@@ -6,22 +6,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -33,6 +25,10 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.List;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Test the functionality of TagAPI class
@@ -579,63 +575,71 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void updateTagReferences() throws Exception{
 
-		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName("Host", systemUser);
-		contentAsset.setStructureInode(st.getInode());
-		String hostName="testtagapiHost"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
-		contentAsset.setProperty(Host.HOST_NAME_KEY, hostName);
-		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
-		contentAsset=conAPI.checkin(contentAsset, testUser, false);
-		conAPI.publish(contentAsset, testUser, false);
-		assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), 100));
+		Host newHost = null;
+		try {
+			Contentlet contentAsset = new Contentlet();
+			Structure st = structureAPI.findByVarName("Host", systemUser);
+			contentAsset.setStructureInode(st.getInode());
+			String hostName =
+					"testtagapiHost" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+			contentAsset.setProperty(Host.HOST_NAME_KEY, hostName);
+			contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+			contentAsset = conAPI.checkin(contentAsset, testUser, false);
+			conAPI.publish(contentAsset, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), true));
 
-		Host newHost = hostAPI.findByName(hostName, systemUser, false);
-		contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
-		contentAsset.setInode(null);
-		contentAsset=conAPI.checkin(contentAsset, testUser, false);
-		conAPI.publish(contentAsset, testUser, false);
+			newHost = hostAPI.findByName(hostName, systemUser, false);
+			contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
+			contentAsset.setInode(null);
+			contentAsset = conAPI.checkin(contentAsset, testUser, false);
+			conAPI.publish(contentAsset, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), true));
 
-		TagFactory tagFactory = FactoryLocator.getTagFactory();
-		List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
-		int initialNumberOfTagsDemo =tags.size();
-		assertNotNull(tags);
-		assertTrue(initialNumberOfTagsDemo > 0);
+			TagFactory tagFactory = FactoryLocator.getTagFactory();
+			List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
+			int initialNumberOfTagsDemo = tags.size();
+			assertNotNull(tags);
+			assertTrue(initialNumberOfTagsDemo > 0);
 
-		tags = tagFactory.getTagsByHost(newHost.getIdentifier());
-		int initialNumberOfTagsNewHost =tags.size();
-		assertNotNull(tags);
-		assertTrue(initialNumberOfTagsNewHost >= 0);
+			tags = tagFactory.getTagsByHost(newHost.getIdentifier());
+			int initialNumberOfTagsNewHost = tags.size();
+			assertNotNull(tags);
+			assertTrue(initialNumberOfTagsNewHost >= 0);
 
-		//Move tags to other host
-		tagAPI.updateTagReferences( defaultHostId, defaultHostId, newHost.getIdentifier() );
+			//Move tags to other host
+			tagAPI.updateTagReferences(defaultHostId, defaultHostId, newHost.getIdentifier());
 
-		//to refresh cache
-		tagCache.clearCache();
+			//to refresh cache
+			tagCache.clearCache();
 
-		List<Tag> newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
-		assertTrue(newHostTags.size() > initialNumberOfTagsNewHost);
+			List<Tag> newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
+			assertTrue(newHostTags.size() > initialNumberOfTagsNewHost);
 
-		List<Tag> tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
-		assertTrue(tagsAfterUpdate.size() < initialNumberOfTagsDemo);
+			List<Tag> tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
+			assertTrue(tagsAfterUpdate.size() < initialNumberOfTagsDemo);
 
+			//return tags to original host
+			tagAPI.updateTagReferences(defaultHostId, newHost.getIdentifier(), defaultHostId);
+			tagCache.clearCache();
 
-		//return tags to original host
-		tagAPI.updateTagReferences( defaultHostId, newHost.getIdentifier(), defaultHostId );
-		tagCache.clearCache();
-
-		tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
-		assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
-		/*here the amount is not 0 because is entering in the condition 
+			tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
+			assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
+		/*here the amount is not 0 because is entering in the condition
 		 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
 		 * saveTag(tag.getTagName(), "", hostIdentifier);
 		 */
-		newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
-		assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
+			newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
+			assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
+		} finally {
 
-		//delete host
-		conAPI.unpublish(newHost, systemUser, false);
-		conAPI.archive(newHost, systemUser, false);
-		conAPI.delete(newHost, systemUser, false);
+			if (null != newHost) {
+				//delete host
+				conAPI.unpublish(newHost, systemUser, false);
+				conAPI.archive(newHost, systemUser, false);
+				conAPI.delete(newHost, systemUser, false);
+			}
+
+		}
 	}
 
 	/**
