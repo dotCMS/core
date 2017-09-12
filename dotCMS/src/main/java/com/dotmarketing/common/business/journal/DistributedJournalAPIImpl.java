@@ -73,17 +73,14 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 		distributedJournalFactory.deleteReindexEntryForServer(iJournal);
 	}
 
-	public boolean isIndexationEnabled() {
-		return distributedJournalFactory.isIndexationEnabled();
-	}
-
-	public void setIndexationEnabled(boolean indexationEnabled) {
-		distributedJournalFactory.setIndexationEnabled(indexationEnabled);
-	}
-
 	@CloseDBIfOpened
 	public boolean areRecordsLeftToIndex() throws DotDataException {
 		return distributedJournalFactory.areRecordsLeftToIndex();
+	}
+
+	@Override
+	public boolean isIndexationEnabled() {
+		return false; // todo: should it exists
 	}
 
 	@CloseDBIfOpened
@@ -99,7 +96,12 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	public void deleteLikeJournalRecords(IndexJournal<T> ijournal) throws DotDataException {
 		distributedJournalFactory.deleteLikeJournalRecords(ijournal);
 	}
-	
+
+	@Override
+	public void setIndexationEnabled(boolean indexationEnabled) {
+		// todo: should it exists
+	}
+
 	public String getServerId(){
 		return distributedJournalFactory.getServerId();
 	}

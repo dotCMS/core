@@ -25,6 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -57,7 +58,8 @@ import com.liferay.util.servlet.UploadServletRequest;
  * @author Oswaldo
  *
  */
-public class SubmitContentAction extends DispatchAction{
+@Deprecated
+public class SubmitContentAction extends SecureAction{
 
 
 	private final LanguageAPI langAPI = APILocator.getLanguageAPI();

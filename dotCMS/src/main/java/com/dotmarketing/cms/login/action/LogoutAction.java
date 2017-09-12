@@ -13,6 +13,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.UtilMethods;
 
@@ -26,7 +27,8 @@ import com.dotmarketing.util.UtilMethods;
  */
 
 
-public class LogoutAction extends DispatchAction {
+@Deprecated
+public class LogoutAction extends SecureAction {
     public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
         HttpServletResponse response) throws Exception {
 

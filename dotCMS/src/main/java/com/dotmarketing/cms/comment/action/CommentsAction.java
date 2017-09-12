@@ -31,6 +31,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.comment.struts.CommentsForm;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -65,7 +66,8 @@ import com.liferay.util.Html;
  * @version 1.6
  * @since 1.0
  */
-public class CommentsAction extends DispatchAction {
+@Deprecated
+public class CommentsAction extends SecureAction {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private CategoryAPI catAPI = APILocator.getCategoryAPI();

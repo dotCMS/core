@@ -78,51 +78,8 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void addCacheEntry(String key, String group)
             throws DotDataException {
         Connection con = null;
-        String[] serversIds = APILocator.getServerAPI().getAliveServersIds();
-        String serverId = ConfigUtils.getServerId();
-        try {
-            if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
-                con = DbConnectionFactory.getConnection();
-                con.setAutoCommit(false);
-                java.sql.Timestamp timestamp = new java.sql.Timestamp(new java.util.Date().getTime());
-                for (String serversId : serversIds) {
-                    if (!serverId.equals(serversId)) {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("INSERT INTO dist_process(object_to_index, time_entered, serverid, journal_type)VALUES (?, ?, ?, ?)");
-                        dc.addParam(key + ":" + group);
-                        dc.addParam(timestamp);
-                        dc.addParam(serversId);
-                        dc.addParam(JOURNAL_TYPE_CACHE);
-                        try {
-                            dc.getResult(con);
-                        } catch (Exception e) {
-                            Logger
-                                    .warn(this,
-                                            "Usually not a problem but a cache entry failed to insert in the table.");
-                            Logger.debug(this, e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e1) {
-            throw new DotDataException(e1.getMessage(), e1);
-        } finally {
-            try {
-                if(con!=null){
-                    con.commit();
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            } finally {
-                try {
-                    if(con!=null){
-                        con.close();
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-            }
-        }
+
+
     }
 
     @Override
@@ -426,10 +383,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         return ConfigUtils.getServerId();
     }
 
-    @Override
-    protected boolean isIndexationEnabled() {
-        return Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false);
-    }
 
     @Override
     protected void processJournalEntries() throws DotDataException {
@@ -554,11 +507,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
-    protected void setIndexationEnabled(boolean indexationEnabled) {
-    	Config.setProperty("DIST_INDEXATION_ENABLED", Boolean.FALSE); // todo: set always to false is intentional or not?
-    }
-
-    @Override
     protected List<IndexJournal> viewReindexJournalData() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as mycount,serverid,priority from dist_reindex_journal group by serverid,priority order by serverid, priority");
@@ -637,4 +585,5 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             //No need to unlock for oracle, pg, or sql server.  Using passed in connection, the calling method should commit (which is all that's needed to unlock the tables)
         }
     }
+
 }

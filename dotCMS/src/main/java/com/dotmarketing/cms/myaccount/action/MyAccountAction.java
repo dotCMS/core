@@ -18,6 +18,7 @@ import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -37,7 +38,8 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 
-public class MyAccountAction extends DispatchAction {
+@Deprecated
+public class MyAccountAction extends SecureAction {
 
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,
 			HttpServletRequest request, HttpServletResponse response)
