@@ -1,4 +1,12 @@
-# DotcmsUi
+# DotCMS UI
+
+## Run in dev mode
+1. ```npm run start```
+2. Open http://localhost:3000
+
+## Run in prod mode
+1. ```npm run dotcms -- -op=your-path-to-tomcat8/webapps/ROOT/dotAdmin```
+2. Open http://localhost:8080/dotAdmin
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.3.0.
 
