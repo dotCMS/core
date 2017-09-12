@@ -65,7 +65,7 @@ public class FieldResource implements Serializable {
 		try {
 			final List<Field> fields = new JsonFieldTransformer(fieldsJson).asList();
 
-			for (Field field : fields) {
+			for (final Field field : fields) {
 				fieldAPI.save(field, user);
 			}
 
@@ -345,7 +345,7 @@ public class FieldResource implements Serializable {
 
 			for (final String fieldId : fieldsID) {
 				try {
-					Field field = fieldAPI.find(fieldId);
+					final Field field = fieldAPI.find(fieldId);
 					fieldAPI.delete(field, user);
 					deletedIds.add(fieldId);
 				} catch (NotFoundInDbException e) {
