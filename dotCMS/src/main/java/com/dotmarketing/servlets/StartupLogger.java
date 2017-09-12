@@ -45,14 +45,7 @@ public class StartupLogger {
         Logger.info(this, "   Licensed to   : " + license.getClientName());
         Logger.info(this, "   Server id     : " + license.getDisplayServerId());
         Logger.info(this, "   License id    : " + license.getDisplaySerial());
-        Logger.info(this, "   Valid until   : " + expires);
-        if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
-            Logger.info(this, "   Clustering    : Enabled");
-        } else{
-            Logger.info(this, "   Clustering    : Disabled");
-        }
-
-
+        Logger.info(this, "   Expires       : " + expires);
         Logger.info(this, "");
 
         

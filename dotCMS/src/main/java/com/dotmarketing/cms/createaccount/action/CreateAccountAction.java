@@ -18,9 +18,11 @@ import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.createaccount.struts.CreateAccountForm;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -40,6 +42,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
@@ -48,7 +51,8 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
-public class CreateAccountAction extends DispatchAction {
+@Deprecated
+public class CreateAccountAction extends SecureAction {
 
 	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
@@ -60,6 +64,8 @@ public class CreateAccountAction extends DispatchAction {
 		this.categoryAPI = categoryAPI;
 	}
 
+
+	
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 		loadUser(lf,request);

@@ -63,7 +63,7 @@ public abstract class CategoryCache implements Cachable{
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<String> getChildren(Categorizable parentId) throws DotDataException;
+	abstract protected List<Category> getChildren(Categorizable parentId) throws DotDataException;
 
 	/**
 	 * Sets the list of children based on the given parent id/inode
@@ -75,15 +75,6 @@ public abstract class CategoryCache implements Cachable{
 	 */
 	abstract protected void putChildren(Categorizable parentId, List<Category> children) throws DotDataException, DotCacheException;
 
-	/**
-	 * Sets the list of children based on the given parent id/inode
-	 * @param parentId
-	 * @param children
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotCacheException 
-	 */
-	abstract protected void addChild(Categorizable parentId, Category child, List<Category> children) throws DotDataException, DotCacheException;
 
     /**
      * Removes the list of children categories based using the given parent id/inode

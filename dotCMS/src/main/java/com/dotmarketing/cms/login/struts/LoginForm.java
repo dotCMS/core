@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 
 import com.liferay.portal.util.Constants;
 
+@Deprecated
 public class LoginForm extends ValidatorForm {
 
 
