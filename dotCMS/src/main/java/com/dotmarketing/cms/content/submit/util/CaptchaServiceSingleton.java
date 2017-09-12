@@ -3,6 +3,7 @@ package com.dotmarketing.cms.content.submit.util;
 import com.dotcms.repackage.com.octo.captcha.service.sound.DefaultManageableSoundCaptchaService;
 import com.dotcms.repackage.com.octo.captcha.service.sound.SoundCaptchaService;
 
+@Deprecated
 public class CaptchaServiceSingleton {
     
     private static SoundCaptchaService instance = new DefaultManageableSoundCaptchaService();

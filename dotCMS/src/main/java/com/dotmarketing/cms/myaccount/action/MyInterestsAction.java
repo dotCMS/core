@@ -14,6 +14,7 @@ import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.myaccount.struts.MyAccountForm;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
@@ -24,7 +25,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
-public class MyInterestsAction extends DispatchAction {
+@Deprecated
+public class MyInterestsAction extends SecureAction {
 	
 	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	

@@ -57,6 +57,7 @@ import com.liferay.util.FileUtil;
  * @author Oswaldo
  *
  */
+@Deprecated
 public class SubmitContentUtil {
 
 	public static final String errorFieldVariable = "errorFieldMessage";
