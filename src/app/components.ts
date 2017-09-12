@@ -1,7 +1,7 @@
 // CUSTOM COMPONENTS
 import { Accordion, AccordionGroup } from './view/components/_common/accordion/accordion';
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
-import { DotLoadingIndicator } from './view/components/_common/dot-loading-indicator/dot-loading-indicator';
+import { DotLoadingIndicatorComponent } from './view/components/_common/dot-loading-indicator/dot-loading-indicator.component';
 import { DropdownComponent } from './view/components/_common/dropdown-component/dropdown-component';
 import { ForgotPasswordComponent } from './view/components/login/forgot-password-component/forgot-password-component';
 import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
@@ -30,7 +30,7 @@ export const COMPONENTS = [
     Accordion,
     AccordionGroup,
     CustomTimeComponent,
-    DotLoadingIndicator,
+    DotLoadingIndicatorComponent,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,

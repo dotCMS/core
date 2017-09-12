@@ -1,11 +1,11 @@
-import { Component, ElementRef, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, OnInit } from '@angular/core';
 import { LoginService, SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
 import { ActivatedRoute } from '@angular/router';
 import { RoutingService } from '../../../api/services/routing-service';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
-import { SiteChangeListener } from '../../../api/util/site-change-listener';
 import { MessageService } from '../../../api/services/messages-service';
 import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { BaseComponent } from '../_common/_base/base-component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -13,25 +13,25 @@ import { IframeOverlayService } from '../../../api/services/iframe-overlay-servi
     styleUrls: ['./iframe-legacy-component.scss'],
     templateUrl: 'iframe-legacy-component.html'
 })
-export class IframeLegacyComponent extends SiteChangeListener {
+export class IframeLegacyComponent extends BaseComponent implements OnInit {
     iframe: SafeResourceUrl;
     iframeElement;
-    private loadingInProgress = true;
-    private showOverlay = false;
+    loadingInProgress = true;
+    showOverlay = false;
 
     constructor(
-        private route: ActivatedRoute,
-        private routingService: RoutingService,
-        siteService: SiteService,
-        private sanitizer: DomSanitizer,
+        messageService: MessageService,
+        private dotcmsEventsService: DotcmsEventsService,
         private element: ElementRef,
         private loginService: LoginService,
-        private dotcmsEventsService: DotcmsEventsService,
-        messageService: MessageService,
-        private loggerService: LoggerService,
-        private iframeOverlayService: IframeOverlayService
+        private route: ActivatedRoute,
+        private routingService: RoutingService,
+        private sanitizer: DomSanitizer,
+        public iframeOverlayService: IframeOverlayService,
+        public loggerService: LoggerService,
+        public siteService: SiteService
     ) {
-        super(siteService, ['ask-reload-page-message'], messageService);
+        super(['ask-reload-page-message'], messageService);
 
         /**
          * Subscribe to the portletUrl$ changes to force the
@@ -45,6 +45,10 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     ngOnInit(): void {
+        this.siteService.switchSite$.subscribe(site => {
+            this.changeSiteReload();
+        });
+
         this.iframeOverlayService.overlay.subscribe(val => (this.showOverlay = val));
 
         // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
@@ -105,7 +109,9 @@ export class IframeLegacyComponent extends SiteChangeListener {
      * @param $event
      */
     hideLoadingIndicator($event): void {
-        this.loadingInProgress = false;
+        setTimeout(() => {
+            this.loadingInProgress = false;
+        }, 0);
     }
 
     initComponent(): void {
