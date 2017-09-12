@@ -87,18 +87,6 @@ public abstract class DistributedJournalFactory<T> {
 	 */
 	protected abstract void processJournalEntries() throws DotDataException;
 
-	/**
-	 * Return whether distribuited indexation is enabled (records are being inserted in the database)
-	 * @return
-	 */
-	protected abstract boolean isIndexationEnabled();
-	
-
-	/**
- 	* 
- 	* Setsn whether distribuited indexation is enabled or not (records are being inserted in the database)
- 	*/
-	protected abstract void setIndexationEnabled(boolean indexationEnabled) ;
 
 	/**
 	 * Will add reindex enteries for all content on all servers in the cluster including this one

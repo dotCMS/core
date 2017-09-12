@@ -35,6 +35,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -97,10 +98,20 @@ public class FieldAPIImpl implements FieldAPI {
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fac.byId(field.id());
+
+	    		if (oldField.sortOrder() != field.sortOrder()){
+	    		    if (oldField.sortOrder() > field.sortOrder()) {
+                        fac.moveSortOrderForward(field.sortOrder(), oldField.sortOrder());
+                    } else {
+                        fac.moveSortOrderBackward(oldField.sortOrder(), field.sortOrder());
+                    }
+                }
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
-	    }
+	    }else {
+            fac.moveSortOrderForward(field.sortOrder());
+        }
 
 		Field result = fac.save(field);
 		//update Content Type mod_date to detect the changes done on the field
@@ -111,18 +122,17 @@ public class FieldAPIImpl implements FieldAPI {
         CacheLocator.getContentTypeCache().remove(structure);
         StructureServices.removeStructureFile(structure);
 
-
-
-        //http://jira.dotmarketing.net/browse/DOTCMS-5178
-        if(oldField != null && ((!oldField.indexed() && field.indexed()) || (oldField.indexed() && !field.indexed()))){
-          // rebuild contentlets indexes
-          conAPI.reindex(structure);
-        }
-
-        if (field instanceof ConstantField) {
-            ContentletServices.removeContentletFile(structure);
-            ContentletMapServices.removeContentletMapFile(structure);
-            conAPI.refresh(structure);
+        
+        if(oldField!=null){
+	        if(oldField.indexed() != field.indexed()){
+	          conAPI.refresh(structure);
+	        } else if (field instanceof ConstantField) {
+	        	if(!StringUtils.equals(oldField.values(), field.values()) ){
+		            ContentletServices.removeContentletFile(structure);
+		            ContentletMapServices.removeContentletMapFile(structure);
+		            conAPI.refresh(structure);
+	        	}
+	        }
         }
 
         return result;
@@ -184,6 +194,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
 	      }
 
+	      fac.moveSortOrderBackward(oldField.sortOrder());
 	      fac.delete(field);
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);

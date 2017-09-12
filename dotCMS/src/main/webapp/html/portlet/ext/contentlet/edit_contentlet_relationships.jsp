@@ -437,7 +437,7 @@
 		 		function identifier_func (o) {
 					var value = "";
 					if (o != null)
-						value = o['identifier'];
+						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['identifier'] + "</a>";
 		 			return value;
 		 		}
 
