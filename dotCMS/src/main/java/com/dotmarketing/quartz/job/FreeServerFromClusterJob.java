@@ -63,12 +63,15 @@ public class FreeServerFromClusterJob implements StatefulJob {
     }
 
     private boolean freeLicense(String serverID) throws DotDataException, IOException {
+        boolean needsRewire = false;
+
         for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
             if (serverID.equals(lic.serverId)) {
                 LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
+                needsRewire = true;
                 break;
             }
         }
-        return true;
+        return needsRewire;
     }
 }
