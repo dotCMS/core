@@ -237,7 +237,11 @@
                                               ? "<span class='pageIcon'></span> "
                                                   : (s.getStructureType()==6)
                                                   ? "<span class='personaIcon'></span>"
-                                                      :"<span class='blankIcon'></span>";
+                                                    : (s.getStructureType()==7)
+                                                    ? "<span class='mapIcon'></span>"
+                                                        : (s.getStructureType()==8)
+                                                        ? "<span class='globeIcon'></span>"
+                                                            :"<span class='blankIcon'></span>";
 
 
 
