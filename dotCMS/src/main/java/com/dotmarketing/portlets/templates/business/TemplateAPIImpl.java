@@ -1,12 +1,5 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
@@ -17,14 +10,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -33,7 +20,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
@@ -43,6 +29,13 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 

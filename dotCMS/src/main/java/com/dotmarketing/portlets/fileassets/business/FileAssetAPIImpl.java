@@ -17,6 +17,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -60,9 +61,9 @@ import com.liferay.util.FileUtil;
 public class FileAssetAPIImpl implements FileAssetAPI {
 
     private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
-	private SystemEventsAPI systemEventsAPI;
-	ContentletAPI contAPI;
-	PermissionAPI perAPI;
+	private final SystemEventsAPI systemEventsAPI;
+	final ContentletAPI contAPI;
+	final PermissionAPI perAPI;
 
 	public FileAssetAPIImpl() {
 		contAPI = APILocator.getContentletAPI();
@@ -90,7 +91,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return fromContentlet(contAPI.checkin(fileCon,user,respectFrontendRoles));
 	}
 	 */
-
+	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 		List<FileAsset> assets = null;
@@ -105,6 +106,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
+	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException,
 	DotSecurityException {
 		List<FileAsset> assets = null;
@@ -142,6 +144,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 	} // findFileAssetsByHost.
 
+	@WrapInTransaction
 	public void createBaseFileAssetFields(Structure structure) throws DotDataException, DotStateException {
 		if (structure == null || !InodeUtils.isSet(structure.getInode())) {
 			throw new DotStateException("Cannot create base fileasset fields on a structure that doesn't exist");
@@ -209,6 +212,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		FieldsCache.clearCache();
 	}
 
+	@CloseDBIfOpened
 	public FileAsset fromContentlet(Contentlet con) throws DotStateException {
 		if (con == null) {
 			throw new DotStateException("Contentlet : is null");

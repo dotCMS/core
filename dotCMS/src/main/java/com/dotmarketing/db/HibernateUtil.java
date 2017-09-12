@@ -765,6 +765,14 @@ public class HibernateUtil {
 		}
     }
 
+	public static void closeSessionSilently() {
+
+		try {
+			closeSession();
+		} catch (DotHibernateException e) {
+
+		}
+	}
 
 	public static void closeSession()  throws DotHibernateException{
 		try{

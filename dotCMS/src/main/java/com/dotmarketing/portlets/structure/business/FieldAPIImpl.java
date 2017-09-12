@@ -5,6 +5,8 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
@@ -78,7 +80,7 @@ public class FieldAPIImpl implements FieldAPI {
 		return false;
 	}
 	
-	
+	@CloseDBIfOpened
 	public Field find(String id, User user, boolean respectFrontendRoles){
 		return FieldsCache.getField(id);
 	}
@@ -90,26 +92,31 @@ public class FieldAPIImpl implements FieldAPI {
 		FieldFactory.deleteFieldVariable(fieldVar);
 		FieldsCache.removeFieldVariables(field);
 	}
+
+	@WrapInTransaction
 	public FieldVariable findFieldVariable(String id, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {		
 		return FieldFactory.getFieldVariable(id);		
 	}
 
+	@CloseDBIfOpened
 	public List<FieldVariable> getFieldVariablesForField(String fieldId, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {		
 		return FieldFactory.getFieldVariablesForField(fieldId);
 	}
+
+	@WrapInTransaction
 	public void saveFieldVariable(FieldVariable object, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 		FieldFactory.saveFieldVariable(object);
 	}
+
     @Override
     public List<FieldVariable> getAllFieldVariables(User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        // TODO Auto-generated method stub
         return null;
     }
 	

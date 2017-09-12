@@ -7,6 +7,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -44,6 +45,7 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -594,21 +596,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // gets all not live link children
-        Logger.debug(this, "IM HERE BEFORE PUBLISHING LINKS FOR A CONTENTLET!!!!!!!");
-        List<Link> links = getRelatedLinks(contentlet, systemUser, false);
-        for (Link link : links) {
-            Logger.debug(this, "*****I'm a Contentlet -- Publishing my Link Child=" + link.getInode());
-            try {
-                PublishFactory.publishAsset(link, systemUser, false, isNewVersion);
-            } catch (DotSecurityException e) {
-                Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
-                        + " but not the related link = " + link.getIdentifier());
-                throw new DotStateException("Problem occured while publishing link");
-            } catch (Exception e) {
-                throw new DotStateException("Problem occured while publishing file");
-            }
-        }
+        this.publishRelatedLinks(contentlet, isNewVersion, systemUser);
 
         if (!isNew) {
             // writes the contentlet to a live directory under velocity folder
@@ -622,6 +610,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+
+    @CloseDBIfOpened
+    private void publishRelatedLinks(final Contentlet contentlet,
+                                     final boolean isNewVersion,
+                                     final User systemUser) throws DotDataException, DotSecurityException {
+        // gets all not live link children
+        Logger.debug(this, "IM HERE BEFORE PUBLISHING LINKS FOR A CONTENTLET!!!!!!!");
+        final List<Link> links = getRelatedLinks(contentlet, systemUser, false);
+
+        for (Link link : links) {
+
+            Logger.debug(this, "*****I'm a Contentlet -- Publishing my Link Child=" + link.getInode());
+            try {
+
+                PublishFactory.publishAsset(link, systemUser, false, isNewVersion);
+            } catch (DotSecurityException e) {
+                Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
+                        + " but not the related link = " + link.getIdentifier());
+                throw new DotStateException("Problem occured while publishing link");
+            } catch (Exception e) {
+                throw new DotStateException("Problem occured while publishing file");
+            }
+        }
+    } // publishRelatedLinks.
 
     @Override
     public List<Contentlet> search(String luceneQuery, int limit, int offset,String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -789,12 +801,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return list;
     }
 
+    @CloseDBIfOpened
     @Override
     public void publishRelatedHtmlPages(Contentlet contentlet) throws DotStateException, DotDataException{
         if(contentlet.getInode().equals(""))
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         //Get the contentlet Identifier to gather the related pages
-        Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
         List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getInode());
 
@@ -838,6 +851,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException, DotMappingException {
@@ -902,8 +916,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw e;
         }
         finally {
+
             if(localTransaction){
-                HibernateUtil.commitTransaction();
+                try {
+                    HibernateUtil.commitTransaction();
+                } finally {
+                    HibernateUtil.closeSession();
+                }
             }
         }
     }
@@ -1342,6 +1361,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return true;
     }
 
+    @WrapInTransaction
     @Override
     public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -1351,6 +1371,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return deleteContentlets(contentletsToDelete, user, respectFrontendRoles, true);
     }
 
+    @WrapInTransaction
     @Override
     public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -1369,6 +1390,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,
             DotSecurityException {
@@ -1675,6 +1697,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return noErrors;
     }
 
+    @WrapInTransaction
     @Override
     public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         if(contentlets == null || contentlets.size() == 0){
@@ -1747,6 +1770,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
         for (Contentlet con : contentlets){
@@ -1792,6 +1816,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void deleteVersion(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         if(contentlet == null){
@@ -1822,6 +1847,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         deleteBinaryFiles(contentlets,null);
     }
 
+    @WrapInTransaction
     @Override
     public void archive(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         logContentletActivity(contentlet, "Archiving Content", user);
@@ -1903,6 +1929,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         logContentletActivity(contentlet, "Content Archived", user);
     }
 
+    // todo: everything should be in a transaction>????
     @Override
     public void archive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         boolean stateError = false;
@@ -1973,6 +2000,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         refreshAllContent();
     }
 
+    @WrapInTransaction
     @Override
     public void reindex(Structure structure)throws DotReindexStateException {
         try {
@@ -1988,6 +2016,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         indexAPI.addContentToIndex(contentlet);
     }
 
+    @WrapInTransaction
     @Override
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
@@ -2065,10 +2094,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.warn(this, e1.getMessage(),e1);
             }
             throw new DotReindexStateException("Unable to complete reindex",e);
+        } finally {
+            HibernateUtil.closeSessionSilently();
         }
 
     }
 
+    @WrapInTransaction
     @Override
     public void refreshContentUnderHost(Host host) throws DotReindexStateException {
         try {
@@ -2080,6 +2112,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void refreshContentUnderFolder(Folder folder) throws DotReindexStateException {
         try {
@@ -2091,6 +2124,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
         try {
@@ -2101,6 +2135,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void unpublish(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         if(contentlet.getInode().equals(""))
@@ -2112,6 +2147,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         unpublish(contentlet, user);
     }
+
 
     private void unpublish(Contentlet contentlet, User user) throws DotDataException,DotSecurityException, DotContentletStateException {
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())){
@@ -2186,6 +2222,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    // todo:should be in a transaction?
     @Override
     public void unpublish(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,    DotSecurityException, DotContentletStateException {
         boolean stateError = false;
@@ -2201,6 +2238,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void unarchive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 
@@ -2264,6 +2302,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    // todo: should be in a transaction.
     @Override
     public void unarchive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         boolean stateError = false;
@@ -2284,6 +2323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
     }
 
+    @WrapInTransaction
     @Override
     public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
@@ -2309,6 +2349,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         refreshNoDeps(contentlet);
     }
 
+    @WrapInTransaction
     @Override
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
@@ -2318,13 +2359,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relateContent(contentlet, related, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
+    private List<Relationship> getRelationships (final ContentTypeIf type) throws DotDataException {
+
+        return FactoryLocator.getRelationshipFactory().byContentType(type);
+    }
+
+    @CloseDBIfOpened
+    private List<Tree> getContentParents (final String inode) throws DotDataException {
+
+        return TreeFactory.getTreesByChild(inode);
+    }
+
     @Override
     public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        List<Relationship> rels = this.getRelationships(contentlet.getStructure());
         if(!rels.contains(related.getRelationship())){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown")
                     + " does not have passed in relationship");
@@ -2334,12 +2387,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Tree> contentParents = null;
         if (child)
-            contentParents = TreeFactory.getTreesByChild(contentlet.getIdentifier());
+            contentParents = this.getContentParents(contentlet.getIdentifier());
 
         boolean localTransaction = false;
         try{
-            try{
-                localTransaction =	 HibernateUtil.startLocalTransactionIfNeeded();
+            try {
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
             }
             catch(Exception e){
                 throw new DotDataException(e.getMessage());
@@ -2398,9 +2451,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw new DotDataException(exception.getMessage(), exception);
+        } finally {
+            if(localTransaction){
+                HibernateUtil.closeSession();
+            }
         }
     }
 
+    // todo: should be in a transaction.????
     @Override
     public void publish(List<Contentlet> contentlets, User user,    boolean respectFrontendRoles) throws DotSecurityException,DotDataException, DotContentletStateException {
         boolean stateError = false;
@@ -2441,6 +2499,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentletList;
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
 
@@ -2478,6 +2537,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
 
@@ -2507,6 +2567,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats, User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
 
@@ -2539,6 +2600,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException,DotContentletValidationException {
 
@@ -2571,6 +2633,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
 
@@ -2610,6 +2673,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, false);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
 
@@ -2664,6 +2728,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      * @throws DotContentletValidationException
      */
+    @CloseDBIfOpened
     private Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
                                List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles,
                                boolean generateSystemEvent)
@@ -2689,6 +2754,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, true, false);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
@@ -2720,6 +2786,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      * @throws DotContentletValidationException
      */
+    @WrapInTransaction
     private Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats, List<Permission> permissions,
                                User user, boolean respectFrontendRoles, boolean createNewVersion, boolean generateSystemEvent) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
@@ -3439,6 +3506,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         throw new DotSecurityException(message);
     }
 
+    // todo: should be this in a transaction???
     @Override
     public List<Contentlet> checkout(List<Contentlet> contentlets, User user,   boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         List<Contentlet> result = new ArrayList<Contentlet>();
@@ -3448,6 +3516,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return result;
     }
 
+    // todo: should be this in a transaction???
     @Override
     public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         List<Contentlet> result = new ArrayList<Contentlet>();
@@ -3458,6 +3527,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return result;
     }
 
+    // todo: should be this in a transaction???
     @Override
     public List<Contentlet> checkout(String luceneQuery, User user,boolean respectFrontendRoles, int offset, int limit) throws DotDataException,DotSecurityException, DotContentletStateException {
         List<Contentlet> result = new ArrayList<Contentlet>();
@@ -3468,6 +3538,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return result;
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet checkout(String contentletInode, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         //return new version
@@ -3598,6 +3669,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void restoreVersion(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotSecurityException, DotContentletStateException, DotDataException {
         if(contentlet.getInode().equals(""))
@@ -3612,7 +3684,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         canLock(contentlet, user);
         Contentlet currentWorkingCon = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
         APILocator.getVersionableAPI().setWorking(contentlet);
-        // Upodating lucene index
+        // Updating lucene index
         ContentletServices.invalidateWorking(contentlet);
         // Updating lucene index
         indexAPI.addContentToIndex(currentWorkingCon);
@@ -3705,6 +3777,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public void copyProperties(Contentlet contentlet,Map<String, Object> properties,boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
         if(!InodeUtils.isSet(contentlet.getStructureInode())){
             Logger.warn(this,"Cannot copy properties to contentlet where structure inode < 1 : You must set the structure's inode");
@@ -3964,6 +4037,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return text;
     }
 
+    @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,List<Category> cats)throws DotContentletValidationException {
         if(contentlet == null){
@@ -4332,6 +4406,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats)throws DotContentletValidationException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
@@ -4347,6 +4422,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         validateContentlet(contentlet, relationshipsData, cats);
     }
 
+    @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,
                                    ContentletRelationships contentRelationships, List<Category> cats)
@@ -4561,6 +4637,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.convertContentletToFatContentlet(cont, fatty);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet convertFatContentletToContentlet(
             com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
@@ -5120,6 +5197,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return resultContentlet;
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         HostAPI hostAPI = APILocator.getHostAPI();
@@ -5136,16 +5214,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return copyContentlet(contentlet, host, folder, user, generateCopySuffix(contentlet, host, folder), respectFrontendRoles);
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, host, null, user, generateCopySuffix(contentlet, host, null), respectFrontendRoles);
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, null, folder, user, generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         // Suffix that we need to apply to append in content name
@@ -5355,6 +5436,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);
     }
 
+    @CloseDBIfOpened
     @Override
     public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         // no structure, no inode, no workee
@@ -5446,6 +5528,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return value;
     }
 
+    @WrapInTransaction
     @Override
     public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
         if(contentlet.getInode().equals(""))
@@ -5485,6 +5568,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 permissions, user, false);
     }
 
+    @WrapInTransaction
     @Override
     public void removeFolderReferences(Folder folder)throws DotDataException, DotSecurityException {
         contentFactory.removeFolderReferences(folder);
@@ -5496,6 +5580,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return canLock(contentlet, user, false);
     }
 
+    @CloseDBIfOpened
     @Override
     public boolean canLock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws   DotLockException {
         if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())){
@@ -5533,6 +5618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @CloseDBIfOpened
     @Override
     public Map<Relationship, List<Contentlet>> findContentRelationships(
             Contentlet contentlet, User user) throws DotDataException,
@@ -5569,6 +5655,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.indexCount(buffy.toString());
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDateStr, String endDateStr, User user) {
 

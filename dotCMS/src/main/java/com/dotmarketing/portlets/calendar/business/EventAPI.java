@@ -1,11 +1,6 @@
 package com.dotmarketing.portlets.calendar.business;
 
-import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.model.Event;
@@ -15,6 +10,10 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 
 public interface EventAPI {
 	/**
