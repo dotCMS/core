@@ -46,7 +46,7 @@ public class Task00020LoadClusterLicenses implements StartupTask {
             Logger.info(this.getClass(), "found license pack: " + pack);
             File oldPack = new File(pack.getParent() + File.separator + "imported_" + now  + "_" + pack.getName());
             pack.renameTo(oldPack);
-            try(InputStream in = Files.newInputStream(pack.toPath())){
+            try(InputStream in = Files.newInputStream(oldPack.toPath())){
                 LicenseUtil.uploadLicenseRepoFile(in);
                 if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", true)){
                     pack.renameTo(oldPack);
