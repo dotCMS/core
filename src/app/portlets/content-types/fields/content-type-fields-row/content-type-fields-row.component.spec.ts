@@ -18,6 +18,7 @@ import { MockMessageService } from '../../../../test/message-service.mock';
 class TestContentTypeFieldDraggableItemComponent {
     @Input() field: Field;
     @Output() remove: EventEmitter<Field> = new EventEmitter();
+    @Output() edit: EventEmitter<Field> = new EventEmitter();
 }
 
 describe('ContentTypeFieldsRowComponent', () => {
@@ -53,39 +54,85 @@ describe('ContentTypeFieldsRowComponent', () => {
         el = de.nativeElement;
     }));
 
-    it('should has row and columns', () => {
-        const fieldRow = new FieldRow();
-        fieldRow.columns.push(new FieldColumn([
-            {
-                clazz: 'text',
-                name: 'field-1'
-            },
-            {
-                clazz: 'image',
-                name: 'field-1'
-            }
-        ]));
+    describe('setting rows and columns', () => {
 
-        fieldRow.columns.push(new FieldColumn([
-            {
-                clazz: 'text',
-                name: 'field-1'
-            }
-        ]));
+        beforeEach(async(() => {
+            this.fieldRow = new FieldRow();
+            this.fieldRow.columns.push(new FieldColumn([
+                {
+                    clazz: 'text',
+                    name: 'field-1'
+                },
+                {
+                    clazz: 'image',
+                    name: 'field-1'
+                }
+            ]));
 
-        comp.fieldRow = fieldRow;
+            this.fieldRow.columns.push(new FieldColumn([
+                {
+                    clazz: 'text',
+                    name: 'field-1'
+                }
+            ]));
 
-        fixture.detectChanges();
+            comp.fieldRow = this.fieldRow;
+        }));
 
-        const columns = de.queryAll(By.css('.row-columns__item'));
-        expect(2).toEqual(columns.length);
+        it('should has row and columns', () => {
+            fixture.detectChanges();
 
-        columns.forEach((col, index) => {
-            expect('fields-bag').toEqual(col.attributes['dragula']);
-            expect('target').toEqual(col.attributes['data-drag-type']);
+            const columns = de.queryAll(By.css('.row-columns__item'));
+            expect(2).toEqual(columns.length);
 
-            const draggableItems = col.queryAll(By.css('content-type-field-dragabble-item'));
-            expect(fieldRow.columns[index].fields.length).toEqual(draggableItems.length);
+            columns.forEach((col, index) => {
+                expect('fields-bag').toEqual(col.attributes['dragula']);
+                expect('target').toEqual(col.attributes['data-drag-type']);
+
+                const draggableItems = col.queryAll(By.css('content-type-field-dragabble-item'));
+                expect(this.fieldRow.columns[index].fields.length).toEqual(draggableItems.length);
+            });
         });
+
+        it('should handle edit field event', fakeAsync(() => {
+            let editField;
+
+            const field = {
+                clazz: 'text',
+                name: 'field-1'
+            };
+
+            fixture.detectChanges();
+
+            const column = de.query(By.css('.row-columns__item'));
+            const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
+
+            comp.editField.subscribe(eventField => editField = eventField);
+            dragableItem.componentInstance.edit.emit(field);
+
+            tick();
+
+            expect(field).toEqual(editField);
+        }));
+
+        it('should handle remove field event', fakeAsync(() => {
+            let removeField;
+
+            const field = this.fieldRow.columns[0].fields[0];
+            console.log('field222', field);
+            fixture.detectChanges();
+
+            const column = de.query(By.css('.row-columns__item'));
+            const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
+
+            comp.removeField.subscribe(eventField => removeField = eventField);
+            dragableItem.componentInstance.remove.emit(field);
+
+            tick();
+
+            expect(field).toEqual(removeField);
+            const fieldRemoved = this.fieldRow.columns[0].fields.filter(columnField => columnField === field);
+            expect(fieldRemoved).toEqual([]);
+        }));
     });
 });

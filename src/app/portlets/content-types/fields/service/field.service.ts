@@ -29,40 +29,35 @@ export class FieldService {
      * @memberof FieldService
      */
     saveFields(contentTypeId: string, fields: Field[]): Observable<any> {
-        const observables: Observable<any>[] = fields.map((field, index) => {
-            const fieldToSend = Object.assign({}, field, {
-                contentTypeId: contentTypeId,
-                sortOrder: index + 1
-            });
+        fields.forEach((field, index) => {
+            field.contentTypeId = contentTypeId;
 
-            if (FieldUtil.isColumn(fieldToSend) || FieldUtil.isRow(fieldToSend)) {
-                fieldToSend.name = `fields-${index}`;
+            if (FieldUtil.isRowOrColumn(field)) {
+                field.name = `fields-${index}`;
             }
 
-            if (fieldToSend['dataType'] === '') {
-                delete fieldToSend['dataType'];
+            if (field.dataType === '') {
+                delete field.dataType;
             }
-
-            if (!fieldToSend.id) {
-                return this.coreWebService
-                    .requestView({
-                        body: fieldToSend,
-                        method: RequestMethod.Post,
-                        url: `v1/contenttype/${contentTypeId}/fields`
-                    })
-                    .pluck('entity');
-            } else {
-                return this.coreWebService
-                    .requestView({
-                        body: fieldToSend,
-                        method: RequestMethod.Put,
-                        url: `v1/contenttype/${contentTypeId}/fields/id/${fieldToSend.id}`
-                    })
-                    .pluck('entity');
-            }
-            return Observable.of(fieldToSend);
         });
 
-        return Observable.forkJoin(observables);
+        return this.coreWebService.requestView({
+            body: fields,
+            method: RequestMethod.Put,
+            url: `v1/contenttype/${contentTypeId}/fields`
+        }).pluck('entity');
+    }
+
+    /**
+     * Delete fields
+     * @param contentTypeId content types's id that contains the fields
+     * @param fields Fields to delete
+     */
+    deleteFields(contentTypeId: string, fields: Field[]): Observable<{fields: Field[], deletedIds: string[]}> {
+        return this.coreWebService.requestView({
+            body: fields.map(field => field.id),
+            method: RequestMethod.Delete,
+            url: `v1/contenttype/${contentTypeId}/fields`
+        }).pluck('entity');
     }
 }

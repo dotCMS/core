@@ -9,7 +9,9 @@
         <content-type-fields-row
             *ngIf="row.columns.length"
             [fieldRow]="row"
-            (editField)="editField($event)">
+            (editField)="editField($event)"
+            (removeField)="removeField($event)"
+            (removeRow)="removeFieldRow($event)">
         </content-type-fields-row>
     </ng-template>
 

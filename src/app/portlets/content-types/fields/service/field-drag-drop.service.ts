@@ -13,24 +13,41 @@ export class FieldDragDropService {
 
     private _fieldDropFromSource: Subject<any> = new Subject();
     private _fieldDropFromTarget: Subject<any> = new Subject();
+    private _fieldRowDropFromSource: Subject<any> = new Subject();
+    private _fieldRowDropFromTarget: Subject<any> = new Subject();
 
     constructor(private dragulaService: DragulaService) {
         dragulaService.dropModel.subscribe(value => {
-            this.handleDropField(value[0], value[3].dataset.dragType);
+            this.handleDrop(value[0], value[3].dataset.dragType);
         });
 
         dragulaService.removeModel.subscribe(value => {
-            this.handleDropField(value[0], value[3].dataset.dragType);
+            this.handleDrop(value[0], value[3].dataset.dragType);
         });
     }
 
-    private handleDropField(dragType: string, source: string) {
+    private handleDrop(dragType: string, source: string) {
         if (dragType === 'fields-bag') {
-            if (source === 'source') {
-                this._fieldDropFromSource.next();
-            } else if (source === 'target') {
-                this._fieldDropFromTarget.next();
-            }
+            this.handleDropField(dragType, source);
+        } else if (dragType === 'fields-row-bag') {
+            this.handleDropFieldRow(dragType, source);
+
+        }
+    }
+
+    private handleDropField(dragType: string, source: string) {
+        if (source === 'source') {
+            this._fieldDropFromSource.next();
+        } else if (source === 'target') {
+            this._fieldDropFromTarget.next();
+        }
+    }
+
+    private handleDropFieldRow(dragType: string, source: string) {
+        if (source === 'source') {
+            this._fieldRowDropFromSource.next();
+        } else if (source === 'target') {
+            this._fieldRowDropFromTarget.next();
         }
     }
 
@@ -70,6 +87,14 @@ export class FieldDragDropService {
 
     get fieldDropFromTarget$(): Observable<any> {
         return this._fieldDropFromTarget.asObservable();
+    }
+
+    get fieldRowDropFromSource$(): Observable<any> {
+        return this._fieldRowDropFromSource.asObservable();
+    }
+
+    get fieldRowDropFromTarget$(): Observable<any> {
+        return this._fieldRowDropFromTarget.asObservable();
     }
 
     private shouldCopy(

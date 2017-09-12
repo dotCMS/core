@@ -30,6 +30,9 @@ import { FieldService } from '../fields/service';
 })
 class TestContentTypeFieldsDropZone {
     @Input() fields: Field[];
+
+    @Output() saveFields: EventEmitter<any> = new EventEmitter();
+    @Output() removeFields: EventEmitter<any> = new EventEmitter();
 }
 
 @Component({
@@ -101,6 +104,21 @@ describe('ContentTypesEditComponent', () => {
         de = fixture.debugElement;
         el = de.nativeElement;
         route = fixture.debugElement.injector.get(ActivatedRoute);
+
+        url = [
+            new UrlSegment('edit', { name: 'edit' }),
+            new UrlSegment('1234-identifier', { name: '1234-identifier' })
+        ];
+
+        route.url = Observable.of(url);
+
+        const crudService = fixture.debugElement.injector.get(CrudService);
+
+        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: [],
+            id: '1234-identifier',
+        }));
     }));
 
     it('should have Content Types Layout', () => {
@@ -116,18 +134,7 @@ describe('ContentTypesEditComponent', () => {
     });
 
     it('should get the content type data with the id in the url', () => {
-        url = [
-            new UrlSegment('edit', { name: 'edit' }),
-            new UrlSegment('1234-identifier', { name: '1234-identifier' })
-        ];
-
-        route.url = Observable.of(url);
-
         const crudService = fixture.debugElement.injector.get(CrudService);
-        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            fields: []
-        }));
 
         fixture.detectChanges();
 
@@ -135,20 +142,7 @@ describe('ContentTypesEditComponent', () => {
     });
 
     it('should have call content types endpoint with widget data', () => {
-        url = [
-            new UrlSegment('edit', { name: 'edit' }),
-            new UrlSegment('1234-identifier', { name: '1234-identifier' })
-        ];
-
-        route.url = Observable.of(url);
-
         const crudService = fixture.debugElement.injector.get(CrudService);
-
-        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            fields: [],
-            id: '1234-identifier',
-        }));
 
         spyOn(crudService, 'putData').and.returnValue(Observable.of({}));
 
@@ -170,4 +164,120 @@ describe('ContentTypesEditComponent', () => {
             name: 'Hello World'
         });
     });
+
+    it('should handle saveFields event', fakeAsync(() => {
+
+        const fields = [
+            {
+                name: 'field 1',
+                id: 1,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                sortOrder: 1
+            },
+            {
+                name: 'field 2',
+                id: 2,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                sortOrder: 2
+            }
+        ];
+
+        const fieldsReturnByServer: Field[] = [...fields.map((field, index) => Object.assign({id: String(index)}, field))];
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        const saveFieldsSpy = spyOn(fieldService, 'saveFields').and.returnValue(Observable.of(fieldsReturnByServer));
+
+        // given: a data set...
+        comp.data = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: [
+                {
+                    name: 'fieldName',
+                    clazz: 'fieldClass'
+                }
+            ],
+            defaultType: true,
+            fixed: true,
+            folder: 'folder',
+            host: 'host',
+            name: 'name',
+            owner: 'owner',
+            system: false,
+        };
+
+        fixture.detectChanges();
+
+        const contentTypeLayout = de.query(By.css('content-type-layout'));
+        const contentTypeFieldsDropZone = contentTypeLayout.query(By.css('content-type-fields-drop-zone'));
+
+        // when: the saveFields event is tiggered in content-type-fields-drop-zone
+        contentTypeFieldsDropZone.componentInstance.saveFields.emit(fields);
+
+        tick();
+        // then: the saveFields method has to be called in FileService ...
+        expect(saveFieldsSpy).toHaveBeenCalledWith(comp.data.id, fields);
+        // ...and the comp.data.fields has to be set to the fields return by the service
+        expect(comp.data.fields).toEqual(fieldsReturnByServer);
+    }));
+
+    it('should handle removeFields event', () => {
+        const fields = [
+            {
+                name: 'field 1',
+                id: 1,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                sortOrder: 1
+            },
+            {
+                name: 'field 2',
+                id: 2,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                sortOrder: 2
+            }
+        ];
+
+        const fieldsReturnByServer: Field[] = [
+            {
+                name: 'field 3',
+                id: '3',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                sortOrder: 1
+            },
+       ];
+
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        const deleteFieldsSpy = spyOn(fieldService, 'deleteFields').and.returnValue(Observable.of(
+            {
+            fields: fieldsReturnByServer,
+            deletedIds: [1, 2]
+            }
+        ));
+
+        // given: a data set...
+        comp.data = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: [
+            ],
+            defaultType: true,
+            fixed: true,
+            folder: 'folder',
+            host: 'host',
+            name: 'name',
+            owner: 'owner',
+            system: false,
+        };
+
+        fixture.detectChanges();
+
+        const contentTypeLayout = de.query(By.css('content-type-layout'));
+        const contentTypeFieldsDropZone = contentTypeLayout.query(By.css('content-type-fields-drop-zone'));
+
+        // when: the deleteFields event is tiggered in content-type-fields-drop-zone
+        contentTypeFieldsDropZone.componentInstance.removeFields.emit(fields);
+
+        // then: the saveFields method has to be called in FileService ...
+        expect(deleteFieldsSpy).toHaveBeenCalledWith(comp.data.id, fields);
+        // ...and the comp.data.fields has to be set to the fields return by the service
+        expect(comp.data.fields).toEqual(fieldsReturnByServer);
+    });
 });
+

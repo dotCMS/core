@@ -16,7 +16,11 @@ export class FieldUtil {
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     static isNewField(field: Field): Boolean {
-        return !field.id && !(this.isRow(field) || this.isColumn(field));
+        return !field.id;
+    }
+
+    static isRowOrColumn(field: Field) {
+        return this.isRow(field) || this.isColumn(field);
     }
 
     /**

@@ -69,11 +69,13 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
      * @memberof ContentTypesCreateComponent
      */
     public handleFormSubmit($event): void {
+
         const contentTypeData: ContentType = Object.assign(
             {},
             CONTENT_TYPE_INITIAL_DATA,
             $event.value
         );
+
         contentTypeData.clazz = this.contentTypesInfoService.getClazz(
             this.contentTypeType
         );
@@ -89,6 +91,12 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
      */
     saveFields(fieldsToSave: Field[]): void {
         this.fieldService.saveFields(this.contentTypeId, fieldsToSave).subscribe(fields => this.fields = fields);
+    }
+
+    removeFields(fieldsToDelete: Field[]): void {
+        this.fieldService.deleteFields(this.contentTypeId, fieldsToDelete)
+        .pluck('fields')
+        .subscribe((fields: Field[]) => this.fields = fields);
     }
 
     private handleFormSubmissionResponse(res: ContentType[]): void {

@@ -9,7 +9,8 @@
 
     <content-type-fields-drop-zone *ngIf="contentTypeId"
         [fields]="fields" 
-        (saveFields)="saveFields($event)">
+        (saveFields)="saveFields($event)"
+        (removeFields)="removeFields($event)">
 
     </content-type-fields-drop-zone>
 </content-type-layout>

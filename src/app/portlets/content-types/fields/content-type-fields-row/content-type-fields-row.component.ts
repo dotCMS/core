@@ -17,7 +17,10 @@ import { MessageService } from '../../../../api/services/messages-service';
 })
 export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Input() fieldRow: FieldRow;
+
     @Output() editField: EventEmitter<Field> = new EventEmitter();
+    @Output() removeField: EventEmitter<Field> = new EventEmitter();
+    @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
 
     constructor(messageService: MessageService) {
         super(
@@ -33,7 +36,7 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
      * Remove a field
      * @param field field to remove
      */
-    removeField(field: Field): void {
+    onRemoveField(field: Field): void {
         this.fieldRow.columns = this.fieldRow.columns.map(col => {
             const index: number = col.fields.indexOf(field);
 
@@ -42,6 +45,8 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
              }
             return col;
         });
+
+        this.removeField.emit(field);
     }
 
     /**
@@ -52,5 +57,12 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
     getColumnWidth(): string {
         const nColumns = this.fieldRow.columns.length;
         return `${100 / nColumns}%`;
+    }
+
+    /**
+     * Tigger the removeRow event whit the current FieldRow
+     */
+    onRemoveFieldRow(): void {
+        this.removeRow.emit(this.fieldRow);
     }
 }
