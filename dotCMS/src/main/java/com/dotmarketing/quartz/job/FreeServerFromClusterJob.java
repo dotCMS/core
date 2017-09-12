@@ -38,38 +38,19 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
-            boolean shouldExecute = inactiveServers.isEmpty() ? false : true;
+            boolean shouldExecute = !inactiveServers.isEmpty();
 
             if (shouldExecute) {
                 boolean shouldRewire = false;
 
                 for (Server inactiveServer : inactiveServers) {
-                    String serverID = inactiveServer.getServerId();
+                    shouldRewire = freeLicense(inactiveServer.getServerId());
+                }
 
-                    //Frees the license.
-                    for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
-
-                        if (serverID.equals(lic.serverId)) {
-                            LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
-                            shouldRewire = true;
-                            break;
-                        }
-                    }
-
-                    if (shouldRewire) {
-                        //Rewires the other nodes.
-                        if(ClusterUtils.isTransportAutoWire()) {
-                            ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
-                        }
-
-                        if(ClusterUtils.isESAutoWire()) {
-                            ClusterFactory.addNodeToESCluster();
-                        }
-                    }
-
+                if (shouldRewire) {
+                    rewire();
                 }
             }
-
         } catch (DotDataException dotDataException) {
             Logger.error(FreeServerFromClusterJob.class, "Error trying to Free License", dotDataException);
         } catch (IOException iOException) {
@@ -85,6 +66,27 @@ public class FreeServerFromClusterJob implements StatefulJob {
             finally {
                 DbConnectionFactory.closeConnection();
             }
+        }
+    }
+
+    private boolean freeLicense(String serverID) throws DotDataException, IOException {
+        for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
+            if (serverID.equals(lic.serverId)) {
+                LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
+                break;
+            }
+        }
+        return true;
+    }
+
+    private void rewire() throws Exception {
+        //Rewires the other nodes.
+        if(ClusterUtils.isTransportAutoWire()) {
+            ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
+        }
+
+        if(ClusterUtils.isESAutoWire()) {
+            ClusterFactory.addNodeToESCluster();
         }
     }
 }
