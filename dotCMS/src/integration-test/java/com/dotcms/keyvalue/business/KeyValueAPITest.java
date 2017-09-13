@@ -3,6 +3,7 @@ package com.dotcms.keyvalue.business;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.cache.KeyValueCache;
@@ -66,35 +67,95 @@ public class KeyValueAPITest extends IntegrationTestBase {
     }
 
     /*
-     * Saving KeyValues in english and spanish.
+     * Saving KeyValues in english and spanish where both versions are the same Contenlet (same identifier)
+     * and testing the unique field is properly validated
      */
     @Test
-    public void saveKeyValueContent() throws DotContentletValidationException, DotContentletStateException,
+    public void saveKeyValueContent() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
-        String key1 = "com.dotcms.test.key1." + new Date().getTime();
-        String value1 = "Test Key #1";
-        
-        final Contentlet contentletEnglish =
-                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
-                        systemUser);
-        final Contentlet contentletSpanish =
-                createTestKeyValueContent(key1, value1, spanishLanguageId, keyValueContentType,
-                        systemUser);
+        Contentlet contentletEnglish = null;
+        Contentlet contentletSpanish = null;
 
-        Assert.assertTrue("Failed creating a new english Contentlet using the Key/Value Content Type.",
-                        UtilMethods.isSet(contentletEnglish.getIdentifier()));
-        Assert.assertTrue("Failed creating a new spanish Contentlet using the Key/Value Content Type.",
-                        UtilMethods.isSet(contentletSpanish.getIdentifier()));
+        try {
+            String key1 = "com.dotcms.test.key1." + new Date().getTime();
+            String value1 = "Test Key #1";
 
-        deleteContentlets(systemUser, contentletEnglish, contentletSpanish);
+            contentletEnglish = createTestKeyValueContent(key1, value1, englishLanguageId,
+                    keyValueContentType,
+                    systemUser);
+            //Create a Spanish version of the same Contentlet
+            contentletSpanish = createTestKeyValueContent(contentletEnglish.getIdentifier(), key1,
+                    value1, spanishLanguageId, keyValueContentType,
+                    systemUser);
+
+            Assert.assertTrue(
+                    "Failed creating a new english Contentlet using the Key/Value Content Type.",
+                    UtilMethods.isSet(contentletEnglish.getIdentifier()));
+            Assert.assertTrue(
+                    "Failed creating a new spanish Contentlet using the Key/Value Content Type.",
+                    UtilMethods.isSet(contentletSpanish.getIdentifier()));
+        } finally {
+            deleteContentlets(systemUser, contentletEnglish, contentletSpanish);
+        }
+    }
+
+    /*
+     * Saving KeyValues in english testing the unique field is properly validated
+     */
+    @Test
+    public void saveKeyValueContentWithUnique2()
+            throws DotContentletStateException,
+            IllegalArgumentException, DotDataException, DotSecurityException {
+        validateUnique(englishLanguageId, englishLanguageId);
+    }
+
+    /*
+     * Saving KeyValues in english and spanish where both Contenlets are different Contentlets testing
+     * the unique field is properly validated
+     */
+    @Test
+    public void saveKeyValueContentWithUnique()
+            throws DotContentletStateException,
+            IllegalArgumentException, DotDataException, DotSecurityException {
+        validateUnique(englishLanguageId, spanishLanguageId);
+    }
+
+    private void validateUnique(Long languageContent1, Long languageContent2)
+            throws DotSecurityException, DotDataException {
+
+        Contentlet contentlet1 = null;
+        Contentlet contentlet2 = null;
+        try {
+            String key1 = "com.dotcms.test.key1." + new Date().getTime();
+            String value1 = "Test Key #1";
+
+            contentlet1 = createTestKeyValueContent(key1, value1, languageContent1,
+                    keyValueContentType,
+                    systemUser);
+            Assert.assertTrue(
+                    "Failed creating a new Contentlet using the Key/Value Content Type.",
+                    UtilMethods.isSet(contentlet1.getIdentifier()));
+
+            contentlet2 = createTestKeyValueContent(key1, value1, languageContent2,
+                    keyValueContentType,
+                    systemUser);
+            fail("Saving this record should not be possible as already exist another Contentlet with the same unique key.");
+        } catch (DotContentletValidationException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Unexpected exception, expecting a DotContentletValidationException.");
+        } finally {
+            deleteContentlets(systemUser, contentlet1, contentlet2);
+        }
     }
 
     /*
      * Updating an existing KeyValue and verifying the cache group.
      */
     @Test
-    public void updateKeyValueContent() throws DotContentletValidationException, DotContentletStateException,
+    public void updateKeyValueContent() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
@@ -132,7 +193,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * Returning a list of KeyValues which have the same key.
      */
     @Test
-    public void getKeyValueList() throws DotContentletValidationException, DotContentletStateException, IllegalArgumentException,
+    public void getKeyValueList() throws DotContentletStateException, IllegalArgumentException,
                     DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
@@ -143,7 +204,8 @@ public class KeyValueAPITest extends IntegrationTestBase {
                 createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
                         systemUser);
         final Contentlet contentlet2 =
-                createTestKeyValueContent(key1, value1 + "spanish", spanishLanguageId,
+                createTestKeyValueContent(contentlet.getIdentifier(), key1, value1 + "spanish",
+                        spanishLanguageId,
                         keyValueContentType, systemUser);
         final List<KeyValue> keyValueList = keyValueAPI
                 .get(key1, systemUser, keyValueContentType, Boolean.FALSE);
@@ -162,7 +224,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * correctly at the end
      */
     @Test
-    public void keyValueCache() throws DotContentletValidationException, DotContentletStateException, IllegalArgumentException,
+    public void keyValueCache() throws DotContentletStateException, IllegalArgumentException,
                     DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
@@ -195,7 +257,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * filled correctly at the end
      */
     @Test
-    public void keyValueLanguageCache() throws DotContentletValidationException, DotContentletStateException,
+    public void keyValueLanguageCache() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
@@ -235,7 +297,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * filled correctly at the end
      */
     @Test
-    public void keyValueContentTypeCache() throws DotContentletValidationException, DotContentletStateException,
+    public void keyValueContentTypeCache() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
@@ -271,7 +333,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * beginning and filled correctly at the end
      */
     @Test
-    public void keyValueLanguageContentTypeCache() throws DotContentletValidationException, DotContentletStateException,
+    public void keyValueLanguageContentTypeCache() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
