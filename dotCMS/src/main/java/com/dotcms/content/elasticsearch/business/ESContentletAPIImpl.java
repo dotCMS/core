@@ -661,7 +661,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException {
-        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
+        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
 
@@ -675,7 +675,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String[] identifiers=new String[identifierList.size()];
         identifiers=identifierList.toArray(identifiers);
 
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        List<Contentlet> contentlets = new ArrayList<>();
         if(anyLanguage){
             for(String identifier : identifierList){
                 for(Language lang : APILocator.getLanguageAPI().getLanguages()){
@@ -699,7 +699,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
 
-        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
+        Map<String, Contentlet> map = new HashMap<>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
             map.put(contentlet.getIdentifier(), contentlet);
         }
