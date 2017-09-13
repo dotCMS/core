@@ -643,7 +643,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException {
+        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
+        contents.setTotalResults(list.getTotalResults());
 
         List<String> identifierList = new ArrayList<>();
         for(ContentletSearch conwrap: list){
@@ -657,29 +659,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         if(anyLanguage){
-        	for(String identifier : identifierList){
-        		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
-                	try{
-                		Contentlet languageContentlet = null;
-                		try{
-                			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
-                		}catch (DotContentletStateException e) {
-                			Logger.debug(this,e.getMessage(),e);
-						}
-                		if(languageContentlet != null && UtilMethods.isSet(languageContentlet.getInode())){
-                			contentlets.add(languageContentlet);
-                			break;
-                		}
+            for(String identifier : identifierList){
+                for(Language lang : APILocator.getLanguageAPI().getLanguages()){
+                    try{
+                        Contentlet languageContentlet = null;
+                        try{
+                            languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
+                        }catch (DotContentletStateException e) {
+                            Logger.debug(this,e.getMessage(),e);
+                        }
+                        if(languageContentlet != null && UtilMethods.isSet(languageContentlet.getInode())){
+                            contentlets.add(languageContentlet);
+                            break;
+                        }
                     }catch(DotContentletStateException se){
-                    	Logger.debug(this, se.getMessage());
+                        Logger.debug(this, se.getMessage());
                     }
                 }
-        	}
+            }
         }else{
-        	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+            contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
 
-        return contentlets;
+        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
+        for (Contentlet contentlet : contentlets) {
+            map.put(contentlet.getIdentifier(), contentlet);
+        }
+        for (String identifier : identifiers) {
+            if(map.get(identifier) != null && !contents.contains(map.get(identifier))){
+                contents.add(map.get(identifier));
+            }
+        }
+        return contents;
 
     }
 
