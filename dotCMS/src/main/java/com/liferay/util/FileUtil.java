@@ -202,20 +202,17 @@ public class FileUtil {
                     sb.append(", destination: " + destination.getAbsolutePath());
                     Logger.warn(FileUtil.class, sb.toString());
                 }
-            }  catch (Exception e1) {
-                if (e1 instanceof FileAlreadyExistsException){
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Source File: " + source.getAbsolutePath());
-                    sb.append("already exists on the destination: " + destination.getAbsolutePath());
-                    Logger.debug(FileUtil.class, sb.toString());
-                }
-                if (e1 instanceof IOException ){
-                    hardLinks = false; // setting to false will execute the fallback
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Could not created the hard link, will try copy for source: " + source);
-                    sb.append(", destination: " + destination + ". Error message: " + e1.getMessage());
-                    Logger.debug(FileUtil.class, sb.toString());
-                }
+            }  catch (FileAlreadyExistsException e1) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Source File: " + source.getAbsolutePath());
+                sb.append("already exists on the destination: " + destination.getAbsolutePath());
+                Logger.debug(FileUtil.class, sb.toString());
+            } catch (IOException e2 ){
+                hardLinks = false; // setting to false will execute the fallback
+                StringBuilder sb = new StringBuilder();
+                sb.append("Could not created the hard link, will try copy for source: " + source);
+                sb.append(", destination: " + destination + ". Error message: " + e2.getMessage());
+                Logger.debug(FileUtil.class, sb.toString());
             } 
         }
 
