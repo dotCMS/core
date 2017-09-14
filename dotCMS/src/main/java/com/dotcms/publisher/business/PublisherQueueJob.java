@@ -268,6 +268,8 @@ public class PublisherQueueJob implements StatefulJob {
 										if (remoteHistory != null) {
 											publishStart = remoteHistory.getPublishStart();
 											publishEnd = remoteHistory.getPublishEnd();
+											localHistory.setPublishStart(publishStart);
+											localHistory.setPublishEnd(publishEnd);
 											endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
 											for (String remoteGroupId : remoteHistory.getEndpointsMap().keySet()) {
 												Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
@@ -331,8 +333,6 @@ public class PublisherQueueJob implements StatefulJob {
 							countGroupFailed++;
 						}
 					}
-					localHistory.setPublishStart(publishStart);
-					localHistory.setPublishEnd(publishEnd);
 					PublishAuditStatus.Status bundleStatus = null;
 					if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (countGroupFailed > 0 || countGroupPublishing > 0) ) {
 						// If bundle cannot be installed after [MAX_NUM_TRIES] tries

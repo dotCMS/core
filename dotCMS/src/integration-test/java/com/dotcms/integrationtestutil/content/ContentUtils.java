@@ -40,9 +40,11 @@ public class ContentUtils {
                     throws DotContentletStateException, DotDataException, DotSecurityException {
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         for (Contentlet contentlet : contentlets) {
-            contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
-            contentletAPI.archive(contentlet, user, Boolean.FALSE);
-            contentletAPI.delete(contentlet, user, Boolean.FALSE);
+            if (null != contentlet) {
+                contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
+                contentletAPI.archive(contentlet, user, Boolean.FALSE);
+                contentletAPI.delete(contentlet, user, Boolean.FALSE);
+            }
         }
     }
 
@@ -63,10 +65,20 @@ public class ContentUtils {
      */
     public static Contentlet createTestKeyValueContent(final String key, final String value, final long languageId,
             final ContentType keyValueContentType, final User user)
-            throws DotContentletValidationException,
-            DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
+            throws DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
+
+        return createTestKeyValueContent(null, key, value, languageId, keyValueContentType, user);
+    }
+
+    public static Contentlet createTestKeyValueContent(final String identifier, final String key,
+            final String value, final long languageId,
+            final ContentType keyValueContentType, final User user)
+            throws DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         Contentlet contentlet = new Contentlet();
+        if (null != identifier) {
+            contentlet.setIdentifier(identifier);
+        }
         contentlet.setContentTypeId(keyValueContentType.inode());
         contentlet.setLanguageId(languageId);
         final Map<String, Field> fields = keyValueContentType.fieldMap();
