@@ -208,7 +208,7 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	@Override
-	public void removeServerFromClusterTable(String serverId) throws DotDataException, IOException{
+	public void removeServerFromClusterTable(String serverId) throws DotDataException{
 		serverFactory.removeServerFromClusterTable(serverId);
 	}
 
