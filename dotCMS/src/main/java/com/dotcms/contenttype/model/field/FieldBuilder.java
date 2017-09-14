@@ -30,7 +30,8 @@ public interface FieldBuilder {
 	FieldBuilder readOnly(boolean val);
 	FieldBuilder indexed(boolean val);
     FieldBuilder listed(boolean listed);
-	
+    FieldBuilder values(String values);
+    
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
 	}

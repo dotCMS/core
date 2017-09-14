@@ -38,32 +38,19 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
-            boolean shouldExecute = inactiveServers.isEmpty() ? false : true;
+            boolean shouldExecute = !inactiveServers.isEmpty();
 
             if (shouldExecute) {
                 boolean shouldRewire = false;
 
                 for (Server inactiveServer : inactiveServers) {
-                    String serverID = inactiveServer.getServerId();
+                    shouldRewire = freeLicense(inactiveServer.getServerId());
+                }
 
-                    //Frees the license.
-                    for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
-
-                        if (serverID.equals(lic.serverId)) {
-                            LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
-                            shouldRewire = true;
-                            break;
-                        }
-                    }
-
-                    if (shouldRewire) {
-                        //Rewires the other nodes.
-                    	ClusterFactory.rewireCluster();
-                    }
-
+                if (shouldRewire) {
+                    ClusterFactory.rewireCluster();
                 }
             }
-
         } catch (DotDataException dotDataException) {
             Logger.error(FreeServerFromClusterJob.class, "Error trying to Free License", dotDataException);
         } catch (IOException iOException) {
@@ -73,5 +60,18 @@ public class FreeServerFromClusterJob implements StatefulJob {
         } finally {
             DbConnectionFactory.closeSilently();
         }
+    }
+
+    private boolean freeLicense(String serverID) throws DotDataException, IOException {
+        boolean needsRewire = false;
+
+        for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
+            if (serverID.equals(lic.serverId)) {
+                LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
+                needsRewire = true;
+                break;
+            }
+        }
+        return needsRewire;
     }
 }
