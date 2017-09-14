@@ -47,6 +47,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -199,12 +200,15 @@ public class FileUtil {
                     Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
                             + ", destination: " + destination.getAbsolutePath());
                 }
-            } catch (IOException e) {
-
+            }  catch (FileAlreadyExistsException e1) {
+                Logger.debug(FileUtil.class,
+                        "Could not created the hard link, will try copy for source: " + source +
+                        ", destination: " + destination + ". Error message: " + e1.getMessage());
+            } catch (Exception e2) {
                 hardLinks = false; // setting to false will execute the fallback
                 Logger.debug(FileUtil.class,
                         "Could not created the hard link, will try copy for source: " + source +
-                        ", destination: " + destination + ". Error message: " + e.getMessage());
+                        ", destination: " + destination + ". Error message: " + e2.getMessage());
             }
         }
 
