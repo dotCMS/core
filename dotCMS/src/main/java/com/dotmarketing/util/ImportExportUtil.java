@@ -1360,7 +1360,10 @@ public class ImportExportUtil {
                             Logger.info(this, "user already exists going to update");
                             if (e.getCause() instanceof DuplicateUserException) {
                                 u = loadUserFromIdOrEmail(u);
+                            } else {
+                                throw e;
                             }
+                            
                         }
 
                         APILocator.getUserAPI().save(u,APILocator.getUserAPI().getSystemUser(),false);
