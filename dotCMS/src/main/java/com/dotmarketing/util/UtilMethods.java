@@ -1122,7 +1122,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         } else {
-            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n");
+            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n").replaceAll("\"", "\\\\\"");
             return x;
         }
     }
