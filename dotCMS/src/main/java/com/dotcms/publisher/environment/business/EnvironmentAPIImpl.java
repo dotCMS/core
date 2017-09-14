@@ -17,7 +17,7 @@ import java.util.Set;
 
 public class EnvironmentAPIImpl implements EnvironmentAPI {
 
-	private EnvironmentFactory environmentFactory;
+	private final EnvironmentFactory environmentFactory;
 
 	public EnvironmentAPIImpl() {
 		environmentFactory = FactoryLocator.getEnvironmentFactory();

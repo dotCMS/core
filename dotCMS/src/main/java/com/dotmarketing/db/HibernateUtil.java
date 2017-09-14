@@ -20,6 +20,7 @@ import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
+import com.dotcms.repackage.org.apache.poi.ss.formula.functions.T;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -231,6 +232,56 @@ public class HibernateUtil {
 		}catch (Exception e) {
 			throw new DotHibernateException("Error deleting object " + e.getMessage(), e);
 		}
+	}
+
+	/**
+	 * Do a query, settings the parameters (if exists) and return a unique result
+	 * @param clazz
+	 * @param query
+	 * @param parameters
+	 * @param <T>
+	 * @return
+	 * @throws DotHibernateException
+	 * @throws HibernateException
+	 */
+	public static <T> T load(final Class<T> clazz, final String query,
+							 final Object ...parameters) throws DotHibernateException {
+
+		T result = null;
+		int index = 0;
+		Query hibernateQuery = null;
+
+		try {
+
+			hibernateQuery = getSession().createQuery(query).setCacheable(useCache);
+
+			for (Object parameter : parameters) {
+				hibernateQuery.setParameter(index++, parameter);
+			}
+
+			result         = (T)hibernateQuery.list().get(0);
+			hibernateQuery = null;
+		} catch (java.lang.IndexOutOfBoundsException iob) {
+			// if no object is found in db, return an new Object
+			try {
+				result = clazz.newInstance();
+			} catch (Exception ex) {
+				Logger.error(HibernateUtil.class, hibernateQuery.getQueryString(), ex);
+				throw new DotRuntimeException(ex.toString());
+			}
+		} catch ( ObjectNotFoundException e ) {
+			Logger.warn(HibernateUtil.class, "---------- DotHibernate: can't load- no results from query---------------", e);
+			try {
+				result = clazz.newInstance();
+			} catch (Exception ee) {
+				Logger.error(HibernateUtil.class, "---------- DotHibernate: can't load- thisClass.newInstance()---------------", e);
+				throw new DotRuntimeException(e.toString());
+			}
+		} catch ( Exception e ) {
+			throw new DotRuntimeException( e.getMessage(), e );
+		}
+
+		return result;
 	}
 
 	/*

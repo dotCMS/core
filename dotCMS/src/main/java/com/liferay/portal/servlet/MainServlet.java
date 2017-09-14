@@ -22,25 +22,6 @@
 
 package com.liferay.portal.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.business.CloseDBIfOpened;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -51,6 +32,7 @@ import com.dotcms.repackage.org.dom4j.DocumentException;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
@@ -69,19 +51,29 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.struts.StrutsUtil;
-import com.liferay.portal.util.ContentUtil;
-import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.ShutdownUtil;
-import com.liferay.portal.util.WebAppPool;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.*;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Http;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -93,7 +85,6 @@ import com.liferay.util.servlet.UploadServletRequest;
  */
 public class MainServlet extends ActionServlet {
 
-	@CloseDBIfOpened
 	public void init(ServletConfig config) throws ServletException {
 		synchronized (MainServlet.class) {
 			super.init(config);
@@ -113,9 +104,9 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			} catch (DotDataException e1) {
 				throw new ServletException(e1);
+			} finally {
+				DbConnectionFactory.closeSilently();
 			}
-
-
 
 			// Context path
 

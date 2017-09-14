@@ -347,9 +347,7 @@ public class SystemEventsFactory implements Serializable {
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ? order by created");
 			dc.addParam(fromDate);
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				return convertSystemEventRecord(record);
-			});
+			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
 		}
 
 		@Override
@@ -357,9 +355,7 @@ public class SystemEventsFactory implements Serializable {
 			final DotConnect dc = new DotConnect();
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				return convertSystemEventRecord(record);
-			});
+			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
 		}
 
 		@Override

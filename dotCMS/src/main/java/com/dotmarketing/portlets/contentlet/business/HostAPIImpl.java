@@ -307,10 +307,10 @@ public class HostAPIImpl implements HostAPI {
         Host host  = hostCache.get(id);
 
         if(host ==null){
-            HibernateUtil hu=new HibernateUtil(ContentletVersionInfo.class);
-            hu.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=?");
-            hu.setParam(id);
-            ContentletVersionInfo vinfo=(ContentletVersionInfo) hu.load();
+
+            final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
+                    "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
+
             if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
 
                 User systemUser = APILocator.systemUser();
@@ -335,7 +335,6 @@ public class HostAPIImpl implements HostAPI {
             }
         }
         return host;
-
     }
 
     /**

@@ -22,6 +22,7 @@
 
 package com.dotmarketing.cms.factories;
 
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -115,19 +116,23 @@ public class PublicCompanyFactory extends CompanyUtil {
 			CompanyUtil.update(c);
 
 			/* Set the DM logo */
-			File f = new File(FileUtil.getRealPath("/html/images/shim.gif"));
+			BufferedInputStream in = null;
+			final ByteArrayOutputStream baout = new ByteArrayOutputStream();
+			final File file = new File(FileUtil.getRealPath("/html/images/shim.gif"));
 
-			BufferedInputStream in = new BufferedInputStream(new FileInputStream(f));
+			try {
 
-			ByteArrayOutputStream baout = new ByteArrayOutputStream();
+				in = new BufferedInputStream(new FileInputStream(file));
 
-			byte[] buf = new byte[2048];
-			int i = 0;
-			while ((i = in.read(buf)) != -1) {
-				baout.write(buf, 0, i);
+				byte[] buf = new byte[2048];
+				int i = 0;
+				while ((i = in.read(buf)) != -1) {
+					baout.write(buf, 0, i);
+				}
+			} finally {
+
+				CloseUtils.closeQuietly(in);
 			}
-
-			in.close();
 
 			ImageManagerUtil.updateImage("dotcms.org", baout.toByteArray());
 

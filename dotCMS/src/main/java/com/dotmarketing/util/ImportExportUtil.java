@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -224,8 +225,9 @@ public class ImportExportUtil {
 	 * @throws IOException
 	 */
     public void doImport(PrintWriter out) throws IOException {
-        File f = new File(getBackupTempFilePath());
-        String[] _tempFiles = f.list();
+        final File backTemporalFile = new File(getBackupTempFilePath());
+        final String[] _tempFiles = backTemporalFile.list();
+
         out.println("<pre>Found " + _tempFiles.length + " files to import");
         Logger.info(this, "Found " + _tempFiles.length + " files to import");
         deleteDotCMS();
@@ -234,7 +236,7 @@ public class ImportExportUtil {
         boolean hasAssetDir = false;
         for (int i = 0; i < _tempFiles.length; i++) {
             try {
-				HibernateUtil.closeSession();
+				HibernateUtil.closeSession(); // todo: why this?
 			} catch (DotHibernateException e) {
 				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
 			}
@@ -368,8 +370,9 @@ public class ImportExportUtil {
         }
 
         Collections.sort(roles);
-        try{
-            HibernateUtil.closeSession();
+
+        try {
+            HibernateUtil.closeSession();   // todo: why this?
             for (Role role : roles) {
                 HibernateUtil _dh = new HibernateUtil(Role.class);
                 String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(Role.class).getIdentifierPropertyName();
@@ -394,7 +397,9 @@ public class ImportExportUtil {
                 } else {
                     HibernateUtil.save(role);
                 }
+
                 HibernateUtil.getSession().flush();
+
                 try {
                     Thread.sleep(3);
                 } catch (InterruptedException e) {
@@ -412,7 +417,7 @@ public class ImportExportUtil {
 
         for (File file : usersRolesXML) {
             try{
-				HibernateUtil.closeSession();
+				HibernateUtil.closeSession(); // todo: why this?
 			} catch (DotHibernateException e) {
 				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
 			}
@@ -929,7 +934,7 @@ public class ImportExportUtil {
     private void deleteDotCMS() {
         try {
             /* get a list of all our tables */
-            ArrayList<String> _tablesToDelete = new ArrayList<String>();
+            final ArrayList<String> _tablesToDelete = new ArrayList<String>();
             Map map =null;
 
             try {
@@ -990,35 +995,39 @@ public class ImportExportUtil {
             _tablesToDelete.add("pollsquestion");
             _tablesToDelete.add("pollsvote");
 
-            DotConnect _dc = null;
             for (String table : _tablesToDelete) {
                 Logger.info(this, "About to delete all records from " + table);
-                _dc = new DotConnect();
-                _dc.setSQL("delete from " + table);
-                _dc.getResult();
+                this.deleteTable(table);
                 Logger.info(this, "Deleted all records from " + table);
             }
         } catch (HibernateException e) {
             Logger.error(this,e.getMessage(),e);
         }
-        File ad;
-        if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(FileUtil.getRealPath(assetPath));
-        }else{
-            ad = new File(assetRealPath);
-        }
-        ad.mkdirs();
-        String[] fl = ad.list();
-        for (String fileName : fl) {
+
+        final File assetDirectory = (!UtilMethods.isSet(assetRealPath))?
+            new File(FileUtil.getRealPath(assetPath)):
+            new File(assetRealPath);
+
+        assetDirectory.mkdirs();
+        final String[] assetsFileList = assetDirectory.list();
+        for (String fileName : assetsFileList) {
         	if(fileName.equalsIgnoreCase("license")) continue;
         	
-            File f = new File(ad.getPath() + File.separator + fileName);
-            if(f.isDirectory()){
+            File f = new File(assetDirectory.getPath() + File.separator + fileName);
+            if(f.isDirectory()) {
                 FileUtil.deltree(f);
-            }else{
+            } else {
                 f.delete();
             }
         }
+    }
+
+    @WrapInTransaction
+    private void deleteTable (final String table) {
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("delete from " + table);
+        dotConnect.getResult();
     }
 
     interface ObjectFilter {
@@ -1074,6 +1083,8 @@ public class ImportExportUtil {
             boolean pollsdisplay = false;
             boolean pollsquestion = false;
             boolean pollsvote = false;
+
+            Logger.debug(this, "**** Importing the file: " + f + " *****");
 
             /* if we have a multipart import file */
             Pattern p = Pattern.compile("_[0-9]{8}");
@@ -1378,18 +1389,29 @@ public class ImportExportUtil {
                                 	}
                                     HibernateUtil.saveWithPrimaryKey(identifier, prop);
                                 }else{
+                                    Logger.debug(this, "Saving the object: " +
+                                                obj.getClass() + ", with the id: " + prop);
                                     Long myId = new Long(Long.parseLong(prop));
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
                                 }
                                 HibernateUtil.commitTransaction();
-                            }else{
-								
+                            } else {
+
+                                Logger.debug(this, "Saving the object: " +
+                                        obj.getClass() + ", with the id: " + prop);
+
 								HibernateUtil.saveWithPrimaryKey(obj, prop);
 								
                                 HibernateUtil.commitTransaction();
                             }
                         } catch (Exception e) {
-                            try{
+                            try {
+
+                                Logger.debug(this, "Error on trying to save: " +
+                                        e.getMessage()
+                                        + ", trying to Save the object again: " +
+                                        obj.getClass() + ", with the id: " + prop);
+
                                 HibernateUtil.saveWithPrimaryKey(obj, prop);
                                 HibernateUtil.commitTransaction();
                             }catch (Exception ex) {
@@ -1421,16 +1443,41 @@ public class ImportExportUtil {
                             if(inodeList.size() > 1){
                                 HibernateUtil.save(obj);
                             }
-                            else{
+                            else {
                                 Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
-
                             }
                         }
                         else{
                             try {
+
+                                Logger.debug(this, "Saving the object: " +
+                                        obj.getClass() + ", with the values: " + obj);
+
+                                HibernateUtil.startTransaction();
                                 HibernateUtil.save(obj);
+                                HibernateUtil.commitTransaction();
                             } catch (DotHibernateException e) {
                                 Logger.error(this,e.getMessage(),e);
+                                try {
+
+                                    Logger.debug(this, "Error on trying to save: " +
+                                            e.getMessage()
+                                            + ", trying to Save the object again: " +
+                                            obj.getClass() + ", with the values: " + obj);
+
+                                    HibernateUtil.save(obj);
+                                    HibernateUtil.commitTransaction();
+                                }catch (Exception ex) {
+                                    Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
+                                    Logger.info(this, "Problematic object: "+obj);
+                                    Logger.info(this, _xstream.toXML(obj));
+
+                                    try{
+                                        HibernateUtil.rollbackTransaction();
+                                        HibernateUtil.closeSession();
+                                    }catch (Exception e1) {}
+                                    continue;
+                                }
                             }
                         }
                     }

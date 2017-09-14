@@ -5,6 +5,8 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -72,12 +74,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
-    private PermissionAPI permissionAPI;
-    private IdentifierAPI identifierAPI;
-    private UserAPI userAPI;
-    private VersionableAPI versionableAPI;
-    private ContentletAPI contentletAPI;
-    private SystemEventsAPI systemEventsAPI;
+    private final PermissionAPI permissionAPI;
+    private final IdentifierAPI identifierAPI;
+    private final UserAPI userAPI;
+    private final VersionableAPI versionableAPI;
+    private final ContentletAPI contentletAPI;
+    private final SystemEventsAPI systemEventsAPI;
 
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
@@ -88,6 +90,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         systemEventsAPI = APILocator.getSystemEventsAPI();
     }
 
+    @WrapInTransaction
     @Override
     public void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException {
         if (structure == null || !InodeUtils.isSet(structure.getInode())) {
@@ -120,10 +123,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(TEMPLATE_FIELD);
         FieldFactory.saveField(field);
         
-        
-        
-        
-        
         field = new Field(ADVANCED_PROPERTIES_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 6, "", "", "", false, false, false);
         field.setVelocityVarName(ADVANCED_PROPERTIES_TAB);
         FieldFactory.saveField(field);
@@ -140,9 +139,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(FRIENDLY_NAME_FIELD);
         FieldFactory.saveField(field);
         
-
-        
-        field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10, 
+        field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10,
                 "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(REDIRECT_URL_FIELD);
         FieldFactory.saveField(field);
@@ -162,7 +159,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field = new Field(PAGE_METADATA_FIELD_NAME, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, structure, false, false, true, 14, "", "", "", true, false, true);
         field.setVelocityVarName(PAGE_METADATA_FIELD);
         FieldFactory.saveField(field);
-                
     }
 
     @Override
@@ -402,6 +398,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
     }
 
+    @WrapInTransaction
     @Override
     public boolean rename ( HTMLPageAsset page, String newName, User user ) throws DotDataException, DotSecurityException {
 
@@ -429,7 +426,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public boolean move(HTMLPageAsset page, Host host, User user) throws DotDataException, DotSecurityException {
         return move(page,host,APILocator.getFolderAPI().findSystemFolder(),user);
     }
-    
+
+    @WrapInTransaction
     public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
             throws DotDataException, DotSecurityException {
         Identifier sourceIdent = identifierAPI.find(page);
@@ -485,6 +483,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
      * @param endDate Must be Set
      * @return
      */
+    @CloseDBIfOpened
     @Override
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
 

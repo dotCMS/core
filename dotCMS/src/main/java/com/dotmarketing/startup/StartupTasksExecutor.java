@@ -130,49 +130,51 @@ public class StartupTasksExecutor {
 		setupSQL();
 		//Integer currentVersion = null;
 		PreparedStatement update = null;
-		Statement s = null;
-		ResultSet rs = null;
-		Connection conn = null;
-		try {
-			conn = DbConnectionFactory.getDataSource().getConnection();
+		Statement statement = null;
+		ResultSet resultSet = null;
+		Connection connection = null;
 
-			conn.setAutoCommit(false);
-			s = conn.createStatement();
-			update = conn
+		try {
+
+			connection = DbConnectionFactory.getDataSource().getConnection();
+			connection.setAutoCommit(false);
+			statement = connection.createStatement();
+
+			update = connection
 					.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
-			s.execute(lock);
-			rs = s
+			statement.execute(lock);
+			resultSet = statement
 					.executeQuery(select);
-			rs.next();
-			Config.DB_VERSION = rs.getInt("db_version");
+			resultSet.next();
+			Config.DB_VERSION = resultSet.getInt("db_version");
 		} catch (SQLException e) {
 			// Maybe the table doesn't exist?
 			Logger.debug(this.getClass(), "Trying to create db_version table");
 			try {
-				conn.rollback();
+				connection.rollback();
 				if(DbConnectionFactory.isMySql()){
-					s.execute("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB");
+					statement.execute("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB");
 				}
-				s.execute(create);
+				statement.execute(create);
 				if(update==null) {
 				    // looks like H2 do an early table name check
-				    update = conn.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
+				    update = connection.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
 				}
 				update.setInt(1, 0);
 				Date date = new Date(Calendar.getInstance().getTimeInMillis());
 				update.setDate(2, date);
 				update.execute();
-				conn.commit();
+				connection.commit();
 
 				Logger
 						.debug(this.getClass(),
 								"Table db_version created.  Trying to lock db_table again.");
-				s.execute(lock);
-				rs = s
+				statement.execute(lock);
+				resultSet = statement
 						.executeQuery(select);
 
-				rs.next();
-				Config.DB_VERSION = rs.getInt("db_version");
+				resultSet.next();
+				Config.DB_VERSION = resultSet.getInt("db_version");
 
 			} catch (SQLException e2) {
 				Logger.fatal(this.getClass(),
@@ -260,11 +262,11 @@ public class StartupTasksExecutor {
 							HibernateUtil.startTransaction();
 							Logger.info(this, "Running: " + name);
 							if(name.equals("Task00250UpdateMysqlTablesToINNODB")){
-								s = conn.createStatement();
-								s.execute(commit);
+								statement = connection.createStatement();
+								statement.execute(commit);
 								task.executeUpgrade();
-								s = conn.createStatement();
-								s.execute(lock);
+								statement = connection.createStatement();
+								statement.execute(lock);
 							}else{
 							  task.executeUpgrade();
 							}
@@ -273,18 +275,18 @@ public class StartupTasksExecutor {
 						// the db version.
 						try {
 //						    conn = DbConnectionFactory.getDataSource().getConnection();
-							if (conn != null && conn.isClosed()) {
-								conn = DbConnectionFactory.getDataSource().getConnection();
+							if (connection != null && connection.isClosed()) {
+								connection = DbConnectionFactory.getDataSource().getConnection();
 							}
-						    conn.setAutoCommit(true);
-						    update = conn.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
+						    connection.setAutoCommit(true);
+						    update = connection.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
     						update.setInt(1, taskId);
     						Date date = new Date(Calendar.getInstance().getTimeInMillis());
     						update.setDate(2, date);
     						update.execute();
 						}
 						finally {
-//							s.execute(commit);
+//							statement.execute(commit);
 						    update.close();
 //						    conn.close();
 						}
@@ -317,15 +319,15 @@ public class StartupTasksExecutor {
 			
 			// DOTCMS-4352
 			try {
-				if(conn != null && !conn.isClosed()){
-					Statement s1 = conn.createStatement();
+				if(connection != null && !connection.isClosed()){
+					Statement s1 = connection.createStatement();
 					if(DbConnectionFactory.isMySql()){
 						s1.execute(commit);
 					}
-					if(!conn.getAutoCommit()){
-						conn.commit();
+					if(!connection.getAutoCommit()){
+						connection.commit();
 					}
-					conn.close();
+					connection.close();
 				}
 			} catch (Exception e) {
 				Logger.debug(StartupTasksExecutor.class, "Exception: "
@@ -335,7 +337,7 @@ public class StartupTasksExecutor {
 						e);
 			} finally {
 
-				CloseUtils.closeQuietly(conn);
+				CloseUtils.closeQuietly(connection);
 			}
 			Logger.info(this, "Finishing upgrade tasks.");
 		}

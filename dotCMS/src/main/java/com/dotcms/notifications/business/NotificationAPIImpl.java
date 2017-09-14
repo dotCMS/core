@@ -392,6 +392,7 @@ public class NotificationAPIImpl implements NotificationAPI {
     } // getNotificationsCount.
 
 
+    @CloseDBIfOpened
     @Override
     public List<Notification> getAllNotifications(final String userId) throws DotDataException {
 
