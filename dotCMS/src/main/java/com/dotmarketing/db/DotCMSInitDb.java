@@ -84,6 +84,9 @@ public class DotCMSInitDb {
 		} catch (DotSecurityException e) {
 			Logger.fatal(DotCMSInitDb.class, "Unable to initialize default data", e);
 			throw new DotRuntimeException(e.getMessage(), e);
+		} catch (Exception e) {
+			Logger.fatal(DotCMSInitDb.class, "Unable to initialize default data", e);
+			new DotDataException(e.getMessage(), e);
 		}
 	}
 

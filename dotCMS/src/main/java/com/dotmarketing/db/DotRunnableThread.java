@@ -23,7 +23,7 @@ public class DotRunnableThread extends Thread {
     public void run() {
         try {
             LocalTransaction.wrap(this::internalRunner);
-        } catch (DotDataException dde) {
+        } catch (Exception dde) {
             throw new DotStateException(dde);
         }
     }

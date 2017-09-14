@@ -425,110 +425,114 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
     }
 
-    final ContentType ctype = contentType;
+    return transactionalSave(newFields, newFieldVariables, contentType);
+  }
 
-    return LocalTransaction.wrapReturn(() -> {
-      ContentType contentTypeToSave = ctype;
+  @WrapInTransaction
+  private ContentType transactionalSave(final List<Field> newFields,
+                                        final List<FieldVariable> newFieldVariables,
+                                        final ContentType ctype) throws DotDataException, DotSecurityException {
 
-      // set to system folder if on system host or the host id of the folder it is on
-      List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
+    ContentType contentTypeToSave = ctype;
 
-      // Checks if the folder has been set, if so checks the host where that folder lives and set
-      // it.
-      if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
-        contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
-            .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
-      } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
-                                                               // if the host has been set, if so
-                                                               // set the folder to System Folder
-        contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
+    // set to system folder if on system host or the host id of the folder it is on
+    List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
+
+    // Checks if the folder has been set, if so checks the host where that folder lives and set
+    // it.
+    if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
+      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
+          .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
+    } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
+                                                             // if the host has been set, if so
+                                                             // set the folder to System Folder
+      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
+    }
+
+    if (!ctype.fields().isEmpty()) {
+      contentTypeToSave.constructWithFields(ctype.fields());
+    }
+
+    ContentType oldType = null;
+    try {
+      if (contentTypeToSave.id() != null) {
+        oldType = this.contentTypeFactory.find(contentTypeToSave.id());
       }
+    } catch (NotFoundInDbException notThere) {
+      // not logging, expected when inserting new from separate environment
+    }
 
-      if (!ctype.fields().isEmpty()) {
-        contentTypeToSave.constructWithFields(ctype.fields());
+    contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
+
+    if (oldType != null) {
+      if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
+
+        IdentifierDateJob.triggerJobImmediately(oldType, user);
+      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
+
+        IdentifierDateJob.triggerJobImmediately(oldType, user);
       }
+      perms.resetPermissionReferences(contentTypeToSave);
+    }
+    ActivityLogger.logInfo(getClass(), "Save ContentType Action",
+        "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
+            + " to host id:" + contentTypeToSave.host());
+    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
 
-      ContentType oldType = null;
-      try {
-        if (contentTypeToSave.id() != null) {
-          oldType = this.contentTypeFactory.find(contentTypeToSave.id());
-        }
-      } catch (NotFoundInDbException notThere) {
-        // not logging, expected when inserting new from separate environment
-      }
+    // update the existing content type fields
+    if (newFields != null) {
 
-      contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
+      Map<String, Field> varNamesCantDelete = new HashMap();
 
-      if (oldType != null) {
-        if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
+      for (Field oldField : oldFields) {
+        if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {
+          if (!oldField.fixed()) {
+            Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
+                + ", from Content Type: " + contentTypeToSave.name());
 
-          IdentifierDateJob.triggerJobImmediately(oldType, user);
-        } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-
-          IdentifierDateJob.triggerJobImmediately(oldType, user);
-        }
-        perms.resetPermissionReferences(contentTypeToSave);
-      }
-      ActivityLogger.logInfo(getClass(), "Save ContentType Action",
-          "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
-              + " to host id:" + contentTypeToSave.host());
-      AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
-
-      // update the existing content type fields
-      if (newFields != null) {
-
-        Map<String, Field> varNamesCantDelete = new HashMap();
-
-        for (Field oldField : oldFields) {
-          if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {
-            if (!oldField.fixed()) {
-              Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
-                  + ", from Content Type: " + contentTypeToSave.name());
-
-              fieldAPI.delete(oldField);
-            } else {
-              Logger.info(this, "Can't delete Field because is fixed: " + oldField.name() + " with ID: " + oldField.id()
-                  + ", from Content Type: " + contentTypeToSave.name());
-              varNamesCantDelete.put(oldField.variable(), oldField);
-            }
+            fieldAPI.delete(oldField);
+          } else {
+            Logger.info(this, "Can't delete Field because is fixed: " + oldField.name() + " with ID: " + oldField.id()
+                + ", from Content Type: " + contentTypeToSave.name());
+            varNamesCantDelete.put(oldField.variable(), oldField);
           }
         }
+      }
 
-        // for each field in the content type lets create it if doesn't exists and update its
-        // properties if it does
-        for (Field field : newFields) {
-          if (!varNamesCantDelete.containsKey(field.variable())) {
+      // for each field in the content type lets create it if doesn't exists and update its
+      // properties if it does
+      for (Field field : newFields) {
+        if (!varNamesCantDelete.containsKey(field.variable())) {
+          fieldAPI.save(field, APILocator.systemUser());
+        } else {
+          // We replace the newField-ID with the oldField-ID in order to be able to update the
+          // Field
+          // instead of creating a new one due the different ID. We need to be sure new field has
+          // same variable and DB column.
+          Field oldField = varNamesCantDelete.get(field.variable());
+          if (oldField.variable().equals(field.variable()) && oldField.dbColumn().equals(field.dbColumn())) {
+
+            // Create a copy of the new Field with the oldField-ID,
+            field = FieldBuilder.builder(field).id(oldField.id()).build();
             fieldAPI.save(field, APILocator.systemUser());
           } else {
-            // We replace the newField-ID with the oldField-ID in order to be able to update the
-            // Field
-            // instead of creating a new one due the different ID. We need to be sure new field has
-            // same variable and DB column.
-            Field oldField = varNamesCantDelete.get(field.variable());
-            if (oldField.variable().equals(field.variable()) && oldField.dbColumn().equals(field.dbColumn())) {
-
-              // Create a copy of the new Field with the oldField-ID,
-              field = FieldBuilder.builder(field).id(oldField.id()).build();
-              fieldAPI.save(field, APILocator.systemUser());
-            } else {
-              // If the field don't match on VariableName and DBColumn we log an error.
-              Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
-                  + field.id() + ", DBColumn: " + field.dbColumn());
-            }
+            // If the field don't match on VariableName and DBColumn we log an error.
+            Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
+                + field.id() + ", DBColumn: " + field.dbColumn());
           }
+        }
 
-          if (newFieldVariables != null && !newFieldVariables.isEmpty()) {
-            for (FieldVariable fieldVariable : newFieldVariables) {
-              if (fieldVariable.fieldId().equals(field.inode())) {
-                fieldAPI.save(fieldVariable, APILocator.systemUser());
-              }
+        if (newFieldVariables != null && !newFieldVariables.isEmpty()) {
+          for (FieldVariable fieldVariable : newFieldVariables) {
+            if (fieldVariable.fieldId().equals(field.inode())) {
+              fieldAPI.save(fieldVariable, APILocator.systemUser());
             }
           }
         }
       }
+    }
 
-      return find(contentTypeToSave.id());
-    });
+    return find(contentTypeToSave.id());
   }
 
   @WrapInTransaction

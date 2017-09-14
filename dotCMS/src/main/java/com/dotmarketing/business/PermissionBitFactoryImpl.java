@@ -2349,11 +2349,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					throw new DotDataException(exception.getMessage(), exception);
 				}finally {
 		            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
+					if(localTransaction) {
+						HibernateUtil.closeSessionSilently();
+					}
 				}
 
 				bitPermissionsList = inheritedPermissions;
 			}
 		}
+
 		Thread.currentThread().setName(threadName);
 
 		return bitPermissionsList;

@@ -1016,6 +1016,8 @@ public class IntegrityResource {
 						+ " could not be cleared on end-point [" + requesterEndPoint.getId()
 						+ "]. Please truncate the table data manually.", e);
 			}
+
+			HibernateUtil.closeSessionSilently();
 		}
 
         jsonResponse.put( "success", true );
@@ -1144,6 +1146,7 @@ public class IntegrityResource {
 						+ " could not be cleared on end-point [" + endpointId
 						+ "]. Please truncate the table data manually.", e);
 			}
+			HibernateUtil.closeSessionSilently();
 		}
 
         return response( jsonResponse.toString(), false );

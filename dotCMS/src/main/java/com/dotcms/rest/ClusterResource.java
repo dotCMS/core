@@ -391,8 +391,10 @@ public class ClusterResource {
                 Logger.warn(this, "can't rollback", e);
             }
             return Response.serverError().build();
-        }
-        
+        } finally {
+        	HibernateUtil.closeSessionSilently();
+		}
+
         return Response.ok().build();
     }
 }

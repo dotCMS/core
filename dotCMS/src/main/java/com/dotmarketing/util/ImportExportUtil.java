@@ -43,6 +43,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -59,6 +60,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.mockito.cglib.core.Local;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -1044,7 +1046,7 @@ public class ImportExportUtil {
 	 *            - Printwriter to write responses to Reponse Printwriter so
 	 *            this method can write to screen.
 	 */
-    private void doXMLFileImport(File f, PrintWriter out)throws DotDataException, HibernateException {
+    private void doXMLFileImport(File f, PrintWriter out) throws Exception {
         doXMLFileImport(f, out, null);
     }
 
@@ -1061,7 +1063,7 @@ public class ImportExportUtil {
      * @throws DotDataException
      * @throws HibernateException
      */
-    private void doXMLFileImport(File f, PrintWriter out, ObjectFilter filter)throws DotDataException, HibernateException {
+    private void doXMLFileImport(File f, PrintWriter out, ObjectFilter filter)throws Exception {
         if( f ==null){
             return;
         }
@@ -1151,113 +1153,127 @@ public class ImportExportUtil {
             Logger.info(this, "Found :\t" + l.size() + " " + _className + "(s)");
             if(address){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into address values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                    dc.addParam(dcResults.get("addressid"));
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("username"));
-                    dc.addParam(dcResults.get("createDate"));
-                    dc.addParam(dcResults.get("ModifiedDate"));
-                    dc.addParam(dcResults.get("classname"));
-                    dc.addParam(dcResults.get("classpk"));
-                    dc.addParam(dcResults.get("description"));
-                    dc.addParam(dcResults.get("street1"));
-                    dc.addParam(dcResults.get("street2"));
-                    dc.addParam(dcResults.get("city"));
-                    dc.addParam(dcResults.get("state"));
-                    dc.addParam(dcResults.get("zip"));
-                    dc.addParam(dcResults.get("country"));
-                    dc.addParam(dcResults.get("phone"));
-                    dc.addParam(dcResults.get("fax"));
-                    dc.addParam(dcResults.get("cell"));
-                    dc.addParam(UtilMethods.isSet(dcResults.get("priority")) ? Integer.parseInt(dcResults.get("priority")) : null);
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+
+                        final DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into address values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                        dc.addParam(dcResults.get("addressid"));
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("username"));
+                        dc.addParam(dcResults.get("createDate"));
+                        dc.addParam(dcResults.get("ModifiedDate"));
+                        dc.addParam(dcResults.get("classname"));
+                        dc.addParam(dcResults.get("classpk"));
+                        dc.addParam(dcResults.get("description"));
+                        dc.addParam(dcResults.get("street1"));
+                        dc.addParam(dcResults.get("street2"));
+                        dc.addParam(dcResults.get("city"));
+                        dc.addParam(dcResults.get("state"));
+                        dc.addParam(dcResults.get("zip"));
+                        dc.addParam(dcResults.get("country"));
+                        dc.addParam(dcResults.get("phone"));
+                        dc.addParam(dcResults.get("fax"));
+                        dc.addParam(dcResults.get("cell"));
+                        dc.addParam(UtilMethods.isSet(dcResults.get("priority")) ? Integer.parseInt(dcResults.get("priority")) : null);
+                        dc.getResults();
+                    });
+
                 }
             }else if(counter){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into counter values (?,?)");
-                    dc.addParam(dcResults.get("name"));
-                    dc.addParam(Integer.valueOf(dcResults.get("currentid")));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into counter values (?,?)");
+                        dc.addParam(dcResults.get("name"));
+                        dc.addParam(Integer.valueOf(dcResults.get("currentid")));
+                        dc.getResults();
+                    });
                 }
             }else if(pollschoice){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollschoice values (?,?,?)");
-                    dc.addParam(dcResults.get("choiceid"));
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("description"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollschoice values (?,?,?)");
+                        dc.addParam(dcResults.get("choiceid"));
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("description"));
+                        dc.getResults();
+                    });
                 }
             }else if(pollsdisplay){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
-                    dc.addParam(dcResults.get("layoutid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("portletid"));
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
+                        dc.addParam(dcResults.get("layoutid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("portletid"));
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.getResults();
+                    });
                 }
             }else if(pollsquestion){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("portletid"));
-                    if(UtilMethods.isSet(dcResults.get("groupid"))){
-                        dc.addParam(dcResults.get("groupid"));
-                    }else{
-                        dc.addParam(-1);
-                    }
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("username"));
-                    if(UtilMethods.isSet(dcResults.get("createdate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    if(UtilMethods.isSet(dcResults.get("modifieddate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.addParam(dcResults.get("title"));
-                    dc.addParam(dcResults.get("description"));
-                    if(UtilMethods.isSet(dcResults.get("expirationdate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    if(UtilMethods.isSet(dcResults.get("lastvotedate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("portletid"));
+                        if (UtilMethods.isSet(dcResults.get("groupid"))) {
+                            dc.addParam(dcResults.get("groupid"));
+                        } else {
+                            dc.addParam(-1);
+                        }
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("username"));
+                        if (UtilMethods.isSet(dcResults.get("createdate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        if (UtilMethods.isSet(dcResults.get("modifieddate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.addParam(dcResults.get("title"));
+                        dc.addParam(dcResults.get("description"));
+                        if (UtilMethods.isSet(dcResults.get("expirationdate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.getResults();
+                    });
                 }
             }else if(pollsvote){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsvote values (?,?,?,?)");
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("choiceid"));
-                    if(UtilMethods.isSet(dcResults.get("lastvotedate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsvote values (?,?,?,?)");
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("choiceid"));
+                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.getResults();
+                    });
                 }
             }else if(image){
                 /*
@@ -1266,46 +1282,52 @@ public class ImportExportUtil {
                  * the object is loaded from liferay and DotConnect is not used
                  */
                 for (int j = 0; j < l.size(); j++) {
-                    Image im = (Image)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into image values (?,?)");
-                    if(!UtilMethods.isSet(im.getImageId()) && DbConnectionFactory.isOracle()){
-                        continue;
-                    }
-                    dc.addParam(im.getImageId());
-                    dc.addParam(im.getText());
-                    dc.getResults();
+                    final Image im = (Image)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into image values (?,?)");
+                        if (!UtilMethods.isSet(im.getImageId()) && DbConnectionFactory.isOracle()) {
+                            return;
+                        }
+                        dc.addParam(im.getImageId());
+                        dc.addParam(im.getText());
+                        dc.getResults();
+                    });
                 }
             }else if(portlet){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    StringBuffer sb = new StringBuffer("insert into portlet values (?,?,?,?,");
-                    if(dcResults.get("narrow").equalsIgnoreCase("f") || dcResults.get("narrow").equalsIgnoreCase("false") || dcResults.get("narrow").equalsIgnoreCase("0") || dcResults.get("narrow").equals(DbConnectionFactory.getDBFalse()))
-                        sb.append(DbConnectionFactory.getDBFalse() + ",?,");
-                    else
-                        sb.append(DbConnectionFactory.getDBTrue() + ",?,");
-                    if(dcResults.get("active_").equalsIgnoreCase("f") || dcResults.get("active_").equalsIgnoreCase("false") || dcResults.get("active_").equalsIgnoreCase("0") || dcResults.get("active_").equals(DbConnectionFactory.getDBFalse()))
-                        sb.append(DbConnectionFactory.getDBFalse() + ")");
-                    else
-                        sb.append(DbConnectionFactory.getDBTrue() + ")");
-                    dc.setSQL(sb.toString());
-                    dc.addParam(dcResults.get("portletid"));
-                    dc.addParam(dcResults.get("groupid"));
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("defaultpreferences"));
-                    dc.addParam(dcResults.get("roles"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        StringBuffer sb = new StringBuffer("insert into portlet values (?,?,?,?,");
+                        if(dcResults.get("narrow").equalsIgnoreCase("f") || dcResults.get("narrow").equalsIgnoreCase("false") || dcResults.get("narrow").equalsIgnoreCase("0") || dcResults.get("narrow").equals(DbConnectionFactory.getDBFalse()))
+                            sb.append(DbConnectionFactory.getDBFalse() + ",?,");
+                        else
+                            sb.append(DbConnectionFactory.getDBTrue() + ",?,");
+                        if(dcResults.get("active_").equalsIgnoreCase("f") || dcResults.get("active_").equalsIgnoreCase("false") || dcResults.get("active_").equalsIgnoreCase("0") || dcResults.get("active_").equals(DbConnectionFactory.getDBFalse()))
+                            sb.append(DbConnectionFactory.getDBFalse() + ")");
+                        else
+                            sb.append(DbConnectionFactory.getDBTrue() + ")");
+                        dc.setSQL(sb.toString());
+                        dc.addParam(dcResults.get("portletid"));
+                        dc.addParam(dcResults.get("groupid"));
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("defaultpreferences"));
+                        dc.addParam(dcResults.get("roles"));
+                        dc.getResults();
+                    });
                 }
             }else if(logsMappers){
                 for ( int j = 0; j < l.size(); j++ ) {
-                    LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL( "insert into log_mapper values (?,?,?)" );
-                    dc.addParam( logMapperRow.getEnabled() ? 1 : 0 );
-                    dc.addParam( logMapperRow.getLog_name() );
-                    dc.addParam( logMapperRow.getDescription() );
-                    dc.getResults();
+                    final LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into log_mapper values (?,?,?)");
+                        dc.addParam(logMapperRow.getEnabled() ? 1 : 0);
+                        dc.addParam(logMapperRow.getLog_name());
+                        dc.addParam(logMapperRow.getDescription());
+                        dc.getResults();
+                    });
                 }
             }else if(portletpreferences){
                 /*
@@ -1314,33 +1336,33 @@ public class ImportExportUtil {
                  * the object is loaded from liferay and DotConnect is not used
                  */
                 for (int j = 0; j < l.size(); j++) {
-                    PortletPreferences portletPreferences = (PortletPreferences)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into portletpreferences values (?,?,?,?)");
-                    dc.addParam(portletPreferences.getPortletId());
-                    dc.addParam(portletPreferences.getUserId());
-                    dc.addParam(portletPreferences.getLayoutId());
-                    dc.addParam(portletPreferences.getPreferences());
-                    dc.getResults();
+                    final PortletPreferences portletPreferences = (PortletPreferences)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into portletpreferences values (?,?,?,?)");
+                        dc.addParam(portletPreferences.getPortletId());
+                        dc.addParam(portletPreferences.getUserId());
+                        dc.addParam(portletPreferences.getLayoutId());
+                        dc.addParam(portletPreferences.getPreferences());
+                        dc.getResults();
+                    });
                 }
             }else if (_importClass.equals(User.class)) {
                 for (int j = 0; j < l.size(); j++) {
                     User u = (User)l.get(j);
                     u.setModified(true);
                     if(!u.isDefaultUser() && !u.getUserId().equals("system")){
-                        try{
+                        try {
                             User u1 = APILocator.getUserAPI().createUser(u.getUserId(), u.getEmailAddress());
                             u.setUserId(u1.getUserId());
                             u.setEmailAddress(u.getEmailAddress());
-                        }catch (DuplicateUserException e) {
+                         } catch (Exception e) {
                             Logger.info(this, "user already exists going to update");
-                            try{
-                                u = APILocator.getUserAPI().loadUserById(u.getUserId(), APILocator.getUserAPI().getSystemUser(),false);
-                            }catch (Exception e1) {
-                                Logger.info(this, "couldn't find user by ID going to lookup by email address");
-                                u = APILocator.getUserAPI().loadByUserByEmail(u.getEmailAddress(), APILocator.getUserAPI().getSystemUser(),false);
+                            if (e.getCause() instanceof DuplicateUserException) {
+                                u = loadUserFromIdOrEmail(u);
                             }
                         }
+
                         APILocator.getUserAPI().save(u,APILocator.getUserAPI().getSystemUser(),false);
                     }else{
                         Logger.info(this, "");
@@ -1429,25 +1451,27 @@ public class ImportExportUtil {
                         }
                     } else {
                         if(obj instanceof Tree){
-                            Tree t = (Tree) obj;
-                            DotConnect dc = new DotConnect();
-                            List<String> inodeList = new ArrayList<String>();
-                            dc.setSQL("select inode from inode where inode = ? or inode = ?");
-                            dc.addParam(t.getParent());
-                            dc.addParam(t.getChild());
-                            inodeList = dc.getResults();
-                            dc.setSQL("select id from identifier where id = ? or id = ?");
-                            dc.addParam(t.getParent());
-                            dc.addParam(t.getChild());
-                            inodeList.addAll(dc.getResults());
-                            if(inodeList.size() > 1){
-                                HibernateUtil.save(obj);
-                            }
-                            else {
-                                Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
-                            }
-                        }
-                        else{
+                            final Tree t = (Tree) obj;
+                            LocalTransaction.wrap(() -> {
+
+                                DotConnect dc = new DotConnect();
+                                List<String> inodeList = new ArrayList<String>();
+                                dc.setSQL("select inode from inode where inode = ? or inode = ?");
+                                dc.addParam(t.getParent());
+                                dc.addParam(t.getChild());
+                                inodeList = dc.getResults();
+                                dc.setSQL("select id from identifier where id = ? or id = ?");
+                                dc.addParam(t.getParent());
+                                dc.addParam(t.getChild());
+                                inodeList.addAll(dc.getResults());
+                                if(inodeList.size() > 1){
+                                    HibernateUtil.save(obj);
+                                }
+                                else {
+                                    Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
+                                }
+                            });
+                        } else{
                             try {
 
                                 Logger.debug(this, "Saving the object: " +
@@ -1481,6 +1505,7 @@ public class ImportExportUtil {
                             }
                         }
                     }
+
                     HibernateUtil.getSession().flush();
                     HibernateUtil.closeSession();
                     try {
@@ -1514,6 +1539,21 @@ public class ImportExportUtil {
                 Logger.error(this,e.getMessage(),e);
             }
         }
+    }
+
+    private User loadUserFromIdOrEmail(final User u) throws DotDataException, DotSecurityException {
+        User user = null;
+
+        try {
+            user = APILocator.getUserAPI().loadUserById
+                    (u.getUserId(), APILocator.getUserAPI().getSystemUser(),false);
+        } catch (Exception e1) {
+            Logger.info(this, "couldn't find user by ID going to lookup by email address");
+            user = APILocator.getUserAPI().loadByUserByEmail
+                    (u.getEmailAddress(), APILocator.getUserAPI().getSystemUser(),false);
+        }
+
+        return user;
     }
 
     /**
