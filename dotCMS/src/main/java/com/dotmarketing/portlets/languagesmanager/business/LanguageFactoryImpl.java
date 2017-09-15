@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.sql.Connection;
@@ -525,7 +524,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		try {
 			if (file.exists() && tempFile.exists()) {
 				fileToChannel = (new FileOutputStream(file)).getChannel();
-				fileFromChannel = (FileChannel) Channels.newChannel(Files.newInputStream(tempFile.toPath()));
+				fileFromChannel = FileChannel.open(tempFile.toPath());;
 				fileFromChannel.transferTo(0, fileFromChannel.size(), fileToChannel);
 			} else {
 				if (!file.exists())

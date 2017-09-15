@@ -43,7 +43,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -209,14 +208,12 @@ public class FileUtil {
 
         if (!hardLinks) {
 
-            InputStream is = Files.newInputStream(source.toPath());
             FileOutputStream fos = new FileOutputStream(destination);
-            FileChannel srcChannel = (FileChannel) Channels.newChannel(is);
+            FileChannel srcChannel = FileChannel.open(source.toPath());
             FileChannel dstChannel = fos.getChannel();
             dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
             srcChannel.close();
             dstChannel.close();
-            is.close();
             fos.close();
 
 

@@ -23,7 +23,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.file.Files;
@@ -84,7 +83,7 @@ public class UserManagerPropertiesFactory {
 			}
 
 			if (copy) {
-				FileChannel srcChannel = (FileChannel) Channels.newChannel(Files.newInputStream(from.toPath()));
+				FileChannel srcChannel = FileChannel.open(from.toPath());
 				// Create channel on the destination
 				FileChannel dstChannel = new FileOutputStream(to).getChannel();
 				// Copy file contents from source to destination
@@ -185,7 +184,7 @@ public class UserManagerPropertiesFactory {
 			File to = new java.io.File(filePath);
 			to.createNewFile();
 
-			FileChannel srcChannel = (FileChannel) Channels.newChannel(Files.newInputStream(from.toPath()));;
+			FileChannel srcChannel = FileChannel.open(from.toPath());
 
 			// Create channel on the destination
 			FileChannel dstChannel = new FileOutputStream(to).getChannel();

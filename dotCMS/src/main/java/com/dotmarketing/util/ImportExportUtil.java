@@ -34,7 +34,6 @@ import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,7 +41,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.sql.SQLException;
@@ -1550,7 +1548,7 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = (FileChannel) Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+            FileChannel ic = FileChannel.open(zipFile.toPath());
             FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
             // to handle huge zipfiles

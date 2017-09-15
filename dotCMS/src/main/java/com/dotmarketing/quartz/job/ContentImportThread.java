@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.sql.Timestamp;
@@ -286,14 +285,12 @@ public class ContentImportThread implements Job{
 			if (!dest.exists())
 				dest.createNewFile();
 
-			InputStream is = Files.newInputStream(orig.toPath());
-			FileChannel channelFrom = (FileChannel) Channels.newChannel(is);
+			FileChannel channelFrom = FileChannel.open(orig.toPath());
 			FileChannel channelTo = new FileOutputStream(dest).getChannel();
 			channelFrom.transferTo(0, channelFrom.size(), channelTo);
 			channelTo.force(false);
 			channelTo.close();
 			channelFrom.close();
-			is.close();
 
 			myOutput.println("File:"+orig.getAbsolutePath()+" move to: "+dest.getAbsolutePath());
 			orig.delete();
