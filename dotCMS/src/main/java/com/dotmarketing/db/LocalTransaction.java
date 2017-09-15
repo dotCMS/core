@@ -25,7 +25,7 @@ public class LocalTransaction {
      *		return myDBMethod(args);
      *  });
      */
-    static public <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws DotDataException {
+    static public <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws Exception {
 
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean autoCommit         = (!isNewConnection)?DbConnectionFactory.getAutoCommit():true;
@@ -72,7 +72,7 @@ public class LocalTransaction {
      *      return null;
      *  });
      */
-    static public void wrap(final VoidDelegate delegate) throws DotDataException {
+    static public void wrap(final VoidDelegate delegate) throws Exception {
 
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean autoCommit         = (!isNewConnection)?DbConnectionFactory.getAutoCommit():true;
@@ -101,10 +101,16 @@ public class LocalTransaction {
     } // wrap.
 
     private static void handleException(final boolean isLocalTransaction,
-                                        final Throwable  e) throws DotDataException {
+                                        final Throwable  e) throws Exception {
         if(isLocalTransaction){
             DbConnectionFactory.rollbackTransaction();
         }
+
+        if (e instanceof Exception) {
+
+            throw Exception.class.cast(e);
+        }
+
         Throwable t = e;
         while(t.getCause()!=null){
             t=t.getCause();

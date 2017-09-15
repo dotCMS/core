@@ -26,6 +26,7 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
+<%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -458,7 +459,19 @@ var editButtonRow="editContentletButtonRow";
 	<%if(!permissionsTabFieldExists && canEditAsset){%>
 		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 			<%
-				IHTMLPage permParent = (IHTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), IHTMLPage.class);
+				IHTMLPage permParent = null;
+				final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+
+				try {
+
+					permParent = (IHTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), IHTMLPage.class);
+				} finally {
+
+					if (isNewConnection) {
+
+						DbConnectionFactory.closeSilently();
+					}
+				}
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				if(permParent != null)
 					request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, permParent);

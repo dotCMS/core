@@ -13,7 +13,6 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -39,79 +38,66 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     @Override
     public ContentType find(String id) throws DotDataException {
-        ContentType type = cache.byVarOrInode(id);
-        if (type == null) {
-            type =  LocalTransaction.wrapReturn(() -> {
-                ContentType t;
-                /*
-                 1. If the if has UUID format lets try to find the ContentType by id.
-                 2. If not let's try to find it by var name.
-                 3. If the id is a really old inode, it will not have the UUID format but still need to catch that case.
-                 */
-                if ( UUIDUtil.isUUID(id) ){
-                    t = dbById(id);
-                } else {
-                    try {
-                        t = dbByVar(id);
-                    } catch (NotFoundInDbException e){
-                        t = dbById(id);
-                    }
 
+        ContentType type = cache.byVarOrInode(id);
+
+        if (type == null) {
+
+            /*
+             1. If the if has UUID format lets try to find the ContentType by id.
+             2. If not let's try to find it by var name.
+             3. If the id is a really old inode, it will not have the UUID format but still need to catch that case.
+             */
+            if ( UUIDUtil.isUUID(id) ){
+              type = dbById(id);
+            } else {
+                try {
+                  type = dbByVar(id);
+                } catch (NotFoundInDbException e){
+                  type = dbById(id);
                 }
-                t.fieldMap();
-                return t;
-            });
+
+            }
+
+            type.fieldMap();
             Logger.debug(this.getClass(), "found type by db:" + type.name());
             cache.add(type);
         }
+
         return type;
     }
 
   @Override
   public List<ContentType> findAll() throws DotDataException {
-    return LocalTransaction.wrapReturn(() -> {
-          return dbAll("structuretype,upper(name)");
-        });
+      return dbAll("structuretype,upper(name)");
   }
 
   @Override
   public void delete(ContentType type) throws DotDataException {
-    LocalTransaction.wrapReturn(() -> {
       dbDelete(type);
       cache.remove(type);
-      return null;
-    });
-
   }
 
   @Override
   public List<ContentType> findAll(String orderBy) throws DotDataException {
-    return LocalTransaction.wrapReturn(() -> {
       return dbAll(orderBy);
-    });
   }
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-    return LocalTransaction.wrapReturn(() -> {
-        return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
-     });
+      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
   }
 
   @Override
   public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbSearch(search, baseType, orderBy, limit, offset);
-    });
   }
 
   @Override
   public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-      return  LocalTransaction.wrapReturn(() -> {
     return dbSearch(search, baseType.getType(), orderBy, limit, offset);
-    });
   }
 
   @Override
@@ -142,75 +128,56 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public int searchCount(String search) throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbCount(search, BaseContentType.ANY.getType());
-    });
   }
 
   @Override
   public int searchCount(String search, int baseType) throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbCount(search, baseType);
-    });
   }
 
   @Override
   public int searchCount(String search, BaseContentType baseType) throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbCount(search, baseType.getType());
-    });
   }
 
   @Override
   public List<ContentType> findByBaseType(BaseContentType type) throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbByType(type.getType());
-    });
   }
 
 
   @Override
   public ContentType findDefaultType() throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbSelectDefaultType();
-    });
   }
 
   @Override
   public List<ContentType> findByBaseType(int type) throws DotDataException {
-    return  LocalTransaction.wrapReturn(() -> {
       return dbByType(type);
-    });
   }
 
   @Override
   public ContentType save(ContentType type) throws DotDataException {
 
-    return LocalTransaction.wrapReturn(() -> {
       ContentType returnType = dbSaveUpdate(type);
       cache.remove(returnType);
       if (type instanceof UrlMapable) {
         cache.clearURLMasterPattern();
       }
       validateFields(returnType);
-      
-      
+
       return find(returnType.id());
-    });
-
-
   }
 
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException {
-    ContentType oldDefault= findDefaultType();
+    final ContentType oldDefault = findDefaultType();
     if (!type.equals(oldDefault)) {
-      LocalTransaction.wrapReturn(() -> {
         ContentType returnType = dbUpdateDefaultToTrue(type);
         cache.remove(type);
         cache.remove(oldDefault);
         return returnType;
-      });
     }
 
     return type;
@@ -220,7 +187,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbSelectDefaultType() throws DotDataException {
     DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
-
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).from();
   }

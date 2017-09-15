@@ -22,15 +22,7 @@
 
 package com.dotmarketing.cms.factories;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.ServletContext;
-
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -39,6 +31,14 @@ import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.ejb.ImageManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.FileUtil;
+
+import javax.servlet.ServletContext;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <a href="AddressUtil.java.html"><b><i>View Source</i></b></a>
@@ -73,13 +73,11 @@ public class PublicCompanyFactory extends CompanyUtil {
 	}
 	
 	
-
 	public static List getCompanies() {
 			
 			try {
 				return findAll();
 			} catch (SystemException e) {
-				// TODO Auto-generated catch block
 				Logger.error(PublicCompanyFactory.class,e.getMessage(),e);
 			}
 			return new ArrayList();
@@ -118,19 +116,23 @@ public class PublicCompanyFactory extends CompanyUtil {
 			CompanyUtil.update(c);
 
 			/* Set the DM logo */
-			File f = new File(FileUtil.getRealPath("/html/images/shim.gif"));
+			BufferedInputStream in = null;
+			final ByteArrayOutputStream baout = new ByteArrayOutputStream();
+			final File file = new File(FileUtil.getRealPath("/html/images/shim.gif"));
 
-			BufferedInputStream in = new BufferedInputStream(new FileInputStream(f));
+			try {
 
-			ByteArrayOutputStream baout = new ByteArrayOutputStream();
+				in = new BufferedInputStream(new FileInputStream(file));
 
-			byte[] buf = new byte[2048];
-			int i = 0;
-			while ((i = in.read(buf)) != -1) {
-				baout.write(buf, 0, i);
+				byte[] buf = new byte[2048];
+				int i = 0;
+				while ((i = in.read(buf)) != -1) {
+					baout.write(buf, 0, i);
+				}
+			} finally {
+
+				CloseUtils.closeQuietly(in);
 			}
-
-			in.close();
 
 			ImageManagerUtil.updateImage("dotcms.org", baout.toByteArray());
 

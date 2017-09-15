@@ -1,38 +1,34 @@
 package com.dotmarketing.portlets.links.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	static MenuLinkFactory menuLinkFactory = FactoryLocator.getMenuLinkFactory();
 
+	@WrapInTransaction
 	public Link copy(Link sourceLink, Folder destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(sourceLink, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException("You don't have permission to read the source file.");
@@ -86,6 +82,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		return newLink;
 	}
 
+	@WrapInTransaction
 	public void save(Link menuLink, Folder destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		boolean isNew = false;
@@ -114,6 +111,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		save(menuLink, parentFolder, user, respectFrontendRoles);
 	}
 
+	@WrapInTransaction
 	protected void save(WebAsset webAsset) throws DotDataException, DotStateException, DotSecurityException {
 		menuLinkFactory.save((Link) webAsset);
 	}
@@ -136,6 +134,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		return find(info.getWorkingInode(), user, respectFrontendRoles);
 	}
 
+	@CloseDBIfOpened
 	public List<Link> findLinks(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -148,7 +147,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
         return deleteOldVersions(assetsOlderThan,"links");
     }
 
-
+	@CloseDBIfOpened
     @Override
     public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException{
 
@@ -160,6 +159,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     	return link;
     }
 
+    @WrapInTransaction
     @Override
     public boolean move(Link link, Host host, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
         if(!permissionAPI.doesUserHavePermission(link, PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
@@ -171,6 +171,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
         return LinkFactory.moveLink(link, host);
     }
 
+	@WrapInTransaction
     @Override
     public boolean move(Link link, Folder folder, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
         if(!permissionAPI.doesUserHavePermission(link, PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
@@ -191,6 +192,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
+    @WrapInTransaction
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		LinkFactory.updateUserReferences(userId, replacementUserId);
 	}

@@ -80,6 +80,9 @@ public class EscalationThread extends DotStatefulJob {
                 try {
                     HibernateUtil.rollbackTransaction();
                 } catch (DotHibernateException e) {}
+            } finally {
+
+                HibernateUtil.closeSessionSilently();
             }
         }
     }

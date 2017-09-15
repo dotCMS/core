@@ -286,14 +286,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 	@Override
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
-		boolean local = false;
 		try{
-			try {
-				local = HibernateUtil.startLocalTransactionIfNeeded();
-			} catch (DotDataException e1) {
-				Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
-				throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
-			}
+
 			HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
 			for(Container container:containerIdentifiers){
 				TemplateContainers templateContainer = new  TemplateContainers();
@@ -302,15 +296,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				HibernateUtil.save(templateContainer);
 			}
 			
-			if(local){
-                HibernateUtil.commitTransaction();
-            }
+
 		}catch(DotHibernateException e){
-			if(local){
-				HibernateUtil.rollbackTransaction();
-			}
+
 			throw new DotWorkflowException(e.getMessage());
-	
 		}
 	}
 	

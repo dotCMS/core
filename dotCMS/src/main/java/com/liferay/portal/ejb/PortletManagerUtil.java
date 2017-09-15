@@ -22,6 +22,8 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+
 /**
  * <a href="PortletManagerUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -120,6 +122,7 @@ public class PortletManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static java.util.List getPortlets(java.lang.String companyId)
 		throws com.liferay.portal.SystemException {
 		try {

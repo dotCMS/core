@@ -245,7 +245,7 @@ public class TimeMachineFilter implements Filter {
 		}
 		resp.setContentType(mimeType);
 		resp.setContentLength((int) file.length());
-		try (FileInputStream fis = new FileInputStream(file)) {
+		try (FileInputStream fis = new FileInputStream(file)) { // todo: should use nio here
 			IOUtils.copy(fis, resp.getOutputStream());
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Time Machine : File [" + file.getAbsolutePath() + "] cannot be found.", e);

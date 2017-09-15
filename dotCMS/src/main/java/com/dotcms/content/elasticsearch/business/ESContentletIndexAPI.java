@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -209,7 +211,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else
 	        return initIndex();
 	}
-	
+
+	@CloseDBIfOpened
 	public boolean isInFullReindex() throws DotDataException {
 	    return isInFullReindex(DbConnectionFactory.getConnection());
 	}
@@ -219,6 +222,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    return info.reindex_working!=null && info.reindex_live!=null;
 	}
 
+	@CloseDBIfOpened
 	public synchronized void fullReindexSwitchover() {
 	    fullReindexSwitchover(DbConnectionFactory.getConnection());
 	}
@@ -283,6 +287,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    addContentToIndex(content,deps,indexBeforeCommit,reindexOnly,null);
 	}
 
+	@WrapInTransaction
 	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly, final BulkRequestBuilder bulk) throws DotHibernateException {
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;

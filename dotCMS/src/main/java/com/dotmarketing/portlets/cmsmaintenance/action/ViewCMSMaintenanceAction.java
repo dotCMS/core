@@ -202,6 +202,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
 						errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
 						HibernateUtil.rollbackTransaction();
+					} finally {
+						DbConnectionFactory.closeSilently();
 					}
 				}
 				else

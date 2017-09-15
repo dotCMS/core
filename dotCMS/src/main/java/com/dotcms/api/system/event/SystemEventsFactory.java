@@ -2,6 +2,8 @@ package com.dotcms.api.system.event;
 
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
@@ -158,6 +160,12 @@ public class SystemEventsFactory implements Serializable {
 						+ "]: " + e.getMessage();
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
+			} finally {
+
+				if (localTransaction) {
+
+					DbConnectionFactory.closeSilently();
+				}
 			}
 		}
 
@@ -193,6 +201,7 @@ public class SystemEventsFactory implements Serializable {
 		}
 
 		@Override
+		@CloseDBIfOpened
 		public Collection<SystemEvent> getEventsSince(final long createdDate) throws DotDataException {
 			if (createdDate <= 0) {
 				final String msg = "System Event creation date must be greater than zero.";
@@ -201,9 +210,7 @@ public class SystemEventsFactory implements Serializable {
 			}
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
-				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					return convertSystemEventDTO(record);
-				});
+				return this.conversionUtils.convert(result, this::convertSystemEventDTO);
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving system events created since: ["
 						+ new Date(createdDate) + "]";
@@ -213,12 +220,11 @@ public class SystemEventsFactory implements Serializable {
 		}
 
 		@Override
+		@CloseDBIfOpened
 		public Collection<SystemEvent> getAll() throws DotDataException {
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
-				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					return convertSystemEventDTO(record);
-				});
+				return this.conversionUtils.convert(result, this::convertSystemEventDTO);
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving all system events.";
 				Logger.error(this, msg, e);
@@ -226,6 +232,7 @@ public class SystemEventsFactory implements Serializable {
 			}
 		}
 
+		@WrapInTransaction
 		@Override
 		public void deleteEvents(final long toDate) throws DotDataException {
 			if (toDate <= 0) {
@@ -234,29 +241,10 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 
-			boolean localTransaction = false;
-
 			try {
 
-				//Check for a transaction and start one if required
-				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
 				this.systemEventsDAO.deleteEvents(toDate);
-
-				//Everything ok..., committing the transaction
-				if ( localTransaction ) {
-					HibernateUtil.commitTransaction();
-				}
 			} catch (Exception e) {
-
-				try {
-					//On error rolling back the changes
-					if ( localTransaction ) {
-						HibernateUtil.rollbackTransaction();
-					}
-				} catch (DotHibernateException hibernateException) {
-					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
-				}
 
 				final String msg = "An error occurred when deleting system events created up to: [" + new Date(toDate) + "]";
 				Logger.error(this, msg, e);
@@ -264,6 +252,7 @@ public class SystemEventsFactory implements Serializable {
 			}
 		}
 
+		@WrapInTransaction
 		@Override
 		public void deleteEvents(final long fromDate, final long toDate) throws DotDataException {
 			if (fromDate <= 0) {
@@ -282,29 +271,10 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 
-			boolean localTransaction = false;
-
 			try {
 
-				//Check for a transaction and start one if required
-				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
 				this.systemEventsDAO.deleteEvents(fromDate, toDate);
-
-				//Everything ok..., committing the transaction
-				if ( localTransaction ) {
-					HibernateUtil.commitTransaction();
-				}
 			} catch (Exception e) {
-
-				try {
-					//On error rolling back the changes
-					if ( localTransaction ) {
-						HibernateUtil.rollbackTransaction();
-					}
-				} catch (DotHibernateException hibernateException) {
-					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
-				}
 
 				final String msg = "An error occurred when deleting system events created from: [" + new Date(fromDate)
 						+ "] to: [" + new Date(toDate) + "]";
@@ -313,32 +283,14 @@ public class SystemEventsFactory implements Serializable {
 			}
 		}
 
+		@WrapInTransaction
 		@Override
 		public void deleteAll() throws DotDataException {
 
-			boolean localTransaction = false;
-
 			try {
 
-				//Check for a transaction and start one if required
-				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
 				this.systemEventsDAO.deleteAll();
-
-				//Everything ok..., committing the transaction
-				if ( localTransaction ) {
-					HibernateUtil.commitTransaction();
-				}
 			} catch (Exception e) {
-
-				try {
-					//On error rolling back the changes
-					if ( localTransaction ) {
-						HibernateUtil.rollbackTransaction();
-					}
-				} catch (DotHibernateException hibernateException) {
-					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
-				}
 
 				final String msg = "An error occurred when deleting all system events.";
 				Logger.error(this, msg, e);
@@ -395,9 +347,7 @@ public class SystemEventsFactory implements Serializable {
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ? order by created");
 			dc.addParam(fromDate);
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				return convertSystemEventRecord(record);
-			});
+			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
 		}
 
 		@Override
@@ -405,9 +355,7 @@ public class SystemEventsFactory implements Serializable {
 			final DotConnect dc = new DotConnect();
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				return convertSystemEventRecord(record);
-			});
+			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
 		}
 
 		@Override

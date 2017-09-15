@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Inode;
@@ -654,6 +655,7 @@ public class MaintenanceUtil {
         return fileAssetsList;
 	}
 
+	@WrapInTransaction
 	public static void fixImagesTable() throws SQLException{
 		DotConnect dc = new DotConnect();
 		List<String> imageIds = new ArrayList<String>();

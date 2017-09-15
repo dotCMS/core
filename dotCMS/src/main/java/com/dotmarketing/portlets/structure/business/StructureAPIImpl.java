@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -65,6 +67,7 @@ public class StructureAPIImpl implements StructureAPI {
 			"where c.structure_inode = s.inode and mod_user = ? and s.structuretype = ? " +
 			"order by c.mod_date desc;";
 
+	@WrapInTransaction
     public void olddelete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {        
         // check for write permissions
         PermissionAPI perAPI=APILocator.getPermissionAPI();
@@ -147,11 +150,8 @@ public class StructureAPIImpl implements StructureAPI {
         // flushing cache
         FieldsCache.removeFields(st);
         CacheLocator.getContentTypeCache().remove(st);
-
-    
-
-
 	}
+
 	@Override
 	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
 
@@ -198,6 +198,7 @@ public class StructureAPIImpl implements StructureAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	public Collection<Map<String, Object>> getRecentContentType(BaseContentType type, User user, int nRecents) throws DotDataException {
 
 	    
@@ -228,7 +229,5 @@ public class StructureAPIImpl implements StructureAPI {
 		}
 
 		return result.values();
-	
-
 	}
 }

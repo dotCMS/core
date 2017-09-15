@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -8,6 +9,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -347,6 +349,7 @@ public class ReindexThread extends Thread {
 						}
 
 						HibernateUtil.closeSession();
+
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
 
@@ -669,37 +672,63 @@ public class ReindexThread extends Thread {
 	    }
 	}
 
+	@CloseDBIfOpened
+	private List<Map<String,String>> getContentletVersionInfoByIdentifier (final String id) throws DotDataException {
+
+		final String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(sql);
+		dc.addParam(id);
+		return dc.loadResults();
+	}
+
+	@CloseDBIfOpened
+	private com.dotmarketing.portlets.contentlet.business.Contentlet getContentletByINode (final String inode) throws DotHibernateException {
+
+		return (com.dotmarketing.portlets.contentlet.business.Contentlet)
+				HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
+	}
+
+	@CloseDBIfOpened
+	private Contentlet convertFatContentletToContentlet (final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet) throws DotDataException, DotSecurityException {
+
+		return FactoryLocator.getContentletFactory()
+				.convertFatContentletToContentlet(fattyContentlet);
+	}
+
 	@SuppressWarnings("unchecked")
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
+
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-	    
-	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
-	    
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql);
-        dc.addParam(idx.getIdentToIndex());
-        List<Map<String,String>> ret = dc.loadResults();
-        List<String> inodes = new ArrayList<String>(); 
-        for(Map<String,String> m : ret) {
-        	String workingInode = m.get("working_inode");
-        	String liveInode = m.get("live_inode");
+
+	    final List<Map<String,String>> ret =
+				this.getContentletVersionInfoByIdentifier(idx.getIdentToIndex());
+        final List<String> inodes = new ArrayList<>();
+
+        for(Map<String,String> mapResult : ret) {
+        	String workingInode = mapResult.get("working_inode");
+        	String liveInode = mapResult.get("live_inode");
         	inodes.add(workingInode);
         	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
         		inodes.add(liveInode);
         	}
         }
+
         for(String inode : inodes) {
-            Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
-                    (com.dotmarketing.portlets.contentlet.business.Contentlet)
-                        HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
+
+        	final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet =
+					this.getContentletByINode(inode);
+            final Contentlet contentlet =
+					this.convertFatContentletToContentlet(fattyContentlet);
             
-            if(idx.isDelete() && idx.getIdentToIndex().equals(con.getIdentifier()))
-                // we delete contentlets from the identifier pointed on index journal record
-                // its dependencies are reindexed in order to update its relationships fields
-                indexAPI.removeContentFromIndex(con);
-            else
-                indexAPI.addContentToIndex(con,false,true,indexAPI.isInFullReindex(),bulk);
+            if(idx.isDelete() && idx.getIdentToIndex().equals(contentlet.getIdentifier())) {
+				// we delete contentlets from the identifier pointed on index journal record
+				// its dependencies are reindexed in order to update its relationships fields
+				indexAPI.removeContentFromIndex(contentlet);
+			} else {
+				indexAPI.addContentToIndex(contentlet, false, true, indexAPI.isInFullReindex(), bulk);
+			}
         }
 	}
 	
@@ -878,7 +907,7 @@ public class ReindexThread extends Thread {
 					Logger.warn(this, ex.getMessage(), ex);
 					conn.rollback();
 				} finally {
-					conn.close();
+					CloseUtils.closeQuietly(conn);
 				}
 			}
 			this.notifiedFailingRecords.clear();

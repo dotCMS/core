@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -167,7 +168,7 @@ public class PublishFactory {
 		if (webAsset instanceof WebAsset)
 		{
 			try {
-				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion);
+				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion); // todo: reviewing here
 			} catch (Exception e) {
 				Logger.error(PublishFactory.class, "publishAsset: Failed to publish the asset.", e);
 			}
@@ -450,6 +451,7 @@ public class PublishFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public static List getUnpublishedRelatedAssetsForPage ( IHTMLPage htmlPage, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
 
         Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- PrePublishing" );

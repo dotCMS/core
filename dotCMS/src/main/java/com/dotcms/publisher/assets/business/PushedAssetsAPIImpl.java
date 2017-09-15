@@ -2,6 +2,8 @@ package com.dotcms.publisher.assets.business;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -10,12 +12,13 @@ import com.dotmarketing.util.UtilMethods;
 
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
-	private PushedAssetsFactory pushedAssetsFactory;
+	private final PushedAssetsFactory pushedAssetsFactory;
 
 	public PushedAssetsAPIImpl() {
 		pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
 	}
 
+	@WrapInTransaction
 	@Override
 	public void savePushedAsset(PushedAsset asset)
 			throws DotDataException {
@@ -23,6 +26,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deletePushedAssets(String bundleId, String environmentId)
 			throws DotDataException {
@@ -40,6 +44,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deletePushedAssets(String assetId)
 			throws DotDataException {
@@ -57,6 +62,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deletePushedAssetsByEnvironment(String environmentId)
 			throws DotDataException {
@@ -74,6 +80,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deleteAllPushedAssets() throws DotDataException {
 		pushedAssetsFactory.deleteAllPushedAssets();
@@ -81,6 +88,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<PushedAsset> getPushedAssets(String assetId)
 			throws DotDataException {
@@ -88,17 +96,14 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	}
 	
 	
-	
+	@CloseDBIfOpened
 	@Override
 	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
+
 		if(!UtilMethods.isSet(environmentId) ||!UtilMethods.isSet(assetId)) {
 			return null;
 		}
-		
-		
-		
-		
-		
+
 		return pushedAssetsFactory.getLastPushForAsset(assetId,environmentId,endpointIds);
 		
 	}
