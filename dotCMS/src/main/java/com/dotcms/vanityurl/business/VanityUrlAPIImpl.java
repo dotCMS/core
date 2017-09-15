@@ -515,7 +515,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 			 * initialization of dotCMS if for some reason at this point we
 			 * don't have indexes.
 			 */
-            Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+            Logger.error(this, "Error when initializing Vanity URLs, no index found ");
+            Logger.debug(this, e.getMessage(), e);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
         } catch (Exception e) {
@@ -525,7 +526,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 				 * initialization of dotCMS if for some reason at this point we
 				 * don't have indexes.
 				 */
-                Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+                Logger.error(this, "Error when initializing Vanity URLs, no index found ");
+                Logger.debug(this, e.getMessage(), e);
             } else {
                 throw new DotRuntimeException("Error searching and populating the Vanity URL Cache",
                         e);
