@@ -89,14 +89,43 @@ public class FieldBuilderTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testImplTypeBuilder() throws Exception {
+		
+		
+		final String value = "testest";
+		
+		
 		for(LegacyFieldTypes types : LegacyFieldTypes.values()){
-			FieldBuilder.instanceOf(types.implClass());
-			FieldBuilder.builder(types.implClass()).id("asd");
+			Class clazz = types.implClass();
+			Field test = FieldBuilder.builder(clazz)				
+			.name(value)
+			.variable(value)
+			.required(true)
+			.listed(true)
+			.indexed(true)
+			.sortOrder(1)
+			.contentTypeId(value)
+			.fixed(true)
+			.searchable(true)
+			.values(value)
+			.build();
+			
+			
+			assertThat("value is set", value.equals(test.values()));
+			assertThat("variable is set", value.equals(test.variable()));
+			assertThat("contentTypeId is set", value.equals(test.contentTypeId()));
+			assertThat("name is set", value.equals(test.name()));
+			Field test2 = FieldBuilder.builder(test).build();
+			assertThat("fieldbuilder works ",test.equals(test2));
 
 		}
 	}
 
 
+	
+	
+	
+	
+	
 	@Test
 	public void testCopy() throws Exception {
 
@@ -110,6 +139,7 @@ public class FieldBuilderTest extends ContentTypeBaseTest {
 				.contentTypeId("test")
 				.fixed(true)
 				.searchable(true)
+				.values("testest")
 				.build();
 
 
