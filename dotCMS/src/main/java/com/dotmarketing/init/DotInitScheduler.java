@@ -1,6 +1,23 @@
 package com.dotmarketing.init;
 
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+import java.lang.management.ManagementFactory;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+
+import org.quartz.CronTrigger;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
@@ -16,34 +33,24 @@ import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
+import com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
+
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
+
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
+
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.lang.management.ManagementFactory;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import org.quartz.CronTrigger;
-import org.quartz.Job;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
+
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
 /**
  * Initializes all dotCMS startup jobs.
@@ -661,6 +668,48 @@ public class DotInitScheduler {
                     Logger.error( DotInitScheduler.class, e.getMessage(), e );
                 }
             }
+
+			//SCHEDULE REMOVE INACTIVE CLUSTER SERVERS JOB
+            String jobName = "RemoveInactiveClusterServerJob";
+            String jobGroup = DOTCMS_JOB_GROUP_NAME;
+            String triggerName = "trigger23";
+            String triggerGroup = "group23";
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)&& Config
+				.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
+				try {
+					isNew = false;
+					
+					try {
+						if ((job = sched.getJobDetail(jobName, jobGroup)) == null) {
+							job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob(jobName, jobGroup);
+						job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+				    trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null,Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob(triggerName, triggerGroup, trigger);
+
+					Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob on");
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob off");
+
+				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
+					sched.deleteJob(jobName, jobGroup);
+				}
+			}
 
 			//SCHEDULE ESCALATION THREAD JOB
 			String ETjobName = "EscalationThreadJob";

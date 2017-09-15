@@ -219,7 +219,7 @@ public class ServerAPIImpl implements ServerAPI {
 
 	@WrapInTransaction
 	@Override
-	public void removeServerFromClusterTable(String serverId) throws DotDataException{
+	public void removeServerFromClusterTable(String serverId) throws DotDataException, IOException{
 		serverFactory.removeServerFromClusterTable(serverId);
 	}
 

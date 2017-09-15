@@ -86,15 +86,9 @@ public class PublisherAPIImpl implements PublisherAPI {
                 // If the bundle exists and we are retrying to push the bundle
                 // there is no need to run all the bundlers again.
                 if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
-                    PublishAuditStatus currentStatus = publishAuditAPI
-                            .getPublishAuditStatus(config.getId());
-                    PublishAuditHistory currentStatusHistory = null;
-                    if(currentStatus != null) {
-                        currentStatusHistory = currentStatus.getStatusPojo();
-                        if(currentStatusHistory != null) {
-                            currentStatusHistory.setBundleStart(new Date());
-                        }
-                    }
+                    PublishAuditHistory currentStatusHistory = publishAuditAPI
+                            .getPublishAuditStatus(config.getId()).getStatusPojo();
+                    currentStatusHistory.setBundleStart(new Date());
 
                     for ( Class<IBundler> clazz : p.getBundlers() ) {
                         IBundler bundler = clazz.newInstance();
@@ -109,13 +103,10 @@ public class PublisherAPIImpl implements PublisherAPI {
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
 
-                    if(currentStatusHistory != null) {
-                        currentStatusHistory.setBundleEnd(new Date());
-                        publishAuditAPI
-                                .updatePublishAuditStatus(config.getId(),
-                                        PublishAuditStatus.Status.BUNDLING,
-                                        currentStatusHistory);
-                    }
+                    currentStatusHistory.setBundleEnd(new Date());
+                    publishAuditAPI
+                            .updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING,
+                                    currentStatusHistory);
                 } else {
                     Logger.info(this, "Retrying bundle: " + config.getId()
                             + ", we don't need to run bundlers again");

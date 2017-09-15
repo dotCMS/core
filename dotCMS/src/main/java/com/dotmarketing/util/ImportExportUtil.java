@@ -1,5 +1,30 @@
 package com.dotmarketing.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.FileChannel;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
@@ -35,30 +60,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
+import org.mockito.cglib.core.Local;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -1354,9 +1356,14 @@ public class ImportExportUtil {
                             User u1 = APILocator.getUserAPI().createUser(u.getUserId(), u.getEmailAddress());
                             u.setUserId(u1.getUserId());
                             u.setEmailAddress(u.getEmailAddress());
-                        } catch (DuplicateUserException e) {
+                         } catch (Exception e) {
                             Logger.info(this, "user already exists going to update");
-                            u = loadUserFromIdOrEmail(u);
+                            if (e.getCause() instanceof DuplicateUserException) {
+                                u = loadUserFromIdOrEmail(u);
+                            } else {
+                                throw e;
+                            }
+                            
                         }
 
                         APILocator.getUserAPI().save(u,APILocator.getUserAPI().getSystemUser(),false);

@@ -268,12 +268,8 @@ public class PublisherQueueJob implements StatefulJob {
 										if (remoteHistory != null) {
 											publishStart = remoteHistory.getPublishStart();
 											publishEnd = remoteHistory.getPublishEnd();
-											if(localHistory.getPublishStart()==null || publishStart.before(localHistory.getPublishStart())) {
-												localHistory.setPublishStart(publishStart);
-											}
-											if(localHistory.getPublishEnd()==null || publishEnd.after(localHistory.getPublishEnd())) {
-												localHistory.setPublishEnd(publishEnd);
-											}
+											localHistory.setPublishStart(publishStart);
+											localHistory.setPublishEnd(publishEnd);
 											endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
 											for (String remoteGroupId : remoteHistory.getEndpointsMap().keySet()) {
 												Map<String, EndpointDetail> remoteGroup = endpointTrackingMap

@@ -13,6 +13,10 @@ import com.liferay.util.StringPool;
 
 import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
 public class StringUtils {
+
+    public static final String TRUE = "true";
+
+
     public static String formatPhoneNumber(String phoneNumber) {
         try {
             String s = phoneNumber.replaceAll("\\(|\\)|:|-|\\.", "");
