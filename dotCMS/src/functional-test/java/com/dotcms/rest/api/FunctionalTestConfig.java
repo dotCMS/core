@@ -50,7 +50,7 @@ public class FunctionalTestConfig {
         this.defaultHost = defaultHost;
         this.defaultHostId = defaultHost.getIdentifier();
 
-        client = RestClientBuilder.newClient();
+        client = RestClientBuilder.getClient();
         HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
         client.register(feature);
 
