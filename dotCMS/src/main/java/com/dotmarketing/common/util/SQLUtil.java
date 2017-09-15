@@ -31,6 +31,13 @@ import java.util.Set;
  */
 public class SQLUtil {
 
+
+	public static final String ASC  = "asc";
+	public static final String DESC  = "desc";
+	public static final String _ASC  = " " + ASC ;
+	public static final String _DESC  = " " + DESC;
+
+
 	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
 
@@ -52,7 +59,8 @@ public class SQLUtil {
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
-			"mod_date,upper(name)", "relation_type_value");
+			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
+			"parent_relation_name");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -212,7 +220,10 @@ public class SQLUtil {
 			return StringPool.BLANK;
 		}
 
-		String testParam=parameter.replaceAll(" asc", StringPool.BLANK).replaceAll(" desc", StringPool.BLANK).replaceAll("-", StringPool.BLANK).toLowerCase();
+		String testParam=parameter.replaceAll(_ASC, StringPool.BLANK)
+								  .replaceAll(_DESC, StringPool.BLANK)
+				                  .replaceAll("-", StringPool.BLANK).toLowerCase();
+
 		if(ORDERBY_WHITELIST.contains(testParam)){
 			return parameter;
 		}
