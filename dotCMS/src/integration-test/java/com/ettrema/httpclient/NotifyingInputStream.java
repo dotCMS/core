@@ -8,7 +8,7 @@ import java.io.InputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 
-class NotifyingFileInputStream extends InputStream {
+class NotifyingInputStream extends InputStream {
 	private InputStream fin;
 	private final InputStream wrapped;
     private final ProgressListener listener;
@@ -19,7 +19,7 @@ class NotifyingFileInputStream extends InputStream {
     private long timeLastNotify;
     private long bytesSinceLastNotify;
 
-    public NotifyingFileInputStream(File f, ProgressListener listener) throws FileNotFoundException, IOException {
+    public NotifyingInputStream(File f, ProgressListener listener) throws FileNotFoundException, IOException {
         this.fin = FileUtils.openInputStream(f);
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;
@@ -36,7 +36,7 @@ class NotifyingFileInputStream extends InputStream {
 	 * @param listener
 	 * @throws IOException 
 	 */
-    public NotifyingFileInputStream(InputStream in, Long length, String path, ProgressListener listener) throws IOException {
+    public NotifyingInputStream(InputStream in, Long length, String path, ProgressListener listener) throws IOException {
         this.fin = in;
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;

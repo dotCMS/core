@@ -1,24 +1,11 @@
 package com.dotmarketing.viewtools;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.Date;
-
-import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.xml.transform.Source;
 import com.dotcms.repackage.javax.xml.transform.Transformer;
 import com.dotcms.repackage.javax.xml.transform.TransformerConfigurationException;
 import com.dotcms.repackage.javax.xml.transform.TransformerFactory;
 import com.dotcms.repackage.javax.xml.transform.stream.StreamResult;
 import com.dotcms.repackage.javax.xml.transform.stream.StreamSource;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -39,6 +26,15 @@ import com.dotmarketing.viewtools.cache.XSLTransformationCache;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * XSLTTransform macro methods
@@ -145,7 +141,8 @@ public class XsltTool implements ViewTool {
 					if(xmlId!=null && InodeUtils.isSet(xmlId.getId()) && xmlId.getAssetType().equals("contentlet")){
 						Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(xmlId.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(),false);
 						if(cont!=null && InodeUtils.isSet(cont.getInode())){
-							xmlSource = new StreamSource(new InputStreamReader(new FileInputStream(cont.getBinary(FileAssetAPI.BINARY_FIELD)), "UTF8"));
+							xmlSource = new StreamSource(new InputStreamReader(Files.newInputStream(
+									cont.getBinary(FileAssetAPI.BINARY_FIELD).toPath()), "UTF8"));
 						}
 					}
 
@@ -153,7 +150,8 @@ public class XsltTool implements ViewTool {
 					xmlSource = new StreamSource(XMLPath);
 				}
 
-				Source xsltSource = new StreamSource(new InputStreamReader(new FileInputStream(binFile), "UTF8"));
+				Source xsltSource = new StreamSource(
+						new InputStreamReader(Files.newInputStream(binFile.toPath()), "UTF8"));
 
 				// create an instance of TransformerFactory
 				TransformerFactory transFact = TransformerFactory.newInstance();

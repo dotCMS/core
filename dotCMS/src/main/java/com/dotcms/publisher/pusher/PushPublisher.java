@@ -1,10 +1,5 @@
 package com.dotcms.publisher.pusher;
 
-import com.dotcms.repackage.org.apache.log4j.MDC;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
-import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -51,8 +46,13 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -62,9 +62,9 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -209,7 +209,7 @@ public class PushPublisher extends Publisher {
 				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
 
-					InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
 
 
 

@@ -1,19 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -34,9 +20,9 @@ import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.Invocation.Builder;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.Cookie;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.NewCookie;
-import com.dotcms.repackage.javax.ws.rs.core.Cookie;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
@@ -59,6 +45,19 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -257,7 +256,10 @@ public class IntegrityResource {
                     case FINISHED:
                         StreamingOutput output = new StreamingOutput() {
                             public void write(OutputStream output) throws IOException, WebApplicationException {
-                                InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId() + File.separator + INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME);
+                                InputStream is = Files.newInputStream(Paths.get(
+                                        ConfigUtils.getIntegrityPath() + File.separator
+                                                + requesterEndPoint.getId() + File.separator
+                                                + INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME));
 
                                 byte[] buffer = new byte[1024];
                                 int bytesRead;

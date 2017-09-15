@@ -5,8 +5,9 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,7 +50,7 @@ public class PushCategoryUtil {
 				if(wrapper.isTopLevel())
 					categoriesTopLevel.add(wrapper.getCategory().getInode());
 
-			} catch (FileNotFoundException fnfe) {
+			} catch (IOException fnfe) {
 				throw new DotPublishingException(fnfe.getMessage(),fnfe);
 			}
 		}
@@ -60,7 +61,7 @@ public class PushCategoryUtil {
 	 * 
 	 * Mar 6, 2013 - 9:53:45 AM
 	 */
-	public List<CategoryWrapper> findTopLevelWrappers() throws FileNotFoundException {
+	public List<CategoryWrapper> findTopLevelWrappers() throws IOException {
 		List<CategoryWrapper> topLevels = new ArrayList<CategoryWrapper>();
 		for(String categoryInode : categoriesTopLevel){
 			File categoryFile = categoriesByInode.get(categoryInode);
@@ -69,13 +70,13 @@ public class PushCategoryUtil {
 		return topLevels;
 	}
 
-	public CategoryWrapper getCategoryWrapperFromInode(String inode) throws FileNotFoundException {
+	public CategoryWrapper getCategoryWrapperFromInode(String inode) throws IOException {
 		File categoryFile = categoriesByInode.get(inode);
 		return (categoryFile != null) ? getCategoryWrapperFromFile(categoryFile) : null;
 	}
 	
-	private CategoryWrapper getCategoryWrapperFromFile(File category) throws FileNotFoundException {
-		FileInputStream fis = new FileInputStream(category);
+	private CategoryWrapper getCategoryWrapperFromFile(File category) throws IOException {
+		InputStream fis = Files.newInputStream(category.toPath());
 		try {
 			return (CategoryWrapper)xstream.fromXML(fis);
 		} finally {

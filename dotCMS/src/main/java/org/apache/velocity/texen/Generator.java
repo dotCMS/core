@@ -19,27 +19,26 @@ package org.apache.velocity.texen;
  * under the License.    
  */
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.FileInputStream;
 import java.io.BufferedInputStream;
-import java.io.Writer;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Properties;
-
 import org.apache.velocity.Template;
-import org.apache.velocity.context.Context;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.util.ClassUtils;
 
 /**
@@ -152,7 +151,7 @@ public class Generator
             BufferedInputStream bi = null;
             try
             {
-                bi = new BufferedInputStream (new FileInputStream (propFile));
+                bi = new BufferedInputStream (Files.newInputStream(Paths.get(propFile)));
                 props.load (bi);
             }
             finally

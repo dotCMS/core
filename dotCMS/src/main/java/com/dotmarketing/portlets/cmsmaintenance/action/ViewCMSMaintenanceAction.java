@@ -1,30 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -69,7 +44,6 @@ import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -101,6 +75,29 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -879,28 +876,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		byte b[] = new byte[512];
 		ZipOutputStream zout = new ZipOutputStream(out);
 		ZipUtil.zipDirectory(backupTempFilePath, zout);
-//		File f = new File(backupTempFilePath);
-//		String[] s = f.list();
-//		for (int i = 0; i < s.length; i++) {
-//			if(s[i].equals(".svn")){
-//				continue;
-//			}
-//			f = new File(backupTempFilePath + File.separator + "" + s[i]);
-//			InputStream in;
-//			if(f.isDirectory()){
-//				in = new BufferedInputStream(new ByteArrayInputStream(f.));
-//			}else{
-//				in = new BufferedInputStream(new FileInputStream(f));
-//			}
-//			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-//			zout.putNextEntry(e);
-//			int len = 0;
-//			while ((len = in.read(b)) != -1) {
-//				zout.write(b, 0, len);
-//			}
-//			zout.closeEntry();
-//			in.close();
-//		}
 		zout.close();
 		out.close();
 	}

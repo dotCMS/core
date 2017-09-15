@@ -22,24 +22,23 @@
 
 package com.liferay.portal.tools;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-
 import com.dotcms.repackage.org.dom4j.Document;
 import com.dotcms.repackage.org.dom4j.DocumentException;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.StringUtil;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * <a href="WebSiteBuilder.java.html"><b><i>View Source</i></b></a>
@@ -275,8 +274,7 @@ public class WebSiteBuilder {
 		// Session timeout
 
 		Properties props = new Properties();
-		props.load(
-			new FileInputStream("../portal-ejb/classes/portal.properties"));
+		props.load(Files.newInputStream(Paths.get("../portal-ejb/classes/portal.properties")));
 
 		String sessionTimeout =
 			GetterUtil.get(props.getProperty("session.timeout"), "30");

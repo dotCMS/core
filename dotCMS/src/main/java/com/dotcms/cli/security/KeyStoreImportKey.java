@@ -3,10 +3,11 @@ package com.dotcms.cli.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -18,7 +19,7 @@ import java.util.Collection;
 public class KeyStoreImportKey  {
     
     private static InputStream fullStream ( String fname ) throws IOException {
-        FileInputStream fis = new FileInputStream(fname);
+        InputStream fis = Files.newInputStream(Paths.get(fname));
         DataInputStream dis = new DataInputStream(fis);
         byte[] bytes = new byte[dis.available()];
         dis.readFully(bytes);
@@ -56,7 +57,7 @@ public class KeyStoreImportKey  {
         try {
             KeyStore ks = KeyStore.getInstance("JKS", "SUN");            
             System.out.println("Using keystore-file : "+keystorename);
-            ks.load(new FileInputStream ( keystorename ),
+            ks.load(Files.newInputStream(Paths.get(keystorename)),
                     keypass.toCharArray());
 
             // loading Key

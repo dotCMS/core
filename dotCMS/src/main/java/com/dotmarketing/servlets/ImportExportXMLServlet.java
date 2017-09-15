@@ -1,36 +1,8 @@
 package com.dotmarketing.servlets;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.repackage.com.oreilly.servlet.MultipartRequest;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.metadata.ClassMetadata;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
@@ -41,15 +13,40 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.com.oreilly.servlet.MultipartRequest;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Description of the Class
@@ -191,7 +188,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			 */
 			if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
 
-				InputStream in = new BufferedInputStream(new FileInputStream(importFile));
+				InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
 				ZipInputStream zin = new ZipInputStream(in);
 				ZipEntry e;
 
@@ -250,7 +247,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				} else {
 
 				   _dh = new HibernateUtil(_importClass);
-				   _bin = new BufferedInputStream(new FileInputStream(f));
+				   _bin = new BufferedInputStream(Files.newInputStream(f.toPath()));
 				   List l = (List) _xstream.fromXML(_bin);
 				   out.println("Found :\t" + l.size() + " " + _className + "(s)");
 				   String id = _dh.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
@@ -275,7 +272,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 		} catch (DotHibernateException e) {
 		   // TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
 		} catch (ClassNotFoundException e1) {
@@ -405,7 +402,8 @@ public class ImportExportXMLServlet extends HttpServlet {
 		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] s = f.list();
 		for (int i = 0; i < s.length; i++) {
-			InputStream in = new BufferedInputStream(new FileInputStream(f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s[i]))));
+			final String realPath = FileUtil.getRealPath(backupTempFilePath + "/" + s[i]);
+			InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(realPath)));
 			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
 			zout.putNextEntry(e);
 			int len = 0;

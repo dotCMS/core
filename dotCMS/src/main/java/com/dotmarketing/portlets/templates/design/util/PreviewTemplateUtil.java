@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.templates.design.util;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.List;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
@@ -18,6 +10,14 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.List;
 
 /**
  * This class contains a list of utility's methods for the preview of the template.
@@ -85,7 +85,7 @@ public class PreviewTemplateUtil {
 		}
 		//set the real path for the body preview
 		result.setRealFileSystemPath(previewAsset.getPath().substring(previewAsset.getPath().indexOf("/_preview")));
-		FileInputStream fis = new FileInputStream(assetFile);
+		InputStream fis = Files.newInputStream(assetFile.toPath());
 		FileOutputStream fos = new FileOutputStream(previewAsset);
 		final byte[] buffer = new byte[ 1024 ];
         int n = 0;

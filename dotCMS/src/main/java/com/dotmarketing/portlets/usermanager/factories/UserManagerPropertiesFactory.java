@@ -1,15 +1,5 @@
 package com.dotmarketing.portlets.usermanager.factories;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.NonWritableChannelException;
-import java.util.Properties;
-import java.util.StringTokenizer;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -17,11 +7,7 @@ import com.dotcms.repackage.javax.portlet.PortletRequest;
 import com.dotcms.repackage.javax.portlet.PortletResponse;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -33,6 +19,19 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 public class UserManagerPropertiesFactory {
 
@@ -85,7 +84,7 @@ public class UserManagerPropertiesFactory {
 			}
 
 			if (copy) {
-				FileChannel srcChannel = new FileInputStream(from).getChannel();
+				FileChannel srcChannel = (FileChannel) Channels.newChannel(Files.newInputStream(from.toPath()));
 				// Create channel on the destination
 				FileChannel dstChannel = new FileOutputStream(to).getChannel();
 				// Copy file contents from source to destination
@@ -118,7 +117,7 @@ public class UserManagerPropertiesFactory {
 			// Loading properties file
 
 			String filePath = UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp";
-			BufferedInputStream is = new BufferedInputStream(new FileInputStream(filePath));
+			BufferedInputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(filePath)));
 
 			if (is != null) {
 				properties.load(is);
@@ -186,7 +185,7 @@ public class UserManagerPropertiesFactory {
 			File to = new java.io.File(filePath);
 			to.createNewFile();
 
-			FileChannel srcChannel = new FileInputStream(from).getChannel();
+			FileChannel srcChannel = (FileChannel) Channels.newChannel(Files.newInputStream(from.toPath()));;
 
 			// Create channel on the destination
 			FileChannel dstChannel = new FileOutputStream(to).getChannel();

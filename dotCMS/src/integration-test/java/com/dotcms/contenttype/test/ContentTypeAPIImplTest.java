@@ -1,25 +1,39 @@
 package com.dotcms.contenttype.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.OnePerContentType;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -117,7 +131,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		temp.renameTo(temp2);
 		ContentType fromDisk = null;
-		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(temp2))) {
+		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(temp2.toPath()))) {
 			fromDisk = (ContentType) ois.readObject();
 			ois.close();
 		}

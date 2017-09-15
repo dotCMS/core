@@ -1,17 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -44,6 +32,17 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -809,7 +808,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
-		FileInputStream fis = new FileInputStream(getBinary(velocityVarName));
+		InputStream fis = Files.newInputStream(getBinary(velocityVarName).toPath());
 		return fis;
 	}
 

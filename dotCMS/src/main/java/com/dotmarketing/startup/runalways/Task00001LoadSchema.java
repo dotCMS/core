@@ -1,16 +1,5 @@
 package com.dotmarketing.startup.runalways;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
-
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -20,6 +9,18 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 
 public class Task00001LoadSchema implements StartupTask {
 
@@ -51,7 +52,7 @@ public class Task00001LoadSchema implements StartupTask {
 			ClassLoader classLoader = Thread.currentThread()
 					.getContextClassLoader();
 			URL url = classLoader.getResource(schemaFile);
-			FileInputStream fstream = new FileInputStream(url.getPath());
+			InputStream fstream = Files.newInputStream(Paths.get(url.getPath()));
 			// Get the object of DataInputStream
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));

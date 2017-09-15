@@ -3,10 +3,11 @@ package com.dotcms.cli.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -15,7 +16,7 @@ import java.util.Collection;
 public class TrustStoreImportKey  {
     
     private static InputStream fullStream ( String fname ) throws IOException {
-        FileInputStream fis = new FileInputStream(fname);
+        InputStream fis = Files.newInputStream(Paths.get(fname));
         DataInputStream dis = new DataInputStream(fis);
         byte[] bytes = new byte[dis.available()];
         dis.readFully(bytes);
@@ -50,7 +51,7 @@ public class TrustStoreImportKey  {
         try {
             KeyStore ks = KeyStore.getInstance("JKS", "SUN");
             System.out.println("Using truststore-file : "+truststorename);
-            ks.load(new FileInputStream ( truststorename ),
+            ks.load(Files.newInputStream(Paths.get(truststorename)),
                     keypass.toCharArray());
 
             // loading CertificateChain

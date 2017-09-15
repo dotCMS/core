@@ -1,23 +1,25 @@
 package com.dotmarketing.util;
 
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
-import org.apache.batik.bridge.*;
-import org.apache.batik.gvt.GraphicsNode;
-import org.apache.batik.util.XMLResourceDescriptor;
-import org.w3c.dom.Document;
-
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Iterator;
-
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.bridge.BridgeContext;
+import org.apache.batik.bridge.DocumentLoader;
+import org.apache.batik.bridge.GVTBuilder;
+import org.apache.batik.bridge.UserAgent;
+import org.apache.batik.bridge.UserAgentAdapter;
+import org.apache.batik.gvt.GraphicsNode;
+import org.apache.batik.util.XMLResourceDescriptor;
+import org.w3c.dom.Document;
 
 public final class ImageUtil {
 
@@ -65,7 +67,7 @@ public final class ImageUtil {
 			SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
 					XMLResourceDescriptor.getXMLParserClassName());
 
-			InputStream is = new FileInputStream(imgFile);
+			InputStream is = Files.newInputStream(imgFile.toPath());
 
 			Document document = factory.createDocument(
 					imgFile.toURI().toURL().toString(), is);

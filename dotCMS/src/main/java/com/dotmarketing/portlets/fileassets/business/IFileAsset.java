@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.fileassets.business;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map;
@@ -83,7 +84,7 @@ public interface IFileAsset extends Permissionable {
 
 	public String getVersionType();
 
-	public InputStream getFileInputStream() throws FileNotFoundException;
+	public InputStream getInputStream() throws IOException;
 
 	public File getFileAsset();
 

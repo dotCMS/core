@@ -22,15 +22,6 @@
 
 package com.dotmarketing.cms.factories;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.ServletContext;
-
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -39,6 +30,13 @@ import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.ejb.ImageManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.FileUtil;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.ServletContext;
 
 /**
  * <a href="AddressUtil.java.html"><b><i>View Source</i></b></a>
@@ -120,7 +118,7 @@ public class PublicCompanyFactory extends CompanyUtil {
 			/* Set the DM logo */
 			File f = new File(FileUtil.getRealPath("/html/images/shim.gif"));
 
-			BufferedInputStream in = new BufferedInputStream(new FileInputStream(f));
+			BufferedInputStream in = new BufferedInputStream(Files.newInputStream(f.toPath()));
 
 			ByteArrayOutputStream baout = new ByteArrayOutputStream();
 

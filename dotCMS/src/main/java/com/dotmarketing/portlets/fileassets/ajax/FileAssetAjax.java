@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.fileassets.ajax;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +15,13 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 public class FileAssetAjax {
 
@@ -45,7 +44,7 @@ public class FileAssetAjax {
 		Map<String, Object> map = fa.getMap();
 
 		java.io.File fileIO = fa.getFileAsset();
-		FileInputStream fios = new FileInputStream(fileIO);
+		InputStream fios = Files.newInputStream(fileIO.toPath());
 		byte[] data = new byte[fios.available()];
 		fios.read(data);
 		String text = new String(data);

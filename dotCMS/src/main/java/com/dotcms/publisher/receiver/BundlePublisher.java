@@ -1,27 +1,13 @@
 package com.dotcms.publisher.receiver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-
-import org.apache.tools.tar.TarBuffer;
-
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryFullHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
@@ -31,7 +17,6 @@ import com.dotcms.enterprise.publishing.remote.handler.LinkHandler;
 import com.dotcms.enterprise.publishing.remote.handler.OSGIHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
-import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
 import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
@@ -63,6 +48,19 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import org.apache.tools.tar.TarBuffer;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -167,9 +165,9 @@ public class BundlePublisher extends Publisher {
         // Extract file to a directory
         InputStream bundleIS;
         try {
-            bundleIS = new FileInputStream(bundlePath + bundleName);
+            bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
             untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
         }
 

@@ -12,15 +12,14 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
@@ -58,7 +57,7 @@ public class TikaUtils {
 
             if (forceMemory) {
                 // no worry about the limit and less time to process.
-                String content = t.parseToString(new FileInputStream(binFile), met);
+                String content = t.parseToString(Files.newInputStream(binFile.toPath()), met);
                 metaMap = new HashMap<String, String>();
                 for (int i = 0; i < met.names().length; i++) {
                     String name = met.names()[i];

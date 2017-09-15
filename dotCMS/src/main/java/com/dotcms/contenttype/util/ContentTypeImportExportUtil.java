@@ -1,17 +1,5 @@
 package com.dotcms.contenttype.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -30,6 +18,17 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ContentTypeImportExportUtil {
 
@@ -106,7 +105,7 @@ public class ContentTypeImportExportUtil {
 
     private void streamingJsonImport(File file) throws DotDataException, IOException {
     	ContentTypeWrapper contentTypeWrapper = null;
-        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+        try (InputStream in = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
 
 
             JsonFactory jsonFactory = new JsonFactory();

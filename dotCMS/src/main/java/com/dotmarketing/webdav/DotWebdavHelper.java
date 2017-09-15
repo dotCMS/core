@@ -3,27 +3,6 @@ package com.dotmarketing.webdav;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
@@ -75,6 +54,25 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 public class DotWebdavHelper {
 
@@ -574,7 +572,7 @@ public class DotWebdavHelper {
 		if(fromFile == null){
 			throw new IOException("The temp source file must exist");
 		}
-		InputStream in = new FileInputStream(fromFile);
+		InputStream in = Files.newInputStream(fromFile.toPath());
 		setResourceContent(destPath, in, null, null, new Date(fromFile.lastModified()),user, autoPublish);
 	}
 
@@ -1429,14 +1427,14 @@ public class DotWebdavHelper {
 								IFileAsset fa = (IFileAsset)file;
 								String fileUri = "";
 								File workingFile = null;
-								FileInputStream is = null;
+								InputStream is = null;
 								Date idate = null;
 
 								Identifier identifier  = APILocator.getIdentifierAPI().find(file);
 								if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 									fileUri = identifier.getPath();
 									workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-									is = new FileInputStream(workingFile);
+									is = Files.newInputStream(workingFile.toPath());
 									idate = file.getModDate();
 								}
 
@@ -1492,7 +1490,7 @@ public class DotWebdavHelper {
                 Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 			    workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
 			}
-			FileInputStream is = new FileInputStream(workingFile);
+			InputStream is = Files.newInputStream(workingFile.toPath());
 			returnValue = is;
 		}
 		return returnValue;

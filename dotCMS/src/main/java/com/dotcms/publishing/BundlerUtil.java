@@ -1,25 +1,24 @@
 package com.dotcms.publishing;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.Calendar;
-import java.util.Date;
-
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.util.Calendar;
+import java.util.Date;
 
 public class BundlerUtil {
 
@@ -193,10 +192,10 @@ public class BundlerUtil {
 
     	BufferedInputStream input = null;
 		try {
-			input = new BufferedInputStream(new FileInputStream(f));
+			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
 			Object ret = xstream.fromXML(input);
 			return ret;
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			Logger.error(BundlerUtil.class,e.getMessage(),e);
 			return null;
 		}finally{
@@ -223,7 +222,7 @@ public class BundlerUtil {
 
     	BufferedInputStream input = null;
 		try {
-			input = new BufferedInputStream(new FileInputStream(f));
+			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
 			T ret = mapper.readValue(input, clazz);
 			return ret;
 		} catch (IOException e) {

@@ -1,4 +1,6 @@
 <%@page import="java.io.*,java.util.zip.*" %>
+<%@ page import="java.nio.file.Files" %>
+<%@ page import="java.nio.file.Paths" %>
 <%
 /**
  * tiny_mce_gzip.jsp
@@ -24,7 +26,7 @@
 	ByteArrayOutputStream bos;
 	GZIPOutputStream gzipStream;
 	FileOutputStream fout;
-	FileInputStream fin;
+	InputStream fin;
 	byte buff[];
 
 	// Get input
@@ -86,7 +88,7 @@
 		if (compress)
 			response.addHeader("Content-Encoding", enc);
 
-		fin = new FileInputStream(cacheFile);
+		fin = Files.newInputStream(Paths.get(cacheFile));
 		buff = new byte[1024];
 
 		while ((bytes = fin.read(buff, 0, buff.length)) != -1)
@@ -184,7 +186,7 @@
 			if (!new File(path).exists())
 				return "";
 
-			FileInputStream fis = new FileInputStream(path);
+			InputStream fis = Files.newInputStream(Paths.get(path));
 			int x = fis.available();
 			byte b[] = new byte[x];
 

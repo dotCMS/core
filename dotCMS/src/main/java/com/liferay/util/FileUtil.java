@@ -28,22 +28,22 @@ import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -55,7 +55,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
 import javax.servlet.ServletContext;
 
 /**
@@ -210,14 +209,14 @@ public class FileUtil {
 
         if (!hardLinks) {
 
-            FileInputStream ios = new FileInputStream(source);
+            InputStream is = Files.newInputStream(source.toPath());
             FileOutputStream fos = new FileOutputStream(destination);
-            FileChannel srcChannel = ios.getChannel();
+            FileChannel srcChannel = (FileChannel) Channels.newChannel(is);
             FileChannel dstChannel = fos.getChannel();
             dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
             srcChannel.close();
             dstChannel.close();
-            ios.close();
+            is.close();
             fos.close();
 
 
@@ -283,7 +282,7 @@ public class FileUtil {
 		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		FileInputStream in = new FileInputStream(file);
+		InputStream in = Files.newInputStream(file.toPath());
 
 		byte buffer[] = new byte[2048];
 
@@ -513,9 +512,9 @@ public class FileUtil {
 		try {
 			//Confirms that destination exists. 
 			if(destination.exists()) {
-				//Creates FileInputStream for both files.  
-				FileInputStream inputSource = new FileInputStream(source);
-				FileInputStream inputDestination = new FileInputStream(destination);
+				//Creates InputStream for both files.
+				InputStream inputSource = Files.newInputStream(source.toPath());
+				InputStream inputDestination = Files.newInputStream(destination.toPath());
 				
 				//Both files checked. 
 				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
@@ -620,11 +619,11 @@ public class FileUtil {
 		}
 	}
 
-	public static Properties toProperties(FileInputStream fis) {
+	public static Properties toProperties(InputStream is) {
 		Properties props = new Properties();
 
 		try {
-			props.load(fis);
+			props.load(is);
 		}
 		catch (IOException ioe) {
 		}
@@ -634,7 +633,7 @@ public class FileUtil {
 
 	public static Properties toProperties(String fileName) {
 		try {
-			return toProperties(new FileInputStream(fileName));
+			return toProperties(Files.newInputStream(Paths.get(fileName)));
 		}
 		catch (IOException ioe) {
 			return new Properties();

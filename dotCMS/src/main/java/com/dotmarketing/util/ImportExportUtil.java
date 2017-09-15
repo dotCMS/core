@@ -1,30 +1,5 @@
 package com.dotmarketing.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
-
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -58,6 +33,31 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -356,7 +356,7 @@ public class ImportExportUtil {
             _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
+                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -453,7 +453,7 @@ public class ImportExportUtil {
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
-                List<Identifier> idents=(List<Identifier>)xstream.fromXML(new FileInputStream(ff));
+                List<Identifier> idents=(List<Identifier>)xstream.fromXML(Files.newInputStream(ff.toPath()));
                 for(Identifier ident : idents) {
                     if(ident.getAssetType().equals("folder"))
                         folderIdents.add(ident);
@@ -1118,8 +1118,8 @@ public class ImportExportUtil {
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
-            }catch (UnsupportedEncodingException uet) {
+                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
+            }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
             List l = new ArrayList();
@@ -1446,8 +1446,6 @@ public class ImportExportUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
-        } catch (FileNotFoundException e) {
-            Logger.error(this,e.getMessage(),e);
         } catch (IllegalAccessException e) {
             Logger.error(this,e.getMessage(),e);
         } catch (InvocationTargetException e) {
@@ -1552,7 +1550,7 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = new FileInputStream(zipFile).getChannel();
+            FileChannel ic = (FileChannel) Channels.newChannel(Files.newInputStream(zipFile.toPath()));
             FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
             // to handle huge zipfiles

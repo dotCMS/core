@@ -280,7 +280,7 @@ public class ContentResourceTest {
         FileAsset file=APILocator.getFileAssetAPI().fromContentlet(cont);
         Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
         Assert.assertEquals("demo.dotcms.com", hostAPI.find(file.getHost(), user, false).getHostname());
-        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getInputStream()));
     }
 
     /**

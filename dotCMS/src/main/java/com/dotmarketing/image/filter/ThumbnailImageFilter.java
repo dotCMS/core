@@ -1,28 +1,21 @@
 package com.dotmarketing.image.filter;
 
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.MediaTracker;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Map;
-
-import javax.imageio.ImageIO;
-
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImageResizeUtils;
 import com.dotmarketing.util.Logger;
 import com.twelvemonkeys.image.ResampleOp;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Map;
+import javax.imageio.ImageIO;
 
 public class ThumbnailImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters() {

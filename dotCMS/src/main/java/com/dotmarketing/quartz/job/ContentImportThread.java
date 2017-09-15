@@ -25,17 +25,30 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 /**
  * This class implement the import contentlet thread to be use by the quartz job schedule task
@@ -273,8 +286,8 @@ public class ContentImportThread implements Job{
 			if (!dest.exists())
 				dest.createNewFile();
 
-			FileInputStream is = new FileInputStream(orig);
-			FileChannel channelFrom = is.getChannel();
+			InputStream is = Files.newInputStream(orig.toPath());
+			FileChannel channelFrom = (FileChannel) Channels.newChannel(is);
 			FileChannel channelTo = new FileOutputStream(dest).getChannel();
 			channelFrom.transferTo(0, channelFrom.size(), channelTo);
 			channelTo.force(false);
@@ -299,7 +312,7 @@ public class ContentImportThread implements Job{
 	 */
 	private byte[] getBytesFromFile(File file) throws IOException {
 		byte[] currentData = new byte[0];
-		FileInputStream is = new FileInputStream(file);
+		InputStream is = Files.newInputStream(file.toPath());
 		int size = is.available();
 		currentData = new byte[size];
 		is.read(currentData);

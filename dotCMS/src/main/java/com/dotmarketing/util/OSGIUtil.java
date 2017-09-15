@@ -1,12 +1,25 @@
 package com.dotmarketing.util;
 
-import com.google.common.collect.ImmutableList;
-
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-
+import com.google.common.collect.ImmutableList;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Properties;
+import javax.servlet.ServletContextEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
@@ -17,21 +30,6 @@ import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Properties;
-
-import javax.servlet.ServletContextEvent;
 
 /**
  * Created by Jonathan Gamba
@@ -350,11 +348,11 @@ public class OSGIUtil {
         }
 
         //Reading the file with the extra packages
-        FileInputStream inputStream;
+        InputStream inputStream;
         if (f.exists()) {
-            inputStream = new FileInputStream(FELIX_EXTRA_PACKAGES_FILE);
+            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE));
         } else {
-            inputStream = new FileInputStream(FELIX_EXTRA_PACKAGES_FILE_GENERATED);
+            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED));
         }
 
         try {
