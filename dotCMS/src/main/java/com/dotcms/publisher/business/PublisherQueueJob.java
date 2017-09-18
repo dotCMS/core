@@ -369,7 +369,7 @@ public class PublisherQueueJob implements StatefulJob {
             boolean isGroupOk = false;
             boolean isGroupPublishing = false;
             boolean isGroupFailed = false;
-            for (EndpointDetail detail : group.values() ) {
+            for (final EndpointDetail detail : group.values() ) {
                 if ( detail.getStatus() == Status.SUCCESS.getCode() ) {
                     isGroupOk = true;
                 } else if ( detail.getStatus() == Status.PUBLISHING_BUNDLE
@@ -394,16 +394,17 @@ public class PublisherQueueJob implements StatefulJob {
         return groupPushStats;
 	}
 
-	private void updateLocalEndpointDetailFromRemote(PublishAuditHistory localHistory, String groupID,
-													 String endpointID, PublishAuditHistory remoteHistory) {
-		for (Map<String, EndpointDetail> remoteGroup : remoteHistory.getEndpointsMap().values()) {
-            for (EndpointDetail remoteDetail : remoteGroup.values()) {
+	private void updateLocalEndpointDetailFromRemote(final PublishAuditHistory localHistory, final String groupID,
+													 final String endpointID, final PublishAuditHistory remoteHistory) {
+		for (final Map<String, EndpointDetail> remoteGroup : remoteHistory.getEndpointsMap().values()) {
+            for (final EndpointDetail remoteDetail : remoteGroup.values()) {
                 localHistory.addOrUpdateEndpoint(groupID, endpointID, remoteDetail);
             }
         }
 	}
 
-	private void updateLocalPublishDatesFromRemote(PublishAuditHistory localHistory, PublishAuditHistory remoteHistory) {
+	private void updateLocalPublishDatesFromRemote(final PublishAuditHistory localHistory,
+												   final PublishAuditHistory remoteHistory) {
 		Date publishStart;
 		Date publishEnd;
 		publishStart = remoteHistory.getPublishStart();
@@ -417,7 +418,7 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	private PublishAuditHistory getRemoteHistoryFromEndpoint(PublishAuditStatus bundleAudit, PublishingEndPoint targetEndpoint) {
-		WebTarget webTarget = RestClientBuilder.getClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
+		final WebTarget webTarget = RestClientBuilder.getClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
 		return PublishAuditHistory.getObjectFromString(
                 webTarget
                         .path("get")
