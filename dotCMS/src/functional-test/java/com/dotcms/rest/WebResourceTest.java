@@ -34,7 +34,7 @@ public class WebResourceTest {
 
     @Before
     public void init() {
-        client = RestClientBuilder.newClient();
+        client = RestClientBuilder.getClient();
         request = ServletTestRunner.localRequest.get();
         serverName = request.getServerName();
         serverPort = request.getServerPort();
