@@ -37,6 +37,16 @@ export class ContentTypesInfoService {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFormContentType',
             icon: 'fa-list',
             label: 'form'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType',
+            icon: 'fa-map-signs',
+            label: 'vanity_url'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableKeyValueContentType',
+            icon: 'fa-globe',
+            label: 'key_value'
         }
     ];
 

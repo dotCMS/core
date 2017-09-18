@@ -1,5 +1,6 @@
 @import "mixins";
 @import "variables";
+@import "theme-variables";
 
 .toolbar-add-contentlet__head {
     align-items: center;
@@ -20,3 +21,77 @@
     background-color: $gray-lightest;
 }
 
+
+.toolbar-add-contentlet__flat-button{
+    &.action-button{
+        background: none;
+        border: none;
+        box-shadow: none;
+        border-radius: 50%;
+        height: $field-height;
+    
+        &:hover {
+            border: none;
+            box-shadow: none;
+            background: rgba($black, 0.1);
+        }
+    
+        .ui-splitbutton {
+            .ui-button {
+                background-color: transparent;
+                width: auto;
+                height: auto;
+                box-shadow: none;
+    
+                span {
+                    color: $black;
+                }
+    
+                .ui-button-icon-left:before {
+                    content: "\F0D7";
+                    color: $black;
+                    font-size: 18px;
+                }
+
+                &:not([disabled]) {
+                    &:hover,
+                    &:active,
+                    &:focus {
+                        box-shadow: none;
+                    }
+                    &:hover, &:active, &:focus {
+                        background: none;
+                    }
+                }
+            }
+    
+            .ui-button.ui-corner-right {
+                display: none;
+            }
+
+            .ui-menu.ui-menu-dynamic{
+                margin-left: -125px;
+                margin-top: 35px;
+            }
+        }
+    
+        &.multiple-options {
+            .ui-corner-left {
+                display: none;
+            }
+    
+            .ui-splitbutton {
+                .ui-button.ui-corner-right {
+                    display: block;
+                    margin-top: 2px;
+                }
+            }
+        }
+    }
+}
+
+.toolbar-add-contentlet__show-more-label{
+    display: block;
+    text-align: center;
+    margin-top: 1px;
+}

@@ -17,4 +17,6 @@ import { MenuItem } from 'primeng/primeng';
 export class ActionButtonComponent {
     @Input() model?: MenuItem[];
     @Input() command?: ($event) => void;
+    @Input() label: string;
+    @Input() flat: boolean;
 }

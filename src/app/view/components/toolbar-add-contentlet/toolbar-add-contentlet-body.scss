@@ -4,7 +4,7 @@
 toolbar-add-contentlet-body {
     display: flex;
     flex-direction: column;
-    padding: $basic-padding * 2 0 0;
+    padding: $basic-padding * 2 0 $basic-padding * 2;
 }
 
 .toolbar-add-contentlet-body {
@@ -38,6 +38,7 @@ toolbar-add-contentlet-body {
     padding: $basic-padding;
     text-align: center;
     text-decoration: none;
+    margin-bottom: -$basic-padding * 2;
 }
 
 .toolbar-add-contentlet-body__section {

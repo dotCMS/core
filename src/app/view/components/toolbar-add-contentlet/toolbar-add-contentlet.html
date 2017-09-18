@@ -6,10 +6,11 @@
     (open)="iframeOverlayService.show()"
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-add-contentlet__head">
-        <span class="toolbar-add-contentlet__head-button" *ngFor="let structureTypeView of types">
+        <span class="toolbar-add-contentlet__head-button" *ngFor="let structureTypeView of mainTypes">
             <button pButton iconButton flat (click)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [class.toolbar-add-contentlet__head-selected]="selectedName === structureTypeView.name"></button>
             <label>{{structureTypeView.label}}</label>
         </span>
+        <action-button label="{{i18nMessages['more']}}" [model]="moreTypes" [flat]="true"></action-button>
     </div>
 
     <toolbar-add-contentlet-body
