@@ -1,5 +1,5 @@
-@import "../../../../styles/mixins";
-@import "../../../../styles/variables";
+@import "mixins";
+@import "variables";
 
 .layout__toolbar {
     z-index: 1004; // Menu and dropdown options in primeng use 1003.

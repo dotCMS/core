@@ -1,0 +1,31 @@
+@import 'variables';
+@import 'mixins';
+
+:host ::ng-deep .ui-selectbutton {
+    box-shadow: none;
+    border-bottom: 0;
+
+    .ui-button {
+        &:first-child {
+            border-bottom-left-radius: 0;
+        }
+
+        &:last-child {
+            border-bottom-right-radius: 0;
+        }
+    }
+}
+
+.textarea-content__code-field,
+.textarea-content__plain-field {
+    border: solid 1px $gray-light;
+}
+
+.textarea-content__plain-field {
+    display: block;
+    height: 300px;
+    outline: none;
+    padding: $basic-padding;
+    resize: none;
+    width: 100%;
+}

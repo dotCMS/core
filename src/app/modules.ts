@@ -26,6 +26,7 @@ import {
     ToolbarModule,
     TreeTableModule
 } from 'primeng/primeng';
+import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
 export const CUSTOM_MODULES = [
     ActionButtonModule,
@@ -33,7 +34,8 @@ export const CUSTOM_MODULES = [
     IFrameModule,
     ListingDataTableModule,
     SearchableDropDownModule,
-    SiteSelectorModule
+    SiteSelectorModule,
+    DotTextareaContentModule
 ];
 
 export const NGFACES_MODULES = [

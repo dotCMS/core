@@ -7,6 +7,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { MessageService } from '../../../../../../api/services/messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { DotTextareaContentModule } from '../../../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
 @Component({
     selector: 'field-validation-message',
@@ -33,6 +34,7 @@ describe('ValuesPropertyComponent', () => {
                 ValuesPropertyComponent
             ],
             imports: [
+                DotTextareaContentModule
             ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
@@ -63,7 +65,6 @@ describe('ValuesPropertyComponent', () => {
         expect(group).toEqual(divForm.componentInstance.group);
     });
 
-
     it('should have a field-message', () => {
         fixture.detectChanges();
 
@@ -72,5 +73,16 @@ describe('ValuesPropertyComponent', () => {
 
         expect(fieldValidationmessage).not.toBeNull();
         expect(comp.group.controls['values']).toBe(fieldValidationmessage.componentInstance.field);
+    });
+
+    it('should have value field', () => {
+        const valueField = de.query(By.css('dot-textarea-content'));
+        expect(valueField).toBeTruthy();
+    });
+
+    it('should have value component with the right options', () => {
+        fixture.detectChanges();
+        expect(comp.value.show).toEqual(['code']);
+        expect(comp.value.height).toBe('90px');
     });
 });

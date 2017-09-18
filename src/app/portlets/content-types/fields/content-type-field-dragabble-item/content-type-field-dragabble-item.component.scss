@@ -1,5 +1,5 @@
-@import "../../../../../styles/mixins";
-@import "../../../../../styles/variables";
+@import "mixins";
+@import "variables";
 
 :host {
     border-left: solid 3px $gray-lighter;

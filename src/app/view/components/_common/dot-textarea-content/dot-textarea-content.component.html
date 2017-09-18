@@ -1,0 +1,34 @@
+<p-selectButton 
+    *ngIf="selectOptions.length > 1"
+    class="textarea-content__select-field" 
+    [options]="selectOptions"
+    [(ngModel)]="selected">
+</p-selectButton>
+<textarea
+    *ngIf="selected === 'plain'"
+    class="textarea-content__plain-field"
+    (ngModelChange)="onModelChange($event)"
+    [ngModel]="value"
+    [ngStyle]="styles">
+</textarea>
+<ace-editor
+    #ace
+    *ngIf="selected === 'code'"
+    class="textarea-content__code-field"
+    theme="textmate"
+    [mode]="code.mode"
+    [readOnly]="false"
+    [options]="code.options"
+    [durationBeforeCallback]="500"
+    [autoUpdateContent]="true"
+    (textChanged)="onModelChange($event)"
+    [text]="value"
+    [ngStyle]="styles">
+</ace-editor>
+<app-tinymce
+    #wysiwyg
+    *ngIf="selected === 'wysiwyg'"
+    class="textarea-content__wysiwyg-field"
+    (ngModelChange)="onModelChange($event)"
+    [ngModel]="value">
+</app-tinymce>

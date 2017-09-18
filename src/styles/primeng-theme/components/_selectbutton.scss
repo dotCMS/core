@@ -1,0 +1,45 @@
+@import "variables";
+@import "mixins";
+@import "primeng-theme/components/button";
+
+.ui-selectbutton {
+    @extend #buttons;
+
+    @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
+
+    &:hover {
+        @include button-base($selectbutton-hover-bgcolor, $selectbutton-hover-border, $selectbutton-hover-shadow);
+    }
+
+    .ui-button {
+        box-shadow: none;
+        line-height: $button-height;
+        transition: background-color $field-animation-speed ease-in; 
+
+        &:hover {
+            background-color: $selectbutton-button-hover-bgcolor;
+        }
+
+        &:first-child {
+            border-top-left-radius: $border-radius;
+            border-bottom-left-radius: $border-radius;
+        }
+
+        &:last-child {
+            border-top-right-radius: $border-radius;
+            border-bottom-right-radius: $border-radius;
+        }
+
+        &.ui-state-active {
+            background: $selectbutton-button-active-bgcolor;
+
+            .ui-button-text {
+                color: $selectbutton-button-active-color;
+            }
+        }
+
+        .ui-button-text {
+            display: inline;
+        }
+    }
+}

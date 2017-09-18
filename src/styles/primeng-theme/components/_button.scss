@@ -4,6 +4,10 @@
     outline: none;
     transition: background-color $field-animation-speed ease-in,
         box-shadow $field-animation-speed ease-in, color $field-animation-speed ease-in;
+}
+
+.ui-button {
+    @extend #buttons;
 
     @each $button, $states in $buttons-map {
         @if ($button == "basic") {
@@ -18,10 +22,6 @@
             }
         }
     }
-}
-
-.ui-button {
-    @extend #buttons;
 
     &[disabled] {
         cursor: inherit;

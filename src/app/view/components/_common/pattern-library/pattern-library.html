@@ -71,7 +71,10 @@
 
                 <h3 class="section__title">Site Selector</h3>
                 <site-selector-component formControlName="currentSite"></site-selector-component>
-            </form> 
+            </form>
+            <h3 class="section__title">Plain, code and WYSIWYG</h3>
+            <dot-textarea-content value="Hello world from param" [(ngModel)]="dotTextAreaContentValue"></dot-textarea-content>
+            external: {{dotTextAreaContentValue}}
         </div>
 
         <div class="ui-g-5 section-fields">

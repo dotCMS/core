@@ -169,7 +169,22 @@ $buttons-map: (
     )
 );
 
+// SELECT BUTTON
+
+$selectbutton-normal-bgcolor: $white;
+$selectbutton-normal-border: $button-border;
+$selectbutton-normal-shadow: $md-shadow-1;
+
+$selectbutton-hover-bgcolor: $white;
+$selectbutton-hover-border: $button-border;
+$selectbutton-hover-shadow: $md-shadow-2;
+
+$selectbutton-button-hover-bgcolor: $gray-lighter;
+$selectbutton-button-active-bgcolor: $brand-primary;
+$selectbutton-button-active-color: $white;
+
 // ACTION BUTTON
+// TODO: need to move this out here, it's not primeng
 $action-button-active-bgcolor: darken($blue, 20%);
 $action-button-focus-bgcolor: darken($blue, 10%);
 $action-button-hover-bgcolor: darken($blue, 10%);

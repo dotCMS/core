@@ -18,10 +18,14 @@
 
 // BUTTONS & SPLIT BUTTONS
 
+@mixin button-base($background, $border, $shadow) {
+    background: $background;
+    border: $border;
+    box-shadow: $shadow;
+}
+
 @mixin button-state($props) {
-    background: map-get($props, background);
-    border: map-get($props, border);
-    box-shadow: map-get($props, shadow);
+    @include button-base(map-get($props, background), map-get($props, border), map-get($props, shadow));
 
     .ui-button-text,
     .ui-c {

@@ -444,7 +444,7 @@ input, select, textarea, button {
 
 /* ButtonSet */
 
-.ui-togglebutton.ui-button.ui-state-default, .ui-selectbutton .ui-button.ui-state-default {
+.ui-togglebutton.ui-button.ui-state-default {
     border: 1px solid #d6d6d6;
     background: #ffffff;
     font-weight: normal;
@@ -460,16 +460,7 @@ input, select, textarea, button {
     }
 }
 
-.ui-selectbutton .ui-button {
-    &.ui-state-hover, &.ui-state-focus {
-        border: 1px solid #c0c0c0;
-        background: #eeeeee;
-        font-weight: normal;
-        color: #212121;
-    }
-}
-
-.ui-togglebutton.ui-button.ui-state-active, .ui-selectbutton .ui-button.ui-state-active {
+.ui-togglebutton.ui-button.ui-state-active {
     border: 1px solid #156090;
     background: #186ba0;
     color: #FFFFFF;
