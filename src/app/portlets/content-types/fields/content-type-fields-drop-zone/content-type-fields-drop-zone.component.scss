@@ -10,10 +10,11 @@
 }
 
 .content-type-fields-drop-zone__container {
+    flex-grow: 1;
+    padding-bottom: $basic-padding * 2;
 
     &.empty {
         border: 1px $gray-light dashed;
-        flex-grow: 1;
         position: relative
     }
 }
