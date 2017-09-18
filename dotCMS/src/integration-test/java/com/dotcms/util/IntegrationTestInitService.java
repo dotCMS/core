@@ -42,6 +42,9 @@ public class IntegrationTestInitService {
     		FactoryLocator.init();
     		APILocator.init();
 
+    		//For these tests fire the reindex immediately
+            Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
+
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
 
