@@ -237,10 +237,10 @@ public class PublisherQueueJob implements StatefulJob {
 				//There is no need to keep checking after MAX_NUM_TRIES.
 				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
 
-					Map<String, Map<String, EndpointDetail>> endpointTrackingMap =
+					final Map<String, Map<String, EndpointDetail>> endpointTrackingMap =
 							collectEndpointInfoFromRemote(bundleAudit);
 
-					GroupPushStats groupPushStats = getGroupStats(endpointTrackingMap);
+					final GroupPushStats groupPushStats = getGroupStats(endpointTrackingMap);
 
 					updateBundleStatus(bundleAudit, endpointTrackingMap, groupPushStats);
 				} else {
@@ -254,7 +254,7 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
-	private Map<String, Map<String, EndpointDetail>> collectEndpointInfoFromRemote(PublishAuditStatus bundleAudit)
+	private Map<String, Map<String, EndpointDetail>> collectEndpointInfoFromRemote(final PublishAuditStatus bundleAudit)
 			throws DotDataException, DotPublisherException {
 		Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<>();
 		PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
@@ -274,7 +274,7 @@ public class PublisherQueueJob implements StatefulJob {
                         try {
                             // Try to get the status of the remote end-points to
                             // update the local history
-                            PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(bundleAudit, targetEndpoint);
+                            final PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(bundleAudit, targetEndpoint);
 
                             if (remoteHistory != null) {
                                 updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
@@ -309,14 +309,14 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	@NotNull
-	private void updateBundleStatus(PublishAuditStatus bundleAudit,
-									Map<String, Map<String, EndpointDetail>> endpointTrackingMap,
-									GroupPushStats groupPushStats) throws DotDataException, DotPublisherException {
+	private void updateBundleStatus(final PublishAuditStatus bundleAudit,
+									final Map<String, Map<String, EndpointDetail>> endpointTrackingMap,
+									final GroupPushStats groupPushStats) throws DotDataException, DotPublisherException {
 		Status bundleStatus;
 		PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 
-		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.countGroupFailed() > 0
-                || groupPushStats.countGroupPublishing() > 0) ) {
+		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.getCountGroupFailed() > 0
+                || groupPushStats.getCountGroupPublishing() > 0) ) {
             // If bundle cannot be installed after [MAX_NUM_TRIES] tries
             // and some groups could not be published
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleAudit.getBundleId());
@@ -327,21 +327,22 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        } else if (groupPushStats.countGroupFailed() > 0 && (groupPushStats.countGroupOk() + groupPushStats.countGroupFailed()) == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupFailed() > 0
+				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
             // If bundle was installed in some groups only
             bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else if (groupPushStats.countGroupFailed() > 0 && groupPushStats.countGroupFailed() == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else if (groupPushStats.countGroupOk() > 0 && groupPushStats.countGroupOk() == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
             // If bundle was installed in all groups
             PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus = Status.SUCCESS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        } else if ( groupPushStats.countGroupPublishing() == endpointTrackingMap.size() ) {
+        } else if ( groupPushStats.getCountGroupPublishing() == endpointTrackingMap.size() ) {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
@@ -361,10 +362,10 @@ public class PublisherQueueJob implements StatefulJob {
 		Logger.info(this, "===========================================================");
 	}
 
-	private GroupPushStats getGroupStats(Map<String, Map<String, EndpointDetail>> endpointTrackingMap) {
-		GroupPushStats groupPushStats = new GroupPushStats();
+	private GroupPushStats getGroupStats(final Map<String, Map<String, EndpointDetail>> endpointTrackingMap) {
+		final GroupPushStats groupPushStats = new GroupPushStats();
 
-		for (Map<String, EndpointDetail> group : endpointTrackingMap.values()) {
+		for (final Map<String, EndpointDetail> group : endpointTrackingMap.values()) {
             boolean isGroupOk = false;
             boolean isGroupPublishing = false;
             boolean isGroupFailed = false;
@@ -393,7 +394,8 @@ public class PublisherQueueJob implements StatefulJob {
         return groupPushStats;
 	}
 
-	private void updateLocalEndpointDetailFromRemote(PublishAuditHistory localHistory, String groupID, String endpointID, PublishAuditHistory remoteHistory) {
+	private void updateLocalEndpointDetailFromRemote(PublishAuditHistory localHistory, String groupID,
+													 String endpointID, PublishAuditHistory remoteHistory) {
 		for (Map<String, EndpointDetail> remoteGroup : remoteHistory.getEndpointsMap().values()) {
             for (EndpointDetail remoteDetail : remoteGroup.values()) {
                 localHistory.addOrUpdateEndpoint(groupID, endpointID, remoteDetail);
@@ -495,9 +497,9 @@ public class PublisherQueueJob implements StatefulJob {
     }
 
     private class GroupPushStats {
-		private int countGroupOk;
-		private int countGroupPublishing;
-		private int countGroupFailed;
+		private int countGroupOk = 0;
+		private int countGroupPublishing = 0;
+		private int countGroupFailed = 0;
 
 		public void increaseCountGroupOk() {
 			countGroupOk++;
@@ -511,15 +513,15 @@ public class PublisherQueueJob implements StatefulJob {
 			countGroupFailed++;
 		}
 
-		public int countGroupOk() {
+		public int getCountGroupOk() {
 			return countGroupOk;
 		}
 
-		public int countGroupPublishing() {
+		public int getCountGroupPublishing() {
 			return countGroupPublishing;
 		}
 
-		public int countGroupFailed() {
+		public int getCountGroupFailed() {
 			return countGroupFailed;
 		}
 	}
