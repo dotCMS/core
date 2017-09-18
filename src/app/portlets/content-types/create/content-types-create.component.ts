@@ -27,7 +27,7 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
     @ViewChild('form') form: ContentTypesFormComponent;
     private contentTypeName: Observable<string>;
     private contentTypeIcon: string;
-    private contentTypeId: string;
+    contentTypeId: string;
     private fields: Field[] = [];
 
     constructor(

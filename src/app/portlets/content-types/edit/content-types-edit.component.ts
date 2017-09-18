@@ -1,5 +1,5 @@
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, OnChanges } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 import { ConfirmationService } from 'primeng/primeng';
@@ -27,7 +27,7 @@ import { MessageService } from '../../../api/services/messages-service';
 })
 export class ContentTypesEditComponent extends BaseComponent implements OnInit {
     @ViewChild('form') form: ContentTypesFormComponent;
-    contentTypeItem: Observable<any>;
+    contentTypeItem: Observable<ContentType>;
     contentTypeName: Observable<string>;
     contentTypeType: string;
     contentTypeIcon: string;
@@ -59,7 +59,7 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
         this.route.url.subscribe(res => {
             this.contentTypeItem = this.crudService
                 .getDataById('v1/contenttype', res[1].path)
-                .map(contentType => {
+                .do(contentType => {
                     const type = this.contentTypesInfoService.getLabel(contentType.clazz);
                     this.contentTypeName = this.messageService.messageMap$.pluck(
                         this.stringUtils.titleCase(type)
@@ -67,7 +67,6 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
                     this.contentTypeType = type;
                     this.contentTypeIcon = this.contentTypesInfoService.getIcon(contentType.clazz);
                     this.data = contentType;
-                    return contentType;
                 });
         });
     }

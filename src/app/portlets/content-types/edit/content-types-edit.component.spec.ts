@@ -23,6 +23,7 @@ import { ContentType } from '../main';
 import { tick, fakeAsync } from '@angular/core/testing';
 import { Field } from '../fields';
 import { FieldService } from '../fields/service';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 @Component({
     selector: 'content-type-fields-drop-zone',
@@ -40,7 +41,7 @@ class TestContentTypeFieldsDropZone {
     template: '<ng-content></ng-content>'
 })
 class TestContentTypeLayout {
-    @Input() mode: string;
+    @Input() contentTypeId: string;
 }
 
 @Component({
@@ -114,11 +115,8 @@ describe('ContentTypesEditComponent', () => {
 
         const crudService = fixture.debugElement.injector.get(CrudService);
 
-        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            fields: [],
-            id: '1234-identifier',
-        }));
+        this.getDataByIdSubjectSubject = new Subject();
+        spyOn(crudService, 'getDataById').and.returnValue(this.getDataByIdSubjectSubject.asObservable());
     }));
 
     it('should have Content Types Layout', () => {
@@ -143,16 +141,21 @@ describe('ContentTypesEditComponent', () => {
 
     it('should have call content types endpoint with widget data', () => {
         const crudService = fixture.debugElement.injector.get(CrudService);
-
         spyOn(crudService, 'putData').and.returnValue(Observable.of({}));
 
         fixture.detectChanges();
+
+        this.getDataByIdSubjectSubject.next({
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: [],
+            id: '1234-identifier',
+        });
 
         comp.handleFormSubmit({
             originalEvent: Event,
             value: {
                 host: '12345',
-                name: 'Hello World'
+                name: 'Hello World',
             }
         });
 

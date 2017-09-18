@@ -10,9 +10,9 @@ import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.c
 import { LoginPageComponent } from './view/components/login/login-page-component';
 import { LoginContainer } from './view/components/login/login-component/login-container';
 import { LogOutContainer } from './view/components/login/login-component/log-out-container';
-import { IframeLegacyComponent } from './view/components/iframe-legacy/iframe-legacy-component';
 import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
 import { environment } from '../environments/environment';
+import { IFramePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
 
 const angularComponents: any[] = [
     {
@@ -45,7 +45,7 @@ const mainComponentChildren = [
     },
     {
         canActivate: [RoutingPrivateAuthService],
-        component: IframeLegacyComponent,
+        component: IFramePortletLegacyComponent,
         path: ':id'
     }
 ];
@@ -66,7 +66,7 @@ const angularChildren: any[] = [
     },
     {
         canActivate: [RoutingPrivateAuthService],
-        component: IframeLegacyComponent,
+        component: IFramePortletLegacyComponent,
         path: 'c/:id',
     },
 ];

@@ -13,15 +13,11 @@
                 </div>
             </div>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.permissions']}}" *ngIf="mode === 'edit'">
-            <div class="container-fluid">
-                Content 2
-            </div>
+        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.permissions']}}" *ngIf="contentTypeId">
+            <dot-iframe [src]="permissionURL"></dot-iframe>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.publisher.push.history']}}">
-            <div class="container-fluid">
-                Content 3
-            </div>
+        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.publisher.push.history']}}" *ngIf="contentTypeId">
+            <dot-iframe [src]="pushHistoryURL"></dot-iframe>
         </p-tabPanel>
     </p-tabView>
 </div>

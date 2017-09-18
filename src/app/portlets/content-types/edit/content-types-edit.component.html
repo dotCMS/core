@@ -1,4 +1,4 @@
-<content-type-layout mode="edit">
+<content-type-layout [contentTypeId]="data ? data.id : null">
     <content-types-form
         #form
         [data]="contentTypeItem | async"

@@ -4,6 +4,7 @@ import { FieldValidationMessageModule } from './view/components/_common/field-va
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
+import { IFrameModule } from './view/components/_common/iframe';
 
 import {
     AutoCompleteModule,
@@ -29,9 +30,10 @@ import {
 export const CUSTOM_MODULES = [
     ActionButtonModule,
     FieldValidationMessageModule,
+    IFrameModule,
     ListingDataTableModule,
     SearchableDropDownModule,
-    SiteSelectorModule,
+    SiteSelectorModule
 ];
 
 export const NGFACES_MODULES = [

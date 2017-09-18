@@ -55,12 +55,18 @@ import {
 import {
     DynamicFieldPropertyDirective
 } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import { IFrameModule } from '../../view/components/_common/iframe';
 
 @NgModule({
     declarations: [
+        CategoriesPropertyComponent,
+        CheckboxPropertyComponent,
+        ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsPropertiesFormComponent,
         ContentTypeFieldsRowComponent,
+        ContentTypeFieldsRowComponent,
+        ContentTypeFieldsRowListComponent,
         ContentTypeFieldsRowListComponent,
         ContentTypesCreateComponent,
         ContentTypesEditComponent,
@@ -69,18 +75,13 @@ import {
         ContentTypesFormComponent,
         ContentTypesLayoutComponent,
         ContentTypesPortletComponent,
-        ContentTypeFieldsDropZoneComponent,
-        ContentTypeFieldsRowComponent,
-        ContentTypeFieldsRowListComponent,
-        NamePropertyComponent,
-        DynamicFieldPropertyDirective,
-        CheckboxPropertyComponent,
-        CategoriesPropertyComponent,
         DataTypePropertyComponent,
-        HintPropertyComponent,
         DefaultValuePropertyComponent,
+        DynamicFieldPropertyDirective,
+        HintPropertyComponent,
+        NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent
+        ValuesPropertyComponent,
     ],
     entryComponents: [
         NamePropertyComponent,
@@ -97,23 +98,24 @@ import {
     ],
     imports: [
         ButtonModule,
+        CheckboxModule,
         CommonModule,
         ConfirmDialogModule,
         ContentTypesRoutingModule,
-        CheckboxModule,
         DialogModule,
         DragulaModule,
         DropdownModule,
         FieldValidationMessageModule,
         FormsModule,
+        IFrameModule,
         IconButtonTooltipModule,
         InputTextModule,
-        SplitButtonModule,
-        RadioButtonModule,
         ListingDataTableModule,
         OverlayPanelModule,
+        RadioButtonModule,
         ReactiveFormsModule,
         SiteSelectorModule,
+        SplitButtonModule,
         SplitButtonModule,
         TabViewModule
     ],

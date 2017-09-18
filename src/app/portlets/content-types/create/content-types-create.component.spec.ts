@@ -36,7 +36,9 @@ class TestContentTypeFieldsRowComponent {
     selector: 'content-type-layout',
     template: '<ng-content></ng-content>'
 })
-class TestContentTypeLayout {}
+class TestContentTypeLayout {
+    @Input() contentTypeId: string;
+}
 
 @Component({
     selector: 'content-types-form',

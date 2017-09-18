@@ -1,13 +1,11 @@
 // CUSTOM COMPONENTS
 import { Accordion, AccordionGroup } from './view/components/_common/accordion/accordion';
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
-import { DotLoadingIndicatorComponent } from './view/components/_common/dot-loading-indicator/dot-loading-indicator.component';
 import { DropdownComponent } from './view/components/_common/dropdown-component/dropdown-component';
 import { ForgotPasswordComponent } from './view/components/login/forgot-password-component/forgot-password-component';
 import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
 import { GlobalSearch } from './view/components/global-search/global-search';
 import { GravatarComponent } from './view/components/_common/gravatar/gravatar.component';
-import { IframeLegacyComponent } from './view/components/iframe-legacy/iframe-legacy-component';
 import { LogOutContainer } from './view/components/login/login-component/log-out-container';
 import { LoginAsComponent } from './view/components/login-as/login-as';
 import { LoginComponent } from './view/components/login/login-component/login-component';
@@ -30,13 +28,11 @@ export const COMPONENTS = [
     Accordion,
     AccordionGroup,
     CustomTimeComponent,
-    DotLoadingIndicatorComponent,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,
     GlobalSearch,
     GravatarComponent,
-    IframeLegacyComponent,
     LogOutContainer,
     LoginAsComponent,
     LoginComponent,
