@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
@@ -126,7 +125,7 @@ public class BundlerUtil {
             	f.createNewFile();
             }	
             
-            OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream( f ), "UTF-8");
+            OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8");
             HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
             xstream.marshal(obj, xmlWriter);
             writer.close();

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,7 +78,7 @@ public class ContentTypeImportExportUtil {
 
     private void streamingJsonExport(File file, int run) throws DotDataException, DotSecurityException, IOException {
         
-        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(file.toPath()))) {
             JsonGenerator jg = mapper.getJsonFactory().createGenerator(out, JsonEncoding.UTF8);
             jg.writeStartArray();
             for (int i = 0; i < 1000; i++) {

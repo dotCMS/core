@@ -12,8 +12,8 @@ import java.awt.image.BufferedImageOp;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
@@ -44,7 +44,6 @@ public class ThumbnailImageFilter extends ImageFilter {
 			return resultFile;
 		}
 
-		FileOutputStream fos = null;
 		try {
 			resultFile.delete();
 	        if (height <= 0 && width <= 0) {
@@ -111,7 +110,7 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        resultGraphics.dispose();
 
 	        // save thumbnail image to OUTFILE
-	        BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(resultFile));
+	        BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
 	        ImageIO.write(bgImage, "png", out);
 	        out.close();
 
@@ -120,14 +119,6 @@ public class ThumbnailImageFilter extends ImageFilter {
 			Logger.error(this.getClass(), e.getMessage());
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
-		} finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e) {
-					Logger.error(this.getClass(), "should not be here");
-				}
-			}
 		}
 
 		return resultFile;

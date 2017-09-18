@@ -25,15 +25,17 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -260,7 +262,7 @@ public class ContentImportThread implements Job{
 			if (!outputFile.exists())
 				outputFile.createNewFile();
 
-			myOutput = new PrintStream(new FileOutputStream(outputFile));
+			myOutput = new PrintStream(Files.newOutputStream(outputFile.toPath()));
 
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
@@ -285,12 +287,11 @@ public class ContentImportThread implements Job{
 			if (!dest.exists())
 				dest.createNewFile();
 
-			FileChannel channelFrom = FileChannel.open(orig.toPath());
-			FileChannel channelTo = new FileOutputStream(dest).getChannel();
-			channelFrom.transferTo(0, channelFrom.size(), channelTo);
-			channelTo.force(false);
-			channelTo.close();
-			channelFrom.close();
+            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(orig.toPath()));
+            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(dest.toPath()));
+            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            inputChannel.close();
+            outputChannel.close();
 
 			myOutput.println("File:"+orig.getAbsolutePath()+" move to: "+dest.getAbsolutePath());
 			orig.delete();

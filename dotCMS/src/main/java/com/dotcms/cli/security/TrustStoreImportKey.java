@@ -3,7 +3,6 @@ package com.dotcms.cli.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -71,7 +70,7 @@ public class TrustStoreImportKey  {
             ks.setCertificateEntry(alias, certs[0]);
             System.out.println ("Certificate stored.");
             System.out.println ("Alias:"+alias+"  Password:"+keypass);
-            ks.store(new FileOutputStream ( truststorename ),
+            ks.store(Files.newOutputStream(Paths.get(truststorename)),
                      keypass.toCharArray());
         } catch (Exception ex) {
             ex.printStackTrace();

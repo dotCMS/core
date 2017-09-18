@@ -12,13 +12,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -195,7 +196,7 @@ public class IntegrityUtil {
         }
         
         ZipInputStream zin = null;
-        FileOutputStream fout = null;
+        OutputStream os = null;
         
         try {
             
@@ -208,15 +209,14 @@ public class IntegrityUtil {
                 byte[] buf = new byte[1024];
                 
                 Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
-         
-                fout = new FileOutputStream(outputDir + File.separator
-                        + ze.getName()); 
+
+                os = Files.newOutputStream(Paths.get(outputDir + File.separator + ze.getName()));
 
                 while ( (bytesRead = zin.read( buf, 0, 1024 )) > -1 )
-                    fout.write( buf, 0, bytesRead );
+                    os.write( buf, 0, bytesRead );
                 try {
-                    if ( null != fout ) {
-                        fout.close();
+                    if ( null != os ) {
+                        os.close();
                     }
                 } catch ( Exception e ) {
                     Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
@@ -233,9 +233,9 @@ public class IntegrityUtil {
                     Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
                 }
             }
-            if ( fout != null ) {
+            if ( os != null ) {
                 try {
-                    fout.close();
+                    os.close();
                 } catch ( IOException e ) {
                     Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
                 }
@@ -269,8 +269,8 @@ public class IntegrityUtil {
             zipFile = new File(outputPath + File.separator
                     + IntegrityResource.INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME);
 
-            try (FileOutputStream fos = new FileOutputStream(zipFile);
-                    ZipOutputStream zos = new ZipOutputStream(fos)) {
+            try (OutputStream os = Files.newOutputStream(zipFile.toPath());
+                    ZipOutputStream zos = new ZipOutputStream(os)) {
                 IntegrityType[] types = IntegrityType.values();
                 for (IntegrityType integrityType : types) {
                     File fileToCheckCsvFile = null;
@@ -314,8 +314,8 @@ public class IntegrityUtil {
 
             zipFile = new File(outputPath + File.separator
                     + IntegrityResource.INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
-            try (FileOutputStream fos = new FileOutputStream(zipFile);
-                    ZipOutputStream zos = new ZipOutputStream(fos)) {
+            try (OutputStream os = Files.newOutputStream(zipFile.toPath());
+                    ZipOutputStream zos = new ZipOutputStream(os)) {
                 // create Folders CSV
                 dataToFixCsvFile = generateDataToFixCSV(outputPath, endpointId, type);
 

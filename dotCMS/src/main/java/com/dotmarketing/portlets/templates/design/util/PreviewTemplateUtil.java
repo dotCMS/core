@@ -10,9 +10,9 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -86,14 +86,14 @@ public class PreviewTemplateUtil {
 		//set the real path for the body preview
 		result.setRealFileSystemPath(previewAsset.getPath().substring(previewAsset.getPath().indexOf("/_preview")));
 		InputStream fis = Files.newInputStream(assetFile.toPath());
-		FileOutputStream fos = new FileOutputStream(previewAsset);
+		OutputStream os = Files.newOutputStream(previewAsset.toPath());
 		final byte[] buffer = new byte[ 1024 ];
         int n = 0;
         while ((n = fis.read(buffer)) > 0){
-        	fos.write( buffer, 0, n );
+        	os.write( buffer, 0, n );
         }
         fis.close();
-        fos.close();
+        os.close();
         return result;
 	}
 

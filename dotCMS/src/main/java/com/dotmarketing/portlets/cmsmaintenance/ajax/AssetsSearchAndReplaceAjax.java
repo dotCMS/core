@@ -17,9 +17,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,9 +128,9 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 			fileData = file.getFileAsset();
 		}
 		fileData.deleteOnExit();
-		FileOutputStream fos = null;
+		OutputStream fos = null;
 		try {
-			fos = new FileOutputStream(fileData);
+			fos = Files.newOutputStream(fileData.toPath());
 			fos.write(newText.getBytes());
 		} finally {
 			if (fos != null)

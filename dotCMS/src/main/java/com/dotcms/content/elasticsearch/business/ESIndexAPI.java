@@ -23,7 +23,6 @@ import com.dotmarketing.util.ZipUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -185,7 +184,7 @@ public class ESIndexAPI {
 
 		BufferedWriter bw = null;
 		try {
-		    ZipOutputStream zipOut=new ZipOutputStream(new FileOutputStream(toFile));
+		    ZipOutputStream zipOut=new ZipOutputStream(Files.newOutputStream(toFile.toPath()));
 		    zipOut.setLevel(9);
 		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
 
@@ -896,7 +895,7 @@ public class ESIndexAPI {
 		// this will be the zip file using the same name of the directory path
 
 		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
-		try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(toZipFile))) {
+		try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toZipFile.toPath()))) {
 			ZipUtil.zipDirectory(toFile.getAbsolutePath(), zipOut);
 			return toZipFile;
 		}

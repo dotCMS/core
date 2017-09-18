@@ -13,7 +13,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -90,7 +89,7 @@ public class TikaUtils {
                 bytes = new byte[1024];
                 count = fulltext.read(buf);
                 if (count > 0 && !contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
-                    OutputStream out = new FileOutputStream(contentM);
+                    OutputStream out = Files.newOutputStream(contentM.toPath());
 
                     // compressor config
                     String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");

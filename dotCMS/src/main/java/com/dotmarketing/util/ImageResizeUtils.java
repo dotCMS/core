@@ -17,7 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,7 +63,7 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		generateThumbnail(Files.newInputStream(Paths.get(fullImagePath)), new FileOutputStream(new File(resultImagePath)), fileExtension, width, height, bgColor);
+		generateThumbnail(Files.newInputStream(Paths.get(fullImagePath)), Files.newOutputStream(Paths.get(resultImagePath)), fileExtension, width, height, bgColor);
 	}
 	
 	public static void generateThumbnail(InputStream input, OutputStream output, String format, int width, int height, Color bgColor) throws IOException, InterruptedException {
@@ -173,7 +172,7 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		resizeImage(Files.newInputStream(Paths.get(fullImagePath)), new FileOutputStream(new File(resultImagePath)), fileExtension, width, height);
+		resizeImage(Files.newInputStream(Paths.get(fullImagePath)), Files.newOutputStream(Paths.get(resultImagePath)), fileExtension, width, height);
 
 	}
 	

@@ -22,13 +22,15 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -523,9 +525,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		try {
 			if (file.exists() && tempFile.exists()) {
-				fileToChannel = (new FileOutputStream(file)).getChannel();
-				fileFromChannel = FileChannel.open(tempFile.toPath());;
-				fileFromChannel.transferTo(0, fileFromChannel.size(), fileToChannel);
+                final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(tempFile.toPath()));
+                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(file.toPath()));
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                inputChannel.close();
+                outputChannel.close();
 			} else {
 				if (!file.exists())
 					Logger.warn(this, "Error: properties file: '" + filePath + "' doesn't exists.");

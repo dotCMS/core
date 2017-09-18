@@ -29,20 +29,20 @@ import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -578,7 +578,8 @@ public class ContentletServices {
 
 	private static void saveToDisk(String folderPath, String filePath, String data) throws IOException {
 
-		java.io.BufferedOutputStream tmpOut= new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(folderPath+ filePath)));
+		java.io.BufferedOutputStream tmpOut= new java.io.BufferedOutputStream(
+				Files.newOutputStream(Paths.get(folderPath+ filePath)));
 
 		// Specify a proper character encoding
 		OutputStreamWriter out= new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());

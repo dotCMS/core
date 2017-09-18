@@ -36,7 +36,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
@@ -491,7 +490,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		try {
 			temporaryFile = new File(Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_FILENAME","XMLSitemap")
 					+ ".xml");
-			out = new OutputStreamWriter(new FileOutputStream(temporaryFile),
+			out = new OutputStreamWriter(Files.newOutputStream(temporaryFile.toPath()),
 					"UTF-8");
 
 			out.write( "<?xml version='1.0' encoding='UTF-8'?>\n" );
@@ -524,8 +523,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			String sitemapName = Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_GZ_FILENAME","XMLSitemapGenerated")
 					+ dateCounter + counter + ".xml.gz";
 			compressedFile = new File(sitemapName);
-			GZIPOutputStream gout = new GZIPOutputStream(new FileOutputStream(
-					compressedFile));
+			GZIPOutputStream gout = new GZIPOutputStream(Files.newOutputStream(compressedFile.toPath()));
 
 			// Open the input file
 			InputStream in = Files.newInputStream(temporaryFile.toPath());

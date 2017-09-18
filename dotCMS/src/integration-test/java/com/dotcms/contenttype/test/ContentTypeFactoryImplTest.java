@@ -24,7 +24,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
@@ -129,7 +128,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		File temp2 = File.createTempFile("test2", "obj");
 		ContentType origType = contentTypeFactory.find(Constants.NEWS);
 
-		try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp))){
+		try(ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))){
 			oos.writeObject(origType);
 			oos.close();
 		}

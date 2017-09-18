@@ -49,9 +49,9 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -273,7 +273,7 @@ public class BundlePublisher extends Publisher {
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
       TarArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
-        FileOutputStream outputStream = null;
+        OutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
         try {
             //Clean the bundler folder if exist to clean dirty data
@@ -327,7 +327,7 @@ public class BundlePublisher extends Publisher {
                 
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = new FileOutputStream(pathWithoutName + entry.getName());
+                outputStream = Files.newOutputStream(Paths.get(pathWithoutName + entry.getName()));
                 while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
                     outputStream.write(buf, 0, bytesRead);
                 }

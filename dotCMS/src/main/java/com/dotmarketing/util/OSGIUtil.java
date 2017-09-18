@@ -8,7 +8,6 @@ import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -332,7 +331,7 @@ public class OSGIUtil {
 
             BufferedWriter writer = null;
             try {
-                writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream( FELIX_EXTRA_PACKAGES_FILE_GENERATED), "utf-8"));
+                writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"));
                 writer.write(bob.toString());
             } catch (IOException ex) {
                 Logger.error(this, ex.getMessage(), ex);

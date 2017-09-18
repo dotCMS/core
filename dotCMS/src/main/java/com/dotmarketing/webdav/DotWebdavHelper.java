@@ -55,7 +55,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
@@ -735,7 +734,7 @@ public class DotWebdavHelper {
 
 				// Saving the new working data
 				final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
+                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
@@ -782,7 +781,7 @@ public class DotWebdavHelper {
 
 				// Saving the new working data
 			    final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
+                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 

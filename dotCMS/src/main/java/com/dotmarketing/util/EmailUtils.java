@@ -5,42 +5,37 @@
  */
 package com.dotmarketing.util;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.sun.mail.pop3.POP3SSLStore;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import javax.activation.DataHandler;
-import javax.mail.Address;
 import javax.mail.BodyPart;
 import javax.mail.FetchProfile;
 import javax.mail.Flags.Flag;
 import javax.mail.Folder;
 import javax.mail.Header;
 import javax.mail.Message;
+import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
-import javax.mail.Message.RecipientType;
 import javax.mail.internet.MimeMultipart;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.sun.mail.pop3.POP3SSLStore;
 
 /**
  * @author will
@@ -406,7 +401,7 @@ public class EmailUtils {
 					if(!attachment.exists())
 						attachment.createNewFile();
 
-					FileOutputStream os = new FileOutputStream(attachment);
+					OutputStream os = Files.newOutputStream(attachment.toPath());
 					attachmentDataHandler.writeTo(os);
 					os.close();
 

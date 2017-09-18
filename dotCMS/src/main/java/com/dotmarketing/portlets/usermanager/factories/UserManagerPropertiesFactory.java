@@ -21,10 +21,11 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
 import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -67,7 +68,7 @@ public class UserManagerPropertiesFactory {
 					if (!from.exists())
 						from.createNewFile();
 					
-					properties.store(new java.io.FileOutputStream(filePath), null);
+					properties.store(Files.newOutputStream(Paths.get(filePath)), null);
 				} catch (Exception e) {
 					Logger.error(UserManagerPropertiesFactory.class,e.getMessage(),e);
 				}
@@ -83,14 +84,11 @@ public class UserManagerPropertiesFactory {
 			}
 
 			if (copy) {
-				FileChannel srcChannel = FileChannel.open(from.toPath());
-				// Create channel on the destination
-				FileChannel dstChannel = new FileOutputStream(to).getChannel();
-				// Copy file contents from source to destination
-				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-				// Close the channels
-				srcChannel.close();
-				dstChannel.close();
+                final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(from.toPath()));
+                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(to.toPath()));
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                inputChannel.close();
+                outputChannel.close();
 			}
 
 		} catch (IOException e) {
@@ -184,17 +182,11 @@ public class UserManagerPropertiesFactory {
 			File to = new java.io.File(filePath);
 			to.createNewFile();
 
-			FileChannel srcChannel = FileChannel.open(from.toPath());
-
-			// Create channel on the destination
-			FileChannel dstChannel = new FileOutputStream(to).getChannel();
-
-			// Copy file contents from source to destination
-			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-
-			// Close the channels
-			srcChannel.close();
-			dstChannel.close();
+            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(from.toPath()));
+            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(to.toPath()));
+            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            inputChannel.close();
+            outputChannel.close();
 
 		} catch (NonWritableChannelException we) {
 
@@ -234,7 +226,7 @@ public class UserManagerPropertiesFactory {
 			}
 		}
 
-		properties.store(new java.io.FileOutputStream(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp"), null);
+		properties.store(Files.newOutputStream(Paths.get(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp")), null);
 
 		req.setAttribute(WebKeys.USERMANAGER_PROPERTIES, properties);
 	}
@@ -262,7 +254,7 @@ public class UserManagerPropertiesFactory {
 			}
 		}
 
-		properties.store(new java.io.FileOutputStream(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp"), null);
+		properties.store(Files.newOutputStream(Paths.get(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp")), null);
 
 		req.setAttribute(WebKeys.USERMANAGER_PROPERTIES, properties);
 	}

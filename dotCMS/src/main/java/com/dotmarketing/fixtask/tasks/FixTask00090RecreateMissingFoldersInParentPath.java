@@ -19,18 +19,19 @@ import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This task will iterate through each record in the identifier table and check
@@ -217,8 +218,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
 			BufferedOutputStream _bout = null;
 			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+			} catch (IOException e) {
 				Logger.error(this, "Could not write to Fix Task status file.");
 			}
 			_xstream.toXML(modifiedData, _bout);

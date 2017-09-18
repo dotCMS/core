@@ -3,7 +3,6 @@ package com.dotcms.cli.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -92,7 +91,7 @@ public class KeyStoreImportKey  {
                            certs );
             System.out.println ("Key and certificate stored.");
             System.out.println ("Alias:"+alias+"  Password:"+keypass);
-            ks.store(new FileOutputStream ( keystorename ),
+            ks.store(Files.newOutputStream(Paths.get(keystorename)),
                      keypass.toCharArray());
         } catch (Exception ex) {
             ex.printStackTrace();

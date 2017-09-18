@@ -26,7 +26,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -139,7 +138,7 @@ public class IndexAjaxAction extends AjaxAction {
                    isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
-                   FileOutputStream out = new FileOutputStream(ufile);
+                   OutputStream out = Files.newOutputStream(ufile.toPath());
                    IOUtils.copyLarge(in, out);
                    IOUtils.closeQuietly(out);
                    IOUtils.closeQuietly(in);

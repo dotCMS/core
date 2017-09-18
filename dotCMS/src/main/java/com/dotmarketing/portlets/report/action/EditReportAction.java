@@ -38,7 +38,6 @@ import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -244,8 +243,7 @@ public class EditReportAction extends DotPortletAction {
 								reportFolder.mkdirs();
 		
 							File f = new File(jrxmlPath);
-							FileChannel channelTo = new FileOutputStream(f)
-									.getChannel();
+							FileChannel channelTo = FileChannel.open(f.toPath());
 							ByteBuffer currentDataBuffer = ByteBuffer
 									.allocate(currentData.length);
 							currentDataBuffer.put(currentData);

@@ -1,15 +1,5 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -23,7 +13,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.util.FileUtil;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -289,7 +288,9 @@ public class ContainerServices {
             String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
 
             if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-            	java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+File.separator + filePath)));
+            	java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+                        Files.newOutputStream(
+                                Paths.get(ConfigUtils.getDynamicVelocityPath()+File.separator + filePath)));
 	            //Specify a proper character encoding
 	            OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
 	            out.write(sb.toString());

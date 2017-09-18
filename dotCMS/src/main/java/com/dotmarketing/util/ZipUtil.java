@@ -7,9 +7,9 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -113,8 +113,8 @@ public class ZipUtil {
 	        try{
 	            InputStream istr = zipFile.getInputStream(zipEntry);
 	            bis = new BufferedInputStream(istr);
-	            FileOutputStream fos = new FileOutputStream(file);
-	            bos  = new BufferedOutputStream(fos);
+	            OutputStream os = Files.newOutputStream(file.toPath());
+	            bos  = new BufferedOutputStream(os);
 	            IOUtils.copy(bis, bos);
 	        } finally {
 	            if (bis !=  null){

@@ -15,9 +15,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,15 +75,15 @@ public class FileAssetAjax {
 		java.io.File fileData = new java.io.File(tempDir.getAbsoluteFile() + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
 
 		fileData.deleteOnExit();
-		FileOutputStream fos = null;
+		OutputStream os = null;
 		try {
-			fos = new FileOutputStream(fileData);
-			fos.write(newText.getBytes());
+			os = Files.newOutputStream(fileData.toPath());
+			os.write(newText.getBytes());
 		} catch(Exception e) {
 			Logger.error(getClass(), "Error writing to file", e);
 		}finally {
-			if (fos != null)
-				fos.close();
+			if (os != null)
+				os.close();
 		}
 	}
 

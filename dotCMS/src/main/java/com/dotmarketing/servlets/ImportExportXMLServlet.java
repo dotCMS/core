@@ -22,7 +22,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,7 +99,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 				response.getWriter().println("Zipping up to file:" + zipFile.getAbsolutePath());
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				response.getWriter().println("Done.");
@@ -343,7 +342,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				 */
 
 				_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + clazz.getName() + ".xml"));
-				_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
+				_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
 				_dh = new HibernateUtil(clazz);
 				_dh.setQuery("from " + clazz.getName());
 
@@ -363,7 +362,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_list = PublicCompanyFactory.getCompanies();
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
-			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
+			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
 			_list = null;
@@ -373,7 +372,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_list = APILocator.getUserAPI().findAllUsers();
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
-			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
+			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
 			_list = null;
@@ -444,7 +443,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 	private void unzip(ZipInputStream zin, String s) throws IOException {
 		Logger.info(this, "unzipping " + s);
 		File f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s));
-		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
+		BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
 		byte[] b = new byte[512];
 		int len = 0;
 		while ((len = zin.read(b)) != -1) {

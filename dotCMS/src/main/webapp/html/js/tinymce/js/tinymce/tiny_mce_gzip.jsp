@@ -1,6 +1,11 @@
-<%@page import="java.io.*,java.util.zip.*" %>
+<%@page import="java.io.ByteArrayOutputStream,java.io.File" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.io.InputStream" %>
+<%@ page import="java.io.OutputStream" %>
+<%@ page import="java.io.OutputStreamWriter" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.nio.file.Paths" %>
+<%@ page import="java.util.zip.GZIPOutputStream" %>
 <%
 /**
  * tiny_mce_gzip.jsp
@@ -25,7 +30,7 @@
 	OutputStreamWriter bow;
 	ByteArrayOutputStream bos;
 	GZIPOutputStream gzipStream;
-	FileOutputStream fout;
+	OutputStream fout;
 	InputStream fin;
 	byte buff[];
 
@@ -156,7 +161,7 @@
 
 			// Write to file
 			try {
-				fout = new FileOutputStream(cacheFile);
+				fout = Files.newOutputStream(Paths.get(cacheFile));
 				fout.write(bos.toByteArray());
 				fout.close();
 			} catch (IOException e) {

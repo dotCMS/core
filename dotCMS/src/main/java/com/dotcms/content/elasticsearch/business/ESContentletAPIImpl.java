@@ -17,12 +17,11 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
-import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -121,9 +120,9 @@ import com.liferay.util.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -146,7 +145,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
-import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1546,7 +1544,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     java.io.File _writing = new java.io.File(backupPath + java.io.File.separator
                             + cont.getIdentifier().toString() + ".xml");
 
-                    try (BufferedOutputStream _bout = new BufferedOutputStream(new FileOutputStream(_writing))) {
+                    try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))) {
                         _xstream.toXML(cont, _bout);
                     } catch (IOException e) {
                         Logger.error(this,
@@ -1556,7 +1554,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     java.io.File _writingwbin = new java.io.File(backupPath + java.io.File.separator
                             + cont.getIdentifier().toString() + "_bin" + ".xml");
 
-                    try (BufferedOutputStream _bout = new BufferedOutputStream(new FileOutputStream(_writingwbin))) {
+                    try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writingwbin.toPath()))) {
                         contentwbin.setBinaryFilesList(filelist);
                         _xstream.toXML(contentwbin, _bout);
                         arebinfiles = false;
@@ -1764,8 +1762,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             BufferedOutputStream _bout = null;
             try {
-                _bout = new BufferedOutputStream(new FileOutputStream(_writing));
-            } catch (FileNotFoundException e) {
+                _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            } catch (IOException e) {
                 Logger.error(this, e.getMessage());
             } finally{
                 try {

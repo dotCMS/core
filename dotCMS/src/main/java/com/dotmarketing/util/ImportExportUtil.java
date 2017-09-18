@@ -34,14 +34,15 @@ import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1548,14 +1549,12 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = FileChannel.open(zipFile.toPath());
-            FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
-            // to handle huge zipfiles
-            ic.transferTo(0, ic.size(), oc);
-
-            ic.close();
-            oc.close();
+            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()));
+            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            inputChannel.close();
+            outputChannel.close();
 
             /*
              * Unzip zipped backups

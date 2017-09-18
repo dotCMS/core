@@ -1,15 +1,5 @@
 package com.dotmarketing.fixtask.tasks;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
@@ -23,6 +13,15 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This task will locate the Content Type fields that are pointing to Content
@@ -134,8 +133,8 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 
 			BufferedOutputStream _bout = null;
 			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+			} catch (IOException e) {
 				Logger.error(this, "Could not write to Fix Task status file.");
 			}
 			_xstream.toXML(modifiedData, _bout);

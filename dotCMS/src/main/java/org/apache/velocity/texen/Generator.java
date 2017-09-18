@@ -22,7 +22,6 @@ package org.apache.velocity.texen;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -290,7 +289,7 @@ public class Generator
         }
         else
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), encoding));
+            writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(path)), encoding));
         }
         return writer;
     }
