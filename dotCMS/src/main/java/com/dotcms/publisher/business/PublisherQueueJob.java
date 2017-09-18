@@ -417,7 +417,8 @@ public class PublisherQueueJob implements StatefulJob {
         }
 	}
 
-	private PublishAuditHistory getRemoteHistoryFromEndpoint(PublishAuditStatus bundleAudit, PublishingEndPoint targetEndpoint) {
+	private PublishAuditHistory getRemoteHistoryFromEndpoint(final  PublishAuditStatus bundleAudit,
+															 final PublishingEndPoint targetEndpoint) {
 		final WebTarget webTarget = RestClientBuilder.getClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
 		return PublishAuditHistory.getObjectFromString(
                 webTarget
