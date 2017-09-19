@@ -13,8 +13,8 @@ import { DotRouterService } from '../../../../api/services/dot-router-service';
         ></dot-forgot-password-component>
     `
 })
-export class ForgotPasswordContainer {
-    private message = '';
+export class ForgotPasswordContainerComponent {
+    public message = '';
     private email = '';
 
     constructor(private loginService: LoginService, private router: DotRouterService) {}

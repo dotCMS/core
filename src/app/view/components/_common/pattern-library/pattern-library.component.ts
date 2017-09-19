@@ -7,11 +7,11 @@ import { FormGroup, FormBuilder } from '@angular/forms';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'pattern-library',
-    styleUrls: ['./pattern-library.scss'],
-    templateUrl: 'pattern-library.html'
+    styleUrls: ['./pattern-library.component.scss'],
+    templateUrl: 'pattern-library.component.html'
 })
 
-export class PatternLibrary {
+export class PatternLibraryComponent {
     public selectedDummyData = [];
     public submitAttempt = false;
     public actionButtonLog;

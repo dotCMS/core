@@ -15,10 +15,36 @@ import {
     UserModel
 } from 'dotcms-js/dotcms-js';
 
+// Custom Directives
+import { MessageKeysModule } from '../view/directives/message-keys/message-keys.module';
+import { RippleEffectModule } from '../view/directives/ripple/ripple-effect.module';
+import { MdInputTextModule } from '../view/directives/md-inputtext/md-input-text.module';
+
+// Common Components
+import { DotDropdownModule } from '../view/components/_common/dropdown-component/dot-dropdown.module';
+import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
+
+
 @NgModule({
     declarations: [],
-    imports: [ CommonModule ],
-    exports: [],
+    imports: [
+        CommonModule,
+        MessageKeysModule,
+        RippleEffectModule,
+        MdInputTextModule,
+        DotDropdownModule,
+        GravatarModule
+    ],
+    exports: [
+        CommonModule,
+        // Custom Directives
+        MessageKeysModule,
+        RippleEffectModule,
+        MdInputTextModule,
+        // Common Components
+        DotDropdownModule,
+        GravatarModule
+    ],
 })
 export class SharedModule {
     static forRoot(): ModuleWithProviders {

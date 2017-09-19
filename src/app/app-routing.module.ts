@@ -1,16 +1,11 @@
 import { RoutingPublicAuthService } from './api/services/routing-public-auth-service';
 import { RoutingPrivateAuthService } from './api/services/routing-private-auth-service';
 import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
-import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
-import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
-import { NotLicensedComponent } from './view/components/not-licensed/not-licensed-component';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
 import { LoginPageComponent } from './view/components/login/login-page-component';
-import { LoginContainer } from './view/components/login/login-component/login-container';
 import { LogOutContainer } from './view/components/login/login-component/log-out-container';
-import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
 import { environment } from '../environments/environment';
 import { IFramePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
 
@@ -36,12 +31,12 @@ const mainComponentChildren = [
         redirectTo: environment.production ? 'home' : 'pl'
     },
     {
-        component: PatternLibrary,
-        path: 'pl'
+        path: 'pl',
+        loadChildren: 'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
     },
     {
-        component: NotLicensedComponent,
-        path: 'notLicensed'
+        path: 'notLicensed',
+        loadChildren: 'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
     },
     {
         canActivate: [RoutingPrivateAuthService],
@@ -50,6 +45,7 @@ const mainComponentChildren = [
     }
 ];
 
+/*TODO: Should we remove 'angularChildren' since is not used anywhere ? */
 const angularChildren: any[] = [
     {
         path: '',
@@ -57,12 +53,12 @@ const angularChildren: any[] = [
         redirectTo: environment.production ? 'c/home' : 'c/pl'
     },
     {
-        component: PatternLibrary,
-        path: 'c/pl'
+        path: 'pl',
+        loadChildren: 'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
     },
     {
-        component: NotLicensedComponent,
-        path: 'c/notLicensed'
+        path: 'notLicensed',
+        loadChildren: 'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
     },
     {
         canActivate: [RoutingPrivateAuthService],
@@ -88,16 +84,16 @@ const appRoutes: Routes = [
         canActivate: [RoutingPublicAuthService],
         children: [
             {
-                component: ForgotPasswordContainer,
-                path: 'forgotPassword'
+                path: 'forgotPassword',
+                loadChildren: 'app/view/components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
             },
             {
-                component: LoginContainer,
-                path: 'login'
+                path: 'login',
+                loadChildren: 'app/view/components/login/login-component/login.module#LoginModule'
             },
             {
-                component: ResetPasswordContainer,
-                path: 'resetPassword/:token'
+                path: 'resetPassword/:token',
+                loadChildren: 'app/view/components/login/reset-password-component/reset-password.module#ResetPasswordModule'
             }
         ],
         component: LoginPageComponent,
@@ -133,8 +129,6 @@ const appRoutes: Routes = [
     ],
     imports: [
         RouterModule.forRoot(appRoutes, {
-            // TODO: make sure we need this preloadingStrategy
-            preloadingStrategy: PreloadAllModules,
             useHash: true
         })
     ]

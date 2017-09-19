@@ -19,12 +19,12 @@ import { DotRouterService } from '../../../../api/services/dot-router-service';
         </dot-login-component>
     `
 })
-export class LoginContainer {
-    private isLoginInProgress = false;
-    private message: string;
-    private passwordChanged = false;
-    private resetEmail = '';
-    private resetEmailSent = false;
+export class LoginContainerComponent {
+    public isLoginInProgress = false;
+    public message: string;
+    public passwordChanged = false;
+    public resetEmail = '';
+    public resetEmailSent = false;
 
     constructor(
         private loginService: LoginService,
@@ -50,7 +50,7 @@ export class LoginContainer {
             .loginUser(
                 loginData.login,
                 loginData.password,
-                loginData.remenberMe,
+                loginData.rememberMe,
                 loginData.language
             )
             .subscribe(
@@ -83,6 +83,6 @@ export class LoginContainer {
 export interface LoginData {
     login: string;
     password: string;
-    remenberMe: boolean;
+    rememberMe: boolean;
     language: string;
 }

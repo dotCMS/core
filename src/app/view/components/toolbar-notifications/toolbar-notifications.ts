@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, ElementRef, ViewChild } from '@angular/co
 
 import { BaseComponent } from '../_common/_base/base-component';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
-import { DropdownComponent } from '../_common/dropdown-component/dropdown-component';
+import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { INotification } from '../../../shared/models/notifications';
 import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
 import { MessageService } from '../../../api/services/messages-service';
@@ -15,7 +15,7 @@ import { NotificationsService } from '../../../api/services/notifications-servic
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {
-    @ViewChild(DropdownComponent) dropdown: DropdownComponent;
+    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
     private elementRef;
     private isNotificationsMarkedAsRead = false;
     private notifications: Array<INotification> = [];

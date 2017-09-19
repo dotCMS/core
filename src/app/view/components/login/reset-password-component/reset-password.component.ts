@@ -1,37 +1,37 @@
 import { Component, ViewEncapsulation, Input, Output, EventEmitter } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
-import { ChangePasswordData } from './reset-password-container';
+import { ChangePasswordData } from './reset-password-container.component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: [],
-    templateUrl: 'reset-password-component.html'
+    templateUrl: 'reset-password.component.html'
 })
 export class ResetPasswordComponent {
     @Input() private token = '';
-    @Input() private message = '';
+    @Input() public message = '';
 
     @Output() private changePassword = new EventEmitter<ChangePasswordData>();
 
     private language = '';
 
     // labels
-    private resetPasswordLabel = '';
-    private enterPasswordLabel = '';
-    private confirmPasswordLabel = '';
-    private changePasswordButton = '';
+    public resetPasswordLabel = '';
+    public enterPasswordLabel = '';
+    public confirmPasswordLabel = '';
+    public changePasswordButton = '';
 
     // Message
     private resetPasswordSuccessMessage = '';
     private resetPasswordConfirmationDoNotMessage = '';
     private mandatoryFieldError = '';
-    private passwordMandatoryFieldError = '';
-    private confirmPasswordMandatoryFieldError = '';
+    public passwordMandatoryFieldError = '';
+    public confirmPasswordMandatoryFieldError = '';
 
-    private password = '';
-    private confirmPassword = '';
+    public password = '';
+    public confirmPassword = '';
 
     private i18nMessages: Array<string> = [
         'error.form.mandatory',

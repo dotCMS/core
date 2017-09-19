@@ -15,9 +15,9 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
         </dot-reset-password-component>
     `
 })
-export class ResetPasswordContainer {
-    private message = '';
-    private token = '';
+export class ResetPasswordContainerComponent {
+    public message = '';
+    public token = '';
 
     private changePasswordSuccessfully: string;
 

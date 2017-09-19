@@ -11,8 +11,8 @@
 @import "styles/primeng-theme/base";
 
 // DIRECTIVES
-@import "app/view/directives/ripple/ripple-effects.scss";
-@import "app/view/directives/md-inputtext/md-inputtext.scss";
+@import "app/view/directives/ripple/ripple-effect.directive.scss";
+@import "app/view/directives/md-inputtext/md-input-text.directive.scss";
 
 // // GOOGLE FONTS
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,700");

@@ -21,11 +21,11 @@ import { trigger, transition, style, animate } from '@angular/animations';
         '(document:click)': 'handleClick($event)',
     },
     selector: 'dot-dropdown-component',
-    styleUrls: ['./dropdown-component.scss'],
-    templateUrl: 'dropdown-component.html'
+    styleUrls: ['./dot-dropdown.component.scss'],
+    templateUrl: 'dot-dropdown.component.html'
 })
 
-export class DropdownComponent {
+export class DotDropdownComponent {
     @Input() disabled= false;
     @Input() icon = null;
     @Input() gravatar = null;

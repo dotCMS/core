@@ -4,24 +4,24 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-forgot-password-component',
-    templateUrl: 'forgot-password-component.html'
+    templateUrl: 'forgot-password.component.html'
 })
 export class ForgotPasswordComponent {
     @Input() message: string;
     @Output() cancel = new EventEmitter<any>();
     @Output() recoverPassword = new EventEmitter<string>();
 
-    private forgotPasswordLogin: string;
+    public forgotPasswordLogin: string;
     private language = '';
 
     // labels
-    private cancelButton = '';
-    private forgotPasswordButton = '';
-    private forgotPasswordLabel = '';
-    private userIdOrEmailLabel = '';
+    public cancelButton = '';
+    public forgotPasswordButton = '';
+    public forgotPasswordLabel = '';
+    public userIdOrEmailLabel = '';
 
     // Messages
-    private emailMandatoryFieldError = '';
+    public emailMandatoryFieldError = '';
     private forgotPasswordConfirmationMessage = '';
 
     private i18nMessages: Array<string> = [

@@ -4,25 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { IframeComponent } from './iframe-component';
-import { DotLoadingIndicatorComponent } from './dot-loading-indicator';
+import { DotLoadingIndicatorModule } from './dot-loading-indicator/dot-loading-indicator.module';
 import { IFramePortletLegacyComponent } from './iframe-porlet-legacy';
 import { IframeOverlayService } from './service/iframe-overlay-service';
 
 @NgModule({
     declarations: [
-        DotLoadingIndicatorComponent,
         IframeComponent,
         IFramePortletLegacyComponent
     ],
     exports: [
-        DotLoadingIndicatorComponent,
+        DotLoadingIndicatorModule,
         IframeComponent,
         IFramePortletLegacyComponent
     ],
     imports: [
         CommonModule,
         FormsModule,
-        SearchableDropDownModule
+        SearchableDropDownModule,
+        DotLoadingIndicatorModule
     ],
     providers: [
         IframeOverlayService,

@@ -2,7 +2,7 @@ import { BaseComponent } from '../_common/_base/base-component';
 import { Component, ViewChild, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { ContentletService, StructureTypeView, ContentTypeView } from '../../../api/services/contentlet-service';
-import { DropdownComponent } from '../_common/dropdown-component/dropdown-component';
+import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
 import { MessageService } from '../../../api/services/messages-service';
 import { RoutingService } from '../../../api/services/routing-service';
@@ -44,9 +44,8 @@ export class ToolbarAddContenletBodyComponent {
 
 })
 export class ToolbarAddContenletComponent extends BaseComponent {
-    @ViewChild(DropdownComponent) dropdown: DropdownComponent;
+    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
     @Input() command?: ($event) => void;
-
     types: StructureTypeView[];
     mainTypes: StructureTypeView[];
     moreTypes: StructureTypeView[];

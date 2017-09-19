@@ -1,5 +1,5 @@
 import {Directive, ElementRef, OnDestroy, OnInit} from '@angular/core';
-import { MessageService } from '../../api/services/messages-service';
+import { MessageService } from '../../../api/services/messages-service';
 
 @Directive({
     host: {},

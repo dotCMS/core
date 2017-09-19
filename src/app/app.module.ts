@@ -11,7 +11,7 @@ import { AppRoutingModule } from './app-routing.module';
 /*
  * Custom Components
  */
-import { COMPONENTS, DIRECTIVES, PIPES } from './components';
+import { COMPONENTS, PIPES } from './components';
 import { ENV_PROVIDERS } from './providers';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
@@ -21,7 +21,7 @@ import { SharedModule } from './shared/shared.module';
  */
 @NgModule({
     bootstrap: [AppComponent],
-    declarations: [AppComponent, ...PIPES, ...COMPONENTS, ...DIRECTIVES],
+    declarations: [AppComponent, ...PIPES, ...COMPONENTS],
     imports: [
         ...CUSTOM_MODULES,
         ...NGFACES_MODULES,
