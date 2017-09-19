@@ -11373,6 +11373,10 @@ a.category_higlighted, a.tag_higlighted {
   overflow: hidden;
 }
 
+.dijitTabPaneWrapper .rules__tab-container .dijitContentPane {
+  padding: 0;
+}
+
 #iFrameWrapper {
   position: absolute;
   left: 0px;
