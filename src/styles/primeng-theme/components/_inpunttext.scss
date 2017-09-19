@@ -10,6 +10,7 @@ textarea.ui-inputtext {
     height: $field-height;
     padding: 0;
     transition: box-shadow $field-animation-speed ease-in;
+    -webkit-appearance: none;
 
     &:hover {
         @extend #field-hover-state;
