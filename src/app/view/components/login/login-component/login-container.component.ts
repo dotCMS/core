@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { HttpRequestUtils, LoginService, LoggerService, HttpCode } from 'dotcms-js/dotcms-js';
+import { HttpRequestUtils, LoginService, LoggerService, HttpCode, ResponseView } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../../../../api/services/dot-router-service';
 
 @Component({
@@ -58,12 +58,12 @@ export class LoginContainerComponent {
                     this.message = '';
                     this.router.goToMain();
                 },
-                error => {
+                (error: ResponseView) => {
                     if (
-                        error.response.status === HttpCode.BAD_REQUEST ||
-                        error.response.status === HttpCode.UNAUTHORIZED
+                        error.status === HttpCode.BAD_REQUEST ||
+                        error.status === HttpCode.UNAUTHORIZED
                     ) {
-                        this.message = error.errorsMessages;
+                        this.message = error.errorsMessages || this.getErrorMessage(error.response.json().error);
                     } else {
                         this.loggerService.debug(error);
                     }
@@ -77,6 +77,11 @@ export class LoginContainerComponent {
      */
     showForgotPassword(): void {
         this.router.goToForgotPassword();
+    }
+
+    private getErrorMessage(origMessage: string): string {
+        const split = origMessage.split(':');
+        return split[2];
     }
 }
 
