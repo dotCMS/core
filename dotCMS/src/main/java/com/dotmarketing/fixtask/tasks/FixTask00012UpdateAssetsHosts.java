@@ -2,6 +2,7 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -218,7 +219,11 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
 			} catch (IOException e) {
 			}
-			_xstream.toXML(modifiedData, _bout);
+			try {
+				_xstream.toXML(modifiedData, _bout);
+			} finally {
+				CloseUtils.closeQuietly(_bout);
+			}
 		}
 		return modifiedData;
 	}

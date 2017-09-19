@@ -39,6 +39,7 @@ import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchive
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -163,12 +164,14 @@ public class BundlePublisher extends Publisher {
         folderOut.mkdir();
 
         // Extract file to a directory
-        InputStream bundleIS;
+        InputStream bundleIS = null;
         try {
             bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
             untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
         } catch (IOException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
+        } finally {
+            CloseUtils.closeQuietly(bundleIS);
         }
 
         Map<String, String> assetsDetails = null;

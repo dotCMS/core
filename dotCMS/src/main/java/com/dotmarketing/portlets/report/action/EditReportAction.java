@@ -233,10 +233,12 @@ public class EditReportAction extends DotPortletAction {
 						File importFile = upr.getFile("jrxmlFile");
 						if (importFile.exists()) {
 							byte[] currentData = new byte[0];
-							InputStream is = Files.newInputStream(importFile.toPath());
-							int size = is.available();
-							currentData = new byte[size];
-							is.read(currentData);
+							try (InputStream is = Files.newInputStream(importFile.toPath())){
+                                int size = is.available();
+                                currentData = new byte[size];
+                                is.read(currentData);
+                            }
+
 							java.io.File reportFolder = new java.io.File(reportPath);
 							
 							if (!reportFolder.exists())

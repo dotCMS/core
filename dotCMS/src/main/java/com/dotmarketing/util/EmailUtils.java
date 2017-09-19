@@ -401,9 +401,9 @@ public class EmailUtils {
 					if(!attachment.exists())
 						attachment.createNewFile();
 
-					OutputStream os = Files.newOutputStream(attachment.toPath());
-					attachmentDataHandler.writeTo(os);
-					os.close();
+					try (OutputStream os = Files.newOutputStream(attachment.toPath())){
+                        attachmentDataHandler.writeTo(os);
+                    }
 
 					totalAttachments++;
 					email.put("attachment"+totalAttachments, attachment);

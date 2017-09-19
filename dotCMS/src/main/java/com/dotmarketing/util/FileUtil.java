@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.util.CloseUtils;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -114,21 +115,23 @@ public class FileUtil {
 	public static void writeToFile(InputStream uploadedInputStream,
 			String uploadedFileLocation) {
 
-		try {
+        OutputStream out = null;
+	    try {
 			int read;
 			byte[] bytes = new byte[1024];
 
 			final File file = new File(uploadedFileLocation);
-			OutputStream out = Files.newOutputStream(file.toPath());
+			out = Files.newOutputStream(file.toPath());
 			while ((read = uploadedInputStream.read(bytes)) != -1) {
 				out.write(bytes, 0, read);
 			}
-			out.flush();
-			out.close();
-		} catch (IOException e) {
+            out.flush();
 
+		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		} finally {
+            CloseUtils.closeQuietly(out);
+        }
 
 	}
 	

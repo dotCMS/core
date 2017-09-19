@@ -8,6 +8,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Identifier;
@@ -539,9 +540,12 @@ public class CMSMaintenanceAjax {
 	                        Logger.error(this,e.getMessage(),e);
 	                    }
 
-	    				_xstream.toXML(_list, _bout);
+	                    try {
+                            _xstream.toXML(_list, _bout);
+                        } finally {
+	    				    CloseUtils.closeQuietly(_bout);
+                        }
 
-	    				_bout.close();
 	    				_list = null;
 	    				_dh = null;
 	    				_bout = null;
@@ -557,8 +561,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator +  Company.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -568,8 +575,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator +  User.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -581,8 +591,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Counter.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -592,8 +605,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Address.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -611,8 +627,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Image.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -629,8 +648,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -644,8 +666,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -680,11 +705,14 @@ public class CMSMaintenanceAjax {
 		 * @author Will
 		 */
 		public void zipTempDirectoryToStream(OutputStream out) throws IOException {
-			byte b[] = new byte[512];
-			ZipOutputStream zout = new ZipOutputStream(out);
-			ZipUtil.zipDirectory(backupTempFilePath, zout);
-			zout.close();
-			out.close();
+            ZipOutputStream zout = null;
+		    try {
+                zout = new ZipOutputStream(out);
+                ZipUtil.zipDirectory(backupTempFilePath, zout);
+            } finally {
+                CloseUtils.closeQuietly(zout);
+                CloseUtils.closeQuietly(out);
+            }
 	}
 
 }

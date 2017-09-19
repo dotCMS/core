@@ -33,6 +33,7 @@ import com.liferay.util.StringUtil;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -274,7 +275,11 @@ public class WebSiteBuilder {
 		// Session timeout
 
 		Properties props = new Properties();
-		props.load(Files.newInputStream(Paths.get("../portal-ejb/classes/portal.properties")));
+		try (final InputStream inStream = Files
+				.newInputStream(Paths.get("../portal-ejb/classes/portal.properties"))){
+			props.load(inStream);
+		}
+
 
 		String sessionTimeout =
 			GetterUtil.get(props.getProperty("session.timeout"), "30");

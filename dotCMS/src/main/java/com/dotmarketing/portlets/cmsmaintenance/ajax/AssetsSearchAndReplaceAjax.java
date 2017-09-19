@@ -94,11 +94,12 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	private String getWorkingTextFile(FileAsset file) throws DotDataException, DotSecurityException,
 	PortalException, SystemException, IOException {
 		java.io.File fileIO = file.getFileAsset();
-        InputStream is = Files.newInputStream(fileIO.toPath());
-		byte[] data = new byte[is.available()];
-		is.read(data);
-		String text = new String(data);
-		return text;
+        try (InputStream is = Files.newInputStream(fileIO.toPath());){
+            byte[] data = new byte[is.available()];
+            is.read(data);
+            String text = new String(data);
+            return text;
+        }
 	}
 
 	/**

@@ -69,17 +69,14 @@ public class FieldServices {
 			String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 			String filePath=folderPath + contentInode + "_" + fieldInode + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION");
             //Specify a proper character encoding
-         	try{
-         		java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
-         		        Files.newOutputStream(
-						        Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
-	            OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
-	            
+         	try (java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+                    Files.newOutputStream(
+                            Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
+                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())){
+
 	            out.write(contFieldValue.toString());
 	            
 	            out.flush();
-	            out.close();
-	            tmpOut.close();
          	}catch (Exception e) {
 				Logger.error(FieldServices.class,"Unable to write velocity field file");
 			}

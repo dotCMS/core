@@ -24,6 +24,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -507,20 +508,17 @@ public class ContentletMapServices {
 
 	private static void saveToDisk(String folderPath, String filePath, String data) throws IOException {
 
-		java.io.BufferedOutputStream tmpOut=new java.io.BufferedOutputStream(
-				Files.newOutputStream(Paths.get(folderPath + filePath)));
+		try (BufferedOutputStream tmpOut =
+                new BufferedOutputStream(Files.newOutputStream(Paths.get(folderPath + filePath)));
+                OutputStreamWriter out=new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())
+            ){
 
-		// Specify a proper character encoding
-		OutputStreamWriter out=new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+            out.write(data);
 
-		out.write(data);
-
-		out.flush();
-		out.close();
-		tmpOut.close();
-		DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-
+            out.flush();
+            DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+        }
 	}
 
 }

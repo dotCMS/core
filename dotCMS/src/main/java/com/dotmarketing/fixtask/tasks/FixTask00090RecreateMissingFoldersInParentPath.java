@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -222,7 +223,11 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 			} catch (IOException e) {
 				Logger.error(this, "Could not write to Fix Task status file.");
 			}
-			_xstream.toXML(modifiedData, _bout);
+			try {
+				_xstream.toXML(modifiedData, _bout);
+			} finally {
+				CloseUtils.closeQuietly(_bout);
+			}
 		}
 		return modifiedData;
 	}

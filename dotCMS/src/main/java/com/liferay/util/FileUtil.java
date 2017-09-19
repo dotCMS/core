@@ -206,11 +206,10 @@ public class FileUtil {
         }
 
         if (!hardLinks) {
-            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
-            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()));
-            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-            inputChannel.close();
-            outputChannel.close();
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()))){
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
         }
 
     }
@@ -500,29 +499,28 @@ public class FileUtil {
 			validateEmptyFile(source);
 		}
 		//If both files exists and are equals no need to move it.
-		try {
-			//Confirms that destination exists. 
-			if(destination.exists()) {
-				//Creates InputStream for both files.
-				InputStream inputSource = Files.newInputStream(source.toPath());
-				InputStream inputDestination = Files.newInputStream(destination.toPath());
-				
-				//Both files checked. 
-				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
+        //Confirms that destination exists.
+        if(destination.exists()) {
+            try (//Creates InputStream for both files.
+                    InputStream inputSource = Files.newInputStream(source.toPath());
+                    InputStream inputDestination = Files.newInputStream(destination.toPath())){
+
+                //Both files checked.
+                if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
 
                     //If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
                     if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
                             || Files.isSymbolicLink(destination.toPath()) ) {
-					return true;
-				}
+                        return true;
+                    }
 
-					return source.delete();
-				}
-			}
-		} catch (Exception e) {
-			//In case of error, no worries. Continued with the same logic of move. 
-			Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
-		}
+                    return source.delete();
+                }
+            } catch (Exception e) {
+                //In case of error, no worries. Continued with the same logic of move.
+                Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
+            }
+        }
 
 		destination.delete();
 
@@ -623,8 +621,8 @@ public class FileUtil {
 	}
 
 	public static Properties toProperties(String fileName) {
-		try {
-			return toProperties(Files.newInputStream(Paths.get(fileName)));
+		try (final InputStream is = Files.newInputStream(Paths.get(fileName))){
+            return toProperties(is);
 		}
 		catch (IOException ioe) {
 			return new Properties();

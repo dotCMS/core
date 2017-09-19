@@ -35,6 +35,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -354,8 +355,8 @@ public class ImportExportUtil {
 
             _xstream = new XStream(new DomDriver(CHARSET));
 
-            try{
-                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
+            try(final InputStream in = Files.newInputStream(file.toPath())){
+                charStream = new InputStreamReader(in, CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -1116,8 +1117,8 @@ public class ImportExportUtil {
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
 
-            try{
-                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
+            try(final InputStream in = Files.newInputStream(f.toPath())){
+                charStream = new InputStreamReader(in, CHARSET);
             }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -1550,11 +1551,11 @@ public class ImportExportUtil {
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
 
-            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
-            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()));
-            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-            inputChannel.close();
-            outputChannel.close();
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()))){
+
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
 
             /*
              * Unzip zipped backups

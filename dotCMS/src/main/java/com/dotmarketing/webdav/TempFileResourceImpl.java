@@ -70,13 +70,14 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     
     
     public void sendContent(OutputStream out, Range range, Map<String, String> params, String arg3) throws IOException {
-        InputStream fis = Files.newInputStream(file.toPath());
-        BufferedInputStream bin = new BufferedInputStream(fis);
-        final byte[] buffer = new byte[ 1024 ];
-        int n = 0;
-        while( -1 != (n = bin.read( buffer )) ) {
-            out.write( buffer, 0, n );
-        }
+        try(InputStream fis = Files.newInputStream(file.toPath())){
+			BufferedInputStream bin = new BufferedInputStream(fis);
+			final byte[] buffer = new byte[ 1024 ];
+			int n = 0;
+			while( -1 != (n = bin.read( buffer )) ) {
+				out.write( buffer, 0, n );
+			}
+		}
     }
 
     

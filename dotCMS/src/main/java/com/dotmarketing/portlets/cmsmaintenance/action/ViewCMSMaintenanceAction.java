@@ -673,9 +673,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                         Logger.error(this,e.getMessage(),e);
                     }
 
-    				_xstream.toXML(_list, _bout);
+    				try {
+                        _xstream.toXML(_list, _bout);
+                    } finally {
+                        _bout.close();
+                    }
 
-    				_bout.close();
     				_list = null;
     				_dh = null;
     				_bout = null;
@@ -692,8 +695,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + Company.class.getName() + ".xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -703,8 +709,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + User.class.getName() + ".xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -718,8 +727,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Counter.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -729,8 +741,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Address.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -740,8 +755,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollschoice.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -751,8 +769,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsdisplay.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -762,8 +783,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsquestion.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -773,8 +797,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsvote.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -791,8 +818,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Image.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -809,8 +839,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portlet.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -824,8 +857,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portletpreferences.xml");
 			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 

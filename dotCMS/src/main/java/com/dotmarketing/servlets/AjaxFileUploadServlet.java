@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFact
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -52,7 +53,8 @@ public class AjaxFileUploadServlet extends HttpServlet {
 	private void doFileRetrieve(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
 
-		try {
+        ServletOutputStream outStream = null;
+	    try {
 
 			String userId = null;
 			// if we want front end access, this validation would need to be altered
@@ -85,18 +87,19 @@ public class AjaxFileUploadServlet extends HttpServlet {
 				int count = 0;
 				String mimeType = this.getServletContext().getMimeType(file.getName());
 				response.setContentType(mimeType);
-				ServletOutputStream outStream = response.getOutputStream();
+				outStream = response.getOutputStream();
 				while((count = is.read(buffer)) > 0) {
 					outStream.write(buffer, 0, count);
 				}
 				outStream.flush();
-				outStream.close();
 			}
 
 		} catch (Exception e) {
 			sendCompleteResponse(response, e.getMessage());
 			e.printStackTrace();
-		}
+		} finally {
+            CloseUtils.closeQuietly(outStream);
+        }
 
 	}
 

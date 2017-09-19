@@ -266,12 +266,14 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		if(!f.exists()){
 			f.createNewFile();
 		}
-		OutputStream fos = Files.newOutputStream(f.toPath());
-		byte[] buf = new byte[256];
-		int read = -1;
-		while ((read = in.read()) != -1) {
-			fos.write(read);
+		try (OutputStream fos = Files.newOutputStream(f.toPath());){
+			byte[] buf = new byte[256];
+			int read = -1;
+			while ((read = in.read()) != -1) {
+				fos.write(read);
+			}
 		}
+
 		WebAPILocator.getLanguageWebAPI().clearCache();
 		LanguageFileResourceImpl lfr = new LanguageFileResourceImpl(f.getName());
 		return lfr;

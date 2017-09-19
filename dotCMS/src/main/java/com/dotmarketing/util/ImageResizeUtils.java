@@ -63,7 +63,11 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		generateThumbnail(Files.newInputStream(Paths.get(fullImagePath)), Files.newOutputStream(Paths.get(resultImagePath)), fileExtension, width, height, bgColor);
+		try(final InputStream input = Files.newInputStream(Paths.get(fullImagePath));
+                final OutputStream output = Files.newOutputStream(Paths.get(resultImagePath))){
+
+		    generateThumbnail(input, output, fileExtension, width, height, bgColor);
+        }
 	}
 	
 	public static void generateThumbnail(InputStream input, OutputStream output, String format, int width, int height, Color bgColor) throws IOException, InterruptedException {
@@ -172,8 +176,10 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		resizeImage(Files.newInputStream(Paths.get(fullImagePath)), Files.newOutputStream(Paths.get(resultImagePath)), fileExtension, width, height);
-
+        try (final InputStream input = Files.newInputStream(Paths.get(fullImagePath));
+                final OutputStream output = Files.newOutputStream(Paths.get(resultImagePath))){
+            resizeImage(input, output, fileExtension, width, height);
+        }
 	}
 	
 	public static void resizeImage(InputStream input, OutputStream output, String format, int width, int height) throws IOException, InterruptedException {

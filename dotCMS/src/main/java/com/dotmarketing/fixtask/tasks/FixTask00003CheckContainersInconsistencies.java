@@ -3,6 +3,7 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
@@ -170,7 +171,12 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 			} catch (IOException e) {
 
 			}
-			_xstream.toXML(modifiedData, _bout);
+			try {
+                _xstream.toXML(modifiedData, _bout);
+            } finally {
+                CloseUtils.closeQuietly(_bout);
+            }
+
 		}
 		return modifiedData;
 	}

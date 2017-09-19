@@ -733,10 +733,12 @@ public class DotWebdavHelper {
 				File fileData = createFileInTemporalFolder(fieldVar, user.getUserId(), fileName);
 
 				// Saving the new working data
-				final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()));
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+				try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
+                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
+
+				    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                }
                 
                 //Avoid uploading an empty file
 				if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
@@ -780,10 +782,12 @@ public class DotWebdavHelper {
 
 
 				// Saving the new working data
-			    final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()));
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
+                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
+
+                    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                }
                 
                 //Avoid uploading an empty file
 				fileData = writeDataIfEmptyFile(folder, fileName, fileData);

@@ -44,15 +44,15 @@ public class FileAssetAjax {
 		Map<String, Object> map = fa.getMap();
 
 		java.io.File fileIO = fa.getFileAsset();
-		InputStream fios = Files.newInputStream(fileIO.toPath());
-		byte[] data = new byte[fios.available()];
-		fios.read(data);
-		String text = new String(data);
+		try (InputStream fios = Files.newInputStream(fileIO.toPath())){
+            byte[] data = new byte[fios.available()];
+            fios.read(data);
+            String text = new String(data);
 
-		map.put("text", text);
+            map.put("text", text);
 
-		return map;
-
+            return map;
+		}
 	}
 
 

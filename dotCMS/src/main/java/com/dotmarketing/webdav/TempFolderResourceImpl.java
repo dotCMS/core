@@ -175,11 +175,12 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 			fe.mkdirs();
 			f.createNewFile();
 		}
-		OutputStream fos = Files.newOutputStream(f.toPath());
-		byte[] buf = new byte[256];
-        int read = -1;
-		while ((read = in.read()) != -1) {
-			fos.write(read);
+		try(OutputStream fos = Files.newOutputStream(f.toPath())){
+			byte[] buf = new byte[256];
+			int read = -1;
+			while ((read = in.read()) != -1) {
+				fos.write(read);
+			}
 		}
 		TempFileResourceImpl tr = new TempFileResourceImpl(f, f.getPath(), isAutoPub);
 		return tr;

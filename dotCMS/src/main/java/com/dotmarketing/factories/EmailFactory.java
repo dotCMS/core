@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -38,6 +39,7 @@ import com.liferay.util.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -433,11 +435,13 @@ public class EmailFactory {
 				}
 
 				// Saving email backup in a file
-				try {
+                OutputStream os = null;
+                BufferedOutputStream bos = null;
+                try {
 					String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
 					new File(filePath).mkdir();
 
-					File file = null;
+					File file;
 					synchronized (emailTime) {
 						emailTime = new Long(emailTime.longValue() + 1);
 						if (UtilMethods.isSet(emailFolder)) {
@@ -448,8 +452,8 @@ public class EmailFactory {
 								+ ".html");
 					}
 					if (file != null) {
-						java.io.OutputStream os = Files.newOutputStream(file.toPath());
-						BufferedOutputStream bos = new BufferedOutputStream(os);
+						os = Files.newOutputStream(file.toPath());
+						bos = new BufferedOutputStream(os);
 						if(emailBodies.get("emailHTMLBody") != null)
 							bos.write(emailBodies.get("emailHTMLBody").getBytes());
 						else if(emailBodies.get("emailHTMLTableBody") != null) 
@@ -457,12 +461,13 @@ public class EmailFactory {
 						else
 							bos.write(emailBodies.get("emailPlainTextBody").getBytes());
 						bos.flush();
-						bos.close();
-						os.close();
 					}
 				} catch (Exception e) {
 					Logger.warn(EmailFactory.class, "sendForm: Couldn't save the email backup in " + Config.getStringProperty("EMAIL_BACKUPS"));
-				}
+				} finally {
+                    CloseUtils.closeQuietly(bos);
+                    CloseUtils.closeQuietly(os);
+                }
 
 				// send the mail out;
 				Mailer m = new Mailer();

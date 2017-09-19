@@ -130,7 +130,6 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		try(ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))){
 			oos.writeObject(origType);
-			oos.close();
 		}
 
 		temp.renameTo(temp2);

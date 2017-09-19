@@ -1,5 +1,6 @@
 package com.dotmarketing.services;
 
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -69,29 +70,31 @@ public class HostServices {
 			
 			 }
 		}
+        java.io.BufferedOutputStream tmpOut = null;
+        OutputStreamWriter out = null;
 		try {
-
-			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+		    if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 
 			    String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 
-				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+				tmpOut = new java.io.BufferedOutputStream(
 				        Files.newOutputStream(
 						        Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 				//Specify a proper character encoding
-				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+				out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
 
 				out.write(sb.toString());
 
 				out.flush();
-				out.close();
-				tmpOut.close();
 			}
 		} catch (Exception e) {
 			Logger.error(HostServices.class, e.toString(), e);
-		}
-		try {
+		} finally {
+            CloseUtils.closeQuietly(out);
+            CloseUtils.closeQuietly(tmpOut);
+        }
+        try {
 			result = new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e1) {
 			result = new ByteArrayInputStream(sb.toString().getBytes());

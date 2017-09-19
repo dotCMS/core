@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.metadata.ClassMetadata;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Inode;
@@ -178,6 +179,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 		String tempdir = FileUtil.getRealPath(backupTempFilePath);
 
 		MultipartRequest mpr;
+        ZipInputStream zin = null;
 		try {
 			mpr = new MultipartRequest(request, tempdir, 1000000000);
 			File importFile = mpr.getFile("fileUpload");
@@ -188,19 +190,21 @@ public class ImportExportXMLServlet extends HttpServlet {
 			if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
 
 				InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
-				ZipInputStream zin = new ZipInputStream(in);
+				zin = new ZipInputStream(in);
 				ZipEntry e;
 
 				while ((e = zin.getNextEntry()) != null) {
 					unzip(zin, e.getName());
 				}
-				zin.close();
+
 				importFile.delete();
 			}
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
+		} finally {
+			zin.close();
 		}
 		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] _tempFiles = f.list(new XMLFileNameFilter());
@@ -348,9 +352,13 @@ public class ImportExportXMLServlet extends HttpServlet {
 
 				_list = _dh.list();
 				Logger.info(this, "writing : " + _list.size() + " records to " + clazz.getName());
-				_xstream.toXML(_list, _bout);
 
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
+
 				_list = null;
 				_dh = null;
 				_bout = null;
@@ -363,8 +371,11 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
 			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                CloseUtils.closeQuietly(_bout);
+            }
 			_list = null;
 			_bout = null;
 
@@ -373,8 +384,11 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
 			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                CloseUtils.closeQuietly(_bout);
+            }
 			_list = null;
 			_bout = null;
 
@@ -402,15 +416,15 @@ public class ImportExportXMLServlet extends HttpServlet {
 		String[] s = f.list();
 		for (int i = 0; i < s.length; i++) {
 			final String realPath = FileUtil.getRealPath(backupTempFilePath + "/" + s[i]);
-			InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(realPath)));
-			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-			zout.putNextEntry(e);
-			int len = 0;
-			while ((len = in.read(b)) != -1) {
-				zout.write(b, 0, len);
-			}
-			zout.closeEntry();
-			in.close();
+			try (InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(realPath)))){
+                ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
+                zout.putNextEntry(e);
+                int len = 0;
+                while ((len = in.read(b)) != -1) {
+                    zout.write(b, 0, len);
+                }
+                zout.closeEntry();
+            }
 		}
 		zout.close();
 		out.close();
@@ -443,13 +457,13 @@ public class ImportExportXMLServlet extends HttpServlet {
 	private void unzip(ZipInputStream zin, String s) throws IOException {
 		Logger.info(this, "unzipping " + s);
 		File f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s));
-		BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-		byte[] b = new byte[512];
-		int len = 0;
-		while ((len = zin.read(b)) != -1) {
-			out.write(b, 0, len);
-		}
-		out.close();
+		try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()))){
+            byte[] b = new byte[512];
+            int len = 0;
+            while ((len = zin.read(b)) != -1) {
+                out.write(b, 0, len);
+            }
+        }
 	}
 
 	/**

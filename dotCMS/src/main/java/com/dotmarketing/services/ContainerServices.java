@@ -1,5 +1,6 @@
 package com.dotmarketing.services;
 
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -13,6 +14,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -283,23 +285,27 @@ public class ContainerServices {
             sb.append(container.getCode());
         }
 
+        OutputStreamWriter out = null;
+        BufferedOutputStream tmpOut = null;
+
         try {
             String folderPath = (!EDIT_MODE) ? "live" + File.separator: "working" + File.separator;
             String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
 
             if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-            	java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+            	tmpOut = new java.io.BufferedOutputStream(
                         Files.newOutputStream(
                                 Paths.get(ConfigUtils.getDynamicVelocityPath()+File.separator + filePath)));
 	            //Specify a proper character encoding
-	            OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+	            out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
 	            out.write(sb.toString());
 	            out.flush();
-	            out.close();
-	            tmpOut.close();
             }
         } catch (Exception e) {
             Logger.error(ContentletServices.class, e.toString(), e);
+        } finally {
+            CloseUtils.closeQuietly(out);
+            CloseUtils.closeQuietly(tmpOut);
         }
 
         try {

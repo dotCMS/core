@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -114,6 +115,7 @@ public class BundlerUtil {
             f.delete();
 
         XStream xstream = new XStream( new DomDriver("UTF-8") );
+        OutputStreamWriter writer = null;
 
         try {
             if ( !f.exists() ){
@@ -125,15 +127,16 @@ public class BundlerUtil {
             	f.createNewFile();
             }	
             
-            OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8");
+            writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8");
             HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
             xstream.marshal(obj, xmlWriter);
-            writer.close();
 
         } catch ( FileNotFoundException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         } catch ( IOException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
+        } finally {
+            CloseUtils.closeQuietly(writer);
         }
     }
 
