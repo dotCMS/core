@@ -36,7 +36,7 @@
 										<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
 									</div>
 								</div>
-								<table dojoAttachPoint="results_table" class="listingTable"></table>
+								<table dojoAttachPoint="results_table" class="listingTable relateContent"></table>
 							</div>
 							<div class="portlet-pagination">
 								<div dojoAttachPoint="previousDiv" style="display: none;">
