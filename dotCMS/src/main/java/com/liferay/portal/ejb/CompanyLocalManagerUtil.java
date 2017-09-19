@@ -22,6 +22,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
@@ -118,6 +119,7 @@ public class CompanyLocalManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static com.liferay.portal.model.Company getCompany(
 		java.lang.String companyId)
 		throws com.liferay.portal.PortalException, 

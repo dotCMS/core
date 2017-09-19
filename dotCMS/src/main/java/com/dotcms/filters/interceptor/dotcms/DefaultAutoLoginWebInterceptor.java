@@ -1,8 +1,10 @@
 package com.dotcms.filters.interceptor.dotcms;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -22,14 +24,17 @@ import java.io.IOException;
 public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
     private final JsonWebTokenUtils jsonWebTokenUtils;
+    private final LoginServiceAPI loginServiceAPI;
 
     public DefaultAutoLoginWebInterceptor() {
-        this(JsonWebTokenUtils.getInstance());
+        this(JsonWebTokenUtils.getInstance(), APILocator.getLoginServiceAPI());
     }
 
-    public DefaultAutoLoginWebInterceptor(final JsonWebTokenUtils jsonWebTokenUtils) {
+    public DefaultAutoLoginWebInterceptor(final JsonWebTokenUtils jsonWebTokenUtils,
+                                          final LoginServiceAPI loginServiceAPI) {
 
         this.jsonWebTokenUtils = jsonWebTokenUtils;
+        this.loginServiceAPI = loginServiceAPI;
     }
 
     @Override
@@ -46,7 +51,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                 UtilMethods.isSet(encryptedId)) {
 
             Logger.debug(DefaultAutoLoginWebInterceptor.class, "Doing AutoLogin for " + encryptedId);
-            if (LoginFactory.doCookieLogin(encryptedId, request, response)) {
+            if (this.loginServiceAPI.doCookieLogin(encryptedId, request, response)) {
 
                 result = Result.SKIP;
             }

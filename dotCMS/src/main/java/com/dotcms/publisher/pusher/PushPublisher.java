@@ -153,7 +153,7 @@ public class PushPublisher extends Publisher {
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = RestClientBuilder.newClient();
+			Client client = RestClientBuilder.getClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 

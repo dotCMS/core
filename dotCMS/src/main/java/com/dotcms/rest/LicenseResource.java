@@ -189,9 +189,7 @@ public class LicenseResource {
                 HibernateUtil.startTransaction();
                 
                 LicenseUtil.pickLicense(serial);
-                
 
-                
                 HibernateUtil.commitTransaction();
                 
                 AdminLogger.log(LicenseResource.class, "pickLicense", "Picked license from repo. Serial: "+serial, initData.getUser());
@@ -204,6 +202,8 @@ public class LicenseResource {
                     Logger.warn(this, "can't rollback", e);
                 }
                 return Response.serverError().build();
+            } finally {
+                HibernateUtil.closeSessionSilently();
             }
         }
         

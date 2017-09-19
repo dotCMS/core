@@ -5,6 +5,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -51,9 +53,9 @@ import com.liferay.util.GetterUtil;
  */
 public class UserAPIImpl implements UserAPI {
 
-	private UserFactory uf;
-	private PermissionAPI perAPI;
-	private UserProxyAPI upAPI;
+	private final UserFactory userFactory;
+	private final PermissionAPI permissionAPI;
+	private final UserProxyAPI userProxyAPI;
 	private final NotificationAPI notfAPI;
 	private final BundleAPI bundleAPI;
 	static User systemUser, anonUser=null;
@@ -61,59 +63,69 @@ public class UserAPIImpl implements UserAPI {
 	 * Creates an instance of the class.
 	 */
 	public UserAPIImpl() {
-		uf = FactoryLocator.getUserFactory();
-		perAPI = APILocator.getPermissionAPI();
-		upAPI = APILocator.getUserProxyAPI();
+		userFactory = FactoryLocator.getUserFactory();
+		permissionAPI = APILocator.getPermissionAPI();
+		userProxyAPI = APILocator.getUserProxyAPI();
 		notfAPI = APILocator.getNotificationAPI();
 		bundleAPI = APILocator.getBundleAPI();
 	}
 
+	@CloseDBIfOpened
 	@Override
-	public User loadUserById(String userId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+	public User loadUserById(final String userId, final User user, final boolean respectFrontEndRoles)
+			throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+
 		if(!UtilMethods.isSet(userId)){
 			throw new DotDataException("You must specifiy an userId to search for");
 		}
-		User u = uf.loadUserById(userId);
+		User u = userFactory.loadUserById(userId);
 		if(!UtilMethods.isSet(u)){
 			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
 		}
-		if(perAPI.doesUserHavePermission(upAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+		if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			return u;
 		}else{
 			throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
-	public User loadUserById(String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+	public User loadUserById(final String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(userId)){
 			throw new DotDataException("You must specifiy an userId to search for");
 		}
-		User u = uf.loadUserById(userId);
-		if(!UtilMethods.isSet(u)){
+		
+		final User user = userFactory.loadUserById(userId);
+		if(!UtilMethods.isSet(user)){
 			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
 		}
-		return u;
+		return user;
 	}
 
+	@CloseDBIfOpened
 	@Override
-	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
+	public User loadByUserByEmail(final String email, final User user, 
+								  final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
+		
 		if(!UtilMethods.isSet(email)){
 			throw new DotDataException("You must specifiy an email to search for");
 		}
-		User u = uf.loadByUserByEmail(email);
+		
+		final User u = userFactory.loadByUserByEmail(email);
 		if(!UtilMethods.isSet(u)){
 			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
 		}
-		if(perAPI.doesUserHavePermission(upAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+		if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			return u;
 		}else{
 			throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
-	public String encryptUserId(String userId) throws DotStateException{
+	public String encryptUserId(final String userId) throws DotStateException{
 		try{
 			return UserManagerUtil.encryptUserId(userId);
 		}catch (Exception e) {
@@ -121,29 +133,34 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long getCountUsersByName(String filter) throws DotDataException {
-		return uf.getCountUsersByName(filter);
+		return userFactory.getCountUsersByName(filter);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
-		return uf.getUsersByName(filter, start, limit);
+		return userFactory.getUsersByName(filter, start, limit);
 	}
 
+	@WrapInTransaction
 	@Override
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
-		return uf.createUser(userId, email);
+		return userFactory.createUser(userId, email);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public User getDefaultUser() throws DotDataException {
 		try {
-			return uf.loadDefaultUser();
+			return userFactory.loadDefaultUser();
 		} catch (Exception e) {
 			throw new DotDataException("getting default user user failed", e);
 		}
 	}
+
     @Override
 	public User getSystemUser() throws DotDataException {
       if(this.systemUser==null){
@@ -151,16 +168,14 @@ public class UserAPIImpl implements UserAPI {
 	   }
 	   return this.systemUser;
 	}
-	
-	
-	
 
+	@WrapInTransaction
 	private User _getSystemUser() throws DotDataException {
 		User user = null;
 		RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
 		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
 		try {
-			user = uf.loadUserById(SYSTEM_USER_ID);
+			user = userFactory.loadUserById(SYSTEM_USER_ID);
 		} catch (NoSuchUserException e) {
 			user = createUser("system", "system@dotcmsfakeemail.org");
 			user.setUserId(SYSTEM_USER_ID);
@@ -168,7 +183,7 @@ public class UserAPIImpl implements UserAPI {
 			user.setLastName("system user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			uf.saveUser(user);
+			userFactory.saveUser(user);
 		}
 		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
 			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
@@ -186,18 +201,18 @@ public class UserAPIImpl implements UserAPI {
     }
     
 
-
+	@WrapInTransaction
 	private User _getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
-			user = uf.loadUserById("anonymous");
+			user = userFactory.loadUserById("anonymous");
 		} catch (DotDataException e) {
 			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
 			user.setUserId("anonymous");
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			uf.saveUser(user);
+			userFactory.saveUser(user);
 			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
 		} catch (NoSuchUserException e) {
 			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
@@ -205,87 +220,100 @@ public class UserAPIImpl implements UserAPI {
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			uf.saveUser(user);
+			userFactory.saveUser(user);
 			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), user);
 		}
 		return user;
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public boolean userExistsWithEmail(String email) throws DotDataException {
-		return uf.userExistsWithEmail(email);
+		return userFactory.userExistsWithEmail(email);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> findAllUsers(int begin, int end) throws DotDataException {
-		return uf.findAllUsers(begin, end);
+		return userFactory.findAllUsers(begin, end);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> findAllUsers() throws DotDataException {
-		return uf.findAllUsers();
+		return userFactory.findAllUsers();
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
-		return uf.getCountUsersByNameOrEmail(filter);
+		return userFactory.getCountUsersByNameOrEmail(filter);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
-		return uf.getUsersByNameOrEmail(filter, page, pageSize);
+		return userFactory.getUsersByNameOrEmail(filter, page, pageSize);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
-		return uf.getUsersIdsByCreationDate( filterDate, page, pageSize );
+		return userFactory.getUsersIdsByCreationDate( filterDate, page, pageSize );
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
-		return uf.getCountUsersByNameOrEmailOrUserID(filter);
+		return userFactory.getCountUsersByNameOrEmailOrUserID(filter);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
-		return uf.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
+		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
 			throws DotDataException {
-		return uf.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
+		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
-		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
-		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
+		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
 			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
+		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
 	}
 
+	@WrapInTransaction
 	@Override
-	public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
+	public void save(final User userToSave, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
 		String userId = userToSave.getUserId();
 		if (userId == null) {
 			throw new DotDataException("Can't save a user without a userId");
 		}
-		if (!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,
+		if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
 				APILocator.getUserAPI().getSystemUser(), false),
 				PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
 			throw new DotSecurityException(
 					"User doesn't have permission to save the user which is trying to be saved");
 		}
-		uf.saveUser(userToSave);
+		userFactory.saveUser(userToSave);
 		PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
 				.getManager();
 		try {
@@ -336,12 +364,13 @@ public class UserAPIImpl implements UserAPI {
 		if (userToDelete.getUserId() == null) {
 			throw new DotDataException("Can't delete a user without a userId");
 		}
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
 		delete(userToDelete,user, user, respectFrontEndRoles);
 	}
 
+	@WrapInTransaction
 	@Override
 	public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
 		if (!UtilMethods.isSet(userToDelete) || userToDelete.getUserId() == null) {
@@ -356,7 +385,7 @@ public class UserAPIImpl implements UserAPI {
 		if (getAnonymousUser().getUserId() == userToDelete.getUserId()){
 			throw new DotDataException("Anonymous user can not be deleted.");
 		}
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
 
@@ -424,7 +453,7 @@ public class UserAPIImpl implements UserAPI {
 		logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
 
 		//removing user roles
-		perAPI.removePermissionsByRole(userRole.getId());
+		permissionAPI.removePermissionsByRole(userRole.getId());
 		roleAPI.removeAllRolesFromUser(userToDelete);
 
 		/**
@@ -436,7 +465,7 @@ public class UserAPIImpl implements UserAPI {
 		roleAPI.delete(userRole);
 
 		/*Delete role*/
-		uf.delete(userToDelete);
+		userFactory.delete(userToDelete);
 
 	}
 
@@ -479,37 +508,41 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
 	public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
-		uf.saveAddress(user, ad);
+		userFactory.saveAddress(user, ad);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		Address ad = uf.loadAddressById(addressId);
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
+		Address ad = userFactory.loadAddressById(addressId);
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
 		return ad;
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
-		uf.deleteAddress(ad);
+		userFactory.deleteAddress(ad);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
+		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
-		return uf.loadUserAddresses(user);
+		return userFactory.loadUserAddresses(user);
 	}
 
 	@Override
@@ -539,16 +572,18 @@ public class UserAPIImpl implements UserAPI {
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void markToDelete(User userToDelete) throws DotDataException {
 		userToDelete.setDeleteInProgress(true);
 		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
-		uf.saveUser(userToDelete);
+		userFactory.saveUser(userToDelete);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<User> getUnDeletedUsers() throws DotDataException {
-		return uf.getUnDeletedUsers();
+		return userFactory.getUnDeletedUsers();
 	}
 
 }

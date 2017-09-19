@@ -196,64 +196,62 @@ public class BundlePublisher extends Publisher {
         }
 
         try {
-            HibernateUtil.startTransaction();
+            try {
+                HibernateUtil.startTransaction();
 
-            //Execute the handlers
-            for (IHandler handler : handlers) {
+                //Execute the handlers
+                for (IHandler handler : handlers) {
 
-                handler.handle(folderOut);
+                    handler.handle(folderOut);
 
+                }
+
+                HibernateUtil.commitTransaction();
+            } catch (Exception e) {
+                bundleSuccess = false;
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch (DotHibernateException e1) {
+                    Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
+                }
+                Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
+
+                //Update audit
+                try {
+                    detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+                    detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
+                    detail.setStackTrace(ExceptionUtils.getStackTrace(e));
+                    String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+                    currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
+                    currentStatusHistory.setPublishEnd(new Date());
+                    currentStatusHistory.setAssets(assetsDetails);
+
+                    auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                            currentStatusHistory);
+                } catch (DotPublisherException e1) {
+                    throw new DotPublishingException("Cannot update audit: ", e);
+                }
+                throw new DotPublishingException("Error Publishing: " + e, e);
             }
 
-            HibernateUtil.commitTransaction();
-        } catch (Exception e) {
-            bundleSuccess = false;
             try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
-            }
-            Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
-
-            //Update audit
-            try {
-                detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
-                detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
-                detail.setStackTrace(ExceptionUtils.getStackTrace(e));
+                //Update audit
+                detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+                detail.setInfo("Everything ok");
                 String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
                 currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
-
-                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-                    currentStatusHistory);
-            } catch (DotPublisherException e1) {
-                throw new DotPublishingException("Cannot update audit: ", e);
+                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+                HibernateUtil.commitTransaction();
+            } catch (Exception e) {
+                Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
             }
-            throw new DotPublishingException("Error Publishing: " + e, e);
-        }
-
-        try {
-            //Update audit
-            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-            detail.setInfo("Everything ok");
-            String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
-            currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-            currentStatusHistory.setPublishEnd(new Date());
-            currentStatusHistory.setAssets(assetsDetails);
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-            HibernateUtil.commitTransaction();
-        } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
-        }
-
-        try {
-            HibernateUtil.closeSession();
-        } catch (DotHibernateException e) {
-            Logger.warn(this, e.getMessage(), e);
         } finally {
-            DbConnectionFactory.closeConnection();
+
+            DbConnectionFactory.closeSilently();
         }
+
         return config;
     }
 

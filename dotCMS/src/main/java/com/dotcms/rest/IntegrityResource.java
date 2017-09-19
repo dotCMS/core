@@ -139,7 +139,7 @@ public class IntegrityResource {
     // https://github.com/dotCMS/core/issues/9067
 	private Response postWithEndpointState(String endpointId, String url, MediaType mediaType, Entity<?> entity) {
 
-		final Builder requestBuilder = RestClientBuilder.newClient().target(url).request(mediaType);
+		final Builder requestBuilder = RestClientBuilder.getClient().target(url).request(mediaType);
 
 		applyEndpointState(endpointId, requestBuilder);
 
@@ -1018,6 +1018,8 @@ public class IntegrityResource {
 						+ " could not be cleared on end-point [" + requesterEndPoint.getId()
 						+ "]. Please truncate the table data manually.", e);
 			}
+
+			HibernateUtil.closeSessionSilently();
 		}
 
         jsonResponse.put( "success", true );
@@ -1097,7 +1099,7 @@ public class IntegrityResource {
             } else  if(whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
 
-                final Client client = RestClientBuilder.newClient();
+                final Client client = RestClientBuilder.getClient();
 
                 PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
                 String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
@@ -1146,6 +1148,7 @@ public class IntegrityResource {
 						+ " could not be cleared on end-point [" + endpointId
 						+ "]. Please truncate the table data manually.", e);
 			}
+			HibernateUtil.closeSessionSilently();
 		}
 
         return response( jsonResponse.toString(), false );

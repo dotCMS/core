@@ -480,9 +480,9 @@ public class BrowserAPI {
 			List<Link> links = new ArrayList<Link>();
 			try {
 				if (parent != null) {
-					if(showWorking){
+					if(showWorking) {
 						links.addAll(folderAPI.getLinks(parent, true, false, user,false));
-					}else{
+					} else {
 						links.addAll(folderAPI.getLiveLinks(parent, user, false));
 					}
 					if(showArchived)

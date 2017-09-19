@@ -2,6 +2,8 @@ package com.dotcms.publisher.endpoint.business;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
@@ -15,24 +17,30 @@ import com.dotmarketing.exception.DotDataException;
  */
 public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 
-	@Override
-	public List<String> findSendGroups() throws DotDataException {
-		return publishingEndPointFactory.findSendGroups();
-	}
-
 	private PublishingEndPointFactory publishingEndPointFactory;
 
 	public PublishingEndPointAPIImpl(PublishingEndPointFactory publishingEndPointFactory){
 		this.publishingEndPointFactory = publishingEndPointFactory;
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public List<String> findSendGroups() throws DotDataException {
+		return publishingEndPointFactory.findSendGroups();
+	}
+
+
 	/**
 	 * Returns the end points list.
 	 */
+	@CloseDBIfOpened
+	@Override
 	public List<PublishingEndPoint> getAllEndPoints() throws DotDataException{
 		return publishingEndPointFactory.getEndPoints();
 	}
 
+	@CloseDBIfOpened
+	@Override
 	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException{
 		return publishingEndPointFactory.getReceivingEndPoints();
 	}
@@ -40,6 +48,8 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	/**
 	 * Returns a single end point based on id.
 	 */
+	@CloseDBIfOpened
+	@Override
 	public PublishingEndPoint findEndPointById(String id) throws DotDataException {
 		return publishingEndPointFactory.getEndPointById(id);
 	}
@@ -47,6 +57,8 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	/**
 	 * Save a new end point
 	 */
+	@WrapInTransaction
+	@Override
 	public void saveEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
 		publishingEndPointFactory.store(anEndPoint);
 	}
@@ -54,6 +66,8 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	/**
 	 * Update an end point
 	 */
+	@WrapInTransaction
+	@Override
 	public void updateEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
 		publishingEndPointFactory.update(anEndPoint);
 	}
@@ -61,9 +75,11 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	/**
 	 * Delete an end point by id
 	 */
+	@WrapInTransaction
+	@Override
 	public void deleteEndPointById(String id) throws DotDataException {
 	    //Delete all conflicts reported for this Endpoint
-	    IntegrityUtil integrityUtil = new IntegrityUtil();
+	    final IntegrityUtil integrityUtil = new IntegrityUtil();
 	    integrityUtil.completeDiscardConflicts(id);
 	    //Delete the Endpoint
 		publishingEndPointFactory.deleteEndPointById(id);
@@ -73,6 +89,8 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	 * Returns the single end point configured like sender. Null otherwise.
 	 *
 	 */
+	@CloseDBIfOpened
+	@Override
 	public PublishingEndPoint findEnabledSendingEndPointByAddress(String address) throws DotDataException {
 		return publishingEndPointFactory.getEnabledSendingEndPointByAddress(address);
 	}
@@ -81,6 +99,8 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	 * Returns a single end point configured like sender. Null otherwise.
 	 *
 	 */
+	@CloseDBIfOpened
+	@Override
 	public List<PublishingEndPoint> findSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
 		return publishingEndPointFactory.getSendingEndPointsByEnvironment(environmentId);
 
@@ -89,8 +109,16 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	/**
 	 * Returns all the receiver end points.
 	 */
+	@CloseDBIfOpened
+	@Override
 	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
 		return publishingEndPointFactory.getEnabledReceivingEndPoints();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public PublishingEndPoint findEndPointByName(String name) throws DotDataException {
+		return publishingEndPointFactory.getEndPointByName(name);
 	}
 
 	public PublishingEndPointFactory getPublishingEndPointFactory() {
@@ -100,10 +128,5 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	public void setPublishingEndPointFactory(
 			PublishingEndPointFactory publishingEndPointFactory) {
 		this.publishingEndPointFactory = publishingEndPointFactory;
-	}
-
-	@Override
-	public PublishingEndPoint findEndPointByName(String name) throws DotDataException {
-		return publishingEndPointFactory.getEndPointByName(name);
 	}
 }

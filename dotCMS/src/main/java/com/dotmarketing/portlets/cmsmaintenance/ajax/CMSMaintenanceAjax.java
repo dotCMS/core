@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
+
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -691,6 +693,8 @@ public class CMSMaintenanceAjax {
 				Logger.error(this,e.getMessage(),e);
 			} catch (SystemException e) {
 				Logger.error(this,e.getMessage(),e);
+			} finally {
+				DbConnectionFactory.closeSilently();
 			}
 
 		}

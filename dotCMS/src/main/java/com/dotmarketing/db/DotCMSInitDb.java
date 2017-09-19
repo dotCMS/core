@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -24,13 +25,20 @@ import com.liferay.util.FileUtil;
 
 public class DotCMSInitDb {
 
-	public static void InitializeDb() throws DotDataException {
+	@CloseDBIfOpened
+	private static boolean isConfigured () {
 
 		DotConnect db = new DotConnect();
 		db.setSQL("select count(*) as test from inode");
 
 		int test = db.getInt("test");
-		boolean configured = (test > 0);
+		return (test > 0);
+	}
+
+	@CloseDBIfOpened
+	public static void InitializeDb() throws DotDataException {
+
+		final boolean configured = isConfigured();
 
 		if (!configured) {
 			if(Config.getBooleanProperty("STARTERSITE_BUILD", true)){
@@ -54,7 +62,7 @@ public class DotCMSInitDb {
 	private static void buildDefaultData() throws DotDataException {
 		try {
 			HostAPI hostAPI = APILocator.getHostAPI();
-			PublicCompanyFactory.createDefaultCompany();
+			LocalTransaction.wrap(() -> PublicCompanyFactory.createDefaultCompany());
 			// Ensures that default groups are set up
 	//		GroupFactory.createDefaultGroups();
 	//		try {
@@ -76,6 +84,9 @@ public class DotCMSInitDb {
 		} catch (DotSecurityException e) {
 			Logger.fatal(DotCMSInitDb.class, "Unable to initialize default data", e);
 			throw new DotRuntimeException(e.getMessage(), e);
+		} catch (Exception e) {
+			Logger.fatal(DotCMSInitDb.class, "Unable to initialize default data", e);
+			new DotDataException(e.getMessage(), e);
 		}
 	}
 

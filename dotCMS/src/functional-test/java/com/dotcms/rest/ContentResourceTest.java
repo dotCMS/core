@@ -104,7 +104,7 @@ public class ContentResourceTest {
     public void before() throws Exception{
         LicenseTestUtil.getLicense();
 
-        client=RestClientBuilder.newClient();
+        client=RestClientBuilder.getClient();
         HttpServletRequest request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();
         long serverPort = request.getServerPort();

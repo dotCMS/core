@@ -2062,10 +2062,6 @@ public class ContentletAjax {
 
 		}
 
-
-
-
-
 		return ret;
 	}
 

@@ -182,6 +182,8 @@ public class RuleResource {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
         }
     }
 

@@ -1,12 +1,10 @@
 package com.dotcms.contenttype.business;
 
-import java.util.List;
-import java.util.Observer;
-
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
+
+import java.util.List;
 
 public interface ContentTypeFactory {
 	
