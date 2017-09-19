@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import com.dotcms.business.CloseDBIfOpened;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -163,6 +164,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	 * folder
 	 */
 	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
 	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);

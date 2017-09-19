@@ -585,7 +585,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 
-	// todo: not sure if this should be a transaction
+	@WrapInTransaction
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 

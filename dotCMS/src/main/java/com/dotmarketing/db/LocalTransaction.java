@@ -6,6 +6,37 @@ import com.dotmarketing.exception.DotDataException;
 
 public class LocalTransaction {
 
+    static public <T> T wrapHibernateReturn(final ReturnableDelegate<T> delegate) throws Exception {
+
+        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
+        final boolean isLocalTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+        T result = null;
+
+        try {
+
+            result= delegate.execute();
+            if (isLocalTransaction) {
+                HibernateUtil.onlyCommitTransaction();
+            }
+        } catch (Throwable e) {
+
+            if (isLocalTransaction) {
+                HibernateUtil.rollbackTransaction();
+            }
+
+            throwException(e);
+        } finally {
+
+            if (isLocalTransaction && isNewConnection) {
+                HibernateUtil.closeSessionSilently();
+            }
+        }
+
+        return result;
+    } // wrapReturn.
+
+
     /**
      *
      * @param delegate {@link ReturnableDelegate}
@@ -27,8 +58,6 @@ public class LocalTransaction {
      */
     static public <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws Exception {
 
-        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
-        final boolean autoCommit         = (!isNewConnection)?DbConnectionFactory.getAutoCommit():true;
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
 
         T result = null;
@@ -45,10 +74,7 @@ public class LocalTransaction {
         } finally {
 
             if (isLocalTransaction) {
-                DbConnectionFactory.setAutoCommit(autoCommit);
-            }
-
-            if (isNewConnection) {
+                DbConnectionFactory.setAutoCommit(true);
                 DbConnectionFactory.closeConnection();
             }
         }
@@ -74,8 +100,6 @@ public class LocalTransaction {
      */
     static public void wrap(final VoidDelegate delegate) throws Exception {
 
-        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
-        final boolean autoCommit         = (!isNewConnection)?DbConnectionFactory.getAutoCommit():true;
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
         
         try {
@@ -91,10 +115,7 @@ public class LocalTransaction {
         } finally {
 
             if (isLocalTransaction) {
-                DbConnectionFactory.setAutoCommit(autoCommit);
-            }
-
-            if (isNewConnection) {
+                DbConnectionFactory.setAutoCommit(true);
                 DbConnectionFactory.closeConnection();
             }
         }
@@ -105,6 +126,11 @@ public class LocalTransaction {
         if(isLocalTransaction){
             DbConnectionFactory.rollbackTransaction();
         }
+
+        throwException(e);
+    } // handleException.
+
+    private static void throwException ( final Throwable  e) throws Exception {
 
         if (e instanceof Exception) {
 
@@ -119,6 +145,6 @@ public class LocalTransaction {
             throw (DotDataException) t;
         }
         throw new DotDataException(t.getMessage(),t);
-    } // handleException.
+    }
 
 } // E:O:F:LocalTransaction.
