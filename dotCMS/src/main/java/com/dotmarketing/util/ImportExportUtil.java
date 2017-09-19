@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -355,8 +356,8 @@ public class ImportExportUtil {
 
             _xstream = new XStream(new DomDriver(CHARSET));
 
-            try(final InputStream in = Files.newInputStream(file.toPath())){
-                charStream = new InputStreamReader(in, CHARSET);
+            try{
+                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -364,6 +365,8 @@ public class ImportExportUtil {
                 roles.addAll((List<Role>) _xstream.fromXML(charStream));
             }catch(Exception e){
                 Logger.error(this, "Unable to import " + _className, e);
+            } finally {
+                CloseUtils.closeQuietly(charStream);
             }
         }
 
@@ -453,7 +456,10 @@ public class ImportExportUtil {
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
-                List<Identifier> idents=(List<Identifier>)xstream.fromXML(Files.newInputStream(ff.toPath()));
+                List<Identifier> idents;
+                try(final InputStream input = Files.newInputStream(ff.toPath())){
+                    idents = (List<Identifier>)xstream.fromXML(input);
+                }
                 for(Identifier ident : idents) {
                     if(ident.getAssetType().equals("folder"))
                         folderIdents.add(ident);
@@ -1117,8 +1123,8 @@ public class ImportExportUtil {
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
 
-            try(final InputStream in = Files.newInputStream(f.toPath())){
-                charStream = new InputStreamReader(in, CHARSET);
+            try{
+                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
             }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }

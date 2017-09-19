@@ -77,11 +77,13 @@ public class PushCategoryUtil {
 	
 	private CategoryWrapper getCategoryWrapperFromFile(File category) throws IOException {
 		InputStream fis = Files.newInputStream(category.toPath());
+		CategoryWrapper categoryWrapper;
 		try {
-			return (CategoryWrapper)xstream.fromXML(fis);
+            categoryWrapper = (CategoryWrapper) xstream.fromXML(fis);
 		} finally {
 			IOUtils.closeQuietly(fis);
 		}
+		return categoryWrapper;
 	}
 	
 	public int getCategoryXMLCount(){
