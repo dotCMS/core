@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.license.LicenseManager"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.struts.MultiMessageResources"%>
@@ -61,96 +62,11 @@
         isCommunity     :"<%=isCommunity%>",
         
         requestTrial : function(){
-            var data = {"licenseLevel":"<%=LicenseLevel.PLATFORM.level%>","licenseType":"trial"};
-            
-            var xhrArgs = {
-                url: "/api/license/requestCode/licenseType/"+ data.licenseType +'/licenseLevel/'+ data.licenseLevel,
-                handleAs: "text",
-                load: function(data) {
-                    var isError = false;
-                    var json = data;
-                    
-                    try{
-                        json = JSON.parse(json);
-                    } catch (e) {
-                        console.log(e);
-                        console.log(json)
-                    }
-                
-                    if (json.success == false || json.success == "false") {
-                        isError = true;
-                    }
 
-                    if(isError){
-                        showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
-                    }else{
-                        var requestCode = json.requestCode;
-                        dojo.byId("trialLicenseRequestCode").value=requestCode;
-                    dojo.byId("trialLicenseForm").submit();
-                }
-                },
-                error: function (error) {
-                    showDotCMSSystemMessage("ERROR:" + error,true);
-                    
-                    console.log(error);
-                }
-            };
-            
-            dojo.xhrPost(xhrArgs);
+        	dojo.byId("trialLicenseForm").submit();
+
         },
     
-        doCodeRequest : function () {
-            
-            if(dijit.byId("license_type").getValue()==undefined || dijit.byId("license_type").getValue()=="--"){
-                //console.log("code request: " + dijit.byId("license_type").getValue());
-                dojo.byId("licenseCode").value="";
-                return;
-            }
-            if(dijit.byId("license_level").getValue() == "<%=LicenseLevel.COMMUNITY.level%>"){
-                //console.log("code request: " + dijit.byId("license_level").getValue());
-                dojo.byId("licenseCode").value="";
-                return;
-            }
-            
-
-            var licenseType = dijit.byId("license_type").getValue();
-            var licenseLevel = dijit.byId("license_level").getValue();
-                    
-            var xhrArgs = {
-                url: "/api/license/requestCode/licenseType/"+ licenseType + '/licenseLevel/' + licenseLevel,
-                handleAs: "text",
-                load: function (data) {
-                    console.log('data is '+ data)
-                    var json = JSON.parse(data);
-                    
-                    var isError = false;
-                    
-                    if (json.success == false || json.success == "false") {
-                        isError = true;
-                }
-    
-                    if(isError){
-                        showDotCMSSystemMessage("There was an error generating the Request Code. Please try again", true);
-                    } else {
-                        console.log(json.requestCode);
-                        var requestCode = json.requestCode;
-                        dojo.byId("licenseCode").value=requestCode;
-                    }
-                },
-                error: function (error) {
-                    showDotCMSSystemMessage("ERROR:" + error,true);
-                    console.log(error);
-                }
-            };
-        
-            dojo.xhrPost(xhrArgs);
-        },
-
-
-        
-        
-        
-        
         resetLicense :function () {
 
             var data = {"licenseText":"reset"};
@@ -494,7 +410,7 @@
 </style>
 
 <form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://dotcms.com/licensing/request-a-license-3/">
-    <input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
+    <input type="hidden" name="trialLicenseRequestCode" id="trialLicenseRequestCode" value="<%=LicenseManager.getInstance().createTrialLicenseRequestCode()%>">
 </form>
 
     <div class="license-manager">
@@ -511,8 +427,7 @@
                     </td>
                     <td>
                         <% if(isCommunity){  %>
-                            <a href="/html/blank.jsp"
-                                    target="trialRequestWindow"
+                            <a href="#"
                                     onclick="licenseAdmin.requestTrial()"
                                     >
                                 <b><%= LicenseUtil.getLevelName()  %></b>
@@ -574,8 +489,7 @@
 
          <%} else {%>
             <div style="text-align:center;margin:30px 0;">
-                <a href="/html/blank.jsp"
-                    target="trialRequestWindow"
+                <a href="#"
                     onclick="licenseAdmin.requestTrial()"
                     id="trailBtn"
                     class="btn btn-info">

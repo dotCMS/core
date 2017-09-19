@@ -7000,6 +7000,10 @@ select[multiple]:hover {
 .listingTable table td {
   background: none !important;
 }
+.listingTable.relateContent td a {
+  color: #0E80CB;
+  text-decoration: underline;
+}
 .listingTable td a {
   color: #161616;
   text-decoration: none;
