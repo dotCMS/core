@@ -183,8 +183,7 @@ public class ESIndexAPI {
 		Client client = esclient.getClient();
 
 		BufferedWriter bw = null;
-		try {
-		    ZipOutputStream zipOut=new ZipOutputStream(Files.newOutputStream(toFile.toPath()));
+		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
 		    zipOut.setLevel(9);
 		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
 
@@ -220,9 +219,6 @@ public class ESIndexAPI {
 		    Logger.error(this.getClass(), "Can't export index",e);
 			throw new IOException(e.getMessage(),e);
 		} finally {
-			if (bw != null) {
-				bw.close();
-			}
 			AdminLogger.log(this.getClass(), "backupIndex", "Back up for index: " + index + " done.");
 		}
 	}
@@ -287,7 +283,7 @@ public class ESIndexAPI {
 				createIndex(index);
 			}
 
-			ZipInputStream zipIn=new ZipInputStream(Files.newInputStream(backupFile.toPath()));
+			final ZipInputStream zipIn=new ZipInputStream(Files.newInputStream(backupFile.toPath()));
 			zipIn.getNextEntry();
 			br = new BufferedReader(new InputStreamReader(zipIn));
 

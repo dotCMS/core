@@ -286,7 +286,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + "/backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";

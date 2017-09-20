@@ -299,7 +299,7 @@ public class ESIndexResource {
             }
 
             final File snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			InputStream in = Files.newInputStream(snapshotFile.toPath());
+			final InputStream in = Files.newInputStream(snapshotFile.toPath());
 			StreamingOutput stream = new StreamingOutput() {
 				@Override
 				public void write(OutputStream os) throws IOException, WebApplicationException {

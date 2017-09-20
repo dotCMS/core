@@ -39,7 +39,7 @@ import java.util.Iterator;
  */
 public class XLSTextStripper {
 
-	public XLSTextStripper(InputStream fis) {
+	public XLSTextStripper(final InputStream fis) {
 		try {
 			StringBuffer sb = new StringBuffer();
 

@@ -114,7 +114,7 @@ public class UserManagerPropertiesFactory {
 			// Loading properties file
 
 			String filePath = UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp";
-			BufferedInputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(filePath)));
+			final BufferedInputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(filePath)));
 
 			if (is != null) {
 				properties.load(is);

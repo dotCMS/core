@@ -16,7 +16,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -70,30 +72,24 @@ public class HostServices {
 			
 			 }
 		}
-        java.io.BufferedOutputStream tmpOut = null;
-        OutputStreamWriter out = null;
-		try {
-		    if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 
-			    String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
+        if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+            final String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+            final String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 
-				tmpOut = new java.io.BufferedOutputStream(
-				        Files.newOutputStream(
-						        Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
-				//Specify a proper character encoding
-				out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+            final String velocityFilePath = ConfigUtils.getDynamicVelocityPath() + File.separator + filePath;
 
-				out.write(sb.toString());
-
-				out.flush();
-			}
-		} catch (Exception e) {
-			Logger.error(HostServices.class, e.toString(), e);
-		} finally {
-            CloseUtils.closeQuietly(out);
-            CloseUtils.closeQuietly(tmpOut);
+            try(
+                    BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(Paths.get(velocityFilePath)));
+                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())
+            ){
+                out.write(sb.toString());
+                out.flush();
+            } catch (Exception e) {
+                Logger.error(HostServices.class, e.toString(), e);
+            }
         }
+
         try {
 			result = new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e1) {

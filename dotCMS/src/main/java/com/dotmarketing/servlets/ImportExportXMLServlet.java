@@ -100,7 +100,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 				response.getWriter().println("Zipping up to file:" + zipFile.getAbsolutePath());
-				BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				response.getWriter().println("Done.");
@@ -179,33 +179,24 @@ public class ImportExportXMLServlet extends HttpServlet {
 		String tempdir = FileUtil.getRealPath(backupTempFilePath);
 
 		MultipartRequest mpr;
-        ZipInputStream zin = null;
-		try {
-			mpr = new MultipartRequest(request, tempdir, 1000000000);
-			File importFile = mpr.getFile("fileUpload");
+        mpr = new MultipartRequest(request, tempdir, 1000000000);
+        File importFile = mpr.getFile("fileUpload");
 
-			/*
-			 * Unzip zipped backups
-			 */
-			if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
+        /*
+         * Unzip zipped backups
+         */
+        if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
 
-				InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
-				zin = new ZipInputStream(in);
-				ZipEntry e;
+            final InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
+            try(ZipInputStream zin = new ZipInputStream(in)){
+                ZipEntry e;
 
-				while ((e = zin.getNextEntry()) != null) {
-					unzip(zin, e.getName());
-				}
-
-				importFile.delete();
-			}
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Logger.error(this,e.getMessage(),e);
-		} finally {
-			zin.close();
-		}
+                while ((e = zin.getNextEntry()) != null) {
+                    unzip(zin, e.getName());
+                }
+            }
+            importFile.delete();
+        }
 		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] _tempFiles = f.list(new XMLFileNameFilter());
 		PrintWriter out = response.getWriter();
@@ -458,7 +449,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 		Logger.info(this, "unzipping " + s);
 		File f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s));
 		try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()))){
-            byte[] b = new byte[512];
+            final byte[] b = new byte[512];
             int len = 0;
             while ((len = zin.read(b)) != -1) {
                 out.write(b, 0, len);

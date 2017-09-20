@@ -70,13 +70,13 @@ public class PushCategoryUtil {
 		return topLevels;
 	}
 
-	public CategoryWrapper getCategoryWrapperFromInode(String inode) throws IOException {
+	public CategoryWrapper getCategoryWrapperFromInode(final String inode) throws IOException {
 		File categoryFile = categoriesByInode.get(inode);
 		return (categoryFile != null) ? getCategoryWrapperFromFile(categoryFile) : null;
 	}
 	
-	private CategoryWrapper getCategoryWrapperFromFile(File category) throws IOException {
-		InputStream fis = Files.newInputStream(category.toPath());
+	private CategoryWrapper getCategoryWrapperFromFile(final File category) throws IOException {
+		final InputStream fis = Files.newInputStream(category.toPath());
 		CategoryWrapper categoryWrapper;
 		try {
             categoryWrapper = (CategoryWrapper) xstream.fromXML(fis);

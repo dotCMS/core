@@ -67,7 +67,7 @@ public final class ImageUtil {
 			SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
 					XMLResourceDescriptor.getXMLParserClassName());
 
-			InputStream is = Files.newInputStream(imgFile.toPath());
+			final InputStream is = Files.newInputStream(imgFile.toPath());
 
 			Document document = factory.createDocument(
 					imgFile.toURI().toURL().toString(), is);

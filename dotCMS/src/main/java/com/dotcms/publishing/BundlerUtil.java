@@ -115,7 +115,6 @@ public class BundlerUtil {
             f.delete();
 
         XStream xstream = new XStream( new DomDriver("UTF-8") );
-        OutputStreamWriter writer = null;
 
         try {
             if ( !f.exists() ){
@@ -127,16 +126,15 @@ public class BundlerUtil {
             	f.createNewFile();
             }	
             
-            writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8");
-            HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
-            xstream.marshal(obj, xmlWriter);
+            try(OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8")){
+                HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
+                xstream.marshal(obj, xmlWriter);
+            }
 
         } catch ( FileNotFoundException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         } catch ( IOException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
-        } finally {
-            CloseUtils.closeQuietly(writer);
         }
     }
 

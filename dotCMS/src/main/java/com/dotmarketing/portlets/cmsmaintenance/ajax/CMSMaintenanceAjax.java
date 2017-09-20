@@ -709,12 +709,9 @@ public class CMSMaintenanceAjax {
 		 * @author Will
 		 */
 		public void zipTempDirectoryToStream(OutputStream out) throws IOException {
-            ZipOutputStream zout = null;
-		    try {
-                zout = new ZipOutputStream(out);
+		    try (ZipOutputStream zout = new ZipOutputStream(out)){
                 ZipUtil.zipDirectory(backupTempFilePath, zout);
             } finally {
-                CloseUtils.closeQuietly(zout);
                 CloseUtils.closeQuietly(out);
             }
 	}

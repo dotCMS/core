@@ -38,7 +38,7 @@ public class ZipUtil {
 			    continue; 
 		    } 
 			//if we reached here, the File object f was not a directory create a InputStream on top of f
-			InputStream fis = Files.newInputStream(f.toPath());
+			final InputStream fis = Files.newInputStream(f.toPath());
 			//create a new zip entry 
 			String path = f.getPath().substring(zipPath.length()+1);
 			ZipEntry anEntry = new ZipEntry(path); 
@@ -113,7 +113,7 @@ public class ZipUtil {
 	        try{
 	            InputStream istr = zipFile.getInputStream(zipEntry);
 	            bis = new BufferedInputStream(istr);
-	            OutputStream os = Files.newOutputStream(file.toPath());
+	            final OutputStream os = Files.newOutputStream(file.toPath());
 	            bos  = new BufferedOutputStream(os);
 	            IOUtils.copy(bis, bos);
 	        } finally {

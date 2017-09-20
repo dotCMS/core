@@ -1487,13 +1487,13 @@ public class DotWebdavHelper {
 			throw new IOException(e.getMessage());
 		}
 		if (host != null && InodeUtils.isSet(host.getInode()) && InodeUtils.isSet(folder.getInode())) {
-			File workingFile  = null;
+            InputStream is = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
                 Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
-			    workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
+			    File workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
+                is = Files.newInputStream(workingFile.toPath());
 			}
-			InputStream is = Files.newInputStream(workingFile.toPath());
 			returnValue = is;
 		}
 		return returnValue;

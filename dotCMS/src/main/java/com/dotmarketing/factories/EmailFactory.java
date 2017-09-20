@@ -465,8 +465,7 @@ public class EmailFactory {
 				} catch (Exception e) {
 					Logger.warn(EmailFactory.class, "sendForm: Couldn't save the email backup in " + Config.getStringProperty("EMAIL_BACKUPS"));
 				} finally {
-                    CloseUtils.closeQuietly(bos);
-                    CloseUtils.closeQuietly(os);
+                    CloseUtils.closeQuietly(bos, os);
                 }
 
 				// send the mail out;

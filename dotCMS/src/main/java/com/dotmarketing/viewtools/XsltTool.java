@@ -150,7 +150,7 @@ public class XsltTool implements ViewTool {
 					xmlSource = new StreamSource(XMLPath);
 				}
 
-				Source xsltSource = new StreamSource(
+				final Source xsltSource = new StreamSource(
 						new InputStreamReader(Files.newInputStream(binFile.toPath()), "UTF8"));
 
 				// create an instance of TransformerFactory

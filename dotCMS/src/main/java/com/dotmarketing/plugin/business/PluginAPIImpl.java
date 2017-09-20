@@ -214,7 +214,7 @@ public class PluginAPIImpl implements PluginAPI {
 					//Create temporary file with the inputstream
 					InputStream input = jar.getInputStream(entry);
 					File temporaryFile = new File("file.temp");
-					OutputStream output= Files.newOutputStream(temporaryFile.toPath());
+					final OutputStream output= Files.newOutputStream(temporaryFile.toPath());
 					byte buf[]=new byte[1024];
 					int len;
 					while((len=input.read(buf))>0){

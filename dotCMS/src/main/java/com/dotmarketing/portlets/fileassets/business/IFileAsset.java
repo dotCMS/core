@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
 
 public interface IFileAsset extends Permissionable {
 

@@ -19,7 +19,7 @@ class NotifyingInputStream extends InputStream {
     private long timeLastNotify;
     private long bytesSinceLastNotify;
 
-    public NotifyingInputStream(File f, ProgressListener listener) throws FileNotFoundException, IOException {
+    public NotifyingInputStream(final File f, ProgressListener listener) throws FileNotFoundException, IOException {
         this.fin = FileUtils.openInputStream(f);
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;
@@ -36,7 +36,7 @@ class NotifyingInputStream extends InputStream {
 	 * @param listener
 	 * @throws IOException 
 	 */
-    public NotifyingInputStream(InputStream in, Long length, String path, ProgressListener listener) throws IOException {
+    public NotifyingInputStream(final InputStream in, Long length, String path, ProgressListener listener) throws IOException {
         this.fin = in;
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;

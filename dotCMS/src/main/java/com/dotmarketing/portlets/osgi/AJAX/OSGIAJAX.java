@@ -157,7 +157,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     
                     
 
-                    OutputStream out = Files.newOutputStream(osgiJar.toPath());
+                    final OutputStream out = Files.newOutputStream(osgiJar.toPath());
                     IOUtils.copyLarge( in, out );
                     IOUtils.closeQuietly( out );
                     IOUtils.closeQuietly( in );
