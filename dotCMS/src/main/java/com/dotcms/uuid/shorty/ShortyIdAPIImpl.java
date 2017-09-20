@@ -13,16 +13,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 
 public class ShortyIdAPIImpl implements ShortyIdAPI {
-
-  public long getDbHits() {
-    return dbHits;
-  }
-
-  long dbHits = 0;
-  public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
-
     
-    
+    long dbHits = 0;
+    public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
+    public static final boolean ENABLE_SUPPORT_LEGACY_IDS = Config.getBooleanProperty("ENABLE_SUPPORT_LEGACY_IDS", false);
+
+    public long getDbHits() {
+        return dbHits;
+    }
+
     @Override
     public Optional<ShortyId> getShorty(final String shortStr) {
         try {
@@ -99,36 +98,41 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @CloseDBIfOpened
   ShortyId viaDb(final String shorty) {
 
-    this.dbHits++;
-    ShortyId shortyId = noShorty(shorty);
+      this.dbHits++;
+      ShortyId shortyId = noShorty(shorty);
 
+      DotConnect db = new DotConnect();
+      db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL);
+      String uuid = uuidIfy(shorty);
+      db.addParam(uuid + "%");
+      db.addParam(uuid + "%");
 
-    DotConnect db = new DotConnect();
-    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL);
-    String uuid = uuidIfy(shorty);
-    db.addParam(uuid + "%");
-    db.addParam(uuid + "%");
+      List<Map<String, Object>> results;
+      try {
 
+          boolean found = false;
+          results = db.loadObjectResults();
 
-    List<Map<String, Object>> results;
-    try {
-      results = db.loadObjectResults();
+          for (final Map<String, Object> map : results){
+              if (uuid.equals((String)map.get("id"))){
+                  found = true;
+                  final String id = (String) map.get("id");
+                  String type = (String) map.get("type");
+                  String subType = (String) map.get("subtype");
 
-      if (results.size() > 1) {
-        throw new ShortyException("Shorty ID collision:" + uuid);
-      } else if (results.size() == 1) {
-        String id = (String) results.get(0).get("id");
-        String type = (String) results.get(0).get("type");
-        String subType = (String) results.get(0).get("subtype");
-
-        shortyId = new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
+                  shortyId = new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
+              }
+          }
+          
+          if(!found){
+              throw new ShortyException("Shorty ID Could not be retrieved: " + uuid);
+          }
+          
+      } catch (DotDataException e) {
+          Logger.warn(this.getClass(), "db exception:" + e.getMessage());
       }
-    } catch (DotDataException e) {
-      Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-    }
 
-
-    return shortyId;
+      return shortyId;
   }
 
   public String shortUri(Contentlet c) {
@@ -143,17 +147,17 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return null;
   }
 
-    public void validShorty(final String test) {
-        if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {
-            throw new ShortyException(
-                    "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
-        }
-        
-        for (char c : test.toCharArray()) {
-            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
-                throw new ShortyException(
-                        "shorty " + test + " is not an alpha numeric id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
-            }
-        }
-    }
+  public void validShorty(final String test) {
+      if ((test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) && !ENABLE_SUPPORT_LEGACY_IDS) {
+          throw new ShortyException(
+                  "Short Id is invalid. Valid Length of Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars. Short Id is: " + test!=null?test:"null");
+      }
+      
+      for (char c : test.toCharArray()) {
+          if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
+              throw new ShortyException(
+                      "shorty " + test + " is not an alpha numeric id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
+          }
+      }
+  }
 }
