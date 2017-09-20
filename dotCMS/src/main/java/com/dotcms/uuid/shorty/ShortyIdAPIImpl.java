@@ -114,7 +114,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
           results = db.loadObjectResults();
 
           for (final Map<String, Object> map : results){
-              if (uuid.equals((String)map.get("id"))){
+              if (uuid.equals((String)map.get("id")) || uuid.startsWith((String)map.get("id"))){
                   found = true;
                   final String id = (String) map.get("id");
                   String type = (String) map.get("type");
