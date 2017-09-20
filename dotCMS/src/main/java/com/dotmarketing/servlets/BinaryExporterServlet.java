@@ -127,10 +127,12 @@ public class BinaryExporterServlet extends HttpServlet {
 		String[] uriPieces = uri.split("/");
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
-		Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(uuid);
-		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : APILocator.getShortyAPI().noShorty(uuid);
-		boolean isContent= (shorty.subType == ShortType.CONTENTLET);
-		uuid = shorty.longId;
+        Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(uuid);
+        ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : APILocator.getShortyAPI().noShorty(uuid);
+        
+        //if noShorty was called, let the servlet handle the originally passed in UUID and throw 404 if necessary
+        boolean isContent = (shorty.subType == ShortType.CONTENTLET || shorty.longId == ShortType.CACHE_MISS.toString());
+        uuid = shorty.longId == ShortType.CACHE_MISS.toString() ? uuid : shorty.longId;
 
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
