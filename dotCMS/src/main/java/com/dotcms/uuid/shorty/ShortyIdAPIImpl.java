@@ -150,7 +150,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   public void validShorty(final String test) {
       if ((test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) && !ENABLE_SUPPORT_LEGACY_IDS) {
           throw new ShortyException(
-                  "Passed in Short Id is not valid.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length. Short Id value is: " + test!=null?test:"null");
+                  "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
       }
       
       for (char c : test.toCharArray()) {
