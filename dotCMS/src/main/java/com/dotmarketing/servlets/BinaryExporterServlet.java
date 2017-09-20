@@ -192,11 +192,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 			Contentlet content = null;
+			
 			if(byInode) {
-			    if(isTempBinaryImage)
+			    if(isTempBinaryImage) {
 			        content = contentAPI.find(assetInode, APILocator.systemUser(), respectFrontendRoles);
-			    else
+			    } else {
 			        content = contentAPI.find(assetInode, user, respectFrontendRoles);
+			    }
 			    assetIdentifier = content.getIdentifier();
 			} else {
 			    boolean live=userWebAPI.isLoggedToFrontend(req);
@@ -256,7 +258,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			            }
 			        } else {
 			            Logger.error(this, "Content with Identifier [" + assetIdentifier + "] not found.");
-			            resp.sendError(404);
+			            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			            return;
 			        }
 
@@ -277,7 +279,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
 			        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
 			                + content.getInode());
-			        resp.sendError(404);
+			        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			        return;
 			    }
 			}
@@ -287,7 +289,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			
 			if(type.baseType() != BaseContentType.FILEASSET){
                 Logger.debug(this,"Content is not a File-Type Content Type.");
-                resp.sendError(404);
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 			
@@ -298,17 +300,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			    field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
 			} catch (NotFoundInDbException e) {
 			    Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
-			    resp.sendError(404);
+			    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			    return;
 			}
 
-			if(isTempBinaryImage)
+			if(isTempBinaryImage) {
 			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.systemUser());
-			else
+			} else {
 			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
+			}
 			if(inputFile == null){
 			    Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-			    resp.sendError(404);
+			    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			    return;
 			}
 			downloadName = inputFile.getName();
