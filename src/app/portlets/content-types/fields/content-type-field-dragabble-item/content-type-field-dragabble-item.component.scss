@@ -39,3 +39,11 @@
         opacity: 1;
     }
 }
+
+.field__icon {
+    color: $gray;
+    font-size: $basic-padding * 2;
+    margin-right: $basic-padding * 2;
+    text-align: center;
+    width: $icon-size;
+}

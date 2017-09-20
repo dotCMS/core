@@ -4,6 +4,7 @@ import { Field, FieldType, FieldRow } from '../shared';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldUtil } from '../util/field-util';
+import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-icon-map';
 
 /**
  * Provide method to handle with the Field Types
@@ -59,5 +60,13 @@ export class FieldService {
             method: RequestMethod.Delete,
             url: `v1/contenttype/${contentTypeId}/fields`
         }).pluck('entity');
+    }
+
+    /**
+     * Get Field icon by field's class
+     * @param fieldClazz
+     */
+    getIcon(fieldClazz: string): string {
+        return FIELD_ICONS[fieldClazz];
     }
 }

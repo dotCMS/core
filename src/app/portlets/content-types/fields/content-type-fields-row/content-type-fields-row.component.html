@@ -16,10 +16,6 @@
         class="row-columns__item"
         data-drag-type="target"
         dragula="fields-bag">
-
-        <span class="row-columns__item-empty-message" *ngIf="!column.fields.length">
-            {{i18nMessages['contenttypes.dropzone.rows.empty.message']}}
-        </span>
        
         <content-type-field-dragabble-item 
             *ngFor="let field of column.fields"
@@ -27,5 +23,9 @@
             (remove)="onRemoveField($event)"
             (edit)="this.editField.emit(field)">
         </content-type-field-dragabble-item>
+
+        <div class="row-columns__item-empty-message" data-drag-type="not_field">
+            {{i18nMessages['contenttypes.dropzone.rows.empty.message']}}
+        </div>
     </span>
 </div>

@@ -7,6 +7,7 @@ import { Field } from '../';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { MessageService } from '../../../../api/services/messages-service';
+import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -24,7 +25,10 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypesFieldDragabbleItemComponent],
                 imports: [IconButtonTooltipModule],
-                providers: [{ provide: MessageService, useValue: messageServiceMock }]
+                providers: [
+                    { provide: MessageService, useValue: messageServiceMock },
+                    FieldService
+                ]
             });
 
             fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);

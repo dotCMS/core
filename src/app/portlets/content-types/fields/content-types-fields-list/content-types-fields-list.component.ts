@@ -19,7 +19,7 @@ import { Field, FieldType } from '../';
 export class ContentTypesFieldsListComponent implements  OnInit {
     fieldTypes: Field[];
 
-    constructor(private fieldService: FieldService, private fieldDragDropService: FieldDragDropService) {
+    constructor(public fieldService: FieldService, private fieldDragDropService: FieldDragDropService) {
 
     }
 
@@ -34,8 +34,4 @@ export class ContentTypesFieldsListComponent implements  OnInit {
 
         this.fieldDragDropService.setFieldBagOptions();
    }
-
-    getIcon(fieldClazz: string): string {
-        return FIELD_ICONS[fieldClazz];
-    }
 }

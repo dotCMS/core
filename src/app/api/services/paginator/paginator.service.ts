@@ -110,6 +110,10 @@ export class PaginatorService {
             params.set('direction', OrderDirection[this.sortOrder]);
         }
 
+        if (this.paginationPerPage) {
+            params.set('per_page', String(this.paginationPerPage));
+        }
+
         if (this.extraParams) {
             params.appendAll(this.extraParams);
         }

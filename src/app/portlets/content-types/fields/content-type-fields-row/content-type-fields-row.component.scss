@@ -28,14 +28,9 @@
 
 .row-columns__item {
     margin: 0 $basic-padding / 2;
-
-    &.empty {
-        border: solid 1px $gray-lighter;
-        color: $gray-light;
-        min-height: $basic-padding * 4;
-        position: relative;
-    }
-
+    display: flex;
+    flex-direction: column;
+    
     &:first-child {
         margin-left: 0;
     }
@@ -46,11 +41,16 @@
 }
 
 .row-columns__item-empty-message {
-    margin-top: -7px;
-    position: absolute;
     text-align: center;
-    top: 50%;
     width: 100%;
+    border: solid 1px $gray-lighter;
+    color: $gray-light;
+    min-height: 48px;
+    flex: 1;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .row-header {

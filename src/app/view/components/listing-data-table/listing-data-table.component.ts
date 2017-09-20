@@ -22,6 +22,7 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     @Input() sortOrder: number;
     @Input() sortField: string;
     @Input() multipleSelection = false;
+    @Input() paginationPerPage: number;
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
 
@@ -51,6 +52,10 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
                 column => column.format === this.DATE_FORMAT
             );
             this.loadData(0);
+        }
+
+        if (changes.paginationPerPage && changes.paginationPerPage.currentValue) {
+            this.paginatorService.paginationPerPage = this.paginationPerPage;
         }
     }
 

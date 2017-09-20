@@ -1,5 +1,5 @@
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component } from '@angular/core';
 
 import { ActionHeaderOptions } from '../../../shared/models/action-header';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
@@ -15,8 +15,8 @@ import { MessageService } from '../../../api/services/messages-service';
  * @extends {BaseComponent}
  */
 @Component({
-    encapsulation: ViewEncapsulation.None,
     selector: 'content-types',
+    styleUrls: ['./content-types.component.scss'],
     templateUrl: 'content-types.component.html'
 })
 export class ContentTypesPortletComponent extends BaseComponent {

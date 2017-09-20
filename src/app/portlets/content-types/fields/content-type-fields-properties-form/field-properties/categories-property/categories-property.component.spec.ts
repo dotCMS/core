@@ -86,7 +86,7 @@ describe('CategoriesPropertyComponent', () => {
     it('should set PaginatorService url', () => {
         comp.ngOnInit();
         const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
-        expect('/v1/categories').toBe(mockFieldPaginatorService.url);
+        expect('v1/categories').toBe(mockFieldPaginatorService.url);
     });
 
     describe('Pagination events', () => {

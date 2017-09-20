@@ -30,6 +30,7 @@ $top-height: ($toolbar-height + $tabview-nav-height);
 }
 
 .content-type__fields-main {
+    background-color: $gray-lightest;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -57,4 +58,8 @@ $top-height: ($toolbar-height + $tabview-nav-height);
     font-weight: normal;
     margin: 0;
     padding: $basic-padding $basic-padding * 2;
+}
+
+.content-type-fields-row {
+    background-color: $white;
 }

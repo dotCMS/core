@@ -35,7 +35,7 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
     }
 
     ngOnInit(): void {
-        this.paginationService.url = '/v1/categories';
+        this.paginationService.url = 'v1/categories';
     }
 
     private getCategoriesList(filter = '', offset = 0): void {

@@ -61,7 +61,8 @@ export class FieldDragDropService {
         if (!fieldBagOpts) {
             this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
                 copy: this.shouldCopy,
-                accepts: this.shouldAccepts
+                accepts: this.shouldAccepts,
+                moves: this.shouldMovesField
             });
         }
     }
@@ -124,5 +125,14 @@ export class FieldDragDropService {
         sibling: HTMLElement
     ): boolean {
         return source.dataset.dragType !== 'source';
+    }
+
+    private shouldMovesField(
+        el: HTMLElement,
+        source: HTMLElement,
+        handle: HTMLElement,
+        sibling: HTMLElement
+    ): boolean {
+        return el.dataset.dragType !== 'not_field';
     }
 }
