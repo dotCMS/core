@@ -13,15 +13,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 
 public class ShortyIdAPIImpl implements ShortyIdAPI {
-
-  public long getDbHits() {
-    return dbHits;
-  }
-
-  long dbHits = 0;
-  public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
-  public static final boolean ENABLE_SUPPORT_LEGACY_IDS = Config.getBooleanProperty("ENABLE_SUPPORT_LEGACY_IDS", false);
     
+    long dbHits = 0;
+    public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
+    public static final boolean ENABLE_SUPPORT_LEGACY_IDS = Config.getBooleanProperty("ENABLE_SUPPORT_LEGACY_IDS", false);
+
+    public long getDbHits() {
+        return dbHits;
+    }
+
     @Override
     public Optional<ShortyId> getShorty(final String shortStr) {
         try {
