@@ -3,21 +3,10 @@ package com.dotmarketing.portlets.linkchecker.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.UserAPITest;
-import com.dotmarketing.portlets.HTMLPageAssetUtil;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -28,10 +17,11 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -42,6 +32,13 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * This class tests the Link Checker functionality provided in dotCMS. It
@@ -424,31 +421,6 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         for(InvalidLink link : invalids)
             assertTrue(links.remove(link.getUrl()));
         disposeThings();
-    }
-
-    @Test
-    public void saveInvalidLinks() {
-
-    }
-
-    @Test
-    public void deleteInvalidLinks() {
-
-    }
-
-    @Test
-    public void findByInode()  {
-
-    }
-
-    @Test
-    public void findAll() {
-
-    }
-
-    @Test
-    public void findAllCount() {
-
     }
 
 }
