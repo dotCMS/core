@@ -32,13 +32,19 @@
 
 
 <style>
-.dijitTree {
-    width: 100% !important;
-    height: 100%;
-}
-.classAce{
-  display: none;
-}
+    .dijitTree {
+        width: 100% !important;
+        height: 100%;
+    }
+    .classAce{
+      display: none;
+    }
+    .lineDivider{
+        display: flex;
+    }
+    .tabDivider {
+        flex: 1;
+    }
 </style>
 
 <%
@@ -294,23 +300,26 @@ var editButtonRow="editContentletButtonRow";
                 </div>
             <% } %>
 
+			<div class="lineDivider">
+				<span class="tabDivider">
+
             <%-- Begin Looping over fields --%>
             <% boolean fieldSetOpen = false;
                 int fieldCounter =0;
-                for (Field f : fields) {
+ 				int i = fields.get(0).getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ? 2 : 0;
+                for (; i < fields.size(); i++) {
+					Field f = fields.get(i);
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
                         fieldSetOpen = false;%>
                     <%}%>
                     <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
-                        <div class="lineDividerTitle"><%=f.getFieldName() %></div>
-                    <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-                        tabDividerOpen = true;%>
-                            </div>
-                        </div>
-                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
-                            <div class="wrapperRight">
+						</div>
+						<span class="lineDivider">
+                    <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {;%>
+						</span>
+						<span class="tabDivider">
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
@@ -426,7 +435,7 @@ var editButtonRow="editContentletButtonRow";
                     <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
                 <%}%>
             <%}%>
-        </div>
+        </span>
         <!-- END START EDIT CONTENT FORM -->
 	</div>
 	<!-- END TABS -->
