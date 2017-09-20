@@ -113,10 +113,10 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
           boolean found = false;
           results = db.loadObjectResults();
 
-          for (Map<String, Object> map : results){
+          for (final Map<String, Object> map : results){
               if (uuid.equals((String)map.get("id"))){
                   found = true;
-                  String id = (String) map.get("id");
+                  final String id = (String) map.get("id");
                   String type = (String) map.get("type");
                   String subType = (String) map.get("subtype");
 
@@ -150,7 +150,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   public void validShorty(final String test) {
       if ((test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) && !ENABLE_SUPPORT_LEGACY_IDS) {
           throw new ShortyException(
-                  "Passed in Short Id is not valid.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length. Short Id value is: " + test!=null?test:"null");
+                  "Short Id is invalid. Valid Length of Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars. Short Id is: " + test!=null?test:"null");
       }
       
       for (char c : test.toCharArray()) {
