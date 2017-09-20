@@ -80,8 +80,7 @@ public class DbConnectionFactoryTest extends IntegrationTestBase {
             count2 = testNestedTransactionsFail(0);
         } catch (Throwable dse) {
             dse.printStackTrace();
-            assertThat("we have our DotDataException", dse instanceof DotDataException);
-            assertThat("we have our DotStateException", dse.getCause() instanceof DotStateException);
+            assertThat("we have our DotDataException", dse instanceof DotStateException);
             assertThat("we have the right DotStateException", dse.getMessage().equals("crapped out!"));
             assertThat("No transaction", !DbConnectionFactory.inTransaction());
             exceptionThrown = true;

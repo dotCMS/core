@@ -58,6 +58,7 @@ public class LocalTransaction {
      */
     static public <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws Exception {
 
+        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
 
         T result = null;
@@ -75,7 +76,9 @@ public class LocalTransaction {
 
             if (isLocalTransaction) {
                 DbConnectionFactory.setAutoCommit(true);
-                DbConnectionFactory.closeConnection();
+                if (isNewConnection) {
+                    DbConnectionFactory.closeConnection();
+                }
             }
         }
 
@@ -100,6 +103,7 @@ public class LocalTransaction {
      */
     static public void wrap(final VoidDelegate delegate) throws Exception {
 
+        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
         
         try {
@@ -116,7 +120,9 @@ public class LocalTransaction {
 
             if (isLocalTransaction) {
                 DbConnectionFactory.setAutoCommit(true);
-                DbConnectionFactory.closeConnection();
+                if (isNewConnection) {
+                    DbConnectionFactory.closeConnection();
+                }
             }
         }
     } // wrap.

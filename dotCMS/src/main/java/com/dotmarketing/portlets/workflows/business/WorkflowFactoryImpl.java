@@ -486,8 +486,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
-		WorkflowStep step = cache.getStep(contentlet);
-		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode());
+		WorkflowStep step = cache.getStep(contentlet); System.out.println("\ncontentlet.getIdentifier(): " + contentlet.getIdentifier() + ", contentlet.getStructureInode(): " + contentlet.getStructureInode());
+		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode()); System.out.println("scheme.getId()): " + scheme.getId() + ", step = " + step);
 		if ((step == null) || !step.getSchemeId().equals(scheme.getId())) {
 			try {
 				final DotConnect db = new DotConnect();
@@ -525,7 +525,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_STEPS_BY_SCHEME);
-		db.addParam(scheme.getId());
+		db.addParam(scheme.getId()); System.out.println("\nscheme.getId(): " + scheme.getId());
 		return this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class);
 
 	}
@@ -975,7 +975,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 
-		boolean isNew = true;
+		boolean isNew = true; System.out.println("step.getId(): " + step.getId());
 		if (UtilMethods.isSet(step.getId())) {
 			try {
 				final WorkflowStep test = this.findStep(step.getId());
@@ -988,6 +988,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} else {
 			step.setId(UUIDGenerator.generateUuid());
 		}
+
+		System.out.println("step.getId()2: " + step.getId());
 
 		final DotConnect db = new DotConnect();
 		if (isNew) {

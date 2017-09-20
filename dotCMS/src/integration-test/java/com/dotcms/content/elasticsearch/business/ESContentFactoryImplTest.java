@@ -1,29 +1,38 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.repackage.org.apache.fop.fo.flow.Float;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
-
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-public class ESContentFactoryImplTest {
+public class ESContentFactoryImplTest extends IntegrationTestBase {
 	
 	@BeforeClass
 	public static void prepare() throws Exception{
 		//Setting web app environment
         IntegrationTestInitService.getInstance().init();
-	}
+        setDebugMode(true);
+    }
+
+    @AfterClass
+    public static void cleanup() throws DotDataException, DotSecurityException {
+
+        cleanupDebug(ESContentFactoryImplTest.class);
+    }
     
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
     
@@ -84,6 +93,8 @@ public class ESContentFactoryImplTest {
         //Executing a simple query filtering by score
         SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
 
+        System.out.println(
+                "\nsearchHits.getTotalHits(): " + searchHits.getTotalHits());
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
@@ -106,9 +117,12 @@ public class ESContentFactoryImplTest {
         hits = searchHits.getHits();
         maxScore = getMaxScore(hits);
 
+
         //With this query the first result must have a higher score than the others
         assertTrue(maxScore == searchHits.getHits()[0].getScore());
         //The second record should have a lower score
+        System.out.println("\tsearchHits.getHits()[0].getScore(): " + searchHits.getHits()[0].getScore()
+                        +  "\tsearchHits.getHits()[1].getScore(): " + searchHits.getHits()[1].getScore());
         assertTrue(maxScore != searchHits.getHits()[1].getScore());
         assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
     }

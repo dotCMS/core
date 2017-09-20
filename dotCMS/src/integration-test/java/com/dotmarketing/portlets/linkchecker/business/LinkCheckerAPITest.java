@@ -12,8 +12,10 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
@@ -143,6 +145,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
         }
         finally {
+            setDebugMode(true);
             HibernateUtil.closeSession();
         }
     }
@@ -172,6 +175,12 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         finally {
             HibernateUtil.closeSession();
         }
+    }
+
+    @AfterClass
+    public static void cleanup() throws DotDataException, DotSecurityException {
+
+        cleanupDebug(LinkCheckerAPITest.class);
     }
 
     @Test

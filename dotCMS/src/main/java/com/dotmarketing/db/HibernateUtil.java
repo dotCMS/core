@@ -926,7 +926,7 @@ public class HibernateUtil {
 	/**
 	 * This commit and close the current session, connection
 	 * @return
-	 * @throws DotHibernateException
+	 * @throws DotHibernateException // todo close and commit
 	 */
 	public static boolean commitTransaction()  throws DotHibernateException{
 		closeSession();
