@@ -577,23 +577,32 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Host newHost = null;
 		try {
-			Contentlet contentAsset = new Contentlet();
+			Contentlet host = new Contentlet();
 			Structure st = structureAPI.findByVarName("Host", systemUser);
-			contentAsset.setStructureInode(st.getInode());
-			String hostName =
-					"testtagapiHost" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
-			contentAsset.setProperty(Host.HOST_NAME_KEY, hostName);
-			contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
-			contentAsset = conAPI.checkin(contentAsset, testUser, false);
-			conAPI.publish(contentAsset, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), true));
+			host.setStructureInode(st.getInode());
+			String hostName = "testtagapiHost_" + System.currentTimeMillis();
+			host.setProperty(Host.HOST_NAME_KEY, hostName);
+			host.setLanguageId(langAPI.getDefaultLanguage().getId());
+			host = conAPI.checkin(host, testUser, false);
+			conAPI.publish(host, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				//Do nothing...
+			}
 
 			newHost = hostAPI.findByName(hostName, systemUser, false);
-			contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
-			contentAsset.setInode(null);
-			contentAsset = conAPI.checkin(contentAsset, testUser, false);
-			conAPI.publish(contentAsset, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), true));
+			host.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
+			host.setInode(null);
+			host = conAPI.checkin(host, testUser, false);
+			conAPI.publish(host, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				//Do nothing...
+			}
 
 			TagFactory tagFactory = FactoryLocator.getTagFactory();
 			List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
@@ -624,10 +633,11 @@ public class TagAPITest extends IntegrationTestBase {
 
 			tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
 			assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
-		/*here the amount is not 0 because is entering in the condition
-		 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
-		 * saveTag(tag.getTagName(), "", hostIdentifier);
-		 */
+
+			/*here the amount is not 0 because is entering in the condition
+			 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
+			 * saveTag(tag.getTagName(), "", hostIdentifier);
+			 */
 			newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
 			assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
 		} finally {
