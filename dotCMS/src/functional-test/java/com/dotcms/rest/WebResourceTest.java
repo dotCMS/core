@@ -44,7 +44,12 @@ public class WebResourceTest {
 
     @Test(expected = NotAuthorizedException.class)
     public void testAuthenticateNoUser() {
-        webTarget.path("/loadchildren/").request().get(String.class);
+        try {
+            webTarget.path("/loadchildren/").request().get(String.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Test(expected = NotAuthorizedException.class)
@@ -60,10 +65,15 @@ public class WebResourceTest {
 
     @Test(expected = NotAuthorizedException.class)
     public void testAuthenticateInvalidUserBasicAuth() {
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("wrong@user.com", "123456");
-        client.register(feature);
-        webTarget = client.target("http://" + serverName + ":" + serverPort + "/api/role");
-        webTarget.path("/loadchildren/").request().get(String.class);
+        try {
+            HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("wrong@user.com", "123456");
+            client.register(feature);
+            webTarget = client.target("http://" + serverName + ":" + serverPort + "/api/role");
+            webTarget.path("/loadchildren/").request().get(String.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Test
