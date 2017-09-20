@@ -2,6 +2,7 @@ package com.dotmarketing.quartz.job;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
 import java.util.List;
@@ -472,25 +473,25 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 
             // Make sure the values are not in cache anymore
             Contentlet contentletFromDB = CacheLocator.getContentletCache().get(contentlet.getInode());
-            assertNull(contentletFromDB.get(checkboxFieldVarName));
-            assertNull(contentletFromDB.get(dateFieldVarName));
-            assertNull(contentletFromDB.get(timeFieldVarName));
-            assertNull(contentletFromDB.get(dateTimeFieldVarName));
-            assertNull(contentletFromDB.get(radioFieldVarName));
-            assertNull(contentletFromDB.get(selectTextFieldVarName));
-            assertNull(contentletFromDB.get(selectBooleanFieldVarName));
-            assertNull(contentletFromDB.get(selectDecimalFieldVarName));
-            assertNull(contentletFromDB.get(selectWholeNumberFieldVarName));
-            assertNull(contentletFromDB.get(multiSelectFieldVarName));
-            assertNull(contentletFromDB.get(textWholeNumberFieldVarName));
-            assertNull(contentletFromDB.get(textDecimalFieldVarName));
-            assertNull(contentletFromDB.get(textFieldVarName));
-            assertNull(contentletFromDB.get(textAreaFieldVarName));
-            assertNull(contentletFromDB.get(wysiwygFieldVarName));
-            assertNull(contentletFromDB.get(fileFieldVarName));
-            assertNull(contentletFromDB.get(imageFieldVarName));
-            assertNull(contentletFromDB.get(customFieldVarName));
-            assertNull(contentletFromDB.get(keyValueFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(checkboxFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(dateFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(timeFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(dateTimeFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(radioFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectTextFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectBooleanFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectDecimalFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectWholeNumberFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(multiSelectFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(textWholeNumberFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(textDecimalFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(textFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(textAreaFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(wysiwygFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(fileFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(imageFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(customFieldVarName));
+            assertTrue(null == contentletFromDB || null == contentletFromDB.get(keyValueFieldVarName));
 		} catch (Exception e) {
 			throw new RuntimeException("An error occurred when deleting fields from a test Content Type ["
 					+ (contentType != null ? contentType.getName() : "N/A") + "]", e);
