@@ -316,7 +316,7 @@ var editButtonRow="editContentletButtonRow";
                     <%}%>
                     <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
 						</div>
-						<span class="lineDivider">
+						<div class="lineDivider">
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {;%>
 						</span>
 						<span class="tabDivider">
