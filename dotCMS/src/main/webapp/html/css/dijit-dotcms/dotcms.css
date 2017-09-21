@@ -7000,10 +7000,6 @@ select[multiple]:hover {
 .listingTable table td {
   background: none !important;
 }
-.listingTable.relateContent td a {
-  color: #0E80CB;
-  text-decoration: underline;
-}
 .listingTable td a {
   color: #161616;
   text-decoration: none;
@@ -10574,6 +10570,22 @@ a.category_higlighted, a.tag_higlighted {
   .content-search__action-item {
     display: none;
   }
+}
+
+.import-preview {
+  margin: 50px auto;
+  border: solid 1px transparent;
+  border-color: #ECEDEE;
+  border-radius: 4px;
+}
+.import-preview .import-preview__heading {
+  background-color: #ECEDEE;
+  border-color: #ECEDEE;
+  padding: 10px 16px;
+  border-bottom: 1px solid #ECEDEE;
+}
+.import-preview .import-preview__body {
+  padding: 16px;
 }
 
 .content-type__edit-field-form {
