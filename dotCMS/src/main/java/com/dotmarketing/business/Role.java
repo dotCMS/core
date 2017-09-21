@@ -177,7 +177,12 @@ public class Role implements Serializable,Comparable<Role> {
 		
 		return (this.getId().equalsIgnoreCase(castOther.getId()));
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return this.id.hashCode();
+	}
+
 	public Map<String, Object> toMap() {
 		Map<String, Object> roleMap = new HashMap<String, Object>();
 		roleMap.put("DBFQN", this.DBFQN);
