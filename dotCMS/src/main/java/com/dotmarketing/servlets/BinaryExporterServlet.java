@@ -40,6 +40,7 @@ import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
@@ -68,9 +69,7 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
  *
  */
 public class BinaryExporterServlet extends HttpServlet {
-    
-    private boolean isContentLive;
-    private boolean isContentExpired;
+   
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -81,8 +80,6 @@ public class BinaryExporterServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
-	    isContentLive = Boolean.FALSE;
-	    isContentExpired = Boolean.FALSE;
 		exportersByPathMapping = new HashMap<String, BinaryContentExporter>();
 
 		Iterator<String> keys = Config.getKeys();
@@ -182,6 +179,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		ServletOutputStream out = null;
 		RandomAccessFile input = null;
 		InputStream is = null;
+		
+		AtomicBoolean isContentLive = new AtomicBoolean();
+	    AtomicBoolean isContentExpired = new AtomicBoolean(Boolean.FALSE);
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
@@ -205,7 +205,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			    }
 			    assetIdentifier = content.getIdentifier();
 			} else {
-			    isContentLive = userWebAPI.isLoggedToFrontend(req);
+			    isContentLive.set(userWebAPI.isLoggedToFrontend(req));
 			    boolean PREVIEW_MODE = false;
 			    boolean EDIT_MODE = false;
 
@@ -220,21 +220,25 @@ public class BinaryExporterServlet extends HttpServlet {
 			    //GIT-4506
 			    if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
 			        if(!EDIT_MODE && !PREVIEW_MODE) {// LIVE_MODE
-			            isContentLive = true;
+			            isContentLive.set(Boolean.TRUE);
 			        } else {
-			            isContentLive = false;
+			            isContentLive.set(Boolean.FALSE);
 			        }
 			    }
 
 			    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
-			        isContentLive=true;
+			        isContentLive.set(Boolean.TRUE);
 			        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
-			        checkIdentPublishExpireDates(ident,req);
-			        if(isContentExpired){
-			            Logger.debug(this, "Id " + assetIdentifier + " belongs to an expired content.");
-			            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-			            return;
+			        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
+			            Date fdate = new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
+			            isContentLive.set(ifIdentifierIsUnpublishedOrExpired(ident.getSysPublishDate(),fdate));
+			            isContentExpired.set(ifIdentifierIsUnpublishedOrExpired(ident.getSysExpireDate(),fdate));
 			        }
+                    if(isContentExpired.get()){
+                        Logger.debug(this, "Id " + assetIdentifier + " belongs to an expired content.");
+                        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                    }
 			    }
 
 			    //If the DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in request/session...
@@ -247,7 +251,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			        StringBuilder query = new StringBuilder();
 			        query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
 			        query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
-			        if ( isContentLive ) {
+			        if ( isContentLive.get() ) {
 			            query.append("+live:true ");
 			        } else {
 			            query.append("+working:true ");
@@ -272,7 +276,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 			         */
-			        content = contentAPI.findContentletByIdentifier(assetIdentifier, isContentLive, lang, user, respectFrontendRoles);
+			        content = contentAPI.findContentletByIdentifier(assetIdentifier, isContentLive.get(), lang, user, respectFrontendRoles);
 			    }
 			    assetInode = content.getInode();
 			}
@@ -281,7 +285,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			// Temporal files should be allowed any time
 			if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
 			    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
-			        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
+			        Logger.debug(this, "Content " + fieldVarName + " is not published, with inode: "
 			                + content.getInode());
 			        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			        return;
@@ -667,14 +671,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		return map;
 	}
 	
-	private void checkIdentPublishExpireDates (Identifier ident, HttpServletRequest req){
-        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
-            Date fdate = new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
-            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
-                isContentLive = false;
-            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
-                isContentExpired = true; // expired!
-        }
+	private boolean ifIdentifierIsUnpublishedOrExpired (Date publishOrExpireDate, Date tmDate ){
+	    if(UtilMethods.isSet(publishOrExpireDate) && publishOrExpireDate.before(tmDate)){
+	        return true;
+	    }
+	    return false;
 	}
-
+	
 }
