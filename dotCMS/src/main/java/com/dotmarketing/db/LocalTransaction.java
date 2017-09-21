@@ -6,7 +6,28 @@ import com.dotmarketing.exception.DotDataException;
 
 public class LocalTransaction {
 
-    static public <T> T wrapHibernateReturn(final ReturnableDelegate<T> delegate) throws Exception {
+    /**
+     *
+     * @param delegate {@link ReturnableDelegate}
+     * @return T result of the {@link ReturnableDelegate}
+     * @throws DotDataException
+     *
+     * This class can be used to wrap methods in a "local transaction" pattern including the listeners (commit and rollback listeners)
+     * this pattern will check to see if the method is being called in an existing transaction.
+     * if it is being called in a transaction, it will do nothing.  If it is not being called in a transaction
+     * it will checkout a db connection,start a transaction, do the work, commit the transaction, return the result
+     * and  finally close the db connection.  If the SQL call fails, it will rollback the work, close  the db connection
+     * and throw the error up the stack.
+     *
+     * In addition the connection will be closed, only if the current transaction is opening it.
+     *
+     *  How to use:
+     *
+     *	return new LocalTransaction().wrapReturnWithListeners(() ->{
+     *		return myDBMethod(args);
+     *  });
+     */
+    static public <T> T wrapReturnWithListeners(final ReturnableDelegate<T> delegate) throws Exception {
 
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean isLocalTransaction = HibernateUtil.startLocalTransactionIfNeeded();
@@ -17,7 +38,7 @@ public class LocalTransaction {
 
             result= delegate.execute();
             if (isLocalTransaction) {
-                HibernateUtil.onlyCommitTransaction();
+                HibernateUtil.commitTransaction();
             }
         } catch (Throwable e) {
 

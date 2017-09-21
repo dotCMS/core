@@ -18,7 +18,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -68,7 +67,7 @@ public class FixTask00011RenameHostInFieldVariableName implements FixTask {
 				Audit.setRecordsAltered(results.size());
 				Audit.setAction("task 11: Renaming structure fields with variable name 'host'");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 				MaintenanceUtil.deleteStaticFileStore();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

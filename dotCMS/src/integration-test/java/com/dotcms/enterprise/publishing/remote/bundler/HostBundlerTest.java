@@ -65,7 +65,7 @@ public class HostBundlerTest extends IntegrationTestBase {
 
         HibernateUtil.startTransaction();
         host = hostAPI.save(host, user, false);
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         contentSet.add(host.getIdentifier());
 

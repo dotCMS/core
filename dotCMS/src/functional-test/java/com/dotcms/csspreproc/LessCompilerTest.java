@@ -116,7 +116,7 @@ public class LessCompilerTest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(LessCompilerTest.class, e.getMessage());

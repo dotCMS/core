@@ -23,7 +23,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -177,7 +176,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 				Audit.setRecordsAltered(counter);
 				Audit.setAction("task 12: Update Assets Hosts");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 				MaintenanceUtil.deleteStaticFileStore();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

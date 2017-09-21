@@ -25,14 +25,14 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 	public static void prepare() throws Exception{
 		//Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        setDebugMode(true);
+        //setDebugMode(true);
     }
 
-    @AfterClass
+    /*@AfterClass
     public static void cleanup() throws DotDataException, DotSecurityException {
 
         cleanupDebug(ESContentFactoryImplTest.class);
-    }
+    }*/
     
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
     

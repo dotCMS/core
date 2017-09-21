@@ -293,7 +293,7 @@ public class PermissionAjax {
 				permissionAPI.removePermissions(asset);
 			}		
 			
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		} catch (Exception e) {
 		    Logger.warn(this, e.getMessage(), e);
 			HibernateUtil.rollbackTransaction();
@@ -324,7 +324,7 @@ public class PermissionAjax {
 			HibernateUtil.rollbackTransaction();
 			throw e;
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -437,7 +437,7 @@ public class PermissionAjax {
 	    		if(parentPermissionable!=null){
 	    			permissionAPI.permissionIndividually(parentPermissionable, asset, user);
 	    		}
-	    		HibernateUtil.commitTransaction();
+	    		HibernateUtil.closeAndCommitTransaction();
 	    	} catch (Exception e) {
 	    		HibernateUtil.rollbackTransaction();
 	    		throw e;

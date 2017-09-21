@@ -255,7 +255,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         categoryAPI.save( parentCategory, childCategory2, user, false );
         categories.add( childCategory2 );
 
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //***************************************************************
         //Verify If we find the parent for the categories we just added categories
@@ -299,7 +299,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         APILocator.getContentletAPI().isInodeIndexed( contentlet.getInode() );
         APILocator.getVersionableAPI().setLive( contentlet );
 
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //***************************************************************
         //Verify If we find the parent for these categories

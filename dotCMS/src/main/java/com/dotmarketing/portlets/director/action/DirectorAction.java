@@ -603,7 +603,7 @@ public class DirectorAction extends DotPortletAction {
 					Logger.error(this, "Unable to add content to page", e);
 				} finally {
 					try {
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
 					}catch(Exception e){
 						session.setAttribute("duplicatedErrorMessage","Content already exists in the same container on the page");
 						//res.sendRedirect(referer);
@@ -656,7 +656,7 @@ public class DirectorAction extends DotPortletAction {
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 				}
 				_sendToReferral(req, res, referer);
 				return;
@@ -866,7 +866,7 @@ public class DirectorAction extends DotPortletAction {
 			        HibernateUtil.startTransaction();
     			    HTMLPage htmlPage = (HTMLPage) HibernateUtil.load(HTMLPage.class, req.getParameter("htmlPage"));
     			    APILocator.getHTMLPageAssetAPI().migrateLegacyPage(htmlPage, user, false);
-    			    HibernateUtil.commitTransaction();
+    			    HibernateUtil.closeAndCommitTransaction();
 			    }
 			    catch(Exception ex) {
 			        HibernateUtil.rollbackTransaction();

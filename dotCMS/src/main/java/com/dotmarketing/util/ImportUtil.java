@@ -253,7 +253,7 @@ public class ImportUtil {
                             }
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                                 Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
@@ -274,7 +274,7 @@ public class ImportUtil {
                         results.get("counters").add("errors="+errors);
                         results.get("counters").add("newContent="+counters.getNewContentCounter());
                         results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
                     }
 
                     results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));

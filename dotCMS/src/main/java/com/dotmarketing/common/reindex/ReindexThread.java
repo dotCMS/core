@@ -661,7 +661,7 @@ public class ReindexThread extends Thread {
 	    try {
 	        HibernateUtil.startTransaction();
 	        remoteQ.addAll(jAPI.findContentReindexEntriesToReindex(includeFailedRecords));
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 	    }
 	    catch(Exception ex) {
 	        HibernateUtil.rollbackTransaction();
@@ -759,7 +759,7 @@ public class ReindexThread extends Thread {
 	    APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
 	    indexAPI.fullReindexAbort();
 	    unpause();
-	    HibernateUtil.commitTransaction();
+	    HibernateUtil.closeAndCommitTransaction();
 	}
 
 	/**

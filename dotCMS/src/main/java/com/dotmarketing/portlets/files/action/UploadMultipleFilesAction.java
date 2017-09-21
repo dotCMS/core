@@ -10,8 +10,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -86,7 +84,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				_handleException(ae, req);
 				return;
 			}
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 		}
 		else if (cmd != null && cmd.equals(Constants.ADD)) {
             try {
@@ -286,7 +284,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                             APILocator.getVersionableAPI().setLive( contentlet );
                         }
 
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
 						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }

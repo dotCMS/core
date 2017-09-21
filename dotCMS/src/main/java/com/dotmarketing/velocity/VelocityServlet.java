@@ -298,7 +298,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			// added finally because of
 			// http://jira.dotmarketing.net/browse/DOTCMS-1334
 			try {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}

@@ -509,7 +509,7 @@ public class WebAssetFactory {
 
 			if(localTransaction) {
 
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 		} catch(Exception e){
 

@@ -146,7 +146,7 @@ public class FixTask00030DeleteOrphanedAssets implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("task 30: Fixed DeleteOrphanedAssets");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

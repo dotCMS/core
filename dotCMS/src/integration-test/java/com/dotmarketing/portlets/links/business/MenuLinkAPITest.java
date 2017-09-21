@@ -50,7 +50,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         try{
         	HibernateUtil.startTransaction();
         	host = hAPI.save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(MenuLinkAPITest.class, e.getMessage());
@@ -67,7 +67,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         	HibernateUtil.startTransaction();
         	hAPI.unpublish(host, user, false);
         	hAPI.archive(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(MenuLinkAPITest.class, e.getMessage());
@@ -129,7 +129,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         link.setUrl("google.com");
         link.setProtocal("http://");
         mAPI.save(link, folder, user, false);
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
         assertEquals(existingIdent,link.getIdentifier());
         assertEquals(existingInode,link.getInode());
     }

@@ -2333,7 +2333,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 
 					if(localTransaction){
-	                    HibernateUtil.commitTransaction();
+	                    HibernateUtil.closeAndCommitTransaction();
 	                }
 				} catch(Exception exception){
 					if(permissionable != null && newReference != null){

@@ -87,7 +87,7 @@ public class ResetPermissionsJob implements Job {
 			HibernateUtil.startTransaction();
 			Permissionable permissionable = (Permissionable) retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			try {

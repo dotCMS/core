@@ -883,7 +883,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             StructureDataGen.remove(structure);
             FolderDataGen.remove(folder);
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
             HibernateUtil.rollbackTransaction();
             throw e;
@@ -966,7 +966,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
             menuLinkAPI.delete( menuLink, user, false );
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2269,7 +2269,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
         	APILocator.getStructureAPI().delete(testStructure, user);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());

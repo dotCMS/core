@@ -16,7 +16,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -34,7 +33,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -304,7 +302,7 @@ public class EditReportAction extends DotPortletAction {
 							return;
 						}
 					}
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					HashMap params = new HashMap();
 					SessionMessages.add(req, "message",
 							"message.report.upload.success");

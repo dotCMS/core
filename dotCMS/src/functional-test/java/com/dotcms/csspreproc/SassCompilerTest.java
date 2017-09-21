@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.junit.Assert;
@@ -143,7 +142,7 @@ public class SassCompilerTest {
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(SassCompilerTest.class, e.getMessage());
@@ -154,7 +153,7 @@ public class SassCompilerTest {
         try{
             HibernateUtil.startTransaction();
             APILocator.getHostAPI().publish(host, user, false);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(SassCompilerTest.class, e.getMessage());
@@ -169,7 +168,7 @@ public class SassCompilerTest {
         try{
             HibernateUtil.startTransaction();
             APILocator.getHostAPI().publish(defaultHost, user, false);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(SassCompilerTest.class, e.getMessage());

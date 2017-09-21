@@ -142,7 +142,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
         }
         finally {
-            setDebugMode(true);
+            //setDebugMode(true);
             HibernateUtil.closeSession();
         }
     }
@@ -174,11 +174,11 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         }
     }
 
-    @AfterClass
+   /* @AfterClass
     public static void cleanup() throws DotDataException, DotSecurityException {
 
         cleanupDebug(LinkCheckerAPITest.class);
-    }
+    }*/
 
     @Test
     public void findInvalidLinks() throws Exception {

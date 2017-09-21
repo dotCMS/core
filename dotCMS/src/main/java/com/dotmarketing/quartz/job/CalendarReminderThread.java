@@ -42,7 +42,7 @@ public class CalendarReminderThread implements Job {
 		}
 		finally {
 			try {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			} catch (Exception e) {
 				Logger.warn(this, e.toString());
 			}

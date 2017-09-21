@@ -72,7 +72,7 @@ public class PermissionAPITest {
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, sysuser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	host = APILocator.getHostAPI().findByName("testhost.demo.dotcms.com", sysuser, false);
@@ -101,7 +101,7 @@ public class PermissionAPITest {
         	HibernateUtil.startTransaction();
             APILocator.getHostAPI().archive(host, sysuser, false);
             APILocator.getHostAPI().delete(host, sysuser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         	dwrAuthentication.shutdownWebContext();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
@@ -411,7 +411,7 @@ public class PermissionAPITest {
             	HibernateUtil.startTransaction();
                 APILocator.getHostAPI().archive(hh, sysuser, false);
                 APILocator.getHostAPI().delete(hh, sysuser, false);
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
             	Logger.error(PermissionAPITest.class, e.getMessage());
@@ -478,7 +478,7 @@ public class PermissionAPITest {
             	HibernateUtil.startTransaction();
                 APILocator.getHostAPI().archive(hh, sysuser, false);
                 APILocator.getHostAPI().delete(hh, sysuser, false);
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
             	Logger.error(PermissionAPITest.class, e.getMessage());
@@ -728,7 +728,7 @@ public class PermissionAPITest {
              	HibernateUtil.startTransaction();
                  APILocator.getHostAPI().archive(hh, sysuser, false);
                  APILocator.getHostAPI().delete(hh, sysuser, false);
-             	HibernateUtil.commitTransaction();
+             	HibernateUtil.closeAndCommitTransaction();
              }catch(Exception e){
              	HibernateUtil.rollbackTransaction();
              	Logger.error(PermissionAPITest.class, e.getMessage());

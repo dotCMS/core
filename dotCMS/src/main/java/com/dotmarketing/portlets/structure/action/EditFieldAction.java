@@ -178,7 +178,7 @@ public class EditFieldAction extends DotPortletAction {
             }
             _sendToReferral(req, res, referer);
         }
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
         _loadForm(form, req, res);
         setForward(req, "portlet.ext.structure.edit_field");
     }

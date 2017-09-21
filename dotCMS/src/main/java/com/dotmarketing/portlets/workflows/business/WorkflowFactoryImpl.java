@@ -323,7 +323,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 
 			if(localTransaction){
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 
 		} catch (final Exception e) {

@@ -890,10 +890,10 @@ public class HibernateUtil {
 	}
 
 	/**
-	 * This just commit does not close anything.
+	 * This just commit the transaction and process the listeners.
 	 * @throws DotHibernateException
 	 */
-	public static void onlyCommitTransaction()  throws DotHibernateException{
+	public static void commitTransaction()  throws DotHibernateException{
 
 		try{
 			// if there is nothing to close
@@ -926,9 +926,9 @@ public class HibernateUtil {
 	/**
 	 * This commit and close the current session, connection
 	 * @return
-	 * @throws DotHibernateException // todo close and commit
+	 * @throws DotHibernateException
 	 */
-	public static boolean commitTransaction()  throws DotHibernateException{
+	public static boolean closeAndCommitTransaction()  throws DotHibernateException{
 		closeSession();
 		return true;
 	}

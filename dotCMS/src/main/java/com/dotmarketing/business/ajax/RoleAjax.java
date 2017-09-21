@@ -811,7 +811,7 @@ public class RoleAjax {
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
 			
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 		} catch (Exception e) {
 			Logger.error(this, "Error saving permissions for role " + roleId + " and folder/host id:" + folderHostId, e);

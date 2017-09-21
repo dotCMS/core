@@ -21,7 +21,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
@@ -123,7 +122,7 @@ public class FixTask00008CheckTreeInconsistencies  implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Check the tree entries that doesn't have a child o parent in the inode table and deleted them");
 				HibernateUtil.save(Audit);				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class, "Ending fixAssetsInconsistencies");
