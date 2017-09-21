@@ -36,7 +36,7 @@ class NotifyingInputStream extends InputStream {
 	 * @param listener
 	 * @throws IOException 
 	 */
-    public NotifyingInputStream(final InputStream in, final Long length, String path, ProgressListener listener) throws IOException {
+    public NotifyingInputStream(final InputStream in, final Long length, String path, final ProgressListener listener) throws IOException {
         this.fin = in;
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;

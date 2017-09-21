@@ -451,12 +451,13 @@ public class EmailFactory {
                     try (OutputStream os = Files.newOutputStream(file.toPath());
                             BufferedOutputStream bos = new BufferedOutputStream(os)) {
 
-                        if (emailBodies.get("emailHTMLBody") != null)
+                        if (emailBodies.get("emailHTMLBody") != null) {
                             bos.write(emailBodies.get("emailHTMLBody").getBytes());
-                        else if (emailBodies.get("emailHTMLTableBody") != null)
+                        } else if (emailBodies.get("emailHTMLTableBody") != null) {
                             bos.write(emailBodies.get("emailHTMLTableBody").getBytes());
-                        else
+                        } else {
                             bos.write(emailBodies.get("emailPlainTextBody").getBytes());
+                        }
                         bos.flush();
                     } catch (IOException e) {
                         Logger.warn(EmailFactory.class,

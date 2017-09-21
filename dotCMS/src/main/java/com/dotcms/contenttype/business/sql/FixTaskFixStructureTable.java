@@ -4,7 +4,6 @@ package com.dotcms.contenttype.business.sql;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
@@ -197,16 +196,10 @@ public class FixTaskFixStructureTable  implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator  + lastmoddate + "_"
 					+ "FixTask00001CheckAssetsMissingIdentifiers" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			} catch (IOException e) {
-
-			}
-			try {
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
 				_xstream.toXML(modifiedData, _bout);
-			} finally {
-				CloseUtils.closeQuietly(_bout);
+			} catch (IOException e) {
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
 		}
 		return modifiedData;

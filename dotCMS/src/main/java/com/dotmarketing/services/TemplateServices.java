@@ -64,7 +64,7 @@ public class TemplateServices {
             templateBody.append(Constants.TEMPLATE_POSTPROCESS);
             
             if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-            	final BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+            	final BufferedOutputStream tmpOut = new BufferedOutputStream(
             	        Files.newOutputStream(
             	                Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 	            //Specify a proper character encoding

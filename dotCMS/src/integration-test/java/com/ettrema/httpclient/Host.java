@@ -276,7 +276,7 @@ public class Host extends Folder {
      * @throws FileNotFoundException
      * @throws HttpException
      */
-    public int doPut(Path remotePath, final File file, ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException {
+    public int doPut(Path remotePath, final File file, final ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException {
         if (fileSyncer != null) {
             try {
                 fileSyncer.upload(this, file, remotePath, listener);
