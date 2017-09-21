@@ -180,8 +180,8 @@ public class BinaryExporterServlet extends HttpServlet {
 		RandomAccessFile input = null;
 		InputStream is = null;
 		
-		AtomicBoolean isContentLive = new AtomicBoolean();
-	    AtomicBoolean isContentExpired = new AtomicBoolean(Boolean.FALSE);
+		final AtomicBoolean isContentLive = new AtomicBoolean();
+	    final AtomicBoolean isContentExpired = new AtomicBoolean(Boolean.FALSE);
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
@@ -318,13 +318,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 			}
 			
-			try{
-			    downloadName = inputFile.getName();
-			} catch (Exception e){
-	             Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-	             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-	             return;
+			if(checkIfFileIsNull(inputFile)){
+	              Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+	                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	                 return;
 			}
+			
+			downloadName = inputFile.getName();
 
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
@@ -632,7 +632,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
-	@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
 	private Map sortByKey(Map map) {
 		List list = new LinkedList(map.entrySet());
 		Collections.sort(list, new Comparator() {
@@ -674,6 +674,10 @@ public class BinaryExporterServlet extends HttpServlet {
 	
 	private boolean ifIdentifierIsUnpublishedOrExpired (Date publishOrExpireDate, Date tmDate ){
 	    return (UtilMethods.isSet(publishOrExpireDate) && publishOrExpireDate.before(tmDate));
+	}
+	
+	private boolean checkIfFileIsNull(File inputFile) {
+	    return(inputFile==null || !inputFile.exists());
 	}
 	
 }
