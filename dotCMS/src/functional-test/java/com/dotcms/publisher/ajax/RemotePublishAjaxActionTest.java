@@ -276,7 +276,7 @@ public class RemotePublishAjaxActionTest {
 		//Sending bundle to endpoint
 		String contentDisposition = "attachment; filename=\"" + newBundleFile.getName() + "\"";
 
-		InputStream newBundleFileStream = new BufferedInputStream(Files.newInputStream(newBundleFile.toPath()));
+		final InputStream newBundleFileStream = new BufferedInputStream(Files.newInputStream(newBundleFile.toPath()));
 
 		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")

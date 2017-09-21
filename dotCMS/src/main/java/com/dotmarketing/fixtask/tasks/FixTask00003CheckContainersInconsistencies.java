@@ -3,7 +3,6 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
@@ -165,17 +164,11 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_"
 					+ "FixTask00003CheckContainersInconsistencies" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+				_xstream.toXML(modifiedData, _bout);
 			} catch (IOException e) {
-
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
-			try {
-                _xstream.toXML(modifiedData, _bout);
-            } finally {
-                CloseUtils.closeQuietly(_bout);
-            }
 
 		}
 		return modifiedData;

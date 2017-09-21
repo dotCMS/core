@@ -356,7 +356,7 @@ public class CMSMaintenanceAjax {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + File.separator + "backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 				Logger.info(this, "Creating zipped backup file in "+ backupFilePath + " folder. Please wait");
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";

@@ -138,7 +138,7 @@ public class IndexAjaxAction extends AjaxAction {
                    isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
-                   OutputStream out = Files.newOutputStream(ufile.toPath());
+                   final OutputStream out = Files.newOutputStream(ufile.toPath());
                    IOUtils.copyLarge(in, out);
                    IOUtils.closeQuietly(out);
                    IOUtils.closeQuietly(in);
@@ -179,7 +179,7 @@ public class IndexAjaxAction extends AjaxAction {
 		File f=ESIndexResource.downloadIndex(indexName);
 		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
-		InputStream in = Files.newInputStream(f.toPath());
+		final InputStream in = Files.newInputStream(f.toPath());
 
 		response.setHeader("Content-Type", "application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");

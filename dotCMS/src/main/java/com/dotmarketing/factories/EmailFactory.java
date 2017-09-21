@@ -1,7 +1,6 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -435,37 +434,35 @@ public class EmailFactory {
 				}
 
 				// Saving email backup in a file
-                OutputStream os = null;
-                BufferedOutputStream bos = null;
-                try {
-					String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
-					new File(filePath).mkdir();
+                String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
+                new File(filePath).mkdir();
 
-					File file;
-					synchronized (emailTime) {
-						emailTime = new Long(emailTime.longValue() + 1);
-						if (UtilMethods.isSet(emailFolder)) {
-							new File(filePath + File.separator + emailFolder).mkdir();
-							filePath = filePath + File.separator + emailFolder;
-						}
-						file = new File(filePath + File.separator + emailTime.toString()
-								+ ".html");
-					}
-					if (file != null) {
-						os = Files.newOutputStream(file.toPath());
-						bos = new BufferedOutputStream(os);
-						if(emailBodies.get("emailHTMLBody") != null)
-							bos.write(emailBodies.get("emailHTMLBody").getBytes());
-						else if(emailBodies.get("emailHTMLTableBody") != null) 
-							bos.write(emailBodies.get("emailHTMLTableBody").getBytes());
-						else
-							bos.write(emailBodies.get("emailPlainTextBody").getBytes());
-						bos.flush();
-					}
-				} catch (Exception e) {
-					Logger.warn(EmailFactory.class, "sendForm: Couldn't save the email backup in " + Config.getStringProperty("EMAIL_BACKUPS"));
-				} finally {
-                    CloseUtils.closeQuietly(bos, os);
+                File file;
+                synchronized (emailTime) {
+                    emailTime = new Long(emailTime.longValue() + 1);
+                    if (UtilMethods.isSet(emailFolder)) {
+                        new File(filePath + File.separator + emailFolder).mkdir();
+                        filePath = filePath + File.separator + emailFolder;
+                    }
+                    file = new File(filePath + File.separator + emailTime.toString()
+                            + ".html");
+                }
+                if (file != null) {
+                    try (OutputStream os = Files.newOutputStream(file.toPath());
+                            BufferedOutputStream bos = new BufferedOutputStream(os)) {
+
+                        if (emailBodies.get("emailHTMLBody") != null)
+                            bos.write(emailBodies.get("emailHTMLBody").getBytes());
+                        else if (emailBodies.get("emailHTMLTableBody") != null)
+                            bos.write(emailBodies.get("emailHTMLTableBody").getBytes());
+                        else
+                            bos.write(emailBodies.get("emailPlainTextBody").getBytes());
+                        bos.flush();
+                    } catch (IOException e) {
+                        Logger.warn(EmailFactory.class,
+                                "sendForm: Couldn't save the email backup in " + Config
+                                        .getStringProperty("EMAIL_BACKUPS"));
+                    }
                 }
 
 				// send the mail out;

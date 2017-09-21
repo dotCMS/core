@@ -195,13 +195,11 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator  + lastmoddate + "_"
 					+ "FixTask00001CheckAssetsMissingIdentifiers" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+				_xstream.toXML(modifiedData, _bout);
 			} catch (IOException e) {
-
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
-			_xstream.toXML(modifiedData, _bout);
 		}
 		return modifiedData;
 

@@ -13,6 +13,7 @@ import com.dotcms.repackage.com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.Utils.CancelledException;
 import com.ettrema.httpclient.zsyncclient.FileSyncer;
 import java.io.*;
+import java.io.File;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -275,7 +276,7 @@ public class Host extends Folder {
      * @throws FileNotFoundException
      * @throws HttpException
      */
-    public int doPut(Path remotePath, java.io.File file, ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException {
+    public int doPut(Path remotePath, final File file, ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException {
         if (fileSyncer != null) {
             try {
                 fileSyncer.upload(this, file, remotePath, listener);

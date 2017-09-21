@@ -1,12 +1,12 @@
 package com.ettrema.httpclient;
 
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 
 class NotifyingInputStream extends InputStream {
 	private InputStream fin;
@@ -19,7 +19,7 @@ class NotifyingInputStream extends InputStream {
     private long timeLastNotify;
     private long bytesSinceLastNotify;
 
-    public NotifyingInputStream(final File f, ProgressListener listener) throws FileNotFoundException, IOException {
+    public NotifyingInputStream(final File f, final ProgressListener listener) throws FileNotFoundException, IOException {
         this.fin = FileUtils.openInputStream(f);
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;
@@ -36,7 +36,7 @@ class NotifyingInputStream extends InputStream {
 	 * @param listener
 	 * @throws IOException 
 	 */
-    public NotifyingInputStream(final InputStream in, Long length, String path, ProgressListener listener) throws IOException {
+    public NotifyingInputStream(final InputStream in, final Long length, String path, ProgressListener listener) throws IOException {
         this.fin = in;
 		this.wrapped = new BufferedInputStream(fin);
         this.listener = listener;

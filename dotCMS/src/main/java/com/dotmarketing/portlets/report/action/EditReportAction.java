@@ -245,7 +245,7 @@ public class EditReportAction extends DotPortletAction {
 								reportFolder.mkdirs();
 		
 							File f = new File(jrxmlPath);
-							FileChannel channelTo = FileChannel.open(f.toPath());
+							final FileChannel channelTo = FileChannel.open(f.toPath());
 							ByteBuffer currentDataBuffer = ByteBuffer
 									.allocate(currentData.length);
 							currentDataBuffer.put(currentData);

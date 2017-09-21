@@ -110,7 +110,7 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        resultGraphics.dispose();
 
 	        // save thumbnail image to OUTFILE
-	        BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
+	        final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
 	        ImageIO.write(bgImage, "png", out);
 	        out.close();
 

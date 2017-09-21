@@ -56,7 +56,7 @@ public class TikaUtils {
 
             if (forceMemory) {
                 // no worry about the limit and less time to process.
-                String content = t.parseToString(Files.newInputStream(binFile.toPath()), met);
+                final String content = t.parseToString(Files.newInputStream(binFile.toPath()), met);
                 metaMap = new HashMap<String, String>();
                 for (int i = 0; i < met.names().length; i++) {
                     String name = met.names()[i];

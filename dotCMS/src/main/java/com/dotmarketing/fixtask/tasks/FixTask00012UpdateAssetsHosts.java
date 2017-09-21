@@ -2,7 +2,6 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -213,17 +212,12 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 			}
 			
 			_writing = new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_" + "FixTask00012UpdateAssetsHosts" + ".xml");
-			
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			} catch (IOException e) {
-			}
-			try {
-				_xstream.toXML(modifiedData, _bout);
-			} finally {
-				CloseUtils.closeQuietly(_bout);
-			}
+
+            try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+                _xstream.toXML(modifiedData, _bout);
+            } catch (IOException e) {
+                Logger.error(this, "Error trying to get modified data from XML.", e);
+            }
 		}
 		return modifiedData;
 	}

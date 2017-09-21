@@ -272,7 +272,7 @@ public class FileUtil {
 		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		InputStream in = Files.newInputStream(file.toPath());
+		final InputStream in = Files.newInputStream(file.toPath());
 
 		byte buffer[] = new byte[2048];
 

@@ -13,6 +13,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -63,7 +64,7 @@ public class TemplateServices {
             templateBody.append(Constants.TEMPLATE_POSTPROCESS);
             
             if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-            	java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+            	final BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
             	        Files.newOutputStream(
             	                Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 	            //Specify a proper character encoding

@@ -1,6 +1,5 @@
 package com.dotmarketing.services;
 
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -74,7 +73,7 @@ public class HostServices {
 		}
 
         if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-            final String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+            final String realFolderPath = (!EDIT_MODE) ? "live" + File.separator: "working" + File.separator;
             final String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 
             final String velocityFilePath = ConfigUtils.getDynamicVelocityPath() + File.separator + filePath;

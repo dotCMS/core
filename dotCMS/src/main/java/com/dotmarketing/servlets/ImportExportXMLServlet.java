@@ -187,8 +187,8 @@ public class ImportExportXMLServlet extends HttpServlet {
          */
         if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
 
-            final InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
-            try(ZipInputStream zin = new ZipInputStream(in)){
+            try(final InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
+                    ZipInputStream zin = new ZipInputStream(in)){
                 ZipEntry e;
 
                 while ((e = zin.getNextEntry()) != null) {

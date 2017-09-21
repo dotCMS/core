@@ -52,7 +52,7 @@ public class Task00001LoadSchema implements StartupTask {
 			ClassLoader classLoader = Thread.currentThread()
 					.getContextClassLoader();
 			URL url = classLoader.getResource(schemaFile);
-			InputStream fstream = Files.newInputStream(Paths.get(url.getPath()));
+			final InputStream fstream = Files.newInputStream(Paths.get(url.getPath()));
 			// Get the object of DataInputStream
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));

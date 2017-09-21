@@ -82,8 +82,10 @@ public class FileAssetAjax {
 		} catch(Exception e) {
 			Logger.error(getClass(), "Error writing to file", e);
 		}finally {
-			if (os != null)
+			if (os != null){
 				os.close();
+			}
+
 		}
 	}
 

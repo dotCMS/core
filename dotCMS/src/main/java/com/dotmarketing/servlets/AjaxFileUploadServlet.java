@@ -82,7 +82,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 			}
 
 			if(file.exists()) {
-				InputStream is = Files.newInputStream(file.toPath());
+				final InputStream is = Files.newInputStream(file.toPath());
 				byte[] buffer = new byte[1000];
 				int count = 0;
 				String mimeType = this.getServletContext().getMimeType(file.getName());

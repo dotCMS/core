@@ -3,7 +3,6 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -134,16 +133,10 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator  + lastmoddate + "_"
 					+ "FixTask00009CheckContentletsInconsistencies" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			} catch (IOException e) {
-
-			}
-			try {
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
 				_xstream.toXML(modifiedData, _bout);
-			} finally {
-				CloseUtils.closeQuietly(_bout);
+			} catch (IOException e) {
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
 		}
 		return modifiedData;
