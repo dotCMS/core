@@ -219,10 +219,11 @@ public class BinaryExporterServlet extends HttpServlet {
 			    }
 			    //GIT-4506
 			    if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-			        if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
+			        if(!EDIT_MODE && !PREVIEW_MODE) {// LIVE_MODE
 			            isContentLive = true;
-			        else
+			        } else {
 			            isContentLive = false;
+			        }
 			    }
 
 			    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
