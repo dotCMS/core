@@ -81,8 +81,8 @@ public class BinaryExporterServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
-	    isContentLive = false;
-	    isContentExpired = false;
+	    isContentLive = Boolean.FALSE;
+	    isContentExpired = Boolean.FALSE;
 		exportersByPathMapping = new HashMap<String, BinaryContentExporter>();
 
 		Iterator<String> keys = Config.getKeys();
