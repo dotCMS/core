@@ -578,7 +578,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			if(!resp.isCommitted()){
 			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
-		}catch (Exception e) {
+		} catch (IOException e) {
+            Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+            Logger.error(BinaryExporterServlet.class, e.getMessage());
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
             if(!resp.isCommitted()){
