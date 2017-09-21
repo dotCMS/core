@@ -93,8 +93,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         //Executing a simple query filtering by score
         SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
 
-        System.out.println(
-                "\nsearchHits.getTotalHits(): " + searchHits.getTotalHits());
+
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
@@ -121,8 +120,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         //With this query the first result must have a higher score than the others
         assertTrue(maxScore == searchHits.getHits()[0].getScore());
         //The second record should have a lower score
-        System.out.println("\tsearchHits.getHits()[0].getScore(): " + searchHits.getHits()[0].getScore()
-                        +  "\tsearchHits.getHits()[1].getScore(): " + searchHits.getHits()[1].getScore());
         assertTrue(maxScore != searchHits.getHits()[1].getScore());
         assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
     }

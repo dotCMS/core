@@ -212,7 +212,6 @@ public class SassCompilerTest {
                                            "someclass { width: ($file1 + $file2 + $file3 + $file4); } \r\n");
         Contentlet fileAsset5=newFile(file5,f2,defaultHost);
         
-        System.out.println("cssURL: " + baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         Assert.assertEquals("someclass{width:30}", response.substring(0,response.lastIndexOf("}")+1).trim());

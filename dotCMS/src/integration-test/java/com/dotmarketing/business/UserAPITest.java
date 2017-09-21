@@ -99,14 +99,14 @@ public class UserAPITest extends IntegrationTestBase {
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
-		setDebugMode(true);
+		//setDebugMode(true);
 	}
 
-	@AfterClass
+	/*@AfterClass
 	public static void cleanup() throws DotDataException, DotSecurityException {
 
 		cleanupDebug(UserAPITest.class);
-	}
+	}*/
 
 	/**
 	 * Testing {@link UserAPI#delete(User, User, User, boolean)}
@@ -434,8 +434,7 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
-		System.out.println("\ncurrentStep.getId(): " + currentStep.getId());
-		System.out.println("workflowStep2.getId(): " + workflowStep2.getId());
+
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
 		/**

@@ -280,10 +280,6 @@ public class PermissionAPITest {
         p2.setInode(f.getInode());
         perm.save(p2, f, sysuser, false);
 
-        System.out.println("nrole: " + nrole);
-        System.out.println("perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_READ): " + perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_READ));
-        System.out.println("perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_EDIT): " + perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_EDIT));
-
         assertTrue(perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_READ).contains(nrole));
         assertTrue(perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_EDIT).contains(nrole));
 
