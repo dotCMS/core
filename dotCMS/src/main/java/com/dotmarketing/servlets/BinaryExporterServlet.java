@@ -68,7 +68,9 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
  *
  */
 public class BinaryExporterServlet extends HttpServlet {
-
+    
+    private boolean isContentLive = false;
+    private boolean isContentExpired = false;
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -201,7 +203,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			    }
 			    assetIdentifier = content.getIdentifier();
 			} else {
-			    boolean live=userWebAPI.isLoggedToFrontend(req);
+			    isContentLive = userWebAPI.isLoggedToFrontend(req);
 			    boolean PREVIEW_MODE = false;
 			    boolean EDIT_MODE = false;
 
@@ -216,20 +218,19 @@ public class BinaryExporterServlet extends HttpServlet {
 			    //GIT-4506
 			    if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
 			        if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
-			            live = true;
+			            isContentLive = true;
 			        else
-			            live = false;
+			            isContentLive = false;
 			    }
 
 			    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
-			        live=true;
+			        isContentLive=true;
 			        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
-			        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
-			            Date fdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
-			            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
-			                live=false;
-			            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
-			                return; // expired!
+			        checkIdentPublishExpireDates(ident,req);
+			        if(isContentExpired){
+			            Logger.debug(this, "Id " + assetIdentifier + " belongs to an expired content.");
+			            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			            return;
 			        }
 			    }
 
@@ -243,7 +244,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			        StringBuilder query = new StringBuilder();
 			        query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
 			        query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
-			        if ( live ) {
+			        if ( isContentLive ) {
 			            query.append("+live:true ");
 			        } else {
 			            query.append("+working:true ");
@@ -268,7 +269,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 			         */
-			        content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+			        content = contentAPI.findContentletByIdentifier(assetIdentifier, isContentLive, lang, user, respectFrontendRoles);
 			    }
 			    assetInode = content.getInode();
 			}
@@ -661,6 +662,16 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 
 		return map;
+	}
+	
+	private void checkIdentPublishExpireDates (Identifier ident, HttpServletRequest req){
+        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
+            Date fdate = new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
+            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
+                isContentLive = false;
+            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
+                isContentExpired = true; // expired!
+        }
 	}
 
 }
