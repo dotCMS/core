@@ -40,7 +40,6 @@ import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
@@ -180,8 +179,8 @@ public class BinaryExporterServlet extends HttpServlet {
 		RandomAccessFile input = null;
 		InputStream is = null;
 		
-		final AtomicBoolean isContentLive = new AtomicBoolean();
-	    final AtomicBoolean isContentExpired = new AtomicBoolean(Boolean.FALSE);
+		boolean isLiveMode = Boolean.FALSE;
+	    boolean isContentExpired = Boolean.FALSE;
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
@@ -198,43 +197,36 @@ public class BinaryExporterServlet extends HttpServlet {
 			Contentlet content = null;
 			
 			if(byInode) {
-			    if(isTempBinaryImage) {
-			        content = contentAPI.find(assetInode, APILocator.systemUser(), respectFrontendRoles);
-			    } else {
-			        content = contentAPI.find(assetInode, user, respectFrontendRoles);
-			    }
+			    content = (isTempBinaryImage) ? contentAPI.find(assetInode, APILocator.systemUser(), respectFrontendRoles)
+			            :contentAPI.find(assetInode, user, respectFrontendRoles);
 			    assetIdentifier = content.getIdentifier();
 			} else {
-			    isContentLive.set(userWebAPI.isLoggedToFrontend(req));
+			    isLiveMode = userWebAPI.isLoggedToFrontend(req);
 			    boolean PREVIEW_MODE = false;
 			    boolean EDIT_MODE = false;
 
 			    if(session != null) {
-			        PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
+			        PREVIEW_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
 			        try {
-			            EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
+			            EDIT_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
 			        } catch (Exception e) {
 			            Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
 			        }
 			    }
 			    //GIT-4506
 			    if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-			        if(!EDIT_MODE && !PREVIEW_MODE) {// LIVE_MODE
-			            isContentLive.set(Boolean.TRUE);
-			        } else {
-			            isContentLive.set(Boolean.FALSE);
-			        }
+			        isLiveMode = (!EDIT_MODE && !PREVIEW_MODE);
 			    }
 
 			    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
-			        isContentLive.set(Boolean.TRUE);
+			        isLiveMode = Boolean.TRUE;
 			        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
 			        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
 			            Date fdate = new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
-			            isContentLive.set(ifIdentifierIsUnpublishedOrExpired(ident.getSysPublishDate(),fdate));
-			            isContentExpired.set(ifIdentifierIsUnpublishedOrExpired(ident.getSysExpireDate(),fdate));
+			            isLiveMode = ifIdentifierIsUnpublishedOrExpired(ident.getSysPublishDate(),fdate);
+			            isContentExpired = ifIdentifierIsUnpublishedOrExpired(ident.getSysExpireDate(),fdate);
 			        }
-                    if(isContentExpired.get()){
+                    if(isContentExpired){
                         Logger.debug(this, "Id " + assetIdentifier + " belongs to an expired content.");
                         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                         return;
@@ -251,11 +243,8 @@ public class BinaryExporterServlet extends HttpServlet {
 			        StringBuilder query = new StringBuilder();
 			        query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
 			        query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
-			        if ( isContentLive.get() ) {
-			            query.append("+live:true ");
-			        } else {
-			            query.append("+working:true ");
-			        }
+			        
+			        query.append((isLiveMode) ? "+live:true ": "+working:true ");
 
 			        List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
 			        if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
@@ -276,7 +265,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 			         */
-			        content = contentAPI.findContentletByIdentifier(assetIdentifier, isContentLive.get(), lang, user, respectFrontendRoles);
+			        content = contentAPI.findContentletByIdentifier(assetIdentifier, isLiveMode, lang, user, respectFrontendRoles);
 			    }
 			    assetInode = content.getInode();
 			}
@@ -312,16 +301,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			    return;
 			}
 
-			if(isTempBinaryImage) {
-			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.systemUser());
-			} else {
-			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
-			}
+			inputFile = (isTempBinaryImage) ? contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.systemUser())
+			        :contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 			
 			if(checkIfFileIsNull(inputFile)){
 	              Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-	                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-	                 return;
+	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	              return;
 			}
 			
 			downloadName = inputFile.getName();
