@@ -60,7 +60,7 @@ public class CalendarReminderThread implements Job {
 	/**
 	  * Job main method to start Calendar Reminder process, this method call run()
 	  * @param		context JobExecutionContext.
-	  * @exception	JobExecutionException.
+	  * @exception	JobExecutionException .
 	  */
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running CalendarReminderThread - " + new Date());		

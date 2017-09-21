@@ -118,58 +118,60 @@ public class HostAPITest {
     	/*
     	 * Get the current Default host
     	 */
-            Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
+            Host defaultSite = APILocator.getHostAPI().findDefaultHost(user, false);
     	
     	/*
     	 * Create a new Host and make it default
     	 */
-            Host host = new Host();
-            host.setHostname("test" + System.currentTimeMillis() + ".demo.dotcms.com");
-            host.setDefault(false);
+            Host newSite = new Host();
+            newSite.setHostname("test" + System.currentTimeMillis() + ".demo.dotcms.com");
+            newSite.setDefault(false);
             try {
                 HibernateUtil.startTransaction();
-                host = APILocator.getHostAPI().save(host, user, false);
+                newSite = APILocator.getHostAPI().save(newSite, user, false);
                 HibernateUtil.commitTransaction();
             } catch (Exception e) {
                 HibernateUtil.rollbackTransaction();
                 Logger.error(HostAPITest.class, e.getMessage());
             }
-            APILocator.getHostAPI().publish(host, user, false);
-            APILocator.getHostAPI().makeDefault(host, user, false);
+            APILocator.getHostAPI().publish(newSite, user, false);
+            APILocator.getHostAPI().makeDefault(newSite, user, false);
 
-            host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
-            hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
-            APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-            APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
+            newSite = APILocator.getHostAPI().find(newSite.getIdentifier(), user, false);
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode(), true);
+            defaultSite = APILocator.getHostAPI().find(defaultSite.getIdentifier(), user, false);
+            APILocator.getContentletAPI().isInodeIndexed(defaultSite.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultSite.getInode(), true);
         
         /*
          * Validate if the previous default host. Is live and not default
          */
-            Assert.assertTrue(hdef.isLive());
-            Assert.assertFalse(hdef.isDefault());
+            Assert.assertTrue("The original default Site " + defaultSite.getHostname() + " is NOT live yet.", defaultSite.isLive());
+            Assert.assertFalse("The original default Site " + defaultSite.getHostname() + " is NOT set as default yet.", defaultSite.isDefault());
         
         /*
          * get Back to default the previous host
          */
-            APILocator.getHostAPI().makeDefault(hdef, user, false);
+            APILocator.getHostAPI().makeDefault(defaultSite, user, false);
 
-            host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
-            hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
-            APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-            APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
+            newSite = APILocator.getHostAPI().find(newSite.getIdentifier(), user, false);
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode(), true);
+            defaultSite = APILocator.getHostAPI().find(defaultSite.getIdentifier(), user, false);
+            APILocator.getContentletAPI().isInodeIndexed(defaultSite.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultSite.getInode(), true);
         
         /*
          * Validate if the new host is not default anymore and if its live
          */
-            Assert.assertFalse(host.isDefault());
-            Assert.assertTrue(host.isLive());
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(newSite.getInode(), true);
+            Assert.assertFalse("The new Site " + newSite.getHostname() + " is still the default site.", newSite.isDefault());
+            Assert.assertTrue("The new Site " + newSite.getHostname() + " is NOT live yet.", newSite.isLive());
 
-            Assert.assertTrue(hdef.isLive());
-            Assert.assertTrue(hdef.isDefault());
+            Assert.assertTrue("The original default Site " + defaultSite.getHostname() + " is NOT live yet.", defaultSite.isLive());
+            Assert.assertTrue("The original default Site " + defaultSite.getHostname() + " is NOT set as default yet.", defaultSite.isDefault());
         
         /*
          * Delete the new test host
@@ -177,8 +179,8 @@ public class HostAPITest {
             Thread.sleep(600); // wait a bit for the index
             try {
                 HibernateUtil.startTransaction();
-                APILocator.getHostAPI().archive(host, user, false);
-                APILocator.getHostAPI().delete(host, user, false);
+                APILocator.getHostAPI().archive(newSite, user, false);
+                APILocator.getHostAPI().delete(newSite, user, false);
                 HibernateUtil.commitTransaction();
             } catch (Exception e) {
                 HibernateUtil.rollbackTransaction();
@@ -188,8 +190,9 @@ public class HostAPITest {
         /*
          * Validate if the current Original default host is the current default one
          */
-            host = APILocator.getHostAPI().findDefaultHost(user, false);
-            Assert.assertEquals(hdef.getIdentifier(), host.getIdentifier());
+            newSite = APILocator.getHostAPI().findDefaultHost(user, false);
+            Assert.assertEquals("The original default Site " + defaultSite.getHostname() + " was NOT set as default in the end.",
+                            defaultSite.getIdentifier(), newSite.getIdentifier());
         } finally {
             HibernateUtil.setAsyncCommitListenersFinalization(true);
         }

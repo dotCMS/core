@@ -42,6 +42,7 @@ public class TestInitialContext extends InitialContext {
         dataSource.setLogAbandoned(true);
         dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
         dataSource.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
+        dataSource.setMaxWait(300000);
         
     }
 

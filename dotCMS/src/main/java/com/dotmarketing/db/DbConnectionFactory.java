@@ -529,7 +529,6 @@ public class DbConnectionFactory {
      */
     public static boolean startTransactionIfNeeded() throws DotDataException {
         boolean startTransaction = !inTransaction();
-        ;
 
         try {
             if (startTransaction) {
