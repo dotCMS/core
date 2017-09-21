@@ -69,8 +69,8 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
  */
 public class BinaryExporterServlet extends HttpServlet {
     
-    private boolean isContentLive = false;
-    private boolean isContentExpired = false;
+    private boolean isContentLive;
+    private boolean isContentExpired;
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -81,6 +81,8 @@ public class BinaryExporterServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
+	    isContentLive = false;
+	    isContentExpired = false;
 		exportersByPathMapping = new HashMap<String, BinaryContentExporter>();
 
 		Iterator<String> keys = Config.getKeys();
