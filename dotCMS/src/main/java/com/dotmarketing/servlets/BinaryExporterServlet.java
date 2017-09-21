@@ -317,13 +317,14 @@ public class BinaryExporterServlet extends HttpServlet {
 			} else {
 			    inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 			}
-			if(inputFile == null){
-			    Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-			    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-			    return;
+			
+			try{
+			    downloadName = inputFile.getName();
+			} catch (Exception e){
+	             Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+	             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	             return;
 			}
-			downloadName = inputFile.getName();
-
 
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
@@ -672,10 +673,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	}
 	
 	private boolean ifIdentifierIsUnpublishedOrExpired (Date publishOrExpireDate, Date tmDate ){
-	    if(UtilMethods.isSet(publishOrExpireDate) && publishOrExpireDate.before(tmDate)){
-	        return true;
-	    }
-	    return false;
+	    return (UtilMethods.isSet(publishOrExpireDate) && publishOrExpireDate.before(tmDate));
 	}
 	
 }
