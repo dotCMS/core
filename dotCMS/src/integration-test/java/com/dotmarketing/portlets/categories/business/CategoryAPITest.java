@@ -329,8 +329,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         //***************************************************************
         //Creating new categories
 
-        HibernateUtil.startTransaction();
-
         //---------------------------------------------------------------
         //Adding the parent category
         Category parentCategory = new Category();
@@ -400,7 +398,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         //Saving it
         categoryAPI.save( childCategory2, subCategory, user, false );
 
-        HibernateUtil.commitTransaction();
 
         //***************************************************************
 
@@ -421,7 +418,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         //CATEGORY 1
         //Verify If we find the parent for the categories we just added categories
         List<String> cachedCategoriesStr = categoryCache.getParents( childCategory1 );
-        assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
+        assertNotNull( cachedCategories ); //Verify the cache -> when you create a child cat, the parent is load on cache.
         List<Category> parents = categoryAPI.getParents( childCategory1, user, false );
         assertNotNull( parents );
         assertTrue( parents.size() > 0 );
@@ -453,7 +450,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         //SUB-CATEGORY
         //Verify If we find the parent for the sub-category we just added
         cachedCategoriesStr = categoryCache.getParents( subCategory );
-        assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
+        assertNotNull( cachedCategories );//Verify the cache -> when you create a child cat, the parent is load on cache.
         parents = categoryAPI.getParents( subCategory, user, false );
         assertNotNull( parents );
         assertTrue( parents.size() > 0 );
