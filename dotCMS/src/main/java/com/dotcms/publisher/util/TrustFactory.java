@@ -1,14 +1,16 @@
 package com.dotcms.publisher.util;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
-import java.io.FileInputStream;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -17,10 +19,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 public class TrustFactory {
 	private static final String truststore_path = Config.getStringProperty("TRUSTSTORE_PATH", null); //cacerts.jks";
@@ -86,7 +84,7 @@ public class TrustFactory {
 
             KeyStore ks = KeyStore.getInstance("JKS");
 
-            ks.load(new FileInputStream(trustStore), password);
+            ks.load(Files.newInputStream(trustStore.toPath()), password);
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
             tmf.init(ks);
@@ -164,7 +162,7 @@ public class TrustFactory {
             // create a "default" JSSE X509KeyManager.
 
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(keyStore), password);
+            ks.load(Files.newInputStream(keyStore.toPath()), password);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
             kmf.init(ks, password);

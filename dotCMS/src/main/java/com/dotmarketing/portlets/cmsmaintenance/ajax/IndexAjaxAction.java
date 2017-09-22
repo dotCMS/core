@@ -1,24 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.elasticsearch.snapshots.SnapshotRestoreException;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -44,6 +25,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class IndexAjaxAction extends AjaxAction {
 
@@ -145,7 +138,7 @@ public class IndexAjaxAction extends AjaxAction {
                    isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
-                   FileOutputStream out = new FileOutputStream(ufile);
+                   final OutputStream out = Files.newOutputStream(ufile.toPath());
                    IOUtils.copyLarge(in, out);
                    IOUtils.closeQuietly(out);
                    IOUtils.closeQuietly(in);
@@ -186,7 +179,7 @@ public class IndexAjaxAction extends AjaxAction {
 		File f=ESIndexResource.downloadIndex(indexName);
 		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
-		InputStream in = new FileInputStream(f);
+		final InputStream in = Files.newInputStream(f.toPath());
 
 		response.setHeader("Content-Type", "application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");

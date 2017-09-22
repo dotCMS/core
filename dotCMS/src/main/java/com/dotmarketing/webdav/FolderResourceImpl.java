@@ -3,15 +3,6 @@
  */
 package com.dotmarketing.webdav;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -23,7 +14,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
 import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
 import com.dotcms.repackage.com.bradmcevoy.http.Request;
 import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
@@ -37,12 +27,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Jason Tesser

@@ -3,19 +3,18 @@
  */
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 
 /**
  * @author Jason Tesser
@@ -38,8 +37,8 @@ public class ZipUtil {
 			    zipDirectory(filePath, zos, zipPath); 
 			    continue; 
 		    } 
-			//if we reached here, the File object f was not a directory create a FileInputStream on top of f 
-			FileInputStream fis = new FileInputStream(f); 
+			//if we reached here, the File object f was not a directory create a InputStream on top of f
+			final InputStream fis = Files.newInputStream(f.toPath());
 			//create a new zip entry 
 			String path = f.getPath().substring(zipPath.length()+1);
 			ZipEntry anEntry = new ZipEntry(path); 
@@ -114,8 +113,8 @@ public class ZipUtil {
 	        try{
 	            InputStream istr = zipFile.getInputStream(zipEntry);
 	            bis = new BufferedInputStream(istr);
-	            FileOutputStream fos = new FileOutputStream(file);
-	            bos  = new BufferedOutputStream(fos);
+	            final OutputStream os = Files.newOutputStream(file.toPath());
+	            bos  = new BufferedOutputStream(os);
 	            IOUtils.copy(bis, bos);
 	        } finally {
 	            if (bis !=  null){

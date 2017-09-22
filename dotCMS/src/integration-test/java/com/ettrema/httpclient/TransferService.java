@@ -46,12 +46,12 @@ public class TransferService {
             m = new GetMethod(url);
         }
         InputStream in = null;
-        NotifyingFileInputStream nin = null;
+        NotifyingInputStream nin = null;
         try {
             int res = client.executeMethod(m);
             Utils.processResultCode(res, url);
             in = m.getResponseBodyAsStream();
-            nin = new NotifyingFileInputStream(in, m.getResponseContentLength(), url, listener);
+            nin = new NotifyingInputStream(in, m.getResponseContentLength(), url, listener);
             receiver.receive(nin);
         } catch (com.dotcms.repackage.org.apache.commons.httpclient.HttpException ex) {
             m.abort();
@@ -78,9 +78,9 @@ public class TransferService {
         HttpMethodParams params = new HttpMethodParams();
         params.setSoTimeout(timeout);
         p.setParams(params);
-        NotifyingFileInputStream notifyingIn = null;
+        NotifyingInputStream notifyingIn = null;
         try {
-            notifyingIn = new NotifyingFileInputStream(content, contentLength, s, listener);
+            notifyingIn = new NotifyingInputStream(content, contentLength, s, listener);
             RequestEntity requestEntity;
             if (contentLength == null) {
                 log.trace("no content length");

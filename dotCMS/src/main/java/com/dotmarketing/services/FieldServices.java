@@ -3,13 +3,6 @@
  */
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +18,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.util.FileUtil;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author Jason Tesser
@@ -70,15 +69,14 @@ public class FieldServices {
 			String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 			String filePath=folderPath + contentInode + "_" + fieldInode + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION");
             //Specify a proper character encoding
-         	try{
-         		java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
-	            OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
-	            
+         	try (java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+                    Files.newOutputStream(
+                            Paths.get(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
+                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())){
+
 	            out.write(contFieldValue.toString());
 	            
 	            out.flush();
-	            out.close();
-	            tmpOut.close();
          	}catch (Exception e) {
 				Logger.error(FieldServices.class,"Unable to write velocity field file");
 			}

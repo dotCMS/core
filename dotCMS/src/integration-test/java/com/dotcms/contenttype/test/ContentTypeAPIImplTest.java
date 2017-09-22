@@ -24,10 +24,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -92,14 +91,13 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentType origType = contentTypeApi.find(Constants.NEWS);
 
 
-		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp))) {
+		try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))) {
 			oos.writeObject(origType);
-			oos.close();
 		}
 
 		temp.renameTo(temp2);
 		ContentType fromDisk = null;
-		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(temp2))) {
+		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(temp2.toPath()))) {
 			fromDisk = (ContentType) ois.readObject();
 			ois.close();
 		}

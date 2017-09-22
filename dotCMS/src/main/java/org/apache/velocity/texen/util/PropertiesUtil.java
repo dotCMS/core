@@ -19,11 +19,11 @@ package org.apache.velocity.texen.util;
  * under the License.    
  */
 
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.StringTokenizer;
-
 import org.apache.velocity.texen.Generator;
 
 /**
@@ -132,7 +132,7 @@ public class PropertiesUtil
                     fullPath = templateDir + "/" + propertiesFile;
                 }
 
-                stream = new FileInputStream(fullPath);
+                stream = Files.newInputStream(Paths.get(fullPath));
                 properties.load(stream);
                 // first pick wins, we don't need to go further since
                 // we found a valid file.
