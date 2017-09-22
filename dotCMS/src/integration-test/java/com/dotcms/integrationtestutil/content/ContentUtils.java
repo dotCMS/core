@@ -90,7 +90,7 @@ public class ContentUtils {
         contentletAPI.isInodeIndexed(contentlet.getInode(), true);
 
         try {
-            Thread.sleep(500);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             //Do nothing...
         }
