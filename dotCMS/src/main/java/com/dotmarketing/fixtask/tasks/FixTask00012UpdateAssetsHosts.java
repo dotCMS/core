@@ -1,16 +1,7 @@
 package com.dotmarketing.fixtask.tasks;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -23,13 +14,20 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FixTask00012UpdateAssetsHosts implements FixTask {
 	private HostAPI hostAPI = APILocator.getHostAPI();
@@ -177,7 +175,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 				Audit.setRecordsAltered(counter);
 				Audit.setAction("task 12: Update Assets Hosts");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 				MaintenanceUtil.deleteStaticFileStore();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
@@ -214,13 +212,12 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 			}
 			
 			_writing = new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_" + "FixTask00012UpdateAssetsHosts" + ".xml");
-			
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
-			}
-			_xstream.toXML(modifiedData, _bout);
+
+            try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+                _xstream.toXML(modifiedData, _bout);
+            } catch (IOException e) {
+                Logger.error(this, "Error trying to get modified data from XML.", e);
+            }
 		}
 		return modifiedData;
 	}

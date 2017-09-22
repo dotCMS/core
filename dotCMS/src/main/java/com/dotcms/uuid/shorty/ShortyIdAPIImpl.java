@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -95,7 +96,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
 
-
+  @CloseDBIfOpened
   ShortyId viaDb(final String shorty) {
 
     this.dbHits++;

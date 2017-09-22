@@ -20,9 +20,10 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.util.HostUtils" %>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
-
-<%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FieldVariableAjax.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
 <script type='text/javascript' src='/dwr/util.js'></script>
@@ -59,7 +60,7 @@
 		hasPublishPermissions = true;
 	}
 	List<WorkflowScheme> wfSchemes=new ArrayList<WorkflowScheme>();
-	if(LicenseUtil.getLevel() > 100){
+	if(LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level){
 		wfSchemes = APILocator.getWorkflowAPI().findSchemes(false);
 	}
 	else{
@@ -590,7 +591,7 @@
 										<%= LanguageUtil.get(pageContext, "VanityURL") %>
                                         <%} else if (form.getStructureType() == 8){%>
                                         <%= LanguageUtil.get(pageContext, "KeyValue") %>
-										<%}%>&nbsp;%>&nbsp;
+										<%}%>&nbsp;
 										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 										<%}else{ %>
 										<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
@@ -598,7 +599,7 @@
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_WIDGET) %>"><%= LanguageUtil.get(pageContext, "Widget") %></option>
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_FILEASSET) %>"><%= LanguageUtil.get(pageContext, "File") %></option>
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_HTMLPAGE) %>"><%= LanguageUtil.get(pageContext, "HTMLPage") %></option>
-											<%if(LicenseUtil.getLevel() > 199) {%>
+											<%if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {%>
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
 											<% } %>
 											<option value="7"><%= LanguageUtil.get(pageContext, "VanityURL") %></option>
@@ -664,7 +665,7 @@
 								<dl>
 									<dt><%= LanguageUtil.get(pageContext, "Workflow-Scheme") %>:</dt>
 									<dd>
-										<%	if(LicenseUtil.getLevel() > 100){ %>
+										<%	if(LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level){ %>
 										<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.FilteringSelect" value="<%=wfScheme.getId()%>">
 											<%for(WorkflowScheme scheme : wfSchemes){ %>
 											<option value="<%=scheme.getId()%>"><%=scheme.getName() %></option>

@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public abstract class AbstractHazelcastCacheTransport implements CacheTransport {
 
-    private Map<String, Map<String, Boolean>> cacheStatus;
+    private Map<String, Map<String, Boolean>> cacheStatus = new HashMap<>();
 
     private final AtomicLong receivedMessages = new AtomicLong(0);
     private final AtomicLong receivedBytes = new AtomicLong(0);
@@ -64,7 +65,23 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
                 receive(msg);
             }
         };
-        topicId = hazel.getTopic(topicName).addMessageListener(messageListener);
+        for(int i=0;i<50;i++){
+            try{
+                topicId = hazel.getTopic(topicName).addMessageListener(messageListener);
+                break;
+            }
+            catch(NullPointerException npe){
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Logger.error(this.getClass(), e.getMessage());
+                }
+            }
+            if(i==49){
+                Logger.error(this.getClass(), "Unable to register HAZELCAST Listener");
+            }
+        }
+        
 
         isInitialized.set(true);
     }

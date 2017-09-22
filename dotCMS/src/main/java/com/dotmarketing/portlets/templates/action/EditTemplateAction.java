@@ -466,7 +466,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		} else
 			Logger.debug(this, "Unspecified Action");
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 

@@ -1,26 +1,22 @@
 <%@ page import="com.dotmarketing.beans.Identifier" %>
-<%@ page import="com.dotmarketing.business.IdentifierFactory" %>
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.dotmarketing.business.APILocator" %>
-<%@ page import="com.dotmarketing.business.PermissionAPI" %>
-<%@ page import="com.dotmarketing.util.InodeUtils"%>
-<%@ page import="com.dotmarketing.portlets.templates.struts.TemplateForm"%>
+<%@ page import="com.dotmarketing.portlets.containers.business.ContainerAPI" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.business.HostAPI" %>
+<%@ page import="com.dotmarketing.portlets.templates.struts.TemplateForm" %>
+<%@ page import="com.dotmarketing.util.InodeUtils" %>
 <%@ page import="java.net.URLDecoder"%>
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
-<%@page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <style type="text/css">
-    .show{
-        border:1px solid #C0C0C0;
-    }
-    .hidden{
+	.show {
+		border: 1px solid #C0C0C0;
+	}
+
+	.hidden {
 		display: none;
 	}
 
 </style>
-
-<%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 
 
 <%
@@ -55,6 +51,9 @@
 	if (request.getParameter("referer") != null) {
 		referer = URLDecoder.decode(request.getParameter("referer"), "UTF-8");
 		referer = UtilMethods.encodeURL(referer);
+		if(referer.contains("language")){
+			referer = referer.replaceAll("language", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+		}
 	} else {
 		java.util.Map params = new java.util.HashMap();
 		params.put("struts_action",new String[] {"/ext/templates/view_templates"});

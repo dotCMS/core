@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -229,13 +231,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return fPerms;
-
-
 	}
-
-
-
-
 
 
 	public boolean doesUserHaveInheriablePermissions(Permissionable parentPermissionable, String type, int requiredPermissions, User user) throws DotDataException {
@@ -304,6 +300,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User, boolean)
 	 */
+	@CloseDBIfOpened
 	public boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException {
 
 		// if we have bad data
@@ -464,6 +461,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#removePermissionsOnInode(com.dotmarketing.beans.Inode)
 	 */
+	@WrapInTransaction
 	public void removePermissions(Permissionable permissionable) throws DotDataException {
 
 		permissionFactory.removePermissions(permissionable);
@@ -476,6 +474,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	//This method can be used later
+	@WrapInTransaction
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
 		Role cmsAnonymousRole;
 		try {
@@ -526,6 +525,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#setDefaultCMSAdminPermissions(com.dotmarketing.beans.Inode)
 	 */
+	@WrapInTransaction
 	public void setDefaultCMSAdminPermissions (Permissionable permissionable) throws DotDataException {
 		Role cmsAdminRole;
 		try {
@@ -553,6 +553,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#copyPermissions(com.dotmarketing.beans.Inode, com.dotmarketing.beans.Inode)
 	 */
+	@WrapInTransaction
 	public void copyPermissions(Permissionable from, Permissionable to) throws DotDataException {
 
 		permissionFactory.removePermissions(to);
@@ -577,34 +578,39 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @param id of permission to find
 	 * @return  Permission
 	 */
+	@CloseDBIfOpened
 	public  Permission find(String id){
 		return permissionFactory.getPermission(String.valueOf(id));
 	}
 
-
+	@CloseDBIfOpened
 	public List<Permission> getPermissions(Permissionable permissionable) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, false);
 	}
 
+	@CloseDBIfOpened
 	public List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions);
 	}
 
+	@CloseDBIfOpened
 	public List<Permission> getPermissions(Permissionable permissionable,
 			boolean bitPermissions, boolean onlyIndividualPermissions) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions, onlyIndividualPermissions);
 	}
 
-
+	@CloseDBIfOpened
 	public List<Permission> getPermissions(Permissionable permissionable,
 			boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions, onlyIndividualPermissions, forceLoadFromDB);
 	}
 
+	@CloseDBIfOpened
     public void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException {
         permissionFactory.addPermissionsToCache( permissionable );
     }
-    
+
+    // todo: should be this a transaction (all of nothing on save several permissions)???
     public void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         
     	for (Permission permission: permissions ) {
@@ -624,6 +630,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+
 	public void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		save(permission, permissionable, user, respectFrontendRoles, true);
 	}
@@ -641,6 +648,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
 		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
 			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
@@ -687,6 +695,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
 	 * @deprecated Use save(permission) instead.
 	 */
+	@WrapInTransaction
 	@Override
     @Deprecated
 	public void assignPermissions(List<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles)
@@ -830,6 +839,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return writePermissions;
 	}
 
+	@CloseDBIfOpened
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 
 		Set<Role> roles = new HashSet<Role>();
@@ -893,7 +903,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getPermissionIdsFromRoles()
 	 */
-	public List<Integer> getPermissionIdsFromRoles(Permissionable permissionable, Role[] roles, User user)throws DotDataException {
+	@CloseDBIfOpened
+	public List<Integer> getPermissionIdsFromRoles(final Permissionable permissionable, final Role[] roles,
+												   final User user) throws DotDataException {
 		Set<Integer> permissions = new TreeSet<Integer>();
 		List<Permission> assetsPermissions;
 
@@ -984,7 +996,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoles -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
+			
+			inodeObj = InodeUtils.getInode(inode);
+			
 			permissionList = getPermissions(inodeObj, true);
 
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
@@ -1088,6 +1102,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getUsers(long, int, java.lang.String, int, int)
 	 */
+	@CloseDBIfOpened
 	public List<User> getUsers(String inode, int permissionType, String filter, int start, int limit) {
 
 		Inode inodeObj = null;
@@ -1116,6 +1131,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getUserCount(long, int, java.lang.String)
 	 */
+	@CloseDBIfOpened
 	public int getUserCount(String inode, int permissionType, String filter) {
 
 		Inode inodeObj = null;
@@ -1143,7 +1159,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         CacheLocator.getPermissionCache().remove(permissionableId);
     }
 
-	public <P extends Permissionable> List<P> filterCollection(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
+    @CloseDBIfOpened
+	public <P extends Permissionable> List<P> filterCollection(final List<P> inputList,
+															   final int requiredTypePermission,
+															   final boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -1170,6 +1189,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionables;
 	}
 
+	@CloseDBIfOpened
 	public <P extends Permissionable> List<P> filterCollectionByDBPermissionReference(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -1185,6 +1205,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionFactory.filterCollectionByDBPermissionReference(permissionables, requiredTypePermission, respectFrontendRoles, user);
 	}
 
+	@WrapInTransaction
 	public void removePermissionsByRole(String roleId) {
 		try {
 			permissionFactory.removePermissionsByRole(roleId);
@@ -1193,10 +1214,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	public Map<String, Integer> getPermissionTypes() {
 		return permissionFactory.getPermissionTypes();
 	}
 
+	@WrapInTransaction
 	public void updateOwner(Permissionable asset, String ownerId) throws DotDataException {
 		permissionFactory.updateOwner(asset, ownerId);
 	}
@@ -1210,11 +1233,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return getPermissionsByRole(role, onlyFoldersAndHosts, false);
 	}
 
+	@CloseDBIfOpened
 	public List<Permission> getPermissionsByRole(Role role, boolean onlyFoldersAndHosts, boolean bitPermissions)
 		throws DotDataException {
 		return permissionFactory.getPermissionsByRole(role, onlyFoldersAndHosts, bitPermissions);
 	}
 
+	@WrapInTransaction
 	public void resetPermissionsUnder(Permissionable parent) throws DotDataException {
 		if(!parent.isParentPermissionable())
 			return;
@@ -1222,31 +1247,37 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
+	@CloseDBIfOpened
 	public List<Permission> getInheritablePermissions(Permissionable permissionable) throws DotDataException {
 		if(!permissionable.isParentPermissionable())
 			return null;
 		return permissionFactory.getInheritablePermissions(permissionable, false);
 	}
 
+	@CloseDBIfOpened
 	public List<Permission> getInheritablePermissions(Permissionable permissionable, boolean bitPermissions) throws DotDataException {
 		if(!permissionable.isParentPermissionable())
 			return null;
 		return permissionFactory.getInheritablePermissions(permissionable, bitPermissions);
 	}
 
+	@WrapInTransaction
 	public void cascadePermissionUnder(Permissionable permissionable, Role role) throws DotDataException {
 		permissionFactory.cascadePermissionUnder(permissionable, role);
 	}
 
+	@WrapInTransaction
 	public void resetPermissionReferences(Permissionable perm) throws DotDataException {
 		permissionFactory.resetPermissionReferences(perm);
 
 	}
 
+	@WrapInTransaction
 	public void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 		permissionFactory.resetChildrenPermissionReferences(structure);
 	}
 
+	@WrapInTransaction
 	public void resetAllPermissionReferences() throws DotDataException {
 		permissionFactory.resetAllPermissionReferences();
 
@@ -1262,6 +1293,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermissions(com.dotmarketing.beans.Inode, String, com.liferay.portal.model.User, boolean)
 	 */
+	@CloseDBIfOpened
     public boolean doesUserHavePermissions(Permissionable permissionable, String requiredPermissions, User user, boolean respectFrontendRoles) throws DotDataException{
 
 		// if we have bad data
@@ -1467,6 +1499,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         permissionIndividually(parent, permissionable, user);
     }
 
+    @WrapInTransaction
     @Override
     public void permissionIndividually(Permissionable parent, Permissionable permissionable,
             User user) throws DotDataException, DotSecurityException {
@@ -1481,6 +1514,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void permissionIndividuallyByRole(Permissionable parent, Permissionable permissionable,
             User user, Role role) throws DotDataException, DotSecurityException {
@@ -1607,6 +1641,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         return newSetOfPermissions;
     }
 
+    @CloseDBIfOpened
     public Permissionable findParentPermissionable(Permissionable permissionable) throws DotDataException, DotSecurityException {
 		Permissionable parentPermissionable=permissionable.getParentPermissionable();
 		if(parentPermissionable!=null) {
@@ -1638,6 +1673,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return parentPermissionable;
 	}
 
+	@CloseDBIfOpened
 	public boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException {
 		return permissionFactory.isInheritingPermissions(permissionable);
 	}

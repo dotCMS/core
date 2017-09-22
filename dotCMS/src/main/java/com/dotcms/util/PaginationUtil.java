@@ -12,10 +12,9 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.*;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
@@ -32,7 +31,6 @@ public class PaginationUtil {
 	public static final int FIRST_PAGE_INDEX = 1;
 
 	public static final String FILTER = "filter";
-	public static final String ARCHIVED = "archived";
 	public static final String PAGE = "page";
 	public static final String PER_PAGE = "per_page";
 	public static final String ORDER_BY = "orderby";
@@ -43,10 +41,10 @@ public class PaginationUtil {
 	private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
 	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
 	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
+	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
 	private Paginator paginator;
 
-	private static final String URL_TEMPLATE;
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";
 
 	private static final String  FIRST_REL_VALUE = "first";
@@ -57,21 +55,6 @@ public class PaginationUtil {
 
 	private int perPageDefault;
 	private int nLinks;
-
-	static{
-		URL_TEMPLATE = StringUtil.format(
-				"{baseURL}?{filter}={filterValue}&{archived}={archivedValue}&{page}={pageValue}" +
-						"&{perPage}={perPageValue}&{direction}={directionValue}&{orderBy}={orderByValue}",
-				map(
-						"filter", FILTER,
-						"archived", ARCHIVED,
-						"page", PAGE,
-						"perPage", PER_PAGE,
-						"direction", DIRECTION,
-						"orderBy", ORDER_BY
-				)
-		);
-	}
 
 	public PaginationUtil(Paginator paginator){
 		this.paginator = paginator;
@@ -100,14 +83,19 @@ public class PaginationUtil {
 		return perPage * currentPage;
 	}
 
-	public Response getPage(HttpServletRequest req, User user, String filter, boolean showArchived, int pageParam,
-							int perPageParam) {
-		return getPage(req, user, filter, showArchived, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null);
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam, final int perPageParam) {
+		return getPage(req, user, filter, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null, null);
 	}
 
-	public Response getPage(HttpServletRequest req, User user, String filter, boolean showArchived, int pageParam,
-							int perPageParam, String orderBy, String direction) {
-		return getPage(req, user, filter, showArchived, pageParam, perPageParam, orderBy, OrderDirection.valueOf(direction));
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
+							final int perPageParam, final String orderBy, final String direction) {
+		return getPage(req, user, filter, pageParam, perPageParam, orderBy,
+				OrderDirection.valueOf(direction), null);
+	}
+
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
+							final int perPageParam, final Map<String, Object>  extraParams) {
+		return getPage(req, user, filter, pageParam, perPageParam, null, null, extraParams);
 	}
 
 	/**
@@ -116,25 +104,25 @@ public class PaginationUtil {
 	 * @param req
 	 * @param user Login User
 	 * @param filter
-	 * @param showArchived If is true return items archived when apply
 	 * @param page Page to return
 	 * @param perPage Number of items by page
 	 * @param orderBy Field name to order by
 	 * @param direction Order direction (ASC, DESC)
 	 * @return
 	 */
-	public Response getPage(HttpServletRequest req, User user, String filter, boolean showArchived, int page,
-							int perPage, String orderBy, OrderDirection direction) {
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+							final int perPage, final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
 
-		int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
-		int perPageValue = perPage == 0 ? perPageDefault : perPage;
-		int minIndex = getMinIndex(pageValue, perPageValue);
-		String sanitizefilter = SQLUtil.sanitizeParameter(filter);
+		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
+		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
+		final int minIndex = getMinIndex(pageValue, perPageValue);
+		final String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
-		Collection items = paginator.getItems(user, sanitizefilter, showArchived, perPageValue, minIndex, orderBy, direction);
-		long totalRecords = paginator.getTotalRecords(filter);
-		String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue, showArchived,
-				totalRecords, orderBy, direction);
+		Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+		items =  !UtilMethods.isSet(items) ? Collections.emptyList() : items;
+		final long totalRecords = paginator.getTotalRecords(filter);
+		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
+				totalRecords, orderBy, direction, extraParams);
 
 		return Response.
 				ok(new ResponseEntityView(items))
@@ -166,36 +154,36 @@ public class PaginationUtil {
 	 * @param filter
 	 * @param page
 	 * @param perPage
-	 * @param showArchived
 	 * @param totalRecords
 	 * @param orderBy
 	 * @param direction
 	 * @return
 	 */
-	private static String getHeaderValue(String urlBase, String filter, int page, int perPage, boolean showArchived,
-										 long totalRecords, String orderBy, OrderDirection direction) {
+	private static String getHeaderValue(final String urlBase, final String filter, final int page, final int perPage,
+										 final long totalRecords, final String orderBy, final OrderDirection direction,
+										 final Map<String, Object> extraParams) {
 		final List<String> links = new ArrayList<>();
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, showArchived, orderBy, direction),
+				"URL", getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, orderBy, direction, extraParams),
 				"relValue", FIRST_REL_VALUE
 		)));
 
 		int lastPage = (int) (Math.ceil((double) totalRecords/perPage));
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, lastPage, perPage, showArchived, orderBy, direction),
+				"URL", getUrl(urlBase, filter, lastPage, perPage, orderBy, direction, extraParams),
 				"relValue", LAST_REL_VALUE
 		)));
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, -1, perPage, showArchived, orderBy, direction),
+				"URL", getUrl(urlBase, filter, -1, perPage, orderBy, direction, extraParams),
 				"relValue", PAGE_REL_VALUE
 		)));
 
 		int next = page + 1;
 		if (next <= lastPage){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					"URL", getUrl(urlBase, filter, next, perPage, showArchived, orderBy, direction),
+					"URL", getUrl(urlBase, filter, next, perPage, orderBy, direction, extraParams),
 					"relValue", NEXT_REL_VALUE
 			)));
 		}
@@ -203,7 +191,7 @@ public class PaginationUtil {
 		int prev = page - 1;
 		if (prev > 0){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					"URL", getUrl(urlBase, filter, prev, perPage, showArchived, orderBy, direction),
+					"URL", getUrl(urlBase, filter, prev, perPage, orderBy, direction, extraParams),
 					"relValue", PREV_REL_VALUE
 			)));
 		}
@@ -221,32 +209,64 @@ public class PaginationUtil {
 	 * @param filter
 	 * @param page
 	 * @param perPage
-	 * @param showArchived
 	 * @param orderBy
 	 * @param direction
 	 * @return
 	 */
-	private static String getUrl(String urlBase, String filter, int page, int perPage, boolean showArchived,
-								 String orderBy, OrderDirection direction){
+	private static String getUrl(final String urlBase, final String filter, final int page, final int perPage,
+								 final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams){
 
-		Map<String, String> params = map(
-				"baseURL",
-				urlBase,
-				"filterValue",
-				filter,
-				"archivedValue",
-				String.valueOf(showArchived),
-				"perPageValue",
-				String.valueOf(perPage)
-		);
+		final Map<String, String> params = new HashMap<>();
 
-		if (page != -1){
-			params.put("pageValue", String.valueOf(page));
+		if (UtilMethods.isSet(filter)){
+			params.put(FILTER, String.valueOf(filter));
 		}
 
-		params.put("directionValue", UtilMethods.isSet(direction) ? direction.toString() : StringUtils.EMPTY);
-		params.put("orderByValue", UtilMethods.isSet(orderBy) ? orderBy.toString()  : StringUtils.EMPTY);
+		params.put(PER_PAGE, String.valueOf(perPage));
+		params.put (PAGE, (-1 != page) ? String.valueOf(page) : PAGE_VALUE_TEMPLATE);
 
-		return StringUtil.format(URL_TEMPLATE, params);
+		if (UtilMethods.isSet(direction)) {
+			params.put(DIRECTION, direction.toString());
+		}
+
+		if (UtilMethods.isSet(orderBy)) {
+			params.put(ORDER_BY, orderBy);
+		}
+
+		if (extraParams != null) {
+			for (final Map.Entry<String, Object> extraParamsEntry : extraParams.entrySet()) {
+				final Object value = extraParamsEntry.getValue();
+
+				if (value != null) {
+					params.put(extraParamsEntry.getKey(), value.toString());
+				}
+			}
+		}
+
+		final StringBuilder buffer = new StringBuilder(urlBase);
+
+		boolean firstParam = true;
+
+		for (final Map.Entry<String, String> paramsEntry : params.entrySet()) {
+
+			if (firstParam){
+				buffer.append('?');
+				firstParam = false;
+			}else{
+				buffer.append('&');
+			}
+
+
+			try {
+				final String encode = URLEncoder.encode(paramsEntry.getValue(), "UTF-8");
+				buffer.append(paramsEntry.getKey())
+						.append('=')
+						.append(encode);
+			} catch (UnsupportedEncodingException e) {
+				continue;
+			}
+		}
+
+		return buffer.toString();
 	}
 }

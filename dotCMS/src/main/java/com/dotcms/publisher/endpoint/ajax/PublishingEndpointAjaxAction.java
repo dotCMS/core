@@ -1,21 +1,11 @@
 package com.dotcms.publisher.endpoint.ajax;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.repackage.com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -28,6 +18,14 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Properties;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class PublishingEndpointAjaxAction extends AjaxAction {
 
@@ -221,7 +219,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
 		if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
 			// Validate DefaultAWSCredentialsProviderChain configuration
-			DefaultAWSCredentialsProviderChain creds = DefaultAWSCredentialsProviderChain.getInstance();
+			DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
 			if (! new AWSS3EndPointPublisher(creds).canConnectSuccessfully(bucketValidationName)) {
 				throw new DotDataException(
 						LanguageUtil.get( getUser(), "publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid" )

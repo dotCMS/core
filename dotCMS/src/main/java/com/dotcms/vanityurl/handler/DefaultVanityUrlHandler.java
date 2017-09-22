@@ -3,10 +3,10 @@ package com.dotcms.vanityurl.handler;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.CmsUrlUtil;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,12 +19,24 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
-    private static final VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null,
-            CMSFilter.IAm.NOTHING_IN_THE_CMS, true);
+    private static final String CMS_HOME_PAGE = "/cmsHomePage";
 
-    private static final CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    private static final VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null, true);
 
     private static final int LIMIT = 2;
+
+    @Override
+    public VanityUrlResult handle(final String uri,
+            final HttpServletResponse response, final Host host,
+            final long languageId, final User user) throws IOException {
+
+        CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+                .getLiveCachedVanityUrl(("/".equals(uri) ? CMS_HOME_PAGE
+                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
+                        languageId, user);
+
+        return handle(vanityUrl, response, host, languageId);
+    }
 
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
@@ -32,7 +44,6 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
                                   final long languageId) throws IOException {
         String rewrite = null;
         String queryString = null;
-        CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
         VanityUrlResult vanityUrlResult = null;
 
         if (vanityUrl != null) {
@@ -42,7 +53,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         }
 
         if (vanityUrlResult != null) {
-            // if a redirect or error ations was processed
+            // if a redirect or error actions was processed
             return vanityUrlResult;
         }
 
@@ -52,17 +63,15 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
             return DEFAULT_RESULT;
         }
-        if (UtilMethods.isSet(rewrite)) {
-            if (rewrite != null && rewrite.contains("?")) {
-                String[] arr = rewrite.split("\\?", LIMIT);
-                rewrite = arr[0];
-                if (arr.length > 1) {
-                    queryString = arr[1];
-                }
+        //Search for a query string
+        if (UtilMethods.isSet(rewrite) && rewrite.contains("?")) {
+            String[] arr = rewrite.split("\\?", LIMIT);
+            rewrite = arr[0];
+            if (arr.length > 1) {
+                queryString = arr[1];
             }
-            iAm = rewriteIs(rewrite, host, languageId);
         }
-        return new VanityUrlResult(rewrite, queryString, iAm, false);
+        return new VanityUrlResult(rewrite, queryString, false);
     }
 
     /**
@@ -102,26 +111,4 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         return vanityUrlResult;
     }
 
-    /**
-     * Identify what type of CMSFiltet.IAm object is the rewrite url (file asset, page, folder o
-     * nothing)
-     *
-     * @param rewrite The current URL to forward/redirect
-     * @param host The current host
-     * @param languageId The current language id
-     * @return CMSFiltet.IAm object
-     */
-    private CMSFilter.IAm rewriteIs(final String rewrite, Host host, final long languageId) {
-        CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
-
-        if (urlUtil.isFileAsset(rewrite, host, languageId)) {
-            iAm = CMSFilter.IAm.FILE;
-        } else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
-            iAm = CMSFilter.IAm.PAGE;
-        } else if (urlUtil.isFolder(rewrite, host)) {
-            iAm = CMSFilter.IAm.FOLDER;
-        }
-
-        return iAm;
-    }
 }

@@ -235,7 +235,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
                 };
             }
         });
-        when(marshalUtils.unmarshal(any(String.class), anyObject())).thenAnswer(new Answer<DotCMSSubjectBean>() {
+        when(marshalUtils.unmarshal(any(String.class), any(java.lang.reflect.Type.class))).thenAnswer(new Answer<DotCMSSubjectBean>() {
 
             @Override
             public DotCMSSubjectBean answer(InvocationOnMock invocation) throws Throwable {

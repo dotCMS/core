@@ -252,31 +252,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
 			throws DotDataException, DotStateException, DotSecurityException {
-	    Contentlet con = new Contentlet();
+	    Contentlet contentlet = new Contentlet();
 
 
-        con.setStructureInode(fatty.getStructureInode());
+        contentlet.setStructureInode(fatty.getStructureInode());
         Map<String, Object> contentletMap = fatty.getMap();
 
         try {
-            APILocator.getContentletAPI().copyProperties(con, contentletMap);
+            APILocator.getContentletAPI().copyProperties(contentlet, contentletMap);
         } catch (Exception e) {
             Logger.error(this,"Unable to copy contentlet properties",e);
             throw new DotDataException("Unable to copy contentlet properties",e);
         }
-        con.setInode(fatty.getInode());
-        con.setStructureInode(fatty.getStructureInode());
-        con.setIdentifier(fatty.getIdentifier());
-        con.setSortOrder(fatty.getSortOrder());
-        con.setLanguageId(fatty.getLanguageId());
-        con.setNextReview(fatty.getNextReview());
-        con.setLastReview(fatty.getLastReview());
-        con.setOwner(fatty.getOwner());
-        con.setModUser(fatty.getModUser());
-        con.setModDate(fatty.getModDate());
-        con.setReviewInterval(fatty.getReviewInterval());
-
-
+        contentlet.setInode(fatty.getInode());
+        contentlet.setStructureInode(fatty.getStructureInode());
+        contentlet.setIdentifier(fatty.getIdentifier());
+        contentlet.setSortOrder(fatty.getSortOrder());
+        contentlet.setLanguageId(fatty.getLanguageId());
+        contentlet.setNextReview(fatty.getNextReview());
+        contentlet.setLastReview(fatty.getLastReview());
+        contentlet.setOwner(fatty.getOwner());
+        contentlet.setModUser(fatty.getModUser());
+        contentlet.setModDate(fatty.getModDate());
+        contentlet.setReviewInterval(fatty.getReviewInterval());
 
 	     if(UtilMethods.isSet(fatty.getIdentifier())){
 	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -287,39 +285,39 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }else{
 	            folder = APILocator.getFolderAPI().findSystemFolder();
 	        }
-	        con.setHost(identifier.getHostId());
-	        con.setFolder(folder.getInode());
+	        contentlet.setHost(identifier.getHostId());
+	        contentlet.setFolder(folder.getInode());
 
 	        // lets check if we have publish/expire fields to set
-	        Structure st=con.getStructure();
+	        Structure st=contentlet.getStructure();
 	        if(UtilMethods.isSet(st.getPublishDateVar()))
-	            con.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
+	            contentlet.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
 	        if(UtilMethods.isSet(st.getExpireDateVar()))
-	            con.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
+	            contentlet.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
 		} else {
-	        if(!UtilMethods.isSet(con.getStructureInode())) {
+	        if(!UtilMethods.isSet(contentlet.getStructureInode())) {
 	            throw new DotDataException("Contentlet must have a structure type.");
 	        }
 
-            if (con.isSystemHost()) {
+            if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
                 // APILocator.getHostAPI().findSystemHost() method, because this
                 // method will create a system host if not exist which cause 
                 // a infinite loop.
-                con.setHost(Host.SYSTEM_HOST);
+                contentlet.setHost(Host.SYSTEM_HOST);
             } else {
-                con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+                contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
             }
-            con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+            contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
         }
         String wysiwyg = fatty.getDisabledWysiwyg();
         if( UtilMethods.isSet(wysiwyg) ) {
             List<String> wysiwygFields = new ArrayList<String>();
             StringTokenizer st = new StringTokenizer(wysiwyg,",");
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
-            con.setDisabledWysiwyg(wysiwygFields);
+            contentlet.setDisabledWysiwyg(wysiwygFields);
         }
-        return con;
+        return contentlet;
 	}
 
 	@Override
@@ -2372,7 +2370,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if ( DbConnectionFactory.isMsSql() ) {
                     whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
                 } else if ( DbConnectionFactory.isOracle() ) {
-                    whereField.append("'").append(field.getFieldContentlet()).append("'").append(" != ");
+                	whereField.append("TO_CHAR(").append(field.getFieldContentlet()).append(") != ");
                 } else {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }

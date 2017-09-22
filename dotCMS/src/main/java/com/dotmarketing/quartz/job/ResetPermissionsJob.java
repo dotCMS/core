@@ -34,9 +34,9 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 /**
  * @author David H Torres
@@ -87,7 +87,7 @@ public class ResetPermissionsJob implements Job {
 			HibernateUtil.startTransaction();
 			Permissionable permissionable = (Permissionable) retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			try {
@@ -155,7 +155,7 @@ public class ResetPermissionsJob implements Job {
 		}
 
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
-			perm = InodeFactory.getInode(assetId, Inode.class);
+		    perm = InodeUtils.getInode(assetId);
 		}
 		return perm;
 	}

@@ -25,17 +25,31 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
-import java.io.*;
-import java.nio.channels.FileChannel;
+import com.liferay.util.FileUtil;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 /**
  * This class implement the import contentlet thread to be use by the quartz job schedule task
@@ -248,7 +262,7 @@ public class ContentImportThread implements Job{
 			if (!outputFile.exists())
 				outputFile.createNewFile();
 
-			myOutput = new PrintStream(new FileOutputStream(outputFile));
+			myOutput = new PrintStream(Files.newOutputStream(outputFile.toPath()));
 
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
@@ -273,14 +287,11 @@ public class ContentImportThread implements Job{
 			if (!dest.exists())
 				dest.createNewFile();
 
-			FileInputStream is = new FileInputStream(orig);
-			FileChannel channelFrom = is.getChannel();
-			FileChannel channelTo = new FileOutputStream(dest).getChannel();
-			channelFrom.transferTo(0, channelFrom.size(), channelTo);
-			channelTo.force(false);
-			channelTo.close();
-			channelFrom.close();
-			is.close();
+            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(orig.toPath()));
+            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(dest.toPath()));
+            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            inputChannel.close();
+            outputChannel.close();
 
 			myOutput.println("File:"+orig.getAbsolutePath()+" move to: "+dest.getAbsolutePath());
 			orig.delete();
@@ -299,7 +310,7 @@ public class ContentImportThread implements Job{
 	 */
 	private byte[] getBytesFromFile(File file) throws IOException {
 		byte[] currentData = new byte[0];
-		FileInputStream is = new FileInputStream(file);
+		InputStream is = Files.newInputStream(file.toPath());
 		int size = is.available();
 		currentData = new byte[size];
 		is.read(currentData);
@@ -369,7 +380,7 @@ public class ContentImportThread implements Job{
 							importLine(csvreader.getValues(), st, preview, user, lineNumber);
 
 							if (!preview && (lineNumber % commitGranularity == 0)) {
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 								HibernateUtil.startTransaction();
 							}
 
@@ -386,7 +397,7 @@ public class ContentImportThread implements Job{
 						}
 					}
 
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 
 					myOutput.println(lines + " lines of data were read.");
 					if (errors > 0)

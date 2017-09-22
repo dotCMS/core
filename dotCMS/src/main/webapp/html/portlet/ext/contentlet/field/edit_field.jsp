@@ -30,6 +30,7 @@
 
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -454,7 +455,7 @@
         <%int showDim=300; %>
         <%int imageEditors=0; %>
         <!--  If you are not enterprise -->
-        <%if(LicenseUtil.getLevel() < 199 ){ %>
+        <%if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){ %>
         <div id="thumbnailParent<%=field.getVelocityVarName()%>">
             <%
                 String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
@@ -737,9 +738,9 @@
                     }
                 }
             }
-    %>
-    <option onload="this.value='<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(pairvalue)%>'" <%=selected%>><%=name%></option>
-    <%
+            %>
+            <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+            <%
         }
     %>
     </select>
@@ -996,7 +997,7 @@
                 }
             }
 
-            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel()>199) {  %>
+            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {  %>
         <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
             <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
                 int k = 0;

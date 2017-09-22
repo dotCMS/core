@@ -1,4 +1,4 @@
-Build started: Wed Apr 05 2017 08:57:09 GMT-0600 (CST)
+Build started: Wed Jul 19 2017 12:27:23 GMT-0600 (CST)
 Build application version: 1.7.0dev (23930)
 Messages:
 info(100) Assumed module uses legacy loader API.
@@ -137,13 +137,13 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/xmpp/xmppSession
 	module: dojox/xmpp/widget/ChatSession
 info(103) Optimizing module complete.
-	/Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:2.102s)
-	/Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:9.235s)
+	/Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:1.698s)
+	/Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:7.951s)
 info(104) Optimizer messages.
 	/Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:2.102s)
+Done (compile time:1.698s)
 /Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
-Done (compile time:9.235s)
+Done (compile time:7.951s)
 
 info(107) Package Version:
 	package: dojo; version: 1.8.3
@@ -154,7 +154,7 @@ warn(202) AMD module specified and absolute module identifier that is not consis
 warn(205) Module not tagged as pure AMD yet it contains AMD API applications.
 	module: build/build
 warn(209) Missing or empty package.json.
-	filename: /Users/fmontes/Desktop/dojo-release-1.8.3-src/build/package.json
+	filename: /Users/fmontes/Desktop/dojo/dojo-release-1.8.3-src/build/package.json
 warn(216) dojo/has plugin resource could not be resolved during build-time.
 	plugin resource id: dojo-firebug?./_firebug/firebug; reference module id: dojo/main
 	plugin resource id: dom-addeventlistener?:./aspect; reference module id: dojo/on
@@ -474,14 +474,14 @@ build/build:
 
 Optimizer Messages:
 /Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:2.102s)
+Done (compile time:1.698s)
 /Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:2.102s)
+Done (compile time:1.698s)
 /Users/fmontes/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
-Done (compile time:9.235s)
+Done (compile time:7.951s)
 
 
 Process finished normally
 	errors: 0
 	warnings: 18
-	build time: 12.123 seconds
+	build time: 10.439 seconds

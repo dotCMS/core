@@ -1,29 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -33,6 +9,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Identifier;
@@ -45,6 +22,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -63,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -86,6 +65,27 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import org.quartz.JobExecutionContext;
 
 /**
  * This class provides access to maintenance routines that dotCMS users can run
@@ -356,7 +356,7 @@ public class CMSMaintenanceAjax {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + File.separator + "backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 				Logger.info(this, "Creating zipped backup file in "+ backupFilePath + " folder. Please wait");
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";
@@ -531,7 +531,7 @@ public class CMSMaintenanceAjax {
 	                    }
 
 	    				_writing = new File(backupTempFilePath + File.separator +  clazz.getName() + "_" + formatter.format(i) + ".xml");
-	    				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+	    				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
 
 	    				total = total + _list.size();
 
@@ -542,9 +542,12 @@ public class CMSMaintenanceAjax {
 	                        Logger.error(this,e.getMessage(),e);
 	                    }
 
-	    				_xstream.toXML(_list, _bout);
+	                    try {
+                            _xstream.toXML(_list, _bout);
+                        } finally {
+	    				    CloseUtils.closeQuietly(_bout);
+                        }
 
-	    				_bout.close();
 	    				_list = null;
 	    				_dh = null;
 	    				_bout = null;
@@ -559,9 +562,12 @@ public class CMSMaintenanceAjax {
 				List<Company> companies = new ArrayList<Company>(_list);
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator +  Company.class.getName() + ".xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -570,9 +576,12 @@ public class CMSMaintenanceAjax {
 				_list.add(APILocator.getUserAPI().getDefaultUser());
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator +  User.class.getName() + ".xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -583,9 +592,12 @@ public class CMSMaintenanceAjax {
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Counter.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -594,9 +606,12 @@ public class CMSMaintenanceAjax {
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Address.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -613,9 +628,12 @@ public class CMSMaintenanceAjax {
 
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Image.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -631,9 +649,12 @@ public class CMSMaintenanceAjax {
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -646,9 +667,12 @@ public class CMSMaintenanceAjax {
 				}
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
 				_list = null;
 				_bout = null;
 
@@ -669,6 +693,8 @@ public class CMSMaintenanceAjax {
 				Logger.error(this,e.getMessage(),e);
 			} catch (SystemException e) {
 				Logger.error(this,e.getMessage(),e);
+			} finally {
+				DbConnectionFactory.closeSilently();
 			}
 
 		}
@@ -683,11 +709,11 @@ public class CMSMaintenanceAjax {
 		 * @author Will
 		 */
 		public void zipTempDirectoryToStream(OutputStream out) throws IOException {
-			byte b[] = new byte[512];
-			ZipOutputStream zout = new ZipOutputStream(out);
-			ZipUtil.zipDirectory(backupTempFilePath, zout);
-			zout.close();
-			out.close();
+		    try (ZipOutputStream zout = new ZipOutputStream(out)){
+                ZipUtil.zipDirectory(backupTempFilePath, zout);
+            } finally {
+                CloseUtils.closeQuietly(out);
+            }
 	}
 
 }

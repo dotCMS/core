@@ -1,20 +1,18 @@
 package com.dotmarketing.portlets.personas.business;
 
-import java.util.Date;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+
+import java.util.Date;
+import java.util.List;
 
 public class PersonaFactoryImpl implements PersonaFactory {
 
@@ -37,18 +35,9 @@ public class PersonaFactoryImpl implements PersonaFactory {
 	@Override
 	public void createDefaultPersonaStructure() throws DotDataException {
 
-		
-		
-		
-		
-		
-		boolean localTransaction = false;
 		DotConnect dc = new DotConnect();
 
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		
-			
 
 			dc.setSQL(SELECT_DEFAULT_STRUC_QUERY);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
@@ -62,13 +51,12 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			dc.addParam(new Date());
 			dc.addParam(new Structure().getType());
 			dc.loadResult();
-	
-	
+
 			/**
 			 * inode name description structuretype system fixed velocity_var_name
 			 * host folder mod_date
 			 */
-			 dc = new DotConnect();
+			dc = new DotConnect();
 			dc.setSQL(INSERT_DEFAULT_STRUC_QUERY);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_NAME);
@@ -82,9 +70,7 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			dc.addParam(new Date());
 			dc.addParam(false);
 			dc.loadResult();
-	
-			
-			
+
 			Structure proxy = new Structure();
 			proxy.setInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 			List<Field> fields = APILocator.getPersonaAPI().getBasePersonaFields(proxy);
@@ -94,26 +80,10 @@ public class PersonaFactoryImpl implements PersonaFactory {
 				FieldFactory.saveField(f, f.getInode());
 			}
 		} catch (final Exception e) {
-			if (localTransaction) {
-				HibernateUtil.rollbackTransaction();
-			}
+
 			Logger.error(this, "default persona creation failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
-		finally{
-			if (localTransaction) {
-				try{
-					HibernateUtil.commitTransaction();
-					HibernateUtil.closeSession();
-					DbConnectionFactory.closeConnection();
-				}
-				catch(Exception e){
-					Logger.error(this, "should not be here failed:" + e, e);
-				}
-			}
-		}
-
-
 	}
 
 }

@@ -1,8 +1,10 @@
 package com.dotcms.util;
 
+import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.liferay.util.SystemProperties;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -21,6 +23,8 @@ public class IntegrationTestInitService {
 
     private static AtomicBoolean initCompleted;
 
+    static { SystemProperties.getProperties(); }
+    
     private IntegrationTestInitService() {
         initCompleted = new AtomicBoolean(false);
     }
@@ -37,6 +41,12 @@ public class IntegrationTestInitService {
             CacheLocator.init();
     		FactoryLocator.init();
     		APILocator.init();
+
+    		//For these tests fire the reindex immediately
+            Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
+
+            // Init other dotCMS services.
+            DotInitializationService.getInstance().initialize();
 
             initCompleted.set(true);
         }

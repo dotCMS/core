@@ -5,6 +5,7 @@ package com.dotmarketing.util;
  * @author David H Torres
  *
  */
+
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
@@ -15,14 +16,13 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import javax.imageio.ImageIO;
 
 public class ImageResizeUtils {
@@ -63,7 +63,11 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		generateThumbnail(new FileInputStream(new File(fullImagePath)), new FileOutputStream(new File(resultImagePath)), fileExtension, width, height, bgColor);
+		try(final InputStream input = Files.newInputStream(Paths.get(fullImagePath));
+                final OutputStream output = Files.newOutputStream(Paths.get(resultImagePath))){
+
+		    generateThumbnail(input, output, fileExtension, width, height, bgColor);
+        }
 	}
 	
 	public static void generateThumbnail(InputStream input, OutputStream output, String format, int width, int height, Color bgColor) throws IOException, InterruptedException {
@@ -172,8 +176,10 @@ public class ImageResizeUtils {
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
-		resizeImage(new FileInputStream(new File(fullImagePath)), new FileOutputStream(new File(resultImagePath)), fileExtension, width, height);
-
+        try (final InputStream input = Files.newInputStream(Paths.get(fullImagePath));
+                final OutputStream output = Files.newOutputStream(Paths.get(resultImagePath))){
+            resizeImage(input, output, fileExtension, width, height);
+        }
 	}
 	
 	public static void resizeImage(InputStream input, OutputStream output, String format, int width, int height) throws IOException, InterruptedException {

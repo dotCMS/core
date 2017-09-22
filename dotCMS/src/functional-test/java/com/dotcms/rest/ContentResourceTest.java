@@ -280,7 +280,7 @@ public class ContentResourceTest {
         FileAsset file=APILocator.getFileAssetAPI().fromContentlet(cont);
         Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
         Assert.assertEquals("demo.dotcms.com", hostAPI.find(file.getHost(), user, false).getHostname());
-        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getInputStream()));
     }
 
     /**
@@ -815,6 +815,84 @@ public class ContentResourceTest {
         Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
 
         Assert.assertEquals(working.getInode(), c2.getInode());
+    }
+
+    //Issue https://github.com/dotCMS/core/issues/12287
+    @Test
+    public void updateFileAssetContentTest() throws Exception{
+        final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
+        long currentTime = System.currentTimeMillis();
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+        Folder folder=APILocator.getFolderAPI().createFolders("/rest/" + currentTime, demo, user, false);
+        Contentlet contentlet = null;
+
+        try{
+            //Creating a temporary File to use in the binary fields.
+            File imageFile = temporaryFolder.newFile("DummyFile.txt");
+            writeTextIntoFile(imageFile, "This is the same file");
+
+            Response response = client.target(webTarget.getUri() + "/publish/1").request()
+                    .header(authheader, authvalue).put(Entity.entity(
+                            new MultiPart()
+                                    .bodyPart(new BodyPart(
+                                            new JSONObject()
+                                                    .put("hostFolder", "demo.dotcms.com:/rest/" + currentTime)
+                                                    .put("title", "Test Content")
+                                                    .put("fileName", imageFile.getName())
+                                                    .put("languageId", "1")
+                                                    .put("stName", "fileAsset")
+                                                    .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+
+            Assert.assertEquals(200, response.getStatus());
+            contentlet = contentletAPI.find((String) response.getHeaders().getFirst("inode"), user, false);
+            Assert.assertNotNull(contentlet);
+
+            response = client.target(webTarget.getUri() + "/publish/1").request()
+                    .header(authheader, authvalue).put(Entity.entity(
+                            new MultiPart()
+                                    .bodyPart(new BodyPart(
+                                            new JSONObject()
+                                                    .put("hostFolder", "demo.dotcms.com:/rest/" + currentTime)
+                                                    .put("title", "Test Content Updated")
+                                                    .put("fileName", imageFile.getName())
+                                                    .put("languageId", "1")
+                                                    .put("stName", "fileAsset")
+                                                    .put("identifier",contentlet.getIdentifier())
+                                                    .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+
+            Assert.assertEquals(200, response.getStatus());
+            Contentlet contentletUpdated = contentletAPI.find((String) response.getHeaders().getFirst("inode"), user, false);
+            Assert.assertNotNull(contentletUpdated);
+
+            Assert.assertNotEquals(contentlet.getTitle(), contentletUpdated.getTitle());
+
+
+        } finally {
+            APILocator.getFolderAPI().delete(folder,user,false);
+            contentletAPI.delete(contentlet,user,false);
+
+        }
+
     }
 
     /**

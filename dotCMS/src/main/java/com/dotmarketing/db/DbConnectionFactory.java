@@ -17,6 +17,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.naming.Binding;
@@ -34,6 +35,38 @@ public class DbConnectionFactory {
     protected static final String ORACLE = "Oracle";
     protected static final String MSSQL = "Microsoft SQL Server";
     protected static final String H2 = "H2";
+
+    /**
+     * Gets the autoCommit for the current connection
+     * @return boolean
+     */
+    public static boolean getAutoCommit() {
+
+        boolean autoCommit = false;
+
+        try {
+            autoCommit = getConnection().getAutoCommit();
+        } catch (SQLException e) {
+            autoCommit = false;
+        }
+
+        return autoCommit;
+    } // getAutoCommit.
+
+    /**
+     * If is in transaction, will set the autocommit value
+     * @param autoCommit boolean
+     */
+    public static void setAutoCommit(final boolean autoCommit) {
+
+        try {
+            getConnection().setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: error setting the autocommit " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                    e);
+        }
+    } // setAutoCommit.
 
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;
@@ -112,6 +145,30 @@ public class DbConnectionFactory {
             throw new DotRuntimeException(e.toString());
         }
     }
+
+    /**
+     * Returns true if the connection is already create and will be reuse in a transaction.
+     * Otherwise will returns false, that means a new connection will be created.
+     * @return boolean
+     */
+    public static boolean connectionExists() {
+
+        boolean isCreated = false;
+        final Map<String, Connection> connectionsMap =
+                (HashMap<String, Connection>) connectionsHolder.get();
+
+        if (connectionsMap != null && connectionsMap.size() > 0) {
+            final Connection connection =
+                    connectionsMap.get(Constants.DATABASE_DEFAULT_DATASOURCE);
+            try {
+                isCreated = (connection != null && !connection.isClosed());
+            } catch (SQLException e) {
+                Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+            }
+        }
+
+        return isCreated;
+    } // connectionExists.
 
     /**
      * Returns if the db is in a transaction - it will not open a db connection
@@ -472,7 +529,6 @@ public class DbConnectionFactory {
      */
     public static boolean startTransactionIfNeeded() throws DotDataException {
         boolean startTransaction = !inTransaction();
-        ;
 
         try {
             if (startTransaction) {
@@ -483,6 +539,18 @@ public class DbConnectionFactory {
             throw new DotDataException(e.getMessage(), e);
         }
         return startTransaction;
+    }
+
+    public static void commit () throws DotDataException {
+
+        try {
+            if (inTransaction()) {
+                DbConnectionFactory.getConnection().commit();
+
+            }
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     public static void closeAndCommit() throws DotDataException {

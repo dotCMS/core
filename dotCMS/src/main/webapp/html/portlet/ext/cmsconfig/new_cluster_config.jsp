@@ -2,6 +2,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 
 <%  if(!Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { //In case user tries to acess jsp directly%>
@@ -11,7 +12,7 @@
     }
 %>
 
-<%  if( LicenseUtil.getLevel()<300){ %>
+<%  if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
     <%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
 <%
         return;
@@ -291,8 +292,9 @@
                         + "<tr>"
                             + "<th width='7%'>&nbsp;</th>"
                             + "<th width='7%'>&nbsp;</th>"
-                            + "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
-                            + "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
+                            + "<th width='15%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+                            + "<th width='15%'><%= LanguageUtil.get(pageContext, "license-serial") %></th>"
+                            + "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
                             + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
                             + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
                             + "<th width='6%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "status") %></th>"
@@ -324,6 +326,7 @@
                                 + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
                                 + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
                                 + "<td>" + item.displayServerId + "</td>"
+                                + "<td>" + item.licenseId + "</td>"
                                 + "<td>" + item.friendlyName + "</td>"
                                 + "<td align='left'>"+item.ipAddress+"</td>"
                                 + "<td align='left'>"+item.contacted+"</td>"

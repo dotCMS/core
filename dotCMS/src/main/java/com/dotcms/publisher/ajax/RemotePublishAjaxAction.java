@@ -1,28 +1,5 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.elasticsearch.common.base.Strings;
-
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -78,6 +55,26 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.elasticsearch.common.base.Strings;
 
 /**
  * This class handles the different action mechanisms related to the handling of 
@@ -488,7 +485,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.setHeader( "Content-Disposition", "attachment; filename=" + config.getId() + ".tar.gz" );
         BufferedInputStream in = null;
         try {
-            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
             byte[] buf = new byte[4096];
             int len;
 
@@ -558,7 +555,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.getName() );
         BufferedInputStream in = null;
         try {
-            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
             byte[] buf = new byte[4096];
             int len;
 

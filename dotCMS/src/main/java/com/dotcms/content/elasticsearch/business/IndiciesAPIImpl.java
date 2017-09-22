@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -11,7 +12,8 @@ import com.dotmarketing.util.Logger;
 public class IndiciesAPIImpl implements IndiciesAPI {
     
     protected final IndiciesFactory ifac=FactoryLocator.getIndiciesFactory();
-    
+
+    @CloseDBIfOpened
     public IndiciesInfo loadIndicies() throws DotDataException {
         return loadIndicies(null);
     }
@@ -19,7 +21,8 @@ public class IndiciesAPIImpl implements IndiciesAPI {
     public IndiciesInfo loadIndicies(Connection conn) throws DotDataException {
         return ifac.loadIndicies(conn);
     }
-    
+
+    @CloseDBIfOpened
     public void point(IndiciesInfo info) throws DotDataException {
         point(DbConnectionFactory.getConnection(),info);
     }

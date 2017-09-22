@@ -4,6 +4,10 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
+import com.dotcms.enterprise.license.DotLicenseRepoEntry;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -20,6 +24,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -27,6 +32,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -34,6 +40,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +51,9 @@ import javax.servlet.http.HttpSession;
 public class LicenseResource {
 
     private final WebResource webResource = new WebResource();
+    private static final String SERVER_ID  = "serverid";
 
+    @NoCache
     @GET
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -53,24 +62,43 @@ public class LicenseResource {
         try {
             JSONArray array=new JSONArray();
 
-            for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
+            Calendar cal=Calendar.getInstance();
+            cal.add(Calendar.YEAR, -1);
+
+            
+            for ( DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList() ) {
                 JSONObject obj = new JSONObject();
-                for ( Map.Entry<String, Object> entry : lic.entrySet() ) {
-
-                    //Lets exclude some data we don' want/need to expose
-                    if ( entry.getKey().equals( "serverid" ) ) {
-                        obj.put( entry.getKey(), entry.getValue() != null ? LicenseUtil.getDisplayServerId( (String) lic.get( "serverId" ) ) : "" );
-                        obj.put( "fullserverid", entry.getValue() != null ? entry.getValue() : "" );
-                    } else if ( entry.getKey().equals( "serverId" ) || entry.getKey().equals( "license" ) ) {
-                        //Just ignore these fields
-                    } else if ( entry.getKey().equals( "id" ) ) {
-                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
-                        obj.put( "idDisplay", entry.getValue() != null ? LicenseUtil.getDisplaySerial( (String) entry.getValue() ) : "" );
-                    } else {
-                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
-                    }
-
+                obj.put("serverId", lic.serverId);
+                obj.put("perpetual", lic.dotLicense.perpetual);
+                obj.put("validUntil", lic.dotLicense.validUntil);
+                obj.put("expired", lic.dotLicense.expired);
+                
+                
+                obj.put("serial", lic.dotLicense.serial);
+                obj.put("level",  LicenseManager.getInstance().getLevelName(lic.dotLicense.level));
+                obj.put("id", lic.dotLicense.serial);
+                obj.put("licenseType", lic.dotLicense.licenseType);
+                if(lic.lastPing.after(cal.getTime())){
+                    obj.put("lastPingStr", DateUtil.prettyDateSince(lic.lastPing));
                 }
+                else{
+                    obj.put("lastPingStr", "");
+                }
+                
+                
+                Calendar outThere = Calendar.getInstance();
+                outThere.add(Calendar.YEAR, 25);
+                if(lic.dotLicense.validUntil.after(outThere.getTime())){
+                    obj.put("validUntilStr", "-");
+                    obj.put("perpetual", true);
+                }
+                else{
+                    obj.put("validUntilStr", new SimpleDateFormat("MMMM d, yyyy").format(lic.dotLicense.validUntil));
+                    obj.put("perpetual", lic.dotLicense.perpetual);
+                
+                }
+
+
                 array.put( obj );
             }
             
@@ -82,7 +110,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -111,8 +140,8 @@ public class LicenseResource {
         
     }
 
-    
-    
+
+    @NoCache
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -141,26 +170,25 @@ public class LicenseResource {
             return Response.serverError().build();
         }
     }
-    
+
+    @NoCache
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         String serial = initData.getParamsMap().get("serial");
         
-        final long currentLevel=LicenseUtil.getLevel();
-        final String currentSerial=currentLevel>100 ? LicenseUtil.getSerial() : "";
+        final long currentLevel = LicenseUtil.getLevel();
+        final String currentSerial = currentLevel > LicenseLevel.COMMUNITY.level ? LicenseUtil.getSerial() : "";
         
-        if(currentLevel<200 || !currentSerial.equals(serial)) {
+        if(currentLevel < LicenseLevel.STANDARD.level || !currentSerial.equals(serial)) {
             
             try {
                 HibernateUtil.startTransaction();
                 
                 LicenseUtil.pickLicense(serial);
-                
-                LicenseUtil.updateLicenseHeartbeat();
-                
-                HibernateUtil.commitTransaction();
+
+                HibernateUtil.closeAndCommitTransaction();
                 
                 AdminLogger.log(LicenseResource.class, "pickLicense", "Picked license from repo. Serial: "+serial, initData.getUser());
             }
@@ -172,24 +200,27 @@ public class LicenseResource {
                     Logger.warn(this, "can't rollback", e);
                 }
                 return Response.serverError().build();
+            } finally {
+                HibernateUtil.closeSessionSilently();
             }
         }
         
-        if(currentLevel==100 || currentSerial.equals(LicenseUtil.getSerial())) {
+        if(currentLevel==LicenseLevel.COMMUNITY.level || currentSerial.equals(LicenseUtil.getSerial())) {
             return Response.notModified().build();
         }
         else {
             return Response.ok().build();
         }
     }
-    
+
+    @NoCache
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         
         String localServerId = APILocator.getServerAPI().readServerId();
-        String remoteServerId = initData.getParamsMap().get("serverid");
+        String remoteServerId = initData.getParamsMap().get(SERVER_ID);
         String serial = initData.getParamsMap().get("serial");
 
         
@@ -253,7 +284,7 @@ public class LicenseResource {
             } else {
             	HibernateUtil.startTransaction();
             	LicenseUtil.freeLicenseOnRepo();
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }
             
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
@@ -333,7 +364,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/applyLicense")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
@@ -376,7 +408,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/resetLicense/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)

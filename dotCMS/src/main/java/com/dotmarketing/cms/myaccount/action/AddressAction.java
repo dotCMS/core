@@ -1,9 +1,11 @@
 package com.dotmarketing.cms.myaccount.action;
 
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
+import com.dotmarketing.cms.SecureAction;
 
 
-public class AddressAction extends DispatchAction {
+@Deprecated
+public class AddressAction extends SecureAction {
     /*public ActionForward editAddress(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
         HttpServletResponse response) throws Exception {
         MyAccountForm form = (MyAccountForm) lf;

@@ -1,8 +1,24 @@
 package com.dotcms.publisher.pusher;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
@@ -44,8 +60,13 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -53,18 +74,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -87,15 +96,20 @@ public class PushPublisher extends Publisher {
 
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
-    
-    private static final String PROTOCOL_HTTP = "http";
+    private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private Client restClient;
+
+    private static final String PROTOCOL_HTTP  = "http";
     private static final String PROTOCOL_HTTPS = "https";
-    private static final String HTTP_PORT = "80";
-	private static final String HTTPS_PORT = "443";
+    private static final String HTTP_PORT      = "80";
+	private static final String HTTPS_PORT 	   = "443";
+
+	private static final String BUNDLE_ID      = "BundleId";
+	private static final String ENDPOINT_NAME  = "EndpointName";
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 300 ) {
+        if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
         
@@ -120,7 +134,7 @@ public class PushPublisher extends Publisher {
 	 */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-		if(LicenseUtil.getLevel()<300) {
+		if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 	        throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
         }
 	    PublishAuditHistory currentStatusHistory = null;
@@ -142,7 +156,7 @@ public class PushPublisher extends Publisher {
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = RestClientBuilder.newClient();
+			Client client = getRestClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
@@ -198,10 +212,17 @@ public class PushPublisher extends Publisher {
 				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
 
-					InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
+
+
+
 	        		try {
 	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
+						//For logging purpose
+						MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
+						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
+						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
 	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
@@ -221,6 +242,7 @@ public class PushPublisher extends Publisher {
 	        				detail.setInfo("Everything ok");
 	        			} else {
 
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
 	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
 		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
@@ -245,9 +267,13 @@ public class PushPublisher extends Publisher {
 						detail.setInfo(error);
 	        			failedEnvironment |= true;
 	        			errorCounter++;
-	        			Logger.error(this.getClass(), error);
+	        			Logger.error(this.getClass(), error, e);
+
+						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
 	        		} finally {
 	        			CloseUtils.closeQuietly(bundleStream);
+						MDC.remove(ENDPOINT_NAME);
+						MDC.remove(BUNDLE_ID);
 	        		}
 	        		if (isHistoryEmpty || failedEnvironment) {
 	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
@@ -260,13 +286,22 @@ public class PushPublisher extends Publisher {
 				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 				pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
+
+				//Triggering event listener when all endpoints are successfully sent
+				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
 			} else {
 				if (errorCounter == totalEndpoints) {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when all endpoints failed during the process
+					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent());
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when at least one endpoint is successfully sent but others failed
+					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent());
 				}
 			}
 			return this.config;
@@ -344,13 +379,10 @@ public class PushPublisher extends Publisher {
         if ( buildUsers ) {
             list.add( UserBundler.class );
         }
-        if ( buildCategories ) {
-            list.add( CategoryBundler.class );
-        }
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
         }
-        if ( buildAsset ) {
+        if ( buildAsset || buildLanguages) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -368,15 +400,17 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
         } else {
 			list.add(DependencyBundler.class);
-			if (buildLanguages) {
-				list.add(LanguageVariablesBundler.class);
-				list.add(LanguageBundler.class);
-			} else if (buildRules) {
+			if (buildRules) {
 				list.add(HostBundler.class);
 				list.add(RuleBundler.class);
 			}
         }
         list.add( BundleXMLAsc.class );
+        if ( buildCategories ) { // If we are PP from the categories portlet.
+            list.add( CategoryFullBundler.class );
+        } else { // If we are PP from anywhere else, for example a contentlet, site, folder, etc.
+            list.add(CategoryBundler.class);
+        }
         return list;
     }
 
@@ -387,5 +421,18 @@ public class PushPublisher extends Publisher {
 		protocols.add(PROTOCOL_HTTPS);
 		return protocols;
 	}
+
+    /**
+     * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
+     * retrieve their information.
+     * 
+     * @return The REST {@link Client}.
+     */
+    private Client getRestClient() {
+        if (null == this.restClient) {
+            this.restClient = RestClientBuilder.newClient();
+        }
+        return this.restClient;
+    }
 
 }

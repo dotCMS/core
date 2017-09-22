@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
@@ -59,7 +60,7 @@ public class ESIndexResource {
     }
     
     public static void restoreIndex(final File file, final String alias, String index, final boolean clear) throws DotDataException {
-        if(LicenseUtil.getLevel()>=200) {
+        if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             if(UtilMethods.isSet(alias)) {
                 String indexName=APILocator.getESIndexAPI()
                          .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
@@ -101,7 +102,7 @@ public class ESIndexResource {
     public static String getIndexNameOrAlias(Map<String, String> map,String indexAttr,String aliasAttr) {
         String indexName = map.get(indexAttr);
         String indexAlias = map.get(aliasAttr);
-        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
             String indexName1=APILocator.getESIndexAPI()
                     .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
                     .get(indexAlias);

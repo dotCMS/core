@@ -10,30 +10,22 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.Client;
-
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
+import com.dotcms.repackage.org.apache.poi.ss.formula.functions.T;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -66,10 +58,25 @@ public class HibernateUtil {
 	public HibernateUtil(SessionFactory sessionFac){
 		this.sessionFactory = sessionFac;
 	}
-	
+
+	public enum TransactionListenerStatus {
+		ENABLED, DISABLED;
+	}
+
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
+	/**
+	 * Status for listeners of thread-local -based transactions. This allows to control whether listeners are appended or not (ENABLED by default)
+	 */
+	private static final ThreadLocal< TransactionListenerStatus > listenersStatus = new ThreadLocal< TransactionListenerStatus >(){
+        protected TransactionListenerStatus initialValue() {
+            return TransactionListenerStatus.ENABLED;
+        }
+    };
+
+	private static final ThreadLocal<Boolean> asyncCommitListenersFinalization = ThreadLocal.withInitial(()->true);
+	
 	private static final ThreadLocal< Map<String,DotRunnable> > commitListeners=new ThreadLocal<Map<String,DotRunnable>>() {
 	    protected java.util.Map<String,DotRunnable> initialValue() {
 	        return new LinkedHashMap<String,DotRunnable>();
@@ -225,6 +232,56 @@ public class HibernateUtil {
 		}catch (Exception e) {
 			throw new DotHibernateException("Error deleting object " + e.getMessage(), e);
 		}
+	}
+
+	/**
+	 * Do a query, settings the parameters (if exists) and return a unique result
+	 * @param clazz
+	 * @param query
+	 * @param parameters
+	 * @param <T>
+	 * @return
+	 * @throws DotHibernateException
+	 * @throws HibernateException
+	 */
+	public static <T> T load(final Class<T> clazz, final String query,
+							 final Object ...parameters) throws DotHibernateException {
+
+		T result = null;
+		int index = 0;
+		Query hibernateQuery = null;
+
+		try {
+
+			hibernateQuery = getSession().createQuery(query).setCacheable(useCache);
+
+			for (Object parameter : parameters) {
+				hibernateQuery.setParameter(index++, parameter);
+			}
+
+			result         = (T)hibernateQuery.list().get(0);
+			hibernateQuery = null;
+		} catch (java.lang.IndexOutOfBoundsException iob) {
+			// if no object is found in db, return an new Object
+			try {
+				result = clazz.newInstance();
+			} catch (Exception ex) {
+				Logger.error(HibernateUtil.class, hibernateQuery.getQueryString(), ex);
+				throw new DotRuntimeException(ex.toString());
+			}
+		} catch ( ObjectNotFoundException e ) {
+			Logger.warn(HibernateUtil.class, "---------- DotHibernate: can't load- no results from query---------------", e);
+			try {
+				result = clazz.newInstance();
+			} catch (Exception ee) {
+				Logger.error(HibernateUtil.class, "---------- DotHibernate: can't load- thisClass.newInstance()---------------", e);
+				throw new DotRuntimeException(e.toString());
+			}
+		} catch ( Exception e ) {
+			throw new DotRuntimeException( e.getMessage(), e );
+		}
+
+		return result;
 	}
 
 	/*
@@ -564,6 +621,8 @@ public class HibernateUtil {
 			#################################
 			*/
 			Configuration cfg = new Configuration().configure();
+			cfg.setProperty("hibernate.cache.provider_class", "com.dotmarketing.db.NoCacheProvider");
+			
 
 			if (DbConnectionFactory.isMySql()) {
 				//http://jira.dotmarketing.net/browse/DOTCMS-4937
@@ -702,35 +761,70 @@ public class HibernateUtil {
 		}
 	}
 
+	/**
+	 * Returns the listeners status currently associated to the thread-local -based transaction (ENABLED by default)
+	 */
+	public static TransactionListenerStatus getTransactionListenersStatus() {
+		return listenersStatus.get();
+	}
+	/**
+	 * Allows to override the status of the listeners associated to the current thread-local -based transaction (DISABLED if overriden)
+	 * When using TransactionListenerStatus.DISABLED, client code should be aware of controlling the operations that are suppossed to be done by listeners
+	 * @param status TransactionListenerStatus
+	 */
+	public static void setTransactionListenersStatus(TransactionListenerStatus status) {
+		listenersStatus.set(status);
+	}
+
+	public static boolean getAsyncCommitListenersFinalization() {
+		return asyncCommitListenersFinalization.get();
+	}
+
+	public static void setAsyncCommitListenersFinalization(boolean finalizeAsync) {
+		asyncCommitListenersFinalization.set(finalizeAsync);
+	}
+	
 	public static void addCommitListener(DotRunnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
 	}
 
 	public static void addCommitListener(String tag, DotRunnable listener) throws DotHibernateException {
-	    try {
-    	    if(getSession().connection().getAutoCommit())
-    	        listener.run();
-    	    else {
-    	    	commitListeners.get().put(tag,listener);
-    	    }
-	    }
-	    catch(Exception ex) {
-	        throw new DotHibernateException(ex.getMessage(),ex);
-	    }
+		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+			try {
+	    	    if(getSession().connection().getAutoCommit())
+	    	        listener.run();
+	    	    else {
+	    	    	commitListeners.get().put(tag,listener);
+	    	    }
+		    }
+		    catch(Exception ex) {
+		        throw new DotHibernateException(ex.getMessage(),ex);
+		    }
+		}
 	}
 
 	public static void addRollbackListener(DotRunnable listener) throws DotHibernateException{
-        try {
-            if(getSession().connection().getAutoCommit())
-                listener.run();
-            else
-                rollbackListeners.get().add(listener);
-        }
-        catch(Exception ex) {
-            throw new DotHibernateException(ex.getMessage(),ex);
-        }
+		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+	        try {
+	            if(getSession().connection().getAutoCommit())
+	                listener.run();
+	            else
+	                rollbackListeners.get().add(listener);
+	        }
+	        catch(Exception ex) {
+	            throw new DotHibernateException(ex.getMessage(),ex);
+	        }
+		}
     }
 
+	public static void closeSessionSilently() {
+
+		try {
+			closeSession();
+		} catch (DotHibernateException e) {
+
+		}
+	}
 
 	public static void closeSession()  throws DotHibernateException{
 		try{
@@ -766,56 +860,19 @@ public class HibernateUtil {
 	}
 
 	private static void finalizeCommitListeners() throws DotDataException{
-		
-		List<DotRunnable> listeners = new ArrayList<DotRunnable>(commitListeners.get().values());
+		final List<DotRunnable> listeners = new ArrayList<>(commitListeners.get().values());
 		commitListeners.get().clear();
-		
-		Set<String> reindexInodes= new HashSet<String>();
-		List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
-		
-		
-		List<List<Contentlet>> listOfLists = new ArrayList<List<Contentlet>>();
-		int batchSize = Config.getIntProperty("INDEX_COMMIT_LISTENER_BATCH_SIZE", 50);
-		
-		
-		for(DotRunnable runner : listeners){
-			if(runner instanceof ReindexRunnable){
-				ReindexRunnable rrunner = (ReindexRunnable) runner;
-				if(rrunner.getAction().equals(ReindexRunnable.Action.REMOVING)){
-					rrunner.run();
-					continue;
-				}
-				List<Contentlet> cons  	=  rrunner.getReindexIds();
-				for(Contentlet con : cons){
-					if(!reindexInodes.contains(con.getInode())){
-						reindexInodes.add(con.getInode());
-						contentToIndex.add(con);
-						if(contentToIndex.size() == batchSize){
-							listOfLists.add(contentToIndex);
-							contentToIndex = new ArrayList<Contentlet>();
-						}
-					}
-				}
-			} else {
-				runner.run();
-			}
-		}
-		listOfLists.add(contentToIndex);
-		
-		for(List<Contentlet> batchList : listOfLists){
-			
-			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING, null, false) {}.run();
-		}
-		
 
+		final DotRunnableThread thread = new DotRunnableThread(listeners);
+
+		if(getAsyncCommitListenersFinalization()
+				&& Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
+			thread.start();
+		}  else{
+			thread.run();
+		}
 	}
-	
-	
-	
-	
-	
-	
-	
+
 	public static void startTransaction()  throws DotHibernateException{
 		try{
 
@@ -832,7 +889,46 @@ public class HibernateUtil {
 		}
 	}
 
-	public static boolean commitTransaction()  throws DotHibernateException{
+	/**
+	 * This just commit the transaction and process the listeners.
+	 * @throws DotHibernateException
+	 */
+	public static void commitTransaction()  throws DotHibernateException{
+
+		try{
+			// if there is nothing to close
+			if (sessionHolder.get() == null){
+				return;
+			}
+			Session session = getSession();
+
+			if (session != null) {
+				session.flush();
+				if (!session.connection().getAutoCommit()) {
+					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
+					session.connection().commit();
+					session.connection().setAutoCommit(true);
+					if(commitListeners.get().size()>0) {
+						finalizeCommitListeners();
+					}
+				}
+			}
+		}catch (Exception e) {
+			Logger.error(HibernateUtil.class, e.getMessage(), e);
+			throw new DotHibernateException("Unable to close Hibernate Session ", e);
+		}
+		finally {
+			commitListeners.get().clear();
+			rollbackListeners.get().clear();
+		}
+	}
+
+	/**
+	 * This commit and close the current session, connection
+	 * @return
+	 * @throws DotHibernateException
+	 */
+	public static boolean closeAndCommitTransaction()  throws DotHibernateException{
 		closeSession();
 		return true;
 	}

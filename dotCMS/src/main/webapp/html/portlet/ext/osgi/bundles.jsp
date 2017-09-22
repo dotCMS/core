@@ -2,6 +2,7 @@
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
@@ -29,7 +30,7 @@
     var popupMenusDiv;
     var popupMenus = "";
 
-    var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+    var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
     <%
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
     List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();

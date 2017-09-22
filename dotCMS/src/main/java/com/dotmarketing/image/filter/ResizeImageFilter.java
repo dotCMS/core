@@ -1,23 +1,14 @@
 package com.dotmarketing.image.filter;
 
+import com.dotmarketing.util.Logger;
+import com.twelvemonkeys.image.ResampleOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
-
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-
-import com.dotcms.repackage.com.dotmarketing.jhlabs.image.ScaleFilter;
-import com.dotmarketing.util.ImageResizeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.twelvemonkeys.image.ResampleOp;
 
 public class ResizeImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
@@ -60,9 +51,7 @@ public class ResizeImageFilter extends ImageFilter {
 			BufferedImage output = resampler.filter(ImageIO.read(file), null);
 			ImageIO.write(output, "png", resultFile);
 			return resultFile;
-			
-			//fos = new FileOutputStream(resultFile);
-			//ImageResizeUtils.resizeImage(new FileInputStream(file), fos, FILE_EXT, width, height);
+
 		} catch (FileNotFoundException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		} catch (IOException e) {

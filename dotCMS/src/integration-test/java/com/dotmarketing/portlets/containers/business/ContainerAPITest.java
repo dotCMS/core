@@ -65,7 +65,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(cc.getMaxContentlets()==c.getMaxContentlets());
         assertTrue(cc.getPreLoop().equals(c.getPreLoop()));
         assertTrue(cc.getPostLoop().equals(c.getPostLoop()));
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
     }
 
     @Test
@@ -159,6 +159,6 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
 
         AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getValue());
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
     }
 }

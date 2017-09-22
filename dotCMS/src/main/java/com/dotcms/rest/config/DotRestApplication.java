@@ -3,6 +3,7 @@ package com.dotcms.rest.config;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -13,6 +14,7 @@ import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
+import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -79,6 +81,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(PersonaResource.class);
 					REST_CLASSES.add(UserResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v2.user.UserResource.class);
 					REST_CLASSES.add(TagResource.class);
 
 					REST_CLASSES.add(RulesEnginePortlet.class);
@@ -105,6 +108,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(SiteResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
+					REST_CLASSES.add(FieldTypeResource.class);
 					REST_CLASSES.add(FieldVariableResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
@@ -113,6 +117,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
+
+					REST_CLASSES.add(CategoriesResource.class);
 				}
 			}
 		}

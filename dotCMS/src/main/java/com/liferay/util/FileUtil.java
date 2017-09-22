@@ -28,23 +28,21 @@ import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -55,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
 import javax.servlet.ServletContext;
 
 /**
@@ -161,6 +158,10 @@ public class FileUtil {
         if (!source.exists()) {
             throw new IOException("Source file does not exist" + source);
         }
+
+        if(source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
+        	return;
+		}
         
         validateEmptyFile(source);
 
@@ -205,18 +206,10 @@ public class FileUtil {
         }
 
         if (!hardLinks) {
-
-            FileInputStream ios = new FileInputStream(source);
-            FileOutputStream fos = new FileOutputStream(destination);
-            FileChannel srcChannel = ios.getChannel();
-            FileChannel dstChannel = fos.getChannel();
-            dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-            srcChannel.close();
-            dstChannel.close();
-            ios.close();
-            fos.close();
-
-
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()))){
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
         }
 
     }
@@ -279,7 +272,7 @@ public class FileUtil {
 		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		FileInputStream in = new FileInputStream(file);
+		final InputStream in = Files.newInputStream(file.toPath());
 
 		byte buffer[] = new byte[2048];
 
@@ -506,29 +499,28 @@ public class FileUtil {
 			validateEmptyFile(source);
 		}
 		//If both files exists and are equals no need to move it.
-		try {
-			//Confirms that destination exists. 
-			if(destination.exists()) {
-				//Creates FileInputStream for both files.  
-				FileInputStream inputSource = new FileInputStream(source);
-				FileInputStream inputDestination = new FileInputStream(destination);
-				
-				//Both files checked. 
-				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
+        //Confirms that destination exists.
+        if(destination.exists()) {
+            try (//Creates InputStream for both files.
+                    InputStream inputSource = Files.newInputStream(source.toPath());
+                    InputStream inputDestination = Files.newInputStream(destination.toPath())){
+
+                //Both files checked.
+                if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
 
                     //If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
                     if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
                             || Files.isSymbolicLink(destination.toPath()) ) {
-					return true;
-				}
+                        return true;
+                    }
 
-					return source.delete();
-				}
-			}
-		} catch (Exception e) {
-			//In case of error, no worries. Continued with the same logic of move. 
-			Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
-		}
+                    return source.delete();
+                }
+            } catch (Exception e) {
+                //In case of error, no worries. Continued with the same logic of move.
+                Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
+            }
+        }
 
 		destination.delete();
 
@@ -616,11 +608,11 @@ public class FileUtil {
 		}
 	}
 
-	public static Properties toProperties(FileInputStream fis) {
+	public static Properties toProperties(InputStream is) {
 		Properties props = new Properties();
 
 		try {
-			props.load(fis);
+			props.load(is);
 		}
 		catch (IOException ioe) {
 		}
@@ -629,8 +621,8 @@ public class FileUtil {
 	}
 
 	public static Properties toProperties(String fileName) {
-		try {
-			return toProperties(new FileInputStream(fileName));
+		try (final InputStream is = Files.newInputStream(Paths.get(fileName))){
+            return toProperties(is);
 		}
 		catch (IOException ioe) {
 			return new Properties();

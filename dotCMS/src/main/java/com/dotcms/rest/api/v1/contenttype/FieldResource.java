@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,14 +12,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -35,21 +29,63 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.CollectionsUtils.imap;
+
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;
+	private final FieldAPI fieldAPI;
 
 	public FieldResource() {
-		this(new WebResource());
+		this(new WebResource(), APILocator.getContentTypeFieldAPI());
 	}
 
 	@VisibleForTesting
-	public FieldResource(final WebResource webresource) {
+	public FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
+		this.fieldAPI = fieldAPI;
 		this.webResource = webresource;
 	}
 
 	private static final long serialVersionUID = 1L;
 
+
+	@PUT
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response updateFields(@PathParam("typeId") final String typeId, final String fieldsJson,
+										   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		
+		Response response = null;
+		
+		try {
+			final List<Field> fields = new JsonFieldTransformer(fieldsJson).asList();
+
+			for (final Field field : fields) {
+				fieldAPI.save(field, user);
+			}
+
+			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
+			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(contentTypeFields).mapList())).build();
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
+		} catch (NotFoundInDbException e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
 
 	@POST
 	@JSONP
@@ -57,14 +93,14 @@ public class FieldResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response createContentTypeField(@PathParam("typeId") final String typeId, final String fieldJson,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+										   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-		
+
 		Response response = null;
-		
+
 		try {
 			Field field = new JsonFieldTransformer(fieldJson).from();
 			if (UtilMethods.isSet(field.id())) {
@@ -74,7 +110,7 @@ public class FieldResource implements Serializable {
 			} else {
 
 				field = fapi.save(field, user);
-	
+
 				response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 			}
 		} catch (DotStateException e) {
@@ -92,7 +128,6 @@ public class FieldResource implements Serializable {
 
 		return response;
 	}
-
 
 	@GET
 	@JSONP
@@ -295,24 +330,57 @@ public class FieldResource implements Serializable {
 
 
 	@DELETE
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response deleteFields(@PathParam("typeId") final String typeId, final String[] fieldsID, @Context final HttpServletRequest req)
+			throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+
+		Response response = null;
+		try {
+			final List<String> deletedIds = new ArrayList<>();
+
+			for (final String fieldId : fieldsID) {
+				try {
+					final Field field = fieldAPI.find(fieldId);
+					fieldAPI.delete(field, user);
+					deletedIds.add(fieldId);
+				} catch (NotFoundInDbException e) {
+					continue;
+				}
+			}
+
+			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
+			response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
+					"fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
+		}catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
+
+	@DELETE
 	@Path("/id/{fieldId}")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response deleteContentTypeFieldById(@PathParam("typeId") final String typeId,
-			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
+											   @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = fapi.find(fieldId);
-
-			fapi.delete(field, user);
+			Field field = fieldAPI.find(fieldId);
+			fieldAPI.delete(field, user);
 
 			response = Response.ok(new ResponseEntityView(null)).build();
 

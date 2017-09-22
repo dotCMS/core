@@ -37,7 +37,7 @@ public class DistReindexJournalCleanupThread2 implements Runnable, Job {
 			Logger.debug(this, "About to delete dist_reindex_journal entries older than "+ minutes +" minute(s)");
     		HibernateUtil.startTransaction();
     		APILocator.getDistributedJournalAPI().distReindexJournalCleanup(minutes, false, true, DateType.MINUTE);
-    		HibernateUtil.commitTransaction();
+    		HibernateUtil.closeAndCommitTransaction();
     	}
     	catch (Exception e) 
     	{

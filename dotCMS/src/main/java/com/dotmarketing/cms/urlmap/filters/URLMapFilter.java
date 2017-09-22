@@ -9,9 +9,6 @@
  */
 package com.dotmarketing.cms.urlmap.filters;
 
-import com.dotcms.util.VanityUrlUtil;
-import com.dotcms.vanityurl.business.VanityUrlAPI;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -26,8 +23,8 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.CmsUrlUtil;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
@@ -37,7 +34,6 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -46,7 +42,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,6 +53,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -75,8 +71,7 @@ public class URLMapFilter implements Filter {
     private UserWebAPI wuserAPI;
     private HostWebAPI whostAPI;
     private boolean urlFallthrough;
-    CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
-
+    private CMSUrlUtil cmsUrlUtil = CMSUrlUtil.getInstance();
 
     public void destroy() {
 
@@ -90,9 +85,10 @@ public class URLMapFilter implements Filter {
             ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
+        final HttpServletResponse response = (HttpServletResponse) res;
         HttpSession optSession = request.getSession(false);
-        String uri = request.getRequestURI();
-        uri = URLDecoder.decode(uri, "UTF-8");
+
+        String uri = cmsUrlUtil.getURIFromRequest(request);
 
         String previewPage = request.getParameter("previewPage");
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
@@ -118,26 +114,6 @@ public class URLMapFilter implements Filter {
         // http://jira.dotmarketing.net/browse/DOTCMS-6079
         if (uri.endsWith("/")) {
             uri = uri.substring(0, uri.length() - 1);
-        }
-
-        String pointer = null;
-
-        if (host != null) {
-            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(uri, host, languageId, user);
-            pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
-                    .equals(vanityUrl.getVanityUrlId()) && InodeUtils
-                    .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
-        }
-        if (!UtilMethods.isSet(pointer)) {
-            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(uri, null, languageId, user);
-            pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
-                    .equals(vanityUrl.getVanityUrlId()) && InodeUtils
-                    .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
-        }
-        if (UtilMethods.isSet(pointer)) {
-            uri = pointer;
         }
 
         String mastRegEx = null;
@@ -258,21 +234,32 @@ public class URLMapFilter implements Filter {
                         }
 
                         cons = conAPI.searchIndex(query.toString(), 2, 0,
-                                (hostIsRequired ? "conhost, modDate" : "modDate"), user, true);
+                                (hostIsRequired ? "conhost, modDate" : "modDate"), wuserAPI.getSystemUser(), true);
                         int idx = 0;
                         if (checkIndex && cons.size() == 2) {
                             // prefer session setting
-                            Contentlet second = conAPI.find(cons.get(1).getInode(), user, true);
+                            Contentlet second = conAPI.find(cons.get(1).getInode(), wuserAPI.getSystemUser(), true);
                             if (second.getLanguageId() == sessionLang) {
                                 idx = 1;
                             }
                         }
                         ContentletSearch c = cons.get(idx);
+                        Contentlet contentlet = conAPI
+                                .find(c.getInode(), wuserAPI.getSystemUser(), true);
+
                         if (optSession != null) {
                             optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
-                                    String.valueOf(
-                                            conAPI.find(c.getInode(), user, true).getLanguageId()));
+                                    String.valueOf(contentlet.getLanguageId()));
                         }
+
+                        //Verify and handle the case for unauthorized access of this contentlet
+                        Boolean unauthorized = CMSUrlUtil.getInstance()
+                                .isUnauthorizedAndHandleError(contentlet, uri, user, request,
+                                        response);
+                        if (unauthorized) {
+                            return;
+                        }
+
                         request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
                         request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
                         request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE,
@@ -325,7 +312,7 @@ public class URLMapFilter implements Filter {
 
                     if ((cons != null && cons.size() > 0) || !urlFallthrough) {
 
-                        request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, ident.getURI());
+                        request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, ident.getURI());
 
                     }
 
@@ -343,7 +330,6 @@ public class URLMapFilter implements Filter {
         conAPI = APILocator.getContentletAPI();
         wuserAPI = WebAPILocator.getUserWebAPI();
         whostAPI = WebAPILocator.getHostWebAPI();
-
         // persistant on disk cache makes this necessary
         CacheLocator.getContentTypeCache().clearURLMasterPattern();
         urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);

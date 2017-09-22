@@ -1,20 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -45,6 +32,17 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -157,12 +155,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getInode() {
-    	if(InodeUtils.isSet((String) map.get(INODE_KEY))) {
-    		return (String) map.get(INODE_KEY);
-    	}
-    	return "";
-    }
+	public String getInode() {
+		final String inode = (String) map.get(INODE_KEY);
+
+		if(inode==null) {
+			return "";
+		}
+
+		return inode;
+	}
 
     /**
      * 
@@ -324,18 +325,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
     }
 
-    @Override
-    public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
-    	if( !(o instanceof Contentlet) )
-    		return false;
-    	return o != null && ((Contentlet)o).getInode().equalsIgnoreCase(this.getInode());
-    }
+		Contentlet that = (Contentlet) o;
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(getInode()).toHashCode();
-    }
+		return getInode().equals(that.getInode());
+	}
+
+	@Override
+	public int hashCode() {
+		return getInode().hashCode();
+	}
 
     /**
      * 
@@ -801,7 +808,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
-		FileInputStream fis = new FileInputStream(getBinary(velocityVarName));
+		InputStream fis = Files.newInputStream(getBinary(velocityVarName).toPath());
 		return fis;
 	}
 

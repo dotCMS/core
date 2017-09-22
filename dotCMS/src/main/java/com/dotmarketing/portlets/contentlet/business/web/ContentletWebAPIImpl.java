@@ -199,7 +199,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 
 		if(autocommit) {
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}
 
 		// todo: make it async by thread pool
@@ -1289,6 +1289,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			SessionMessages.add(req, "message", "message.contentlets.batch.deleted.error");
 			throw ae;
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 }

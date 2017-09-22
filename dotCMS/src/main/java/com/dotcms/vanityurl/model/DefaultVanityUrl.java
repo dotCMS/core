@@ -75,7 +75,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
 
     @Override
     public void setOrder(final int order) {
-        setProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
+        setLongProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
     }
 
 

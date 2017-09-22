@@ -3,12 +3,7 @@ package com.dotmarketing.business;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.PermissionReference;
-import com.dotmarketing.beans.PermissionType;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -42,18 +37,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
-
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -2346,7 +2333,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 
 					if(localTransaction){
-	                    HibernateUtil.commitTransaction();
+	                    HibernateUtil.closeAndCommitTransaction();
 	                }
 				} catch(Exception exception){
 					if(permissionable != null && newReference != null){
@@ -2362,11 +2349,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					throw new DotDataException(exception.getMessage(), exception);
 				}finally {
 		            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
+					if(localTransaction) {
+						HibernateUtil.closeSessionSilently();
+					}
 				}
 
 				bitPermissionsList = inheritedPermissions;
 			}
 		}
+
 		Thread.currentThread().setName(threadName);
 
 		return bitPermissionsList;

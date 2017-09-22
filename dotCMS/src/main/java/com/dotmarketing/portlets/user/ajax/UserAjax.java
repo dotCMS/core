@@ -169,7 +169,7 @@ public class UserAjax {
 			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			
 			if (localTransaction) {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 			resultMap = new HashMap<String, Object>();
 			resultMap.put("userID", user.getUserId());
@@ -1488,7 +1488,7 @@ public class UserAjax {
 				catAPI.addChild(userProxy, category, user, respectFrontend);
 			}
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	/**
@@ -1543,7 +1543,7 @@ public class UserAjax {
 		UserProxy toUpdate = userProxyAPI.getUserProxy(userId, user, respectFrontEndRoles);
 		toUpdate.setNoclicktracking(disabled);
 		userProxyAPI.saveUserProxy(toUpdate, user, respectFrontEndRoles);
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 	}
 

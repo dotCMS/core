@@ -877,9 +877,14 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
+                var langIcon = asset.languageFlag;
+                var langCode = asset.languageCode + "_" + asset.countryCode;
+                if(asset.countryCode==""){
+                	langCode = asset.languageCode;
+                }
                 var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
-                    ?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode +
-                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":"";
+                    ?"<img src=\"/html/images/languages/"+ langIcon +
+                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+ langCode +")</span>":"";
                 if(asset.type == 'file_asset'){
                     var html =  '<tr id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +

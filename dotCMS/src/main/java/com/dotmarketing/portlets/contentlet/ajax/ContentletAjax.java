@@ -21,7 +21,9 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -501,7 +503,8 @@ public class ContentletAjax {
 	 *             A system error has occurred.
 	 */
 	@SuppressWarnings("rawtypes")
-	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	@LogTime
+	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE", 40);
 		}
@@ -513,6 +516,7 @@ public class ContentletAjax {
 		// Building search params and lucene query
 		StringBuffer luceneQuery = new StringBuffer();
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
+		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		if (UtilMethods.isSet(sess)) {
@@ -548,7 +552,7 @@ public class ContentletAjax {
 		    luceneQuery.append("-contentType:Host ");
 		    luceneQuery.append("-baseType:3 ");
 		}
-		if (LicenseUtil.getLevel() < 300) {
+		if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			luceneQuery.append("-contentType:Persona ");
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
@@ -668,7 +672,7 @@ public class ContentletAjax {
 									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}
@@ -757,9 +761,13 @@ public class ContentletAjax {
 		    }
 		}
 
-		if (!UtilMethods.isSet(orderBy)){
-			orderBy = "modDate desc";
-		}
+        if (!UtilMethods.isSet(orderBy)){
+            orderBy = "modDate desc";
+        }else{
+            if(orderBy.charAt(0)=='.'){
+                orderBy = st.getVelocityVarName() + orderBy;
+            }
+        }
 
 		lastSearchMap.put("showDeleted", showDeleted);
 		lastSearchMap.put("filterSystemHost", filterSystemHost);
@@ -843,207 +851,226 @@ public class ContentletAjax {
 		//Adding the query results
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
-			con = hits.get(i);
-			Identifier ident=APILocator.getIdentifierAPI().find(con);
-			if(!con.isLive()) {
-    			if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
-    			    expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
-			}
 
-			Map<String, String> searchResult = new HashMap<String, String>();
-			Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
+			Map<String, String> searchResult = null;
 
-			for (String fieldContentlet : fieldsMapping.keySet()) {
-				String fieldValue = null;
-				if(con.getMap() != null && con.getMap().get(fieldContentlet) !=null){
-					fieldValue =(con.getMap().get(fieldContentlet)).toString();
+			try {
+				con = hits.get(i);
+				Identifier ident = APILocator.getIdentifierAPI().find(con);
+				if (!con.isLive()) {
+					if (UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+						expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
 				}
-				Field field = (Field) fieldsMapping.get(fieldContentlet);
-				if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
-						UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
-						UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-					try {
-						Date date = DateUtil.convertDate(fieldValue, new String[] { "yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy" });
-						if (field.getFieldType().equals(Field.FieldType.DATE.toString()))
-							fieldValue = UtilMethods.dateToHTMLDate(date);
-						if (field.getFieldType().equals(Field.FieldType.TIME.toString()))
-							fieldValue = UtilMethods.dateToHTMLTime(date);
-						if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-							fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
-					} catch (java.text.ParseException e) {
-						Logger.error(ContentletAjax.class, e.getMessage(), e);
-						throw new DotRuntimeException(e.getMessage(), e);
+
+				searchResult = new HashMap<String, String>();
+				Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
+
+				for (String fieldContentlet : fieldsMapping.keySet()) {
+					String fieldValue = null;
+					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
+						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-				}else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
-					if (UtilMethods.isSet(fieldValue))
-						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");
-				}
-
-                //We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
-                if(("url").equals(fieldContentlet) &&
-                		s != null &&
-                		s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
-                		UtilMethods.isSet(ident) &&
-                		UtilMethods.isSet(ident.getAssetName())){
-                    fieldValue = ident.getAssetName();
-                }
-
-				searchResult.put(fieldContentlet, fieldValue);
-			}
-			searchResult.put("inode", con.getInode());
-			searchResult.put("Identifier",con.getIdentifier());
-			searchResult.put("identifier", con.getIdentifier());
-			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
-			
-			String spanClass = (s.getStructureType() ==1)
-			        ? "contentIcon"
-			                :  (s.getStructureType() ==2)
-			                ? "gearIcon"
-			                        :  (s.getStructureType() ==3)
-		                        	? "formIcon"
-				                        :  (s.getStructureType() ==4)
-			                        	? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-			                        		:  (s.getStructureType() ==5)
-			                        		? "pageIcon"
-			                        				: "personaIcon";
-					                        
-			String typeStringToShow = s.getName() ;
-			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
-
-			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-
-			searchResult.put("modDate", fieldValue);
-			String user = "";
-			User contentEditor = null;
-			try {
-				contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-			} catch (Exception e1) {
-				Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
-				Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
-				contentEditor = new User();
-			}
-
-			if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
-				user =con.getModUser();
-			} else {
-				user = contentEditor.getFullName();
-			}
-			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			List<Permission> permissions = null;
-			try {
-				permissions = permissionAPI.getPermissions(con);
-			} catch (DotDataException e) {
-			}
-			StringBuffer permissionsSt = new StringBuffer();
-			Boolean ownerCanRead = false;
-			Boolean ownerCanWrite = false;
-			Boolean ownerCanPub = false;
-			for (Permission permission : permissions) {
-				String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
-				if (permissionsSt.toString().indexOf(str) < 0) {
-					permissionsSt.append(str);
-				}
-				try {
-					if(APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))){
-						if(permission.getPermission() == PERMISSION_READ){
-							ownerCanRead = true;
-						}else if(permission.getPermission() == PERMISSION_WRITE){
-							ownerCanRead = true;
-							ownerCanWrite = true;
-						}else if(permission.getPermission() == PERMISSION_PUBLISH){
-							ownerCanRead = true;
-							ownerCanWrite = true;
-							ownerCanPub = true;
+					Field field = (Field) fieldsMapping.get(fieldContentlet);
+					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+						try {
+							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
+							if (field.getFieldType().equals(Field.FieldType.DATE.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date);
+							if (field.getFieldType().equals(Field.FieldType.TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLTime(date);
+							if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
+						} catch (java.text.ParseException e) {
+							Logger.error(ContentletAjax.class, e.getMessage(), e);
+							throw new DotRuntimeException(e.getMessage(), e);
 						}
+					} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
+						if (UtilMethods.isSet(fieldValue))
+							fieldValue = fieldValue.replaceAll("# #", ",").replaceAll("#", "");
 					}
+
+					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
+					if (("url").equals(fieldContentlet) &&
+							s != null &&
+							s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
+							UtilMethods.isSet(ident) &&
+							UtilMethods.isSet(ident.getAssetName())) {
+						fieldValue = ident.getAssetName();
+					}
+
+					searchResult.put(fieldContentlet, fieldValue);
+				}
+
+				searchResult.put("inode", con.getInode());
+				searchResult.put("Identifier",con.getIdentifier());
+				searchResult.put("identifier", con.getIdentifier());
+				final Contentlet contentlet = con;
+				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
+
+				String spanClass = (s.getStructureType() ==1)
+						? "contentIcon"
+								:  (s.getStructureType() ==2)
+								? "gearIcon"
+										:  (s.getStructureType() ==3)
+										? "formIcon"
+											:  (s.getStructureType() ==4)
+											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
+												:  (s.getStructureType() ==5)
+												? "pageIcon"
+														: "personaIcon";
+
+				String typeStringToShow = s.getName() ;
+				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
+
+				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
+
+				searchResult.put("modDate", fieldValue);
+				String user = "";
+				User contentEditor = null;
+				try {
+					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+				} catch (Exception e1) {
+					Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
+					Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
+					contentEditor = new User();
+				}
+
+				if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
+					user = con.getModUser();
+				} else {
+					user = contentEditor.getFullName();
+				}
+				PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+				List<Permission> permissions = null;
+				try {
+					permissions = permissionAPI.getPermissions(con);
 				} catch (DotDataException e) {
-
 				}
-			}
-			searchResult.put("modUser", user);
-			searchResult.put("owner", con.getOwner());
-			searchResult.put("ownerCanRead", ownerCanRead.toString());
-			searchResult.put("ownerCanWrite", ownerCanWrite.toString());
-			searchResult.put("ownerCanPublish", ownerCanPub.toString());
-			Boolean working=con.isWorking();
-			searchResult.put("working", working.toString());
-			Boolean live=con.isLive();
-			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
-			searchResult.put("hasLiveVersion", "false");
-			if(!con.isLive() && con.isWorking() && !con.isArchived()){
-				if(APILocator.getVersionableAPI().hasLiveVersion(con)){
-					searchResult.put("hasLiveVersion", "true");
-					searchResult.put("allowUnpublishOfLiveVersion", "true");
-					searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
-				}
-			}
-
-			searchResult.put("live", live.toString());
-			Boolean isdeleted=con.isArchived();
-			searchResult.put("deleted", isdeleted.toString());
-			Boolean locked=con.isLocked();
-			searchResult.put("locked", locked.toString());
-			searchResult.put("structureInode", con.getStructureInode());
-			searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
-			searchResult.put("contentStructureType", ""+con.getStructure().getStructureType());
-
-			// Workflow Actions
-
-			List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
-
-			try {
-				wfActions = APILocator.getWorkflowAPI().findAvailableActions( con, currentUser );
-			} catch ( Exception e ) {
-                Logger.error( this, "Could not load workflow actions : ", e );
-            }
-
-			JSONArray wfActionMapList = new JSONArray();
-
-			for ( WorkflowAction action : wfActions ) {
-				boolean hasPushPublishActionlet = false;
-                if ( action.requiresCheckout() )
-                    continue;
-
-                JSONObject wfActionMap = new JSONObject();
-                try {
-					wfActionMap.put( "name", action.getName() );
-	                wfActionMap.put( "id", action.getId() );
-	                wfActionMap.put( "icon", action.getIcon() );
-	                wfActionMap.put( "assignable", action.isAssignable() );
-	                wfActionMap.put( "commentable", action.isCommentable() || UtilMethods.isSet( action.getCondition() ) );
-	                wfActionMap.put( "requiresCheckout", action.requiresCheckout() );
-
-	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-	                for(WorkflowActionClass actionlet : actionlets){
-	                	if(actionlet.getActionlet() != null 
-	                			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
-	                		hasPushPublishActionlet = true;
-	                	}
-	                }
-	                wfActionMap.put( "hasPushPublishActionlet", hasPushPublishActionlet );
-	                try {
-						wfActionMap.put( "wfActionNameStr", LanguageUtil.get( currentUser, action.getName() ) );
-					} catch (LanguageException e) {
-						Logger.error( this, "Could not load language key : " + action.getName() );
+				StringBuffer permissionsSt = new StringBuffer();
+				Boolean ownerCanRead = false;
+				Boolean ownerCanWrite = false;
+				Boolean ownerCanPub = false;
+				for (Permission permission : permissions) {
+					String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
+					if (permissionsSt.toString().indexOf(str) < 0) {
+						permissionsSt.append(str);
 					}
-	                wfActionMapList.add( wfActionMap );
+					try {
+						if (APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))) {
+							if (permission.getPermission() == PERMISSION_READ) {
+								ownerCanRead = true;
+							} else if (permission.getPermission() == PERMISSION_WRITE) {
+								ownerCanRead = true;
+								ownerCanWrite = true;
+							} else if (permission.getPermission() == PERMISSION_PUBLISH) {
+								ownerCanRead = true;
+								ownerCanWrite = true;
+								ownerCanPub = true;
+							}
+						}
+					} catch (DotDataException e) {
 
-                } catch (JSONException e1) {
-					Logger.error(this,  "Could not put property in JSONObject");
+					}
 				}
-            }
+				searchResult.put("modUser", user);
+				searchResult.put("owner", con.getOwner());
+				searchResult.put("ownerCanRead", ownerCanRead.toString());
+				searchResult.put("ownerCanWrite", ownerCanWrite.toString());
+				searchResult.put("ownerCanPublish", ownerCanPub.toString());
+				Boolean working = con.isWorking();
+				searchResult.put("working", working.toString());
+				Boolean live = con.isLive();
+				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+				searchResult.put("hasLiveVersion", "false");
+				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
+					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
+						searchResult.put("hasLiveVersion", "true");
+						searchResult.put("allowUnpublishOfLiveVersion", "true");
+						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+					}
+				}
+
+				searchResult.put("live", live.toString());
+				Boolean isdeleted = con.isArchived();
+				searchResult.put("deleted", isdeleted.toString());
+				Boolean locked = con.isLocked();
+				searchResult.put("locked", locked.toString());
+				searchResult.put("structureInode", con.getStructureInode());
+				searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
+				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
+
+				// Workflow Actions
+
+				List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
+
+				try {
+					wfActions = APILocator.getWorkflowAPI().findAvailableActions(con, currentUser);
+				} catch (Exception e) {
+					Logger.error(this, "Could not load workflow actions : ", e);
+				}
+
+				JSONArray wfActionMapList = new JSONArray();
+
+				for (WorkflowAction action : wfActions) {
+					boolean hasPushPublishActionlet = false;
+					if (action.requiresCheckout())
+						continue;
+
+					JSONObject wfActionMap = new JSONObject();
+					try {
+						wfActionMap.put("name", action.getName());
+						wfActionMap.put("id", action.getId());
+						wfActionMap.put("icon", action.getIcon());
+						wfActionMap.put("assignable", action.isAssignable());
+						wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
+						wfActionMap.put("requiresCheckout", action.requiresCheckout());
+
+						List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
+						for (WorkflowActionClass actionlet : actionlets) {
+							if (actionlet.getActionlet() != null
+									&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())) {
+								hasPushPublishActionlet = true;
+							}
+						}
+						wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
+						try {
+							wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()));
+						} catch (LanguageException e) {
+							Logger.error(this, "Could not load language key : " + action.getName());
+						}
+						wfActionMapList.add(wfActionMap);
+
+					} catch (JSONException e1) {
+						Logger.error(this, "Could not put property in JSONObject");
+					}
+				}
 
 
-			searchResult.put( "wfActionMapList", wfActionMapList.toString() );
+				searchResult.put("wfActionMapList", wfActionMapList.toString());
 
-            // End Workflow Actions
+				// End Workflow Actions
 
-			//searchResult.put("structureName", st.getVelocityVarName());
-			Long LanguageId=con.getLanguageId();
-			searchResult.put("languageId", LanguageId.toString());
-			searchResult.put("permissions", permissionsSt.toString());
+				//searchResult.put("structureName", st.getVelocityVarName());
+				Long LanguageId = con.getLanguageId();
+				searchResult.put("languageId", LanguageId.toString());
+				searchResult.put("permissions", permissionsSt.toString());
+			} catch (DotSecurityException e) {
 
-			results.add(searchResult);
+				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
+				searchResult = null;
+
+			} catch (Exception e) {
+
+				Logger.error(this, "Couldn't read the content: " + searchResult, e);
+				searchResult = null;
+
+			}
+
+			if (UtilMethods.isSet(searchResult)) {
+				results.add(searchResult);
+			}
 		}
 
 		long total = hits.getTotalResults();
@@ -1094,6 +1121,8 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+
 
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		ArrayList<String[]> list = new ArrayList<String[]>(15);
@@ -1464,7 +1493,7 @@ public class ContentletAjax {
 			}
 
 			// everything Ok? then commit
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 			// clean up tmp_binary
 			// https://github.com/dotCMS/dotCMS/issues/2921
@@ -1941,7 +1970,7 @@ public class ContentletAjax {
 					SessionMessages.clear(req.getSession());
 					HibernateUtil.rollbackTransaction();
 				}else{
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));
 				}
 			}
@@ -2030,10 +2059,6 @@ public class ContentletAjax {
 			ret.put("Error", LanguageUtil.get(currentUser, "message.cannot.lock.content") );
 
 		}
-
-
-
-
 
 		return ret;
 	}

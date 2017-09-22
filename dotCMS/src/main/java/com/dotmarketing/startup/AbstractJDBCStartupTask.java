@@ -149,6 +149,10 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 					+ INDEX_NAME + "]";
 		}
 
+		public String fkName(){
+			return FK_NAME;
+		}
+
 	}
 
 	/**
@@ -785,7 +789,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
                         HibernateUtil.rollbackTransaction();
                         continue;
                     }
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 } else {
                     try {
                         dc.executeStatement(query, conn);

@@ -341,6 +341,7 @@ public class BrowserAPI {
 					    pageMap.put("languageCode", lang.getLanguageCode());
 		                pageMap.put("countryCode", lang.getCountryCode());
 		                pageMap.put("isLocked", page.isLocked());
+		                pageMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
 		            
 		              
 					}
@@ -466,6 +467,7 @@ public class BrowserAPI {
 			fileMap.put("languageId", lang.getId());
 			fileMap.put("languageCode", lang.getLanguageCode());
 			fileMap.put("countryCode", lang.getCountryCode());
+			fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
 
@@ -478,9 +480,9 @@ public class BrowserAPI {
 			List<Link> links = new ArrayList<Link>();
 			try {
 				if (parent != null) {
-					if(showWorking){
+					if(showWorking) {
 						links.addAll(folderAPI.getLinks(parent, true, false, user,false));
-					}else{
+					} else {
 						links.addAll(folderAPI.getLiveLinks(parent, user, false));
 					}
 					if(showArchived)

@@ -40,17 +40,17 @@ for (Field field : fields) {
 PermissionAPI perAPI = APILocator.getPermissionAPI();
 FolderAPI folderAPI = APILocator.getFolderAPI();
 
+// Retrieves the parent folder where the new files will be uploaded
 com.dotmarketing.portlets.folders.model.Folder parentFolder = (com.dotmarketing.portlets.folders.model.Folder) request.getAttribute("PARENT_FOLDER");
-//gets parent folder
 com.dotmarketing.portlets.folders.model.Folder folder = folderAPI.find(parentFolder.getInode(),user,false);
 
-//The host of the file
+// Retrieves the site of the parent folder
 Host host = folder != null?APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false):null;
 
 boolean hasOwnerRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole().getId());
 boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 boolean canUserWriteToFile = hasOwnerRole || hasAdminRole;
-boolean canUserPublishFile = hasOwnerRole || hasAdminRole;
+boolean canUserPublishFile = hasOwnerRole || hasAdminRole || perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
 
 boolean inFrame = false;
 if(request.getParameter(WebKeys.IN_FRAME)!=null){

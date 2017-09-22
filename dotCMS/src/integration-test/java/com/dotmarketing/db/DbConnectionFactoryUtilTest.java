@@ -7,8 +7,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 
 public class DbConnectionFactoryUtilTest {
     
@@ -40,7 +38,7 @@ public class DbConnectionFactoryUtilTest {
 
     	HibernateUtil.startTransaction();
         Assert.assertTrue( DbConnectionFactory.inTransaction());
-    	HibernateUtil.commitTransaction();
+    	HibernateUtil.closeAndCommitTransaction();
         Assert.assertFalse(DbConnectionFactory.inTransaction() );
 
     	DbConnectionFactory.getConnection();

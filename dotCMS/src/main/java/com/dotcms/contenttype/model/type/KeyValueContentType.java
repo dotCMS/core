@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotmarketing.util.Config;
 import java.util.List;
 
 import org.immutables.gson.Gson;
@@ -24,7 +25,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableKeyValueContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class KeyValueContentType extends ContentType {
+public abstract class KeyValueContentType extends ContentType implements MultilinguableFallback {
+
+	public static final String MULTILINGUABLE_FALLBACK_KEY = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
 	private static final long serialVersionUID = 1L;
 
@@ -51,11 +54,23 @@ public abstract class KeyValueContentType extends ContentType {
 		int order = 1;
 		Field keyField = ImmutableTextField.builder().name(KEY_VALUE_KEY_FIELD_NAME).dataType(DataTypes.TEXT)
 				.variable(KEY_VALUE_KEY_FIELD_VAR).required(Boolean.TRUE).listed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.sortOrder(order++).fixed(Boolean.TRUE).searchable(Boolean.TRUE).build();
+				.sortOrder(order++).fixed(Boolean.TRUE).searchable(Boolean.TRUE).unique(Boolean.TRUE).build();
 		Field valueField = ImmutableTextAreaField.builder().name(KEY_VALUE_VALUE_FIELD_NAME)
 				.dataType(DataTypes.LONG_TEXT).variable(KEY_VALUE_VALUE_FIELD_VAR).required(Boolean.TRUE)
 				.listed(Boolean.TRUE).fixed(Boolean.TRUE).searchable(Boolean.TRUE).sortOrder(order++).build();
 		return ImmutableList.of(keyField, valueField);
+	}
+
+	/**
+	 * Returns based on DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, if the system default language is
+	 * supported for the KeyValue False by default
+	 *
+	 * @return boolean
+	 */
+	@Override
+	public boolean fallback() {
+		return Config.getBooleanProperty
+				(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
 	}
 
 }

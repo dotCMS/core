@@ -35,7 +35,7 @@ public class Task04210CreateDefaultLanguageVariable implements StartupTask {
     private static final String LANGUAGE_VARIABLE_INODE = "f4d7c1b8-2c88-4071-abf1-a5328977b07d";
     private static final String LANGUAGE_VARIABLE_VARNAME = "Languagevariable";
     private static final String LANGUAGE_VARIABLE_NAME = "Language Variable";
-    private static final String LANGUAGE_VARIABLE_DESCRIPTION = "Language Variable as Content";
+    private static final String LANGUAGE_VARIABLE_DESCRIPTION = "Default Content Type for Language Variables";
     private static final String INSERT_INODE_QUERY = "INSERT INTO inode (inode, owner, idate, type) VALUES (?, ?, ?, ?)";
     private static final String INSERT_FIELD_QUERY = "INSERT INTO field "
                     + "(inode, structure_inode, field_name, field_type, field_relation_type, field_contentlet, "
@@ -134,7 +134,7 @@ public class Task04210CreateDefaultLanguageVariable implements StartupTask {
         Map<String, Object> keyField = setFieldElements(KeyValueContentType.KEY_VALUE_KEY_FIELD_NAME,
                         LegacyFieldTypes.TEXT.implClass().getName(), StringPool.BLANK, "text1", isRequired, isListed, isIndexed,
                         KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR, 1, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-                        StringPool.BLANK, isFixed, !isReadOnly, isSearchable, !isUnique);
+                        StringPool.BLANK, isFixed, !isReadOnly, isSearchable, isUnique);
         Map<String, Object> valuField = setFieldElements(KeyValueContentType.KEY_VALUE_VALUE_FIELD_NAME,
                         LegacyFieldTypes.TEXT_AREA.implClass().getName(), StringPool.BLANK, "text_area1", isRequired, isListed,
                         !isIndexed, KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR, 2, StringPool.BLANK, StringPool.BLANK,

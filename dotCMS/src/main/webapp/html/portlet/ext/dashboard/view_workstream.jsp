@@ -17,6 +17,7 @@
 <%@page import="java.util.Map"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%
 String hostId = request.getParameter("hostId");
 java.util.Map params = new java.util.HashMap();
@@ -247,7 +248,7 @@ try {
          	} 
 
     	}
-    	<% if(LicenseUtil.getLevel() > 199){ %>	
+    	<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
     	dojo.addOnLoad(function(){
        		DashboardAjax.getWorkStreams('<%=request.getParameter("hostId")%>','','','',20,1,'',dojo.hitch(this, fillWorkStreamTable));
     	});
@@ -257,7 +258,7 @@ try {
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-workstream") %>' />
-<% if(LicenseUtil.getLevel() > 199){ %>
+<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
 	
 <div class="portlet-main">
 	

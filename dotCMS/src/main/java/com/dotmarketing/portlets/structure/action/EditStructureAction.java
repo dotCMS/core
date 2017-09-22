@@ -27,7 +27,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -149,7 +148,7 @@ public class EditStructureAction extends DotPortletAction {
 			return;
 		}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		_loadForm(form, req, res);
 		if (returnToList) {
 			if (!UtilMethods.isSet(referer)) {

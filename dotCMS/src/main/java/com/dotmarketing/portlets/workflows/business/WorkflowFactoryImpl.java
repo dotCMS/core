@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -322,7 +323,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 
 			if(localTransaction){
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 
 		} catch (final Exception e) {
@@ -437,7 +438,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public WorkflowScheme findSchemeForStruct(String structId) throws DotDataException {
 
-		if (LicenseUtil.getLevel() < 200) {
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return this.findDefaultScheme();
 		}
 
@@ -920,7 +921,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException {
-		if (LicenseUtil.getLevel() < 200) {
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
 
@@ -937,7 +938,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException {
 
-		if (LicenseUtil.getLevel() < 200) {
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
 		try {
@@ -1182,8 +1183,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL(sql.RETRIEVE_LAST_STEP_ACTIONID);
 			db.addParam(taskId);
 			db.loadResult();
-			System.out.println("QUERY retrieveTaskId ESEGUITA");
-
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);
 		}

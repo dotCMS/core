@@ -1,17 +1,5 @@
 package com.dotmarketing.webdav;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Date;
-import java.util.Map;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FileItem;
@@ -28,16 +16,21 @@ import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * 

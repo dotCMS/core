@@ -1,15 +1,5 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -19,7 +9,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.util.FileUtil;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -157,7 +156,8 @@ public class StructureServices {
 	            String relativePath = "/working/" + structure.getInode() + "." + Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION");
 	            
 	            String absolutePath = ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + relativePath;
-	            java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(absolutePath)));
+	            java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(
+						Files.newOutputStream(Paths.get(absolutePath)));
 
 				//Specify a proper character encoding
                 OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());

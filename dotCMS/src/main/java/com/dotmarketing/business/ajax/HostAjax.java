@@ -111,8 +111,8 @@ public class HostAjax {
 
 		Collections.sort(hosts, new HostNameComparator());
 
-		for(Host h : hosts) {
-			if(h.isSystemHost())
+		for(Host host : hosts) {
+			if(host.isSystemHost())
 				continue;
 			boolean addToList = false;
 
@@ -121,17 +121,17 @@ public class HostAjax {
 					addToList = true;
 				else {
 					for(Field searchableField : searchableFields) {
-						String value = h.getStringProperty(searchableField.getVelocityVarName());
+						String value = host.getStringProperty(searchableField.getVelocityVarName());
 						if(value != null && value.toLowerCase().contains(filter.toLowerCase()))
 							addToList = true;
 					}
 				}
-			} else if (!h.isArchived()) {
+			} else if (!host.isArchived()) {
 				if(!UtilMethods.isSet(filter))
 					addToList = true;
 				else {
 					for(Field searchableField : searchableFields) {
-						String value = h.getStringProperty(searchableField.getVelocityVarName());
+						String value = host.getStringProperty(searchableField.getVelocityVarName());
 						if(value != null && value.toLowerCase().contains(filter.toLowerCase()))
 							addToList = true;
 					}
@@ -143,16 +143,16 @@ public class HostAjax {
 
 				boolean hostInSetup = false;
 				try {
-					hostInSetup = QuartzUtils.isJobSequentiallyScheduled("setup-host-" + h.getIdentifier(), "setup-host-group");
+					hostInSetup = QuartzUtils.isJobSequentiallyScheduled("setup-host-" + host.getIdentifier(), "setup-host-group");
 				} catch (SchedulerException e) {
 					Logger.error(HostAjax.class, e.getMessage(), e);
 				}
 
-				Map<String, Object> hostMap = h.getMap();
-				hostMap.put("userPermissions", permissionAPI.getPermissionIdsFromUser(h, user));
+				Map<String, Object> hostMap = host.getMap();
+				hostMap.put("userPermissions", permissionAPI.getPermissionIdsFromUser(host, user));
 				hostMap.put("hostInSetup", hostInSetup);
-				hostMap.put("archived", h.isArchived());
-				hostMap.put("live", h.isLive());
+				hostMap.put("archived", host.isArchived());
+				hostMap.put("live", host.isLive());
 				listOfHosts.add(hostMap);
 			}
 		}
@@ -281,7 +281,7 @@ public class HostAjax {
 			Logger.error(this, e.getMessage(), e);
 		}
 		try{
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}

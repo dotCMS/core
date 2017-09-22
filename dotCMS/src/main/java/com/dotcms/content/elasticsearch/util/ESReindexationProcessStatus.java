@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.util.Hashtable;
 import java.util.Map;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
@@ -15,7 +16,8 @@ import com.dotmarketing.exception.DotDataException;
 
 public class ESReindexationProcessStatus implements Serializable {
     private static final ESContentletIndexAPI indexAPI=new ESContentletIndexAPI();
-    
+
+
     public synchronized static boolean inFullReindexation () throws DotDataException {
         return inFullReindexation(DbConnectionFactory.getConnection());
     }
@@ -23,29 +25,21 @@ public class ESReindexationProcessStatus implements Serializable {
     public synchronized static boolean inFullReindexation (Connection conn) throws DotDataException {
         return indexAPI.isInFullReindex(conn);
     }
-    
+
+    @CloseDBIfOpened
     public synchronized static int getContentCountToIndex() throws DotDataException {
-        try {
-            DotConnect dc=new DotConnect();
-            dc.setSQL("select count(*) as cc from contentlet_version_info");
-            return Integer.parseInt(dc.loadObjectResults().get(0).get("cc").toString());
-        }
-        finally {
-            HibernateUtil.closeSession();
-        }
+
+        DotConnect dc=new DotConnect();
+        dc.setSQL("select count(*) as cc from contentlet_version_info");
+        return Integer.parseInt(dc.loadObjectResults().get(0).get("cc").toString());
     }
-    
+
+    @CloseDBIfOpened
     public synchronized static int getLastIndexationProgress () throws DotDataException {
-        try {
-            long left = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
-            int x = (int) (getContentCountToIndex()-left);
-            
-            return (x<0) ? 0 : x;
-        }
-        finally {
-            HibernateUtil.closeSession();
-        }
-        
+        long left = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+        int x = (int) (getContentCountToIndex()-left);
+
+        return (x<0) ? 0 : x;
     }
     
     public synchronized static String currentIndexPath() throws DotDataException {
@@ -57,23 +51,19 @@ public class ESReindexationProcessStatus implements Serializable {
         IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
         return "["+info.reindex_working+","+info.reindex_live+"]";
     }
-    
-    public synchronized static Map getProcessIndexationMap () throws DotDataException {
-        try {
-            Map<String, Object> theMap = new Hashtable<String, Object> ();
 
-            theMap.put("inFullReindexation", inFullReindexation());
-            // no reason to hit db if not needed
-            if(inFullReindexation()){
-	            theMap.put("contentCountToIndex", getContentCountToIndex());
-	            theMap.put("lastIndexationProgress", getLastIndexationProgress());
-	            theMap.put("currentIndexPath", currentIndexPath());
-	            theMap.put("newIndexPath", getNewIndexPath());
-            }
-            return theMap;
+    @CloseDBIfOpened
+    public synchronized static Map getProcessIndexationMap () throws DotDataException {
+        Map<String, Object> theMap = new Hashtable<String, Object> ();
+
+        theMap.put("inFullReindexation", inFullReindexation());
+        // no reason to hit db if not needed
+        if(inFullReindexation()){
+            theMap.put("contentCountToIndex", getContentCountToIndex());
+            theMap.put("lastIndexationProgress", getLastIndexationProgress());
+            theMap.put("currentIndexPath", currentIndexPath());
+            theMap.put("newIndexPath", getNewIndexPath());
         }
-        finally {
-            HibernateUtil.closeSession();
-        }
+        return theMap;
     }
 }

@@ -3,6 +3,7 @@ package com.dotmarketing.business.ajax;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -810,7 +811,7 @@ public class RoleAjax {
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
 			
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 		} catch (Exception e) {
 			Logger.error(this, "Error saving permissions for role " + roleId + " and folder/host id:" + folderHostId, e);
@@ -894,6 +895,7 @@ public class RoleAjax {
 		return portletTitles;
 	}
 
+	@CloseDBIfOpened
 	public Map<String, Object>  isPermissionableInheriting(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException{
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();

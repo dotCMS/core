@@ -69,7 +69,7 @@ public class Task00800CreateTemplateContainers implements StartupTask{
 		 Logger.error(this, e.getMessage(),e);
 		}
 		
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	public boolean forceRun() {

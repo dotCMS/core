@@ -1,5 +1,6 @@
 buildscript {
     repositories {
+        
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
         jcenter()
     }
@@ -7,16 +8,18 @@ buildscript {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
+        classpath 'nl.eveoh:gradle-aspectj:1.6'
     }
 }
 
 plugins {
-    id "net.ltgt.apt" version "0.9"
+    id "com.moowork.node" version "1.2.0"
 }
 
-plugins {
-    id "com.moowork.node" version "1.1.1"
+project.ext {
+    aspectjVersion = '1.8.10'
 }
+
 
 node {
     // Version of node to use.
@@ -34,6 +37,7 @@ configurations {
     compile
     buildlibs
     starter
+    profiler
     provided
     felix
 }
@@ -55,10 +59,12 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
+apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -97,24 +103,19 @@ idea {
         excludeDirs += file('.idea')
         excludeDirs += file('.gradle')
         //if you prefer different output folders
-        inheritOutputDirs = false
+        inheritOutputDirs = true
         outputDir = file('build/classes/main')
         testOutputDir = file('build/classes/test')
 
         //Extra source dirs
         sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/main/generated')
+        generatedSourceDirs += file('src/main/generated')
         excludeDirs += file('src/main/enterprise/build')
-
-        sourceDirs += file('src/main/license/src/main/java')
-        excludeDirs += file('src/main/license/build')
 
         //Extra test source dirs
         testSourceDirs += file('integration-test/java')
         testSourceDirs += file('functional-test/java')
-
-        //if you prefer different SDK than the one inherited from IDEA project
-        jdkName = '1.8'
-
     }
 }
 
@@ -134,7 +135,9 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170614', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170901', ext: 'zip'
+
+    profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -144,19 +147,23 @@ dependencies {
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.integrationTest.output
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+    }
 }
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
-def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
-def licenseSrcFolder    = file("$licenseProjectHome/src/main/java")
 
-if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+
+if (enterpriseSrcFolder.exists()){
 	sourceSets {
     	main {
         	java {
-            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
 	        }
     	}
 	}
@@ -236,23 +243,17 @@ war {
             java {
                 //We only want to compile using the submodules code when using the deployWarTomcatDev task
                 if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
-                    if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()) {
-                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
-                    } else {
-                        srcDirs = ["src/main/java"]
-                    }
-                } else if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDevEE')) {
                     if (enterpriseSrcFolder.exists()) {
-                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+                        srcDirs = ["src/main/java", "$generatedSourceFolder", "$enterpriseProjectHome/src/main/java"]
                     } else {
-                        srcDirs = ["src/main/java"]
+                        srcDirs = ["src/main/java", "$generatedSourceFolder"]
                     }
                 } else {
-                    srcDirs = ["src/main/java"]
+                    srcDirs = ["src/main/java", "$generatedSourceFolder"]
                 }
-
             }
         }
+
     }
 
     classpath = classpath - sourceSets.main.output.classesDir
@@ -277,6 +278,11 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
+    }
+
+    from (configurations.profiler) {
+        into profilerFolder
+        rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
 }
 war.finalizedBy 'undeployPlugins'
@@ -337,23 +343,14 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
 deployWarTomcatDist.group='dotCMS Util'
 deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
-//Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars.
+//Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
 //(Useful for development)
 task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 
 }
-deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
+deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
-deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)'
-
-//Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar.
-//(Useful for development)
-task deployWarTomcatDevEE (dependsOn: 'deployWarTomcat') {
-
-}
-deployWarTomcatDevEE.finalizedBy 'generateMoveCleanEnterpriseTomcat'
-deployWarTomcatDevEE.group='dotCMS Development'
-deployWarTomcatDevEE.description='Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar. (Useful for development)'
+deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
@@ -498,6 +495,46 @@ task customDistWar(type: War) {
 }
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
+
+compileAspect.dependsOn 'immutables'
+compileAspect {
+    println "\nCompiling Aspect..."
+}
+// This task defines if the immutables folder is generated, otherwise will generate it.
+task immutables() {
+    doLast {
+        println "\nChecking immutables..."
+        def generatedFolder = new File("$generatedSourceFolder");
+        if (!generatedFolder.exists()) {
+
+            println "Generating immutables...\n"
+
+            def gradleTask = "compileJava"
+            def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
+            artefactBuild.buildFile = project.file("immutables.gradle")
+            artefactBuild.tasks = [gradleTask]
+            artefactBuild.execute()
+        } else {
+            println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
+        }
+    }
+}
+immutables.group='dotCMS Development'
+immutables.description='Compiles the source code using the compileJava task and generate the immutables, those immutables will be located under the src/main/generated folder'
+
+task cleanImmutables() {
+    doLast {
+        println "\nDeleting immutables folder..."
+        delete "$generatedSourceFolder"
+    }
+}
+cleanImmutables.group='dotCMS Development'
+cleanImmutables.description='Deletes the folder where the immutables are generated'
+
+clean {
+    println "\nExecuting clean task..."
+}
+clean.finalizedBy 'cleanImmutables'
 
 // This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
@@ -714,25 +751,6 @@ restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, M
 
 undeployPlugins.finalizedBy 'deployConfig'
 
-//Generates a no obfuscated version of the license jar
-task generateMoveCleanLicenseTomcat(type: GradleBuild) {
-    buildFile = "$licenseProjectHome/build.gradle"
-    tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
-	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
-
-	doLast {
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "eelic-*", "eelic_*"
-		}
-		copy{
-			from "$licenseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "eelic_clean.jar"
-		}
-	}
-}
-generateMoveCleanLicenseTomcat.group='dotCMS Util'
-generateMoveCleanLicenseTomcat.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
 
 //Generates a no obfuscated version of the enterprise jar
 task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {

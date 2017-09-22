@@ -1,9 +1,14 @@
 package com.dotcms.services;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.util.VanityUrlUtil;
+import com.dotcms.system.event.local.model.Subscriber;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -14,8 +19,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+
 import java.util.List;
-import java.util.Set;
+
+import static com.dotcms.util.FunctionUtils.ifOrElse;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -26,10 +33,10 @@ import java.util.Set;
  */
 public class VanityUrlServices {
 
-    private static VanityUrlServices vanituUrlService;
-    private final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
-    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    private static VanityUrlServices vanityURLServices;
+    private final  VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
+    private final  ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private final  IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
     /**
      * Get the VanityUrlService singleton
@@ -37,14 +44,14 @@ public class VanityUrlServices {
      * @return a VanityUrlServices
      */
     public static VanityUrlServices getInstance() {
-        if (vanituUrlService == null) {
+        if (vanityURLServices == null) {
 
             synchronized (VanityUrlServices.class) {
-                vanituUrlService = new VanityUrlServices();
+                vanityURLServices = new VanityUrlServices();
             }
 
         }
-        return vanituUrlService;
+        return vanityURLServices;
     }
 
     private VanityUrlServices() {
@@ -56,8 +63,8 @@ public class VanityUrlServices {
      *
      * @param vanityUrl The vanity URL object
      */
-    public void invalidateVanityUrl(VanityUrl vanityUrl) {
-        invalidateVanityUrl((Contentlet) vanityUrl);
+    public void invalidateVanityUrl(final VanityUrl vanityUrl) {
+        this.invalidateVanityUrl((Contentlet) vanityUrl);
     }
 
     /**
@@ -65,8 +72,8 @@ public class VanityUrlServices {
      *
      * @param vanityUrl The vanity URL contentlet object
      */
-    public void invalidateVanityUrl(Contentlet vanityUrl) {
-        invalidateAllVanityUrlVersions(vanityUrl);
+    public void invalidateVanityUrl(final Contentlet vanityUrl) {
+        this.invalidateAllVanityUrlVersions(vanityUrl);
     }
 
     /**
@@ -74,18 +81,18 @@ public class VanityUrlServices {
      *
      * @param vanityUrl The vanity URL contentlet object
      */
-    public void invalidateAllVanityUrlVersions(Contentlet vanityUrl) {
+    public void invalidateAllVanityUrlVersions(final Contentlet vanityUrl) {
         try {
-            Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
+            final Identifier identifier = this.identifierAPI.find(vanityUrl.getIdentifier());
 
-            List<Contentlet> contentletVersions = contentletAPI
+            final List<Contentlet> contentletVersions = this.contentletAPI
                     .findAllVersions(identifier, APILocator.systemUser(), false);
 
             contentletVersions.stream()
                     .filter(con -> vanityUrl.getLanguageId() == con.getLanguageId())
                     .forEach(vanityURLCache::remove);
 
-            vanityURLCache.remove(vanityUrl);
+            this.vanityURLCache.remove(vanityUrl);
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(VanityUrlServices.class,
                     "Error trying to invalidate Vanity URL identifier:" + vanityUrl.getIdentifier(),
@@ -98,19 +105,7 @@ public class VanityUrlServices {
      */
     public void initializeVanityUrlCache() {
         APILocator.getVanityUrlAPI()
-                .getActiveVanityUrls(APILocator.systemUser());
-    }
-
-    /**
-     * Load in cache the active vanities Urls
-     * searching by site and languageId
-     *
-     * @param siteId The current site Id
-     * @param languageId The current language Id
-     */
-    public void initializeVanityUrlCache(String siteId, long languageId) {
-        APILocator.getVanityUrlAPI()
-                .getActiveVanityUrlsBySiteAndLanguage(siteId, languageId, APILocator.systemUser());
+                .initializeVanityURLsCache(APILocator.systemUser());
     }
 
     /**
@@ -118,8 +113,8 @@ public class VanityUrlServices {
      *
      * @param vanity The vanity URL to add
      */
-    public void updateCache(VanityUrl vanity) {
-        vanityURLCache.update(vanity);
+    public void updateCache(final VanityUrl vanity) {
+        this.vanityURLCache.update(vanity);
     }
 
     /**
@@ -127,32 +122,105 @@ public class VanityUrlServices {
      *
      * @param vanity The vanity URL to add
      */
-    public void updateCache(CachedVanityUrl vanity) {
-        vanityURLCache.update(vanity);
+    public void updateCache(final CachedVanityUrl vanity) {
+        this.vanityURLCache.update(vanity);
     }
 
     /**
-     * Get the cached vanity Url from the primary cache
+     * Add single {@link CachedVanityUrl} to the cache not affecting secondaries caches.
+     * @param vanityUrl {@link CachedVanityUrl}
+     */
+    public void addSingleCache(final VanityUrl vanityUrl) {
+
+        this.vanityURLCache.addSingle(vanityUrl);
+    }
+
+    /**
+     * Get the cached vanity Url from the primary cache for a given site and SYSTEM_HOST
      *
      * @param uri The current uri
      * @param siteId The current site Id
      * @param languageId The current language Id
      * @return CachedVanityUrl object
      */
-    public CachedVanityUrl getCachedVanityUrlByUri(String uri, String siteId, long languageId) {
-        return vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
-    }
+    public CachedVanityUrl getCachedVanityUrlByUri(final String uri,
+                                                   final String siteId,
+                                                   final long languageId) {
+
+        CachedVanityUrl foundVanity = null;
+
+        if (!Host.SYSTEM_HOST.equals(siteId)) {
+
+            //First search in cache with the given site
+            foundVanity =
+                    this.vanityURLCache
+                            .get(new CacheVanityKey(siteId, languageId, uri));
+        }
+
+        //If nothing found lets try with the SYSTEM_HOST
+        return (null == foundVanity)?
+                    this.vanityURLCache
+                        .get(new CacheVanityKey(Host.SYSTEM_HOST, languageId, uri)):
+                foundVanity;
+    } // getCachedVanityUrlByUri.
 
     /**
-     * Get the list of cached Vanity Url associated to a site
-     *
+     * Set the list of cached vanity urls list
      * @param siteId The current site Id
      * @param languageId The current language Id
-     * @return A set of CachedVanityUrl
+     * @param vanityUrlList List of {@link CachedVanityUrl}
      */
-    public Set<CachedVanityUrl> getVanityUrlBySiteAndLanguage(String siteId, long languageId) {
-        return CacheLocator.getVanityURLCache()
-                .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
-    }
+    public void setCachedVanityUrlList(final String siteId,
+                                       final long   languageId,
+                                       final List<CachedVanityUrl>   vanityUrlList) {
 
-}
+        this.vanityURLCache.setCachedVanityUrls(
+                new SecondaryCacheVanityKey(siteId, languageId), vanityUrlList);
+    } // setCachedVanityUrlList.
+
+    /**
+     * Set the list of cached vanity urls list
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @return List of {@link CachedVanityUrl}
+     */
+    public List<CachedVanityUrl> getCachedVanityUrlList(final String siteId,
+                                       final long   languageId) {
+
+        return this.vanityURLCache
+                .getCachedVanityUrls(new SecondaryCacheVanityKey(siteId,
+                                languageId));
+    } // setCachedVanityUrlList.
+
+    /**
+     * Subscriber that listen to events of type CommitListenerEvent, this event will be trigger when
+     * the commit listener related to this event is executed.
+     */
+    @Subscriber
+    @WrapInTransaction
+    public void onCommitListener(final CommitListenerEvent commitListenerEvent) {
+
+        final Contentlet contentlet =
+                commitListenerEvent.getContentlet();
+
+        try {
+
+            Logger.debug(this, "Invalidating the vanity: "
+                    + contentlet);
+
+            if (null != contentlet && contentlet.isVanityUrl()) {
+                ifOrElse(this.contentletAPI.isInodeIndexed
+                                (contentlet.getInode(), contentlet.isLive(), contentlet.isWorking()),
+                        () -> this.invalidateVanityUrl(contentlet),
+                        () -> Logger.error(this,
+                                "Unable to invalidate VanityURL in cache:" +
+                                        contentlet));
+            }
+        } catch (Exception e) {
+            Logger.error(this,
+                    String.format("Unable to invalidate VanityURL in cache [%s]",
+                            contentlet.getIdentifier()), e);
+        }
+    } // onCommitListener.
+
+} // E:O:F:VanityUrlServices.

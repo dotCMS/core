@@ -1,12 +1,6 @@
 package com.dotmarketing.viewtools;
 
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
+import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -22,6 +16,11 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 
 public class LanguageWebAPI implements ViewTool {
@@ -127,10 +126,9 @@ public class LanguageWebAPI implements ViewTool {
 
 	/**
 	 * Glosssary webapi
-	 * @param langId
 	 */
 	public String get(String key) {
-		String language = null;
+		String language;
 		language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
 		if (language == null)
 			language = String.valueOf(langAPI.getDefaultLanguage().getId());
@@ -168,12 +166,25 @@ public class LanguageWebAPI implements ViewTool {
 	public String get(String key, String languageId) {
 		String value = null;
 		try {
-			Language lang = langAPI.getLanguage(languageId);
-			value = langAPI.getStringKey(lang, key);
+
+			//Find the requested language
+			Language requestedLanguage;
+			try {
+				requestedLanguage = langAPI.getLanguage(languageId);
+			} catch (Exception e) {
+				Logger.error(this, String.format("Requested language [%s] not found.", languageId),
+						e);
+				requestedLanguage = null;
+			}
+
+			Language lang;
+			if (null != requestedLanguage) {
+				lang = LanguageUtil.getUserLanguage(requestedLanguage, request.getLocale());
+				value = langAPI.getStringKey(lang, key);
+			}
 
 			if ((!UtilMethods.isSet(value) || value.equals(key))
-					&& Config
-							.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE")) {
+					&& Config.getBooleanProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE)) {
 				lang = langAPI.getDefaultLanguage();
 				value = langAPI.getStringKey(lang, key);
 			}
@@ -181,7 +192,7 @@ public class LanguageWebAPI implements ViewTool {
 			Logger.error(this, e.toString());
 		}
 
-		return (value == null) ? "" : value;
+		return (value == null) ? key : value;
 
 	}
 

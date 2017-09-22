@@ -1,12 +1,11 @@
 package com.dotmarketing.common.business.journal;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
+
+import java.sql.Connection;
+import java.util.List;
 
 /**
  * @author Jason Tesser

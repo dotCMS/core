@@ -1,15 +1,5 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import java.awt.Dimension;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,6 +13,14 @@ import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.awt.Dimension;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
@@ -146,8 +144,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
-	public InputStream getFileInputStream() throws FileNotFoundException {
-		return new BufferedInputStream(new FileInputStream(getFileAsset()));
+	public InputStream getInputStream() throws IOException {
+		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
 	}
 
 	public File getFileAsset() {

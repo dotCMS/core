@@ -1,10 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotmarketing.exception.DotDataException;
+
 import java.io.Serializable;
 import java.sql.Connection;
-
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotmarketing.exception.DotDataException;
 
 /**
  * An API to store and retrieve information about current

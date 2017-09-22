@@ -10,13 +10,11 @@ public interface ServerAPI {
 
 	public void saveServer(Server server) throws DotDataException;
 
-	public Server getServer(String serverId);
+	public Server getServer(String serverId) throws DotDataException;
 
-	public void createServerUptime(String serverId) throws DotDataException;
+	public void createServerUptime() throws DotDataException;
 
 	public String readServerId();
-
-	public  void writeServerIdToDisk(String serverId) throws IOException;
 
 	public void updateHeartbeat() throws DotDataException;
 
@@ -24,7 +22,7 @@ public interface ServerAPI {
 
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException;
 
-	public  void writeHeartBeatToDisk(String serverId) throws IOException;
+	public  void writeHeartBeatToDisk() throws IOException;
 
 	public void updateServer(Server server) throws DotDataException;
 
@@ -39,7 +37,7 @@ public interface ServerAPI {
 	 * @param serverId Server identifier
 	 * @throws DotDataException
 	 */
-	void removeServerFromClusterTable(String serverId) throws DotDataException,IOException;
+	void removeServerFromClusterTable(String serverId) throws DotDataException;
 
 	/**
 	 * Get the list of inactive servers
@@ -51,7 +49,10 @@ public interface ServerAPI {
 	/**
 	 *
 	 * @return the server where the API call is made.
+	 * @throws DotDataException 
      */
-    Server getCurrentServer();
+    Server getCurrentServer() throws DotDataException;
+
+    Server getOrCreateServer(String serverId) throws DotDataException;
 
 }

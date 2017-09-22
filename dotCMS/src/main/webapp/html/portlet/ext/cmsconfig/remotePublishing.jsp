@@ -10,9 +10,10 @@
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
-<%	if( LicenseUtil.getLevel()<300){ %>
+<%	if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
 <%return;} %>
 
@@ -835,15 +836,21 @@ function deleteEnvPushHistory(envId) {
         handleAs : "json",
         sync: false,
         load : function(data) {
-            var confirmDialog  =new dijit.Dialog({
-                id: "deleteHistory",
-                class: "noDijitDialogTitleBar",
-                content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
-            });
+            var confirmDialog = dijit.byId("deleteHistory");
+
+            if(confirmDialog===null || confirmDialog === undefined) {
+                confirmDialog = new dijit.Dialog({
+                    id: "deleteHistory",
+                    class: "noDijitDialogTitleBar",
+                    content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+                });
+            }
+
             confirmDialog.show();
         },
         error : function(error) {
-            targetNode.innerHTML = "An unexpected error occurred: " + error;
+            console.log("this is the error:" + error);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
 

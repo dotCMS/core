@@ -285,7 +285,6 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest request,
 										  @QueryParam(PaginationUtil.FILTER)   final String filter,
-										  @QueryParam(PaginationUtil.ARCHIVED) final boolean showArchived,
 										  @QueryParam(PaginationUtil.PAGE) final int page,
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
@@ -299,8 +298,7 @@ public class ContentTypeResource implements Serializable {
 		final User user = initData.getUser();
 
 		try {
-			response = this.paginationUtil.getPage(request, user, filter, showArchived, page, perPage, orderBy,
-					direction);
+			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction);
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

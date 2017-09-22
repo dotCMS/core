@@ -1,13 +1,9 @@
 package com.dotcms.cmis;
 
-import java.io.FileInputStream;
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.enterprise.cmis.server.CMISManager;
+import com.dotcms.enterprise.cmis.server.CMISService;
+import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.PropertyIds;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.data.ObjectInFolderList;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.data.ObjectList;
@@ -22,21 +18,20 @@ import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.CallCon
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.enterprise.cmis.server.CMISManager;
-import com.dotcms.enterprise.cmis.server.CMISService;
-import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.math.BigInteger;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class CMISBaseTest extends IntegrationTestBase {
 
@@ -106,7 +101,7 @@ public class CMISBaseTest extends IntegrationTestBase {
         contentStream.setFileName(fileName + new java.util.Date().getTime());
         contentStream.setLength(BigInteger.valueOf(resourceFile.length()));
         contentStream.setMimeType(APILocator.getFileAssetAPI().getMimeType(fileName));
-        contentStream.setStream(new FileInputStream(resourceFile));
+        contentStream.setStream(Files.newInputStream(resourceFile.toPath()));
                 
         PropertiesImpl result = new PropertiesImpl();
         result.addProperty(new PropertyIdImpl(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_DOCUMENT.value()));
