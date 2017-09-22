@@ -192,7 +192,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.info(this, "Running Contentlet Reindex");
 						HibernateUtil.startTransaction();
 						conAPI.reindex();
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 					}catch(DotReindexStateException dre){

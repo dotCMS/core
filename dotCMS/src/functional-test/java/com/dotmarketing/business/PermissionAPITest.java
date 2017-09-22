@@ -58,7 +58,7 @@ public class PermissionAPITest {
     private static PermissionAPI perm;
     private static Host host;
     private static User sysuser;
-    private static Template tt;
+    private static Template template;
     private static DwrAuthenticationUtil dwrAuthentication = null;
 
     @BeforeClass
@@ -72,19 +72,22 @@ public class PermissionAPITest {
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, sysuser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
+        	host = APILocator.getHostAPI().findByName("testhost.demo.dotcms.com", sysuser, false);
         	Logger.error(PermissionAPITest.class, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
         }
  
 
         perm.permissionIndividually(host.getParentPermissionable(), host, sysuser, false);
 
-        tt=new Template();
-        tt.setTitle("testtemplate");
-        tt.setBody("<html><head></head><body>en empty template just for test</body></html>");
-        APILocator.getTemplateAPI().saveTemplate(tt, host, sysuser, false);
+        template =new Template();
+        template.setTitle("testtemplate");
+        template.setBody("<html><head></head><body>en empty template just for test</body></html>");
+        APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
         // User authentication through DWR is required for RoleAjax class
 		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
 		sessionAttrs.put("USER_ID", "dotcms.org.1");
@@ -98,11 +101,13 @@ public class PermissionAPITest {
         	HibernateUtil.startTransaction();
             APILocator.getHostAPI().archive(host, sysuser, false);
             APILocator.getHostAPI().delete(host, sysuser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         	dwrAuthentication.shutdownWebContext();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(PermissionAPITest.class, e.getMessage());
+        }finally {
+            HibernateUtil.closeSessionSilently();
         }
         
     }
@@ -406,7 +411,7 @@ public class PermissionAPITest {
             	HibernateUtil.startTransaction();
                 APILocator.getHostAPI().archive(hh, sysuser, false);
                 APILocator.getHostAPI().delete(hh, sysuser, false);
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
             	Logger.error(PermissionAPITest.class, e.getMessage());
@@ -473,7 +478,7 @@ public class PermissionAPITest {
             	HibernateUtil.startTransaction();
                 APILocator.getHostAPI().archive(hh, sysuser, false);
                 APILocator.getHostAPI().delete(hh, sysuser, false);
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
             	Logger.error(PermissionAPITest.class, e.getMessage());
@@ -489,20 +494,25 @@ public class PermissionAPITest {
     @Test
     public void issue886() throws Exception {
         Host hh = new Host();
-        hh.setHostname("issue886.demo.dotcms.com");
-        hh=APILocator.getHostAPI().save(hh, sysuser, false);
         try {
-            Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
-            Folder b = APILocator.getFolderAPI().createFolders("/a/b/", hh, sysuser, false);
-            Folder c = APILocator.getFolderAPI().createFolders("/a/b/c/", hh, sysuser, false);
+            hh.setHostname("issue886.demo.dotcms.com");
+            hh = APILocator.getHostAPI().save(hh, sysuser, false);
+        } catch(Exception e) {
+            hh = APILocator.getHostAPI().findByName("issue886.demo.dotcms.com", sysuser, false);
+        }
 
-            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), a, sysuser, false);
+        try {
+            Folder folderA = APILocator.getFolderAPI().createFolders("/ax/", hh, sysuser, false);
+            Folder b = APILocator.getFolderAPI().createFolders("/ax/b/", hh, sysuser, false);
+            Folder c = APILocator.getFolderAPI().createFolders("/ax/b/c/", hh, sysuser, false);
+
+            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser, false);
 
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
             
-            HTMLPageAsset pa = new HTMLPageDataGen(a, tt).nextPersisted();
-            HTMLPageAsset pb = new HTMLPageDataGen(b, tt).nextPersisted();
-            HTMLPageAsset pc = new HTMLPageDataGen(c, tt).nextPersisted();
+            HTMLPageAsset pageAssetFolderA = new HTMLPageDataGen(folderA, template).nextPersisted();
+            HTMLPageAsset pb = new HTMLPageDataGen(b, template).nextPersisted();
+            HTMLPageAsset pc = new HTMLPageDataGen(c, template).nextPersisted();
 
             java.io.File fdata=java.io.File.createTempFile("tmpfile", "data.txt");
             FileWriter fw=new FileWriter(fdata);
@@ -520,7 +530,7 @@ public class PermissionAPITest {
             FileUtils.copyFile(fdata, cadata);
             ca.setBinary(FileAssetAPI.BINARY_FIELD, cadata);
             ca.setHost(hh.getIdentifier());
-            ca.setFolder(a.getInode());
+            ca.setFolder(folderA.getInode());
             ca=APILocator.getContentletAPI().checkin(ca, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(ca.getInode());
 
@@ -549,25 +559,25 @@ public class PermissionAPITest {
             APILocator.getContentletAPI().isInodeIndexed(cc.getInode());
 
             // get them into cache
-            perm.getPermissions(a);   perm.getPermissions(ca);
+            perm.getPermissions(folderA);   perm.getPermissions(ca);
             perm.getPermissions(b);   perm.getPermissions(cb);
             perm.getPermissions(c);   perm.getPermissions(cc);
-            perm.getPermissions(pa);
+            perm.getPermissions(pageAssetFolderA);
             perm.getPermissions(pb);
             perm.getPermissions(pc);
 
             // permission individually on folder a
-            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(folderA), folderA, sysuser, false);
 
             // everybody should be inheriting from a
-            assertTrue(perm.findParentPermissionable(pa).equals(a));
-            assertTrue(perm.findParentPermissionable(ca).equals(a));
-            assertTrue(perm.findParentPermissionable(b).equals(a));
-            assertTrue(perm.findParentPermissionable(pb).equals(a));
-            assertTrue(perm.findParentPermissionable(cb).equals(a));
-            assertTrue(perm.findParentPermissionable(c).equals(a));
-            assertTrue(perm.findParentPermissionable(pc).equals(a));
-            assertTrue(perm.findParentPermissionable(cc).equals(a));
+            assertTrue(perm.findParentPermissionable(pageAssetFolderA).equals(folderA));
+            assertTrue(perm.findParentPermissionable(ca).equals(folderA));
+            assertTrue(perm.findParentPermissionable(b).equals(folderA));
+            assertTrue(perm.findParentPermissionable(pb).equals(folderA));
+            assertTrue(perm.findParentPermissionable(cb).equals(folderA));
+            assertTrue(perm.findParentPermissionable(c).equals(folderA));
+            assertTrue(perm.findParentPermissionable(pc).equals(folderA));
+            assertTrue(perm.findParentPermissionable(cc).equals(folderA));
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
@@ -718,7 +728,7 @@ public class PermissionAPITest {
              	HibernateUtil.startTransaction();
                  APILocator.getHostAPI().archive(hh, sysuser, false);
                  APILocator.getHostAPI().delete(hh, sysuser, false);
-             	HibernateUtil.commitTransaction();
+             	HibernateUtil.closeAndCommitTransaction();
              }catch(Exception e){
              	HibernateUtil.rollbackTransaction();
              	Logger.error(PermissionAPITest.class, e.getMessage());

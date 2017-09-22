@@ -129,7 +129,7 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Check the working and live versions of containers for inconsistencies and fix them");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();				
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class,

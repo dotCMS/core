@@ -121,7 +121,7 @@ public class FixTask00008CheckTreeInconsistencies  implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Check the tree entries that doesn't have a child o parent in the inode table and deleted them");
 				HibernateUtil.save(Audit);				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class, "Ending fixAssetsInconsistencies");

@@ -1,5 +1,19 @@
 package com.dotcms.publisher.pusher;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -60,18 +74,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -95,6 +97,7 @@ public class PushPublisher extends Publisher {
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private Client restClient;
 
     private static final String PROTOCOL_HTTP  = "http";
     private static final String PROTOCOL_HTTPS = "https";
@@ -153,7 +156,7 @@ public class PushPublisher extends Publisher {
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = RestClientBuilder.getClient();
+			Client client = getRestClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
@@ -418,5 +421,18 @@ public class PushPublisher extends Publisher {
 		protocols.add(PROTOCOL_HTTPS);
 		return protocols;
 	}
+
+    /**
+     * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
+     * retrieve their information.
+     * 
+     * @return The REST {@link Client}.
+     */
+    private Client getRestClient() {
+        if (null == this.restClient) {
+            this.restClient = RestClientBuilder.newClient();
+        }
+        return this.restClient;
+    }
 
 }

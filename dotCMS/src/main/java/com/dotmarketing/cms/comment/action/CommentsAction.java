@@ -19,7 +19,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -330,7 +329,7 @@ public class CommentsAction extends SecureAction {
 			String userName = commentsForm.getName();
 			String userEmail = commentsForm.getEmail();
 			String userComment = commentsForm.getComment();
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			if(!conAPI.isInodeIndexed(contentletComment.getInode())){
 				Logger.error(this, "Problem indexing comment content");
 			}

@@ -401,7 +401,7 @@ public class EditContainerAction extends DotPortletAction implements
 		} else
 			Logger.debug(this, "Unspecified Action");
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		_setupEditContainerPage(reqImpl, res, config, form, user);
 		setForward(req, "portlet.ext.containers.edit_container");

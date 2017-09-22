@@ -190,7 +190,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 */
 	public void buildFakeAjaxResponse(ActionRequest req, ActionResponse res) throws IOException, LanguageException{
 	  try {
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
       } catch (DotHibernateException e) {
         try {
           HibernateUtil.rollbackTransaction();
@@ -395,7 +395,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}catch (DotContentletValidationException ce) {
 					((ContentletForm)form).setHasvalidationerrors(true);
 					SessionMessages.add(req, "message.contentlet.save.error");
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					reindexContentlets(contentToIndexAfterCommit,cmd);
 					//This is called to preserve the values submitted in the form
 					//in case of a validation error
@@ -405,7 +405,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}catch (Exception ce) {
 					SessionMessages.add(req, "message.contentlet.save.error");
 					_loadForm(req, res, config, form, user, false);
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					reindexContentlets(contentToIndexAfterCommit,cmd);
 					setForward(req, "portlet.ext.contentlet.edit_contentlet");
 					return;
@@ -770,7 +770,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		_loadForm(req, res, config, form, user, validate);
 
 		reindexContentlets(contentToIndexAfterCommit,cmd);
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		if(UtilMethods.isSet(req.getAttribute("inodeToWaitOn"))){
 			if(!conAPI.isInodeIndexed(req.getAttribute("inodeToWaitOn").toString())){
@@ -2259,7 +2259,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							try{
 								contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
 								conAPI.unpublish(contentlet, user, false);
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 								ActivityLogger.logInfo(this.getClass(), "Unublish contentlet action", " User " + user.getFirstName() + " Unpublished content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
 							}catch (DotContentletStateException e) {
@@ -2414,7 +2414,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								conAPI.publish(contentlet, user, false);
 								ActivityLogger.logInfo(this.getClass(), "Publish contentlet action", " User " + user.getFirstName() + " Published content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
 							}catch(DotDataException de){
@@ -2548,7 +2548,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								conAPI.archive(contentlet, user, false);
 								ActivityLogger.logInfo(this.getClass(), "Archive contentlet action", " User " + user.getFirstName() + " Archived content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
 								contentToIndexAfterCommit.remove(contentlet);
@@ -2801,7 +2801,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								conAPI.unarchive(contentlet, user, false);
 								ActivityLogger.logInfo(this.getClass(), "Unarchive contentlet action", " User " + user.getFirstName() + " Unarchived content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
 							}catch(DotDataException de){
@@ -3232,7 +3232,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						HibernateUtil.startTransaction();
 						try{
 							conAPI.unlock(contentlet, user, false);
-							HibernateUtil.commitTransaction();
+							HibernateUtil.closeAndCommitTransaction();
 						}catch (DotStateException e) {
 							notLocked = true;
 							HibernateUtil.rollbackTransaction();

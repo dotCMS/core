@@ -122,7 +122,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 				Audit.setRecordsAltered(total);
 				Audit.setAction("task 20: Fixed DeleteOrphanedIdentifiers");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

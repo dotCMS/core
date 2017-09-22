@@ -139,7 +139,7 @@ public class IntegrityResource {
     // https://github.com/dotCMS/core/issues/9067
 	private Response postWithEndpointState(String endpointId, String url, MediaType mediaType, Entity<?> entity) {
 
-		final Builder requestBuilder = RestClientBuilder.getClient().target(url).request(mediaType);
+		final Builder requestBuilder = RestClientBuilder.newClient().target(url).request(mediaType);
 
 		applyEndpointState(endpointId, requestBuilder);
 
@@ -1099,7 +1099,7 @@ public class IntegrityResource {
             } else  if(whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
 
-                final Client client = RestClientBuilder.getClient();
+                final Client client = RestClientBuilder.newClient();
 
                 PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
                 String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;

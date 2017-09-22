@@ -43,7 +43,7 @@ public class EditUserAdditionalInfoAction extends DotPortletAction {
 			{
 				_saveUserAdittionalInfo(req,res,config,userAdditionalInfoForm,user);
 			}
-			new HibernateUtil().commitTransaction();
+			new HibernateUtil().closeAndCommitTransaction();
 		}
 		catch(Exception ex)
 		{

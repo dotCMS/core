@@ -2,13 +2,13 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.OnePerContentType;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
@@ -35,38 +35,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
-
-	@Test
-	public void testDifferentContentTypes() throws Exception {
-
-		ContentType content = contentTypeFactory.find(Constants.CONTENT);
-		ContentType news = contentTypeFactory.find(Constants.NEWS);
-		ContentType widget = contentTypeFactory.find(Constants.WIDGET);
-		ContentType form = contentTypeFactory.find(Constants.FORM);
-		ContentType fileAsset = contentTypeFactory.find(Constants.FILEASSET);
-		ContentType htmlPage = contentTypeFactory.find(Constants.HTMLPAGE);
-		ContentType persona = contentTypeFactory.find(Constants.PERSONA);
-
-		// Test all the types
-		assertThat("ContentType is type Content", content.baseType() == BaseContentType.CONTENT);
-		assertThat("ContentType is type Content", content instanceof ImmutableSimpleContentType);
-		assertThat("News is not simple content", !news.equals(content));
-
-		assertThat("ContentType is type FILEASSET", fileAsset.baseType() == BaseContentType.FILEASSET);
-		assertThat("ContentType is type FILEASSET", fileAsset instanceof ImmutableFileAssetContentType);
-
-		assertThat("ContentType is type WIDGET", widget.baseType() == BaseContentType.WIDGET);
-		assertThat("ContentType is type WIDGET", widget instanceof ImmutableWidgetContentType);
-
-		assertThat("ContentType is type FORM", form.baseType() == BaseContentType.FORM);
-		assertThat("ContentType is type FORM", form instanceof ImmutableFormContentType);
-
-		assertThat("ContentType is type PERSONA", persona.baseType() == BaseContentType.PERSONA);
-		assertThat("ContentType is type PERSONA", persona instanceof ImmutablePersonaContentType);
-
-		assertThat("ContentType is type HTMLPAGE", htmlPage.baseType() == BaseContentType.HTMLPAGE);
-		assertThat("ContentType is type HTMLPAGE", htmlPage instanceof ImmutablePageContentType);
-	}
 
 	@Test
 	public void testFindMethodEquals() throws Exception {
@@ -161,31 +129,6 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 
 	}
-
-	/*
-	@Test
-	public void testLegacyTransform() throws Exception {
-
-		Structure st = new Structure();
-		List<ContentType> types = contentTypeApi.findAll("name");
-		List<ContentType> oldTypes = new StructureTransformer(getCrappyStructures()).asList();
-
-		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
-
-		for (int i = 0; i < types.size(); i++) {
-			try {
-				assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
-			} catch (Throwable t) {
-				System.out.println("Old and New Contentyypes are NOT the same");
-				System.out.println(types.get(i));
-				System.out.println(oldTypes.get(i));
-				throw t;
-			}
-		}
-
-		assertThat("findAll sort by Name has same size as find all", contentTypeApi.findAll("name").size() == types.size());
-	}
-	*/
 
 	@Test
 	public void testAddingContentTypes() throws Exception {
@@ -283,12 +226,13 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		for (BaseContentType baseType : BaseContentType.values()) {
 			if (baseType == BaseContentType.ANY)
 				continue;
+
 			int countAll = contentTypeApi.count();
 			int runs = 10;
 			int countBaseType = contentTypeApi.count(null, baseType);
 
 			for (int i = 0; i < runs; i++) {
-				insert(baseType, null);
+				insert(baseType);
 				Thread.sleep(1);
 			}
 
@@ -298,9 +242,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertThat("counts are working", countAll2 > countBaseType2);
 			assertThat("counts are working", countBaseType == countBaseType2 - runs);
 
-
 			for (int i = 0; i < runs; i++) {
-				insert(baseType, UUID.randomUUID().toString());
+				insert(baseType);
 				Thread.sleep(1);
 			}
 			int countAll3 = contentTypeApi.count();
@@ -337,27 +280,6 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		newVar = contentTypeApi.suggestVelocityVar(tryVar);
 		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
 	}
-
-/*
-	@Test
-	public void validateFields() throws DotDataException {
-		for (BaseContentType baseType : BaseContentType.values()) {
-			if (baseType == BaseContentType.ANY)
-				continue;
-			List<ContentType> types = api.search(null, baseType, "name", 100, 0);
-			for (ContentType type : types) {
-				Exception e = null;
-				try{
-					contentTypeApi.validateFields(type);
-				}
-				catch(Exception ex){
-					assertThat(ex.getMessage(), false);
-				}
-			}
-		}
-	}
-*/
-
 
 	private void testDeleting() throws Exception {
 		List<ContentType> types =
@@ -421,71 +343,6 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 		assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
 	}
-
-	private void insert(BaseContentType baseType, String inode) throws Exception {
-
-		long i = System.currentTimeMillis();
-
-
-		ContentTypeBuilder builder = ContentTypeBuilder.builder(baseType.immutableClass()).description("description" + i)
-				.expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-				.name(baseType.name() + "Testing" + i).owner("owner").variable("velocityVarNameTesting" + i);
-
-
-		ContentType type = builder.build();
-		type = contentTypeApi.save(type);
-
-		ContentType type2 = contentTypeApi.find(type.id());
-		try {
-			assertThat("Type saved correctly", type2.equals(type));
-		} catch (Throwable t) {
-			System.out.println("Old and New Contentyypes are NOT the same");
-			System.out.println(type);
-			System.out.println(type2);
-			throw t;
-		}
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
-
-		fields = sortListByVariable(fields);
-		baseTypeFields = sortListByVariable(baseTypeFields);
-
-		try {
-			assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
-		} catch (Throwable e) {
-			System.out.println(e.getMessage());
-			System.out.println("Saved  db: " + fields);
-			System.out.println("not saved: " + baseTypeFields);
-			System.out.println("\n");
-			throw e;
-
-		}
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = null;
-			try {
-				baseField = baseTypeFields.get(j);
-				assertThat("field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
-				assertThat("fields variable is not correct:", field.variable().equals(baseField.variable()));
-				assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
-				assertThat("field name is  not correct:", field.name().equals(baseField.name()));
-				assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
-			} catch (Throwable e) {
-				System.out.println(e.getMessage());
-				System.out.println("Saved  db: " + field);
-				System.out.println("not saved: " + baseField);
-				System.out.println("\n");
-				throw e;
-
-			}
-		}
-	}
-
-	/*
-	private static List<Structure> getCrappyStructures() {
-		return InodeFactory.getInodesOfClass(Structure.class, "name");
-	}
-	*/
 
 	private void addFields(ContentType type) throws Exception {
 

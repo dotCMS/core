@@ -323,7 +323,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 
 			if(localTransaction){
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 
 		} catch (final Exception e) {
@@ -1183,8 +1183,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL(sql.RETRIEVE_LAST_STEP_ACTIONID);
 			db.addParam(taskId);
 			db.loadResult();
-			System.out.println("QUERY retrieveTaskId ESEGUITA");
-
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);
 		}

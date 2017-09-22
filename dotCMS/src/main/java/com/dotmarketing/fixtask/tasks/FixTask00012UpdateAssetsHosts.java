@@ -175,7 +175,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 				Audit.setRecordsAltered(counter);
 				Audit.setAction("task 12: Update Assets Hosts");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 				MaintenanceUtil.deleteStaticFileStore();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

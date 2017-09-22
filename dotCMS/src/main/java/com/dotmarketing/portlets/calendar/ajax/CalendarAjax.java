@@ -41,7 +41,6 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -268,7 +267,7 @@ public class CalendarAjax {
 			contAPI.publish(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}
 		
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
 		}
@@ -300,7 +299,7 @@ public class CalendarAjax {
 				callbackData.put("eventUnpublishErrors", eventUnpublishErrors);								
 			}				
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
 		}
@@ -322,7 +321,7 @@ public class CalendarAjax {
 			contAPI.archive(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
 		}
@@ -358,7 +357,7 @@ public class CalendarAjax {
 		contAPI.archive(ev, user, respectFrontendRoles);
 		
 		
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
 		}
@@ -401,7 +400,7 @@ public class CalendarAjax {
 			
 		}catch(Exception e){Logger.error(this, e.getMessage());}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
 		}
@@ -456,7 +455,7 @@ public class CalendarAjax {
 			}				
 		}
 		if(eventDeleteErrors.size()<=0){
-		   HibernateUtil.commitTransaction();
+		   HibernateUtil.closeAndCommitTransaction();
 		}
 
         //At this point we already deleted the content from the index on the delete call
@@ -907,7 +906,7 @@ public class CalendarAjax {
 		
 		boolean savingRecurrence = false;
 		callbackData.put("referer", referer);	
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		if(UtilMethods.isSet(newInode) && !savingRecurrence){
 			if(!contAPI.isInodeIndexed(newInode)){
 				Logger.error(this, "Timed out while waiting for index to return");
@@ -1018,7 +1017,7 @@ public class CalendarAjax {
 						cAPI.setUser(user);
 						cAPI.setRespectFrontendRoles(respectFrontendRoles);
 						eventMap.put("commentsCount", cAPI.getCommentsCount(newEvent.getInode()));
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 					}catch(Exception e){
 						HibernateUtil.rollbackTransaction();
 						disconnectEventErrors.add(e.getLocalizedMessage());

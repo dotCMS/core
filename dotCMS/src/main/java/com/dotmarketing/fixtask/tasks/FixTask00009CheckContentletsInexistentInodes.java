@@ -97,7 +97,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Delete contentlets that points to inexistent inodes");
 				HibernateUtil.save(Audit);				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue.add( FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class,

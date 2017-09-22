@@ -203,7 +203,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 				List<FileAsset> fileAssets = fileAssetAPI.fromContentlets(fileContents);
 				Map<String,Object> tempResults = AssetsSearchAndReplace(searchText, replaceText, fileAssets, generateNewAssetVersion, publish, user);
 				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				processed= processed+(Integer)tempResults.get("processed");
 				matches= matches+(Integer)tempResults.get("matches");
 				errors= errors+(Integer)tempResults.get("errors");
@@ -262,7 +262,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 				
 			Map<String,Object> tempResults = AssetsSearchAndReplace(searchText, replaceText, assetsList, generateNewAssetVersion, publish, user);
 				
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			processed= processed+(Integer)tempResults.get("processed");
 			matches= matches+(Integer)tempResults.get("matches");
 			errors= errors+(Integer)tempResults.get("errors");

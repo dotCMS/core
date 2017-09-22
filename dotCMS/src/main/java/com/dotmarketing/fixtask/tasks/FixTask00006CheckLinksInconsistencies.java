@@ -132,7 +132,7 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Check the working and live versions of links for inconsistencies and fix them");
 				HibernateUtil.save(Audit);				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue .add(FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class,

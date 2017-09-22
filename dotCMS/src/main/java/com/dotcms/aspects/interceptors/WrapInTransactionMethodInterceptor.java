@@ -20,7 +20,7 @@ public class WrapInTransactionMethodInterceptor implements MethodInterceptor<Obj
     @Override
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
-        return LocalTransaction.wrapReturn(delegate::proceed);
+        return LocalTransaction.wrapReturnWithListeners(delegate::proceed);
     } // invoke.
 
 } // E:O:F:LogTimeMethodInterceptor.

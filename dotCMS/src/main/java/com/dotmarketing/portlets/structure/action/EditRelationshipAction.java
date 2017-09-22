@@ -98,7 +98,7 @@ public class EditRelationshipAction extends DotPortletAction {
 				setForward(req, "portlet.ext.structure.view_relationships");
 			return;
 		} 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		
 		//otherwise edit field
 		_loadForm(form, req, res);

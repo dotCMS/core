@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.test;
 
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -727,25 +728,26 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 			Assert.assertEquals(0, fields.size());
 
 			Contentlet contentletFromDB = CacheLocator.getContentletCache().get(contentlet.getInode());
-			assertNull(contentletFromDB.get(checkboxVariable));
-			assertNull(contentletFromDB.get(dateVariable));
-			assertNull(contentletFromDB.get(timeVariable));
-			assertNull(contentletFromDB.get(dateTimeVariable));
-			assertNull(contentletFromDB.get(radioVariable));
-			assertNull(contentletFromDB.get(selectTextVariable));
-			assertNull(contentletFromDB.get(selectBooleanVariable));
-			assertNull(contentletFromDB.get(selectDecimalVariable));
-			assertNull(contentletFromDB.get(selectWholeNumberVariable));
-			assertNull(contentletFromDB.get(multiSelectVariable));
-			assertNull(contentletFromDB.get(textAreaVariable));
-			assertNull(contentletFromDB.get(textVariable));
-			assertNull(contentletFromDB.get(textDecimalVariable));
-			assertNull(contentletFromDB.get(textWholeNumberVariable));
-			assertNull(contentletFromDB.get(wysiwygVariable));
-			assertNull(contentletFromDB.get(fileVariable));
-			assertNull(contentletFromDB.get(imageVariable));
-			assertNull(contentletFromDB.get(customVariable));
-			assertNull(contentletFromDB.get(keyValueVariable));
+
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(checkboxVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(dateVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(timeVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(dateTimeVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(radioVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectTextVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectBooleanVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectDecimalVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(selectWholeNumberVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(multiSelectVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(textAreaVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(textVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(textDecimalVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(textWholeNumberVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(wysiwygVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(fileVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(imageVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(customVariable));
+			assertTrue(null == contentletFromDB || null == contentletFromDB.get(keyValueVariable));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

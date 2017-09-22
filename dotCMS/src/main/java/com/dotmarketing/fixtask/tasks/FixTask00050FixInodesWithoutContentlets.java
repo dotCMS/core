@@ -122,7 +122,7 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 				Audit.setRecordsAltered(counter);
 				Audit.setAction("task 50: Fixed FixInodesWithoutContentlets");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

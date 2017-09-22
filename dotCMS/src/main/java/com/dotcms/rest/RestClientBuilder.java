@@ -19,36 +19,26 @@ import com.dotmarketing.util.Config;
  */
 public class RestClientBuilder {
 
-    private RestClientBuilder() {}
+    /**
+     * Creates a new instance of the REST client used to access the RESTful
+     * services available in the dotCMS back-end.
+     *
+     * @return The REST {@link Client} object.
+     */
+    public static Client newClient() {
+        TrustFactory tFactory = new TrustFactory();
 
-    private static class RestClientLazyHolder {
-        static final Client REST_CLIENT = newClient();
-
-        /**
-         * Creates a new instance of the REST client used to access the RESTful
-         * services available in the dotCMS back-end.
-         *
-         * @return The REST {@link Client} object.
-         */
-        private static Client newClient() {
-            TrustFactory tFactory = new TrustFactory();
-
-            Client client;
-            String truststorePath = Config.getStringProperty("TRUSTSTORE_PATH", "");
-            if (truststorePath != null && !truststorePath.trim().equals("")) {
-                client = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext())
-                        .hostnameVerifier(tFactory.getHostnameVerifier())
-                        .build();
-            } else {
-                client = ClientBuilder.newClient();
-            }
-            client.register(MultiPartFeature.class);
-            return client;
+        Client client;
+        String truststorePath = Config.getStringProperty("TRUSTSTORE_PATH", "");
+        if (truststorePath != null && !truststorePath.trim().equals("")) {
+            client = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext())
+                    .hostnameVerifier(tFactory.getHostnameVerifier())
+                    .build();
+        } else {
+            client = ClientBuilder.newClient();
         }
-    }
-
-    public static Client getClient() {
-        return RestClientLazyHolder.REST_CLIENT;
+        client.register(MultiPartFeature.class);
+        return client;
     }
 
 }

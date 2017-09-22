@@ -6,6 +6,17 @@
 
 package com.dotmarketing.portlets.report.action;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -299,7 +310,7 @@ public class EditReportAction extends DotPortletAction {
 							return;
 						}
 					}
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					HashMap params = new HashMap();
 					SessionMessages.add(req, "message",
 							"message.report.upload.success");

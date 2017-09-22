@@ -340,7 +340,7 @@ public class RemotePublishAjaxActionTest {
         try{
         	HibernateUtil.startTransaction();
         	newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -534,7 +534,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
     		//APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -864,7 +864,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -927,7 +927,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
     		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());

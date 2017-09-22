@@ -114,7 +114,7 @@ public class CMSMaintenanceFactory {
 			}
 			finally {
 				try {
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 				} catch (DotHibernateException e) {
 					Logger.error(CMSMaintenanceFactory.class, e.getMessage());
 					try {

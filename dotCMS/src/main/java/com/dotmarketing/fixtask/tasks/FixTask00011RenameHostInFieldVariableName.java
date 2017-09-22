@@ -66,7 +66,7 @@ public class FixTask00011RenameHostInFieldVariableName implements FixTask {
 				Audit.setRecordsAltered(results.size());
 				Audit.setAction("task 11: Renaming structure fields with variable name 'host'");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 				MaintenanceUtil.deleteStaticFileStore();
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

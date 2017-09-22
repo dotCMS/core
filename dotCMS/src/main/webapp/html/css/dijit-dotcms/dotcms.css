@@ -10576,6 +10576,22 @@ a.category_higlighted, a.tag_higlighted {
   }
 }
 
+.import-preview {
+  margin: 50px auto;
+  border: solid 1px transparent;
+  border-color: #ECEDEE;
+  border-radius: 4px;
+}
+.import-preview .import-preview__heading {
+  background-color: #ECEDEE;
+  border-color: #ECEDEE;
+  padding: 10px 16px;
+  border-bottom: 1px solid #ECEDEE;
+}
+.import-preview .import-preview__body {
+  padding: 16px;
+}
+
 .content-type__edit-field-form {
   width: 550px;
 }
@@ -11375,6 +11391,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .history .history__status {
   overflow: hidden;
+}
+
+.dijitTabPaneWrapper .rules__tab-container .dijitContentPane {
+  padding: 0;
 }
 
 #iFrameWrapper {

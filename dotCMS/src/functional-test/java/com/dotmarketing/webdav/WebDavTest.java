@@ -210,7 +210,7 @@ public class WebDavTest {
 	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
                 PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
 	        
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 	    }
 	    catch(Exception ex) {
 	        HibernateUtil.rollbackTransaction();

@@ -37,8 +37,6 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 /**
@@ -119,7 +117,7 @@ public class IdentifierDateJob implements Job {
 					}
 				}
 				//Commit 500 (limit) transaction
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				
 				//Next 500
 				limit += limit;

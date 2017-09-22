@@ -53,7 +53,7 @@ public class HostAPITest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
@@ -87,7 +87,7 @@ public class HostAPITest {
         	HibernateUtil.startTransaction();
         	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
@@ -129,7 +129,7 @@ public class HostAPITest {
             try {
                 HibernateUtil.startTransaction();
                 host = APILocator.getHostAPI().save(host, user, false);
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
                 HibernateUtil.rollbackTransaction();
                 Logger.error(HostAPITest.class, e.getMessage());
@@ -179,7 +179,7 @@ public class HostAPITest {
                 HibernateUtil.startTransaction();
                 APILocator.getHostAPI().archive(host, user, false);
                 APILocator.getHostAPI().delete(host, user, false);
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
                 HibernateUtil.rollbackTransaction();
                 Logger.error(HostAPITest.class, e.getMessage());
@@ -213,7 +213,7 @@ public class HostAPITest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
@@ -242,7 +242,7 @@ public class HostAPITest {
         	APILocator.getHostAPI().unpublish(host, user, false);
         	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());

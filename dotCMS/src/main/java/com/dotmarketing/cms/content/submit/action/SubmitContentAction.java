@@ -17,7 +17,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
@@ -416,7 +415,7 @@ public class SubmitContentAction extends SecureAction{
 			message.add(Globals.MESSAGE_KEY, new ActionMessage("message.contentlet.save"));
 			session.setAttribute(Globals.MESSAGE_KEY, message);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			if(!APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode())){
 				Logger.error(this, "Unable to index contentlet");
 			}

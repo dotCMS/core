@@ -76,7 +76,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				dc.loadResult();
 
 				if(localt) {
-				    HibernateUtil.commitTransaction();
+				    HibernateUtil.closeAndCommitTransaction();
 				}
 			}catch(Exception e){
 			    if(localt) {
@@ -132,7 +132,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.loadResult();
 
 			if(local) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(local) {
@@ -167,7 +167,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.loadResult();
 
 			if(local) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(local) {

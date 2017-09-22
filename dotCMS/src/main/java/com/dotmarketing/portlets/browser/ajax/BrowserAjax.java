@@ -792,7 +792,7 @@ public class BrowserAjax {
             HibernateUtil.rollbackTransaction();
             return e.getLocalizedMessage();
         } finally {
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }
 
         return successString;
@@ -844,7 +844,7 @@ public class BrowserAjax {
     	} catch ( Exception e ) {
     		HibernateUtil.rollbackTransaction();
     	} finally {
-    		HibernateUtil.commitTransaction();
+    		HibernateUtil.closeAndCommitTransaction();
     	}
 
     	return result;
@@ -1463,7 +1463,7 @@ public class BrowserAjax {
         		Folder parent = (Folder)folderAPI.findParentFolder(asset, user, false);
         		ret = WebAssetFactory.unPublishAsset(asset, user.getUserId(), parent);
         	}
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
     	}catch(Exception e){
     		ret = false;
     		HibernateUtil.rollbackTransaction();

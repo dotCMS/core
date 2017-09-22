@@ -30,7 +30,7 @@ public class RoleResourceTest {
 
 	@Before
 	public void init() {
-		client = RestClientBuilder.getClient();
+		client = RestClientBuilder.newClient();
 		request = ServletTestRunner.localRequest.get();
 		serverName = request.getServerName();
 		serverPort = request.getServerPort();

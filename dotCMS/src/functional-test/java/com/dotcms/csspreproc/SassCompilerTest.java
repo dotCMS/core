@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -30,7 +32,7 @@ public class SassCompilerTest {
     @Before
     public void prepare() throws Exception {
         HttpServletRequest req=ServletTestRunner.localRequest.get();
-        baseURL = "http://"+req.getServerName()+":"+req.getServerPort();
+        baseURL = "http://"+req.getServerName()+((UtilMethods.isSet(req.getServerPort())?":"+req.getServerPort(): StringPool.BLANK));
     }
 
     @Ignore
@@ -140,18 +142,44 @@ public class SassCompilerTest {
         try{
         	HibernateUtil.startTransaction();
             host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
-        	Logger.error(LessCompilerTest.class, e.getMessage());
+        	Logger.error(SassCompilerTest.class, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
         }
 
-        APILocator.getHostAPI().publish(host, user, false);
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().publish(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(SassCompilerTest.class, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
+        }
+
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
-                
+
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().publish(defaultHost, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(SassCompilerTest.class, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
+        }
+
+        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
+
+
         Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
         Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
         Folder f3=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/d", defaultHost, user, false);
@@ -182,7 +210,6 @@ public class SassCompilerTest {
                                            "@import \"../d/file4\"; \r\n"+
                                            "someclass { width: ($file1 + $file2 + $file3 + $file4); } \r\n");
         Contentlet fileAsset5=newFile(file5,f2,defaultHost);
-        
         
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");

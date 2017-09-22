@@ -90,8 +90,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
-import static com.dotcms.util.FunctionUtils.*;
-
 /**
  * This class handles the communication between the view and the back-end
  * service that returns information to the user regarding Contentlets in dotCMS.
@@ -1495,7 +1493,7 @@ public class ContentletAjax {
 			}
 
 			// everything Ok? then commit
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 			// clean up tmp_binary
 			// https://github.com/dotCMS/dotCMS/issues/2921
@@ -1972,7 +1970,7 @@ public class ContentletAjax {
 					SessionMessages.clear(req.getSession());
 					HibernateUtil.rollbackTransaction();
 				}else{
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));
 				}
 			}
