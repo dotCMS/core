@@ -234,9 +234,9 @@ public class SassCompilerTest {
             HibernateUtil.closeSessionSilently();
         }
 
-        Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
-        Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
-        Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
+        Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/ab", defaultHost, user, false);
+        Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/ab/b/c", defaultHost, user, false);
+        Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/ab/b", defaultHost, user, false);
         
         File file1=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fa.scss");
         FileUtils.writeStringToFile(file1, ".a { color:green; } ");
@@ -250,7 +250,7 @@ public class SassCompilerTest {
         FileUtils.writeStringToFile(file3, "@import \"../fab\"; .abc { color:white; }");
         Contentlet fileAsset3=newFile(file3, fabc, defaultHost);
         
-        URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/fabc.css");
+        URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/ab/b/c/fabc.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         
         Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.substring(0,response.lastIndexOf("}")+1).trim());
