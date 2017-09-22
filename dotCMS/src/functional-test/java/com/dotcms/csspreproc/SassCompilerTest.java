@@ -223,7 +223,17 @@ public class SassCompilerTest {
         final String runId=UUIDGenerator.generateUuid();
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().publish(defaultHost, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(SassCompilerTest.class, e.getMessage());
+        } finally {
+            HibernateUtil.closeSessionSilently();
+        }
+
         Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
         Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
         Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
