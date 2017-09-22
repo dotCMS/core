@@ -84,7 +84,7 @@ public class LoginEditModeServlet extends HttpServlet {
 		request.getRequestDispatcher("/c").forward(request,response);
 	}
 
-    private String findAssetURI(Contentlet cont) throws Exception {
+    private String findAssetURI(Contentlet cont) throws DotDataException {
         if(UtilMethods.isSet(cont.getMap().get("URL_MAP_FOR_CONTENT"))) {
             return cont.getMap().get("URL_MAP_FOR_CONTENT").toString();
         } else {
