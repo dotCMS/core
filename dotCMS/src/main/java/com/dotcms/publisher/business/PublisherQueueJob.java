@@ -32,6 +32,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.rest.RestClientBuilder;
@@ -82,6 +83,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 
+	private Client restClient;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
@@ -417,9 +419,17 @@ public class PublisherQueueJob implements StatefulJob {
         }
 	}
 
+    /**
+     * Obtains the bundle history that has been created in the specified end-point.
+     * 
+     * @param bundleAudit - The {@link PublishAuditStatus} object containing bundle data.
+     * @param targetEndpoint - The {@link PublishingEndPoint} whose bundle history will be
+     *        retrieved.
+     * @return The {@link PublishAuditHistory} of the bundle in the specified end-point.
+     */
 	private PublishAuditHistory getRemoteHistoryFromEndpoint(final  PublishAuditStatus bundleAudit,
 															 final PublishingEndPoint targetEndpoint) {
-		final WebTarget webTarget = RestClientBuilder.newClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
+	    final WebTarget webTarget = getRestClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
 		return PublishAuditHistory.getObjectFromString(
                 webTarget
                         .path("get")
@@ -527,5 +537,18 @@ public class PublisherQueueJob implements StatefulJob {
 			return countGroupFailed;
 		}
 	}
+
+    /**
+     * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
+     * retrieve their information.
+     * 
+     * @return The REST {@link Client}.
+     */
+    private Client getRestClient() {
+        if (null == this.restClient) {
+            this.restClient = RestClientBuilder.newClient();
+        }
+        return this.restClient;
+    }
 
 }
