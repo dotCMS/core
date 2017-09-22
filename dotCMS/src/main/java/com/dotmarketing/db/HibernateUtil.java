@@ -889,7 +889,46 @@ public class HibernateUtil {
 		}
 	}
 
-	public static boolean commitTransaction()  throws DotHibernateException{
+	/**
+	 * This just commit the transaction and process the listeners.
+	 * @throws DotHibernateException
+	 */
+	public static void commitTransaction()  throws DotHibernateException{
+
+		try{
+			// if there is nothing to close
+			if (sessionHolder.get() == null){
+				return;
+			}
+			Session session = getSession();
+
+			if (session != null) {
+				session.flush();
+				if (!session.connection().getAutoCommit()) {
+					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
+					session.connection().commit();
+					session.connection().setAutoCommit(true);
+					if(commitListeners.get().size()>0) {
+						finalizeCommitListeners();
+					}
+				}
+			}
+		}catch (Exception e) {
+			Logger.error(HibernateUtil.class, e.getMessage(), e);
+			throw new DotHibernateException("Unable to close Hibernate Session ", e);
+		}
+		finally {
+			commitListeners.get().clear();
+			rollbackListeners.get().clear();
+		}
+	}
+
+	/**
+	 * This commit and close the current session, connection
+	 * @return
+	 * @throws DotHibernateException
+	 */
+	public static boolean closeAndCommitTransaction()  throws DotHibernateException{
 		closeSession();
 		return true;
 	}

@@ -127,7 +127,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 
 			Logger.info(Task03540UpdateTagInodesReferences.class, "END of the INSERT into structure_inode: " + structureInode);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}
 
 		Logger.info(this, "Finishing Task03540UpdateTagInodesReferences");

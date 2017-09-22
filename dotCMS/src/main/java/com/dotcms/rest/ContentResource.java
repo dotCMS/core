@@ -877,7 +877,7 @@ public class ContentResource {
 			if(live)
 				APILocator.getContentletAPI().publish(contentlet, init.getUser(), allowFrontEndSaving);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			clean = true;
 		} catch ( DotContentletStateException e ) {
 

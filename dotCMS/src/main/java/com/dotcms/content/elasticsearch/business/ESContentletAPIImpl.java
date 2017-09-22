@@ -443,7 +443,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletSystemEventUtil.pushPublishEvent(contentlet);
 
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
         }catch(Exception e){
@@ -869,7 +869,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(localTransaction){
                 try {
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 } finally {
                     HibernateUtil.closeSession();
                 }
@@ -2055,7 +2055,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(indexAPI.isInFullReindex()){
                 try{
                     ReindexThread.getInstance().unlockCluster();
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 }catch (Exception e) {
                     try {
                         HibernateUtil.rollbackTransaction();
@@ -2080,7 +2080,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Make sure all the flags are on and the thread is ready
             ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -2440,7 +2440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if(localTransaction){
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
         } catch(Exception exception){
             Logger.debug(this.getClass(), "Failed to relate content. : " + exception.toString(), exception);

@@ -369,7 +369,7 @@ public class ContentImportThread implements Job{
 							importLine(csvreader.getValues(), st, preview, user, lineNumber);
 
 							if (!preview && (lineNumber % commitGranularity == 0)) {
-								HibernateUtil.commitTransaction();
+								HibernateUtil.closeAndCommitTransaction();
 								HibernateUtil.startTransaction();
 							}
 
@@ -386,7 +386,7 @@ public class ContentImportThread implements Job{
 						}
 					}
 
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 
 					myOutput.println(lines + " lines of data were read.");
 					if (errors > 0)

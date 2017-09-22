@@ -10,7 +10,6 @@ import java.util.Map;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AddedToQueueEvent;
-import org.mapdb.DB;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
@@ -281,7 +280,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                   }
 
                   if(localTransaction) {
-                      HibernateUtil.commitTransaction();
+                      HibernateUtil.closeAndCommitTransaction();
                   }
               } catch ( Exception e ) {
                   if(localTransaction) {
@@ -704,7 +703,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction){
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -758,7 +757,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 			if(localTransaction) {
@@ -799,7 +798,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -836,7 +835,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {

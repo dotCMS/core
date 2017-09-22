@@ -789,7 +789,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
                         HibernateUtil.rollbackTransaction();
                         continue;
                     }
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 } else {
                     try {
                         dc.executeStatement(query, conn);

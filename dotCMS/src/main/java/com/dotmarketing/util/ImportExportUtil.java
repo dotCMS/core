@@ -828,7 +828,7 @@ public class ImportExportUtil {
         deleteTempFiles();
 
         try {
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (DotHibernateException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -1412,7 +1412,7 @@ public class ImportExportUtil {
                                     Long myId = new Long(Long.parseLong(prop));
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
                                 }
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             } else {
 
                                 Logger.debug(this, "Saving the object: " +
@@ -1420,7 +1420,7 @@ public class ImportExportUtil {
 
 								HibernateUtil.saveWithPrimaryKey(obj, prop);
 								
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             }
                         } catch (Exception e) {
                             try {
@@ -1431,7 +1431,7 @@ public class ImportExportUtil {
                                         obj.getClass() + ", with the id: " + prop);
 
                                 HibernateUtil.saveWithPrimaryKey(obj, prop);
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             }catch (Exception ex) {
                                 Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                 Logger.warn(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage());
@@ -1475,7 +1475,7 @@ public class ImportExportUtil {
 
                                 HibernateUtil.startTransaction();
                                 HibernateUtil.save(obj);
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             } catch (DotHibernateException e) {
                                 Logger.error(this,e.getMessage(),e);
                                 try {
@@ -1486,7 +1486,7 @@ public class ImportExportUtil {
                                             obj.getClass() + ", with the values: " + obj);
 
                                     HibernateUtil.save(obj);
-                                    HibernateUtil.commitTransaction();
+                                    HibernateUtil.closeAndCommitTransaction();
                                 }catch (Exception ex) {
                                     Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                     Logger.info(this, "Problematic object: "+obj);

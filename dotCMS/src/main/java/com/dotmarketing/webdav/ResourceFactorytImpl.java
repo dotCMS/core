@@ -223,7 +223,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			return null;
 		}finally{
 			try {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			} catch (DotHibernateException e) {
 				Logger.error(ResourceFactorytImpl.class,e.getMessage(),e);
 				try {

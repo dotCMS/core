@@ -21,7 +21,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
@@ -100,7 +99,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Delete contentlets that points to inexistent inodes");
 				HibernateUtil.save(Audit);				
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				returnValue.add( FixAssetsProcessStatus.getFixAssetsMap());
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(CMSMaintenanceFactory.class,

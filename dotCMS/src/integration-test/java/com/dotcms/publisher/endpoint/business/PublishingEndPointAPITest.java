@@ -184,7 +184,7 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 			throw (e);
 		}
 		
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	@Test

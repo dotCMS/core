@@ -279,7 +279,7 @@ public class URLMapTest {
 			spanishContent = contentletAPI.checkin( spanishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 			if(!(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
 							contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
@@ -335,7 +335,7 @@ public class URLMapTest {
         	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
         	if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
 
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(URLMapTest.class, e.getMessage());

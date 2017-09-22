@@ -77,7 +77,7 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 					try {
 						HibernateUtil.startTransaction();
 						MaintenanceUtil.deleteOrphanContentTypeFields();
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						// Set the number of records that were fixed
 						FixAssetsProcessStatus.setErrorsFixed(modifiedData.size());
 					} catch (Exception e) {
@@ -94,7 +94,7 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 					Audit.setRecordsAltered(total);
 					Audit.setAction("task 80: DeleteOrphanedContentTypeFields");
 					HibernateUtil.save(Audit);
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					MaintenanceUtil.flushCache();
 					returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
 					Logger.debug(

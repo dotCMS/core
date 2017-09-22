@@ -177,7 +177,12 @@ public class Role implements Serializable,Comparable<Role> {
 		
 		return (this.getId().equalsIgnoreCase(castOther.getId()));
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return this.id.hashCode();
+	}
+
 	public Map<String, Object> toMap() {
 		Map<String, Object> roleMap = new HashMap<String, Object>();
 		roleMap.put("DBFQN", this.DBFQN);
@@ -194,5 +199,23 @@ public class Role implements Serializable,Comparable<Role> {
 		roleMap.put("system", this.system);
 		return roleMap;
 	}
-	
+
+
+	@Override
+	public String toString() {
+		return "Role{" +
+				"id='" + id + '\'' +
+				", name='" + name + '\'' +
+				", description='" + description + '\'' +
+				", roleKey='" + roleKey + '\'' +
+				", DBFQN='" + DBFQN + '\'' +
+				", FQN='" + FQN + '\'' +
+				", parent='" + parent + '\'' +
+				", editPermissions=" + editPermissions +
+				", editUsers=" + editUsers +
+				", editLayouts=" + editLayouts +
+				", locked=" + locked +
+				", system=" + system +
+				'}';
+	}
 }

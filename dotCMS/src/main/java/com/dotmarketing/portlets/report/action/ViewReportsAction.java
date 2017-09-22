@@ -251,6 +251,6 @@ public class ViewReportsAction extends DotPortletAction {
 			String formType = report.getReportName();			
 			WebFormFactory.removeWebFormsByType(formType);
 		}
-	    HibernateUtil.commitTransaction();
+	    HibernateUtil.closeAndCommitTransaction();
 	}
 }

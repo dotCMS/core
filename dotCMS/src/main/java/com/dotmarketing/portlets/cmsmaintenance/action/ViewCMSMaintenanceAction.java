@@ -69,7 +69,6 @@ import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -195,7 +194,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.info(this, "Running Contentlet Reindex");
 						HibernateUtil.startTransaction();
 						conAPI.reindex();
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 					}catch(DotReindexStateException dre){

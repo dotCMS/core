@@ -205,7 +205,7 @@ public class BundlePublisher extends Publisher {
 
                 }
 
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
                 bundleSuccess = false;
                 try {
@@ -242,7 +242,7 @@ public class BundlePublisher extends Publisher {
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
                 auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
                 Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
             }

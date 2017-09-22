@@ -72,7 +72,7 @@ public class EscalationThread extends DotStatefulJob {
                         }
                     }
                 }
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
 
             } catch (Exception ex) {
                 Logger.warn(this, ex.getMessage(), ex);
