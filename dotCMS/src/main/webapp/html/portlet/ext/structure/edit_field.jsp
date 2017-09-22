@@ -446,7 +446,17 @@
 		return store.getValue(item, "label");
 	}
 
-	var myStore = new dojo.data.ItemFileReadStore({data: myData});
+    var myDataClone = JSON.parse(JSON.stringify(myData));
+    myDataClone.items.sort(function(fieldType1, fieldType2){
+        return fieldType1.displayOrder - fieldType2.displayOrder;
+    }).map(function(fieldType) {
+        if (fieldType.groupLast) {
+            fieldType.label = '<div style="border-bottom: gray 1px solid">' + fieldType.label + '</div>';
+        }
+        return fieldType;
+    });
+
+    var myStore = new dojo.data.ItemFileReadStore({data: myDataClone});
 
 
 	dojo.addOnLoad(
