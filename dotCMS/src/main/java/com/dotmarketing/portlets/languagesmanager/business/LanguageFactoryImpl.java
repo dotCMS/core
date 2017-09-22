@@ -20,13 +20,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
+
+import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -498,35 +493,31 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				for (String k : toDeleteKeys) {
 					keys.remove(k);
 				}
-				
-			
+
 				for(Map.Entry<String,String> newKey : keys.entrySet()) {
 					tempFileWriter.println(newKey.getKey() + "=" + newKey.getValue());
 				}
 			} else {
 				Logger.warn(this, "Error creating properties temp file: '" + tempFilePath + "' already exists.");
 			}
-		} catch (FileNotFoundException e) {
-			throw e;
 		} catch (IOException e) {
 			throw e;
 		} finally {
 			if(fileReader != null)
 				fileReader.close();
-			if(fileReader != null) {
+			if(tempFileWriter != null) {
 				tempFileWriter.flush();
 				tempFileWriter.close();
 			}
 
 		}
 		
-		FileChannel fileToChannel = null;
-		FileChannel fileFromChannel = null;
+		try(InputStream tempFileInputStream = Files.newInputStream(tempFile.toPath());
+			OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
 
-		try {
 			if (file.exists() && tempFile.exists()) {
-                final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(tempFile.toPath()));
-                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(file.toPath()));
+                final ReadableByteChannel inputChannel = Channels.newChannel(tempFileInputStream);
+                final WritableByteChannel outputChannel = Channels.newChannel(fileOutputStream);
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 inputChannel.close();
                 outputChannel.close();
@@ -536,20 +527,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				if (!tempFile.exists())
 					Logger.warn(this, "Error: properties file: '" + tempFilePath + "' doesn't exists.");
 			}
-		} catch (FileNotFoundException e) {
-			throw e;
 		} catch (IOException e) {
 			throw e;
-		} finally {
-			if(fileFromChannel != null)
-				fileFromChannel.close();
-			if(fileToChannel != null) {
-				fileToChannel.force(true);
-				fileToChannel.close();
-			}
 		}
 
- 		tempFile.delete();
+		tempFile.delete();
 	}
 
 	@Override
