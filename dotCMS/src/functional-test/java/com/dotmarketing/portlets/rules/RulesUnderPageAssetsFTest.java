@@ -66,8 +66,8 @@ public class RulesUnderPageAssetsFTest{
             HibernateUtil.closeSessionSilently();
         }
 
-        APILocator.getContentletAPI().isInodeIndexed(sysUser.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(sysUser.getInode(),true);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
 
         request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();
