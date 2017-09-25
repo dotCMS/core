@@ -4358,8 +4358,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     buffy.append(" +(working:true live:true)");
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
-                        buffy.append(" +languageId:" + contentlet.getLanguageId());
                     }
+
+                    buffy.append(" +languageId:" + contentlet.getLanguageId());
+
                     buffy.append(" +" + contentlet.getStructure().getVelocityVarName() + "." + field.getVelocityVarName() + ":");
                     buffy.append( (field.getDataType().contains(DataTypes.INTEGER.toString()) || field.getDataType().contains(DataTypes.FLOAT.toString())) ? escape(getFieldValue(contentlet, field).toString()) : "\""+ escape(getFieldValue(contentlet, field).toString()) + "\"" );
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
@@ -4378,16 +4380,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Map<String, Object> cMap = c.getMap();
                             Object obj = cMap.get(field.getVelocityVarName());
 
-                            if (((field.getDataType().contains(DataTypes.INTEGER.toString())
-                                    || field.getDataType().contains(DataTypes.FLOAT.toString()))
-                                    && (Long) obj == (Long) o) || ((String) obj)
-                                    .equalsIgnoreCase(((String) o))) {
+                            boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
+                                    || field.getDataType().contains(DataTypes.FLOAT.toString());
+
+                            if ( ( isDataTypeNumber && o.equals(obj) ) ||
+                                    ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) o)) ) )  {
                                 unique = false;
                                 break;
                             }
 
                         }
-
                         if(!unique) {
                             if(UtilMethods.isSet(contentlet.getIdentifier())){
                                 Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
