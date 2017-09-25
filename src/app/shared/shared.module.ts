@@ -20,9 +20,10 @@ import { MessageKeysModule } from '../view/directives/message-keys/message-keys.
 import { RippleEffectModule } from '../view/directives/ripple/ripple-effect.module';
 import { MdInputTextModule } from '../view/directives/md-inputtext/md-input-text.module';
 
-// Common Components
+// Common Modules
 import { DotDropdownModule } from '../view/components/_common/dropdown-component/dot-dropdown.module';
 import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
+import { MainNavigationModule } from '../view/components/main-navigation/main-navigation.module';
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import { GravatarModule } from '../view/components/_common/gravatar/gravatar.mod
         RippleEffectModule,
         MdInputTextModule,
         DotDropdownModule,
-        GravatarModule
+        GravatarModule,
+        MainNavigationModule
     ],
     exports: [
         CommonModule,
@@ -41,9 +43,10 @@ import { GravatarModule } from '../view/components/_common/gravatar/gravatar.mod
         MessageKeysModule,
         RippleEffectModule,
         MdInputTextModule,
-        // Common Components
+        // Common Modules
         DotDropdownModule,
-        GravatarModule
+        GravatarModule,
+        MainNavigationModule
     ],
 })
 export class SharedModule {

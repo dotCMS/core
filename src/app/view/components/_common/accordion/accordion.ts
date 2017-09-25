@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 
 @Component({
 
@@ -48,7 +48,7 @@ export class Accordion {
         </div>
     `
 })
-export class AccordionGroup {
+export class AccordionGroup implements AfterViewInit{
     @Input('open') _isOpen = false;
     @Input() heading: string;
     @Input() icon: string;

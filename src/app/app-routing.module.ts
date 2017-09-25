@@ -9,20 +9,7 @@ import { LogOutContainer } from './view/components/login/login-component/log-out
 import { environment } from '../environments/environment';
 import { IFramePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
 
-const angularComponents: any[] = [
-    {
-        path: 'content-types-angular',
-        loadChildren: 'app/portlets/content-types/content-types.module#ContentTypesModule'
-    },
-    {
-        path: 'rules',
-        loadChildren: 'app/portlets/rule-engine/rule-engine.module#RuleEngineModule',
-    },
-    {
-        path: 'dot-browser',
-        loadChildren: 'app/portlets/dot-browser/dot-browser.module#DotBrowserModule'
-    },
-];
+
 
 const mainComponentChildren = [
     {
@@ -45,26 +32,24 @@ const mainComponentChildren = [
     }
 ];
 
-/*TODO: Should we remove 'angularChildren' since is not used anywhere ? */
-const angularChildren: any[] = [
+const angularComponents: any[] = [
     {
-        path: '',
-        pathMatch: 'full',
-        redirectTo: environment.production ? 'c/home' : 'c/pl'
+        path: 'content-types-angular',
+        loadChildren: 'app/portlets/content-types/content-types.module#ContentTypesModule'
     },
     {
-        path: 'pl',
-        loadChildren: 'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
+        path: 'rules',
+        loadChildren: 'app/portlets/rule-engine/rule-engine.module#RuleEngineModule',
+        canActivate: [RoutingPrivateAuthService]
     },
     {
-        path: 'notLicensed',
-        loadChildren: 'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
+        path: 'dot-browser',
+        loadChildren: 'app/portlets/dot-browser/dot-browser.module#DotBrowserModule'
     },
     {
-        canActivate: [RoutingPrivateAuthService],
-        component: IFramePortletLegacyComponent,
-        path: 'c/:id',
-    },
+        path: 'c',
+        children: mainComponentChildren,
+    }
 ];
 
 const appRoutes: Routes = [
@@ -73,12 +58,6 @@ const appRoutes: Routes = [
         children: angularComponents,
         component: MainComponentLegacy,
         path: '',
-    },
-    {
-        canActivate: [RoutingPrivateAuthService],
-        children: mainComponentChildren,
-        component: MainComponentLegacy,
-        path: 'c',
     },
     {
         canActivate: [RoutingPublicAuthService],

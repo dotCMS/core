@@ -147,6 +147,7 @@ export interface Menu {
     tabName: string;
     url: string;
     menuItems: MenuItem[];
+    isOpen: boolean;
 }
 
 export interface MenuItem {
