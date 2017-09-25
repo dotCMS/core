@@ -199,9 +199,17 @@ public class LessCompilerTest {
         fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
         fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+
         APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
         APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
         APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
+
         return fileAsset;
     }
 }
