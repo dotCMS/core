@@ -178,7 +178,11 @@ public class SassCompilerTest {
 
         APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
         APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
 
         Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
         Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
@@ -232,6 +236,14 @@ public class SassCompilerTest {
             Logger.error(SassCompilerTest.class, e.getMessage());
         } finally {
             HibernateUtil.closeSessionSilently();
+        }
+
+        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            //Do nothing...
         }
 
         Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/ab", defaultHost, user, false);

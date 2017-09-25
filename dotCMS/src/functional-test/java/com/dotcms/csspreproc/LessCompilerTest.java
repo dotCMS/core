@@ -124,6 +124,11 @@ public class LessCompilerTest {
         APILocator.getHostAPI().publish(host, user, false);
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
         try{
