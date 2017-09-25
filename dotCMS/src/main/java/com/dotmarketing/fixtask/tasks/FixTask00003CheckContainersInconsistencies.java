@@ -1,17 +1,8 @@
 package com.dotmarketing.fixtask.tasks;
 
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
@@ -24,8 +15,16 @@ import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class FixTask00003CheckContainersInconsistencies  implements FixTask {
@@ -165,13 +164,12 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_"
 					+ "FixTask00003CheckContainersInconsistencies" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
-
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+				_xstream.toXML(modifiedData, _bout);
+			} catch (IOException e) {
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
-			_xstream.toXML(modifiedData, _bout);
+
 		}
 		return modifiedData;
 	}

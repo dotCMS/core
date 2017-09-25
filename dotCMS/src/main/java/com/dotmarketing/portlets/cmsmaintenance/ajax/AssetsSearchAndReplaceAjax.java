@@ -1,17 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -29,6 +17,17 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
 /**
@@ -95,11 +94,12 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	private String getWorkingTextFile(FileAsset file) throws DotDataException, DotSecurityException,
 	PortalException, SystemException, IOException {
 		java.io.File fileIO = file.getFileAsset();
-		FileInputStream fios = new FileInputStream(fileIO);
-		byte[] data = new byte[fios.available()];
-		fios.read(data);
-		String text = new String(data);
-		return text;
+        try (InputStream is = Files.newInputStream(fileIO.toPath());){
+            byte[] data = new byte[is.available()];
+            is.read(data);
+            String text = new String(data);
+            return text;
+        }
 	}
 
 	/**
@@ -129,9 +129,9 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 			fileData = file.getFileAsset();
 		}
 		fileData.deleteOnExit();
-		FileOutputStream fos = null;
+		OutputStream fos = null;
 		try {
-			fos = new FileOutputStream(fileData);
+			fos = Files.newOutputStream(fileData.toPath());
 			fos.write(newText.getBytes());
 		} finally {
 			if (fos != null)

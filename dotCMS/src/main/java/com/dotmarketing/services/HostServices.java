@@ -1,14 +1,5 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,7 +15,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -70,27 +71,25 @@ public class HostServices {
 			
 			 }
 		}
-		try {
 
-			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+        if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+            final String realFolderPath = (!EDIT_MODE) ? "live" + File.separator: "working" + File.separator;
+            final String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 
-			    String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
+            final String velocityFilePath = ConfigUtils.getDynamicVelocityPath() + File.separator + filePath;
 
-				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
-				//Specify a proper character encoding
-				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+            try(
+                    BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(Paths.get(velocityFilePath)));
+                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())
+            ){
+                out.write(sb.toString());
+                out.flush();
+            } catch (Exception e) {
+                Logger.error(HostServices.class, e.toString(), e);
+            }
+        }
 
-				out.write(sb.toString());
-
-				out.flush();
-				out.close();
-				tmpOut.close();
-			}
-		} catch (Exception e) {
-			Logger.error(HostServices.class, e.toString(), e);
-		}
-		try {
+        try {
 			result = new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e1) {
 			result = new ByteArrayInputStream(sb.toString().getBytes());

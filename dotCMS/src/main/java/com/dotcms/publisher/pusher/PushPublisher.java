@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -211,7 +212,7 @@ public class PushPublisher extends Publisher {
 				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
 
-					InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
 
 
 

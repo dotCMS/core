@@ -7,6 +7,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -36,16 +37,17 @@ import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -358,7 +360,7 @@ public class ImportExportUtil {
             _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
+                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -366,6 +368,8 @@ public class ImportExportUtil {
                 roles.addAll((List<Role>) _xstream.fromXML(charStream));
             }catch(Exception e){
                 Logger.error(this, "Unable to import " + _className, e);
+            } finally {
+                CloseUtils.closeQuietly(charStream);
             }
         }
 
@@ -458,7 +462,10 @@ public class ImportExportUtil {
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
-                List<Identifier> idents=(List<Identifier>)xstream.fromXML(new FileInputStream(ff));
+                List<Identifier> idents;
+                try(final InputStream input = Files.newInputStream(ff.toPath())){
+                    idents = (List<Identifier>)xstream.fromXML(input);
+                }
                 for(Identifier ident : idents) {
                     if(ident.getAssetType().equals("folder"))
                         folderIdents.add(ident);
@@ -1129,8 +1136,8 @@ public class ImportExportUtil {
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
-            }catch (UnsupportedEncodingException uet) {
+                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
+            }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
             List l = new ArrayList();
@@ -1514,8 +1521,6 @@ public class ImportExportUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
-        } catch (FileNotFoundException e) {
-            Logger.error(this,e.getMessage(),e);
         } catch (IllegalAccessException e) {
             Logger.error(this,e.getMessage(),e);
         } catch (InvocationTargetException e) {
@@ -1635,14 +1640,12 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = new FileInputStream(zipFile).getChannel();
-            FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
-            // to handle huge zipfiles
-            ic.transferTo(0, ic.size(), oc);
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()))){
 
-            ic.close();
-            oc.close();
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
 
             /*
              * Unzip zipped backups

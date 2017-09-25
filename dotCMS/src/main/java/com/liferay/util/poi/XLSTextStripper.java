@@ -22,15 +22,13 @@
 
 package com.liferay.util.poi;
 
-import java.io.FileInputStream;
-import java.util.Iterator;
-
 import com.dotcms.repackage.org.apache.poi.hssf.usermodel.HSSFCell;
 import com.dotcms.repackage.org.apache.poi.hssf.usermodel.HSSFRow;
 import com.dotcms.repackage.org.apache.poi.hssf.usermodel.HSSFSheet;
 import com.dotcms.repackage.org.apache.poi.hssf.usermodel.HSSFWorkbook;
-
 import com.dotmarketing.util.Logger;
+import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * <a href="XLSTextStripper.java.html"><b><i>View Source</i></b></a>
@@ -41,7 +39,7 @@ import com.dotmarketing.util.Logger;
  */
 public class XLSTextStripper {
 
-	public XLSTextStripper(FileInputStream fis) {
+	public XLSTextStripper(final InputStream fis) {
 		try {
 			StringBuffer sb = new StringBuffer();
 

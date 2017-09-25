@@ -3,8 +3,6 @@ package com.dotmarketing.common.util;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -13,6 +11,9 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -22,17 +23,10 @@ import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Util class for sanitize, tokenize, etc
  */
 public class SQLUtil {
-
-	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
-			APILocator.getSecurityLogger();
 
 	public static final String ASC  = "asc";
 	public static final String DESC  = "desc";
@@ -290,9 +284,9 @@ public class SQLUtil {
                                     )
                     )) {
 
-                Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + query);
-                Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query, e);
-                securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query);
+				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				Logger.error(SQLUtil.class, message, new DotStateException(message));
+				SecurityLogger.logInfo(SQLUtil.class, message);
 
                 return StringPool.BLANK;
             }
