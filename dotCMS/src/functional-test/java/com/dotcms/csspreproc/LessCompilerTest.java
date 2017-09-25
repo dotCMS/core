@@ -144,7 +144,12 @@ public class LessCompilerTest {
 
         APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
         APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-        
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
+
         Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/ax", defaultHost, user, false);
         Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/ax/b/c", defaultHost, user, false);
         Folder f3=APILocator.getFolderAPI().createFolders("/"+runId+"/ax/b/d", defaultHost, user, false);
