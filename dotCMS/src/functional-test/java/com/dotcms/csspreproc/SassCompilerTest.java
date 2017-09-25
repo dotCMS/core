@@ -1,18 +1,9 @@
 package com.dotcms.csspreproc;
 
-import java.io.File;
-import java.net.URL;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.csspreproc.CompilerUtils.newFile;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,7 +14,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.File;
+import java.net.URL;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class SassCompilerTest {
     
@@ -267,20 +267,5 @@ public class SassCompilerTest {
         
         Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.substring(0,response.lastIndexOf("}")+1).trim());
     }
-    
-    protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
-        Contentlet fileAsset=new Contentlet();
-        fileAsset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-        fileAsset.setHost(host.getIdentifier());
-        fileAsset.setFolder(f.getInode());
-        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
-        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
-        return fileAsset;
-    }
+
 }

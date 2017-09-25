@@ -1,16 +1,9 @@
 package com.dotcms.csspreproc;
 
-import java.io.File;
-import java.net.URL;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.csspreproc.CompilerUtils.newFile;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -22,6 +15,13 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.net.URL;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class LessCompilerTest {
 
@@ -188,28 +188,5 @@ public class LessCompilerTest {
         Assert.assertEquals("someclass{width:30}", response.trim());
         
     }
-    
-    protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
-        Contentlet fileAsset=new Contentlet();
-        fileAsset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-        fileAsset.setHost(host.getIdentifier());
-        fileAsset.setFolder(f.getInode());
-        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
-        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 
-        APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
-
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            //Do nothing...
-        }
-
-        return fileAsset;
-    }
 }
