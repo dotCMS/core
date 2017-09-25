@@ -284,9 +284,8 @@ public class SQLUtil {
                                     )
                     )) {
 
-				String message = "Invalid or pernicious sql parameter passed in : " + query;
-				Exception e = new DotStateException(message);
-				Logger.error(SQLUtil.class, message, e);
+				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				Logger.error(SQLUtil.class, message, new DotStateException(message));
 				SecurityLogger.logInfo(SQLUtil.class, message);
 
                 return StringPool.BLANK;
