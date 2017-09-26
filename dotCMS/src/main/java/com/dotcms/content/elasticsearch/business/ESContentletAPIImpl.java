@@ -1,5 +1,35 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -119,34 +149,6 @@ import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -804,18 +806,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public void publishRelatedHtmlPages(Contentlet contentlet) throws DotStateException, DotDataException{
-        if(contentlet.getInode().equals(""))
+    public void publishRelatedHtmlPages(final Contentlet contentlet) throws DotStateException, DotDataException{
+        if(StringUtils.EMPTY.equals(contentlet.getInode())) {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        }
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getInode());
+        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {
             //Get the Identifiers of the related pages
-            Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(multitree.getParent1());
+            final Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(multitree.getParent1());
             Long languageId = -1L;
             IHTMLPage page = null;
             //Get the pages
@@ -826,18 +829,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Search for the page with a given identifier and for a given language (in case of Pages as content)
                 page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
 
-                if(page != null && page.isLive()){
+                if(null != page && page.isLive()){
                     //Rebuild the pages' files
                     PageServices.invalidateAll(page);
                 }
-            }
-            catch(Exception e){
-                String htmlPageIdentifierId = htmlPageIdentifier!=null?htmlPageIdentifier.getId():null;
-                String pageInode = page!=null?page.getInode():null;
-                Logger.error(this.getClass(), "Cannot publish related HTML Pages" +
-                        ". htmlPageIdentifier.getId(): " + htmlPageIdentifierId +
-                        ". LanguageId:" + languageId +
-                        ". pageInode:" + pageInode, e);
+            } catch(Exception e) {
+                final String htmlPageIdentifierId = null != htmlPageIdentifier ? htmlPageIdentifier.getId() : null;
+                final String pageInode = null != page ? page.getInode() : null;
+                Logger.warn(this.getClass(),
+                                "Cannot publish related HTML Pages" + ". htmlPageIdentifier.getId() = [" + htmlPageIdentifierId
+                                                + "], languageId = [" + languageId + "], pageInode = [" + pageInode
+                                                + "]. This might happen if contents are being imported in batch.");
             }
 
         }
@@ -4358,8 +4360,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     buffy.append(" +(working:true live:true)");
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
-                        buffy.append(" +languageId:" + contentlet.getLanguageId());
                     }
+
+                    buffy.append(" +languageId:" + contentlet.getLanguageId());
+
                     buffy.append(" +" + contentlet.getStructure().getVelocityVarName() + "." + field.getVelocityVarName() + ":");
                     buffy.append( (field.getDataType().contains(DataTypes.INTEGER.toString()) || field.getDataType().contains(DataTypes.FLOAT.toString())) ? escape(getFieldValue(contentlet, field).toString()) : "\""+ escape(getFieldValue(contentlet, field).toString()) + "\"" );
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
@@ -4378,16 +4382,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Map<String, Object> cMap = c.getMap();
                             Object obj = cMap.get(field.getVelocityVarName());
 
-                            if (((field.getDataType().contains(DataTypes.INTEGER.toString())
-                                    || field.getDataType().contains(DataTypes.FLOAT.toString()))
-                                    && (Long) obj == (Long) o) || ((String) obj)
-                                    .equalsIgnoreCase(((String) o))) {
+                            boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
+                                    || field.getDataType().contains(DataTypes.FLOAT.toString());
+
+                            if ( ( isDataTypeNumber && o.equals(obj) ) ||
+                                    ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) o)) ) )  {
                                 unique = false;
                                 break;
                             }
 
                         }
-
                         if(!unique) {
                             if(UtilMethods.isSet(contentlet.getIdentifier())){
                                 Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
