@@ -2998,6 +2998,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .build();
             field = fieldAPI.save(field, user);
 
+            //Contentlet in English
             Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(contentType.inode());
             contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
@@ -3006,11 +3007,19 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletAPI.isInodeIndexed(contentlet.getInode());
             contentlet = contentletAPI.find(contentlet.getInode(), user, false);
 
+            //Contentlet in Spanish (should not be an issue since the unique is per lang)
             Contentlet contentlet2 = new Contentlet();
             contentlet2.setContentTypeId(contentType.inode());
             contentlet2.setLanguageId(2);
             contentlet2.setStringProperty(field.variable(),"test");
             contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
 
 
         }finally{
