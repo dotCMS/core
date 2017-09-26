@@ -81,9 +81,13 @@ public class PermissionAPITest {
             HibernateUtil.closeSessionSilently();
         }
  
-
-        perm.permissionIndividually(host.getParentPermissionable(), host, sysuser, false);
-
+        try{
+            perm.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+        }catch(DotDataException e){
+            Logger.warn(PermissionAPITest.class, "Host Individual Permissions were already set. Reaplying permissions.");
+            perm.removePermissions(host);
+            perm.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+        }
         template =new Template();
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
@@ -189,7 +193,7 @@ public class PermissionAPITest {
         assertTrue(perm.isInheritingPermissions(f));
         assertTrue(f.getParentPermissionable().equals(host));
 
-        perm.permissionIndividually(host, f, sysuser, false);
+        perm.permissionIndividually(host, f, sysuser);
         assertFalse(perm.isInheritingPermissions(f));
 
         perm.removePermissions(f);
@@ -207,8 +211,8 @@ public class PermissionAPITest {
 
         Role nrole=getRole("TestingRole3");
 
-        perm.permissionIndividually(host, f1, sysuser, false);
-        perm.permissionIndividually(host, f2, sysuser, false);
+        perm.permissionIndividually(host, f1, sysuser);
+        perm.permissionIndividually(host, f2, sysuser);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -466,10 +470,10 @@ public class PermissionAPITest {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
-            perm.permissionIndividually(perm.findParentPermissionable(f1), f1, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(f1), f1, sysuser);
             assertTrue(perm.findParentPermissionable(cont1).equals(f1));
 
-            perm.permissionIndividually(perm.findParentPermissionable(f2), f2, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(f2), f2, sysuser);
             CacheLocator.getPermissionCache().clearCache();
             assertTrue(perm.findParentPermissionable(cont1).equals(f2));
         }
@@ -506,7 +510,7 @@ public class PermissionAPITest {
             Folder b = APILocator.getFolderAPI().createFolders("/ax/b/", hh, sysuser, false);
             Folder c = APILocator.getFolderAPI().createFolders("/ax/b/c/", hh, sysuser, false);
 
-            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser, false);
+            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser);
 
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
             
@@ -567,7 +571,7 @@ public class PermissionAPITest {
             perm.getPermissions(pc);
 
             // permission individually on folder a
-            perm.permissionIndividually(perm.findParentPermissionable(folderA), folderA, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(folderA), folderA, sysuser);
 
             // everybody should be inheriting from a
             assertTrue(perm.findParentPermissionable(pageAssetFolderA).equals(folderA));
@@ -581,6 +585,7 @@ public class PermissionAPITest {
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
+            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 
@@ -605,7 +610,7 @@ public class PermissionAPITest {
         Contentlet cont1=null;
         try {
             Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
-            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser);
 
             s = new Structure();
             s.setHost(hh.getIdentifier());
