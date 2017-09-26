@@ -294,7 +294,7 @@ public class ContentTypeResource implements Serializable {
 
 		Response response = null;
 
-		final String orderBy = orderbyParam.equals("modDate") ? "mod_date" : orderbyParam;
+		final String orderBy = getOrderByRealName(orderbyParam);
 		final User user = initData.getUser();
 
 		try {
@@ -306,6 +306,16 @@ public class ContentTypeResource implements Serializable {
 		}
 
 		return response;
+	}
+
+	private String getOrderByRealName(String orderbyParam) {
+		if (orderbyParam.equals("modDate")){
+			return "mod_date";
+		}else if (orderbyParam.equals("variable")) {
+			return "velocity_var_name";
+		} else {
+			return orderbyParam;
+		}
 	}
 
 }
