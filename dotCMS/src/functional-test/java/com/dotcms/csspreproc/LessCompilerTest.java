@@ -14,7 +14,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.net.URL;
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +32,8 @@ public class LessCompilerTest {
     @Before
     public void prepare() throws Exception {
         HttpServletRequest req=ServletTestRunner.localRequest.get();
-        baseURL = "http://"+req.getServerName()+":"+req.getServerPort();
+        baseURL = "http://" + req.getServerName() + ((UtilMethods.isSet(req.getServerPort()) ? ":"
+                + req.getServerPort() : StringPool.BLANK));
     }
 
     @Ignore
