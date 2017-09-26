@@ -451,7 +451,7 @@
         return fieldType1.displayOrder - fieldType2.displayOrder;
     }).map(function(fieldType) {
         if (fieldType.groupLast) {
-            fieldType.label = '<div style="border-bottom: gray 1px solid">' + fieldType.label + '</div>';
+            fieldType.label = '<div class="dijitMenuItemSeparator">' + fieldType.label + '</div>';
         }
         return fieldType;
     });

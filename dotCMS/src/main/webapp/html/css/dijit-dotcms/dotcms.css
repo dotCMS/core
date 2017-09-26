@@ -4785,7 +4785,8 @@ html, body {
 
 .dijitComboBoxMenuPopup .dijitMenuItem {
   line-height: 32px;
-  padding: 0 10px;
+  margin-bottom: 1px;
+  padding: 0 8px;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
   min-width: 200px;
@@ -7000,16 +7001,16 @@ select[multiple]:hover {
 .listingTable table td {
   background: none !important;
 }
-.listingTable.relateContent td a {
-  color: #0E80CB;
-  text-decoration: underline;
-}
 .listingTable td a {
   color: #161616;
   text-decoration: none;
 }
 .listingTable td table tr {
   border: none;
+}
+.listingTable.relateContent td a {
+  color: #0E80CB;
+  text-decoration: underline;
 }
 
 .browserTableStatus td {
@@ -11670,6 +11671,12 @@ Resize Handle
 
 #search_form, #borderContainer {
   height: 100%;
+}
+
+.dijitMenuItemSeparator {
+  border-bottom: solid 1px #eeeeee;
+  margin: 0 -8px;
+  padding: 0 8px;
 }
 
 #cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions, .license-manager__listing-action {
