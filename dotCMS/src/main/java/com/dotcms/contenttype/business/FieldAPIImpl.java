@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -20,6 +21,8 @@ import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -105,6 +108,14 @@ public class FieldAPIImpl implements FieldAPI {
                   contentletAPI.refresh(structure);
               }
           }
+
+          ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
+                  String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getName()));
+      } else {
+          ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
+                  String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
+                          structure.getName()));
       }
 
       return result;
@@ -169,6 +180,11 @@ public class FieldAPIImpl implements FieldAPI {
 
           fieldFactory.moveSortOrderBackward(oldField.sortOrder());
           fieldFactory.delete(field);
+
+          ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
+                  String.format("User %s/%s eleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getName()));
+
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);
 
