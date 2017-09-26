@@ -131,29 +131,35 @@ public class LessCompilerTest {
         }
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        try{
-            HibernateUtil.startTransaction();
-            APILocator.getHostAPI().publish(defaultHost, user, false);
-            HibernateUtil.closeAndCommitTransaction();
-        }catch(Exception e){
-            HibernateUtil.rollbackTransaction();
-            Logger.error(SassCompilerTest.class, e.getMessage());
-        } finally {
-            HibernateUtil.closeSessionSilently();
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
         }
 
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            //Do nothing...
-        }
-
-        Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/ax", defaultHost, user, false);
-        Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/ax/b/c", defaultHost, user, false);
-        Folder f3=APILocator.getFolderAPI().createFolders("/"+runId+"/ax/b/d", defaultHost, user, false);
-        Folder f4=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/ax/b", defaultHost, user, false);
+        Folder f1 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a", defaultHost, user, false);
+        Folder f2 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a/b/c", defaultHost, user, false);
+        Folder f3 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a/b/d", defaultHost, user, false);
+        Folder f4 = APILocator.getFolderAPI()
+                .findFolderByPath("/" + runId + "/a/b", defaultHost, user, false);
         Folder ff=APILocator.getFolderAPI().createFolders("/less", host, user, false);
         
 
@@ -180,9 +186,8 @@ public class LessCompilerTest {
                                            "@import \"../d/file4\"; \r\n"+
                                            "someclass { width: (@file1 + @file2 + @file3 + @file4); } \r\n");
         Contentlet fileAsset5=newFile(file5,f2,defaultHost);
-        
-        
-        URL cssURL = new URL(baseURL + "/DOTLESS/" + runId + "/ax/b/c/file5.css");
+
+        URL cssURL = new URL(baseURL + "/DOTLESS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         
         Assert.assertEquals("someclass{width:30}", response.trim());

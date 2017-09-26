@@ -165,23 +165,25 @@ public class SassCompilerTest {
         APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        try{
-            HibernateUtil.startTransaction();
-            APILocator.getHostAPI().publish(defaultHost, user, false);
-            HibernateUtil.closeAndCommitTransaction();
-        }catch(Exception e){
-            HibernateUtil.rollbackTransaction();
-            Logger.error(SassCompilerTest.class, e.getMessage());
-        } finally {
-            HibernateUtil.closeSessionSilently();
-        }
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
 
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            //Do nothing...
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(), true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
         }
 
         Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
@@ -227,23 +229,25 @@ public class SassCompilerTest {
         final String runId=UUIDGenerator.generateUuid();
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        try{
-            HibernateUtil.startTransaction();
-            APILocator.getHostAPI().publish(defaultHost, user, false);
-            HibernateUtil.closeAndCommitTransaction();
-        }catch(Exception e){
-            HibernateUtil.rollbackTransaction();
-            Logger.error(SassCompilerTest.class, e.getMessage());
-        } finally {
-            HibernateUtil.closeSessionSilently();
-        }
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
 
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            //Do nothing...
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(), true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
         }
 
         Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/ab", defaultHost, user, false);
