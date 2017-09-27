@@ -92,10 +92,16 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
         	if(lang == null) {
 	            HibernateUtil dh = new HibernateUtil(Language.class);
-	            dh.setQuery(
-	                "from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and lower(country_code) = ?");
-	            dh.setParam(languageCode);
-	            dh.setParam(countryCode);
+	            if(UtilMethods.isSet(countryCode)) {
+					dh.setQuery(
+							"from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and lower(country_code) = ?");
+					dh.setParam(languageCode);
+					dh.setParam(countryCode);
+				}else{
+					dh.setQuery(
+							"from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and (country_code = '' OR country_code IS NULL)");
+					dh.setParam(languageCode);
+				}
 	            lang = (Language) dh.load();
 
 	            //Validate we are returning a valid Language object
