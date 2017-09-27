@@ -129,7 +129,7 @@ export class SearchableDropdownComponent extends BaseComponent
         if (this.value !== item) {
             this.value = item;
             this.valueString = item[this.labelPropertyName];
-            this.propagateChange(![this.valuePropertyName] ? item : item[this.valuePropertyName]);
+            this.propagateChange(!this.valuePropertyName ? item : item[this.valuePropertyName]);
             this.change.emit(Object.assign({}, this.value));
         }
 
