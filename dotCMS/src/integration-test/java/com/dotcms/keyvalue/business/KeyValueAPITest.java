@@ -107,7 +107,33 @@ public class KeyValueAPITest extends IntegrationTestBase {
     public void saveKeyValueContentWithUnique2()
             throws DotContentletStateException,
             IllegalArgumentException, DotDataException, DotSecurityException {
-        validateUnique(englishLanguageId, englishLanguageId);
+
+        Contentlet contentlet1 = null;
+        Contentlet contentlet2 = null;
+
+        try {
+            String key1 = "com.dotcms.test.key1." + new Date().getTime();
+            String value1 = "Test Key #1";
+
+            contentlet1 = createTestKeyValueContent(key1, value1, englishLanguageId,
+                    keyValueContentType,
+                    systemUser);
+            Assert.assertTrue(
+                    "Failed creating a new Contentlet using the Key/Value Content Type.",
+                    UtilMethods.isSet(contentlet1.getIdentifier()));
+
+            contentlet2 = createTestKeyValueContent(key1, value1, englishLanguageId,
+                    keyValueContentType,
+                    systemUser);
+            fail("Saving this record should not be possible as already exist another Contentlet with the same unique key.");
+        } catch (DotContentletValidationException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Unexpected exception, expecting a DotContentletValidationException.");
+        } finally {
+            deleteContentlets(systemUser, contentlet1, contentlet2);
+        }
     }
 
     /*
@@ -118,34 +144,28 @@ public class KeyValueAPITest extends IntegrationTestBase {
     public void saveKeyValueContentWithUnique()
             throws DotContentletStateException,
             IllegalArgumentException, DotDataException, DotSecurityException {
-        validateUnique(englishLanguageId, spanishLanguageId);
-    }
-
-    private void validateUnique(Long languageContent1, Long languageContent2)
-            throws DotSecurityException, DotDataException {
 
         Contentlet contentlet1 = null;
         Contentlet contentlet2 = null;
+
         try {
             String key1 = "com.dotcms.test.key1." + new Date().getTime();
             String value1 = "Test Key #1";
 
-            contentlet1 = createTestKeyValueContent(key1, value1, languageContent1,
+            contentlet1 = createTestKeyValueContent(key1, value1, englishLanguageId,
                     keyValueContentType,
                     systemUser);
             Assert.assertTrue(
                     "Failed creating a new Contentlet using the Key/Value Content Type.",
                     UtilMethods.isSet(contentlet1.getIdentifier()));
 
-            contentlet2 = createTestKeyValueContent(key1, value1, languageContent2,
+            contentlet2 = createTestKeyValueContent(key1, value1, spanishLanguageId,
                     keyValueContentType,
                     systemUser);
-            fail("Saving this record should not be possible as already exist another Contentlet with the same unique key.");
-        } catch (DotContentletValidationException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Unexpected exception, expecting a DotContentletValidationException.");
+            Assert.assertTrue(
+                    "Failed creating a new Contentlet using the Key/Value Content Type.",
+                    UtilMethods.isSet(contentlet2.getIdentifier()));
+
         } finally {
             deleteContentlets(systemUser, contentlet1, contentlet2);
         }
