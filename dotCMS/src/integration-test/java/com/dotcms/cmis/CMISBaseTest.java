@@ -33,6 +33,10 @@ import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+/**
+ * @deprecated CMIS is deprecated and slated for removal.
+ */
+@Deprecated
 public class CMISBaseTest extends IntegrationTestBase {
 
 	protected static User user;

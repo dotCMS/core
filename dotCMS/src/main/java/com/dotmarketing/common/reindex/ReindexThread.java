@@ -1,7 +1,24 @@
 package com.dotmarketing.common.reindex;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.Client;
+
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -11,7 +28,11 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.business.journal.IndexJournal;
@@ -27,17 +48,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in
@@ -696,7 +706,6 @@ public class ReindexThread extends Thread {
 				.convertFatContentletToContentlet(fattyContentlet);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
 
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
@@ -751,15 +760,23 @@ public class ReindexThread extends Thread {
 		return work;
 	}
 
+	/**
+     * Stops the full re-indexation process. This means clearing up the content queue and the
+     * reindex journal.
+     * 
+     * @throws DotDataException
+     */
+	@WrapInTransaction
 	public void stopFullReindexation() throws DotDataException {
-	    HibernateUtil.startTransaction();
-	    pause();
-	    this.remoteQ.clear();
-	    this.notifiedFailingRecords.clear();
-	    APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
-	    indexAPI.fullReindexAbort();
-	    unpause();
-	    HibernateUtil.closeAndCommitTransaction();
+        try {
+            pause();
+            this.remoteQ.clear();
+            this.notifiedFailingRecords.clear();
+            this.jAPI.cleanDistReindexJournal();
+            indexAPI.fullReindexAbort();
+        } finally {
+            unpause();
+        }
 	}
 
 	/**

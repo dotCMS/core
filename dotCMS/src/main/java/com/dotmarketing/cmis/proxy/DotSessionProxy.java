@@ -8,7 +8,8 @@ import javax.servlet.http.HttpSession;
  * This is Proxy for HTTPServletRequest, This extends Map to put and get objects. This uses
  * DotRequestProxy.map to store and retrieve objects.
  * 
- * @deprecated As of release 3.6, replaced by {@link com.dotcms.mock.request.MockSession}
+ * @deprecated As of release 3.6, replaced by {@link com.dotcms.mock.request.MockSession}. CMIS is
+ *             deprecated and slated for removal.
  */
 @Deprecated
 public interface DotSessionProxy extends HttpSession, Map {

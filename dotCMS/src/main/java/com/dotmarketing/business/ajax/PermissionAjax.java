@@ -1,13 +1,19 @@
 package com.dotmarketing.business.ajax;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -50,7 +56,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
-
 /**
  *
  * AJAX controller for permission related operations
@@ -59,7 +64,9 @@ import com.liferay.portal.model.User;
  *
  */
 public class PermissionAjax {
-		
+
+    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -116,7 +123,6 @@ public class PermissionAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
 
 		String roleId = p.getRoleId();
 		Map<String, Object> roleMap = roles.get(roleId);
@@ -160,9 +166,15 @@ public class PermissionAjax {
 						roleMap.put("inheritedFromPath", APILocator.getIdentifierAPI().find((Folder)permParent).getPath());
 						roleMap.put("inheritedFromId", ((Folder)permParent).getInode());
 					} else if (permParent instanceof Structure) {
-						roleMap.put("inheritedFromType", "structure");
-						roleMap.put("inheritedFromPath", ((Structure)permParent).getName());
-						roleMap.put("inheritedFromId", ((Structure)permParent).getInode());
+					    roleMap.put("inheritedFromType", "structure");
+                        roleMap.put("inheritedFromPath", ((Structure) permParent).getName());
+                        roleMap.put("inheritedFromId", ((Structure) permParent).getInode());
+					} else if (permParent instanceof ContentType) {
+                        roleMap.put("inheritedFromType", "structure");
+                        final Structure contentType = new StructureTransformer(ContentType.class.cast(permParent)).asStructure();
+                        this.contentletAPI.refresh(contentType);
+                        roleMap.put("inheritedFromPath", contentType.getName());
+                        roleMap.put("inheritedFromId", contentType.getInode());
 					} else if (permParent instanceof Category) {
 						roleMap.put("inheritedFromType", "category");
 						roleMap.put("inheritedFromPath", ((Category)permParent).getCategoryName());
@@ -178,7 +190,6 @@ public class PermissionAjax {
 							roleMap.put("inheritedFromPath", host.getHostname());
 							roleMap.put("inheritedFromId", host.getIdentifier());
 						}
-
 					}
 				}
 			}
@@ -327,7 +338,6 @@ public class PermissionAjax {
 		HibernateUtil.closeAndCommitTransaction();
 	}
 
-	@SuppressWarnings("unchecked")
 	@CloseDBIfOpened
 	private Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
@@ -419,30 +429,31 @@ public class PermissionAjax {
 		return perm;
 	}
 
-	  public void permissionIndividually(String assetId, Long languageId) throws Exception {
-			HibernateUtil.startTransaction();
-	    	try {
-	    		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-	    		WebContext ctx = WebContextFactory.get();
-	    		HttpServletRequest request = ctx.getHttpServletRequest();
+	public void permissionIndividually(String assetId, Long languageId) throws Exception {
+		HibernateUtil.startTransaction();
+	   	try {
+	   		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+	   		WebContext ctx = WebContextFactory.get();
+	   		HttpServletRequest request = ctx.getHttpServletRequest();
 
-	    		//Retrieving the current user
-	    		User user = userWebAPI.getLoggedInUser(request);
-	    		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+	   		//Retrieving the current user
+	   		User user = userWebAPI.getLoggedInUser(request);
+	   		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
-	    		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	    		Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
-	    		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
+	   		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+	   		Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
+	   		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
 
-	    		if(parentPermissionable!=null){
-	    			permissionAPI.permissionIndividually(parentPermissionable, asset, user);
-	    		}
-	    		HibernateUtil.closeAndCommitTransaction();
-	    	} catch (Exception e) {
-	    		HibernateUtil.rollbackTransaction();
-	    		throw e;
-	    	}
-	    }
+	   		if(parentPermissionable!=null){
+	   			permissionAPI.permissionIndividually(parentPermissionable, asset, user);
+	   		}
+	   		HibernateUtil.closeAndCommitTransaction();
+	   	} catch (Exception e) {
+	   		HibernateUtil.rollbackTransaction();
+	   		throw e;
+	   	}
+	}
+
     public PermissionableObjectDWR getAsset(String inodeOrIdentifier) throws DotHibernateException {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
