@@ -1,5 +1,31 @@
 package com.dotmarketing.servlets;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.util.Date;
+import java.util.List;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+
+import org.apache.lucene.search.BooleanQuery;
+import org.quartz.SchedulerException;
+
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
@@ -11,6 +37,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -26,33 +53,26 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.job.ShutdownHookThread;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.ReleaseInfo;
-import org.apache.lucene.search.BooleanQuery;
-import org.quartz.SchedulerException;
 
-import javax.management.*;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.net.*;
-import java.net.URLEncoder;
-import java.util.Date;
-import java.util.List;
-
+/**
+ * Initialization servlet for specific dotCMS components and features.
+ * 
+ * @author root
+ *
+ */
 public class InitServlet extends HttpServlet {
+
     private static final long serialVersionUID = 1L;
 
     PermissionAPI             permissionAPI    = APILocator.getPermissionAPI();
     private LanguageAPI langAPI = APILocator.getLanguageAPI();
-
-    //	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config
-    //			.getIntProperty("EXEC_NUM_OF_THREAD"));
 
     /**
      * @param permissionAPI
@@ -73,22 +93,14 @@ public class InitServlet extends HttpServlet {
     public static Date startupDate;
 
     /**
-     * Description of the Method
+     * Initializes several application features.
      *
      * @throws DotDataException
      */
     public void init(ServletConfig config) throws ServletException {
 
         startupDate = new java.util.Date();
-        // Config class Initialization
-//        Config.initializeConfig();
-//        com.dotmarketing.util.Config.setMyApp(config.getServletContext());
-
-
-
         new StartupLogger().log();
-        
-        
 
         //Check and start the ES Content Store
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
@@ -100,27 +112,10 @@ public class InitServlet extends HttpServlet {
 
         new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
-
-
-
-
-
-
-
-
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc);
 
         ImportAuditUtil.voidValidateAuditTableOnStartup();
-
-        // Set up the database
-//        try {
-//            DotCMSInitDb.InitializeDb();
-//        } catch (DotDataException e1) {
-//            throw new ServletException(e1);
-//        }
-
-
 
         // set the application context for use all over the site
         Logger.debug(this, "");
@@ -260,7 +255,10 @@ public class InitServlet extends HttpServlet {
         catch(Exception e){
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
-
+        // Starting the re-indexation thread
+        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", ReindexThread.REINDEX_THREAD_SLEEP_DEFAULT_VALUE),
+                        Config.getIntProperty("REINDEX_THREAD_INIT_DELAY",
+                                        ReindexThread.REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE));
     }
 
     protected void deleteFiles(java.io.File directory) {
@@ -453,4 +451,5 @@ public class InitServlet extends HttpServlet {
         }
 
     }
+
 }
