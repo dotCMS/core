@@ -701,7 +701,7 @@
                     selected = "SELECTED";
                 }
         %>
-        <option value="<%=pairvalue%>" <%=selected%>><%=name%></option>
+        <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
         <%
             }
         %>
