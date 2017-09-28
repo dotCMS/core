@@ -305,8 +305,10 @@ public class PermissionAjax {
 	}
 
 	public void resetAssetPermissions (String assetId, Long languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
-		HibernateUtil.startTransaction();
+
 		try {
+
+			HibernateUtil.startTransaction();
 
 			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
@@ -323,8 +325,10 @@ public class PermissionAjax {
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;
+		} finally {
+
+			HibernateUtil.closeAndCommitTransaction();
 		}
-		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	@SuppressWarnings("unchecked")

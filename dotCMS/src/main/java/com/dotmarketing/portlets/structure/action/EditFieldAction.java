@@ -26,6 +26,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -114,71 +115,80 @@ public class EditFieldAction extends DotPortletAction {
         if ((cmd == null) || !cmd.equals("reorder")) {
             _retrieveField(form, req, res);
         }
-        HibernateUtil.startTransaction();
+
+        try {
+            HibernateUtil.startTransaction();
 
         /*
          * saving the field
          */
-        if ((cmd != null) && cmd.equals(Constants.ADD)) {
-            try {
-                Logger.debug(this, "Calling Add/Edit Method");
+            if ((cmd != null) && cmd.equals(Constants.ADD)) {
+                try {
+                    Logger.debug(this, "Calling Add/Edit Method");
 
-                Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-                if (InodeUtils.isSet(field.getInode())) {
-                    if (field.isFixed()) {
-                        
-                        FieldForm fieldForm = (FieldForm) form;
-                        field.setFieldName(fieldForm.getFieldName());
-                        field.setHint(fieldForm.getHint());
-                        field.setDefaultValue(fieldForm.getDefaultValue());
-                        field.setSearchable(fieldForm.isSearchable());
-                        field.setListed(fieldForm.isListed());
+                    Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
+                    if (InodeUtils.isSet(field.getInode())) {
+                        if (field.isFixed()) {
 
-                        com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
-                        if(LegacyFieldTypes.CONSTANT.implClass().getCanonicalName().equals(newField.typeName()) ||  
-                                        LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName())){
-                            field.setValues(fieldForm.getValues());
+                            FieldForm fieldForm = (FieldForm) form;
+                            field.setFieldName(fieldForm.getFieldName());
+                            field.setHint(fieldForm.getHint());
+                            field.setDefaultValue(fieldForm.getDefaultValue());
+                            field.setSearchable(fieldForm.isSearchable());
+                            field.setListed(fieldForm.isListed());
+
+                            com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
+                            if (LegacyFieldTypes.CONSTANT.implClass().getCanonicalName().equals(newField.typeName()) ||
+                                    LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName())) {
+                                field.setValues(fieldForm.getValues());
+                            }
+
+                            BeanUtils.copyProperties(fieldForm, field);
                         }
-                        
-                        BeanUtils.copyProperties(fieldForm, field);
                     }
-                }
-                if (Validator.validate(req, form, mapping)) {
-                    if (_saveField(form, req, res, user)) {
-                        _sendToReferral(req, res, referer);
-                        return;
+                    if (Validator.validate(req, form, mapping)) {
+                        if (_saveField(form, req, res, user)) {
+                            _sendToReferral(req, res, referer);
+                            return;
+                        }
                     }
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
                 }
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
             }
-        }
         /*
          * If we are deleting the field, run the delete action and return to the
          * list
          *
          */
-        else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
-            try {
-                Logger.debug(this, "Calling Delete Method");
-                _deleteField(req);
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
+            else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
+                try {
+                    Logger.debug(this, "Calling Delete Method");
+                    _deleteField(req);
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
+                }
+                _sendToReferral(req, res, referer);
+            } else if ((cmd != null) && cmd.equals("reorder")) {
+                try {
+                    Logger.debug(this, "Calling reorder Method");
+                    _reorderFields(form, req, res);
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
+                }
+                _sendToReferral(req, res, referer);
             }
-            _sendToReferral(req, res, referer);
-        } else if ((cmd != null) && cmd.equals("reorder")) {
+        } finally {
             try {
-                Logger.debug(this, "Calling reorder Method");
-                _reorderFields(form, req, res);
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (DotHibernateException e) {
+                HibernateUtil.closeSessionSilently();
             }
-            _sendToReferral(req, res, referer);
         }
-        HibernateUtil.closeAndCommitTransaction();
+
         _loadForm(form, req, res);
         setForward(req, "portlet.ext.structure.edit_field");
     }

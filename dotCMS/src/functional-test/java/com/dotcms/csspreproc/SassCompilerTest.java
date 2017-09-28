@@ -1,18 +1,9 @@
 package com.dotcms.csspreproc;
 
-import java.io.File;
-import java.net.URL;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.csspreproc.CompilerUtils.newFile;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,7 +14,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.File;
+import java.net.URL;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class SassCompilerTest {
     
@@ -165,20 +165,26 @@ public class SassCompilerTest {
         APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        try{
-            HibernateUtil.startTransaction();
-            APILocator.getHostAPI().publish(defaultHost, user, false);
-            HibernateUtil.closeAndCommitTransaction();
-        }catch(Exception e){
-            HibernateUtil.rollbackTransaction();
-            Logger.error(SassCompilerTest.class, e.getMessage());
-        } finally {
-            HibernateUtil.closeSessionSilently();
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(), true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
         }
-
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
-
 
         Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
         Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
@@ -223,10 +229,33 @@ public class SassCompilerTest {
         final String runId=UUIDGenerator.generateUuid();
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        
-        Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
-        Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
-        Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(), true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
+        }
+
+        Folder fa = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a", defaultHost, user, false);
+        Folder fabc = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a/b/c", defaultHost, user, false);
+        Folder fab = APILocator.getFolderAPI()
+                .findFolderByPath("/" + runId + "/a/b", defaultHost, user, false);
         
         File file1=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fa.scss");
         FileUtils.writeStringToFile(file1, ".a { color:green; } ");
@@ -239,26 +268,11 @@ public class SassCompilerTest {
         File file3=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "fabc.scss");
         FileUtils.writeStringToFile(file3, "@import \"../fab\"; .abc { color:white; }");
         Contentlet fileAsset3=newFile(file3, fabc, defaultHost);
-        
+
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/fabc.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         
         Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.substring(0,response.lastIndexOf("}")+1).trim());
     }
-    
-    protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
-        Contentlet fileAsset=new Contentlet();
-        fileAsset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-        fileAsset.setHost(host.getIdentifier());
-        fileAsset.setFolder(f.getInode());
-        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
-        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
-        return fileAsset;
-    }
+
 }

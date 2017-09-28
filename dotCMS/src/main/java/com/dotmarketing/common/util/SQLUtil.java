@@ -3,6 +3,8 @@ package com.dotmarketing.common.util;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -27,6 +29,9 @@ import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenize
  * Util class for sanitize, tokenize, etc
  */
 public class SQLUtil {
+
+	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
+			APILocator.getSecurityLogger();
 
 	public static final String ASC  = "asc";
 	public static final String DESC  = "desc";
@@ -286,7 +291,7 @@ public class SQLUtil {
 
 				final String message = "Invalid or pernicious sql parameter passed in : " + query;
 				Logger.error(SQLUtil.class, message, new DotStateException(message));
-				SecurityLogger.logInfo(SQLUtil.class, message);
+				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
 
                 return StringPool.BLANK;
             }

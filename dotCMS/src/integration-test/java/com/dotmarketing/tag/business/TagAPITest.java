@@ -585,9 +585,10 @@ public class TagAPITest extends IntegrationTestBase {
 			host.setLanguageId(langAPI.getDefaultLanguage().getId());
 			host = conAPI.checkin(host, testUser, false);
 			conAPI.publish(host, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(host.getInode()));
 			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
 			try {
-				Thread.sleep(500);
+				Thread.sleep(3000);
 			} catch (InterruptedException e) {
 				//Do nothing...
 			}
@@ -597,9 +598,10 @@ public class TagAPITest extends IntegrationTestBase {
 			host.setInode(null);
 			host = conAPI.checkin(host, testUser, false);
 			conAPI.publish(host, testUser, false);
+			assertTrue(conAPI.isInodeIndexed(host.getInode()));
 			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
 			try {
-				Thread.sleep(500);
+				Thread.sleep(3000);
 			} catch (InterruptedException e) {
 				//Do nothing...
 			}
