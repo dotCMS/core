@@ -54,7 +54,7 @@ public class FieldServices {
 		Object contFieldValueObject = conAPI.getFieldValue(content, field);
 		String contFieldValue = "";
 		
-		if(fAPI.isElementConstant(field)){
+		if(fAPI.isElementConstant(field) || fAPI.isElementHidden(field)){
 			contFieldValue = field.getValues() == null ? "" : field.getValues();
 		}else{
 			contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();

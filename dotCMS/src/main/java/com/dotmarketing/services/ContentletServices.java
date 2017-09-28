@@ -220,7 +220,7 @@ public class ContentletServices {
 			String contFieldValue= null;
 			Object contFieldValueObject= null;
 			String velPath= (!EDIT_MODE) ? "live/" : "working/";
-			if(fAPI.isElementConstant(field)){
+			if(fAPI.isElementConstant(field) || fAPI.isElementHidden(field)){
 			    if(field.getVelocityVarName().equals("widgetPreexecute")){
 					continue;
 				}

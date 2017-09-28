@@ -24,6 +24,7 @@ public interface FieldAPI {
 	public static final String ELEMENT_DIVIDER = "divider";
 	public static final String ELEMENT_TAB = "tab";
 	public static final String ELEMENT_CONSTANT = "constant";
+	public static final String ELEMENT_HIDDEN = "hidden";
 	
 	public boolean valueSettable(Field field);
 	
@@ -54,6 +55,13 @@ public interface FieldAPI {
 	 * @return
 	 */
 	public boolean isElementConstant(Field field);
+
+	/**
+	 * A field that is a hidden
+	 * @param field
+	 * @return
+	 */
+	public boolean isElementHidden(Field field);
 	
 	/**
 	 * A field that is a divider element like Line or tab divider

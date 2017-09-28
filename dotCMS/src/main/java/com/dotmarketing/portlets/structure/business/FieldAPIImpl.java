@@ -56,6 +56,13 @@ public class FieldAPIImpl implements FieldAPI {
 		}
 		return false;
 	}
+
+	public boolean isElementHidden(Field field) {
+		if(FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldType()) || FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldContentlet())){
+			return true;
+		}
+		return false;
+	}
 	
 	public boolean isElementDivider(Field field) {
 		if(Field.FieldType.LINE_DIVIDER.toString().equals(field.getFieldType()) || Field.FieldType.TAB_DIVIDER.toString().equals(field.getFieldType())){
