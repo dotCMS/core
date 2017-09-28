@@ -146,7 +146,7 @@ public class ContentletMapServices {
 			Object contFieldValueObject=null;
 			FieldAPI fdAPI=APILocator.getFieldAPI();
 			String velPath=(!EDIT_MODE) ? "live/" : "working/";
-			if(fdAPI.isElementConstant(field)){
+			if(fdAPI.isElementConstant(field) || fdAPI.isElementHidden(field)){
 				if(field.getVelocityVarName().equals("widgetPreexecute")){
 					continue;
 				}
