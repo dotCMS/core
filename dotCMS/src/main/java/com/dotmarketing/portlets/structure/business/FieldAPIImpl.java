@@ -51,17 +51,11 @@ public class FieldAPIImpl implements FieldAPI {
 	}
 	
 	public boolean isElementConstant(Field field) {
-		if(FieldAPI.ELEMENT_CONSTANT.equals(field.getFieldType()) || FieldAPI.ELEMENT_CONSTANT.equals(field.getFieldContentlet())){
-			return true;
-		}
-		return false;
+		return FieldAPI.ELEMENT_CONSTANT.equals(field.getFieldType()) || FieldAPI.ELEMENT_CONSTANT.equals(field.getFieldContentlet());
 	}
 
-	public boolean isElementHidden(Field field) {
-		if(FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldType()) || FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldContentlet())){
-			return true;
-		}
-		return false;
+	public boolean isElementHidden(final Field field) {
+		return FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldType()) || FieldAPI.ELEMENT_HIDDEN.equals(field.getFieldContentlet());
 	}
 	
 	public boolean isElementDivider(Field field) {
