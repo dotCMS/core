@@ -93,6 +93,9 @@ import com.liferay.portal.model.User;
  */
 public class ReindexThread extends Thread {
 
+    public static final int REINDEX_THREAD_SLEEP_DEFAULT_VALUE = 500;
+    public static final int REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE = 5000;
+    
 	private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
     private final LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
     private final LinkedList<IndexJournal<String>> remoteDelQ = new LinkedList<IndexJournal<String>>();

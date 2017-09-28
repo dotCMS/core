@@ -256,8 +256,9 @@ public class InitServlet extends HttpServlet {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
         // Starting the re-indexation thread
-        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500),
-                        Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", ReindexThread.REINDEX_THREAD_SLEEP_DEFAULT_VALUE),
+                        Config.getIntProperty("REINDEX_THREAD_INIT_DELAY",
+                                        ReindexThread.REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE));
     }
 
     protected void deleteFiles(java.io.File directory) {
