@@ -266,7 +266,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         String value = null;
 
         try {
-            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), lang.getCountryCode() ), key );
+            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), lang.getCountryCode()==null?"":lang.getCountryCode() ), key );
         } catch ( LanguageException e ) {
             Logger.error( this, e.getMessage(), e );
         }

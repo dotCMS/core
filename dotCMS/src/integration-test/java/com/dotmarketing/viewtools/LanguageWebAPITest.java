@@ -263,8 +263,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 			when(viewContext.getRequest()).thenReturn(request);
 			when(request.getSession()).thenReturn(session);
 			when(request.getLocale()).thenReturn(new Locale(languageCode, countryCode));
-			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
-					.thenReturn(String.valueOf(requestLanguageId));
+			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(requestLanguageId));
 
 			Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, fallback);
 
