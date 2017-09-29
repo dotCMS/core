@@ -740,6 +740,7 @@ public class ContentResourceTest {
 
         contentletAPI.isInodeIndexed(c1.getInode());
         contentletAPI.isInodeIndexed(c2.getInode());
+        Thread.sleep(2000);
 
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
         FactoryLocator.getRelationshipFactory().save(rel);
