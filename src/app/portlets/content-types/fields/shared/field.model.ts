@@ -13,4 +13,5 @@ export interface Field {
     sortOrder?: number;
     dataType?: string;
     hint?: string;
+    variable?: string;
 }

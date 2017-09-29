@@ -107,11 +107,13 @@ export class ContentTypesPortletComponent extends BaseComponent {
             },
             {
                 fieldName: 'variable',
-                header: this.i18nMessages['contenttypes.content.variable']
+                header: this.i18nMessages['contenttypes.content.variable'],
+                sortable: true
             },
             {
                 fieldName: 'description',
-                header: this.i18nMessages['contenttypes.form.label.description']
+                header: this.i18nMessages['contenttypes.form.label.description'],
+                sortable: true
             },
             {
                 fieldName: 'nEntries',

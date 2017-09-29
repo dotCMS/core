@@ -23,8 +23,17 @@
     }
 }
 
-.field__name {
+.field__properties {
     flex-grow: 1;
+}
+
+.field__name {
+    color: black;
+}
+
+.field__variable {
+    color: gray;
+    font-size: 11px;
 }
 
 .field__actions {

@@ -6,18 +6,19 @@ import { PROPERTY_INFO } from './field-property-info';
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { ValidationErrors } from '@angular/forms';
 import { FieldService } from './field.service';
+import { FieldType} from '../shared/field-type.model';
 
 /**
  * Provide method to handle with the Field Types's properties
  */
 @Injectable()
 export class FieldPropertyService {
-    private fieldTypesProperties = new Map<string, string[]>();
+    private fieldTypes= new Map<string, FieldType>();
 
     constructor(fieldService: FieldService) {
         fieldService.loadFieldTypes().subscribe(fieldTypes => {
             fieldTypes.forEach(fieldType => {
-                this.fieldTypesProperties.set(fieldType.clazz, fieldType.properties);
+                this.fieldTypes.set(fieldType.clazz, fieldType);
             });
         });
     }
@@ -51,7 +52,7 @@ export class FieldPropertyService {
      */
     getDefaultValue(propertyName: string, fieldTypeClass?: string): any {
         if (propertyName === 'dataType') {
-            return DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value;
+            return DATA_TYPE_PROPERTY_INFO[fieldTypeClass] ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value : null;
         } else {
             return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].defaultValue : null;
         }
@@ -95,7 +96,18 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     getProperties(fieldTypeClass: string): string[] {
-        return this.fieldTypesProperties.get(fieldTypeClass);
+        const fieldType = this.fieldTypes.get(fieldTypeClass);
+        return  fieldType !== undefined ? fieldType.properties : undefined;
+    }
+
+    /**
+     * Return the FieldType object for a specific FieldType clazz
+     * @param {string} fieldTypeClass Field type's class
+     * @returns {string} FieldType object
+     * @memberof FieldPropertyService
+     */
+    getFieldType(fieldTypeClass: string): FieldType {
+        return this.fieldTypes.get(fieldTypeClass);;
     }
 
     /**

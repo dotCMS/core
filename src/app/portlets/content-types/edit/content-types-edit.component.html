@@ -1,12 +1,11 @@
 <content-type-layout [contentTypeId]="data ? data.id : null">
     <content-types-form
         #form
-        [data]="contentTypeItem | async"
+        [data]="data"
         [type]="contentTypeType"
         [name]="contentTypeName | async"
         [icon]="contentTypeIcon"
         (onSubmit)="handleFormSubmit($event)"
-        (onCancel)="router.navigate(['../'], { relativeTo: route })"
         (onDelete)="deleteContentType($event)">
     </content-types-form>
 

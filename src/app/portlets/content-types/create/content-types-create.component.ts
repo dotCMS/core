@@ -25,10 +25,10 @@ import { BaseComponent } from '../../../view/components/_common/_base/base-compo
 export class ContentTypesCreateComponent extends BaseComponent implements OnInit {
     contentTypeType: string;
     @ViewChild('form') form: ContentTypesFormComponent;
-    private contentTypeName: Observable<string>;
-    private contentTypeIcon: string;
+    public contentTypeName: Observable<string>;
+    public contentTypeIcon: string;
+    data: ContentType;
     contentTypeId: string;
-    private fields: Field[] = [];
 
     constructor(
         public contentTypesInfoService: ContentTypesInfoService,
@@ -69,11 +69,18 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
      * @memberof ContentTypesCreateComponent
      */
     public handleFormSubmit($event): void {
+        if (this.data && this.data.id) {
+            this.updateContentType($event.value);
+        } else {
+            this.saveContentType($event.value);
+        }
+    }
 
+    private  saveContentType(contentType: ContentType): void {
         const contentTypeData: ContentType = Object.assign(
             {},
             CONTENT_TYPE_INITIAL_DATA,
-            $event.value
+            contentType
         );
 
         contentTypeData.clazz = this.contentTypesInfoService.getClazz(
@@ -85,22 +92,41 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
             .subscribe(resp => this.handleFormSubmissionResponse(resp));
     }
 
+    public updateContentType(contentType: ContentType): void {
+        const contentTypeData: ContentType = Object.assign(
+            {},
+            this.data,
+            contentType
+        );
+
+        this.crudService
+            .putData(`v1/contenttype/id/${this.data.id}`, contentTypeData)
+            .subscribe(resp => this.handleFormSubmissionResponse(resp));
+    }
+
     /**
      * Save fields
      * @param fieldsToSave Fields to be save
      */
     saveFields(fieldsToSave: Field[]): void {
-        this.fieldService.saveFields(this.contentTypeId, fieldsToSave).subscribe(fields => this.fields = fields);
+        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(fields => {
+            this.data.fields = fields;
+            this.form.updateFormFields();
+        });
     }
 
     removeFields(fieldsToDelete: Field[]): void {
-        this.fieldService.deleteFields(this.contentTypeId, fieldsToDelete)
+        this.fieldService.deleteFields(this.data.id, fieldsToDelete)
         .pluck('fields')
-        .subscribe((fields: Field[]) => this.fields = fields);
+        .subscribe((fields: Field[]) => {
+            this.data.fields = fields;
+            this.form.updateFormFields();
+        });
     }
 
     private handleFormSubmissionResponse(res: ContentType[]): void {
-        this.contentTypeId = res[0].id;
+        this.data = res[0];
+        this.contentTypeId = this.data.id;
         this.form.resetForm();
     }
 

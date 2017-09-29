@@ -256,6 +256,7 @@ describe('ContentTypesFormComponent', () => {
 
     it('form should render dates fields in edit mode', () => {
         comp.data = {
+            id: '1',
             fields: [],
             hello: 'world'
         };

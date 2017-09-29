@@ -1,0 +1,14 @@
+.form__validation-input-container{
+    display: flex;
+
+    .ui-inputtext{
+        max-width: 70%;
+        margin-right: 5%;
+    }
+
+    p-dropdown{
+        .ui-dropdown{
+            width: auto;
+        }
+    }
+}

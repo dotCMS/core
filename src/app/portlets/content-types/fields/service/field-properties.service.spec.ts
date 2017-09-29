@@ -100,4 +100,16 @@ describe('FieldPropertyService', () => {
         expect(['property1', 'property2', 'property3']).toEqual(this.fieldPropertiesService.getProperties('fieldClass'));
         expect(this.fieldPropertiesService.getProperties('fieldClass2')).toBeUndefined();
     });
+
+    it('should return the Field Type Object for a Field Class', () => {
+        expect({
+            clazz: 'fieldClass',
+            helpText: 'help',
+            id: '1',
+            label: 'label',
+            properties: ['property1', 'property2', 'property3']
+        }).toEqual(this.fieldPropertiesService.getFieldType('fieldClass'));
+        expect(this.fieldPropertiesService.getFieldType('fieldClass2')).toBeUndefined();
+    });
+
 });

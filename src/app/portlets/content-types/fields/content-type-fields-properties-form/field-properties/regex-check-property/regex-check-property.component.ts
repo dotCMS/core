@@ -7,6 +7,7 @@ import { FormGroup, FormControl } from '@angular/forms';
 @Component({
     selector: 'regex-check-property',
     templateUrl: './regex-check-property.component.html',
+    styleUrls: ['./regex-check-property.component.scss']
 })
 export class RegexCheckPropertyComponent extends BaseComponent {
 

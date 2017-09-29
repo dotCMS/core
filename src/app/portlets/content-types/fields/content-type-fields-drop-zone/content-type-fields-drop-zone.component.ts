@@ -1,3 +1,4 @@
+///<reference path="../shared/field-type.model.ts"/>
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import {
     Component,
@@ -9,11 +10,13 @@ import {
     OnChanges,
     ViewChild
 } from '@angular/core';
-import { FieldService, FieldDragDropService } from '../service';
-import { FieldRow, Field, FieldColumn } from '../shared';
+import { FieldDragDropService } from '../service';
+import { FieldRow, Field, FieldType } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { MessageService } from '../../../../api/services/messages-service';
 import { FieldUtil } from '../util/field-util';
+import { FieldPropertyService } from '../service/field-properties.service';
+
 
 /**
  * Display all the Field Types
@@ -30,7 +33,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     displayDialog = false;
     fieldRows: FieldRow[] = [];
     formData: Field;
-    fieldProperties: string[];
+    public currentFieldType: FieldType;
 
     @ViewChild('fieldPropertiesForm') propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
@@ -38,7 +41,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     @Output() saveFields = new EventEmitter<Field[]>();
     @Output() removeFields = new EventEmitter<Field[]>();
 
-    constructor(private fieldDragDropService: FieldDragDropService, messageService: MessageService) {
+    constructor(private fieldDragDropService: FieldDragDropService, messageService: MessageService, private fieldPropertyService: FieldPropertyService) {
         super(
             [
                 'contenttypes.dropzone.action.save',
@@ -145,6 +148,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     editField(fieldToEdit: Field): void {
         const fields = this.getFields();
         this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
         this.toggleDialog();
     }
 
@@ -155,6 +159,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     setDroppedField(): void {
         const fields = this.getFields();
         this.formData = fields.find(field => FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field));
+        if (this.formData) {
+            this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
+        }
     }
 
     /**
@@ -186,6 +193,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         this.propertiesForm.destroy();
     }
 
+    // TODO: Remove if we will not use this anymore.
     getDialogHeader(): string {
         const dialogTitle = this.formData && this.formData.id ?
             this.i18nMessages['contenttypes.dropzone.action.edit'] : this.i18nMessages['contenttypes.dropzone.action.create.field'];

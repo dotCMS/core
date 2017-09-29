@@ -88,6 +88,11 @@ p-dropdown {
 }
 
 .ui-dropdown-panel {
+
+    &.ng-trigger-panelState{
+        margin-left: -10px;
+    }
+
     .ui-dropdown-filter-container .fa {
         top: 14px;
     }

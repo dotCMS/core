@@ -1,5 +1,5 @@
 export const FIELD_ICONS = {
-    'com.dotcms.contenttype.model.field.ImmutableBinaryField': 'fa-file',
+    'com.dotcms.contenttype.model.field.ImmutableBinaryField': 'fa-file-text',
     'com.dotcms.contenttype.model.field.ImmutableCategoryField': 'fa-list',
     'com.dotcms.contenttype.model.field.ImmutableCheckboxField': 'fa-check-square-o',
     'com.dotcms.contenttype.model.field.ImmutableConstantField': 'fa-square-o',

@@ -17,6 +17,8 @@ import { MockMessageService } from '../../../../test/message-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Subject } from 'rxjs/Subject';
 import { FieldDragDropService } from '../service/index';
+import {FieldPropertyService } from '../service/field-properties.service';
+import { FieldService } from '../service/field.service';
 
 @Component({
     selector: 'content-type-fields-row',
@@ -36,6 +38,15 @@ class TestContentTypeFieldsPropertiesForm {
     @Output() saveField: EventEmitter<any> = new EventEmitter();
     @Input() formFieldData: Field;
 }
+
+@Component({
+    selector: 'p-overlayPanel',
+    template: ''
+})
+class TestPOverlayPanelComponent {
+
+}
+
 @Injectable()
 class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
@@ -81,7 +92,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
                 TestContentTypeFieldsRow,
-                TestContentTypeFieldsPropertiesForm
+                TestContentTypeFieldsPropertiesForm,
+                TestPOverlayPanelComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([{
@@ -98,6 +110,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 LoginService,
                 SocketFactory,
                 FormatDateService,
+                FieldPropertyService,
+                FieldService,
                 { provide: MessageService, useValue: messageServiceMock },
                 { provide: Router, useValue: mockRouter }
             ]

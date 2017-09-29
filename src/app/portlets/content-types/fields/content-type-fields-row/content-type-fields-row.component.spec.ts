@@ -9,6 +9,7 @@ import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { MessageService } from '../../../../api/services/messages-service';
+import { ConfirmationService, ConfirmDialogModule } from 'primeng/primeng';
 import { MockMessageService } from '../../../../test/message-service.mock';
 
 @Component({
@@ -29,6 +30,12 @@ describe('ContentTypeFieldsRowComponent', () => {
 
     const messageServiceMock = new MockMessageService({
         'contenttypes.dropzone.rows.empty.message': 'Add fields here',
+        'contenttypes.action.delete': 'Delete',
+        'message.structure.delete.structure': 'Are you sure you want to delete this',
+        'message.structure.delete.content': 'and all the content associated with it?',
+        'message.structure.delete.notice': '(This operation can not be undone)',
+        'contenttypes.action.yes': 'Yes',
+        'contenttypes.action.no': 'No'
     });
 
     beforeEach(async(() => {
@@ -40,7 +47,8 @@ describe('ContentTypeFieldsRowComponent', () => {
             ],
             imports: [
                 DragulaModule,
-                IconButtonTooltipModule
+                IconButtonTooltipModule,
+                ConfirmDialogModule
             ],
             providers: [
                 FieldDragDropService,
@@ -115,7 +123,7 @@ describe('ContentTypeFieldsRowComponent', () => {
             expect(field).toEqual(editField);
         }));
 
-        it('should handle remove field event', fakeAsync(() => {
+        it('should handle remove field event', async(() => {
             let removeField;
 
             const field = this.fieldRow.columns[0].fields[0];
@@ -124,10 +132,16 @@ describe('ContentTypeFieldsRowComponent', () => {
             const column = de.query(By.css('.row-columns__item'));
             const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
 
-            comp.removeField.subscribe(eventField => removeField = eventField);
-            dragableItem.componentInstance.remove.emit(field);
+            const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
 
-            tick();
+            spyOn(confirmationService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+
+            comp.removeField.subscribe(eventField => {
+                removeField = eventField;
+            });
+            dragableItem.componentInstance.remove.emit(field);
 
             expect(field).toEqual(removeField);
             const fieldRemoved = this.fieldRow.columns[0].fields.filter(columnField => columnField === field);

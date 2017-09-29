@@ -27,7 +27,7 @@
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
                     <b>{{i18nMessages['contenttypes.content.variable']}}:</b>
-                    <a href="#">{{data.variable }}</a>
+                    <label>{{data.variable }}</label>
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-description" class="form__label">{{i18nMessages['contenttypes.form.label.description']}}</label>
@@ -46,7 +46,7 @@
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
                     <b>{{i18nMessages['contenttypes.form.identifier']}}:</b>
-                    <a href="#">{{data.id }}</a>
+                    <label>{{data.id }}</label>
                 </div>
                 <div class="form__group" *ngIf="isEditMode">
                     <div class="ui-g-6">
@@ -67,14 +67,12 @@
                 <div class="form__group" *ngIf="form.get('urlMapPattern')">
                     <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
                     <label for="content-type-form-url-map-pattern" class="form__label">{{i18nMessages['contenttypes.form.label.URL.pattern']}}</label>
-                    <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern"
-                    />
+                    <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern"/>
                 </div>
             </div>
         </div>
         <div class="form__buttons">
-            <button pButton type="button" flat id="content-type-form-collapse" label="Collapse" (click)="toggleForm()"></button>
-            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.cancel']}}" (click)="onCancelHandle($event)"></button>
+            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.form.hide']}}" (click)="toggleForm()"></button>
             <button pButton type="submit" id="content-type-form-submit" label="{{actionButtonLabel}}"></button>
         </div>
     </div>

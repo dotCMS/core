@@ -20,7 +20,7 @@ import { OverlayPanelModule, ConfirmationService } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldService } from '../fields/service';
-import { CONTENT_TYPE_INITIAL_DATA } from '../main';
+import { CONTENT_TYPE_INITIAL_DATA, ContentType } from '../main';
 import { Field } from '../fields/shared';
 
 @Component({
@@ -45,6 +45,7 @@ class TestContentTypeLayout {
     template: ''
 })
 class TestContentTypesForm {
+    @Input() data: ContentType;
     @Input() icon: string;
     @Input() name: string;
     @Input() type: string;
@@ -137,7 +138,7 @@ describe('ContentTypesCreateComponent', () => {
         expect('Content').toEqual(contentTypeFormComponentInstance.name);
     });
 
-    it('should have call content types endpoint with content data', () => {
+    it('should have call save content types endpoint with content data', () => {
         url = [
             new UrlSegment('create', { name: 'create' }),
             new UrlSegment('content', { name: 'content' })
@@ -147,7 +148,7 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture.detectChanges();
 
-        const mockData = [
+        const mockData: ContentType[] = [
             {
                 clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
@@ -182,6 +183,41 @@ describe('ContentTypesCreateComponent', () => {
         expect(event.value.host).toEqual(this.contentType.host);
         expect(event.value.name).toEqual(this.contentType.name);
         expect('content').toEqual(comp.contentTypeType);
+        expect(mockData[0]).toEqual(comp.data);
+    });
+
+    it('should have call update content types endpoint with content data', () => {
+        const mockData: ContentType[] = [
+            {
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                defaultType: false,
+                fixed: false,
+                folder: 'SYSTEM_FOLDER',
+                host: '12345',
+                id: '1',
+                name: 'Hello World',
+                owner: '123',
+                system: false
+            }
+        ];
+
+        comp.data = mockData[0];
+
+        const crudService = fixture.debugElement.injector.get(CrudService);
+        const spy = spyOn(crudService, 'putData').and.returnValue(Observable.of(mockData));
+
+        const event = {
+            originalEvent: Event,
+            value: {
+                host: '12345',
+                name: 'Hello World'
+            }
+        };
+
+        comp.handleFormSubmit(event);
+
+        expect(mockData[0]).toEqual(comp.data);
+        expect(spy).toHaveBeenCalledWith('v1/contenttype/id/1', mockData[0]);
     });
 
     it('should have call content types endpoint with widget data', () => {

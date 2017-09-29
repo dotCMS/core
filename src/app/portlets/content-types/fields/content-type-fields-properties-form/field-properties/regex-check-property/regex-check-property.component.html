@@ -1,6 +1,8 @@
 <div [formGroup]="group">
     <label class="form__label">{{i18nMessages['contenttypes.field.properties.validation_regex.label']}}</label>
-    <input pInputText type="text" style="width:68%" [formControlName]="property.name">
-    <p-dropdown [style]="{'width':'30%'}" [options]="regexCheckTempletes" (onChange)="templateSelect($event)" [formControlName]="property.name">
-    </p-dropdown>
+    <div class="form__validation-input-container">
+        <input pInputText type="text" [formControlName]="property.name">
+        <p-dropdown [style]="{'width':'auto'}" [options]="regexCheckTempletes" (onChange)="templateSelect($event)" [formControlName]="property.name">
+        </p-dropdown>
+    </div>
 </div>

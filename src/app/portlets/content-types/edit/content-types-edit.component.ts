@@ -57,9 +57,9 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
 
     ngOnInit(): void {
         this.route.url.subscribe(res => {
-            this.contentTypeItem = this.crudService
+            this.crudService
                 .getDataById('v1/contenttype', res[1].path)
-                .do(contentType => {
+                .subscribe(contentType => {
                     const type = this.contentTypesInfoService.getLabel(contentType.clazz);
                     this.contentTypeName = this.messageService.messageMap$.pluck(
                         this.stringUtils.titleCase(type)
@@ -79,7 +79,7 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
     public deleteContentType($event): void {
         this.confirmationService.confirm({
             accept: () => {
-                this.crudService.delete(`v1/contenttype/id/`, this.data.id).subscribe(data => {
+                this.crudService.delete(`v1/contenttype/id`, this.data.id).subscribe(data => {
                     this.router.navigate(['../'], { relativeTo: this.route });
                 });
             },
@@ -107,7 +107,10 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
      * @param fieldsToSave Fields to be save
      */
     saveFields(fieldsToSave: Field[]): void {
-        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(fields => this.data.fields = fields);
+        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(fields => {
+            this.data.fields = fields;
+            this.form.updateFormFields();
+        });
     }
 
     /**
@@ -117,7 +120,10 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
     removeFields(fieldsToDelete: Field[]): void {
         this.fieldService.deleteFields(this.data.id, fieldsToDelete)
             .pluck('fields')
-            .subscribe(fields => this.data.fields = <Field[]> fields);
+            .subscribe(fields => {
+                this.data.fields = <Field[]> fields;
+                this.form.updateFormFields();
+            });
     }
 
     private handleFormSubmissionResponse(res: any): void {

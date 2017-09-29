@@ -20,24 +20,30 @@
         {{i18nMessages['contenttypes.dropzone.empty.message']}}
     </div>
 </div>
-<p-dialog 
+<p-dialog
     modal="modal"
     width="300"
-    [header]="getDialogHeader()"
     [(visible)]="displayDialog"
     [responsive]="true"
     [resizable]="false"
     [draggable]="false"
     (onHide)="removeFieldsWithoutId()">
-    
-    <content-type-fields-properties-form 
+
+    <p-header>
+        {{currentFieldType?.label}} <i class="fa fa-question form__hint-icon content-type-fields-drop-zone__hint-icon" (click)="fieldHelperOverlay.toggle($event)"></i>
+    </p-header>
+
+    <content-type-fields-properties-form
         [formFieldData]="formData"
         (saveField)="saveFieldsHandler($event)"
         #fieldPropertiesForm>
     </content-type-fields-properties-form>
-    
+
     <p-footer>
         <button type="button" flat pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
         <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
     </p-footer>
 </p-dialog>
+<p-overlayPanel #fieldHelperOverlay [style]="{'width':'300px'}">
+    <div [innerHTML]="currentFieldType?.helpText" ></div>
+</p-overlayPanel>

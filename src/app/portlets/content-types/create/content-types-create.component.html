@@ -1,14 +1,14 @@
 <content-type-layout [contentTypeId]="contentTypeId">
     <content-types-form #form
+        [data]="data"
         [type]="contentTypeType"
         [name]="contentTypeName | async"
         [icon]="contentTypeIcon"
-        (onSubmit)="handleFormSubmit($event)"
-        (onCancel)="router.navigate(['../'], { relativeTo: route })">
+        (onSubmit)="handleFormSubmit($event)">
     </content-types-form>
 
     <content-type-fields-drop-zone *ngIf="contentTypeId"
-        [fields]="fields" 
+        [fields]="data.fields"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)">
 
