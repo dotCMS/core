@@ -153,7 +153,11 @@ public class FileUtil {
         }
 	}
 
-	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+    public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+        copyFile(source, destination, hardLinks, true);
+    }
+
+	public static void copyFile(File source, File destination, boolean hardLinks, boolean validateEmptyFile) throws IOException {
 		
         
         if (!source.exists()) {
@@ -164,7 +168,9 @@ public class FileUtil {
         	return;
 		}
         
-        validateEmptyFile(source);
+        if (validateEmptyFile){
+            validateEmptyFile(source);
+        }
 
         if (hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)) {
             hardLinks = false;
