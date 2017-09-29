@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -193,16 +194,23 @@ public class FileUtil {
                 // setting this means we will try again if we cannot hard link
                 if (!destination.exists() || destination.length() == 0) {
                     hardLinks = false;
-                    Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-                            + ", destination: " + destination.getAbsolutePath());
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Can't create hardLink. source: " + source.getAbsolutePath());
+                    sb.append(", destination: " + destination.getAbsolutePath());
+                    Logger.warn(FileUtil.class, sb.toString());
                 }
-            } catch (IOException e) {
-
+            }  catch (FileAlreadyExistsException e1) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Source File: " + source.getAbsolutePath());
+                sb.append("already exists on the destination: " + destination.getAbsolutePath());
+                Logger.debug(FileUtil.class, sb.toString());
+            } catch (IOException e2 ){
                 hardLinks = false; // setting to false will execute the fallback
-                Logger.debug(FileUtil.class,
-                        "Could not created the hard link, will try copy for source: " + source +
-                        ", destination: " + destination + ". Error message: " + e.getMessage());
-            }
+                StringBuilder sb = new StringBuilder();
+                sb.append("Could not created the hard link, will try copy for source: " + source);
+                sb.append(", destination: " + destination + ". Error message: " + e2.getMessage());
+                Logger.debug(FileUtil.class, sb.toString());
+            } 
         }
 
         if (!hardLinks) {
