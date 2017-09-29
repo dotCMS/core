@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -22,7 +21,6 @@ import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 

@@ -308,10 +308,10 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
-	private String getOrderByRealName(String orderbyParam) {
-		if (orderbyParam.equals("modDate")){
+	private String getOrderByRealName(final String orderbyParam) {
+		if ("modDate".equals(orderbyParam)){
 			return "mod_date";
-		}else if (orderbyParam.equals("variable")) {
+		}else if ("variable".equals(orderbyParam)) {
 			return "velocity_var_name";
 		} else {
 			return orderbyParam;
