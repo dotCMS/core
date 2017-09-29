@@ -751,7 +751,10 @@
             var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
             for(var i = 0; i < multiselect.options.length; i++) {
                 if(multiselect.options[i].selected) {
-                    valuesList += multiselect.options[i].value + ",";
+                    if (valuesList != ""){
+                        valuesList += ","
+                    }
+                    valuesList += multiselect.options[i].value;
                 }
             }
             $('<%=field.getVelocityVarName()%>').value = valuesList;
