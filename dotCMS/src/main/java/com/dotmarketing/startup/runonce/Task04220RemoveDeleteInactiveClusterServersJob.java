@@ -22,9 +22,9 @@ public class Task04220RemoveDeleteInactiveClusterServersJob extends AbstractJDBC
     // Execution order of the queries is important
     private static final List<String> QUERIES = CollectionsUtils.list(
                     "DELETE FROM qrtz_excl_fired_triggers WHERE trigger_name = 'trigger23'",
-                    "DELETE FROM dotcms.qrtz_excl_cron_triggers WHERE trigger_name = 'trigger23'",
-                    "DELETE FROM dotcms.qrtz_excl_triggers WHERE trigger_name = 'trigger23' AND job_name = 'RemoveInactiveClusterServerJob'",
-                    "DELETE FROM dotcms.qrtz_excl_job_details WHERE job_name = 'RemoveInactiveClusterServerJob' AND job_class_name = 'com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob'");
+                    "DELETE FROM qrtz_excl_cron_triggers WHERE trigger_name = 'trigger23'",
+                    "DELETE FROM qrtz_excl_triggers WHERE trigger_name = 'trigger23' AND job_name = 'RemoveInactiveClusterServerJob'",
+                    "DELETE FROM qrtz_excl_job_details WHERE job_name = 'RemoveInactiveClusterServerJob' AND job_class_name = 'com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob'");
 
     @Override
     public boolean forceRun() {
