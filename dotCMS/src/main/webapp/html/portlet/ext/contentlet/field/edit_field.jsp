@@ -754,7 +754,7 @@
                     if (valuesList != ""){
                         valuesList += ","
                     }
-                    valuesList += multiselect.options[i].value + ",";
+                    valuesList += multiselect.options[i].value;
                 }
             }
             $('<%=field.getVelocityVarName()%>').value = valuesList;
