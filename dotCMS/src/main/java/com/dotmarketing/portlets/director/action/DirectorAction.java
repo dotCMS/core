@@ -67,6 +67,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.factories.UserPreferencesFactory;
 import com.dotmarketing.portlets.user.model.UserPreference;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -590,6 +592,7 @@ public class DirectorAction extends DotPortletAction {
 								MultiTreeFactory.saveMultiTree(mTree);
 								updatePageModDate(htmlPage, user);
 							}
+							PageServices.invalidateAll(htmlPage);
 	                    }
 	
 	                } else {
@@ -651,7 +654,7 @@ public class DirectorAction extends DotPortletAction {
 					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
 					MultiTreeFactory.deleteMultiTree(multiTree);
-	
+					PageServices.invalidateAll(htmlPage);
 					updatePageModDate(htmlPage, user);
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
@@ -760,6 +763,7 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
+				PageServices.invalidateAll(htmlPage);
 				_sendToReferral(req, res, referer);
 				return;
 			}
@@ -829,7 +833,7 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
-
+				PageServices.invalidateAll(htmlPage);
 				_sendToReferral(req, res, referer);
 				return;
 
