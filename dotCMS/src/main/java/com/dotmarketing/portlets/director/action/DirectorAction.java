@@ -88,6 +88,29 @@ public class DirectorAction extends DotPortletAction {
 	    return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
 	    
 	}
+	
+	/**
+     * Invalidates Cached Resources of Page
+     * in order to refresh any recent update on
+     * contents that were added/removed from it
+     * 
+     * @param htmlPage
+     *            - The Legacy or Content Page that has changed.
+     * @param user
+     *            - The user performing this action.
+     * @throws DotStateException
+     * @throws DotDataException
+     *             An error occurred when persisting the changes in the
+     *             database.
+     * @throws DotSecurityException 
+    */
+    protected void refreshPage(IHTMLPage htmlPage, User user) 
+            throws DotStateException, DotDataException, DotSecurityException {
+        if (htmlPage.isContent()) {
+            PageServices.invalidateAll(htmlPage);
+            updatePageModDate(htmlPage, user);
+        }
+    }
 
 	/**
 	 * Updates the modification date of the page that has been recently
@@ -565,8 +588,6 @@ public class DirectorAction extends DotPortletAction {
 								if (versionInfo != null) {
 									MultiTreeFactory.saveMultiTree(mTree,
 											contentlet.getLanguageId());
-									updatePageModDate(htmlPage, user,
-											contentlet.getLanguageId());
 								} else {
 									// The language in the page and the 
 									// contentlet do not match
@@ -589,9 +610,8 @@ public class DirectorAction extends DotPortletAction {
 								}
 							} else {
 								MultiTreeFactory.saveMultiTree(mTree);
-								updatePageModDate(htmlPage, user);
 							}
-							PageServices.invalidateAll(htmlPage);
+							refreshPage(htmlPage,user);
 	                    }
 	
 	                } else {
@@ -653,8 +673,7 @@ public class DirectorAction extends DotPortletAction {
 					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
 					MultiTreeFactory.deleteMultiTree(multiTree);
-					PageServices.invalidateAll(htmlPage);
-					updatePageModDate(htmlPage, user);
+					refreshPage(htmlPage,user);
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {
@@ -762,7 +781,7 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
-				PageServices.invalidateAll(htmlPage);
+				refreshPage(htmlPage,user);
 				_sendToReferral(req, res, referer);
 				return;
 			}
@@ -832,7 +851,7 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
-				PageServices.invalidateAll(htmlPage);
+				refreshPage(htmlPage,user);
 				_sendToReferral(req, res, referer);
 				return;
 
@@ -864,23 +883,6 @@ public class DirectorAction extends DotPortletAction {
 				return;
 			}
 			
-			/*if(cmd!=null && cmd.equals("migrate")) {
-			    try {
-			        HibernateUtil.startTransaction();
-    			    HTMLPage htmlPage = (HTMLPage) HibernateUtil.load(HTMLPage.class, req.getParameter("htmlPage"));
-    			    APILocator.getHTMLPageAssetAPI().migrateLegacyPage(htmlPage, user, false);
-    			    HibernateUtil.closeAndCommitTransaction();
-			    }
-			    catch(Exception ex) {
-			        HibernateUtil.rollbackTransaction();
-			        Logger.error(this, "can't migrate page inode "+req.getParameter("htmlPage"),ex);
-			    }
-			    
-			    _sendToReferral(req, res, referer);
-                return;
-			}*/
-			
-
 			Contentlet contentlet = new Contentlet();
 			String cInode = req.getParameter("contentlet");
 			if(InodeUtils.isSet(cInode)){
