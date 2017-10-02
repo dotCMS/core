@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
 
 public class AjaxFileUploadServlet extends HttpServlet {
 
@@ -150,11 +151,12 @@ public class AjaxFileUploadServlet extends HttpServlet {
 					if(fileItem.getSize() == 0)
 						isEmptyFile = true;
 
-					if (fileItem.getName().contains(File.separator)) {
-						fileName = fileItem.getName().substring(
-								fileItem.getName().lastIndexOf(File.separator) + 1);
-					} else {
-						fileName = fileItem.getName();
+					fileName = fileItem.getName();
+
+					fileName = FilenameUtils.separatorsToSystem(fileName);
+
+					if (fileName.contains(File.separator)) {
+						fileName = fileName.substring(fileName.lastIndexOf(File.separator) + 1);
 					}
 					fileName = ContentletUtil.sanitizeFileName(fileName);
 					fieldName = ContentletUtil.sanitizeFileName(fieldName);
