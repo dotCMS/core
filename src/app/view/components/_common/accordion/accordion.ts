@@ -1,4 +1,5 @@
 import { Component, Input, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
 
@@ -17,6 +18,7 @@ export class Accordion {
     closeOthers(openGroup: AccordionGroup): void {
         this.groups.forEach((group: AccordionGroup) => {
             if (group !== openGroup) {
+                // TODO: why is this code commented?
                 // group.isOpen = false;
             }
         });
@@ -31,6 +33,25 @@ export class Accordion {
 }
 
 @Component({
+    animations: [
+        trigger('expandAnimation', [
+            state(
+                'expanded',
+                style({
+                    height: '*',
+                    overflow: 'visible'
+                })
+            ),
+            state(
+                'collapsed',
+                style({
+                    height: '0px',
+                    overflow: 'hidden'
+                })
+            ),
+            transition('expanded <=> collapsed', animate('250ms ease-in-out'))
+        ])
+    ],
     selector: 'accordion-group',
     styleUrls: ['./accordion-group.scss'],
     template: `
@@ -41,7 +62,7 @@ export class Accordion {
             </span>
 
         </a>
-        <div class="accordion-group__content" [style.height.px]="isOpen ? accordionGroupHeight : 0">
+        <div class="accordion-group__content" [@expandAnimation]="isOpen ? 'expanded' : 'collapsed'">
             <div class="accordion-group__content-inner" #accordionGroupContentInner>
                 <ng-content></ng-content>
             </div>

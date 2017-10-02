@@ -23,7 +23,7 @@ import { MdInputTextModule } from '../view/directives/md-inputtext/md-input-text
 // Common Modules
 import { DotDropdownModule } from '../view/components/_common/dropdown-component/dot-dropdown.module';
 import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
-import { MainNavigationModule } from '../view/components/main-navigation/main-navigation.module';
+import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
 
 
 @NgModule({

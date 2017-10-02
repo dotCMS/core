@@ -3,7 +3,6 @@
     <form [formGroup]="form" (ngSubmit)="doLoginAs($event)" id="login-as-form" novalidate>    
         <div class="form__group">
             <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-
             <searchable-dropdown #searchableDropdown
                 (change)="userSelectedHandler($event)"
                 (filterChange)="handleFilterChange($event)"

@@ -1,4 +1,5 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { DotLoadingIndicatorService } from './dot-loading-indicator.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -9,5 +10,5 @@ import { Component, Input, ViewEncapsulation } from '@angular/core';
 export class DotLoadingIndicatorComponent {
     @Input() fullscreen: boolean;
 
-    constructor() {}
+    constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}
 }

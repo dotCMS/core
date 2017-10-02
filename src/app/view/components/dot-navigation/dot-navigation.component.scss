@@ -43,6 +43,7 @@ accordion {
 
         a {
             color: $gray-dark;
+            outline: 0;
 
             &:hover {
                 color: $body-font-color;

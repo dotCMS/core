@@ -7,7 +7,10 @@ import { LoginPageComponent } from './view/components/login/login-page-component
 import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
 import { MyAccountComponent } from './view/components/my-account/dot-my-account-component';
-import { NotificationsList, NotificationsItem } from './view/components/_common/notifications/notifications';
+import {
+    NotificationsList,
+    NotificationsItem
+} from './view/components/_common/notifications/notifications';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
 import { ToolbarComponent } from './view/components/toolbar/toolbar.component';
@@ -23,21 +26,12 @@ export const COMPONENTS = [
     MyAccountComponent,
     NotificationsItem,
     NotificationsList,
-    ToolbarAddContenletBodyComponent,
-    ToolbarAddContenletComponent,
     ToolbarComponent,
     ToolbarNotifications,
     ToolbarUserComponent
 ];
 
 // CUSTOM PIPES
-import { CapitalizePipe } from './api/pipes/capitalize-pipe';
+import { CapitalizePipe, SafePipe} from './view/pipes/index';
 
-export const PIPES = [
-    CapitalizePipe
-];
-
-import {
-    ToolbarAddContenletBodyComponent,
-    ToolbarAddContenletComponent
-} from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
+export const PIPES = [CapitalizePipe, SafePipe];

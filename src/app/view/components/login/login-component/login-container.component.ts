@@ -27,10 +27,10 @@ export class LoginContainerComponent {
     public resetEmailSent = false;
 
     constructor(
-        private loginService: LoginService,
-        private router: DotRouterService,
+        private dotRouterService: DotRouterService,
         private httprequestUtils: HttpRequestUtils,
-        private loggerService: LoggerService
+        private loggerService: LoggerService,
+        private loginService: LoginService
     ) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
         const queryParams: Map<string, any> = this.httprequestUtils.getQueryParams();
@@ -56,7 +56,7 @@ export class LoginContainerComponent {
             .subscribe(
                 (result: any) => {
                     this.message = '';
-                    this.router.goToMain();
+                    this.dotRouterService.goToMain();
                 },
                 (error: ResponseView) => {
                     if (
@@ -76,7 +76,7 @@ export class LoginContainerComponent {
      * Display the forgot password card
      */
     showForgotPassword(): void {
-        this.router.goToForgotPassword();
+        this.dotRouterService.goToForgotPassword();
     }
 
     private getErrorMessage(origMessage: string): string {

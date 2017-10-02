@@ -37,12 +37,11 @@ import {
     VisitorsLocationContainer
 } from 'dotcms-rules-engine/dotcms-rules-engine';
 
-const routes: Routes = [
-    {
-        component: AppRulesComponent,
-        path: ''
-    }
-];
+const routes: Routes = [{
+    component: AppRulesComponent,
+    path: ''
+}];
+
 
 @NgModule({
     imports: [

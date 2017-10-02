@@ -6,7 +6,7 @@ import { TestBed, async } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { DOTTestBed } from './test/dot-test-bed';
 import { NotLicensedService } from './api/services/not-licensed-service';
-import { RoutingService } from './api/services/routing-service';
+import { DotMenuService } from './api/services/dot-menu.service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './api/services/dot-router-service';
 
@@ -19,7 +19,7 @@ describe('AppComponent', () => {
                 DotRouterService,
                 LoginService,
                 NotLicensedService,
-                RoutingService,
+                DotMenuService,
                 SocketFactory
             ]
         });

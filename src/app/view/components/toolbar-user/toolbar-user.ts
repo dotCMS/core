@@ -20,11 +20,9 @@ export class ToolbarUserComponent extends BaseComponent {
     private showMyAccount = false;
 
     constructor(
-        private router: DotRouterService,
         private loginService: LoginService,
         messageService: MessageService,
         private loggerService: LoggerService,
-        private iframeOverlayService: IframeOverlayService
     ) {
         super(['my-account'], messageService);
     }
@@ -52,7 +50,6 @@ export class ToolbarUserComponent extends BaseComponent {
         $event.preventDefault();
         this.loginService.logoutAs().subscribe(
             data => {
-                this.router.goToMain();
                 this.dropdown.closeIt();
             },
             error => {

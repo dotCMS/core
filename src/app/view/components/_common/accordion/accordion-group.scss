@@ -3,9 +3,3 @@
 .accordion-group__title {
     display: block;
 }
-
-.accordion-group__content {
-    transition: height 0.15s ease-in;
-    height: 0;
-    overflow: hidden;
-}

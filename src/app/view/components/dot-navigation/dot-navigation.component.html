@@ -1,0 +1,16 @@
+<accordion>
+    <nav #menuElement>
+        <ng-template ngFor let-menu [ngForOf]="menu | async">
+            <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon" [open]="menu.isOpen">
+                <div class="main-nav__submenu">
+                    <ng-template ngFor let-menuItem [ngForOf]="menu.menuItems">
+                        <a ripple (click)="onClick($event, menuItem.id)" [routerLink]="menuItem.menuLink" 
+                            [class.main-nav__submenu--active]="isActive(menuItem.id)">
+                            {{menuItem.name}}
+                        </a>
+                    </ng-template>
+                </div>
+            </accordion-group>
+        </ng-template>
+    </nav>
+</accordion>

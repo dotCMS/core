@@ -2,8 +2,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
-import { MainNavigationComponent } from './main-navigation.component';
+import { DotNavigationComponent } from './dot-navigation.component';
 import { Accordion, AccordionGroup } from '../_common/accordion/accordion';
+import { DotNavigationService } from './dot-navigation.service';
 
 @NgModule({
     imports: [
@@ -11,12 +12,13 @@ import { Accordion, AccordionGroup } from '../_common/accordion/accordion';
         RouterModule
     ],
     declarations: [
-        MainNavigationComponent,
+        DotNavigationComponent,
         AccordionGroup,
         Accordion
     ],
+    providers: [DotNavigationService],
     exports: [
-        MainNavigationComponent
+        DotNavigationComponent
     ]
 })
 export class MainNavigationModule { }

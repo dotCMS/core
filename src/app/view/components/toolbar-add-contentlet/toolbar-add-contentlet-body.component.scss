@@ -1,7 +1,8 @@
 @import "mixins";
 @import "variables";
 
-toolbar-add-contentlet-body {
+dot-toolbar-add-contentlet-body {
+    width: 360px;
     display: flex;
     flex-direction: column;
     padding: $basic-padding * 2 0 $basic-padding * 2;
@@ -18,6 +19,15 @@ toolbar-add-contentlet-body {
 
 .toolbar-add-contentlet-body__list {
     @include naked-list;
+}
+
+.toolbar-add-contentlet-body__list--split {
+    display: flex;
+    flex-wrap: wrap;
+
+    .toolbar-add-contentlet-body__list-item {
+        width: 50%;
+    }
 }
 
 .toolbar-add-contentlet-body__list-item {
@@ -44,4 +54,5 @@ toolbar-add-contentlet-body {
 .toolbar-add-contentlet-body__section {
     padding: 0 $basic-padding * 2;
     white-space: nowrap;
+    flex: 1;
 }
