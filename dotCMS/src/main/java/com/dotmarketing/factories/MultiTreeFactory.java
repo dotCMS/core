@@ -36,8 +36,8 @@ import com.dotmarketing.util.Logger;
  */
 public class MultiTreeFactory {
     
-    private final static String deleteMultiTreeErrorMessage = "Deleting MultiTree Object failed:";
-    private final static String saveMultiTreeErrorMessage = "Saving MultiTree Object failed:";
+    private static final String DeleteMultiTreeErrorMessage = "Deleting MultiTree Object failed:";
+    private static final String SaveMultiTreeErrorMessage = "Saving MultiTree Object failed:";
 
 	public static void deleteMultiTree(Object o1, Object o2, Object o3) {
 		Inode inode1 = (Inode) o1;
@@ -165,11 +165,11 @@ public class MultiTreeFactory {
             refreshPageInCache(parent.getId(), languageId);
             
         } catch (SQLException e) {
-            throw new DotDataException(deleteMultiTreeErrorMessage, e);
+            throw new DotDataException(DeleteMultiTreeErrorMessage, e);
         } catch (DotContentletStateException e) {
-            throw new DotContentletStateException(deleteMultiTreeErrorMessage, e);
+            throw new DotContentletStateException(DeleteMultiTreeErrorMessage, e);
         } catch (DotSecurityException e) {
-            throw new DotSecurityException(deleteMultiTreeErrorMessage, e);
+            throw new DotSecurityException(DeleteMultiTreeErrorMessage, e);
         }
     }
     
@@ -205,16 +205,16 @@ public class MultiTreeFactory {
 	        refreshPageInCache(id,languageId);
 	        return;	        
 	    } catch (DotHibernateException e) {
-	        Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
+	        Logger.error(MultiTreeFactory.class, DeleteMultiTreeErrorMessage + e, e);
 	        throw new DotRuntimeException(e.getMessage());
 	    } catch (DotStateException e) {
-	        Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
+	        Logger.error(MultiTreeFactory.class, DeleteMultiTreeErrorMessage + e, e);
 	        throw new DotStateException(e.getMessage());
         } catch (DotDataException e) {
-            Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
+            Logger.error(MultiTreeFactory.class, DeleteMultiTreeErrorMessage + e, e);
             throw new DotDataException(e.getMessage());
         } catch (DotSecurityException e) {
-            Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
+            Logger.error(MultiTreeFactory.class, DeleteMultiTreeErrorMessage + e, e);
             throw new DotSecurityException(e.getMessage());
         }
 	}
@@ -401,16 +401,16 @@ public class MultiTreeFactory {
 			updateVersionTs(id, languageId);
 			refreshPageInCache(id,languageId);
 		} catch (DotHibernateException e) {
-			Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
+			Logger.error(MultiTreeFactory.class, SaveMultiTreeErrorMessage + e, e);
 			throw new DotRuntimeException(e.getMessage());
 		} catch (DotStateException e) {
-			Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
+			Logger.error(MultiTreeFactory.class, SaveMultiTreeErrorMessage + e, e);
 			throw new DotRuntimeException(e.getMessage());
 		} catch (DotDataException e) {
-            Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
+            Logger.error(MultiTreeFactory.class, SaveMultiTreeErrorMessage + e, e);
             throw new DotRuntimeException(e.getMessage());
         } catch (DotSecurityException e) {
-            Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
+            Logger.error(MultiTreeFactory.class, SaveMultiTreeErrorMessage + e, e);
             throw new DotSecurityException(e.getMessage());
         }
 	}
