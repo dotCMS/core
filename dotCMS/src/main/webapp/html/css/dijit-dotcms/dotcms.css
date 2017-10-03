@@ -9912,7 +9912,7 @@ dd .buttonCaption {
 .portlet-pagination {
   margin: 16px;
 }
-.file-browser.portlet-pagination {
+.file-selector-tree__pagination.portlet-pagination {
   background: #FFFFFF;
   padding: 16px;
   position: absolute;
