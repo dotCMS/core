@@ -117,7 +117,7 @@ export class DotContentletService {
     }
 
     private isMainContentType(type: StructureTypeView): boolean {
-        return this.MAIN_CONTENT_TYPES.includes(type.name);
+        return this.MAIN_CONTENT_TYPES.indexOf(type.name) > -1;
     }
 
     private isMoreContentType(type: StructureTypeView): boolean {

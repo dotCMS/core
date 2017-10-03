@@ -70,9 +70,6 @@ export class DotRouterService {
     }
 
     getPortletId(url: string): string {
-        const urlSplit = url.split('/');
-        return urlSplit[urlSplit.length - 1];
+        return url.split('/').filter(item => item !== '' && item !== '#' && item !== 'c')[0];
     }
-
-    reloadPortlet() {}
 }

@@ -93,7 +93,7 @@ export class DotNavigationService {
             this.dotMenuService
                 .isPortletInMenu(
                     this.dotRouterService.currentPortlet.id ||
-                        this.getPortletIdFromHash(this.location.hash)
+                    this.dotRouterService.getPortletId(this.location.hash)
                 )
                 .subscribe((isPortletInMenu: boolean) => {
                     if (!isPortletInMenu) {
@@ -136,10 +136,6 @@ export class DotNavigationService {
             .map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
     }
 
-    private getPortletIdFromHash(hash: string): string {
-        return hash.split('/').slice(-1)[0];
-    }
-
     private getMenuLink(menuItemId: string): string {
         return `/c/${menuItemId}`;
     }
@@ -153,7 +149,7 @@ export class DotNavigationService {
     }
 
     private isMenuItemCurrentUrl(currentUrl: string, menuItemId: string): boolean {
-        return this.getPortletIdFromHash(currentUrl) === menuItemId;
+        return this.dotRouterService.getPortletId(currentUrl) === menuItemId;
     }
 
     private setMenu(menu: DotMenu[]) {
