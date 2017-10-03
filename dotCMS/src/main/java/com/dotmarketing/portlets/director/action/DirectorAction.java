@@ -29,7 +29,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 
 import javax.servlet.http.HttpServletRequest;
@@ -67,7 +66,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.factories.UserPreferencesFactory;
 import com.dotmarketing.portlets.user.model.UserPreference;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -87,74 +85,6 @@ public class DirectorAction extends DotPortletAction {
 	    Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
 	    return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
 	    
-	}
-	
-	/**
-     * Invalidates Cached Resources of Page
-     * in order to refresh any recent update on
-     * contents that were added/removed from it
-     * 
-     * @param htmlPage
-     *            - The Legacy or Content Page that has changed.
-     * @param user
-     *            - The user performing this action.
-     * @throws DotStateException
-     * @throws DotDataException
-     *             An error occurred when persisting the changes in the
-     *             database.
-     * @throws DotSecurityException 
-    */
-    protected void refreshPage(IHTMLPage htmlPage, User user) 
-            throws DotStateException, DotDataException, DotSecurityException {
-        if (htmlPage.isContent()) {
-            PageServices.invalidateAll(htmlPage);
-            updatePageModDate(htmlPage, user);
-        }
-    }
-
-	/**
-	 * Updates the modification date of the page that has been recently
-	 * modified, i.e., the version info of the page using the default language 
-	 * in the system.
-	 * 
-	 * @param htmlPage
-	 *            - The Legacy or Content Page that has changed.
-	 * @param user
-	 *            - The user performing this action.
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 *             An error occurred when persisting the changes in the
-	 *             database.
-	 */
-	protected void updatePageModDate(IHTMLPage htmlPage, User user) throws DotStateException, DotDataException {
-		updatePageModDate(htmlPage, user, htmlPage.getLanguageId());
-	}
-	
-	/**
-	 * Updates the modification date of the page that has been recently
-	 * modified, i.e., the version info of the page.
-	 * 
-	 * @param htmlPage
-	 *            - The Legacy or Content Page that has changed.
-	 * @param user
-	 *            - The user performing this action.
-	 * @param languageId
-	 *            - The language ID of the content being saved.
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 *             An error occurred when persisting the changes in the
-	 *             database.
-	 */
-	protected void updatePageModDate(IHTMLPage htmlPage, User user,
-			long languageId) throws DotStateException, DotDataException {
-		if (htmlPage.isContent()) {
-			ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
-					.getContentletVersionInfo(htmlPage.getIdentifier(),
-							languageId);
-			versionInfo.setVersionTs(new Date());
-			APILocator.getVersionableAPI().saveContentletVersionInfo(
-					versionInfo);
-		}
 	}
 
 	/**
@@ -579,39 +509,34 @@ public class DirectorAction extends DotPortletAction {
 	                    	
 	                    }
 	                    if(!duplicateContentCheck){
-							if (htmlPage.isContent()) {
-								ContentletVersionInfo versionInfo = APILocator
-										.getVersionableAPI()
-										.getContentletVersionInfo(
-												htmlPage.getIdentifier(),
-												contentlet.getLanguageId());
-								if (versionInfo != null) {
-									MultiTreeFactory.saveMultiTree(mTree,
-											contentlet.getLanguageId());
-								} else {
-									// The language in the page and the 
-									// contentlet do not match
-									long contentletLang = contentlet
-											.getLanguageId();
-									String language = APILocator.getLanguageAPI()
-											.getLanguage(contentletLang)
-											.getLanguage();
-									Logger.error(this,
-											"Creating MultiTree failed: Contentlet with identifier "
-													+ htmlPage.getIdentifier()
-													+ " does not exist in "
-													+ language);
-									String msg = MessageFormat
-											.format(LanguageUtil
-													.get(user,
-															"message.htmlpage.error.addcontent.invalidlanguage"),
-													language);
-									throw new DotRuntimeException(msg);
-								}
-							} else {
-								MultiTreeFactory.saveMultiTree(mTree);
-							}
-							refreshPage(htmlPage,user);
+	                        ContentletVersionInfo versionInfo = APILocator
+	                                .getVersionableAPI()
+	                                .getContentletVersionInfo(
+	                                        htmlPage.getIdentifier(),
+	                                        contentlet.getLanguageId());
+	                        if (versionInfo != null) {
+	                            MultiTreeFactory.saveMultiTree(mTree,
+	                                    contentlet.getLanguageId());
+	                        } else {
+	                            // The language in the page and the 
+	                            // contentlet do not match
+	                            long contentletLang = contentlet.getLanguageId();
+	                            String language = APILocator.getLanguageAPI()
+	                                    .getLanguage(contentletLang)
+	                                    .getLanguage();
+	                            Logger.error(this,
+	                                    "Creating MultiTree failed: Contentlet with identifier "
+	                                            + htmlPage.getIdentifier()
+	                                            + " does not exist in "
+	                                            + language);
+	                            String msg = MessageFormat
+	                                    .format(LanguageUtil
+	                                            .get(user,
+	                                                    "message.htmlpage.error.addcontent.invalidlanguage"),
+	                                            language);
+	                            throw new DotRuntimeException(msg);
+	                        }
+
 	                    }
 	
 	                } else {
@@ -665,15 +590,13 @@ public class DirectorAction extends DotPortletAction {
 					Logger.debug(DirectorAction.class, "Identifier of Contentlet to be removed=" + identifier.getInode());
 	
 					Contentlet contentletWorking = conAPI.findContentletByIdentifier(identifier.getInode(), false, contentlet.getLanguageId(), user, true);
-					Contentlet liveContentlet = conAPI.findContentletByIdentifier(identifier.getInode(), false, contentlet.getLanguageId(), user, true);
 					Logger.debug(DirectorAction.class, "\n\nContentlet Working to be removed=" + contentletWorking.getInode());
 	
 					Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(htmlPage);
 					Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
 					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
-					MultiTreeFactory.deleteMultiTree(multiTree);
-					refreshPage(htmlPage,user);
+					MultiTreeFactory.deleteMultiTree(multiTree, htmlPage.getLanguageId());
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {
@@ -781,7 +704,6 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
-				refreshPage(htmlPage,user);
 				_sendToReferral(req, res, referer);
 				return;
 			}
@@ -851,7 +773,6 @@ public class DirectorAction extends DotPortletAction {
 	
 					}
 				}
-				refreshPage(htmlPage,user);
 				_sendToReferral(req, res, referer);
 				return;
 
