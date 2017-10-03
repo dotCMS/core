@@ -35,6 +35,9 @@ import com.dotmarketing.util.Logger;
  * @author will
  */
 public class MultiTreeFactory {
+    
+    private final static String deleteMultiTreeErrorMessage = "Deleting MultiTree Object failed:";
+    private final static String saveMultiTreeErrorMessage = "Saving MultiTree Object failed:";
 
 	public static void deleteMultiTree(Object o1, Object o2, Object o3) {
 		Inode inode1 = (Inode) o1;
@@ -162,11 +165,11 @@ public class MultiTreeFactory {
             refreshPageInCache(parent.getId(), languageId);
             
         } catch (SQLException e) {
-            throw new DotDataException("Error deleting tree and multi-tree dependencies.", e);
+            throw new DotDataException(deleteMultiTreeErrorMessage, e);
         } catch (DotContentletStateException e) {
-            throw new DotContentletStateException("Error deleting tree and multi-tree dependencies.", e);
+            throw new DotContentletStateException(deleteMultiTreeErrorMessage, e);
         } catch (DotSecurityException e) {
-            throw new DotSecurityException("Error deleting tree and multi-tree dependencies.", e);
+            throw new DotSecurityException(deleteMultiTreeErrorMessage, e);
         }
     }
     
@@ -202,16 +205,16 @@ public class MultiTreeFactory {
 	        refreshPageInCache(id,languageId);
 	        return;	        
 	    } catch (DotHibernateException e) {
-	        Logger.error(MultiTreeFactory.class,"deleteMultiTree failed:"+e,e);
+	        Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
 	        throw new DotRuntimeException(e.getMessage());
 	    } catch (DotStateException e) {
-	        Logger.error(MultiTreeFactory.class,"deleteMultiTree failed:"+e,e);
+	        Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
 	        throw new DotStateException(e.getMessage());
         } catch (DotDataException e) {
-            Logger.error(MultiTreeFactory.class,"deleteMultiTree failed:"+e,e);
+            Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
             throw new DotDataException(e.getMessage());
         } catch (DotSecurityException e) {
-            Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+            Logger.error(MultiTreeFactory.class, deleteMultiTreeErrorMessage + e, e);
             throw new DotSecurityException(e.getMessage());
         }
 	}
@@ -398,16 +401,16 @@ public class MultiTreeFactory {
 			updateVersionTs(id, languageId);
 			refreshPageInCache(id,languageId);
 		} catch (DotHibernateException e) {
-			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+			Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
 			throw new DotRuntimeException(e.getMessage());
 		} catch (DotStateException e) {
-			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+			Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
 			throw new DotRuntimeException(e.getMessage());
 		} catch (DotDataException e) {
-            Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+            Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
             throw new DotRuntimeException(e.getMessage());
         } catch (DotSecurityException e) {
-            Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+            Logger.error(MultiTreeFactory.class, saveMultiTreeErrorMessage + e, e);
             throw new DotSecurityException(e.getMessage());
         }
 	}
@@ -665,7 +668,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      *            
      */
-    private static void updateVersionTs(String id) throws DotStateException, DotDataException, DotSecurityException {
+    private static void updateVersionTs(String id) throws DotDataException {
         updateVersionTs(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());    
     }
 	
@@ -681,7 +684,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      *            
      */
-	private static void updateVersionTs(String id, Long languageId) throws DotStateException, DotDataException, DotSecurityException {
+	private static void updateVersionTs(String id, Long languageId) throws DotDataException {
 	    Identifier ident = APILocator.getIdentifierAPI().find(id);
         ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(ident.getId(), languageId);
@@ -699,7 +702,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      *            
      */
-    private static void refreshPageInCache(String id) throws DotContentletStateException, DotDataException, DotSecurityException {
+    private static void refreshPageInCache(String id) throws DotDataException, DotSecurityException {
         refreshPageInCache(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());
     }
     
@@ -714,9 +717,10 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      *            
      */
-    private static void refreshPageInCache(String id, Long languageId) throws DotContentletStateException, DotDataException, DotSecurityException {
+    private static void refreshPageInCache(String id, Long languageId) throws DotDataException, DotSecurityException {
         Identifier ident = APILocator.getIdentifierAPI().find(id);
-        Contentlet content = APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), true, languageId, APILocator.systemUser(), false);
+        Contentlet content = APILocator.getContentletAPI()
+                .findContentletByIdentifier(ident.getId(), true, languageId, APILocator.systemUser(), false);
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(content);
         PageServices.invalidateAll(htmlPage);
     }
