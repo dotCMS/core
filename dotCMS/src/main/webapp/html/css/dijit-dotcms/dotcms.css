@@ -6961,7 +6961,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 65px auto;
   width: 100%;
 }
 #listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
@@ -9912,6 +9912,14 @@ dd .buttonCaption {
 .portlet-pagination {
   margin: 16px;
 }
+.file-browser.portlet-pagination {
+  background: #FFFFFF;
+  padding: 16px;
+  position: absolute;
+  width: 100%;
+  bottom: 0px;
+  margin: 0;
+}
 .portlet-pagination__results {
   flex: 1;
   align-self: center;
@@ -11098,6 +11106,7 @@ a.category_higlighted, a.tag_higlighted {
   flex: 1;
   justify-content: space-between;
   padding: 0;
+  overflow-y: scroll;
 }
 
 .file-selector-tree__container {
