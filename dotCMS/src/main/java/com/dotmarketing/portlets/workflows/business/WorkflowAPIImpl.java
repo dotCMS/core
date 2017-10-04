@@ -512,9 +512,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return action;
 	}
 
-	@WrapInTransaction
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException {
+		boolean localTran=false;
 		try {
+			localTran=HibernateUtil.startLocalTransactionIfNeeded();
 			this.saveAction(action);
 			APILocator.getPermissionAPI().removePermissions(action);
 			if(perms != null){
@@ -523,10 +524,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					APILocator.getPermissionAPI().save(p, action, APILocator.getUserAPI().getSystemUser(), false);
 				}
 			}
+			if(localTran) {
+				HibernateUtil.closeAndCommitTransaction();
+			}
 		} catch (Exception e) {
+			if(localTran) {
+				HibernateUtil.rollbackTransaction();
+			}
 			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.closeSessionSilently();
 		}
+
 	}
 
 	@WrapInTransaction
