@@ -9,8 +9,15 @@ import { NotLicensedService } from './api/services/not-licensed-service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './api/services/dot-router-service';
+import { MockMessageService } from './test/message-service.mock';
+import { DotConfirmationService } from './api/services/dot-confirmation-service';
 
 describe('AppComponent', () => {
+    const messageServiceMock = new MockMessageService({
+        'contenttypes.action.yes': 'Yes',
+        'contenttypes.action.no': 'No'
+    });
+
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [AppComponent],
@@ -20,7 +27,8 @@ describe('AppComponent', () => {
                 LoginService,
                 NotLicensedService,
                 DotMenuService,
-                SocketFactory
+                SocketFactory,
+                DotConfirmationService
             ]
         });
     });

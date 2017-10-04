@@ -274,5 +274,10 @@ $menu-link-color: $black;
 // DIALOG
 $dialog-padding: $basic-padding * 2;
 $dialog-title-font-size: $font-size-large;
+$dialog-message-line-height: 18px;
+$dialog-message-warning-color: $red;
 $dialog-close-button-normal-color: $gray-light;
 $dialog-close-button-hover-color: $black;
+$dialog-delete-box-shadow: none;
+$dialog-delete-button-normal-color: $blue;
+$dialog-delete-button-hover-color: $gray-lighter;

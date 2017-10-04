@@ -8,8 +8,9 @@
  * http://docs.jquery.com/UI/Dialog#theming
  */
 
-.ui-dialog {
+ .ui-dialog {
     overflow: inherit;
+    padding: $dialog-padding * 2;
 
     &.ui-shadow {
         box-shadow: $md-shadow-3;
@@ -20,7 +21,7 @@
     .ui-dialog-buttonpane,
     .ui-dialog-footer {
         margin: 0;
-        padding: $basic-padding * 2;
+        padding: 0;
     }
 
     .ui-dialog-buttonpane, .ui-dialog-footer {
@@ -29,11 +30,30 @@
         button {
             margin: 0;
             float: none;
+
+            &.button-delete{
+                box-shadow: $dialog-delete-box-shadow;
+                span{
+                    color: $dialog-delete-button-normal-color;
+                }
+                &:hover{
+                    background: $dialog-delete-button-hover-color;
+                }
+            }
         }
     }
 
     .ui-dialog-content {
         overflow: inherit;
+        margin-bottom: $dialog-padding;
+
+        .ui-confirmdialog-message {
+            line-height: $dialog-message-line-height;
+
+            span{
+                color: $dialog-message-warning-color;
+            }
+        }
     }
 
     .ui-dialog-title {
@@ -52,6 +72,17 @@
         &:hover {
             color: $dialog-close-button-hover-color;
             background: none;
+        }
+    }
+
+    .ui-dialog-titlebar {
+        margin-bottom: $basic-padding * 3;
+    }
+
+    &.ui-confirmdialog .ui-dialog-content {
+        padding: 0;
+        .fa {
+            margin-right: 0;
         }
     }
 }

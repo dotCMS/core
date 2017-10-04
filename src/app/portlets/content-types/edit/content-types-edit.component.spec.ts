@@ -16,13 +16,14 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { Observable } from 'rxjs/Observable';
-import { OverlayPanelModule, ConfirmationService } from 'primeng/primeng';
+import { OverlayPanelModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ContentType } from '../main';
 import { tick, fakeAsync } from '@angular/core/testing';
 import { Field } from '../fields';
 import { FieldService } from '../fields/service';
+import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 @Component({
@@ -96,7 +97,7 @@ describe('ContentTypesEditComponent', () => {
                 ContentTypesInfoService,
                 FieldService,
                 StringUtils,
-                ConfirmationService
+                DotConfirmationService
             ]
         });
 

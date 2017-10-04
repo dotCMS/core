@@ -9,7 +9,8 @@ import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { MessageService } from '../../../../api/services/messages-service';
-import { ConfirmationService, ConfirmDialogModule } from 'primeng/primeng';
+import { DotConfirmationService } from '../../../../api/services/dot-confirmation-service';
+import { ConfirmDialogModule } from 'primeng/primeng';
 import { MockMessageService } from '../../../../test/message-service.mock';
 
 @Component({
@@ -52,6 +53,7 @@ describe('ContentTypeFieldsRowComponent', () => {
             ],
             providers: [
                 FieldDragDropService,
+                DotConfirmationService,
                 { provide: MessageService, useValue: messageServiceMock }
             ],
         });
@@ -132,9 +134,9 @@ describe('ContentTypeFieldsRowComponent', () => {
             const column = de.query(By.css('.row-columns__item'));
             const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
 
-            const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+            const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
 
-            spyOn(confirmationService, 'confirm').and.callFake((conf) => {
+            spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
 

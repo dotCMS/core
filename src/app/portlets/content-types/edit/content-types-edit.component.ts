@@ -2,7 +2,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, OnInit, OnChanges } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
-import { ConfirmationService } from 'primeng/primeng';
 import { StringUtils } from 'dotcms-js/dotcms-js';
 
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
@@ -12,6 +11,7 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { CrudService } from '../../../api/services/crud';
 import { Field } from '../fields/index';
 import { FieldService } from '../fields/service';
+import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
 import { MessageService } from '../../../api/services/messages-service';
 
 /**
@@ -36,7 +36,7 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
 
     constructor(
         messageService: MessageService,
-        private confirmationService: ConfirmationService,
+        private dotConfirmationService: DotConfirmationService,
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
         private fieldService: FieldService,
@@ -47,9 +47,12 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
         super(
             [
                 'message.structure.cantdelete',
-                'message.structure.delete.structure.and.content',
-                'contenttypes.action.yes',
-                'contenttypes.action.no'
+                'contenttypes.confirm.message.delete',
+                'contenttypes.confirm.message.delete.content',
+                'contenttypes.confirm.message.delete.warning',
+                'contenttypes.action.delete',
+                'contenttypes.action.cancel',
+                'Content-Type'
             ],
             messageService
         );
@@ -77,14 +80,20 @@ export class ContentTypesEditComponent extends BaseComponent implements OnInit {
      * @memberof ContentTypesEditComponent
      */
     public deleteContentType($event): void {
-        this.confirmationService.confirm({
+        this.dotConfirmationService.confirm({
             accept: () => {
                 this.crudService.delete(`v1/contenttype/id`, this.data.id).subscribe(data => {
                     this.router.navigate(['../'], { relativeTo: this.route });
                 });
             },
             header: this.i18nMessages['message.structure.cantdelete'],
-            message: this.i18nMessages['message.structure.delete.structure.and.content']
+            message: `${this.i18nMessages['contenttypes.confirm.message.delete']} ${this.i18nMessages['Content-Type']}
+                        ${this.i18nMessages['contenttypes.confirm.message.delete.content']}
+                        <span>${this.i18nMessages['contenttypes.confirm.message.delete.warning']}</span>`,
+            footerLabel: {
+                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
+                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+            }
         });
     }
 

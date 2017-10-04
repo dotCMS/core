@@ -1,1 +1,7 @@
 <router-outlet></router-outlet>
+<p-confirmDialog width="400" #cd>
+    <p-footer>
+        <button type="button" class="button-delete" pButton [label]="(dotConfirmationService.labels | async)?.acceptLabel" (click)="cd.accept()"></button>
+        <button type="button" pButton [label]="(dotConfirmationService.labels | async)?.rejectLabel" (click)="cd.reject()"></button>
+    </p-footer> 
+</p-confirmDialog>

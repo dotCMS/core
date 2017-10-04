@@ -15,9 +15,3 @@
         (removeFields)="removeFields($event)">
     </content-type-fields-drop-zone>
 </content-type-layout>
-<p-confirmDialog width="425" #cd>
-    <p-footer>
-        <button type="button" pButton [label]="i18nMessages['contenttypes.action.no']" (click)="cd.reject()"></button>
-        <button type="button" pButton [label]="i18nMessages['contenttypes.action.yes']" (click)="cd.accept()"></button>
-    </p-footer>
-</p-confirmDialog>
