@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -129,9 +130,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	}
 
     	try {
-    	    ContentletAPI conAPI = APILocator.getContentletAPI();
-    	    String x = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
-    	    map.put("title", x);
+			String x = null;
+			if (!(this.getContentType() instanceof WidgetContentType)){
+				ContentletAPI conAPI = APILocator.getContentletAPI();
+				x = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
+				map.put("title", x);
+			}
+
     	    return x;
 		} catch (Exception e) {
 			Logger.error(this,"Unable to get title.");
