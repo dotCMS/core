@@ -2270,33 +2270,31 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private void deleteInsertPermission(Permissionable permissionable, String type,
             Permissionable newReference) throws DotDataException {
 
+        final String permissionId = permissionable.getPermissionId();
+
         try{
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - started");
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
+                    + " - started");
 
             DotConnect dc1 = new DotConnect();
             dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
-            dc1.addParam(permissionable.getPermissionId());
+            dc1.addParam(permissionId);
             List<Map<String, Object>> l = dc1.loadObjectResults();
 
             dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
-            dc1.addParam(permissionable.getPermissionId());
+            dc1.addParam(permissionId);
             List<Map<String, Object>> l2 = dc1.loadObjectResults();
 
             if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
-                dc1.setSQL(DELETE_PERMISSIONABLE_REFERENCE_SQL);
-                dc1.addParam(permissionable.getPermissionId());
-                dc1.loadResult();
+                dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-                dc1.setSQL(INSERT_PERMISSION_REFERENCE_SQL);
-                dc1.addParam(permissionable.getPermissionId());
-                dc1.addParam(newReference.getPermissionId());
-                dc1.addParam(type);
-                dc1.loadResult();
+                dc1.executeUpdate(INSERT_PERMISSION_REFERENCE_SQL, permissionId, newReference.getPermissionId(), type);
             }
 
         } catch(Exception exception){
             if(permissionable != null && newReference != null){
-                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionable.getPermissionId() + " Parent : " + newReference.getPermissionId() + " Type: " + type);
+                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionId
+                        + " Parent : " + newReference.getPermissionId() + " Type: " + type);
             }
             else{
                 Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
@@ -2305,7 +2303,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
             throw new DotDataException(exception.getMessage(), exception);
         } finally {
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
+                    + " - ended");
         }
     }
 
