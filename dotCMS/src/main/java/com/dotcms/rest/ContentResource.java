@@ -1080,37 +1080,7 @@ public class ContentResource {
 					fieldMap.put(ff.getVelocityVarName(), ff);
 
 				// look for relationships
-				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-				List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(st);
-				for(Relationship rel : rels) {
-				    String relname=rel.getRelationTypeValue();
-				    String query=(String)map.get(relname);
-				    if(UtilMethods.isSet(query)) {
-				        try {
-				            List<Contentlet> cons=APILocator.getContentletAPI().search(
-				                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-				            if(cons.size()>0) {
-				                relationships.put(rel, cons);
-				            }
-				            Logger.info(this, "got "+cons.size()+" related contents");
-				        } catch (Exception e) {
-				            Logger.warn(this, e.getMessage(), e);
-				        }
-				    } else {
-			            if(!relationships.containsKey(rel)){
-			                relationships.put(rel, new ArrayList<Contentlet>());
-			            }
-			            List<Contentlet> cons = APILocator.getContentletAPI().getRelatedContent(
-			                    contentlet, rel, APILocator.systemUser(), false);
-			            for (Contentlet c : cons) {
-			                List<Contentlet> l = relationships.get(rel);
-			                l.add(c);
-			            }
-				    }
-				}
-
-				contentlet.setProperty(RELATIONSHIP_KEY, relationships);
-
+				contentlet.setProperty(RELATIONSHIP_KEY, evaluateContentRelationships(contentlet, st, map));
 
 				// fill fields
 				for(Map.Entry<String,Object> entry : map.entrySet()) {
@@ -1269,4 +1239,37 @@ public class ContentResource {
 			
 		}
 	}
+
+    private Map<Relationship, List<Contentlet>> evaluateContentRelationships(Contentlet contentlet, Structure st, Map<String,Object> map) throws DotDataException, DotSecurityException {
+        Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(st);
+        for(Relationship rel : rels) {
+            String relname=rel.getRelationTypeValue();
+            String query=(String)map.get(relname);
+            if(UtilMethods.isSet(query)) {
+                try {
+                    List<Contentlet> cons=APILocator.getContentletAPI().search(
+                            query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+                    if(cons.size()>0) {
+                        relationships.put(rel, cons);
+                    }
+                    Logger.info(this, "got "+cons.size()+" related contents");
+                } catch (Exception e) {
+                    Logger.warn(this, e.getMessage(), e);
+                }
+            } else {
+                if(!relationships.containsKey(rel)){
+                    relationships.put(rel, new ArrayList<Contentlet>());
+                }
+                List<Contentlet> cons = APILocator.getContentletAPI().getRelatedContent(
+                        contentlet, rel, APILocator.systemUser(), false);
+                for (Contentlet c : cons) {
+                    List<Contentlet> l = relationships.get(rel);
+                    l.add(c);
+                }
+            }
+        }
+        
+        return relationships;
+    }
 }
