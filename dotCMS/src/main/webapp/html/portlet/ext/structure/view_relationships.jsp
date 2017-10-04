@@ -12,18 +12,21 @@
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-	referer = referer + "&_content-types_structure_id="+request.getParameter("structure_id");
+	referer = referer + "&_content_types_structure_id="+request.getParameter("structure_id");
 	List<Relationship> relationships = (List<Relationship>) request.getAttribute(com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIPS);
 %>
 
 <script language="javascript">
-function addNewRelationship()
+function addNewRelationship(contentTypeId)
 {
 	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
- 	href = href + "<portlet:param name='referer' value='<%=referer%>' />";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
+	href = href + "<portlet:param name='referer' value='<%=referer%>' />";
+	href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship'/>";
 	href = href + "</portlet:actionURL>";
+	href = href + "&contentTypeId=" + contentTypeId;
+
 	document.location.href = href;
+
 }
 function deleteRelationship(inode) {
 	if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.relationship")) %>')) {
@@ -52,7 +55,7 @@ function deleteRelationship(inode) {
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button" onCLick="addNewRelationship();" iconClass="plusIcon">
+    		<button dojoType="dijit.form.Button" onCLick="addNewRelationship('<%=request.getParameter("structure_id")%>')"   iconClass="plusIcon">
 	           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Relationship")) %>
 	        </button>
     	</div>

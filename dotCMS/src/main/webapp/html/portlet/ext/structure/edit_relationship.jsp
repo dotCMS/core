@@ -9,6 +9,7 @@
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <%	
  String referer = request.getParameter("referer");
+ String currentContentTypeId = request.getParameter("contentTypeId");
  RelationshipForm relationshipForm = (RelationshipForm) request.getAttribute("RelationshipForm");
  Relationship relationship = FactoryLocator.getRelationshipFactory().byInode(relationshipForm.getInode());
  boolean disabled = false;
@@ -24,8 +25,8 @@ List<Structure> structures = (List<Structure>) request.getAttribute(com.dotmarke
 function cancel()
 {
 	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' /> <portlet:param name='structure_id' value='all' /> ";
-	href = href + "</portlet:actionURL>";
+    href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' /> <portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>' /> ";
+    href = href + "</portlet:actionURL>";
 	document.location = href;
 }
 
@@ -36,6 +37,8 @@ function saveRelationship()
 	action = action + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
 	action = action + "<portlet:param name='<%=com.liferay.portal.util.Constants.CMD%>' value='<%=com.liferay.portal.util.Constants.ADD%>' />";
 	action = action + "</portlet:actionURL>";
+    action = action + "&contentTypeId=<%=currentContentTypeId%>";
+
 	form.action = action;
 	form.submit();
 }
@@ -61,7 +64,17 @@ for (Structure structure: structures) {
 %>
 ];
 
-
+<%
+String currentContentTypeName = null;
+if (currentContentTypeId != null){
+	for (Structure structure: structures) {
+		if (structure.getInode().equals(currentContentTypeId)) {
+			currentContentTypeName = structure.getName();
+			break;
+		}
+	}
+}
+%>
 
 function structuresChanged() {
 	var parentRelationName = dijit.byId("parentRelationName").attr('value');
@@ -87,7 +100,16 @@ function structuresChanged() {
 		
 	dijit.byId("parentRelationName").attr('value', parentStructureName);
 	dijit.byId("childRelationName").attr('value', childStructureName);
-	
+
+    if ('<%=currentContentTypeId%>' !== 'all' && parentStructureInode && childStructureInode &&
+			parentStructureInode != '<%=currentContentTypeId%>' && childStructureInode != '<%=currentContentTypeId%>'){
+
+        dojo.style('mustSelectCurrentContetTypeMessage', { display: '' });
+        dijit.byId("saveButton").attr('disabled', true);
+    }else{
+        dojo.style('mustSelectCurrentContetTypeMessage', { display: 'none' });
+        dijit.byId("saveButton").attr('disabled', false);
+    }
 }
 
 function relationNameChanged() {
@@ -132,12 +154,13 @@ function relationNameChanged() {
 	<%@ include file="/html/common/messages_inc.jsp" %>
 
 <html:form action="/ext/structure/edit_relationship" method="post" styleId="relationshipForm">
-    
 
 <div class="portlet-main edit-relationship add-relationship">
 
 	<div class="form-horizontal">
- 
+
+		<div id="mustSelectCurrentContetTypeMessage" style="display: none;color: red;text-align: center"><%= LanguageUtil.get(user.getLocale(), "contenttypes.relationship.select.current.contentType.error", currentContentTypeName) %></div>
+
         <html:hidden property="inode" />
         <html:hidden property="relationTypeValue" />
         <html:hidden property="fixed" />
@@ -198,7 +221,7 @@ function relationNameChanged() {
 
 	<div class="buttonRow">
 		<%if(!disabled){%>
-			<button dojoType="dijit.form.Button" onCLick="saveRelationship();return false;">
+			<button id="saveButton" dojoType="dijit.form.Button" onCLick="saveRelationship();return false;">
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 			</button>
 
