@@ -130,14 +130,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	}
 
     	try {
-			String x = null;
+			String title = null;
 			if (!(this.getContentType() instanceof WidgetContentType)){
 				ContentletAPI conAPI = APILocator.getContentletAPI();
-				x = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
-				map.put("title", x);
+				title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
+				map.put("title", title);
 			}
 
-    	    return x;
+    	    return title;
 		} catch (Exception e) {
 			Logger.error(this,"Unable to get title.");
 			return  "";
