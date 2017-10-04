@@ -1041,7 +1041,7 @@ public class ContentResource {
 		processMap( contentlet, map );
 	}
 
-	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException {
+	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException, DotSecurityException {
 		String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
 		if(!UtilMethods.isSet(stInode)) {
 			String stName=(String)map.get("stName");
@@ -1081,22 +1081,34 @@ public class ContentResource {
 
 				// look for relationships
 				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(st)) {
-					String relname=rel.getRelationTypeValue();
-					String query=(String)map.get(relname);
-					if(UtilMethods.isSet(query)) {
-						try {
-							List<Contentlet> cons=APILocator.getContentletAPI().search(
-									query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-							if(cons.size()>0) {
-								relationships.put(rel, cons);
-							}
-							Logger.info(this, "got "+cons.size()+" related contents");
-						} catch (Exception e) {
-							Logger.warn(this, e.getMessage(), e);
-						}
-					}
+				List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(st);
+				for(Relationship rel : rels) {
+				    String relname=rel.getRelationTypeValue();
+				    String query=(String)map.get(relname);
+				    if(UtilMethods.isSet(query)) {
+				        try {
+				            List<Contentlet> cons=APILocator.getContentletAPI().search(
+				                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+				            if(cons.size()>0) {
+				                relationships.put(rel, cons);
+				            }
+				            Logger.info(this, "got "+cons.size()+" related contents");
+				        } catch (Exception e) {
+				            Logger.warn(this, e.getMessage(), e);
+				        }
+				    } else {
+			            if(!relationships.containsKey(rel)){
+			                relationships.put(rel, new ArrayList<Contentlet>());
+			            }
+			            List<Contentlet> cons = APILocator.getContentletAPI().getRelatedContent(
+			                    contentlet, rel, APILocator.systemUser(), false);
+			            for (Contentlet c : cons) {
+			                List<Contentlet> l = relationships.get(rel);
+			                l.add(c);
+			            }
+				    }
 				}
+
 				contentlet.setProperty(RELATIONSHIP_KEY, relationships);
 
 
