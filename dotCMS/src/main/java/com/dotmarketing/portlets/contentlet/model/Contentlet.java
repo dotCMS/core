@@ -131,7 +131,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     	try {
 			String title = null;
-			if (!(this.getContentType() instanceof WidgetContentType)){
+			if (!(this.getContentType().fields().contains("title"))){
 				ContentletAPI conAPI = APILocator.getContentletAPI();
 				title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
 				map.put("title", title);
