@@ -1,17 +1,6 @@
 package com.dotmarketing.business;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -57,6 +46,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -2254,59 +2253,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				HostAPI hostAPI = APILocator.getHostAPI();
 				if(newReference == null)
 					newReference = hostAPI.findSystemHost();
-				boolean localTransaction = false;
-				try{
-					try{
-						localTransaction =	 HibernateUtil.startLocalTransactionIfNeeded();
-					}
-					catch(Exception e){
-						throw new DotDataException(e.getMessage());
-					}
-					
-					Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - started");
 
-					DotConnect dc1 = new DotConnect();
-					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
-					dc1.addParam(permissionable.getPermissionId());
-					List<Map<String, Object>> l = dc1.loadObjectResults();
-
-					DotConnect dc2 = new DotConnect();
-                    dc2.setSQL("SELECT id FROM identifier WHERE id = ?");
-                    dc2.addParam(permissionable.getPermissionId());
-                    List<Map<String, Object>> l2 = dc2.loadObjectResults();
-
-					if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
-						dc1.setSQL(DELETE_PERMISSIONABLE_REFERENCE_SQL);
-						dc1.addParam(permissionable.getPermissionId());
-						dc1.loadResult();
-						dc1.setSQL(INSERT_PERMISSION_REFERENCE_SQL);
-						dc1.addParam(permissionable.getPermissionId());
-						dc1.addParam(newReference.getPermissionId());
-						dc1.addParam(type);
-						dc1.loadResult();
-					}
-
-					if(localTransaction){
-	                    HibernateUtil.closeAndCommitTransaction();
-	                }
-				} catch(Exception exception){
-					if(permissionable != null && newReference != null){
-						Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionable.getPermissionId() + " Parent : " + newReference.getPermissionId() + " Type: " + type);
-					}
-					else{
-						Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
-					}
-					Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
-					if(localTransaction){
-						HibernateUtil.rollbackTransaction();
-					}
-					throw new DotDataException(exception.getMessage(), exception);
-				}finally {
-		            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
-					if(localTransaction) {
-						HibernateUtil.closeSessionSilently();
-					}
-				}
+				deleteInsertPermission(permissionable, type, newReference);
 
 				bitPermissionsList = inheritedPermissions;
 			}
@@ -2318,7 +2266,50 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
+    @WrapInTransaction
+	private void deleteInsertPermission(Permissionable permissionable, String type,
+            Permissionable newReference) throws DotDataException {
+
+        try{
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - started");
+
+            DotConnect dc1 = new DotConnect();
+            dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
+            dc1.addParam(permissionable.getPermissionId());
+            List<Map<String, Object>> l = dc1.loadObjectResults();
+
+            dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
+            dc1.addParam(permissionable.getPermissionId());
+            List<Map<String, Object>> l2 = dc1.loadObjectResults();
+
+            if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
+                dc1.setSQL(DELETE_PERMISSIONABLE_REFERENCE_SQL);
+                dc1.addParam(permissionable.getPermissionId());
+                dc1.loadResult();
+
+                dc1.setSQL(INSERT_PERMISSION_REFERENCE_SQL);
+                dc1.addParam(permissionable.getPermissionId());
+                dc1.addParam(newReference.getPermissionId());
+                dc1.addParam(type);
+                dc1.loadResult();
+            }
+
+        } catch(Exception exception){
+            if(permissionable != null && newReference != null){
+                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionable.getPermissionId() + " Parent : " + newReference.getPermissionId() + " Type: " + type);
+            }
+            else{
+                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
+            }
+            Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
+
+            throw new DotDataException(exception.getMessage(), exception);
+        } finally {
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
+        }
+    }
+
+    private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
 		List<Permission> filteredList = new ArrayList<Permission>();
 		for(Permission p: permissions) {
 			if((p.isIndividualPermission() && p.getInode().equals(permissionableId)) || !p.getInode().equals(permissionableId))
