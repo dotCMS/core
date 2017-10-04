@@ -619,7 +619,7 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "PUT");
 	}
 	
@@ -628,12 +628,12 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "POST");
 	}
 	
 	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException{
+			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException, DotSecurityException{
 
         InitDataObject init= webResource.init(params, true, request, false, null);
 		User user=init.getUser();
@@ -1206,7 +1206,7 @@ public class ContentResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException {
+	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException, DotSecurityException {
 		processMap(contentlet, webResource.processJSON(input));
 	}
 	
