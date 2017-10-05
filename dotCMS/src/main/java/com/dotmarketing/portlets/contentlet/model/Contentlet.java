@@ -37,11 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -124,15 +120,22 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     @Override
     public String getTitle(){
-    	if(map.get("title") !=null){
-    		return map.get("title").toString();
-    	}
-
     	try {
-    	    ContentletAPI conAPI = APILocator.getContentletAPI();
-    	    String x = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
-    	    map.put("title", x);
-    	    return x;
+
+    		//Verifies if the content type has defined a title field
+			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
+					filter(field -> field.variable().equals("title")).findAny();
+
+
+			if (!fieldFound.isPresent()) {
+				return map.get("title")!=null?map.get("title").toString():null;
+			}
+
+			ContentletAPI conAPI = APILocator.getContentletAPI();
+			String title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
+			map.put("title", title);
+
+    	    return title;
 		} catch (Exception e) {
 			Logger.error(this,"Unable to get title.");
 			return  "";
