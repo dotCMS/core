@@ -6,6 +6,8 @@ dependencies {
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
 
+    compile group: 'pro.redisson', name: 'redisson', version:'3.5.3'
+    compile group: 'de.ruedigermoeller', name: 'fst', version:'2.52'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version:'0.4.0-incubating_2'

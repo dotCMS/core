@@ -768,7 +768,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+	public static class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *
 		 */
