@@ -96,24 +96,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	this.map = map;
     }
 
-    @VisibleForTesting
-    protected Contentlet(ContentletAPI contentletAPI, UserAPI userAPI) {
-		this.contentletAPI = contentletAPI;
-		this.userAPI = userAPI;
+    /**
+     * Default class constructor.
+     */
+    public Contentlet() {
 		setInode("");
 		setIdentifier("");
 		setLanguageId(0);
 		setContentTypeId("");
 		setSortOrder(0);
 		setDisabledWysiwyg(new ArrayList<String>());
-
-	}
-
-    /**
-     * Default class constructor.
-     */
-    public Contentlet() {
-		this(APILocator.getContentletAPI(), APILocator.getUserAPI());
     }
 
     @Override
@@ -134,7 +126,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				return map.get("title")!=null?map.get("title").toString():null;
 			}
 
-			String title = contentletAPI.getName(this, userAPI.getSystemUser(), false);
+			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
 			map.put("title", title);
 
     	    return title;
@@ -1076,4 +1068,28 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
 
+	public ContentletAPI getContentletAPI() {
+		if(contentletAPI==null) {
+			contentletAPI = APILocator.getContentletAPI();
+		}
+
+		return contentletAPI;
+	}
+
+	@VisibleForTesting
+	protected void setContentletAPI(ContentletAPI contentletAPI) {
+		this.contentletAPI = contentletAPI;
+	}
+
+	public UserAPI getUserAPI() {
+		if(userAPI==null) {
+			userAPI = APILocator.getUserAPI();
+		}
+		return userAPI;
+	}
+
+	@VisibleForTesting
+	protected void setUserAPI(UserAPI userAPI) {
+		this.userAPI = userAPI;
+	}
 }

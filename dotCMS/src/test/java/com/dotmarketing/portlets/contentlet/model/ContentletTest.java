@@ -25,13 +25,15 @@ public class ContentletTest {
 
     @Test
     public void testGetTitle_WhenExistingTitleField_returnItsValue() throws DotDataException, DotSecurityException {
-        ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);
-        UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
         Mockito.when(userAPI.getSystemUser()).thenReturn(new User());
-        Contentlet contentlet = Mockito.spy(new Contentlet(contentletAPI, userAPI));
-        ContentType mockContentType = Mockito.mock(ContentType.class);
-        Field fieldWithTitle = createFieldWithVarname("title");
-        List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
+        final Contentlet contentlet = Mockito.spy(Contentlet.class);
+        contentlet.setUserAPI(userAPI);
+        contentlet.setContentletAPI(contentletAPI);
+        final ContentType mockContentType = Mockito.mock(ContentType.class);
+        final Field fieldWithTitle = createFieldWithVarname("title");
+        final List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
         Mockito.doReturn(mockContentType).when(contentlet).getContentType();
         Mockito.when(mockContentType.fields()).thenReturn(mockFieldWithTitle);
 
@@ -43,25 +45,27 @@ public class ContentletTest {
 
     @Test
     public void testGetTitle_WhenNonExistingTitleField_returnGetName() throws DotDataException, DotSecurityException {
-        ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);
-        UserAPI userAPI = Mockito.mock(UserAPI.class);
-        User mockUser = new User();
+        final ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final User mockUser = new User();
         Mockito.when(userAPI.getSystemUser()).thenReturn(mockUser);
-        Contentlet contentlet = Mockito.spy(new Contentlet(contentletAPI, userAPI));
-        ContentType mockContentType = Mockito.mock(ContentType.class);
-        Field fieldWithTitle = createFieldWithVarname("thisIsNotATitle");
-        List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
+        final Contentlet contentlet = Mockito.spy(Contentlet.class);
+        contentlet.setUserAPI(userAPI);
+        contentlet.setContentletAPI(contentletAPI);
+        final ContentType mockContentType = Mockito.mock(ContentType.class);
+        final Field fieldWithTitle = createFieldWithVarname("thisIsNotATitle");
+        final List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
         Mockito.doReturn(mockContentType).when(contentlet).getContentType();
         Mockito.when(mockContentType.fields()).thenReturn(mockFieldWithTitle);
 
-        String expectedValue = "titleTakenFromElsewhere";
+        final String expectedValue = "titleTakenFromElsewhere";
         Mockito.when(contentletAPI.getName(contentlet, mockUser, false))
                 .thenReturn(expectedValue);
 
         assertEquals(contentlet.getTitle(), expectedValue);
     }
 
-    private Field createFieldWithVarname(String varname) {
+    private Field createFieldWithVarname(final String varname) {
         return ImmutableTextField.builder()
                 .name(varname)
                 .variable(varname)
