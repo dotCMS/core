@@ -1,5 +1,9 @@
 package com.dotcms.integritycheckers;
 
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -197,6 +201,19 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 		systemUser, false, 0, 0);
                 for (Contentlet contentlet : contents) {
                     CacheLocator.getContentletCache().remove(contentlet.getInode());
+                }
+
+                //Clean relationShips cache
+                List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(st);
+                for(Relationship rel : relationships) {
+                    try {
+                        CacheLocator.getRelationshipCache()
+                                .removeRelationshipsByStruct(rel.getParentStructure());
+                        CacheLocator.getRelationshipCache()
+                                .removeRelationshipsByStruct(rel.getChildStructure());
+                    }catch(DotCacheException e){
+                        Logger.warn(StructureIntegrityChecker.class,String.format("Unable to clean relationship cache [%s]",e.getMessage()));
+                    }
                 }
 
                 CacheLocator.getContentTypeCache().remove(st);
