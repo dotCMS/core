@@ -127,7 +127,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 					filter(field -> field.variable().equals("title")).findAny();
 
 
-			if (fieldFound.isPresent()) {
+			if (!fieldFound.isPresent()) {
 				return map.get("title")!=null?map.get("title").toString():null;
 			}
 
