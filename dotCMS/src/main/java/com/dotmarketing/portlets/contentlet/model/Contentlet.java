@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -44,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -125,17 +125,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     @Override
     public String getTitle(){
-    	if(map.get("title") !=null){
-    		return map.get("title").toString();
-    	}
-
     	try {
-			String title = null;
-			if (!(this.getContentType().fields().contains("title"))){
-				ContentletAPI conAPI = APILocator.getContentletAPI();
-				title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
-				map.put("title", title);
+
+    		//Verifies if the content type has defined a title field
+			List<String> fields = this.getContentType().fields().stream().
+					map(com.dotcms.contenttype.model.field.Field::variable).filter(variable -> variable.equals("title")).collect(Collectors.toList());
+
+			if (fields != null && !fields.isEmpty()) {
+				return map.get("title")!=null?map.get("title").toString():null;
 			}
+
+			ContentletAPI conAPI = APILocator.getContentletAPI();
+			String title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
+			map.put("title", title);
 
     	    return title;
 		} catch (Exception e) {
