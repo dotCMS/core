@@ -37,11 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -128,10 +124,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	try {
 
     		//Verifies if the content type has defined a title field
-			List<String> fields = this.getContentType().fields().stream().
-					map(com.dotcms.contenttype.model.field.Field::variable).filter(variable -> variable.equals("title")).collect(Collectors.toList());
+			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
+					filter(field -> field.variable().equals("title")).findAny();
 
-			if (fields != null && !fields.isEmpty()) {
+
+			if (fieldFound != null && !fieldFound.isPresent()) {
 				return map.get("title")!=null?map.get("title").toString():null;
 			}
 
