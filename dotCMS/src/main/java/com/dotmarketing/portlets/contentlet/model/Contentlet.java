@@ -2,18 +2,10 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -88,6 +80,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    protected Map<String, Object> map = new ContentletHashMap();
    private boolean lowIndexPriority = false;
 
+   private ContentletAPI contentletAPI;
+   private UserAPI userAPI;
+
     @Override
     public String getCategoryId() {
     	return getInode();
@@ -101,16 +96,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	this.map = map;
     }
 
+    @VisibleForTesting
+    protected Contentlet(ContentletAPI contentletAPI, UserAPI userAPI) {
+		this.contentletAPI = contentletAPI;
+		this.userAPI = userAPI;
+		setInode("");
+		setIdentifier("");
+		setLanguageId(0);
+		setContentTypeId("");
+		setSortOrder(0);
+		setDisabledWysiwyg(new ArrayList<String>());
+
+	}
+
     /**
      * Default class constructor.
      */
     public Contentlet() {
-    	setInode("");
-    	setIdentifier("");
-    	setLanguageId(0);
-    	setContentTypeId("");
-    	setSortOrder(0);
-    	setDisabledWysiwyg(new ArrayList<String>());
+		this(APILocator.getContentletAPI(), APILocator.getUserAPI());
     }
 
     @Override
@@ -131,8 +134,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				return map.get("title")!=null?map.get("title").toString():null;
 			}
 
-			ContentletAPI conAPI = APILocator.getContentletAPI();
-			String title = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
+			String title = contentletAPI.getName(this, userAPI.getSystemUser(), false);
 			map.put("title", title);
 
     	    return title;
