@@ -1068,7 +1068,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
 
-	public ContentletAPI getContentletAPI() {
+	private ContentletAPI getContentletAPI() {
 		if(contentletAPI==null) {
 			contentletAPI = APILocator.getContentletAPI();
 		}
@@ -1081,7 +1081,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		this.contentletAPI = contentletAPI;
 	}
 
-	public UserAPI getUserAPI() {
+	private UserAPI getUserAPI() {
 		if(userAPI==null) {
 			userAPI = APILocator.getUserAPI();
 		}
