@@ -80,8 +80,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    protected Map<String, Object> map = new ContentletHashMap();
    private boolean lowIndexPriority = false;
 
-   private ContentletAPI contentletAPI;
-   private UserAPI userAPI;
+   private transient ContentletAPI contentletAPI;
+   private transient UserAPI userAPI;
 
     @Override
     public String getCategoryId() {
