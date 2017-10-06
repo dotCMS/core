@@ -7939,7 +7939,6 @@ table.sTypeTable.sTypeItem {
 
 /* Host folders selector */
 .dijitHostFoldersTreeWrapper {
-  max-height: 250px;
   overflow: auto;
   position: absolute;
   z-index: 10000;
