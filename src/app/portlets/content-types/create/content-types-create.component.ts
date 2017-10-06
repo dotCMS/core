@@ -10,6 +10,7 @@ import { ContentTypesFormComponent } from '../form';
 import { Field } from '../fields';
 import { FieldService } from '../fields/service';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
+import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
 
 /**
  * Portlet component for edit content types
@@ -35,12 +36,20 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
         public crudService: CrudService,
         public fieldService: FieldService,
         public loginService: LoginService,
-        messageService: MessageService,
+        public messageService: MessageService,
+        public dotConfirmationService: DotConfirmationService,
         public route: ActivatedRoute,
         public stringUtils: StringUtils,
-        router: Router
+        public router: Router
     ) {
         super([
+            'message.structure.cantdelete',
+            'contenttypes.confirm.message.delete',
+            'contenttypes.confirm.message.delete.content',
+            'contenttypes.confirm.message.delete.warning',
+            'contenttypes.action.delete',
+            'contenttypes.action.cancel',
+            'Content-Type',
             'contenttypes.content.file',
             'contenttypes.content.content',
             'contenttypes.content.form',
@@ -76,20 +85,29 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
         }
     }
 
-    private  saveContentType(contentType: ContentType): void {
-        const contentTypeData: ContentType = Object.assign(
-            {},
-            CONTENT_TYPE_INITIAL_DATA,
-            contentType
-        );
-
-        contentTypeData.clazz = this.contentTypesInfoService.getClazz(
-            this.contentTypeType
-        );
-
-        this.crudService
-            .postData('v1/contenttype', contentTypeData)
-            .subscribe(resp => this.handleFormSubmissionResponse(resp));
+    /**
+     * Delete Content Type using the ID
+     * Adding DotConfirmationService
+     *
+     * @param {any} $event
+     * @memberof ContentTypesCreateComponent
+     */
+    deleteContentType($event): void {
+        this.dotConfirmationService.confirm({
+            accept: () => {
+                this.crudService.delete('v1/contenttype/id', this.data.id).subscribe(data => {
+                    this.router.navigate(['../'], { relativeTo: this.route });
+                });
+            },
+            header: this.i18nMessages['message.structure.cantdelete'],
+            message: `${this.i18nMessages['contenttypes.confirm.message.delete']} ${this.i18nMessages['Content-Type']}
+                        ${this.i18nMessages['contenttypes.confirm.message.delete.content']}
+                        <span>${this.i18nMessages['contenttypes.confirm.message.delete.warning']}</span>`,
+            footerLabel: {
+                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
+                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+            }
+        });
     }
 
     public updateContentType(contentType: ContentType): void {
@@ -122,6 +140,22 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
             this.data.fields = fields;
             this.form.updateFormFields();
         });
+    }
+
+    private  saveContentType(contentType: ContentType): void {
+        const contentTypeData: ContentType = Object.assign(
+            {},
+            CONTENT_TYPE_INITIAL_DATA,
+            contentType
+        );
+
+        contentTypeData.clazz = this.contentTypesInfoService.getClazz(
+            this.contentTypeType
+        );
+
+        this.crudService
+            .postData('v1/contenttype', contentTypeData)
+            .subscribe(resp => this.handleFormSubmissionResponse(resp));
     }
 
     private handleFormSubmissionResponse(res: ContentType[]): void {

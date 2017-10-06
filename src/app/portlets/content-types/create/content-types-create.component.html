@@ -4,7 +4,8 @@
         [type]="contentTypeType"
         [name]="contentTypeName | async"
         [icon]="contentTypeIcon"
-        (onSubmit)="handleFormSubmit($event)">
+        (onSubmit)="handleFormSubmit($event)"
+        (onDelete)="deleteContentType($event)">
     </content-types-form>
 
     <content-type-fields-drop-zone *ngIf="contentTypeId"
