@@ -16,6 +16,8 @@ import { ENV_PROVIDERS } from './providers';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
 
+import {HotkeyModule} from 'angular2-hotkeys';
+
 /**
  * `AppModule` is the main entry point into Angular2's bootstraping process
  */
@@ -32,7 +34,8 @@ import { SharedModule } from './shared/shared.module';
         JsonpModule,
         ReactiveFormsModule,
         SharedModule.forRoot(),
-        AppRoutingModule
+        AppRoutingModule,
+        HotkeyModule.forRoot(),
     ],
     providers: [
         ENV_PROVIDERS
