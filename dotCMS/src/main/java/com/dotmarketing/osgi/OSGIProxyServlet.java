@@ -1,21 +1,14 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.com.httpbridge.webproxy.ui.HttpService;
-import com.dotmarketing.util.Logger;
-import org.apache.felix.http.api.ExtHttpService;
-import org.apache.felix.http.base.internal.DispatcherServlet;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.osgi.framework.BundleContext;
 import com.dotmarketing.util.WebKeys;
-import org.osgi.framework.ServiceReference;
-
 import java.io.IOException;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.osgi.framework.BundleContext;
 
 /**
  * Created by Jonathan Gamba
@@ -26,6 +19,7 @@ public class OSGIProxyServlet extends HttpServlet {
     public static DispatcherTracker tracker;
     public static ServletConfig servletConfig;
     public static BundleContext bundleContext;
+    private Boolean isInitialized = Boolean.FALSE;
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
@@ -49,6 +43,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
             tracker.open();
 
+            this.isInitialized = Boolean.TRUE;
         }
     }
 
@@ -57,6 +52,15 @@ public class OSGIProxyServlet extends HttpServlet {
     	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return;
     	}
+
+        if (!this.isInitialized) {
+            try {
+                doInit();
+            } catch (Exception e) {
+                throw new ServletException("Error initializing OSGIProxyServlet", e);
+            }
+        }
+
         HttpServlet dispatcher = tracker.getDispatcher();
         if ( dispatcher != null ) {
             dispatcher.service( req, res );
