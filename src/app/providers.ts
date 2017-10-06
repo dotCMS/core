@@ -11,13 +11,13 @@ import { IframeOverlayService } from './api/services/iframe-overlay-service';
 import { Logger } from 'angular2-logger/core';
 import { MessageService } from './api/services/messages-service';
 import { NotLicensedService } from './api/services/not-licensed-service';
-import { DotConfirmationService } from './api/services/dot-confirmation-service';
 import { NotificationsService } from './api/services/notifications-service';
 import { PaginatorService } from './api/services/paginator';
 import { RoutingContentletAuthService } from './api/services/routing-contentlet-auth.service';
 import { RoutingPrivateAuthService } from './api/services/routing-private-auth.service';
 import { RoutingPublicAuthService } from './api/services/routing-public-auth.service';
 import { StringFormat } from './api/util/stringFormat';
+import { DotConfirmationService } from './api/services/dot-confirmation';
 
 
 const PROVIDERS: any[] = [

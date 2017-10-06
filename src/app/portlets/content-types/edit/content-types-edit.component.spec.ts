@@ -23,8 +23,8 @@ import { ContentType } from '../main';
 import { tick, fakeAsync } from '@angular/core/testing';
 import { Field } from '../fields';
 import { FieldService } from '../fields/service';
-import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { DotConfirmationService } from '../../../api/services/dot-confirmation';
 
 @Component({
     selector: 'content-type-fields-drop-zone',

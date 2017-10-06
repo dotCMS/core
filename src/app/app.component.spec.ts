@@ -10,7 +10,7 @@ import { DotMenuService } from './api/services/dot-menu.service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './api/services/dot-router-service';
 import { MockMessageService } from './test/message-service.mock';
-import { DotConfirmationService } from './api/services/dot-confirmation-service';
+import { DotConfirmationService } from './api/services/dot-confirmation';
 
 describe('AppComponent', () => {
     const messageServiceMock = new MockMessageService({

@@ -11,8 +11,8 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { CrudService } from '../../../api/services/crud';
 import { Field } from '../fields/index';
 import { FieldService } from '../fields/service';
-import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
 import { MessageService } from '../../../api/services/messages-service';
+import { DotConfirmationService } from '../../../api/services/dot-confirmation';
 
 /**
  * Portlet component for edit content types

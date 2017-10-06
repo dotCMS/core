@@ -1,9 +1,15 @@
 import { Injectable, EventEmitter } from '@angular/core';
-import { FooterLabels } from './../../shared/models/dot-confirmation/footer-labels.model';
-import { DotConfirmation } from './../../shared/models/dot-confirmation/dot-confirmation.model';
+import { FooterLabels } from './../../../shared/models/dot-confirmation/footer-labels.model';
+import { DotConfirmation } from './../../../shared/models/dot-confirmation/dot-confirmation.model';
 import { BehaviorSubject } from 'rxjs';
-import { MessageService } from './messages-service';
+import { MessageService } from './../messages-service';
 import { ConfirmationService } from 'primeng/primeng';
+
+/**
+ * Provides a wrapper of ConfirmationService
+ * @export
+ * @class DotConfirmationService
+ */
 
 @Injectable()
 export class DotConfirmationService {
@@ -17,6 +23,12 @@ export class DotConfirmationService {
     constructor(public confirmationService: ConfirmationService) {
     }
 
+    /**
+     * Confirm wrapper method of ConfirmService
+     * Add both accept and reject labels into confirmation object
+     * @param {DotConfirmation} confirmation
+     * @memberof DotConfirmationService
+     */
     // TODO: Import MessageService - Add message keys
     // (Not working right now since inyecting MessageService produces errors)
     confirm(confirmation: DotConfirmation): void {

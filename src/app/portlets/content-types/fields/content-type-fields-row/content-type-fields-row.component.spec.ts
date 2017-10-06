@@ -9,9 +9,9 @@ import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { MessageService } from '../../../../api/services/messages-service';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation-service';
 import { ConfirmDialogModule } from 'primeng/primeng';
 import { MockMessageService } from '../../../../test/message-service.mock';
+import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 
 @Component({
     selector: 'content-type-field-dragabble-item',

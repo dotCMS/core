@@ -1,6 +1,6 @@
-import { DotConfirmationService } from './api/services/dot-confirmation-service';
 import { Component } from '@angular/core';
 import { NotLicensedService } from './api/services/not-licensed-service';
+import { DotConfirmationService } from './api/services/dot-confirmation';
 
 @Component({
     selector: 'dot-root',

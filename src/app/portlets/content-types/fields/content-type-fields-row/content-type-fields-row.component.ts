@@ -3,7 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Field, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { MessageService } from '../../../../api/services/messages-service';
-import { DotConfirmationService } from './../../../../api/services/dot-confirmation-service';
+import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 
 /**
  * Display all the Field Types
