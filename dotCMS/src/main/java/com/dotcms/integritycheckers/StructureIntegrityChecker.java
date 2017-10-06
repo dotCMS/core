@@ -205,14 +205,18 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
                 //Clean relationShips cache
                 List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(st);
-                for(Relationship rel : relationships) {
-                    try {
-                        CacheLocator.getRelationshipCache()
-                                .removeRelationshipsByStruct(rel.getParentStructure());
-                        CacheLocator.getRelationshipCache()
-                                .removeRelationshipsByStruct(rel.getChildStructure());
-                    }catch(DotCacheException e){
-                        Logger.warn(StructureIntegrityChecker.class,String.format("Unable to clean relationship cache [%s]",e.getMessage()));
+                if(null != relationships) {
+                    for (Relationship rel : relationships) {
+                        try {
+                            CacheLocator.getRelationshipCache()
+                                    .removeRelationshipsByStruct(rel.getParentStructure());
+                            CacheLocator.getRelationshipCache()
+                                    .removeRelationshipsByStruct(rel.getChildStructure());
+                        } catch (DotCacheException e) {
+                            Logger.warn(StructureIntegrityChecker.class,
+                                    String.format("Unable to clean relationship cache [%s]",
+                                            e.getMessage()));
+                        }
                     }
                 }
 
