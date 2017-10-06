@@ -319,17 +319,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
 			permissionType=PERMISSION_EDIT;
 		}
-		
-        // everybody should be able to use file content types
-        if (permissionable instanceof Structure || permissionable instanceof ContentType) {
-            final Structure contentType = (permissionable instanceof ContentType)
-                            ? new StructureTransformer(ContentType.class.cast(permissionable)).asStructure()
-                            : Structure.class.cast(permissionable);
-            if ((PERMISSION_WRITE == permissionType || PERMISSION_PUBLISH == permissionType)
-                            && BaseContentType.FILEASSET.getType() == contentType.getStructureType()) {
-                return Boolean.TRUE;
-            }
-        }
 
 		Role adminRole;
 		Role anonRole;
