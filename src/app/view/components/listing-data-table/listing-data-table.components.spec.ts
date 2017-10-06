@@ -72,6 +72,15 @@ describe('Listing Component', () => {
     });
 
     it('renderer basic datatable component', () => {
+        const actionHeader = fixture.debugElement.query(By.css('action-header'));
+        const globalSearch = actionHeader.query(By.css('input'));
+
+        comp.ngOnInit();
+
+        expect(globalSearch.nativeElement).toBe(document.activeElement);
+    });
+
+    it('renderer basic datatable component', () => {
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
             return Observable.create(observer => {
                 observer.next(Object.assign([], this.items));
@@ -89,10 +98,10 @@ describe('Listing Component', () => {
 
         fixture.detectChanges();
 
-        let rows = el.querySelectorAll('tr');
+        const rows = el.querySelectorAll('tr');
         expect(5).toEqual(rows.length);
 
-        let headers = rows[0].querySelectorAll('th');
+        const headers = rows[0].querySelectorAll('th');
         expect(4).toEqual(headers.length);
 
         comp.columns.forEach((col, index) =>

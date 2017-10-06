@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { ActionHeaderOptions, ButtonAction } from '../../../shared/models/action-header';
 import { BaseComponent } from '../_common/_base/base-component';
@@ -14,7 +14,7 @@ import { PaginatorService, OrderDirection } from '../../../api/services/paginato
     styleUrls: ['./listing-data-table.component.scss'],
     templateUrl: 'listing-data-table.component.html'
 })
-export class ListingDataTableComponent extends BaseComponent implements OnChanges {
+export class ListingDataTableComponent extends BaseComponent implements OnChanges, OnInit {
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -25,6 +25,8 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     @Input() paginationPerPage: number;
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
+
+    @ViewChild('gf') globalSearch: ElementRef;
 
     readonly DATE_FORMAT = 'date';
 
@@ -57,6 +59,10 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
         if (changes.paginationPerPage && changes.paginationPerPage.currentValue) {
             this.paginatorService.paginationPerPage = this.paginationPerPage;
         }
+    }
+
+    ngOnInit(): void {
+        this.globalSearch.nativeElement.focus();
     }
 
     handleRowClick($event): void {
