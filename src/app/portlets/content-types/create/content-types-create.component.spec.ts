@@ -20,7 +20,7 @@ import { OverlayPanelModule, ConfirmationService } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldService } from '../fields/service';
-import { DotConfirmationService } from './../../../api/services/dot-confirmation-service';
+import { DotConfirmationService } from './../../../api/services/dot-confirmation';
 import { CONTENT_TYPE_INITIAL_DATA, ContentType } from '../main';
 import { Field } from '../fields/shared';
 
