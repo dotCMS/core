@@ -4,8 +4,8 @@ import {
     Output,
     EventEmitter
 } from '@angular/core';
-import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
 import { SiteService, Site } from 'dotcms-js/dotcms-js';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

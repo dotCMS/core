@@ -6,14 +6,14 @@ import {
     ViewEncapsulation,
     OnInit
 } from '@angular/core';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { MenuItem } from 'primeng/primeng';
 import { MessageService } from '../../../api/services/messages-service';
 import { Observable } from 'rxjs/Observable';
-import { MenuItem } from 'primeng/primeng';
 import { StructureTypeView } from '../../../shared/models/contentlet';
 import { ToolbarAddContenletService } from './toolbar-add-contentlet.service';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

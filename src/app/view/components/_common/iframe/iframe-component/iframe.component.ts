@@ -10,9 +10,9 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
-import { IframeOverlayService } from '../../../../../api/services/iframe-overlay-service';
 import { Observable } from 'rxjs/Observable';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
+import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

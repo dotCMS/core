@@ -4,6 +4,7 @@ import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { MessageService } from '../../../api/services/messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl } from '@angular/forms';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -24,7 +25,8 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         messageService: MessageService,
         private fb: FormBuilder,
         private loginService: LoginService,
-        public paginationService: PaginatorService
+        public paginationService: PaginatorService,
+        private iframeOverlayService: IframeOverlayService
     ) {
         super(
             ['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'],
@@ -62,10 +64,11 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
             data => {
                 if (data) {
                     this.close();
+                    this.iframeOverlayService.hide();
                 }
-                // TODO: Replace the alert below with a modal error message.
             },
             response => {
+                // TODO: Replace the alert below with a modal error message.
                 if (response.entity) {
                     alert(response.errorsMessages);
                 } else {

@@ -18,6 +18,7 @@ import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotRouterService } from '../../../api/services/dot-router-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 describe('LoginAsComponent', () => {
     let comp: LoginAsComponent;
@@ -52,7 +53,8 @@ describe('LoginAsComponent', () => {
                         provide: ActivatedRoute,
                         useValue: { params: Observable.from([{ id: '1234' }]) }
                     },
-                    PaginatorService
+                    PaginatorService,
+                    IframeOverlayService
                 ]
             });
 

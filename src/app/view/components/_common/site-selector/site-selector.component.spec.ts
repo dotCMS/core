@@ -15,12 +15,12 @@ import { CommonModule } from '@angular/common';
 import { MessageService } from '../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
-import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
 import { SiteService, DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
+import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 
 describe('Site Selector Component', () => {
     let comp: SiteSelectorComponent;
@@ -30,11 +30,11 @@ describe('Site Selector Component', () => {
 
     beforeEach(
         async(() => {
-            let messageServiceMock = new MockMessageService({
+            const messageServiceMock = new MockMessageService({
                 search: 'Search'
             });
 
-            let siteServiceMock = new SiteServiceMock();
+            const siteServiceMock = new SiteServiceMock();
 
             DOTTestBed.configureTestingModule({
                 declarations: [SiteSelectorComponent],
@@ -61,7 +61,7 @@ describe('Site Selector Component', () => {
 
         fixture.detectChanges();
 
-        let paginatorService = de.injector.get(PaginatorService);
+        const paginatorService = de.injector.get(PaginatorService);
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
         expect(paginatorService.extraParams.get('live')).toBe('false');
@@ -74,7 +74,7 @@ describe('Site Selector Component', () => {
 
         fixture.detectChanges();
 
-        let paginatorService = de.injector.get(PaginatorService);
+        const paginatorService = de.injector.get(PaginatorService);
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
         expect(paginatorService.extraParams.get('live')).toBe('false');
@@ -82,7 +82,7 @@ describe('Site Selector Component', () => {
     });
 
     it('should call getSitesList', () => {
-        let site1 = {
+        const site1 = {
             identifier: 1,
             name: 'Site 1'
         };

@@ -5,7 +5,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
 import { IframeComponent } from './iframe-component';
 import { DotLoadingIndicatorModule } from './dot-loading-indicator/dot-loading-indicator.module';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy';
-import { IframeOverlayService } from './service/iframe-overlay-service';
+import { IframeOverlayService } from './service/iframe-overlay.service';
 import { PIPES } from '../../../../components';
 
 @NgModule({
