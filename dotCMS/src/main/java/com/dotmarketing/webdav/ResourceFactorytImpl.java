@@ -43,11 +43,11 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	 */
     @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
-		Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
+		url = url.toLowerCase();
+    	Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
 			boolean isFolder = false;
 			boolean isResource = false;
-			dotDavHelper.stripMapping(url);
 			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 
 					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
 			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);

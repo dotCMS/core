@@ -28,8 +28,11 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     protected boolean isAutoPub;
     protected DotWebdavHelper dotDavHelper=new DotWebdavHelper();
     protected long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+    private String originalPath;
     
     public BasicFolderResourceImpl(String path) {
+        this.originalPath = path;
         this.path=path.toLowerCase();
         try {
             this.host=APILocator.getHostAPI().findByName(
@@ -72,10 +75,18 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             	throw new DotRuntimeException(e.getMessage(), e);
             }
         } else {
-            File f = dotDavHelper.createTempFile("/" + host.getHostname() + path + newName);
-            FileUtils.copyStreamToFile(f, in, null);
-            Resource tr = new TempFileResourceImpl(f, path + newName, isAutoPub);
-            return tr;
+            try {
+                if(!originalPath.endsWith("/")){
+                    originalPath = originalPath + "/";
+                }
+                File f = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
+                FileUtils.copyStreamToFile(f, in, null);
+                Resource tr = new TempFileResourceImpl(f, originalPath + newName, isAutoPub);
+                return tr;
+            } catch (Exception e){
+                Logger.error(this, "Error creating temp file", e);
+                throw new DotRuntimeException(e.getMessage(), e);
+            }
         }
     }
 

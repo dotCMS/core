@@ -59,6 +59,8 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+		newName = newName.toLowerCase();
+
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
@@ -72,9 +74,14 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			} catch (DotSecurityException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
-			}			
-			
-			dotDavHelper.createTempFolder(File.separator + host.getHostname() + folderPath + File.separator + newName);
+			}
+
+            String hostFolderPath = File.separator + host.getHostname() + folderPath;
+			if(!hostFolderPath.endsWith(File.separator)){
+                hostFolderPath = hostFolderPath + File.separator;
+            }
+
+            dotDavHelper.createTempFolder(hostFolderPath + newName);
 			File f = new File(File.separator + host.getHostname() + folderPath);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
 			return tr;
