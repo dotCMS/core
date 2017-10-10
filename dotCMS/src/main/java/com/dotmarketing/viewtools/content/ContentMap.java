@@ -168,7 +168,7 @@ public class ContentMap {
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				ContentletVersionInfo cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
 				if(cvi == null) {
-				    long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
