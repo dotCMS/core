@@ -166,7 +166,14 @@ public class ContentMap {
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				ContentletVersionInfo cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				if(cvi == null) {
+				    long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
+				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
+				    }
+				}
+
 				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.getWorkingInode()  : cvi.getLiveInode();
 				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 					
