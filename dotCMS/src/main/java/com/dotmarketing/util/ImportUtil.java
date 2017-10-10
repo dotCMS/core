@@ -1135,14 +1135,14 @@ public class ImportUtil {
 
                         if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
                             if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
+                                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
                             }
                             cont.setHost(folder.getHostId());
                             cont.setFolder(value.toString());
                         }
                         else if(host != null) {
                             if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException("User have no Add Children Permissions on selected host");
+                                throw new DotSecurityException("User has no Add Children Permissions on selected host");
                             }
                             cont.setHost(value.toString());
                             cont.setFolder(FolderAPI.SYSTEM_FOLDER);
