@@ -34,7 +34,7 @@
                     type="email"
                     required
                     (keyup)="message=''"
-                    pattern="^[a-zA-Z0–9_.+-]+@[a-zA-Z0–9_.+-]+\.[a-zA-Z0–9_.+-]+$"/>
+                    [pattern]="emailRegex"/>
             </span>
         </div>
         <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">

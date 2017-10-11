@@ -4,6 +4,7 @@ import { Component, EventEmitter, Output, ViewEncapsulation, Input } from '@angu
 import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
 import { MessageService } from '../../../api/services/messages-service';
 import { StringFormat } from '../../../api/util/stringFormat';
+import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -28,12 +29,14 @@ export class MyAccountComponent extends BaseComponent {
     private passwordMatch: boolean;
     private message = null;
     private changePasswordOption = false;
+    private emailRegex: string;
 
     constructor(
         private loginService: LoginService,
         private accountService: AccountService,
         messageService: MessageService,
-        private stringFormat: StringFormat
+        private stringFormat: StringFormat,
+        private dotcmsConfig: DotcmsConfig
     ) {
         super(
             [
@@ -59,6 +62,9 @@ export class MyAccountComponent extends BaseComponent {
         this.passwordMatch = false;
         this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
+        this.dotcmsConfig.getConfig().subscribe(res => {
+            this.emailRegex = res.emailRegex;
+        });
     }
 
     checkPasswords(): void {
