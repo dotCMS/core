@@ -97,7 +97,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 			PropsUtil.get(PropsUtil.USERS_ID_ALWAYS_AUTOGENERATE));
 
 		if (alwaysAutoUserId) {
-			autoUserId = true;
+			autoUserId &= true;
 		}
 
 		validate(
@@ -106,7 +106,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		if (autoUserId) {
+		if (autoUserId && (userId == null || userId.isEmpty())) {
 			userId =
 				companyId + "." +
 				Long.toString(CounterManagerUtil.increment(
