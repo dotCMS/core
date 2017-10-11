@@ -1,19 +1,5 @@
 package com.dotcms.publisher.pusher;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -70,10 +56,26 @@ import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -86,7 +88,7 @@ import com.dotmarketing.util.UtilMethods;
  * destination server(s). This means that it updates the local status of the
  * bundle so users will know if the bundle was successfully deployed or if
  * something failed during the process.
- * 
+ *
  * @author Alberto
  * @version 1.0
  * @since Oct 12, 2012
@@ -112,7 +114,7 @@ public class PushPublisher extends Publisher {
         if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
-        
+
         config.setStatic(false);
         this.config = super.init( config );
         return this.config;
@@ -179,7 +181,7 @@ public class PushPublisher extends Publisher {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
 				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
-				
+
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
 				for(PublishingEndPoint ep : allEndpoints) {
@@ -193,9 +195,10 @@ public class PushPublisher extends Publisher {
 							// If re-trying a bundle or just re-attempting to
 							// install a bundle, send it only to those
 							// end-points whose status IS NOT success
-							if ((DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy()))
+							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())) {
+											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+											&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
 							}
 						}
@@ -290,6 +293,15 @@ public class PushPublisher extends Publisher {
 				//Triggering event listener when all endpoints are successfully sent
 				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
 			} else {
+
+				/*
+				If we have failed bundles we need to update the delivery strategy in order to only
+				retry the failing endpoints and avoid to resent to successfully endpoints
+				 */
+				if (!DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())) {
+					updateJobDataMap(DeliveryStrategy.FAILED_ENDPOINTS);
+				}
+
 				if (errorCounter == totalEndpoints) {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
@@ -331,7 +343,7 @@ public class PushPublisher extends Publisher {
 	}
 
     /**
-     * 
+     *
      * @param token
      * @return
      * @throws IOException
@@ -425,7 +437,7 @@ public class PushPublisher extends Publisher {
     /**
      * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
      * retrieve their information.
-     * 
+     *
      * @return The REST {@link Client}.
      */
     private Client getRestClient() {
@@ -434,5 +446,26 @@ public class PushPublisher extends Publisher {
         }
         return this.restClient;
     }
+
+	/**
+	 * Allows to update the delivery strategy to the PublishQueueJob
+	 */
+	private void updateJobDataMap(DeliveryStrategy deliveryStrategy) {
+		try {
+			Scheduler sched = QuartzUtils.getStandardScheduler();
+			JobDetail job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs");
+			if (job == null) {
+				return;
+			}
+
+			job.getJobDataMap().put("deliveryStrategy", deliveryStrategy);
+			sched.addJob(job, true);
+		} catch (ObjectAlreadyExistsException e) {
+			// Quartz will throw this error if it is already running
+			Logger.debug(this.getClass(), e.getMessage(), e);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+		}
+	}
 
 }
