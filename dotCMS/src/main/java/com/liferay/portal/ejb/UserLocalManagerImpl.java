@@ -97,7 +97,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 			PropsUtil.get(PropsUtil.USERS_ID_ALWAYS_AUTOGENERATE));
 
 		if (alwaysAutoUserId) {
-			autoUserId &= true;
+			autoUserId = true;
 		}
 
 		validate(
