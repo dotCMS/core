@@ -1,18 +1,25 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
-
+import com.dotmarketing.util.Config;
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -20,6 +27,8 @@ public abstract class Publisher implements IPublisher {
 
 	protected PublisherConfig config;
 
+    protected static final String BUNDLE_ID = "BundleId";
+    protected static final String ENDPOINT_NAME = "EndpointName";
 
 	/**
 	 * This method gets called before any publisher processes
@@ -202,5 +211,47 @@ public abstract class Publisher implements IPublisher {
 	public PublisherConfig setUpConfig(PublisherConfig config){
 		return config;
 	}
+
+    /**
+     * Compress the bundle root (set up in the config) into a tar.gz file. It will run only if
+     * STATIC_PUBLISHING_GENERATE_TAR_GZ property is True. False by default.
+     */
+    protected void compressBundleIfNeeded() throws IOException {
+        if (Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false)) {
+            final File bundleToCompress = BundlerUtil.getBundleRoot(config);
+            final ArrayList<File> list = Lists.newArrayList(bundleToCompress);
+            final File bundle = new File(
+                    bundleToCompress + File.separator
+                    + ".." + File.separator
+                    + config.getId() + ".tar.gz");
+
+            // Compressing the bundle.
+            PushUtils.compressFiles(list, bundle, bundleToCompress.getAbsolutePath());
+        }
+    }
+
+    /**
+     * Reads the configuration properties from the specified static end-point.
+     *
+     * @param endpoint
+     *            - The static {@link PublishingEndPoint}.
+     * @return The {@link Properties} object containing the configuration
+     *         parameters of the static end-point.
+     * @throws DotDataException
+     *             An error occurred when retrieving the end-point's properties
+     *             or connecting to it.
+     */
+    protected Properties getEndPointProperties(PublishingEndPoint endpoint) throws DotDataException {
+        String authToken = PublicEncryptionFactory.decryptString( endpoint.getAuthKey().toString() );
+
+        Properties props = new Properties();
+        try {
+            props.load( new StringReader( authToken ) );
+        } catch (IOException e) {
+            throw new DotDataException("Can't read properties from Endpoint: " + endpoint.getAddress());
+        }
+
+        return props;
+    }
 
 }
