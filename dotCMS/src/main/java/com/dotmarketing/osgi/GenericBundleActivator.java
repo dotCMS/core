@@ -82,7 +82,6 @@ import org.quartz.SchedulerException;
  */
 public abstract class GenericBundleActivator implements BundleActivator {
 
-    private static final String MANIFEST_HEADER_BUNDLE_ACTIVATOR = "Bundle-Activator";
     private static final String MANIFEST_HEADER_OVERRIDE_CLASSES = "Override-Classes";
 
     private static final String INIT_PARAM_VIEW_JSP = "view-jsp";
@@ -148,7 +147,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * <br/>
      * New classes will be injected, existing ones will be overridden
      */
-    protected void overrideClasses ( BundleContext context ) throws Exception {
+    protected void overrideClasses(final BundleContext context) throws Exception {
 
         if (null == this.context) {
             this.context = context;
@@ -173,6 +172,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * @deprecated Use {@link #overrideClasses(BundleContext)} instead
      */
+    @Deprecated
     protected void publishBundleServices ( BundleContext context ) throws Exception {
         overrideClasses(context);
     }
@@ -235,31 +235,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Getting the service to register our Actionlet.
         ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
-        if ( serviceRefSelected == null ) {
-
-            //Forcing the loading of the Rule Conditionlet Service.
-            RulesAPI rulesAPI = APILocator.getRulesAPI();
-            if ( rulesAPI != null ) {
-
-                serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
-                if ( serviceRefSelected == null ) {
-                    //Forcing the registration of our required services
-                    rulesAPI.registerBundleService();
-                }
-            }
-        }
-    }
-
-    /**
-     * Is possible on certain scenarios to have our Rule Conditionlet without initialization, or most probably a Rule Conditionlet without
-     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
-     *
-     * @param context
-     */
-    private void forceRuleActionletServiceLoading ( BundleContext context ) {
-
-        //Getting the service to register our Actionlet.
-        ServiceReference serviceRefSelected = context.getServiceReference( RuleActionletOSGIService.class.getName() );
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the Rule Conditionlet Service.
@@ -520,7 +495,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( urlRewriteFilter != null ) {
 
             if ( rules == null ) {
-                rules = new ArrayList<Rule>();
+                rules = new ArrayList<>();
             }
 
             //Adding the Rule to the filter
@@ -588,7 +563,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         if ( actionlets == null ) {
-            actionlets = new ArrayList<WorkFlowActionlet>();
+            actionlets = new ArrayList<>();
         }
 
         this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
@@ -870,7 +845,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterConditionlets() {
 
-        if ( this.conditionletOSGIService != null && conditionletOSGIService != null ) {
+        if (this.conditionletOSGIService != null && conditionlets != null) {
             for ( Conditionlet conditionlet : conditionlets ) {
 
                 this.conditionletOSGIService.removeConditionlet(conditionlet.getClass().getSimpleName());
@@ -884,7 +859,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterRuleActionlets() {
 
-        if ( this.actionletOSGIService != null && actionletOSGIService != null ) {
+        if (this.actionletOSGIService != null && ruleActionlets != null) {
             for ( RuleActionlet actionlet : ruleActionlets ) {
 
                 this.actionletOSGIService.removeRuleActionlet(actionlet.getClass().getSimpleName());

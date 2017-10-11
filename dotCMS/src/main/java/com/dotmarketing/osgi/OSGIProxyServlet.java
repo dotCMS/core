@@ -19,7 +19,7 @@ public class OSGIProxyServlet extends HttpServlet {
     public static DispatcherTracker tracker;
     public static ServletConfig servletConfig;
     public static BundleContext bundleContext;
-    private Boolean isInitialized = Boolean.FALSE;
+    private static Boolean isInitialized = Boolean.FALSE;
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
@@ -36,24 +36,27 @@ public class OSGIProxyServlet extends HttpServlet {
 
     private void doInit () throws Exception {
 
-        servletConfig = getServletConfig();
-        if (System.getProperty(WebKeys.OSGI_ENABLED) != null) {
-            bundleContext = getBundleContext();
-            tracker = new DispatcherTracker(bundleContext, null, servletConfig);
+        setServletConfig(getServletConfig());
 
+        if (System.getProperty(WebKeys.OSGI_ENABLED) != null) {
+
+            setBundleContext(getBundleContext());
+
+            setTracker(new DispatcherTracker(bundleContext, null, servletConfig));
             tracker.open();
 
-            this.isInitialized = Boolean.TRUE;
+            setIsInitialized(Boolean.TRUE);
         }
     }
 
     @Override
     protected void service ( HttpServletRequest req, HttpServletResponse res ) throws ServletException, IOException {
+
     	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return;
     	}
 
-        if (!this.isInitialized) {
+        if (!isInitialized) {
             try {
                 doInit();
             } catch (Exception e) {
@@ -76,7 +79,7 @@ public class OSGIProxyServlet extends HttpServlet {
         }
         if ( tracker != null ) {
             tracker.close();
-            tracker = null;
+            setTracker(null);
         }
         super.destroy();
     }
@@ -91,6 +94,22 @@ public class OSGIProxyServlet extends HttpServlet {
         }
 
         throw new ServletException( "Bundle context attribute [" + BundleContext.class.getName() + "] not set in servlet context" );
+    }
+
+    private static void setIsInitialized(Boolean initialized) {
+        isInitialized = initialized;
+    }
+
+    private static void setServletConfig(ServletConfig config) {
+        servletConfig = config;
+    }
+
+    private static void setBundleContext(BundleContext context) {
+        bundleContext = context;
+    }
+
+    private static void setTracker(DispatcherTracker dispatcherTracker) {
+        tracker = dispatcherTracker;
     }
 
 }
