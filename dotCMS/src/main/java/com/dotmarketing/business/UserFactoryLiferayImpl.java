@@ -98,7 +98,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			defaultUser = APILocator.getUserAPI().getDefaultUser();
 
 		} catch (Exception e) {
-			throw new DotDataException("Can't get default user");
+			throw new DotDataException("Error creating new user", e);
 		}		
 
 		if(!UtilMethods.isSet(email)){
