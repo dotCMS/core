@@ -1,5 +1,15 @@
 package com.dotcms.cluster.business;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.List;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.bean.Server;
@@ -10,17 +20,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.*;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 
 public class ServerAPIImpl implements ServerAPI {
 
@@ -43,20 +47,25 @@ public class ServerAPIImpl implements ServerAPI {
 
 	@WrapInTransaction
 	@Override
-    public Server getOrCreateServer(final String serverId) throws DotDataException {
-	    final Server tryServer = getServer(serverId);
+    public Server getOrCreateMyServer() throws DotDataException {
+	    final Server tryServer = getServer(readServerId());
 
         if(tryServer == null || tryServer.getServerId() == null)  {
-			createNewServerTransaction(serverId);
+        	createMyServerTransaction();
         }
 
-        return serverFactory.getServer(serverId);
+        return getServer(readServerId());
     }
 
-	private void createNewServerTransaction(String serverId) throws DotDataException {
-		Server newServer = new Server();
-		newServer.setServerId(serverId);
-		newServer.setIpAddress(ClusterFactory.getIPAdress());
+	private void createMyServerTransaction() throws DotDataException {
+		
+		
+		
+		
+
+		
+		Server.Builder serverBuilder =  Server.builder()
+				.withServerId(readServerId());
 
 		String hostName = "localhost";
 		try {
@@ -66,26 +75,31 @@ public class ServerAPIImpl implements ServerAPI {
             Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
         }
 
-		newServer.setName(hostName);
-
-		saveServer(newServer);
+		final String ipAddress=ClusterFactory.getIPAdress();
+		serverBuilder.withIpAddress(ipAddress);
+		
+		serverBuilder.withName(hostName);
+		serverBuilder.withClusterId(ClusterFactory.getClusterId());
+		
+		
+		
 
 		// set up ports
 
-		String port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.CACHE_PORT);
+		String port=ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.CACHE_PORT);
 		Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
-		newServer.setCachePort(Integer.parseInt(port));
+		serverBuilder.withCachePort(Integer.parseInt(port));
 
-		port=new ESClient().getNextAvailableESPort(newServer.getServerId(), newServer.getIpAddress(),
-                String.valueOf(newServer.getEsTransportTcpPort()));
+		port=new ESClient().getNextAvailableESPort(readServerId(), ipAddress,null);
 		Config.setProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), port);
-		newServer.setEsTransportTcpPort(Integer.parseInt(port));
+		serverBuilder.withEsTransportTcpPort(Integer.parseInt(port));
 
-		port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.ES_HTTP_PORT);
+		port=ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.ES_HTTP_PORT);
 		Config.setProperty(ServerPort.ES_HTTP_PORT.getPropertyName(), port);
-		newServer.setEsHttpPort(Integer.parseInt(port));
+		serverBuilder.withEsHttpPort(Integer.parseInt(port));
+		saveServer(serverBuilder.build());
+		
 
-		updateServer(newServer);
 
 		try {
             writeHeartBeatToDisk();
@@ -184,18 +198,8 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getAliveServers(toExclude);
 	}
 
-	@WrapInTransaction
-	@Override
-	public void createServerUptime() throws DotDataException {
-		serverFactory.createServerUptime();
-	}
 
-	@WrapInTransaction
-	@Override
-	public void updateHeartbeat() throws DotDataException {
 
-	    serverFactory.updateHeartbeat(readServerId());
-	}
 
 	@WrapInTransaction
 	@Override
@@ -237,6 +241,6 @@ public class ServerAPIImpl implements ServerAPI {
 	@Override
 	public Server getCurrentServer() throws DotDataException {
 
-	    return getOrCreateServer(readServerId());
+	    return getOrCreateMyServer();
 	}
 }
