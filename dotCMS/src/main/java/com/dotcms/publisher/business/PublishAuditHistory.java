@@ -102,7 +102,7 @@ public class PublishAuditHistory implements Serializable {
 	public void addOrUpdateEndpoint(String groupId, String endpointId, EndpointDetail detail) {
 		Map<String, EndpointDetail> groupMap = endpointsMap.get(groupId);
 		if(groupMap == null) {
-			groupMap = new HashMap<String, EndpointDetail>();
+			groupMap = new HashMap<>();
 			groupMap.put(endpointId, detail);
 			endpointsMap.put(groupId, groupMap);
 		} else if(groupMap.get(endpointId) == null) {

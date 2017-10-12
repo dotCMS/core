@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -99,11 +100,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
 	private final String UPDATESQL_CREATION_DATE="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
 
+	@WrapInTransaction
     @Override
     public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history ) throws DotPublisherException {
         updatePublishAuditStatus(bundleId, newStatus, history, false );
     }
 
+	@WrapInTransaction
 	@Override
 	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException {
 	    boolean local=false;
@@ -319,11 +322,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder ) throws DotPublisherException {
         return updateAuditTable( endpointId, groupId, bundleFolder, false );
     }
 
+	@WrapInTransaction
 	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException {
 
