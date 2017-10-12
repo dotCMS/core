@@ -88,8 +88,8 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			path = path + "/";
 		}
 		try {
-			Folder folder = dotDavHelper.createFolder(path + newName, user);
-			FolderResourceImpl folderResource = new FolderResourceImpl(folder, path + newName + "/");
+			Folder newfolder = dotDavHelper.createFolder(path + newName, user);
+			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, path + newName + "/");
 			return folderResource;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
