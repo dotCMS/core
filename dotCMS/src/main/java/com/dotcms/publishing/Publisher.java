@@ -2,6 +2,7 @@ package com.dotcms.publishing;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.repackage.org.apache.commons.collections.map.CompositeMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -10,14 +11,21 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +37,17 @@ public abstract class Publisher implements IPublisher {
 
     protected static final String BUNDLE_ID = "BundleId";
     protected static final String ENDPOINT_NAME = "EndpointName";
+	protected static final String LIVE_FOLDER = File.separator + "live";
+    protected static final String CURRENT_HOST = "currentHost";
+    protected static final String CURRENT_LANGUAGE = "currentLanguage";
+    protected static final String HOST_ID                                  = "hostId";
+    protected static final String HOST_NAME                                = "hostname";
+    protected static final String LANGUAGE_ISO                             = "languageIso";
+    protected static final String LANGUAGE_ID                              = "languageId";
+    protected static final String LANGUAGE_COUNTRY                         = "languageCountry";
+    protected static final String DATE                                     = "date";
+    protected static final String DATE_FORMAT_DEFAULT                      = "yyyyMMdd-HHmmss";
+    protected static final String DOT_STATIC_DATE = "dot-static-date";
 
 	/**
 	 * This method gets called before any publisher processes
@@ -253,5 +272,60 @@ public abstract class Publisher implements IPublisher {
 
         return props;
     }
+
+    /**
+     * Get the context map for the bucket name interpolating
+     * @param config {@link PublisherConfig}
+     * @return Map
+     */
+    protected Map<String, Object> getContextMap(String bucketProp, final PublisherConfig config) {
+
+        final Map<String, Object> configMap;
+
+        final Host host = (Host) config.get(CURRENT_HOST);
+        final String languageId = (String)config.get(CURRENT_LANGUAGE);
+        final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+
+        if (null != host) {
+            configMap  = new HashMap<>();
+            configMap.put(HOST_ID,          host.getIdentifier());
+            configMap.put(HOST_NAME,        host.getHostname());
+            configMap.put(LANGUAGE_ISO,     language.toString());
+            configMap.put(LANGUAGE_ID,      language.getId());
+            configMap.put(LANGUAGE_COUNTRY, language.getCountry());
+
+            // Timestamp variables: https://github.com/dotCMS/core/issues/10465
+            Date bucketDate = (Date) config.get(DOT_STATIC_DATE);
+            if (bucketDate != null) {
+                SimpleDateFormat defaultDateFormat = new SimpleDateFormat(DATE_FORMAT_DEFAULT);
+                configMap.put(DATE, defaultDateFormat.format(bucketDate));
+
+                if (bucketProp != null) {
+                    final List<RegExMatch> regExMatches = RegEX.find(bucketProp, "(\\{("+DATE+"-([^\\}]+))\\})");
+                    for(RegExMatch regExMatch : regExMatches) {
+                        if (regExMatch.getMatch() != null) {
+                            if (regExMatch.getGroups().size() == 3){
+                                String customDateVariableName = regExMatch.getGroups().get(1).getMatch();
+                                String customDateFormatString = regExMatch.getGroups().get(2).getMatch();
+
+                                try {
+                                    SimpleDateFormat customDateFormat = new SimpleDateFormat(customDateFormatString);
+
+                                    configMap.put(customDateVariableName, customDateFormat.format(bucketDate));
+                                } catch (IllegalArgumentException e) {
+                                    Logger.debug(this.getClass(), "Could not parse date-pattern '"
+                                            +customDateVariableName+"' in bucketId ("+ e.getMessage() +")", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new CompositeMap(config, configMap);
+        }
+
+        return config;
+    } // getContextMap.
 
 }
