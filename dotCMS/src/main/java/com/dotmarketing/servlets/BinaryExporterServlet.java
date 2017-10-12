@@ -14,6 +14,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -310,6 +311,16 @@ public class BinaryExporterServlet extends HttpServlet {
 				downloadName = inputFile.getName();
 			}
 
+			
+			if(downloadName.endsWith(".vtl") || downloadName.endsWith(".vm")){
+				resp.sendError(404);
+			    DbConnectionFactory.closeSilently();
+			    return;
+			}
+			
+			
+			
+			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
