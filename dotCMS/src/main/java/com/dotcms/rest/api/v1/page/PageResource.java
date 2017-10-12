@@ -12,67 +12,71 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Provides different methods to access information about HTML Pages in dotCMS. For example,
+ * users of this end-point can get the metadata of an HTML Page (i.e., information about the
+ * different data structures that make up a page), the final render of a page, etc.
+ *
+ * @author Jose Castro
+ * @version 4.2
+ * @since Oct 6, 2017
+ */
 @Path("/v1/page")
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
 
-    private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-    private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-    private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-    private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-    private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-    private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
-    private final ContainerAPI containerAPI = APILocator.getContainerAPI();
-
     /**
-     *
+     * Creates an instance of this REST end-point.
      */
     public PageResource() {
         this(PageResourceHelper.getInstance(), new WebResource());
     }
 
     @VisibleForTesting
-    protected PageResource(PageResourceHelper pageResourceHelper, WebResource webResource) {
+    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource
+            webResource) {
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
     }
 
     /**
-     * <p>Returns a JSON representation of a page
-     * <p/>
-     * Usage: /page/{hostOrFolderIdentifier}
+     * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
+     * <pre>
+     * Format:
+     * http://localhost:8080/api/v1/page/json/{page-url}
+     * <br/>
+     * Example:
+     * http://localhost:8080/api/v1/page/json/about-us/locations/index
+     * </pre>
+     *
+     * @param request  The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param uri      The path to the HTML Page whose information will be retrieved.
+     * @return All the objects on an associated HTML Page.
      */
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
-    public Response loadJson(@Context HttpServletRequest request, @Context HttpServletResponse
-            response, @PathParam("uri") String uri) {
+    public Response loadJson(@Context final HttpServletRequest request, @Context final
+    HttpServletResponse response, @PathParam("uri") final String uri) {
         // Force authentication
-        final InitDataObject auth = webResource.init(false, request, false);
+        final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.pageResourceHelper.getPageData(request, response,
+            final PageView pageView = this.pageResourceHelper.getPageMetadata(request, response,
                     user, uri);
             final String json = this.pageResourceHelper.asJson(pageView);
             final Response.ResponseBuilder responseBuilder = Response.ok(json);
@@ -81,31 +85,56 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (JsonProcessingException e) {
-            res = ExceptionMapperUtil.createResponse(null, "An error occurred when generating " +
-                    "the JSON response (" + e.getMessage() + ")");
+            final String errorMsg = "An error occurred when generating the JSON response (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotSecurityException e) {
-            res = ExceptionMapperUtil.createResponse(null, "The user does not have the required"
-                    + " permissions (" + e.getMessage() + ")");
+            final String errorMsg = "The user does not have the required permissions (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotDataException e) {
-            res = ExceptionMapperUtil.createResponse(null, "An error occurred when accessing " +
-                    "the page information permissions (" + e.getMessage() + ")");
+            final String errorMsg = "An error occurred when accessing the page information " +
+                    "permissions (" + e.getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (Exception e) {
+            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return res;
     }
 
+    /**
+     * Returns the String representation of the specified HTML Page, i.e., the source code of the
+     * rendered page.
+     * <p>
+     * <pre>
+     * Format:
+     * http://localhost:8080/api/v1/page/render/{page-url}
+     * <br/>
+     * Example:
+     * http://localhost:8080/api/v1/page/render/about-us/locations/index
+     * </pre>
+     *
+     * @param request  The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param uri      The path to the HTML Page whose information will be retrieved.
+     * @return All the <b>rendered</b> objects on an associated HTML Page.
+     */
     @NoCache
     @GET
     @Path("/render/{uri: .*}")
-    public Response renderPage(@Context HttpServletRequest request, @Context HttpServletResponse
-            response, @PathParam("uri") String uri) throws Exception {
+    public Response renderPage(@Context final HttpServletRequest request, @Context final
+    HttpServletResponse response, @PathParam("uri") final String uri) {
         // Force authentication
-        final InitDataObject auth = webResource.init(false, request, false);
+        final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.pageResourceHelper.getPageDataRendered(request,
+            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request,
                     response, user, uri);
             final String json = this.pageResourceHelper.asJson(pageView);
             final Response.ResponseBuilder responseBuilder = Response.ok(json);
@@ -114,15 +143,23 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (JsonProcessingException e) {
-            res = ExceptionMapperUtil.createResponse(null, "An error occurred when generating " +
-                    "the JSON response (" + e.getMessage() + ")");
+            final String errorMsg = "An error occurred when generating the JSON response (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotSecurityException e) {
-            res = ExceptionMapperUtil.createResponse(null, "The user does not have the required"
-                    + " permissions (" + e.getMessage() + ")");
+            final String errorMsg = "The user does not have the required permissions (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotDataException e) {
-            res = ExceptionMapperUtil.createResponse(null, "An error occurred when accessing " +
-                    "the page information permissions (" + e.getMessage() + ")");
+            final String errorMsg = "An error occurred when accessing the page information (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (Exception e) {
+            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return res;

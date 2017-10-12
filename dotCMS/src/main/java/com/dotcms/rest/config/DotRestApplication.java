@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
+import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -122,6 +123,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(CategoriesResource.class);
 					REST_CLASSES.add(PageResource.class);
+					REST_CLASSES.add(ContentRelationshipsResource.class);
 				}
 			}
 		}
