@@ -2279,13 +2279,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             DotConnect dc1 = new DotConnect();
             dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
             dc1.addParam(permissionId);
-            List<Map<String, Object>> l = dc1.loadObjectResults();
+            List<Map<String, Object>> inodeList = dc1.loadObjectResults();
 
             dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
             dc1.addParam(permissionId);
-            List<Map<String, Object>> l2 = dc1.loadObjectResults();
+            List<Map<String, Object>> identifierList = dc1.loadObjectResults();
 
-            if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
+            if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
                 dc1.executeUpdate(INSERT_PERMISSION_REFERENCE_SQL, permissionId, newReference.getPermissionId(), type);

@@ -76,23 +76,21 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 				throw new DotRuntimeException(e.getMessage(), e);
 			}
 
-            String hostFolderPath = File.separator + host.getHostname() + folderPath;
-			if(!hostFolderPath.endsWith(File.separator)){
-                hostFolderPath = hostFolderPath + File.separator;
-            }
+            final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
+					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
 
             dotDavHelper.createTempFolder(hostFolderPath + newName);
-			File f = new File(File.separator + host.getHostname() + folderPath);
-			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
-			return tr;
+			File file = new File(File.separator + host.getHostname() + folderPath);
+			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
+			return tempFolderResource;
 		}
 		if(!path.endsWith("/")){
 			path = path + "/";
 		}
 		try {
-			Folder f = dotDavHelper.createFolder(path + newName, user);
-			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");
-			return fr;
+			Folder folder = dotDavHelper.createFolder(path + newName, user);
+			FolderResourceImpl folderResource = new FolderResourceImpl(folder, path + newName + "/");
+			return folderResource;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);

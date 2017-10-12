@@ -64,9 +64,9 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         if(!dotDavHelper.isTempResource(newName)){
             try {
             	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
-                IFileAsset f = dotDavHelper.loadFile(path + newName,user);
-                Resource fr = new FileResourceImpl(f, f.getFileName());
-                return fr;
+                final IFileAsset iFileAsset = dotDavHelper.loadFile(path + newName,user);
+                final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
+                return fileResource;
                 
             }catch (Exception e){
             	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
@@ -76,13 +76,11 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             }
         } else {
             try {
-                if(!originalPath.endsWith("/")){
-                    originalPath = originalPath + "/";
-                }
-                File f = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
-                FileUtils.copyStreamToFile(f, in, null);
-                Resource tr = new TempFileResourceImpl(f, originalPath + newName, isAutoPub);
-                return tr;
+                originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
+                final File tempFile = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
+                FileUtils.copyStreamToFile(tempFile, in, null);
+                final Resource tempFileResource = new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
+                return tempFileResource;
             } catch (Exception e){
                 Logger.error(this, "Error creating temp file", e);
                 throw new DotRuntimeException(e.getMessage(), e);
