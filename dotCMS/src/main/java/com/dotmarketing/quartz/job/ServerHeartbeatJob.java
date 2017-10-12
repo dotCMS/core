@@ -9,7 +9,6 @@ import org.quartz.JobExecutionException;
 
 import com.dotcms.cluster.common.ClusterServerActionThread;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +24,7 @@ public class ServerHeartbeatJob implements Job {
 
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 		try {
-			APILocator.getServerAPI().updateHeartbeat();
+
 			LicenseUtil.updateLicenseHeartbeat();
 
 		} catch (DotDataException e) {

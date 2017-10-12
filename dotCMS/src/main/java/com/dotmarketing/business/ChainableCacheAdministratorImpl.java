@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -91,7 +92,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		}
 
 	}
-
+	@WrapInTransaction
 	public void setCluster(Server localServer) throws Exception {
 			Logger.info(this, "***\t Starting Cluster Setup");
 

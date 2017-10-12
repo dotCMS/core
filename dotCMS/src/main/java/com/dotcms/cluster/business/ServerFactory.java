@@ -34,4 +34,6 @@ public abstract class ServerFactory {
 	 */
 	public abstract void removeServerFromClusterTable(String serverId) throws DotDataException;
 
+	public abstract List<Server> getInactiveServers() throws DotDataException;
+
 }

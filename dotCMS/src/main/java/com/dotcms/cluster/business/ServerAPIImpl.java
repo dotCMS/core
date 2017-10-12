@@ -16,6 +16,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -173,7 +175,9 @@ public class ServerAPIImpl implements ServerAPI {
 	public List<Server> getAliveServers() throws DotDataException {
 		return serverFactory.getAliveServers();
 	}
+	
 
+	
 	@CloseDBIfOpened
 	@Override
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
@@ -222,24 +226,14 @@ public class ServerAPIImpl implements ServerAPI {
 	public void removeServerFromClusterTable(String serverId) throws DotDataException{
 		serverFactory.removeServerFromClusterTable(serverId);
 	}
-
+	
+	@WrapInTransaction
 	@Override
 	public List<Server> getInactiveServers() throws DotDataException{
-		List<Server> inactiveServers = new CopyOnWriteArrayList<>(getAllServers());
-		List<Server> aliveServers = getAliveServers();
-
-		for(Server aliveServer: aliveServers){
-			for(Server inactiveServer : inactiveServers){
-				if(inactiveServer.getServerId().equals(aliveServer.getServerId())){
-					inactiveServers.remove(inactiveServer);
-				}
-			}
-		}
-		
-		return inactiveServers;
+		return serverFactory.getInactiveServers();
 	}
 
-
+	@WrapInTransaction
 	@Override
 	public Server getCurrentServer() throws DotDataException {
 

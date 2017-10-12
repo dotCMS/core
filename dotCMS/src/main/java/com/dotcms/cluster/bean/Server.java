@@ -15,7 +15,7 @@ public class Server {
 	private Integer cachePort;
 	private Date lastHeartBeat;
 	private String key;
-
+	private String licenseSerial;
 	public String getServerId() {
 		return serverId;
 	}
@@ -81,5 +81,11 @@ public class Server {
 	}
 	public void setKey(String key) {
 	    this.key = key;
+	}
+	public String getLicenseSerial() {
+		return licenseSerial;
+	}
+	public void setLicenseSerial(String licenseSerial) {
+		this.licenseSerial = licenseSerial;
 	}
 }
