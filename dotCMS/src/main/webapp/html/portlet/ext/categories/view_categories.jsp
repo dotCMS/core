@@ -84,8 +84,10 @@
         if(typeof hashReceived != "undefined" && hashReceived != '') {
             var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
             var queryObject = dojo.queryToObject(query);
-            inode = queryObject.inode==''?0:queryObject.inode;
-            name = queryObject.name;
+            if (queryObject.name != 'undefined') {
+                inode = queryObject.inode == '' ? 0 : queryObject.inode;
+                name = queryObject.name;
+            }
             hashToSend = hashReceived;
         }
 
