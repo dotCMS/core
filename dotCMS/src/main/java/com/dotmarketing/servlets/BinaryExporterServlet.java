@@ -313,7 +313,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			
 			if(downloadName.endsWith(".vtl") || downloadName.endsWith(".vm")){
-			    resp.sendError(403);
+				resp.sendError(404);
 			    DbConnectionFactory.closeSilently();
 			    return;
 			}
