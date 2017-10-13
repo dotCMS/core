@@ -1120,3 +1120,4 @@
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.category.deleting")) %>
 		</div>
 	</div>
+</div>
