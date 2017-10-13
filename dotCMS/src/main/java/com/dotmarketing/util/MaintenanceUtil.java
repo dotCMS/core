@@ -691,12 +691,10 @@ public class MaintenanceUtil {
 	public static void deleteOrphanContentTypeFields() throws SQLException {
 	    String query = "DELETE FROM field WHERE NOT EXISTS (SELECT * FROM structure WHERE structure.inode = field.structure_inode)";
 		DotConnect dc = new DotConnect();
-		dc.setSQL(query);
-		dc.getResult();
-		query = "DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM field WHERE field.inode = inode.inode) and inode.type like ? ";
-		dc.setSQL(query);
-		dc.addParam(Inode.Type.FIELD.getTableName());
-		dc.getResult();
+		dc.executeStatement(query);
+		query = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM field " + 
+		        "WHERE field.inode = inode.inode) and inode.type like '%s' ",Inode.Type.FIELD.getTableName());
+        dc.executeStatement(query);
 	}
 
 }
