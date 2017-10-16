@@ -19,7 +19,7 @@ public class Server implements Serializable {
 	public final  Integer esNetworkPort;
 	public final  Integer esHttpPort;
 	public final  Integer cachePort;
-	public final  Date lastHeartBeat;
+	public final  long lastHeartBeat;
 	public final  String key;
 	public final  String licenseSerial;
 
@@ -179,7 +179,7 @@ public class Server implements Serializable {
 	}
 
 	public Date getLastHeartBeat() {
-		return lastHeartBeat;
+		return new Date(lastHeartBeat);
 	}
 
 	public String getKey() {
@@ -221,7 +221,7 @@ public class Server implements Serializable {
 		private Integer esNetworkPort;
 		private Integer esHttpPort;
 		private Integer cachePort;
-		private Date lastHeartBeat;
+		private long lastHeartBeat;
 		private String key;
 		private String licenseSerial;
 
@@ -295,7 +295,7 @@ public class Server implements Serializable {
 			return this;
 		}
 
-		public Builder withLastHeartBeat(Date lastHeartBeat) {
+		public Builder withLastHeartBeat(long lastHeartBeat) {
 			this.lastHeartBeat = lastHeartBeat;
 			return this;
 		}
