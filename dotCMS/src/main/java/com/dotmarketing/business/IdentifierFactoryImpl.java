@@ -452,9 +452,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			// associated with the session
 			loadedObject = loadFromDb(id.getId());
 			//Copy the changed properties back
-			loadedObject.setAssetName(id.getAssetName());
+			loadedObject.setAssetName(id.getAssetName().toLowerCase());
 			loadedObject.setAssetType(id.getAssetType());
-			loadedObject.setParentPath(id.getParentPath());
+			loadedObject.setParentPath(id.getParentPath().toLowerCase());
 			loadedObject.setHostId(id.getHostId());
 			loadedObject.setOwner(id.getOwner());
 			loadedObject.setSysExpireDate(id.getSysExpireDate());

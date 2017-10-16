@@ -12,7 +12,6 @@ import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -29,9 +28,12 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     protected boolean isAutoPub;
     protected DotWebdavHelper dotDavHelper=new DotWebdavHelper();
     protected long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+    private String originalPath;
     
     public BasicFolderResourceImpl(String path) {
-        this.path=path;
+        this.originalPath = path;
+        this.path=path.toLowerCase();
         try {
             this.host=APILocator.getHostAPI().findByName(
                     dotDavHelper.getHostName(path),APILocator.getUserAPI().getSystemUser(),false);
@@ -58,36 +60,32 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         if(!path.endsWith("/")){
             path = path + "/";
         }
-        if(!dotDavHelper.isTempResource(newName)){
 
+        if(!dotDavHelper.isTempResource(newName)){
             try {
-            	IFileAsset f = null;
             	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
-                f = dotDavHelper.loadFile(path + newName,user);
-                FileResourceImpl fr = new FileResourceImpl(f, f.getFileName());
-                return fr;
+                final IFileAsset iFileAsset = dotDavHelper.loadFile(path + newName,user);
+                final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
+                return fileResource;
                 
-            }catch (DotSecurityException dotE){
+            }catch (Exception e){
             	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
                 		+ " in this path: " + (path != null ? path : "Unknown") + " " 
-                		+ dotE.getMessage(), dotE);
-            	throw new DotRuntimeException(dotE.getMessage(), dotE);
-            	
-            }catch (Exception e) {
-                Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
-                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
                 		+ e.getMessage(), e);
+            	throw new DotRuntimeException(e.getMessage(), e);
+            }
+        } else {
+            try {
+                originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
+                final File tempFile = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
+                FileUtils.copyStreamToFile(tempFile, in, null);
+                final Resource tempFileResource = new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
+                return tempFileResource;
+            } catch (Exception e){
+                Logger.error(this, "Error creating temp file", e);
+                throw new DotRuntimeException(e.getMessage(), e);
             }
         }
-        
-        String p = path;
-        if(!p.endsWith("/")){
-            p = p + "/";
-        }
-        File f = dotDavHelper.createTempFile("/" + host.getHostname() + p + newName);
-        FileUtils.copyStreamToFile(f, in, null);
-        TempFileResourceImpl tr = new TempFileResourceImpl(f, path + newName, isAutoPub);
-        return tr;
     }
 
     

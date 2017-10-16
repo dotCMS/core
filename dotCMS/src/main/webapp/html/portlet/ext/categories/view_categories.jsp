@@ -84,8 +84,10 @@
         if(typeof hashReceived != "undefined" && hashReceived != '') {
             var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
             var queryObject = dojo.queryToObject(query);
-            inode = queryObject.inode==''?0:queryObject.inode;
-            name = queryObject.name;
+            if (queryObject.name != 'undefined') {
+                inode = queryObject.inode == '' ? 0 : queryObject.inode;
+                name = queryObject.name;
+            }
             hashToSend = hashReceived;
         }
 
@@ -1055,11 +1057,11 @@
 				</dl>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-					<dd><input dojoType="dijit.form.ValidationTextBox" id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." /></dd>
+					<dd><input dojoType="dijit.form.ValidationTextBox" id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." maxlength="255"/></dd>
 				</dl>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
-					<dd><input dojoType="dijit.form.TextBox" id="addCatKey" type="text" tabindex="2" /></dd>
+					<dd><input dojoType="dijit.form.TextBox" id="addCatKey" type="text" tabindex="2" maxlength="255"/></dd>
 				</dl>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "keywords") %>:</dt>
