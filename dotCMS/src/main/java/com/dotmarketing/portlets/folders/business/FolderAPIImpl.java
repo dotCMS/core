@@ -552,6 +552,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
 		Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
+		
 		Permissionable parent = id.getParentPath().equals("/") || id.getParentPath().equals("/System folder") 
 		        ? host : parentFolder;
 
