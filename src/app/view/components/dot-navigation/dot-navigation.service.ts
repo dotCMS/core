@@ -27,13 +27,6 @@ export class DotNavigationService {
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
             this.reloadNavigation();
         });
-
-        this.location.onPopState((popStateEvent: any) => {
-            if (this.isHashHome(popStateEvent.target.location.hash)) {
-                this.goToFirstPortlet(true);
-            }
-        });
-
         /*
             When the browser refresh the auth$ triggers for the "first time" and because of that
             on page reload we are doing 2 requests to menu enpoint.

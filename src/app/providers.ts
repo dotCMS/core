@@ -14,9 +14,11 @@ import { MessageService } from './api/services/messages-service';
 import { NotLicensedService } from './api/services/not-licensed-service';
 import { NotificationsService } from './api/services/notifications-service';
 import { PaginatorService } from './api/services/paginator';
-import { RoutingContentletAuthService } from './api/services/routing-contentlet-auth.service';
-import { RoutingPrivateAuthService } from './api/services/routing-private-auth.service';
-import { RoutingPublicAuthService } from './api/services/routing-public-auth.service';
+import { AuthGuardService } from './api/services/guards/auth-guard.service';
+import { ContentletGuardService} from './api/services/guards/contentlet-guard.service';
+import { MenuGuardService } from './api/services/guards/menu-guard.service';
+import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { StringFormat } from './api/util/stringFormat';
 
 
@@ -38,10 +40,12 @@ const PROVIDERS: any[] = [
     DotConfirmationService,
     NotificationsService,
     PaginatorService,
-    RoutingContentletAuthService,
-    RoutingPrivateAuthService,
-    RoutingPublicAuthService,
-    StringFormat,
+    AuthGuardService,
+    ContentletGuardService,
+    MenuGuardService,
+    PublicAuthGuardService,
+    DefaultGuardService,
+    StringFormat
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];
