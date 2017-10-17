@@ -122,8 +122,8 @@ public class FolderAPIImpl implements FolderAPI  {
     }
 
     @CloseDBIfOpened
-    public Folder findParentFolder(final Treeable asset, final User user, final boolean respectFrontEndPermissions) throws DotIdentifierStateException,
-            DotDataException, DotSecurityException {
+    public Folder findParentFolder(final Treeable asset, final User user, final boolean respectFrontEndPermissions) 
+            throws DotIdentifierStateException, DotDataException, DotSecurityException {
         Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
         if(id==null) return null;
         if(id.getParentPath()==null || ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())){
@@ -134,14 +134,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
         if(f == null || !UtilMethods.isSet(f.getInode())) return null;
         if (!permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-            if(UtilMethods.isSet(f.getPath())){
-                //Folder exists in DB, but the user does not have permissions to read it.
-                Logger.error(this, "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + f.getPath());
-            }else{
-                //Despite the Folder Object is not null, It may return an empty Folder Object because the Parent Folder is missing.
-                Logger.error(this, "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + id.getParentPath() + " Please check the folder exists.");
-            }
-            throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + f.getPath());
+            String userId = user.getUserId() != null ? user.getUserId(): "";
+            String path = f.getPath() != null ? f.getPath() : id.getParentPath();
+            Logger.error(this, "User " + userId  + " does not have permission to read Folder " + path + " Please check the folder exists.");
+            throw new DotSecurityException("User " + userId + " does not have permission to read Folder " + path);
         }
         return f;
 
@@ -357,9 +353,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
             PermissionAPI papi = getPermissionAPI();
             if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+                String userId = user.getUserId() != null?user.getUserId():"";
 
-                Logger.error(this.getClass(), "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to Folder " + folder.getPath());
-                throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" +  "does not have edit permissions on Folder " + folder.getPath());
+                Logger.error(this.getClass(), "User " +  userId + " does not have permission to Folder " + folder.getPath());
+                throw new DotSecurityException("User " + userId +  "does not have edit permissions on Folder " + folder.getPath());
             }
 
             Folder faker = new Folder();
@@ -825,7 +822,8 @@ public class FolderAPIImpl implements FolderAPI  {
     }
 
     @CloseDBIfOpened
-    public List<Contentlet> getLiveContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+    public List<Contentlet> getLiveContent(Folder parent, User user,boolean respectFrontEndPermissions) 
+            throws DotDataException, DotSecurityException {
         if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
             throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getName());
         }
