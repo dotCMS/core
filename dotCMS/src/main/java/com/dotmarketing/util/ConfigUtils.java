@@ -90,6 +90,18 @@ public class ConfigUtils {
 		return path;
 	}
 
+    public static String getStaticPublishPath(){
+
+        String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
+                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "static_publishing");
+
+        File pathDir = new File(path);
+        if(!pathDir.exists()){
+            pathDir.mkdirs();
+        }
+        return path;
+    }
+
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
