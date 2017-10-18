@@ -27,6 +27,12 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
+/**
+ * Fix broken relationships 
+ * pointing to non-existing Content Types in Structure Table 
+ * @author joseorsini
+ *
+ */
 
 public class FixTask00095DeleteOrphanRelationships implements FixTask{
 
@@ -122,14 +128,19 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         DotConnect dc = new DotConnect();
         dc.setSQL(VERIFICATION_QUERY);
         List<Map<String, Object>> inodesInStructure = new ArrayList<>();
+        
         try {
             inodesInStructure = dc.loadObjectResults();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
         }
+        
+        int total = (inodesInStructure != null && !inodesInStructure.isEmpty()) ? 
+                inodesInStructure.size() : 0;
+                
         Logger.debug(CMSMaintenanceFactory.class,
-                "Found " + inodesInStructure.size() + " invalid inodes.");
-        int total = inodesInStructure.size();
+                "Found " + total + " invalid inodes.");
+        
         FixAssetsProcessStatus.setTotal(total);
         return total > 0 ? true : false;
     }
