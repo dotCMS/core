@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -119,7 +118,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
                 Logger.error(FixTask00095DeleteOrphanRelationships.class, 
                         "Could not write to Fix Task status file.", e);
             }
-            xstreamObj.toXML(modifiedData, bufferedOutObj);
+            xstreamObj.toXML(new ArrayList<>(modifiedData), bufferedOutObj);
         }
         return new ArrayList<>(modifiedData);
     }
