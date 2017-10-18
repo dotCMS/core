@@ -134,8 +134,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
         if(f == null || !UtilMethods.isSet(f.getInode())) return null;
         if (!permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-            String userId = user.getUserId() != null ? user.getUserId(): "";
-            String path = f.getPath() != null ? f.getPath() : id.getParentPath();
+            final String userId = user.getUserId() != null ? user.getUserId(): "";
+            final String path = f.getPath() != null ? f.getPath() : id.getParentPath();
             Logger.error(this, "User " + userId  + " does not have permission to read Folder " + path + " Please check the folder exists.");
             throw new DotSecurityException("User " + userId + " does not have permission to read Folder " + path);
         }
@@ -445,14 +445,14 @@ public class FolderAPIImpl implements FolderAPI  {
 
         try {
 
-            ContentletAPI capi = APILocator.getContentletAPI();
+            final ContentletAPI capi = APILocator.getContentletAPI();
 
             /************ conList *****************/
             HibernateUtil.getSession().clear();
-            List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
-            for (Contentlet c : conList) {
+            final List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
+            for (final Contentlet c : conList) {
                 // Find all multi-language contentlets and archive them
-                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+                final Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
                 List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
                 for (Contentlet cv : otherLanguageCons) {
                     if(cv.isLive()){
