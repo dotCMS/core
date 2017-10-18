@@ -1,23 +1,22 @@
-<%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="com.dotmarketing.business.Role"%>
-<%@ include file="/html/portlet/ext/workflows/init.jsp"%>
-
-<%@page import="java.util.List"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
-<%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@include file="/html/portlet/ext/workflows/init.jsp"%>
+
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
-<%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
+<%@page import="com.dotmarketing.business.Role"%>
+<%@page import="com.dotmarketing.exception.DotDataException"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure" %>
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.*"%>
+<%@page import="com.dotmarketing.util.DateUtil" %>
+<%@page import="com.dotmarketing.util.Logger" %>
 
 <%
-
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 
     //Search for the contentlet (Using the same way the view_tasks_list use to find the contentlet on each WorkflowTask and show it in the list)
@@ -42,7 +41,16 @@
 	List<WorkflowComment> comments = APILocator.getWorkflowAPI().findWorkFlowComments(task);
 	List<WorkflowHistory> history = APILocator.getWorkflowAPI().findWorkflowHistory(task);
 	Collections.reverse(history);
-	List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user); // new files
+	List<IFileAsset> files = new ArrayList<>();
+	String errorRetrievingFilesMsg = null;
+	try {
+		files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user);
+	} catch (DotDataException e) {
+		errorRetrievingFilesMsg = LanguageUtil.get(pageContext,
+				"workflows.task.attachedfiles.permissionerror") + " " + e.getMessage();
+		Logger.error(this, "An error occurred when retrieving the files attached to workflow [" +
+						task.getTitle() + "] with ID [" + task.getId() + "]: " + e.getMessage());
+	}
 
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/workflows/edit_workflow_task"});
@@ -218,15 +226,15 @@
 			<h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
 		</th>
 		<th>
-		<!-- START Actions -->					
+		<!-- START Actions -->
 			<div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
 				<span></span>
-	
+
 				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 					<div id="cancel" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: cancel">
 	                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 	                </div>
-	                
+
 	                <%--Start workflow tasks --%>
 					<%boolean hasAction = false; %>
 					<%if(canEdit) {%>
@@ -237,10 +245,10 @@
 							<% hasAction = true; %>
 						<%} %>
 					<%} %>
-					
+
 					<%for(WorkflowAction a : actions){ %>
 						<%if(a.requiresCheckout())continue; %>
-	
+
 						<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 						<% boolean hasPushPublishActionlet = false; %>
 						<% for(WorkflowActionClass actionlet : actionlets){ %>
@@ -248,20 +256,20 @@
 								<% hasPushPublishActionlet = true; %>
 							<% } %>
 						<% } %>
-	
+
 						<div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
 							<!-- <span class="<%=a.getIcon()%>"></span> -->
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
 							<% hasAction = true; %>
 						</div>
 					<%}%>
-					
+
 					<%if(!hasAction){ %>
 						<div data-dojo-type="dijit/MenuItem" data-dojo-props="">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Actions")) %>
 						</div>
 					<%} %>
-	
+
 				</div>
 			</div>
 		<!-- END Actions -->
@@ -316,7 +324,7 @@
 			<%= DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %>
 		</td>
 	</tr>
-	
+
 	<%String latestComment = (comments != null && comments.size()>0) ? comments.get(0).getComment() :task.getDescription();  %>
 	<%if(UtilMethods.isSet(latestComment)){ %>
 		<tr>
@@ -328,7 +336,7 @@
 			</td>
 		</tr>
 	<%} %>
-	
+
 	<%if (contentlet.isLocked()) {%>
 		<tr>
 			<td colspan=2>
@@ -349,8 +357,8 @@
 
 
 <div style="margin:40px 0;">
-	
-	
+
+
 <!-- START Tabs -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
@@ -359,7 +367,7 @@
 
 
 			<div style="border:1px solid #ddd;margin: 60px 0;">
-				
+
 				<table class="listingTable">
 					<tr>
 						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
@@ -374,7 +382,7 @@
 											</portlet:actionURL>">
 										<input type="hidden" name="referer" value="<%= referer %>">
 										<input type="hidden" name="cmd" value="add_comment">
-										
+
 										<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
 										<div class="buttonRow">
 			                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()" iconClass="infoIcon">
@@ -387,15 +395,15 @@
 							<%}%>
 						</th>
 					</tr>
-	
+
 					<%
 					    String str_style2="";
 						int y =0;
-	
+
 						Iterator<WorkflowComment> commentsIt = comments.iterator();
 						while (commentsIt.hasNext()) {
 							WorkflowComment comment = commentsIt.next();
-	
+
 							if(y%2==0){
 							  str_style2="class=\"alternate_1\"";
 							}
@@ -408,13 +416,13 @@
 							<td colspan="2">
 								<p>
 									<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
-	
+
 									<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
 								</p>
 							</td>
 						</tr>
 					<% } %>
-	
+
 					<%	if (comments.size() == 0) { %>
 						<tr>
 							<td>
@@ -422,7 +430,7 @@
 							</td>
 						</tr>
 					<% } %>
-	
+
 				</table>
 			</div>
 
@@ -471,10 +479,16 @@
 					</tr>
 				<% } %>
 
-				<% if (files.size() == 0) { %>
+				<% if (files.size() == 0 && !UtilMethods.isSet(errorRetrievingFilesMsg)) { %>
 					<tr>
 						<td colspan="2">
 							<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "None") %></div>
+						</td>
+					</tr>
+				<% } else { %>
+					<tr>
+						<td colspan="2">
+							<div class="noResultsMessage"><%= errorRetrievingFilesMsg %></div>
 						</td>
 					</tr>
 				<% } %>
