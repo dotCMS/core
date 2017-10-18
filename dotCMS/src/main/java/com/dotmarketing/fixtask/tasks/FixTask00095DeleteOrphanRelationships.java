@@ -72,18 +72,18 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
                             FixTask00095DeleteOrphanRelationships.class,
                             "Ending DeleteOrphanRelationships");
                 }
-            } catch (DotHibernateException e) {
+            } catch (DotHibernateException e1) {
                 Logger.debug(
                         FixTask00095DeleteOrphanRelationships.class,
-                        "There was a problem during DeleteOrphanRelationships",
-                        e);
+                        "A Hibernate Exception was detected during execution of DeleteOrphanRelationships task",
+                        e1);
                 HibernateUtil.rollbackTransaction();
                 FixAssetsProcessStatus.setActual(-1);
-            } catch (Exception e) {
+            } catch (Exception e2) {
                 Logger.debug(
                         FixTask00095DeleteOrphanRelationships.class,
-                        "There was a problem during DeleteOrphanRelationships",
-                        e);
+                        "There was an unexpected problem during execution of DeleteOrphanRelationships task",
+                        e2);
                 HibernateUtil.rollbackTransaction();
                 FixAssetsProcessStatus.setActual(-1);
             } finally {
@@ -96,25 +96,26 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     @Override
     public List<Map<String, String>> getModifiedData() {
         if (modifiedData.isEmpty()) {
+            final String fixesUriSubstring = "fixes";
             XStream xstreamObj = new XStream(new DomDriver());
             LocalDate date = LocalDate.now();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
             File writingObj = null;
             if (!new File(ConfigUtils.getBackupPath() + File.separator
-                    + "fixes").exists()) {
-                new File(ConfigUtils.getBackupPath() + File.separator + "fixes")
+                    + fixesUriSubstring).exists()) {
+                new File(ConfigUtils.getBackupPath() + File.separator + fixesUriSubstring)
                         .mkdirs();
             }
             writingObj = new File(ConfigUtils.getBackupPath() + File.separator
-                    + "fixes" + java.io.File.separator + lastmoddate + "_"
+                    + fixesUriSubstring + java.io.File.separator + lastmoddate + "_"
                     + "FixTask00095DeleteOrphanRelationships" + ".xml");
 
             BufferedOutputStream bufferedOutObj = null;
             try {
                 bufferedOutObj = new BufferedOutputStream(new FileOutputStream(writingObj));
             } catch (FileNotFoundException e) {
-                Logger.error(this, "Could not write to Fix Task status file.");
+                Logger.error(this, "Could not write to Fix Task status file.", e);
             }
             xstreamObj.toXML(modifiedData, bufferedOutObj);
         }
@@ -138,8 +139,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         int total = (inodesInStructure != null && !inodesInStructure.isEmpty()) ? 
                 inodesInStructure.size() : 0;
                 
-        Logger.debug(CMSMaintenanceFactory.class,
-                "Found " + total + " invalid inodes.");
+        Logger.debug(CMSMaintenanceFactory.class, "Found " + total + " invalid inodes.");
         
         FixAssetsProcessStatus.setTotal(total);
         return total > 0 ? true : false;
@@ -153,11 +153,12 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             HibernateUtil.commitTransaction();
             // Set the number of records that were fixed
             FixAssetsProcessStatus.setErrorsFixed(modifiedData.size());
-        } catch (Exception e) {
-            Logger.error(
-                    this,
-                    "Unable to clean orphaned content type fields.",
-                    e);
+        } catch (DotHibernateException e1) {
+            Logger.error(this, "Unable to clean orphaned relationships.", e1);
+            HibernateUtil.rollbackTransaction();
+            modifiedData.clear();
+        } catch (SQLException e2) {
+            Logger.error(this, "There was an unexpected problem with cleaning up relationship in Database.", e2);
             HibernateUtil.rollbackTransaction();
             modifiedData.clear();
         } finally {
