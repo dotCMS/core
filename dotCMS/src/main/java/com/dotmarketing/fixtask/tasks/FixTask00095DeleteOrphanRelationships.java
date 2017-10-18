@@ -115,7 +115,8 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             try {
                 bufferedOutObj = new BufferedOutputStream(new FileOutputStream(writingObj));
             } catch (FileNotFoundException e) {
-                Logger.error(this, "Could not write to Fix Task status file.", e);
+                Logger.error(FixTask00095DeleteOrphanRelationships.class, 
+                        "Could not write to Fix Task status file.", e);
             }
             xstreamObj.toXML(modifiedData, bufferedOutObj);
         }
