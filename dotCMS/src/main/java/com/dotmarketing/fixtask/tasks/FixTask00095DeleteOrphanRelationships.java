@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -120,7 +121,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             }
             xstreamObj.toXML(modifiedData, bufferedOutObj);
         }
-        return modifiedData;
+        return new ArrayList<>(modifiedData);
     }
 
     @Override
@@ -196,6 +197,5 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         CacheLocator.getRelationshipCache().clearCache();
         CacheLocator.getContentTypeCache().clearCache();
         CacheLocator.getContentTypeCache2().clearCache();
-        
     }
 }
