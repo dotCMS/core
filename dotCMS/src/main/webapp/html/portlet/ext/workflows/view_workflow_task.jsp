@@ -41,7 +41,7 @@
 	List<WorkflowComment> comments = APILocator.getWorkflowAPI().findWorkFlowComments(task);
 	List<WorkflowHistory> history = APILocator.getWorkflowAPI().findWorkflowHistory(task);
 	Collections.reverse(history);
-	List<IFileAsset> files = new ArrayList<>();
+	List<IFileAsset> files = Collections.EMPTY_LIST;
 	String errorRetrievingFilesMsg = null;
 	try {
 		files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user);
