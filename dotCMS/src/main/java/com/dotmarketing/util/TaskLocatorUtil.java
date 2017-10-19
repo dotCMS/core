@@ -47,7 +47,8 @@ public class TaskLocatorUtil {
 			FixTask00070FixVersionInfo.class,
 			FixTask00080DeleteOrphanedContentTypeFields.class,
 			FixTask00085FixEmptyParentPathOnIdentifier.class,
-			FixTask00090RecreateMissingFoldersInParentPath.class
+			FixTask00090RecreateMissingFoldersInParentPath.class,
+			FixTask00095DeleteOrphanRelationships.class
 	);
 
 	/**
