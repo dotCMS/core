@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
@@ -46,13 +47,13 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             "(SELECT * FROM structure WHERE relationship.child_structure_inode = structure.inode) ";
 
     @Override
+    @WrapInTransaction
     public List<Map<String, Object>> executeFix() throws DotDataException {
         Logger.info(FixTask00095DeleteOrphanRelationships.class,
                 "Beginning DeleteOrphanRelationships");
         final List<Map<String, Object>> returnValue = new ArrayList<>();
 
         if (!FixAssetsProcessStatus.getRunning()) {
-            HibernateUtil.startTransaction();
             int total = 0;
             try {
                 FixAssetsProcessStatus.startProgress();
@@ -75,16 +76,15 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             } catch (DotHibernateException e1) {
                 Logger.debug(
                         FixTask00095DeleteOrphanRelationships.class,
-                        "A Hibernate Exception was detected during execution of DeleteOrphanRelationships task",
+                        "An issue happened during execution of DeleteOrphanRelationships task",
                         e1);
-                HibernateUtil.rollbackTransaction();
                 FixAssetsProcessStatus.setActual(-1);
-            } catch (Exception e2) {
+            } 
+            catch (Exception e2) {
                 Logger.debug(
                         FixTask00095DeleteOrphanRelationships.class,
                         "There was an unexpected problem during execution of DeleteOrphanRelationships task",
                         e2);
-                HibernateUtil.rollbackTransaction();
                 FixAssetsProcessStatus.setActual(-1);
             } finally {
                 FixAssetsProcessStatus.stopProgress();
@@ -147,20 +147,13 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     }
 
     
-    private void startCleanup() throws DotHibernateException {
+    private void startCleanup() {
         try {
-            HibernateUtil.startTransaction();
             cleanUpOrphanRelationships();
-            HibernateUtil.commitTransaction();
             // Set the number of records that were fixed
             FixAssetsProcessStatus.setErrorsFixed(modifiedData.size());
-        } catch (DotHibernateException e1) {
-            Logger.error(this, "Unable to clean orphaned relationships.", e1);
-            HibernateUtil.rollbackTransaction();
-            modifiedData.clear();
-        } catch (SQLException e2) {
-            Logger.error(this, "There was an unexpected problem with cleaning up relationship in Database.", e2);
-            HibernateUtil.rollbackTransaction();
+        } catch (SQLException e1) {
+            Logger.error(this, "There was an unexpected problem with cleaning up relationship in Database.", e1);
             modifiedData.clear();
         } finally {
             flushCacheRegions();
@@ -174,7 +167,6 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         auditObj.setRecordsAltered(total);
         auditObj.setAction("task 95: DeleteOrphanRelationships");
         HibernateUtil.save(auditObj);
-        HibernateUtil.commitTransaction();
     }
     
     private void cleanUpOrphanRelationships() throws SQLException{
