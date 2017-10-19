@@ -125,6 +125,10 @@ public class OSGIUtil {
     public Framework initializeFramework (ServletContextEvent context) {
         servletContextEvent = context;
 
+        if (null == Config.CONTEXT) {
+            Config.setMyApp(servletContextEvent.getServletContext());
+        }
+
         // load all properties and set base directory
         Properties felixProps = loadConfig();
 

@@ -59,6 +59,8 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+		newName = newName.toLowerCase();
+
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
@@ -72,20 +74,23 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			} catch (DotSecurityException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
-			}			
-			
-			dotDavHelper.createTempFolder(File.separator + host.getHostname() + folderPath + File.separator + newName);
-			File f = new File(File.separator + host.getHostname() + folderPath);
-			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
-			return tr;
+			}
+
+            final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
+					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
+
+            dotDavHelper.createTempFolder(hostFolderPath + newName);
+			File file = new File(File.separator + host.getHostname() + folderPath);
+			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
+			return tempFolderResource;
 		}
 		if(!path.endsWith("/")){
 			path = path + "/";
 		}
 		try {
-			Folder f = dotDavHelper.createFolder(path + newName, user);
-			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");
-			return fr;
+			Folder newfolder = dotDavHelper.createFolder(path + newName, user);
+			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, path + newName + "/");
+			return folderResource;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);

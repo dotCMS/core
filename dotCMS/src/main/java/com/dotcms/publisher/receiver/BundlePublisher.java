@@ -135,7 +135,8 @@ public class BundlePublisher extends Publisher {
 
         String bundleName = config.getId();
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-        String bundlePath = ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;//FIXME
+        String bundlePath =
+                ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 
         //Publish the bundle extracted
         PublishAuditHistory currentStatusHistory = null;
@@ -143,9 +144,9 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
-            currentStatusHistory = auditAPI.getPublishAuditStatus(bundleFolder).getStatusPojo();
-
+            currentStatusHistory = config.getPublishAuditStatus().getStatusPojo();
             currentStatusHistory.setPublishStart(new Date());
+
             detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
             detail.setInfo("Publishing bundle");
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
@@ -183,7 +184,7 @@ public class BundlePublisher extends Publisher {
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
             //Get the identifiers on this bundle
-            assetsDetails = new HashMap<String, String>();
+            assetsDetails = new HashMap<>();
             List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
@@ -243,12 +244,10 @@ public class BundlePublisher extends Publisher {
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
                 auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-                HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
                 Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
             }
         } finally {
-
             DbConnectionFactory.closeSilently();
         }
 

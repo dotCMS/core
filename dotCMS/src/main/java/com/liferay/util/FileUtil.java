@@ -198,7 +198,8 @@ public class FileUtil {
 
                 Files.createLink(newLink, existingFile);
                 // setting this means we will try again if we cannot hard link
-                if (!destination.exists() || destination.length() == 0) {
+                if (!destination.exists() ||
+                        (validateEmptyFile && destination.length() == 0)) {
                     hardLinks = false;
                     StringBuilder sb = new StringBuilder();
                     sb.append("Can't create hardLink. source: " + source.getAbsolutePath());
