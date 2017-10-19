@@ -1,6 +1,5 @@
 package com.dotcms.util.user;
 
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.liferay.portal.ejb.UserPool;
 import com.liferay.portal.model.User;
