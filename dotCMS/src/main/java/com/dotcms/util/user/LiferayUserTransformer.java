@@ -6,6 +6,10 @@ import com.liferay.portal.ejb.UserPool;
 import com.liferay.portal.model.User;
 import java.util.Map;
 
+/**
+ * This class implement the UserTransformer interface
+ * to convert dotconnect maps from user to User
+ */
 public class LiferayUserTransformer implements UserTransformer {
 
 
