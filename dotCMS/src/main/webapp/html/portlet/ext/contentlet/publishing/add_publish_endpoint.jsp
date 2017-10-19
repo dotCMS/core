@@ -3,9 +3,7 @@
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
-<%@page import="com.dotcms.publisher.environment.bean.Environment"%>
-<%@ page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
-<%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
 
 <%
 	String identifier = request.getParameter("id");
@@ -162,7 +160,7 @@
             if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
 
                 dijit.byId("authKey").set("value",
-                    "<%=StaticPublisher.DEFAULT_PUBLISH_TO%>=dotcms-static-{hostname}-{languageIso}"
+                    "<%=StaticPublisher.DOTCMS_STATIC_PUBLISH_TO%>=dotcms-static-{hostname}-{languageIso}"
                 );
             }
         } else {
