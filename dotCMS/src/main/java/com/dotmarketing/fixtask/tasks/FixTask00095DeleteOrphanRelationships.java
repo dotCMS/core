@@ -49,7 +49,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     public List<Map<String, Object>> executeFix() throws DotDataException {
         Logger.info(FixTask00095DeleteOrphanRelationships.class,
                 "Beginning DeleteOrphanRelationships");
-        List<Map<String, Object>> returnValue = new ArrayList<>();
+        final List<Map<String, Object>> returnValue = new ArrayList<>();
 
         if (!FixAssetsProcessStatus.getRunning()) {
             HibernateUtil.startTransaction();
@@ -58,7 +58,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
                 FixAssetsProcessStatus.startProgress();
                 FixAssetsProcessStatus
                         .setDescription("task 95: DeleteOrphanRelationships");
-                DotConnect dc = new DotConnect();
+                final DotConnect dc = new DotConnect();
                 dc.setSQL(VERIFICATION_QUERY);
                 modifiedData = dc.loadResults();
                 total = modifiedData != null ? modifiedData.size() : 0;
@@ -167,7 +167,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         } 
     }
     
-    private void saveFixAuditRecord(int total) throws DotHibernateException {
+    private void saveFixAuditRecord(final int total) throws DotHibernateException {
         final FixAudit auditObj = new FixAudit();
         auditObj.setTableName("relationship");
         auditObj.setDatetime(new Date());
