@@ -263,9 +263,6 @@ public class UserPersistence extends BasePersistence {
 		catch(DotDataException e){
 			throw new NoSuchUserException(userId.toString());
 		}
-		catch(Exception e){
-			throw new SystemException(e);
-		}
 	}
 
 	protected List findByCompanyId(String companyId) throws SystemException {
