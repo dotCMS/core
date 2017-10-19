@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
@@ -184,7 +185,8 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         dc.setSQL(VERIFICATION_QUERY);
         List<Map<String,Object>> results = dc.loadObjectResults();
         
-        List<String> relInodes = new ArrayList(((Map<String, String>) results).values());
+        List<String> relInodes = ((Map<String, String>) results).values()
+                .stream().map(Object::toString).collect(Collectors.toList());
 
         relInodes.forEach(item->{
             try {
