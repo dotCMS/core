@@ -5,7 +5,9 @@ pwd
 ls -al
 echo "=============================="
 
-./dotCMS/gradlew -p dotCMS/ war
+cd dotCMS/
+./gradlew war
+cd ..
 
 echo "=============================="
 echo "dotCMS"

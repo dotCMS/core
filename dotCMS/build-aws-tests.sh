@@ -52,12 +52,14 @@ mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 cp core/dotCMS/build/libs/test/junit-*.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 
-
 # Uncompress ant/configuration files for tests
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar build-tests.xml
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar context.xml
 mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
+# Move license file to dotsecure folder
+mkdir -p dotserver/tomcat/webapps/ROOT/dotsecure/license
+mv ~/license.dat dotserver/tomcat/webapps/ROOT/dotsecure/license/
 
 # Setup ports
 #PORT_SEED		= Math.abs( Objects.hash( database, branch )	//Pseudo-unique number based on database/branch combination

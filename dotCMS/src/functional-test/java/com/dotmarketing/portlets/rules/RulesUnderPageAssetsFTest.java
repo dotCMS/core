@@ -1,9 +1,14 @@
 package com.dotmarketing.portlets.rules;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
@@ -16,21 +21,18 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Created by Oscar Arrieta on 2/24/16.
@@ -51,6 +53,22 @@ public class RulesUnderPageAssetsFTest{
     public RulesUnderPageAssetsFTest() throws DotDataException, DotSecurityException {
         sysUser = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(sysUser, false);
+
+        if (!host.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(host, sysUser, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
+        }
 
         request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();

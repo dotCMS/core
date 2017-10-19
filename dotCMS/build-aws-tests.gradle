@@ -1,33 +1,22 @@
 // -*- coding: utf-8; mode: groovy -*-
 
-import jp.classmethod.aws.gradle.ec2.AmazonEC2PluginExtension;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2ImportKeyTask;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2RunInstanceTask;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2StartInstanceTask;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2StopInstanceTask;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2TerminateInstanceTask;
-import jp.classmethod.aws.gradle.ec2.AmazonEC2WaitInstanceStatusTask;
-
-import jp.classmethod.aws.gradle.rds.AmazonRDSPluginExtension;
-import jp.classmethod.aws.gradle.rds.AmazonRDSCreateDBInstanceTask;
-import jp.classmethod.aws.gradle.rds.AmazonRDSDeleteDBInstanceTask;
-import jp.classmethod.aws.gradle.rds.AmazonRDSWaitInstanceStatusTask;
-
-
-import com.amazonaws.AmazonServiceException
 
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.model.CreateTagsRequest
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest
 import com.amazonaws.services.ec2.model.DescribeInstancesResult
-import com.amazonaws.services.ec2.model.Instance
 import com.amazonaws.services.ec2.model.Tag
+import com.amazonaws.services.rds.AmazonRDS
+import com.amazonaws.services.rds.model.DescribeDBInstancesRequest
+import com.amazonaws.services.rds.model.DescribeDBInstancesResult
+import jp.classmethod.aws.gradle.ec2.*
+import jp.classmethod.aws.gradle.rds.AmazonRDSCreateDBInstanceTask
+import jp.classmethod.aws.gradle.rds.AmazonRDSDeleteDBInstanceTask
+import jp.classmethod.aws.gradle.rds.AmazonRDSPluginExtension
+import jp.classmethod.aws.gradle.rds.AmazonRDSWaitInstanceStatusTask
 
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
-import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
-
+import java.nio.file.Files
+import java.nio.file.Paths
 
 buildscript {
 	repositories {
@@ -68,7 +57,7 @@ if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" 
 if (hasProperty('outputFile') == false) { ext.outputFile = "build-aws-tests.zip" }
 
 Properties properties = new Properties()
-properties.load(new FileInputStream(project.propertiesFile))
+properties.load(Files.newInputStream(Paths.get(project.propertiesFile)))
 
 if (hasProperty('keyFile') == false) { ext.keyFile = properties.getProperty("security.key.private.file") }
 
@@ -470,6 +459,19 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
   			}
 		}
 
+        println( "Getting License file from: $System.env.JENKINS_HOME/license.dat")
+
+		//Copy license file to the instance
+		ssh.run {
+			session(
+					host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
+					identity: file( project.keyFile )
+			) {
+				put( from: file("$System.env.JENKINS_HOME/license.dat"), into: "/home/"+ properties.getProperty("ssh.username") )
+			}
+		}
+
+		println( "License file saved" )
 
 		// Open SSH session in order to run the interpolated script and transfer its output
 		ssh.run {

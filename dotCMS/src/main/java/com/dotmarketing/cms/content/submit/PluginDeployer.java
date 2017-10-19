@@ -1,6 +1,7 @@
 package com.dotmarketing.cms.content.submit;
 
 
+@Deprecated
 public class PluginDeployer implements com.dotmarketing.plugin.PluginDeployer {
 
 	public boolean deploy() {

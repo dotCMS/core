@@ -1,9 +1,5 @@
 package com.dotcms.publisher.pusher;
 
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
-import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
@@ -50,20 +46,26 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -71,6 +73,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -83,7 +88,7 @@ import java.util.Set;
  * destination server(s). This means that it updates the local status of the
  * bundle so users will know if the bundle was successfully deployed or if
  * something failed during the process.
- * 
+ *
  * @author Alberto
  * @version 1.0
  * @since Oct 12, 2012
@@ -94,18 +99,22 @@ public class PushPublisher extends Publisher {
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private Client restClient;
 
-    private static final String PROTOCOL_HTTP = "http";
+    private static final String PROTOCOL_HTTP  = "http";
     private static final String PROTOCOL_HTTPS = "https";
-    private static final String HTTP_PORT = "80";
-	private static final String HTTPS_PORT = "443";
+    private static final String HTTP_PORT      = "80";
+	private static final String HTTPS_PORT 	   = "443";
+
+	private static final String BUNDLE_ID      = "BundleId";
+	private static final String ENDPOINT_NAME  = "EndpointName";
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
         if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
-        
+
         config.setStatic(false);
         this.config = super.init( config );
         return this.config;
@@ -149,7 +158,7 @@ public class PushPublisher extends Publisher {
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = RestClientBuilder.newClient();
+			Client client = getRestClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
@@ -172,7 +181,7 @@ public class PushPublisher extends Publisher {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
 				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
-				
+
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
 				for(PublishingEndPoint ep : allEndpoints) {
@@ -186,9 +195,10 @@ public class PushPublisher extends Publisher {
 							// If re-trying a bundle or just re-attempting to
 							// install a bundle, send it only to those
 							// end-points whose status IS NOT success
-							if ((DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy()))
+							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())) {
+											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+											&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
 							}
 						}
@@ -205,10 +215,17 @@ public class PushPublisher extends Publisher {
 				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
 
-					InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+					InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));
+
+
+
 	        		try {
 	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
+						//For logging purpose
+						MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
+						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
+						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
 	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
@@ -228,6 +245,7 @@ public class PushPublisher extends Publisher {
 	        				detail.setInfo("Everything ok");
 	        			} else {
 
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
 	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
 		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
@@ -252,9 +270,13 @@ public class PushPublisher extends Publisher {
 						detail.setInfo(error);
 	        			failedEnvironment |= true;
 	        			errorCounter++;
-	        			Logger.error(this.getClass(), error);
+	        			Logger.error(this.getClass(), error, e);
+
+						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
 	        		} finally {
 	        			CloseUtils.closeQuietly(bundleStream);
+						MDC.remove(ENDPOINT_NAME);
+						MDC.remove(BUNDLE_ID);
 	        		}
 	        		if (isHistoryEmpty || failedEnvironment) {
 	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
@@ -271,6 +293,15 @@ public class PushPublisher extends Publisher {
 				//Triggering event listener when all endpoints are successfully sent
 				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
 			} else {
+
+				/*
+				If we have failed bundles we need to update the delivery strategy in order to only
+				retry the failing endpoints and avoid to resent to successfully endpoints
+				 */
+				if (!DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())) {
+					updateJobDataMap(DeliveryStrategy.FAILED_ENDPOINTS);
+				}
+
 				if (errorCounter == totalEndpoints) {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
@@ -312,7 +343,7 @@ public class PushPublisher extends Publisher {
 	}
 
     /**
-     * 
+     *
      * @param token
      * @return
      * @throws IOException
@@ -401,6 +432,40 @@ public class PushPublisher extends Publisher {
 		protocols.add(PROTOCOL_HTTP);
 		protocols.add(PROTOCOL_HTTPS);
 		return protocols;
+	}
+
+    /**
+     * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
+     * retrieve their information.
+     *
+     * @return The REST {@link Client}.
+     */
+    private Client getRestClient() {
+        if (null == this.restClient) {
+            this.restClient = RestClientBuilder.newClient();
+        }
+        return this.restClient;
+    }
+
+	/**
+	 * Allows to update the delivery strategy to the PublishQueueJob
+	 */
+	private void updateJobDataMap(DeliveryStrategy deliveryStrategy) {
+		try {
+			Scheduler sched = QuartzUtils.getStandardScheduler();
+			JobDetail job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs");
+			if (job == null) {
+				return;
+			}
+
+			job.getJobDataMap().put("deliveryStrategy", deliveryStrategy);
+			sched.addJob(job, true);
+		} catch (ObjectAlreadyExistsException e) {
+			// Quartz will throw this error if it is already running
+			Logger.debug(this.getClass(), e.getMessage(), e);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+		}
 	}
 
 }

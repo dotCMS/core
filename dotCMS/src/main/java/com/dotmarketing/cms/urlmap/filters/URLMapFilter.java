@@ -53,6 +53,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -84,6 +85,7 @@ public class URLMapFilter implements Filter {
             ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
+        final HttpServletResponse response = (HttpServletResponse) res;
         HttpSession optSession = request.getSession(false);
 
         String uri = cmsUrlUtil.getURIFromRequest(request);
@@ -232,21 +234,32 @@ public class URLMapFilter implements Filter {
                         }
 
                         cons = conAPI.searchIndex(query.toString(), 2, 0,
-                                (hostIsRequired ? "conhost, modDate" : "modDate"), user, true);
+                                (hostIsRequired ? "conhost, modDate" : "modDate"), wuserAPI.getSystemUser(), true);
                         int idx = 0;
                         if (checkIndex && cons.size() == 2) {
                             // prefer session setting
-                            Contentlet second = conAPI.find(cons.get(1).getInode(), user, true);
+                            Contentlet second = conAPI.find(cons.get(1).getInode(), wuserAPI.getSystemUser(), true);
                             if (second.getLanguageId() == sessionLang) {
                                 idx = 1;
                             }
                         }
                         ContentletSearch c = cons.get(idx);
+                        Contentlet contentlet = conAPI
+                                .find(c.getInode(), wuserAPI.getSystemUser(), true);
+
                         if (optSession != null) {
                             optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
-                                    String.valueOf(
-                                            conAPI.find(c.getInode(), user, true).getLanguageId()));
+                                    String.valueOf(contentlet.getLanguageId()));
                         }
+
+                        //Verify and handle the case for unauthorized access of this contentlet
+                        Boolean unauthorized = CMSUrlUtil.getInstance()
+                                .isUnauthorizedAndHandleError(contentlet, uri, user, request,
+                                        response);
+                        if (unauthorized) {
+                            return;
+                        }
+
                         request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
                         request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
                         request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE,
@@ -317,7 +330,6 @@ public class URLMapFilter implements Filter {
         conAPI = APILocator.getContentletAPI();
         wuserAPI = WebAPILocator.getUserWebAPI();
         whostAPI = WebAPILocator.getHostWebAPI();
-
         // persistant on disk cache makes this necessary
         CacheLocator.getContentTypeCache().clearURLMasterPattern();
         urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);

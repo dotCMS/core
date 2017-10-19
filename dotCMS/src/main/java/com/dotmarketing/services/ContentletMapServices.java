@@ -1,26 +1,11 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -39,6 +24,21 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -146,7 +146,7 @@ public class ContentletMapServices {
 			Object contFieldValueObject=null;
 			FieldAPI fdAPI=APILocator.getFieldAPI();
 			String velPath=(!EDIT_MODE) ? "live/" : "working/";
-			if(fdAPI.isElementConstant(field)){
+			if(fdAPI.isElementConstant(field) || fdAPI.isElementHidden(field)){
 				if(field.getVelocityVarName().equals("widgetPreexecute")){
 					continue;
 				}
@@ -508,19 +508,17 @@ public class ContentletMapServices {
 
 	private static void saveToDisk(String folderPath, String filePath, String data) throws IOException {
 
-		java.io.BufferedOutputStream tmpOut=new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(folderPath+ filePath)));
+		try (BufferedOutputStream tmpOut =
+                new BufferedOutputStream(Files.newOutputStream(Paths.get(folderPath + filePath)));
+                OutputStreamWriter out=new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())
+            ){
 
-		// Specify a proper character encoding
-		OutputStreamWriter out=new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+            out.write(data);
 
-		out.write(data);
-
-		out.flush();
-		out.close();
-		tmpOut.close();
-		DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-
+            out.flush();
+            DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+        }
 	}
 
 }

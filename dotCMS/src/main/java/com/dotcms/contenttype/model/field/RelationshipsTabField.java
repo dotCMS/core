@@ -44,7 +44,7 @@ public abstract class RelationshipsTabField extends Field implements OnePerConte
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.DISPLAY_TYPE);
+		return list(ContentTypeFieldProperties.NAME);
 	}
 
 	@JsonIgnore

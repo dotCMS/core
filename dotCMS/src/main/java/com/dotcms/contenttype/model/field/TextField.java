@@ -39,9 +39,10 @@ public abstract class TextField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.LABEL,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.DEFAULT_TEXT,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.USER_SEARCHABLE,
-				ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.RADIO_BLOCK_TEXT);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.DATA_TYPE,
+				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE,
+				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.REQUIRED,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.LISTED,
+				ContentTypeFieldProperties.UNIQUE);
 	}
 }

@@ -1,27 +1,13 @@
 package com.dotcms.publisher.receiver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-
-import org.apache.tools.tar.TarBuffer;
-
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryFullHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
@@ -31,7 +17,6 @@ import com.dotcms.enterprise.publishing.remote.handler.LinkHandler;
 import com.dotcms.enterprise.publishing.remote.handler.OSGIHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
-import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
 import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
@@ -54,6 +39,7 @@ import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchive
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -63,6 +49,19 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import org.apache.tools.tar.TarBuffer;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -136,7 +135,8 @@ public class BundlePublisher extends Publisher {
 
         String bundleName = config.getId();
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-        String bundlePath = ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;//FIXME
+        String bundlePath =
+                ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 
         //Publish the bundle extracted
         PublishAuditHistory currentStatusHistory = null;
@@ -144,9 +144,9 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
-            currentStatusHistory = auditAPI.getPublishAuditStatus(bundleFolder).getStatusPojo();
-
+            currentStatusHistory = config.getPublishAuditStatus().getStatusPojo();
             currentStatusHistory.setPublishStart(new Date());
+
             detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
             detail.setInfo("Publishing bundle");
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
@@ -165,12 +165,14 @@ public class BundlePublisher extends Publisher {
         folderOut.mkdir();
 
         // Extract file to a directory
-        InputStream bundleIS;
+        InputStream bundleIS = null;
         try {
-            bundleIS = new FileInputStream(bundlePath + bundleName);
+            bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
             untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
+        } finally {
+            CloseUtils.closeQuietly(bundleIS);
         }
 
         Map<String, String> assetsDetails = null;
@@ -182,7 +184,7 @@ public class BundlePublisher extends Publisher {
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
             //Get the identifiers on this bundle
-            assetsDetails = new HashMap<String, String>();
+            assetsDetails = new HashMap<>();
             List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
@@ -195,64 +197,60 @@ public class BundlePublisher extends Publisher {
         }
 
         try {
-            HibernateUtil.startTransaction();
+            try {
+                HibernateUtil.startTransaction();
 
-            //Execute the handlers
-            for (IHandler handler : handlers) {
+                //Execute the handlers
+                for (IHandler handler : handlers) {
 
-                handler.handle(folderOut);
+                    handler.handle(folderOut);
 
+                }
+
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                bundleSuccess = false;
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch (DotHibernateException e1) {
+                    Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
+                }
+                Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
+
+                //Update audit
+                try {
+                    detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+                    detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
+                    detail.setStackTrace(ExceptionUtils.getStackTrace(e));
+                    String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+                    currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
+                    currentStatusHistory.setPublishEnd(new Date());
+                    currentStatusHistory.setAssets(assetsDetails);
+
+                    auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                            currentStatusHistory);
+                } catch (DotPublisherException e1) {
+                    throw new DotPublishingException("Cannot update audit: ", e);
+                }
+                throw new DotPublishingException("Error Publishing: " + e, e);
             }
 
-            HibernateUtil.commitTransaction();
-        } catch (Exception e) {
-            bundleSuccess = false;
             try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
-            }
-            Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
-
-            //Update audit
-            try {
-                detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
-                detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
-                detail.setStackTrace(ExceptionUtils.getStackTrace(e));
+                //Update audit
+                detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+                detail.setInfo("Everything ok");
                 String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
                 currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
-
-                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-                    currentStatusHistory);
-            } catch (DotPublisherException e1) {
-                throw new DotPublishingException("Cannot update audit: ", e);
+                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            } catch (Exception e) {
+                Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
             }
-            throw new DotPublishingException("Error Publishing: " + e, e);
-        }
-
-        try {
-            //Update audit
-            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-            detail.setInfo("Everything ok");
-            String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
-            currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-            currentStatusHistory.setPublishEnd(new Date());
-            currentStatusHistory.setAssets(assetsDetails);
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-            HibernateUtil.commitTransaction();
-        } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
-        }
-
-        try {
-            HibernateUtil.closeSession();
-        } catch (DotHibernateException e) {
-            Logger.warn(this, e.getMessage(), e);
         } finally {
-            DbConnectionFactory.closeConnection();
+            DbConnectionFactory.closeSilently();
         }
+
         return config;
     }
 
@@ -275,7 +273,7 @@ public class BundlePublisher extends Publisher {
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
       TarArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
-        FileOutputStream outputStream = null;
+        OutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
         try {
             //Clean the bundler folder if exist to clean dirty data
@@ -329,7 +327,7 @@ public class BundlePublisher extends Publisher {
                 
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = new FileOutputStream(pathWithoutName + entry.getName());
+                outputStream = Files.newOutputStream(Paths.get(pathWithoutName + entry.getName()));
                 while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
                     outputStream.write(buf, 0, bytesRead);
                 }

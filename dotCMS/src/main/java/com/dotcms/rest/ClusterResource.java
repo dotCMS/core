@@ -3,36 +3,21 @@ package com.dotcms.rest;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.client.AdminClient;
-import com.dotcms.repackage.org.jgroups.Address;
-import com.dotcms.repackage.org.jgroups.JChannel;
-import com.dotcms.repackage.org.jgroups.View;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.cache.transport.CacheTransport;
-import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -45,11 +30,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -87,17 +68,17 @@ public class ClusterResource {
         List<ServerActionBean> resultActionBeans = new ArrayList<ServerActionBean>();
         JSONArray jsonNodes = new JSONArray();
         
-        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+
         Long timeoutSeconds = new Long(1);
 		
 		for (Server server : servers) {
-			
+	        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
 			ServerActionBean nodeStatusServerActionBean = 
 					nodeStatusServerAction.getNewServerAction(myServerId, server.getServerId(), timeoutSeconds);
-			
-			nodeStatusServerActionBean = 
-					APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
-			
+			if(myServerId.equals(server.getServerId())){
+			    nodeStatusServerActionBean= APILocator.getServerActionAPI().handleServerAction(nodeStatusServerActionBean);  
+			}
+			nodeStatusServerActionBean = APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
 			actionBeans.add(nodeStatusServerActionBean);
 		}
 		
@@ -381,7 +362,7 @@ public class ClusterResource {
         try {
         	HibernateUtil.startTransaction();
             APILocator.getServerAPI().removeServerFromClusterTable(serverId);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }
         catch(Exception ex) {
             Logger.error(this, "can't remove from cluster ",ex);
@@ -391,8 +372,10 @@ public class ClusterResource {
                 Logger.warn(this, "can't rollback", e);
             }
             return Response.serverError().build();
-        }
-        
+        } finally {
+        	HibernateUtil.closeSessionSilently();
+		}
+
         return Response.ok().build();
     }
 }

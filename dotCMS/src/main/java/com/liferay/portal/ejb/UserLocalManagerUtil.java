@@ -22,6 +22,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.liferay.portal.model.User;
 
 /**
@@ -135,6 +136,7 @@ public class UserLocalManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static com.liferay.portal.model.User getUserById(
 		java.lang.String userId)
 		throws com.liferay.portal.PortalException, 

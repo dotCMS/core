@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -40,6 +41,12 @@ public class IntegrationTestInitService {
             CacheLocator.init();
     		FactoryLocator.init();
     		APILocator.init();
+
+    		//For these tests fire the reindex immediately
+            Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
+
+            // Init other dotCMS services.
+            DotInitializationService.getInstance().initialize();
 
             initCompleted.set(true);
         }

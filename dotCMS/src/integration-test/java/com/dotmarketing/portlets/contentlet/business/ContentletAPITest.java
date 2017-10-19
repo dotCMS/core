@@ -1,16 +1,12 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.contenttype.model.field.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -67,6 +63,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -77,12 +74,8 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -93,6 +86,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -517,8 +512,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(host2.getInode());
         
         
-        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator
-                + UUIDGenerator.generateUuid() + java.io.File.separator + "hello.txt");
+        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + separator
+                + UUIDGenerator.generateUuid() + separator + "hello.txt");
         bin.getParentFile().mkdirs();
         
         bin.createNewFile();
@@ -690,33 +685,37 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void cleanBinaryField() throws DotDataException, DotSecurityException {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
+        try {
+            //Getting a known structure
+            Structure structure = structures.iterator().next();
 
-        Long identifier = uniqueIdentifier.get(structure.getName());
+            Long identifier = uniqueIdentifier.get(structure.getName());
 
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-        Contentlet contentlet = contentletList.iterator().next();
+            //Search the contentlet for this structure
+            List<Contentlet> contentletList = contentletAPI.findByStructure(structure, user, false, 0, 0);
+            Contentlet contentlet = contentletList.iterator().next();
 
-        //Getting a known binary field for this structure
-        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+            //Getting a known binary field for this structure
+            //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestBinary" + identifier );
+            Field foundBinaryField = FieldFactory.getFieldByVariableName(structure.getInode(), "junitTestBinary" + identifier);
 
 
-        //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
+            //Getting the current value for this field
+            Object value = contentletAPI.getFieldValue(contentlet, foundBinaryField);
 
-        //Validations
-        assertNotNull( value );
-        assertTrue( ((java.io.File) value).exists() );
+            //Validations
+            assertNotNull(value);
+            assertTrue(((java.io.File) value).exists());
 
-        //Cleaning the binary field
-        contentletAPI.cleanField( structure, foundBinaryField, user, false );
+            //Cleaning the binary field
+            contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
-        //Validations
-        assertFalse( ((java.io.File) value).exists() );
+            //Validations
+            assertFalse(((java.io.File) value).exists());
+        } finally {
+            HibernateUtil.setAsyncCommitListenersFinalization(true);
+        }
     }
 
     /**
@@ -884,7 +883,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             StructureDataGen.remove(structure);
             FolderDataGen.remove(folder);
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
             HibernateUtil.rollbackTransaction();
             throw e;
@@ -967,7 +966,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
             menuLinkAPI.delete( menuLink, user, false );
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2270,7 +2269,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
         	APILocator.getStructureAPI().delete(testStructure, user);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2861,6 +2860,242 @@ public class ContentletAPITest extends ContentletBaseTest {
                 fail(e.getMessage());
             }
         }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ShouldDeletePreviousBinary_WhenBinaryIsUpdated()
+            throws DotSecurityException, DotDataException, IOException {
+
+        final String FILE_V1_NAME = "textFileVersion1.txt";
+        final String FILE_V2_NAME = "textFileVersion2.txt";
+        final String FILE_V2_CONTENT = "textFileVersion2 CONTENT";
+        ContentType typeWithBinary = null;
+
+        try {
+            typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
+            com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
+            File textFileVersion1 = createTempFileWithText(FILE_V1_NAME, FILE_V1_NAME);
+            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+                    binaryField.variable(), textFileVersion1);
+            Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
+
+            // let's verify that newly saved file exists
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
+
+            File textFileVersion2 = createTempFileWithText(FILE_V2_NAME, FILE_V2_CONTENT);
+            // replace old binary with new one
+            contentletWithBinary.setBinary(binaryField.variable(), textFileVersion2);
+            Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
+
+            // we've just checkedIn without versioning, so old binary should not exist
+            assertFalse(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
+
+            File newBinary = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), FILE_V2_NAME);
+            // new binary should exist
+            assertTrue(newBinary.exists());
+            // and content should be the expected
+            BufferedReader reader = Files.newReader(newBinary, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, FILE_V2_CONTENT);
+
+        } finally {
+            if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ShouldPreserveBinary_WhenOtherFieldsAreUpdated()
+            throws DotDataException, DotSecurityException, IOException {
+        final String BINARY_NAME = "testCheckinWithoutVersioningBinary.txt";
+        final String BINARY_CONTENT = "testCheckinWithoutVersioningBinary CONTENT";
+        ContentType typeWithBinary = null;
+
+        try {
+            typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
+            com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
+            File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_CONTENT);
+            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+                    binaryField.variable(), textFileVersion1);
+            Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
+
+            // let's verify that newly saved file exists
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), BINARY_NAME).exists());
+
+            //let's update a field different from the binary
+            contentletWithBinary.setStringProperty(textField.variable(), "contentV2");
+            Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
+
+            // let's verify the binary is still in FS
+            File binaryFromAssetsDir = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), BINARY_NAME);
+            assertTrue(binaryFromAssetsDir.exists());
+
+            // let's also verify file content remains the same
+            BufferedReader reader = Files.newReader(binaryFromAssetsDir, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, BINARY_CONTENT);
+
+            // let's verify the reference is still ok
+            File binaryFromContentlet = contentWithoutVersioning.getBinary(binaryField.variable());
+            assertEquals(binaryFromContentlet.getName(), BINARY_NAME);
+
+        } finally {
+            if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
+        }
+
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldWithDataTypeWholeNumber()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Whole Number Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.INTEGER)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setLongProperty(field.variable(),1);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet2.setLongProperty(field.variable(),1);
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsWithDiffLanguages()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),"test");
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            //Contentlet in Spanish (should not be an issue since the unique is per lang)
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(2);
+            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    private File getBinaryAsset(String inode, String varName, String binaryName) {
+
+        FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+
+        File binaryFromAssetsFolder = new File(fileAssetAPI.getRealAssetsRootPath()
+                + separator
+                + inode.charAt(0)
+                + separator
+                + inode.charAt(1)
+                + separator
+                + inode
+                + separator
+                + varName
+                + separator
+                + binaryName);
+
+        return binaryFromAssetsFolder;
+    }
+
+    private Contentlet createContentWithFieldValues(String contentTypeId, Map<String, Object> fieldValues)
+            throws DotSecurityException, DotDataException {
+        Contentlet contentlet = new Contentlet();
+        contentlet.setContentTypeId(contentTypeId);
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+        for(String fieldVariable : fieldValues.keySet()) {
+            contentlet.setProperty(fieldVariable, fieldValues.get(fieldVariable));
+        }
+
+        return contentletAPI.checkin(contentlet, user, false);
+    }
+
+    private File createTempFileWithText(String name, String text) throws IOException {
+        File tempFile = temporaryFolder.newFile(name);
+        writeTextIntoFile(tempFile, text);
+        return tempFile;
+    }
+
+    private ContentType createContentType(String name, BaseContentType baseType)
+            throws DotSecurityException, DotDataException {
+        ContentType contentType = ContentTypeBuilder.builder(baseType.immutableClass())
+                .description(name)
+                .host(defaultHost.getIdentifier())
+                .name(name)
+                .owner("owner")
+                .build();
+
+        return contentTypeAPI.save(contentType);
+    }
+
+    private com.dotcms.contenttype.model.field.Field createTextField(String name, String contentTypeId)
+            throws DotSecurityException, DotDataException {
+        com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                .name(name)
+                .contentTypeId(contentTypeId)
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    private com.dotcms.contenttype.model.field.Field createBinaryField(String name, String contentTypeId)
+            throws DotSecurityException, DotDataException {
+        com.dotcms.contenttype.model.field.Field field = ImmutableBinaryField.builder()
+                .name(name)
+                .contentTypeId(contentTypeId)
+                .build();
+
+        return fieldAPI.save(field, user);
     }
 
     /**

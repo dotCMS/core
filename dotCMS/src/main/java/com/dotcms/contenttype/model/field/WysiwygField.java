@@ -45,11 +45,9 @@ public abstract class WysiwygField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.REQUIRED,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.VALIDATION,
-				ContentTypeFieldProperties.DEFAULT_TEXT, ContentTypeFieldProperties.HINT,
-				ContentTypeFieldProperties.USER_SEARCHABLE, ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.DATA_TYPE,
-				ContentTypeFieldProperties.RADIO_BLOCK_TEXT);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
+				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
 	}
 
 	@JsonIgnore

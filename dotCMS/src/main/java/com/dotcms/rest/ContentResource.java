@@ -6,16 +6,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,6 +72,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import static com.dotmarketing.util.NumberUtil.*;
 
 @Path("/content")
 public class ContentResource {
@@ -400,74 +393,60 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	public Response getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        final InitDataObject initData = this.webResource.init
+				(params, true, request, false, null);
 		//Creating an utility response object
-		ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
-		Map<String, String> paramsMap = initData.getParamsMap();
-		User user = initData.getUser();
-
-		String render = paramsMap.get(RESTParams.RENDER.getValue());
-		String type = paramsMap.get(RESTParams.TYPE.getValue());
-		String query = paramsMap.get(RESTParams.QUERY.getValue());
-		String id = paramsMap.get(RESTParams.ID.getValue());
-		String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
-		String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
-		String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
-		String inode = paramsMap.get(RESTParams.INODE.getValue());
-		String result = null;
-		type = UtilMethods.isSet(type)?type:"json";
-		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
-		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-		if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
-			try{
-				language= Long.parseLong(paramsMap.get(RESTParams.LANGUAGE.getValue()))	;
-			}
-			catch(Exception e){
-				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
-			}
-		}
-
+		final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+		final Map<String, String> paramsMap = initData.getParamsMap();
+		final User user = initData.getUser();
+		final String render = paramsMap.get(RESTParams.RENDER.getValue());
+		final String query = paramsMap.get(RESTParams.QUERY.getValue());
+		final String id = paramsMap.get(RESTParams.ID.getValue());
+		final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
+		final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
+		final String inode = paramsMap.get(RESTParams.INODE.getValue());
+		final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
+										() -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		/* Limit and Offset Parameters Handling, if not passed, using default */
-
-		int limit = 10;
-		int offset = 0;
-
-		try {
-			if(UtilMethods.isSet(limitStr)) {
-				limit = Integer.parseInt(limitStr);
-			}
-		} catch(NumberFormatException e) {
-		}
-
-		try {
-			if(UtilMethods.isSet(offsetStr)) {
-				offset = Integer.parseInt(offsetStr);
-			}
-		} catch(NumberFormatException e) {
-		}
-
-		boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+		final int limit  = toInt(limitStr,  () -> 10);
+		final int offset = toInt(offsetStr, () -> 0);
+		final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
+				!"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
 		/* Fetching the content using a query if passed or an id */
-
-		List<Contentlet> contentlets = new ArrayList<Contentlet>();
+		List<Contentlet> contentlets = new ArrayList<>();
 		Boolean idPassed = false;
 		Boolean inodePassed = false;
 		Boolean queryPassed = false;
+		String result = null;
+		Optional<Status> status = Optional.empty();
+		String type = paramsMap.get(RESTParams.TYPE.getValue());
+		String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+
+		type = UtilMethods.isSet(type)?type:"json";
+		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 
 		try {
+
 			if(idPassed = UtilMethods.isSet(id)) {
-				contentlets.add(this.contentHelper.hydrateContentLet(
-						APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true)));
+				Optional.ofNullable(this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
+						.findContentletByIdentifier(id, live, language, user, true)))
+						.ifPresent(contentlets::add);
 			} else if(inodePassed = UtilMethods.isSet(inode)) {
-				contentlets.add(this.contentHelper.hydrateContentLet(
-						APILocator.getContentletAPI().find(inode, user, true)));
+				Optional.ofNullable(this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
+						.find(inode, user, true)))
+						.ifPresent(contentlets::add);
 			} else if(queryPassed = UtilMethods.isSet(query)) {
 				String tmDate=(String)request.getSession().getAttribute("tm_date");
 				contentlets = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
 			}
+
+			status = (null == contentlets || contentlets.isEmpty())?
+					Optional.of(Status.NOT_FOUND): status;
+		} catch (DotSecurityException e) {
+
+			Logger.debug(this, "Permission error: " + e.getMessage(), e);
+			status = Optional.of(Status.UNAUTHORIZED);
 		} catch (Exception e) {
 			if(idPassed) {
 				Logger.warn(this, "Can't find Content with Identifier: " + id);
@@ -476,10 +455,10 @@ public class ContentResource {
 			} else if(inodePassed) {
 				Logger.warn(this, "Error searching Content : "  + e.getMessage());
 			}
+			status = Optional.of(Status.INTERNAL_SERVER_ERROR);
 		}
 
 		/* Converting the Contentlet list to XML or JSON */
-
 		try {
 			if("xml".equals(type)) {
 				result = getXML(contentlets, request, response, render, user);
@@ -490,7 +469,7 @@ public class ContentResource {
 			Logger.warn(this, "Error converting result to XML/JSON");
 		}
 
-		return responseResource.response( result );
+		return responseResource.response( result, null, status );
 	}
 
 
@@ -907,7 +886,7 @@ public class ContentResource {
 			if(live)
 				APILocator.getContentletAPI().publish(contentlet, init.getUser(), allowFrontEndSaving);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			clean = true;
 		} catch ( DotContentletStateException e ) {
 
@@ -1166,8 +1145,10 @@ public class ContentResource {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
 													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
-														String fileName = contentlet.getMap().get("fileName").toString();
-														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]+fileName);
+													    StringBuilder fileUri = new StringBuilder();
+													    fileUri.append(split[1].endsWith("/")?split[1]:split[1]+"/");
+													    fileUri.append(contentlet.getMap().get("fileName").toString());
+                                                        Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,fileUri.toString());
 														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
 															contentlet.setIdentifier(existingIdent.getId());
 														}

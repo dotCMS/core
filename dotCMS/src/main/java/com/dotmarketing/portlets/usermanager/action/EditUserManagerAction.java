@@ -141,7 +141,7 @@ public class EditUserManagerAction extends DotPortletAction{
 						ae.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.userExists",""));
 						req.setAttribute(Globals.ERROR_KEY,ae);
 						setForward(req, "portlet.ext.usermanager.register_user");
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						return;
 					}
 
@@ -217,7 +217,7 @@ public class EditUserManagerAction extends DotPortletAction{
 								}
 								_sendToReferral(req,res,referer);
 							}
-							HibernateUtil.commitTransaction();
+							HibernateUtil.closeAndCommitTransaction();
 							return;
 
 						} catch (Exception e) {
@@ -255,7 +255,7 @@ public class EditUserManagerAction extends DotPortletAction{
 			setForward(req, "portlet.ext.usermanager.edit_usermanager");
 		}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	/*Private Methods*/

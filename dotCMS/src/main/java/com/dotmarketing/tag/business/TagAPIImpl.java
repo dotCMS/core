@@ -1,5 +1,7 @@
 package com.dotmarketing.tag.business;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -16,13 +18,15 @@ import java.util.*;
 
 public class TagAPIImpl implements TagAPI {
 
-    private TagFactory tagFactory = FactoryLocator.getTagFactory();
+    private final TagFactory tagFactory = FactoryLocator.getTagFactory();
 
+    @CloseDBIfOpened
     @Override
     public java.util.List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
     }
 
+    @CloseDBIfOpened
     @Override
     public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException {
         return tagFactory.getTagsByName(name);
@@ -38,11 +42,13 @@ public class TagAPIImpl implements TagAPI {
         return getTagsForUserByUserInode(user.getInode());
     }
 
+    @CloseDBIfOpened
     @Override
     public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return tagFactory.getTagsForUserByUserInode(userInode);
     }
 
+    @CloseDBIfOpened
     @Override
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
         return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
@@ -175,7 +181,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return newTag;
@@ -185,15 +191,21 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
 
     }
 
+    @CloseDBIfOpened
     @Override
     public Tag getTagByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagByTagId(tagId);
     }
 
+    @CloseDBIfOpened
     @Override
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
         return tagFactory.getTagByNameAndHost(name, hostId);
@@ -257,7 +269,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return foundTagInStorage;
@@ -267,6 +279,10 @@ public class TagAPIImpl implements TagAPI {
             }
 
             throw new GenericTagException( e );
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
     }
 
@@ -300,7 +316,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return tagInodes;
@@ -309,6 +325,10 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
     }
 
@@ -317,6 +337,7 @@ public class TagAPIImpl implements TagAPI {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
+    @WrapInTransaction
     @Override
     public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException {
 
@@ -352,6 +373,7 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void enableDisablePersonaTag ( String tagId, boolean enableAsPersona ) throws DotDataException {
 
@@ -369,6 +391,7 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTag ( Tag tag ) throws DotDataException {
         //First delete the references to this tag
@@ -383,6 +406,7 @@ public class TagAPIImpl implements TagAPI {
         deleteTag(tag);
     }
 
+    @WrapInTransaction
     @Override
     public void editTag ( String tagName, String oldTagName, String userId ) throws DotDataException {
 
@@ -406,6 +430,7 @@ public class TagAPIImpl implements TagAPI {
         return addContentletTagInode(tagName, inode, hostId, inode);
     }
 
+    @WrapInTransaction
     @Override
     public TagInode addContentletTagInode(String tagName, String inode, String hostId, String fieldVarName) throws DotDataException, DotSecurityException {
 
@@ -448,7 +473,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return existingTagInode;
@@ -458,29 +483,38 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagInodesByInode(inode);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
         return tagFactory.getTagsByInodeAndFieldVarName(inode, fieldVarName);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagInodesByTagId(tagId);
     }
 
+    @CloseDBIfOpened
     @Override
     public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
         return tagFactory.getTagInode(tagId, inode, fieldVarName);
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
         tagFactory.deleteTagInode(tagInode);
@@ -536,7 +570,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
         } catch ( Exception e ) {
@@ -544,25 +578,32 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
-
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInodesByInode(String inode) throws DotDataException {
         tagFactory.deleteTagInodesByInode(inode);
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInodesByTagId(String tagId) throws DotDataException {
         tagFactory.deleteTagInodesByTagId(tagId);
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInodesByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
         tagFactory.deleteTagInodesByInodeAndFieldVarName(inode, fieldVarName);    	
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
@@ -572,6 +613,7 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void deleteTagInode ( String tagName, String inode, String fieldVarName ) throws DotSecurityException, DotDataException {
 
@@ -605,6 +647,7 @@ public class TagAPIImpl implements TagAPI {
         return tagName.replace("'", "''");
     }
 
+    @CloseDBIfOpened
     @Override
     @SuppressWarnings ( "unchecked" )
     public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException {
@@ -631,10 +674,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @return boolean
 	 */
     private boolean isGlobalTag ( Tag tag ) {
-        if ( tag.getHostId().equals(Host.SYSTEM_HOST) )
-            return true;
-        else
-            return false;
+        return ( tag.getHostId().equals(Host.SYSTEM_HOST) );
     }
 
     @Override
@@ -670,7 +710,7 @@ public class TagAPIImpl implements TagAPI {
 
                 //Everything ok..., committing the transaction
                 if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 }
             }
         } catch ( Exception e ) {
@@ -678,10 +718,15 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
 
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagsByInode(inode);
@@ -719,7 +764,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return tags;
@@ -728,6 +773,10 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
             throw e;
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSessionSilently();
+            }
         }
     }
 

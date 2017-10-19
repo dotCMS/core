@@ -11,8 +11,6 @@ import java.util.Optional;
 import static com.liferay.util.CookieUtil.COOKIES_HTTP_ONLY;
 import static com.liferay.util.CookieUtil.COOKIES_SECURE_FLAG;
 
-import static com.liferay.util.CookieUtil.containsCookie;
-
 /**
  * Provides utility methods to interact with HTTP Cookies.
  *
@@ -23,8 +21,8 @@ import static com.liferay.util.CookieUtil.containsCookie;
  */
 public class CookieUtil {
 
-    private static final String ALWAYS = "always";
-    private static final String HTTPS = "https";
+    public static final String ALWAYS = "always";
+    public static final String HTTPS = "https";
     private static final String URI = "/";
     private static final int MAX_AGE_DAY_MILLIS = 60 * 60 * 24;
     public static final int DEFAULT_JWT_MAX_AGE_DAYS = 14;
@@ -42,6 +40,8 @@ public class CookieUtil {
         idCookie.setPath(URI);
         idCookie.setMaxAge(MAX_AGE_DAY_MILLIS * 356 * 5);
 
+        setHttpOnlyCookie(idCookie);
+
         return idCookie;
 
     }
@@ -58,6 +58,8 @@ public class CookieUtil {
         idCookie.setPath(URI);
         idCookie.setMaxAge(-1);
 
+        setHttpOnlyCookie(idCookie);
+
         return idCookie;
 
     }
@@ -70,6 +72,9 @@ public class CookieUtil {
         Cookie idCookie = new Cookie(com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE, "1");
         idCookie.setPath(URI);
         idCookie.setMaxAge(MAX_AGE_DAY_MILLIS * 356 * 5);
+
+        setHttpOnlyCookie(idCookie);
+
         return idCookie;
     }
 
@@ -94,10 +99,8 @@ public class CookieUtil {
         //Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsI.eyJpc3MiOiJodHRwczotcGxlL.mFrs3Zo8eaSNcxiNfvRh9dqKP4F1cB; Secure; HttpOnly;
         final Cookie cookie = new Cookie(CookieKeys.JWT_ACCESS_TOKEN, accessToken);
 
-        if ( Config.getBooleanProperty(COOKIES_HTTP_ONLY, false) ) {
-            // add secure and httpOnly flag to the cookie
-            cookie.setHttpOnly(true);
-        }
+        // add secure and httpOnly flag to the cookie
+        setHttpOnlyCookie(cookie);
 
         if ( ALWAYS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
             || HTTPS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
@@ -136,4 +139,14 @@ public class CookieUtil {
             }
         }
     } // setExpireCookies.
+
+    /**
+     * Set HttpOnly to cookie on demand and if needed
+     */
+ 	public static void setHttpOnlyCookie(final Cookie cookie) {
+ 		//https://github.com/dotCMS/core/issues/11912
+ 		if (Config.getBooleanProperty(COOKIES_HTTP_ONLY, false)) {
+ 			cookie.setHttpOnly(true);			
+ 		}
+ 	} // setHttpOnlyCookie.
 }

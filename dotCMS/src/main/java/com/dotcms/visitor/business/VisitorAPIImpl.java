@@ -1,13 +1,12 @@
 package com.dotcms.visitor.business;
 
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
@@ -15,17 +14,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-
 import eu.bitwalker.useragentutils.UserAgent;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -88,12 +84,6 @@ public class VisitorAPIImpl implements VisitorAPI {
 				}
 			}
         }
-        
-        
-        
-        
-        
-        
 
         return visitorOpt;
     }

@@ -23,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.forgotpassword.struts.ForgotPasswordForm;
@@ -48,7 +49,8 @@ import com.liferay.portal.model.User;
  * @version $Revision: 1.5 $
  *
  */
-public class ForgotPasswordAction extends DispatchAction {
+@Deprecated
+public class ForgotPasswordAction extends SecureAction {
 	
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	

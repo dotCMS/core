@@ -28,7 +28,6 @@ import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -554,22 +553,16 @@ public class LanguageUtil {
 	}
 	
 	/**
-	 * According the language and the country gets the locale, if there is no country checks the 
-	 * dotmarketing-config.properties to the default locale regarding that language. If there is no 
-	 * property set it will be set the language as the country.
+	 * Returns a String with the languageCode and the CountryCode appended, if there is no 
+	 * CountryCode only the languageCode. This is use to search the flags that shows in the UI.
 	 * 
 	 * @param languageCode
 	 * @param countryCode
 	 * @return
 	 */
     public static String getLiteralLocale(final String languageCode, final String countryCode) {
-        final String newCountryCode = (countryCode == null || countryCode.isEmpty()) ? getDefaultCountry(languageCode)
-                        : countryCode;
-        return new StringBuilder(languageCode).append("_").append(newCountryCode).toString();
-    }
-
-    public static String getDefaultCountry(final String languageCode) {
-        return Config.getStringProperty("language.default.country.mapping." + languageCode,languageCode);
+        final String newCountryCode = (countryCode == null || countryCode.isEmpty()) ? "" : "_"+countryCode;
+        return new StringBuilder(languageCode).append(newCountryCode).toString();
     }
 
     public static Language getUserLanguage(final Language lang, final Locale locale) {

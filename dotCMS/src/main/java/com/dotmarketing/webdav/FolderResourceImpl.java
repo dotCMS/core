@@ -3,15 +3,6 @@
  */
 package com.dotmarketing.webdav;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -23,7 +14,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
 import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
 import com.dotcms.repackage.com.bradmcevoy.http.Request;
 import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
@@ -37,12 +27,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Jason Tesser
@@ -66,6 +59,8 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+		newName = newName.toLowerCase();
+
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
@@ -79,20 +74,23 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			} catch (DotSecurityException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
-			}			
-			
-			dotDavHelper.createTempFolder(File.separator + host.getHostname() + folderPath + File.separator + newName);
-			File f = new File(File.separator + host.getHostname() + folderPath);
-			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
-			return tr;
+			}
+
+            final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
+					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
+
+            dotDavHelper.createTempFolder(hostFolderPath + newName);
+			File file = new File(File.separator + host.getHostname() + folderPath);
+			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
+			return tempFolderResource;
 		}
 		if(!path.endsWith("/")){
 			path = path + "/";
 		}
 		try {
-			Folder f = dotDavHelper.createFolder(path + newName, user);
-			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");
-			return fr;
+			Folder newfolder = dotDavHelper.createFolder(path + newName, user);
+			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, path + newName + "/");
+			return folderResource;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);

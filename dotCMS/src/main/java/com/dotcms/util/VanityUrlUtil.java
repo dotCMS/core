@@ -1,14 +1,13 @@
 package com.dotcms.util;
 
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.util.Logger;
+
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
+import static com.liferay.util.StringUtil.replaceAllGroups;
 
 /**
  * This class provide some utility methods to interact with
@@ -20,61 +19,8 @@ import java.util.regex.PatternSyntaxException;
  */
 public class VanityUrlUtil {
 
-    private static final HostAPI hostAPI = APILocator.getHostAPI();
-
     private VanityUrlUtil() {
 
-    }
-
-    /**
-     * Generate the sanitized cache key
-     *
-     * @param hostId The current host Identifier
-     * @param uri The current URI
-     * @param languageId The current languageId
-     * @return String with the sanitized key name
-     */
-    public static String sanitizeKey(final String hostId, final String uri, final long languageId) {
-        return hostId + "|" + uri.replace('/', '|') + "|lang_" + languageId;
-    }
-
-    /**
-     * Generate the sanitized cache key
-     *
-     * @param vanityUrl The vanity Url contentlet
-     * @return String with the sanitized key name
-     */
-    public static String sanitizeKey(final Contentlet vanityUrl)
-            throws DotDataException, DotSecurityException {
-
-        return sanitizeKey(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR),
-                vanityUrl.getLanguageId());
-    }
-
-    /**
-     * Generate the sanitized cache key for the second cache
-     *
-     * @param hostId The current host Identifier
-     * @param languageId The current languageId
-     * @return String with the sanitized key name
-     */
-    public static String sanitizeSecondCacheKey(final String hostId, final long languageId) {
-        return hostId + "| lang_" + languageId;
-    }
-
-    /**
-     * Generate the sanitized cache key
-     *
-     * @param vanityUrl The vanity Url contentlet
-     * @return String with the sanitized key name
-     */
-    public static String sanitizeSecondCacheKey(final Contentlet vanityUrl)
-            throws DotDataException, DotSecurityException {
-
-        return sanitizeSecondCacheKey(
-                vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                vanityUrl.getLanguageId());
     }
 
     /**
@@ -83,7 +29,7 @@ public class VanityUrlUtil {
      * @param regex Regular expression string
      * @return true if is a valid pattern, false if not
      */
-    public static boolean isValidRegex(String regex) {
+    public static boolean isValidRegex(final String regex) {
         boolean isValid = false;
         try {
             Pattern.compile(regex);
@@ -93,5 +39,37 @@ public class VanityUrlUtil {
                     "Error cause by invalid Pattern syntax. URI:" + regex, e);
         }
         return isValid;
-    }
-}
+    } // isValidRegex.
+
+    /**
+     * If there is any expression on the cachedVanityUrl to be replaced (anything that starts with $), will be replaced.
+     * @param cachedVanityUrl {@link CachedVanityUrl}
+     * @param matches {@link String} array
+     * @return {@link CachedVanityUrl}
+     */
+    public static CachedVanityUrl processExpressions (final CachedVanityUrl cachedVanityUrl,
+                                                      final String... matches) {
+
+        CachedVanityUrl cachedVanityUrlToReturn = cachedVanityUrl;
+
+        if (null != cachedVanityUrl && null != matches && matches.length > 0 &&
+                -1 != cachedVanityUrl.getForwardTo().indexOf(GROUP_REPLACEMENT_PREFIX)) {
+
+            // Replace the expressions on the vanity forward.
+            final StringBuilder builder =
+                    new StringBuilder(cachedVanityUrl.getForwardTo());
+            replaceAllGroups(builder, matches);
+
+            // check if there was any replacement already
+            final String newForwardTo = builder.toString();
+            if (!cachedVanityUrl.getForwardTo().equals(newForwardTo)) {
+
+                cachedVanityUrlToReturn =
+                        new CachedVanityUrl(newForwardTo, cachedVanityUrl);
+            }
+        }
+
+        return cachedVanityUrlToReturn;
+    } // processExpressions
+
+} // E:O:F:VanityUrlUtil.

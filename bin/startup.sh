@@ -74,15 +74,24 @@ if [ "$1" = "debug" ] ; then
 
     DEBUG_PORT="8000"
     if [ ! -x $2 ] ; then
-        DEBUG_PORT="$2"
+        re='^[0-9]+$'
+        if ! [[ $2 =~ $re ]] ; then
+           echo "Using default debug port [$DEBUG_PORT]"
+        else
+            DEBUG_PORT="$2"
+            echo "Using debug port [$DEBUG_PORT]"
+        fi
+    else
+        echo "Using default debug port [$DEBUG_PORT]"
     fi
 
     #debug
     JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$DEBUG_PORT $JAVA_OPTS"
 fi
 
-
-
+if [ "$1" = "profile" ] || [ "$2" = "profile" ] || [ "$3" = "profile" ] ; then
+    JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/profiler/profiler.jar"
+fi
 
 ## END Script CONFIGURATION Options
 

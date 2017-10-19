@@ -14,7 +14,7 @@
                             <div class="portlet-toolbar__actions-primary">
                                 <div class="inline-form">
                                     <label for="filterTextBox"><%= LanguageUtil.get(pageContext, "Filter")%>:</label>
-                                    <input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyup: _filter" trim="true" dojoAttachPoint="filterTextBox" />
+                                    <input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyUp: _filter" trim="true" dojoAttachPoint="filterTextBox" />
                                     <button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _clearFilter" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear")%></button>
 
                                     <span style="display: none;" dojoAttachPoint="uploadFileButton">
@@ -61,7 +61,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div dojoAttachPoint="tablesSummary" style="display:none" class="portlet-pagination">
+                        <div dojoAttachPoint="tablesSummary" style="display:none" class="file-selector-tree__pagination portlet-pagination">
                             <button dojoType="dijit.form.Button" dojoAttachPoint="previousButton" dojoAttachEvent="onClick:_previousButtonClick"><%= LanguageUtil.get(pageContext, "Previous")%></button>
                             <div class="portlet-pagination__results" dojoAttachPoint="resultsSummary"><%= LanguageUtil.get(pageContext, "Viewing-Results-1-of-10")%></div>
                             <button dojoType="dijit.form.Button" dojoAttachPoint="nextButton" dojoAttachEvent="onClick:_nextButtonClick"><%= LanguageUtil.get(pageContext, "Next")%></button>

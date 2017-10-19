@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -167,7 +168,7 @@ public class PublishFactory {
 		if (webAsset instanceof WebAsset)
 		{
 			try {
-				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion);
+				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion); // todo: reviewing here
 			} catch (Exception e) {
 				Logger.error(PublishFactory.class, "publishAsset: Failed to publish the asset.", e);
 			}
@@ -307,9 +308,10 @@ public class PublishFactory {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
-                    Contentlet c = (Contentlet) asset;
-                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( c.getStructure() ).isMandatory() ) {
+                    Contentlet contentlet = (Contentlet) asset;
+                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( contentlet.getStructure() ).isMandatory() ) {
                         contentletAPI.publish( (Contentlet) asset, user, false );
+                        ContentletServices.invalidateLive(contentlet);
                     }
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
@@ -449,6 +451,7 @@ public class PublishFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public static List getUnpublishedRelatedAssetsForPage ( IHTMLPage htmlPage, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
 
         Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- PrePublishing" );

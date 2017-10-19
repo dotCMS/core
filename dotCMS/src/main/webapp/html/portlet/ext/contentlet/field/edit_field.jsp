@@ -701,7 +701,7 @@
                     selected = "SELECTED";
                 }
         %>
-        <option value="<%=pairvalue%>" <%=selected%>><%=name%></option>
+        <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
         <%
             }
         %>
@@ -738,9 +738,9 @@
                     }
                 }
             }
-    %>
-    <option onload="this.value='<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(pairvalue)%>'" <%=selected%>><%=name%></option>
-    <%
+            %>
+            <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+            <%
         }
     %>
     </select>
@@ -751,7 +751,10 @@
             var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
             for(var i = 0; i < multiselect.options.length; i++) {
                 if(multiselect.options[i].selected) {
-                    valuesList += multiselect.options[i].value + ",";
+                    if (valuesList != ""){
+                        valuesList += ","
+                    }
+                    valuesList += multiselect.options[i].value;
                 }
             }
             $('<%=field.getVelocityVarName()%>').value = valuesList;

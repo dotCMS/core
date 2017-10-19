@@ -40,10 +40,8 @@ public abstract class TextAreaField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.LABEL,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.VALIDATION,
-				ContentTypeFieldProperties.DEFAULT_TEXT, ContentTypeFieldProperties.HINT,
-				ContentTypeFieldProperties.USER_SEARCHABLE, ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.DATA_TYPE,
-				ContentTypeFieldProperties.RADIO_BLOCK_TEXT);
+		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
+				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
 	}
 }

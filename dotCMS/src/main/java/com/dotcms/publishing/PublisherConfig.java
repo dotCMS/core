@@ -1,5 +1,14 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -9,15 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 /**
  * Provides the main configuration parameters of a bundle sent via Push Publish.
@@ -67,6 +67,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 	private Operation operation;
 	private DeliveryStrategy deliveryStrategy = null;
+	private PublishAuditStatus publishAuditStatus;
 
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -537,6 +538,14 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	 */
 	public void setDeliveryStrategy(DeliveryStrategy deliveryStrategy) {
 		this.deliveryStrategy = deliveryStrategy;
+	}
+
+	public PublishAuditStatus getPublishAuditStatus() {
+		return publishAuditStatus;
+	}
+
+	public void setPublishAuditStatus(PublishAuditStatus publishAuditStatus) {
+		this.publishAuditStatus = publishAuditStatus;
 	}
 
 }

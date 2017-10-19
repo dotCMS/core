@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 
@@ -10,7 +11,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -20,11 +23,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -254,29 +259,12 @@ public class CMSUrlUtil {
 	 * @param languageId The current language Id
 	 * @return true if the URI is a vanity URL, false if not
 	 */
-	public boolean isVanityUrl(String uri, Host host, long languageId) {
+	public boolean isVanityUrl(final String uri,
+							   final Host host,
+							   final long languageId) {
 
-		if (uri.length() > 1 && uri.endsWith("/")) {
-			uri = uri.substring(0, uri.length() - 1);
-		}
-
-		CachedVanityUrl cachedVanityUrl = APILocator.getVanityUrlAPI()
-				.getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
-		boolean isVanityURL =
-				UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-						.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-
-		// Still support legacy cmsHomePage
-		if ("/".equals(uri) && !isVanityURL) {
-			uri = "/cmsHomePage";
-			cachedVanityUrl = APILocator.getVanityUrlAPI()
-					.getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
-			isVanityURL = UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-					.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-		}
-
-		return isVanityURL;
-	}
+		return APILocator.getVanityUrlAPI().isVanityUrl(uri, host, languageId);
+	} // isVanityUrl.
 
 	/**
 	 * Determine if the url should be filtered from the vanity treatment
@@ -414,5 +402,88 @@ public class CMSUrlUtil {
 				: request.getQueryString();
 	}
 
+	/**
+	 * Verifies if a given user has READ permissions on a given permissionable object, if there is
+	 * no logged in user and the permissionable object requires authentication a 401 response error
+	 * is set in order to redirect the user to the login page and if an user is already logged in
+	 * but that logged in user does not have read permissions on the given permissionable object a
+	 * 403 response error is set.
+	 *
+	 * @param permissionable Permissionable object to validate
+	 * @param requestedURIForLogging The original requested URI, this URI is required as a parameter
+	 * just for logging purposes, is not used to calculate anything.
+	 * @param user Current user
+	 */
+	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
+			final String requestedURIForLogging, final User user,
+			final HttpServletRequest request, final HttpServletResponse response)
+			throws IOException, DotDataException {
 
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+		// Check if the page is visible by a CMS Anonymous role
+		if (!permissionAPI
+				.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+
+			if (null == user) {//Not logged in user
+
+				Logger.debug(this.getClass(),
+						"CHECKING PERMISSION: Page doesn't have anonymous access ["
+								+ requestedURIForLogging + "]");
+				Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
+				Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
+
+				request.getSession().setAttribute(
+						com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+						"The requested page/file is unauthorized");
+				return true;
+			} else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
+					.contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+				// User is logged in need to check user permissions
+				if (!permissionAPI
+						.doesUserHavePermission(permissionable, PERMISSION_READ, user,
+								true)) {
+					// the user doesn't have permissions to see this page
+					// go to unauthorized page
+					Logger.warn(this.getClass(),
+							"CHECKING PERMISSION: Page doesn't have any access for this user ["
+									+ requestedURIForLogging + "]");
+					response.sendError(HttpServletResponse.SC_FORBIDDEN,
+							"The requested page/file is forbidden");
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * if the uri has a query string then remove it, otherwise keep it as it is
+	 * @param uri String
+	 * @return String
+	 */
+	public String getUriWithoutQueryString(final String uri) {
+
+		final int indexOf = uri.indexOf('?');
+		return (-1 != indexOf)?
+				uri.substring(0, indexOf):
+				uri;
+
+	} // getUriWithoutQueryString.
+
+	/**
+	 * if the uri has a query string then return it, otherwise null
+	 * @param uri String
+	 * @return String
+	 */
+	public String getQueryStringFromUri(final String uri) {
+
+		final int indexOf = uri.indexOf('?');
+		return (-1 != indexOf && indexOf+1 < uri.length())?
+				uri.substring(indexOf+1):
+				null;
+	}
 }

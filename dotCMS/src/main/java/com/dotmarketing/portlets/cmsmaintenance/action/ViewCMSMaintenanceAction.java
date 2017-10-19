@@ -1,30 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -69,7 +44,6 @@ import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -101,6 +75,29 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -195,13 +192,15 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.info(this, "Running Contentlet Reindex");
 						HibernateUtil.startTransaction();
 						conAPI.reindex();
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 					}catch(DotReindexStateException dre){
 						Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
 						errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
 						HibernateUtil.rollbackTransaction();
+					} finally {
+						DbConnectionFactory.closeSilently();
 					}
 				}
 				else
@@ -287,7 +286,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + "/backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";
@@ -665,7 +664,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     }
 
     				_writing = new File(backupTempFilePath + "/" + clazz.getName() + "_" + formatter.format(i) + ".xml");
-    				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+    				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
 
     				total = total + _list.size();
 
@@ -676,9 +675,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                         Logger.error(this,e.getMessage(),e);
                     }
 
-    				_xstream.toXML(_list, _bout);
+    				try {
+                        _xstream.toXML(_list, _bout);
+                    } finally {
+                        _bout.close();
+                    }
 
-    				_bout.close();
     				_list = null;
     				_dh = null;
     				_bout = null;
@@ -694,9 +696,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			List<Company> companies = new ArrayList<Company>(_list);
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + Company.class.getName() + ".xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -705,9 +710,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list.add(APILocator.getUserAPI().getDefaultUser());
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + User.class.getName() + ".xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -720,9 +728,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Counter.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -731,9 +742,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Address.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -742,9 +756,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollschoice.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -753,9 +770,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsdisplay.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -764,9 +784,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsquestion.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -775,9 +798,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsvote.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -793,9 +819,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Image.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -811,9 +840,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portlet.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -826,9 +858,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			}
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portletpreferences.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 			_list = null;
 			_bout = null;
 
@@ -879,28 +914,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		byte b[] = new byte[512];
 		ZipOutputStream zout = new ZipOutputStream(out);
 		ZipUtil.zipDirectory(backupTempFilePath, zout);
-//		File f = new File(backupTempFilePath);
-//		String[] s = f.list();
-//		for (int i = 0; i < s.length; i++) {
-//			if(s[i].equals(".svn")){
-//				continue;
-//			}
-//			f = new File(backupTempFilePath + File.separator + "" + s[i]);
-//			InputStream in;
-//			if(f.isDirectory()){
-//				in = new BufferedInputStream(new ByteArrayInputStream(f.));
-//			}else{
-//				in = new BufferedInputStream(new FileInputStream(f));
-//			}
-//			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-//			zout.putNextEntry(e);
-//			int len = 0;
-//			while ((len = in.read(b)) != -1) {
-//				zout.write(b, 0, len);
-//			}
-//			zout.closeEntry();
-//			in.close();
-//		}
 		zout.close();
 		out.close();
 	}

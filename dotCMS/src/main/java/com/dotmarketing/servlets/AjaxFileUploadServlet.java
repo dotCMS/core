@@ -1,36 +1,31 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-
-import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
-
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
 
 public class AjaxFileUploadServlet extends HttpServlet {
 
@@ -59,7 +54,8 @@ public class AjaxFileUploadServlet extends HttpServlet {
 	private void doFileRetrieve(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
 
-		try {
+        ServletOutputStream outStream = null;
+	    try {
 
 			String userId = null;
 			// if we want front end access, this validation would need to be altered
@@ -87,23 +83,24 @@ public class AjaxFileUploadServlet extends HttpServlet {
 			}
 
 			if(file.exists()) {
-				FileInputStream fis = new FileInputStream(file);
+				final InputStream is = Files.newInputStream(file.toPath());
 				byte[] buffer = new byte[1000];
 				int count = 0;
 				String mimeType = this.getServletContext().getMimeType(file.getName());
 				response.setContentType(mimeType);
-				ServletOutputStream outStream = response.getOutputStream();
-				while((count = fis.read(buffer)) > 0) {
+				outStream = response.getOutputStream();
+				while((count = is.read(buffer)) > 0) {
 					outStream.write(buffer, 0, count);
 				}
 				outStream.flush();
-				outStream.close();
 			}
 
 		} catch (Exception e) {
 			sendCompleteResponse(response, e.getMessage());
 			e.printStackTrace();
-		}
+		} finally {
+            CloseUtils.closeQuietly(outStream);
+        }
 
 	}
 
@@ -154,11 +151,12 @@ public class AjaxFileUploadServlet extends HttpServlet {
 					if(fileItem.getSize() == 0)
 						isEmptyFile = true;
 
-					if (fileItem.getName().contains(File.separator)) {
-						fileName = fileItem.getName().substring(
-								fileItem.getName().lastIndexOf(File.separator) + 1);
-					} else {
-						fileName = fileItem.getName();
+					fileName = fileItem.getName();
+
+					fileName = FilenameUtils.separatorsToSystem(fileName);
+
+					if (fileName.contains(File.separator)) {
+						fileName = fileName.substring(fileName.lastIndexOf(File.separator) + 1);
 					}
 					fileName = ContentletUtil.sanitizeFileName(fileName);
 					fieldName = ContentletUtil.sanitizeFileName(fieldName);

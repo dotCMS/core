@@ -255,7 +255,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         categoryAPI.save( parentCategory, childCategory2, user, false );
         categories.add( childCategory2 );
 
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //***************************************************************
         //Verify If we find the parent for the categories we just added categories
@@ -299,7 +299,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         APILocator.getContentletAPI().isInodeIndexed( contentlet.getInode() );
         APILocator.getVersionableAPI().setLive( contentlet );
 
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //***************************************************************
         //Verify If we find the parent for these categories
@@ -328,8 +328,6 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         //***************************************************************
         //Creating new categories
-
-        HibernateUtil.startTransaction();
 
         //---------------------------------------------------------------
         //Adding the parent category
@@ -400,13 +398,12 @@ public class CategoryAPITest extends IntegrationTestBase {
         //Saving it
         categoryAPI.save( childCategory2, subCategory, user, false );
 
-        HibernateUtil.commitTransaction();
 
         //***************************************************************
 
         //PARENT CATEGORY
         //Verify If we find the children for the parent category we just added categories
-        List<String> cachedCategories = categoryCache.getChildren( parentCategory );
+        List<Category> cachedCategories = categoryCache.getChildren( parentCategory );
         assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
         List<Category> children = categoryAPI.getChildren( parentCategory, user, true );
         assertNotNull( children );
@@ -420,16 +417,16 @@ public class CategoryAPITest extends IntegrationTestBase {
         //---------------------------------------------------------------
         //CATEGORY 1
         //Verify If we find the parent for the categories we just added categories
-        cachedCategories = categoryCache.getParents( childCategory1 );
-        assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
+        List<String> cachedCategoriesStr = categoryCache.getParents( childCategory1 );
+        assertNotNull( cachedCategories ); //Verify the cache -> when you create a child cat, the parent is load on cache.
         List<Category> parents = categoryAPI.getParents( childCategory1, user, false );
         assertNotNull( parents );
         assertTrue( parents.size() > 0 );
         assertEquals( parents.get( 0 ), parentCategory );
         //Now it should be something in cache
-        cachedCategories = categoryCache.getParents( childCategory1 );
-        assertNotNull( cachedCategories );
-        assertTrue( cachedCategories.size() == 1 );
+        cachedCategoriesStr = categoryCache.getParents( childCategory1 );
+        assertNotNull( cachedCategoriesStr );
+        assertTrue( cachedCategoriesStr.size() == 1 );
 
         //---------------------------------------------------------------
         //CATEGORY 2
@@ -452,16 +449,16 @@ public class CategoryAPITest extends IntegrationTestBase {
         //---------------------------------------------------------------
         //SUB-CATEGORY
         //Verify If we find the parent for the sub-category we just added
-        cachedCategories = categoryCache.getParents( subCategory );
-        assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
+        cachedCategoriesStr = categoryCache.getParents( subCategory );
+        assertNotNull( cachedCategories );//Verify the cache -> when you create a child cat, the parent is load on cache.
         parents = categoryAPI.getParents( subCategory, user, false );
         assertNotNull( parents );
         assertTrue( parents.size() > 0 );
         assertEquals( parents.get( 0 ), childCategory2 );
         //Now it should be something in cache
-        cachedCategories = categoryCache.getParents( subCategory );
-        assertNotNull( cachedCategories );
-        assertTrue( cachedCategories.size() == 1 );
+        cachedCategoriesStr = categoryCache.getParents( subCategory );
+        assertNotNull( cachedCategoriesStr );
+        assertTrue( cachedCategoriesStr.size() == 1 );
 
         //***************************************************************
         //Lets add another subcategory to verify we are cleaning the caches

@@ -199,7 +199,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 
 		if(autocommit) {
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}
 
 		// todo: make it async by thread pool
@@ -525,7 +525,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					host = new Host();
 				if(!perAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
 					SessionMessages.add(req, "message", "User needs 'Add Children' Permissions on selected host");
-					throw new DotSecurityException("User have no Add Children Permissions on selected host");
+					throw new DotSecurityException("User has no Add Children Permissions on selected host");
 				}
 				currentContentlet.setHost(hostId);
 				currentContentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
@@ -537,7 +537,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				folder = fldrAPI.find(folderInode, user, true);
 				if(isNew && !perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
 					SessionMessages.add(req, "message", "User needs 'Add Children Permissions' on selected folder");
-					throw new DotSecurityException("User have no Add Children Permissions on selected folder");
+					throw new DotSecurityException("User has no Add Children Permissions on selected folder");
 				}
 				currentContentlet.setHost(folder.getHostId());
 				currentContentlet.setFolder(folderInode);
@@ -1289,6 +1289,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			SessionMessages.add(req, "message", "message.contentlets.batch.deleted.error");
 			throw ae;
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 }

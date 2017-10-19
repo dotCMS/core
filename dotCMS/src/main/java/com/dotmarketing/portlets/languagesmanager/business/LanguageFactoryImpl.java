@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import static com.dotcms.util.CloseUtils.closeQuietly;
+import static com.dotcms.util.ConversionUtils.toLong;
+
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -19,14 +22,22 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 
 import java.io.*;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
-
-import static com.dotcms.util.CloseUtils.closeQuietly;
-import static com.dotcms.util.ConversionUtils.toLong;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 /**
  * Implementation class for the {@link LanguageFactory}.
  * 
@@ -81,11 +92,23 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
         	if(lang == null) {
 	            HibernateUtil dh = new HibernateUtil(Language.class);
-	            dh.setQuery(
-	                "from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and lower(country_code) = ?");
-	            dh.setParam(languageCode);
-	            dh.setParam(countryCode);
+	            if(UtilMethods.isSet(countryCode)) {
+					dh.setQuery(
+							"from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and lower(country_code) = ?");
+					dh.setParam(languageCode);
+					dh.setParam(countryCode);
+				}else{
+					dh.setQuery(
+							"from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and (country_code = '' OR country_code IS NULL)");
+					dh.setParam(languageCode);
+				}
 	            lang = (Language) dh.load();
+
+	            //Validate we are returning a valid Language object
+				if(lang != null && lang.getId() == 0){
+					lang = null;//Clean up as the dh.load() returned just an empty instance
+				}
+
 	            if(lang != null){
 	            	CacheLocator.getLanguageCache().addLanguage(lang);
 	            }
@@ -162,6 +185,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
             dh.setQuery("from language in class com.dotmarketing.portlets.languagesmanager.model.Language where id = ? ");
             dh.setParam(id);
             lang = (Language) dh.load();
+
+			//Validate we are returning a valid Language object
+			if(lang != null && lang.getId() == 0){
+				lang = null;//Clean up as the dh.load() returned just an empty instance
+			}
+
             if(lang != null){
             	CacheLocator.getLanguageCache().addLanguage(lang);
             }
@@ -343,9 +372,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			list = new LinkedList<LanguageKey>();
 			LineNumberReader lineNumberReader = null;
 			InputStreamReader is = null;
-			FileInputStream fs = null;
+			InputStream fs = null;
 			try {
-				fs = new FileInputStream(from);
+				fs = Files.newInputStream(from.toPath());
 				is = new InputStreamReader(fs,"UTF8");
 				lineNumberReader = new LineNumberReader(is);
 				String line = "";
@@ -451,7 +480,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		if(keys == null)
 			keys = new HashMap<String, String>();
 
-		FileInputStream fileReader = null;
+		InputStream fileReader = null;
 		PrintWriter tempFileWriter = null;
 
 		String filePath = getGlobalVariablesPath() + "cms_language_" + fileLangName + ".properties";
@@ -463,63 +492,52 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			if (tempFile.exists())
 				tempFile.delete();
 			if (tempFile.createNewFile()) {
-				fileReader = new FileInputStream(file);
+				fileReader = Files.newInputStream(file.toPath());
 
 				tempFileWriter = new PrintWriter(tempFilePath, "UTF8");
 
 				for (String k : toDeleteKeys) {
 					keys.remove(k);
 				}
-				
-			
+
 				for(Map.Entry<String,String> newKey : keys.entrySet()) {
 					tempFileWriter.println(newKey.getKey() + "=" + newKey.getValue());
 				}
 			} else {
 				Logger.warn(this, "Error creating properties temp file: '" + tempFilePath + "' already exists.");
 			}
-		} catch (FileNotFoundException e) {
-			throw e;
 		} catch (IOException e) {
 			throw e;
 		} finally {
 			if(fileReader != null)
 				fileReader.close();
-			if(fileReader != null) {
+			if(tempFileWriter != null) {
 				tempFileWriter.flush();
 				tempFileWriter.close();
 			}
 
 		}
 		
-		FileChannel fileToChannel = null;
-		FileChannel fileFromChannel = null;
+		try(InputStream tempFileInputStream = Files.newInputStream(tempFile.toPath());
+			OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
 
-		try {
 			if (file.exists() && tempFile.exists()) {
-				fileToChannel = (new FileOutputStream(file)).getChannel();
-				fileFromChannel = (new FileInputStream(tempFile)).getChannel();
-				fileFromChannel.transferTo(0, fileFromChannel.size(), fileToChannel);
+                final ReadableByteChannel inputChannel = Channels.newChannel(tempFileInputStream);
+                final WritableByteChannel outputChannel = Channels.newChannel(fileOutputStream);
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                inputChannel.close();
+                outputChannel.close();
 			} else {
 				if (!file.exists())
 					Logger.warn(this, "Error: properties file: '" + filePath + "' doesn't exists.");
 				if (!tempFile.exists())
 					Logger.warn(this, "Error: properties file: '" + tempFilePath + "' doesn't exists.");
 			}
-		} catch (FileNotFoundException e) {
-			throw e;
 		} catch (IOException e) {
 			throw e;
-		} finally {
-			if(fileFromChannel != null)
-				fileFromChannel.close();
-			if(fileToChannel != null) {
-				fileToChannel.force(true);
-				fileToChannel.close();
-			}
 		}
 
- 		tempFile.delete();
+		tempFile.delete();
 	}
 
 	@Override

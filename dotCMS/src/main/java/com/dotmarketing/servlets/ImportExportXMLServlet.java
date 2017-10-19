@@ -1,12 +1,28 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.repackage.com.oreilly.servlet.MultipartRequest;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.metadata.ClassMetadata;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.beans.Clickstream;
+import com.dotmarketing.beans.ClickstreamRequest;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +30,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,33 +41,12 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.metadata.ClassMetadata;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
-import com.dotcms.repackage.com.oreilly.servlet.MultipartRequest;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * Description of the Class
@@ -103,7 +100,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 				response.getWriter().println("Zipping up to file:" + zipFile.getAbsolutePath());
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				response.getWriter().println("Done.");
@@ -182,30 +179,24 @@ public class ImportExportXMLServlet extends HttpServlet {
 		String tempdir = FileUtil.getRealPath(backupTempFilePath);
 
 		MultipartRequest mpr;
-		try {
-			mpr = new MultipartRequest(request, tempdir, 1000000000);
-			File importFile = mpr.getFile("fileUpload");
+        mpr = new MultipartRequest(request, tempdir, 1000000000);
+        File importFile = mpr.getFile("fileUpload");
 
-			/*
-			 * Unzip zipped backups
-			 */
-			if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
+        /*
+         * Unzip zipped backups
+         */
+        if (importFile != null && importFile.getName().toLowerCase().endsWith(".zip")) {
 
-				InputStream in = new BufferedInputStream(new FileInputStream(importFile));
-				ZipInputStream zin = new ZipInputStream(in);
-				ZipEntry e;
+            try(final InputStream in = new BufferedInputStream(Files.newInputStream(importFile.toPath()));
+                    ZipInputStream zin = new ZipInputStream(in)){
+                ZipEntry e;
 
-				while ((e = zin.getNextEntry()) != null) {
-					unzip(zin, e.getName());
-				}
-				zin.close();
-				importFile.delete();
-			}
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Logger.error(this,e.getMessage(),e);
-		}
+                while ((e = zin.getNextEntry()) != null) {
+                    unzip(zin, e.getName());
+                }
+            }
+            importFile.delete();
+        }
 		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] _tempFiles = f.list(new XMLFileNameFilter());
 		PrintWriter out = response.getWriter();
@@ -250,7 +241,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				} else {
 
 				   _dh = new HibernateUtil(_importClass);
-				   _bin = new BufferedInputStream(new FileInputStream(f));
+				   _bin = new BufferedInputStream(Files.newInputStream(f.toPath()));
 				   List l = (List) _xstream.fromXML(_bin);
 				   out.println("Found :\t" + l.size() + " " + _className + "(s)");
 				   String id = _dh.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
@@ -275,7 +266,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 		} catch (DotHibernateException e) {
 		   // TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
 		} catch (ClassNotFoundException e1) {
@@ -346,15 +337,19 @@ public class ImportExportXMLServlet extends HttpServlet {
 				 */
 
 				_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + clazz.getName() + ".xml"));
-				_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
+				_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
 				_dh = new HibernateUtil(clazz);
 				_dh.setQuery("from " + clazz.getName());
 
 				_list = _dh.list();
 				Logger.info(this, "writing : " + _list.size() + " records to " + clazz.getName());
-				_xstream.toXML(_list, _bout);
 
-				_bout.close();
+                try {
+                    _xstream.toXML(_list, _bout);
+                } finally {
+                    CloseUtils.closeQuietly(_bout);
+                }
+
 				_list = null;
 				_dh = null;
 				_bout = null;
@@ -366,9 +361,12 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_list = PublicCompanyFactory.getCompanies();
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
-			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                CloseUtils.closeQuietly(_bout);
+            }
 			_list = null;
 			_bout = null;
 
@@ -376,9 +374,12 @@ public class ImportExportXMLServlet extends HttpServlet {
 			_list = APILocator.getUserAPI().findAllUsers();
 			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
-			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
+			_bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(_writing.toPath()), CHARSET));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                CloseUtils.closeQuietly(_bout);
+            }
 			_list = null;
 			_bout = null;
 
@@ -405,15 +406,16 @@ public class ImportExportXMLServlet extends HttpServlet {
 		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] s = f.list();
 		for (int i = 0; i < s.length; i++) {
-			InputStream in = new BufferedInputStream(new FileInputStream(f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s[i]))));
-			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-			zout.putNextEntry(e);
-			int len = 0;
-			while ((len = in.read(b)) != -1) {
-				zout.write(b, 0, len);
-			}
-			zout.closeEntry();
-			in.close();
+			final String realPath = FileUtil.getRealPath(backupTempFilePath + "/" + s[i]);
+			try (InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(realPath)))){
+                ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
+                zout.putNextEntry(e);
+                int len = 0;
+                while ((len = in.read(b)) != -1) {
+                    zout.write(b, 0, len);
+                }
+                zout.closeEntry();
+            }
 		}
 		zout.close();
 		out.close();
@@ -446,13 +448,13 @@ public class ImportExportXMLServlet extends HttpServlet {
 	private void unzip(ZipInputStream zin, String s) throws IOException {
 		Logger.info(this, "unzipping " + s);
 		File f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s));
-		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
-		byte[] b = new byte[512];
-		int len = 0;
-		while ((len = zin.read(b)) != -1) {
-			out.write(b, 0, len);
-		}
-		out.close();
+		try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(f.toPath()))){
+            final byte[] b = new byte[512];
+            int len = 0;
+            while ((len = zin.read(b)) != -1) {
+                out.write(b, 0, len);
+            }
+        }
 	}
 
 	/**

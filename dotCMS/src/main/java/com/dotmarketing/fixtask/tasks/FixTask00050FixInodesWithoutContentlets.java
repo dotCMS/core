@@ -1,16 +1,8 @@
 package com.dotmarketing.fixtask.tasks;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -21,8 +13,16 @@ import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Fix database inodes of type contentlet without a contentlet in the content table
@@ -122,7 +122,7 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 				Audit.setRecordsAltered(counter);
 				Audit.setAction("task 50: Fixed FixInodesWithoutContentlets");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
@@ -155,11 +155,15 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 
 			BufferedOutputStream _bout = null;
 			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
+				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+			} catch (IOException e) {
 
 			}
-			_xstream.toXML(modifiedData, _bout);
+			try {
+				_xstream.toXML(modifiedData, _bout);
+			} finally {
+				CloseUtils.closeQuietly(_bout);
+			}
 		}
 		return modifiedData;
 	}

@@ -110,7 +110,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 
 		Logger.debug(this, "Unspecified Action");
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		setForward(req, "portlet.ext.workflows.edit_workflow_task");
 	}

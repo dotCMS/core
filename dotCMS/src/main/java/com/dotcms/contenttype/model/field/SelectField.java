@@ -42,12 +42,10 @@ public abstract class SelectField extends SelectableValuesField {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.LABEL,
-				ContentTypeFieldProperties.VALUE, ContentTypeFieldProperties.TEXT_AREA_VALUES,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.DEFAULT_TEXT,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.USER_SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.DATA_TYPE,
-				ContentTypeFieldProperties.UNIQUE, ContentTypeFieldProperties.RADIO_TEXT,
-				ContentTypeFieldProperties.RADIO_BOOL, ContentTypeFieldProperties.RADIO_DECIMAL, ContentTypeFieldProperties.RADIO_NUMBER);
+		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
+				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
+				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
+				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE,
+				ContentTypeFieldProperties.UNIQUE);
 	}
 }

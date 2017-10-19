@@ -261,7 +261,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 			Logger.error(this, e.getMessage());
 			e.printStackTrace();
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	public boolean forceRun() {

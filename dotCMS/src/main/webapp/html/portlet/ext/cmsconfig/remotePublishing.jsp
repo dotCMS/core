@@ -836,15 +836,21 @@ function deleteEnvPushHistory(envId) {
         handleAs : "json",
         sync: false,
         load : function(data) {
-            var confirmDialog  =new dijit.Dialog({
-                id: "deleteHistory",
-                class: "noDijitDialogTitleBar",
-                content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
-            });
+            var confirmDialog = dijit.byId("deleteHistory");
+
+            if(confirmDialog===null || confirmDialog === undefined) {
+                confirmDialog = new dijit.Dialog({
+                    id: "deleteHistory",
+                    class: "noDijitDialogTitleBar",
+                    content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+                });
+            }
+
             confirmDialog.show();
         },
         error : function(error) {
-            targetNode.innerHTML = "An unexpected error occurred: " + error;
+            console.log("this is the error:" + error);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
 

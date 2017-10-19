@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.personas.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -27,7 +28,7 @@ import java.util.List;
 
 public class PersonaAPIImpl implements PersonaAPI {
 
-	PersonaFactory pFactory = FactoryLocator.getPersonaFactory();
+	final PersonaFactory personaFactory = FactoryLocator.getPersonaFactory();
 
 	@Override
 	public List<Field> getBasePersonaFields(Structure structure) {
@@ -73,12 +74,11 @@ public class PersonaAPIImpl implements PersonaAPI {
 		field.setFieldContentlet("text_area2");
 		fields.add(field);
 
-
-
 		return fields;
 
 	}
 
+	@WrapInTransaction
 	@Override
 	public void createPersonaBaseFields(Structure structure) throws DotDataException, DotStateException {
 		if (structure == null || !InodeUtils.isSet(structure.getInode())) {
@@ -232,6 +232,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 	 *             The current user does not have permissions to perform the
 	 *             requested action.
 	 */
+	@WrapInTransaction
 	public void enableDisablePersonaTag ( Contentlet personaContentlet, boolean enable ) throws DotDataException, DotSecurityException {
 
 		Persona persona = fromContentlet(personaContentlet);
@@ -270,15 +271,14 @@ public class PersonaAPIImpl implements PersonaAPI {
 	@Override
 	public Persona fromContentlet(final Contentlet con) throws DotStateException {
 
-		Persona p = new Persona(con);
-
-		return p;
+		return new Persona(con);
 	}
 
+	@WrapInTransaction
 	@Override
 	public void createDefaultPersonaStructure() throws DotDataException {
 
-		pFactory.createDefaultPersonaStructure();
+		personaFactory.createDefaultPersonaStructure();
 	}
 
 	@Override

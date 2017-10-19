@@ -9,11 +9,15 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.json.JSONException;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,6 +54,11 @@ public class FieldTypeResourceTest {
 
 
         RestUtilTest.verifySuccessResponse(response);
-        assertEquals(((ResponseEntityView) response.getEntity()).getEntity(), fieldTypes);
+
+        ImmutableList<Map<String, Object>> expect = fieldTypes.stream()
+                .map(fieldType -> fieldType1.toMap())
+                .collect(toImmutableList());
+        
+        assertEquals(expect, ((ResponseEntityView) response.getEntity()).getEntity());
     }
 }

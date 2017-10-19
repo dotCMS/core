@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@ include file="/html/portlet/ext/common/edit_permissions_tab_js_inc.jsp" %>
 
 <!-- START Loading Image Div -->
@@ -12,25 +14,27 @@
 <div id="assetPermissionsWrapper">
 <div style="padding-left:20px;padding-bottom:10px;white-space: nowrap;font-size:88%;" class="permissionType">
 	<%if(asset instanceof Folder){%>
-		 <%= LanguageUtil.get(pageContext, "Folder") %>: <b><%= APILocator.getIdentifierAPI().find((Folder) asset).getPath() %></b>
+		 <%= LanguageUtil.get(pageContext, "Folder") %>:  <b><%= APILocator.getIdentifierAPI().find((Folder) asset).getPath() %></b>
 	<%}else if(asset instanceof Host){%>
-		 <%= LanguageUtil.get(pageContext, "Host") %>: <b><%= ((Host) asset).getHostname() %></b>
+		 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Host) asset).getHostname() %></b>
 	<%}else if(asset instanceof Contentlet){%>
 		<%if( ((Contentlet) asset).getStructureInode().equals(APILocator.getHostAPI().findSystemHost().getStructureInode())){ %>
-			 <%= LanguageUtil.get(pageContext, "Host") %>: <b><%= ((Contentlet) asset).getTitle() %></b>
+			 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>
 		<%}else if(!((Contentlet) asset).getPermissionId().isEmpty()) { %>
-			 <%= LanguageUtil.get(pageContext, "Content") %>: <b><%= ((Contentlet) asset).getTitle() %></b>		
+			 <%= LanguageUtil.get(pageContext, "Content") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>		
 		<%} %>
 	<%}else if(asset instanceof Structure){%>
 		 <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= ((Structure) asset).getName() %></b>
+	<%}else if(asset instanceof ContentType){%>
+         <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= new StructureTransformer(ContentType.class.cast(asset)).asStructure().getName() %></b>
 	<%}else if(asset instanceof Category){%>
-		 <%= LanguageUtil.get(pageContext, "Category") %>: <b><%= ((Category) asset).getCategoryName() %></b>
+		 <%= LanguageUtil.get(pageContext, "Category") %>:  <b><%= ((Category) asset).getCategoryName() %></b>
 	<%}%>
 </div>
 <!-- START Button Row -->
 	<div id="inheritingFrom" class="permissions__bar-user-role" style="display: none;">
 		<div class="permissions__bar-user-role-main">
-			<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>
+			<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>&nbsp;
 			<span id="inheritingFromSources"></span>
 		</div>
 		<div class="permissions__bar-user-role-actions">

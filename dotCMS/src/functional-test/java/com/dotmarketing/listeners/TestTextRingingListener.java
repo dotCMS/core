@@ -1,13 +1,14 @@
 package com.dotmarketing.listeners;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-
-import javax.servlet.http.HttpServletResponse;
-import java.text.NumberFormat;
-import java.util.List;
 
 /**
  * Created by Jonathan Gamba.
@@ -20,8 +21,12 @@ public class TestTextRingingListener extends RunListener {
     private int statusCode = HttpServletResponse.SC_OK;
     private StringBuffer globalBuffer;
 
+    private HashMap<Description, Collection<String>> failures;
+    private int realFailures = 0;
+
     public TestTextRingingListener () {
         this.globalBuffer = new StringBuffer();
+        this.failures = new HashMap<>();
     }
 
     /**
@@ -59,7 +64,24 @@ public class TestTextRingingListener extends RunListener {
      */
     @Override
     public void testFailure ( Failure failure ) {
-        getBuffer().append( 'E' );
+
+        Boolean exist = Boolean.FALSE;
+
+        //A test can generate multiple errors
+        if (this.failures.containsKey(failure.getDescription())) {
+            exist = Boolean.TRUE;
+            Collection<String> traces = this.failures.get(failure.getDescription());
+            traces.add(failure.getTrace());
+        } else {
+            Collection<String> traces = new ArrayList<>();
+            traces.add(failure.getTrace());
+            this.failures.put(failure.getDescription(), traces);
+        }
+
+        if (!exist) {
+            this.realFailures++;
+            getBuffer().append('E');
+        }
     }
 
     /**
@@ -89,24 +111,37 @@ public class TestTextRingingListener extends RunListener {
 
     protected void printFailures ( Result result ) {
 
-        List<Failure> failures = result.getFailures();
-        if ( failures.size() == 0 )
+        if (this.failures.isEmpty()) {
             return;
+        }
 
-        if ( failures.size() == 1 )
-            getBuffer().append( "There was " ).append( failures.size() ).append( " failure:" ).append( "\n" );
-        else
-            getBuffer().append( "There were " ).append( failures.size() ).append( " failures:" ).append( "\n" );
+        if (this.failures.size() == 1) {
+            getBuffer().append("There was ").append(this.failures.size()).append(" failure:")
+                    .append("\n");
+        } else {
+            getBuffer().append("There were ").append(this.failures.size()).append(" failures:")
+                    .append("\n");
+        }
 
         int i = 1;
-        for ( Failure each : failures )
-            printFailure( each, "" + i++ );
+        for (Failure failure : result.getFailures()) {
+            printFailure(failure, "" + i++);
+        }
     }
 
-    protected void printFailure ( Failure each, String prefix ) {
+    protected void printFailure(Failure failure, String prefix) {
 
-        getBuffer().append( prefix ).append( ") " ).append( each.getTestHeader() ).append( "\n" );
-        getBuffer().append( each.getTrace() );
+        if (this.failures.containsKey(failure.getDescription())) {
+            getBuffer().append(prefix).append(") ").append(failure.getTestHeader()).append("\n");
+
+            Collection<String> traces = this.failures.get(failure.getDescription());
+            for (String trace : traces) {
+                getBuffer().append(trace);
+            }
+
+            //As we already handle this failure we need to remove it in order to avoid process it again
+            this.failures.remove(failure.getDescription());
+        }
     }
 
     protected void printFooter ( Result result ) {
@@ -119,7 +154,8 @@ public class TestTextRingingListener extends RunListener {
         } else {
             getBuffer().append( "\n" );
             getBuffer().append( "FAILURES!!!" ).append( "\n" );
-            getBuffer().append( "Tests run: " ).append( result.getRunCount() ).append( ",  Failures: " ).append( result.getFailureCount() ).append( "\n" );
+            getBuffer().append("Tests run: ").append(result.getRunCount()).append(",  Failures: ")
+                    .append(this.realFailures).append("\n");
         }
 
         getBuffer().append( "\n" );

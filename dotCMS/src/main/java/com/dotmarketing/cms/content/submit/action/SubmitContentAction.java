@@ -17,7 +17,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
@@ -25,6 +24,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -57,7 +57,8 @@ import com.liferay.util.servlet.UploadServletRequest;
  * @author Oswaldo
  *
  */
-public class SubmitContentAction extends DispatchAction{
+@Deprecated
+public class SubmitContentAction extends SecureAction{
 
 
 	private final LanguageAPI langAPI = APILocator.getLanguageAPI();
@@ -414,7 +415,7 @@ public class SubmitContentAction extends DispatchAction{
 			message.add(Globals.MESSAGE_KEY, new ActionMessage("message.contentlet.save"));
 			session.setAttribute(Globals.MESSAGE_KEY, message);
 
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			if(!APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode())){
 				Logger.error(this, "Unable to index contentlet");
 			}

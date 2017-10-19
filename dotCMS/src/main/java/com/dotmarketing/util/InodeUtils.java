@@ -1,11 +1,18 @@
 package com.dotmarketing.util;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -24,6 +31,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class InodeUtils {
 
@@ -170,5 +178,36 @@ public class InodeUtils {
 		}
 
 		return assetType;
+	}
+	
+	/**
+	 * This method intents to replace any call to the deprecated InodeFactory.getInode,
+	 * since the Structure mapping was deleted from the Hibernate files, now you need to 
+	 * get it via the ContentTypeAPI.
+	 * 
+	 * @param inode
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@CloseDBIfOpened
+	public static Inode getInode(final String inode) throws DotDataException, DotSecurityException{
+	    Inode inodeObj = null;
+        //Using the ShortyAPI to identify the nature of this inode
+        final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
+        
+      //Hibernate won't handle structures, thats why we need a special case here
+        if ( shortOpt.isPresent() && ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+            //Search for the given ContentType inode
+            final ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+            if ( null != foundContentType ) {
+                //Transform the found content type to a Structure
+                inodeObj = new StructureTransformer(foundContentType).asStructure();
+            }
+        } else {
+            inodeObj = InodeFactory.getInode(inode, Inode.class);
+        }
+        return inodeObj;
 	}
 }
