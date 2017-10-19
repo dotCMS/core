@@ -4,6 +4,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -116,12 +119,16 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
 
             BufferedOutputStream bufferedOutObj = null;
             try {
-                bufferedOutObj = new BufferedOutputStream(new FileOutputStream(writingObj));
+                bufferedOutObj = new BufferedOutputStream(Files.newOutputStream(writingObj.toPath()));
             } catch (FileNotFoundException e) {
                 Logger.error(FixTask00095DeleteOrphanRelationships.class, 
-                        "Could not write to Fix Task status file.", e);
+                        "Cannot write FixTask status file. File in filesystem cannot be found.", e);
+            } catch (IOException e) {
+                Logger.error(FixTask00095DeleteOrphanRelationships.class, 
+                        "Cannot write FixTask Status file due to IOException.", e);
             }
             xstreamObj.toXML(new ArrayList<>(modifiedData), bufferedOutObj);
+            CloseUtils.closeQuietly(bufferedOutObj);
         }
         return new ArrayList<>(modifiedData);
     }
@@ -188,7 +195,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         List<String> relInodes = ((Map<String, String>) results).values()
                 .stream().map(Object::toString).collect(Collectors.toList());
 
-        relInodes.forEach(item->{
+        relInodes.forEach((String item) -> {
             try {
                 Relationship rel = APILocator.getRelationshipAPI().byInode(item);
                 relsToClearInCache.add(rel);    
@@ -214,7 +221,8 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run () {
                 //Invalidating Relationships in Cache
-                inodesToClearInCache.forEach(rel -> CacheLocator.getRelationshipCache().removeRelationshipByInode(rel));
+                inodesToClearInCache.forEach(
+                        (Relationship rel) -> CacheLocator.getRelationshipCache().removeRelationshipByInode(rel));
             }
         }); 
     }
