@@ -202,8 +202,9 @@ public class BundlePublisher extends Publisher {
 
                 //Execute the handlers
                 for (IHandler handler : handlers) {
-
+                    Logger.info(this, "Start of Handler: " + handler.getClass().getSimpleName());
                     handler.handle(folderOut);
+                    Logger.info(this, "End of Handler: " + handler.getClass().getSimpleName());
 
                 }
 
