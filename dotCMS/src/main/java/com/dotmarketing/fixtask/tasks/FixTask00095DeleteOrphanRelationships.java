@@ -97,10 +97,10 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     public List<Map<String, String>> getModifiedData() {
         if (modifiedData.isEmpty()) {
             final String fixesUriSubstring = "fixes";
-            XStream xstreamObj = new XStream(new DomDriver());
-            LocalDate date = LocalDate.now();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            String lastmoddate = sdf.format(date);
+            final XStream xstreamObj = new XStream(new DomDriver());
+            final LocalDate date = LocalDate.now();
+            final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+            final String lastModDate = sdf.format(date);
             File writingObj = null;
             if (!new File(ConfigUtils.getBackupPath() + File.separator
                     + fixesUriSubstring).exists()) {
@@ -108,7 +108,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
                         .mkdirs();
             }
             writingObj = new File(ConfigUtils.getBackupPath() + File.separator
-                    + fixesUriSubstring + java.io.File.separator + lastmoddate + "_"
+                    + fixesUriSubstring + File.separator + lastModDate + "_"
                     + "FixTask00095DeleteOrphanRelationships" + ".xml");
 
             BufferedOutputStream bufferedOutObj = null;
@@ -137,7 +137,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
             Logger.error(this, e.getMessage(), e);
         }
         
-        int total = (inodesInStructure != null && !inodesInStructure.isEmpty()) ? 
+        final int total = (inodesInStructure != null && !inodesInStructure.isEmpty()) ? 
                 inodesInStructure.size() : 0;
                 
         Logger.debug(CMSMaintenanceFactory.class, "Found " + total + " invalid inodes.");
@@ -168,7 +168,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     }
     
     private void saveFixAuditRecord(int total) throws DotHibernateException {
-        FixAudit auditObj = new FixAudit();
+        final FixAudit auditObj = new FixAudit();
         auditObj.setTableName("relationship");
         auditObj.setDatetime(new Date());
         auditObj.setRecordsAltered(total);
@@ -185,7 +185,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         final String query3 = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM relationship " + 
                 "WHERE relationship.inode = inode.inode) and inode.type like '%s' ",Inode.Type.RELATIONSHIP.getTableName());
         
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.executeStatement(query1);
         dc.executeStatement(query2);
         dc.executeStatement(query3);
