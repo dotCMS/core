@@ -17,14 +17,17 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
@@ -41,7 +44,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
 
     /** Lookup of records in Relationship table pointing 
      * to missing Content Types in the Structure table */
-    private static final String VERIFICATION_QUERY = "SELECT inode FROM relationship WHERE NOT EXISTS " +
+    private static final String VERIFICATION_QUERY = "SELECT inode AS inode FROM relationship WHERE NOT EXISTS " +
             "(SELECT * FROM structure WHERE relationship.parent_structure_inode = structure.inode) " +
             " OR NOT EXISTS " +
             "(SELECT * FROM structure WHERE relationship.child_structure_inode = structure.inode) ";
@@ -79,8 +82,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
                         "An issue happened during execution of DeleteOrphanRelationships task",
                         e1);
                 FixAssetsProcessStatus.setActual(-1);
-            } 
-            catch (Exception e2) {
+            } catch (Exception e2) {
                 Logger.debug(
                         FixTask00095DeleteOrphanRelationships.class,
                         "There was an unexpected problem during execution of DeleteOrphanRelationships task",
@@ -147,17 +149,16 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     }
 
     
-    private void startCleanup() {
+    private void startCleanup() throws DotDataException {
         try {
+            
             cleanUpOrphanRelationships();
             // Set the number of records that were fixed
             FixAssetsProcessStatus.setErrorsFixed(modifiedData.size());
-        } catch (SQLException e1) {
+        } catch (SQLException | DotHibernateException e1) {
             Logger.error(this, "There was an unexpected problem with cleaning up relationship in Database.", e1);
             modifiedData.clear();
-        } finally {
-            flushCacheRegions();
-        } 
+        }
     }
     
     private void saveFixAuditRecord(final int total) throws DotHibernateException {
@@ -169,24 +170,50 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
         HibernateUtil.save(auditObj);
     }
     
-    private void cleanUpOrphanRelationships() throws SQLException{
-        final String query1 = "DELETE FROM relationship WHERE NOT EXISTS " 
-                + " (SELECT * FROM structure WHERE structure.inode = relationship.parent_structure_inode)";
-        final String query2 = "DELETE FROM relationship WHERE NOT EXISTS " 
-                + " (SELECT * FROM structure WHERE structure.inode = relationship.child_structure_inode)";
-        final String query3 = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM relationship " + 
+    private void cleanUpOrphanRelationships() throws SQLException, DotDataException{
+        
+        
+        String query1 = "DELETE FROM relationship WHERE parent_structure_inode = ?";
+        String query2 = "DELETE FROM relationship WHERE child_structure_inode = ?";
+        String query3 = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM relationship " + 
                 "WHERE relationship.inode = inode.inode) and inode.type like '%s' ",Inode.Type.RELATIONSHIP.getTableName());
         
-        final DotConnect dc = new DotConnect();
-        dc.executeStatement(query1);
-        dc.executeStatement(query2);
-        dc.executeStatement(query3);
+        List<Relationship> relsToClearInCache = new ArrayList<>();
         
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(VERIFICATION_QUERY);
+        List<Map<String,Object>> results = dc.loadObjectResults();
+        
+        List<String> relInodes = new ArrayList(((Map<String, String>) results).values());
+
+        relInodes.forEach(item->{
+            try {
+                Relationship rel = APILocator.getRelationshipAPI().byInode(item);
+                relsToClearInCache.add(rel);    
+                
+                dc.setSQL(query1);
+                dc.addParam(item);        
+                dc.loadResult();
+                
+                dc.setSQL(query2);
+                dc.addParam(item);        
+                dc.loadResult();
+            } catch (DotDataException e){
+                Logger.error(this, "There was an unexpected problem with cleaning up relationship in Database.", e);
+                modifiedData.clear();
+            }
+        });
+        
+        dc.executeStatement(query3);
+        flushRelationshipCacheRegion(relsToClearInCache);
     }
     
-    private void flushCacheRegions() {
-        CacheLocator.getRelationshipCache().clearCache();
-        CacheLocator.getContentTypeCache().clearCache();
-        CacheLocator.getContentTypeCache2().clearCache();
+    private void flushRelationshipCacheRegion(List<Relationship> inodesToClearInCache) throws DotHibernateException {
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            public void run () {
+                //Invalidating Relationships in Cache
+                inodesToClearInCache.forEach(rel -> CacheLocator.getRelationshipCache().removeRelationshipByInode(rel));
+            }
+        }); 
     }
 }
