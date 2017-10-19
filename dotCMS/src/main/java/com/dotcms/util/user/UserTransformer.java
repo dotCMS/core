@@ -1,6 +1,5 @@
 package com.dotcms.util.user;
 
-import com.dotmarketing.business.DotStateException;
 import com.liferay.portal.model.User;
 import java.util.Map;
 
@@ -17,8 +16,7 @@ public interface UserTransformer {
      * Return a com.liferay.portal.model.User from the Map<String, Object> object
      * @param map DB map returned by the dotconnect user seach
      * @return User
-     * @throws DotStateException
      */
-    User fromMap(Map<String, Object> map) throws DotStateException;
+    User fromMap(Map<String, Object> map);
 
 }

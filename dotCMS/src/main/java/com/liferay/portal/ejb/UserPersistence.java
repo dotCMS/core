@@ -242,7 +242,7 @@ public class UserPersistence extends BasePersistence {
 
 	@CloseDBIfOpened
 	protected com.liferay.portal.model.User findByPrimaryKey(String userId)
-			throws NoSuchUserException, SystemException {
+			throws NoSuchUserException {
 		com.liferay.portal.model.User user = UserPool.get(userId);
 
 		try {
@@ -252,7 +252,7 @@ public class UserPersistence extends BasePersistence {
 				dc.addParam(userId);
 				List<Map<String, Object>> list = dc.loadObjectResults();
 				if(list.isEmpty()) {
-					throw new NoSuchUserException(userId.toString());
+					throw new NoSuchUserException(userId);
 				}else{
 					user = userTransformer.fromMap(list.get(0));
 				}
@@ -261,7 +261,7 @@ public class UserPersistence extends BasePersistence {
 			return user;
 		}
 		catch(DotDataException e){
-			throw new NoSuchUserException(userId.toString());
+			throw new NoSuchUserException(userId);
 		}
 	}
 

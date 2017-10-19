@@ -13,7 +13,7 @@ public class LiferayUserTransformer implements UserTransformer {
 
 
     @Override
-    public User fromMap(Map<String, Object> map) throws DotStateException {
+    public User fromMap(Map<String, Object> map) {
         User user = null;
         if (null != map) {
             user = new com.liferay.portal.model.User();
