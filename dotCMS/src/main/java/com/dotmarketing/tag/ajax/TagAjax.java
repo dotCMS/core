@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
+import com.dotmarketing.tag.business.GenericTagException;
 import com.dotmarketing.tag.business.InvalidTagNameLengthException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAlreadyExistsException;
@@ -414,7 +415,13 @@ public class TagAjax {
 		    	if(!tagName.toLowerCase().contains("tag name") && !hostId.toLowerCase().contains("host id")){
 		    		tagName = tagName.replaceAll("\'|\"", "");
 		    		hostId = hostId.replaceAll("\'|\"", "");
-					APILocator.getTagAPI().getTagAndCreate(tagName, "", hostId);
+		    		try {
+					    APILocator.getTagAPI().getTagAndCreate(tagName, "", hostId);
+					}catch(GenericTagException e){
+						counterFailedTags++;
+						Logger.error(TagAjax.class,
+								"Tag (name:"+tagName+" - host ID:"+hostId+") can not be imported because "+e.getMessage()+ ", trying with the next Tag");
+					}
 				}
 		    }
 
