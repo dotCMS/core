@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.menu;
 
+import com.dotmarketing.business.Layout;
+
 import java.util.List;
 
 /**
@@ -11,17 +13,19 @@ public class Menu {
     private String tabIcon;
     private List<MenuItem> menuItems;
     private String url;
+    private Layout layout;
 
     /**
      * Generate a new menu Tab element
      * @param tabName Name of the tab
-     * @param tabDescription Description of the tab
+     * @param layout layout link to the Tab Menu
      * @param url 
      */
-    public Menu(String tabName, String tabIcon, String url) {
+    public Menu(String tabName, String tabIcon, String url, Layout layout) {
         this.tabName = tabName;
         this.tabIcon = tabIcon;
         this.url = url;
+        this.layout = layout;
     }
 
     /**
@@ -61,5 +65,21 @@ public class Menu {
      */
     public String getUrl() {
         return url;
+    }
+
+    /**
+     * Return layout id
+     * @return
+     */
+    public String getId() {
+        return layout.getId();
+    }
+
+    /**
+     * Return layout name
+     * @return
+     */
+    public String getName() {
+        return layout.getName();
     }
 }

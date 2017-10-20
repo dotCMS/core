@@ -7,7 +7,7 @@ public class MenuItem {
 
     private String url;
     private String id;
-    private String name;
+    private String label;
     private boolean angular = false;
     private boolean isAjax = false;
 
@@ -15,14 +15,14 @@ public class MenuItem {
      * Generate a Submenu portlet
      * @param id  Portlet id
      * @param url Portlet url
-     * @param name Portlet name
+     * @param label Portlet label
      * @param isAngular if the portlet is an PortletController portlet 
      * @param isAjax if the portlet is an BaseRestPortlet portlet
      */
-    public MenuItem(String id, String url, String name, boolean isAngular, boolean isAjax) {
+    public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax) {
         this.url = url;
         this.id = id;
-        this.name = name;
+        this.label = label;
         this.angular = isAngular;
         this.isAjax = isAjax;
     }
@@ -47,8 +47,8 @@ public class MenuItem {
      * Get the sub menu portlet name
      * @return the portlet  name
      */
-    public String getName() {
-        return name;
+    public String getLabel() {
+        return label;
     }
 
     /**

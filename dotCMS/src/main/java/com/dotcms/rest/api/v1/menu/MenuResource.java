@@ -36,7 +36,7 @@ import java.util.List;
  * @author freddyrodriguez
  * @author jsanca
  */
-@Path("/v1/{from}/menu")
+@Path("/v1/menu")
 public class MenuResource implements Serializable {
 
 	private final LayoutAPI layoutAPI;
@@ -108,7 +108,7 @@ public class MenuResource implements Serializable {
 					menuContext.setLayoutIndex(layoutIndex);
 
 					final String url = this.menuHelper.getUrl(menuContext);
-					final Menu menu = new Menu(tabName, tabIcon, url);
+					final Menu menu = new Menu(tabName, tabIcon, url, layout);
 
 					final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
 
