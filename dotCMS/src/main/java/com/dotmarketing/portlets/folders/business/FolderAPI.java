@@ -28,6 +28,7 @@ import com.liferay.portal.model.User;
  public interface FolderAPI   {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+	public static final String SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
 
 	/**
 	 * Find a folder by a Host and a path
