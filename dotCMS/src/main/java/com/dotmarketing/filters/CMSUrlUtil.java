@@ -460,5 +460,30 @@ public class CMSUrlUtil {
 	}
 
 
+	/**
+	 * if the uri has a query string then remove it, otherwise keep it as it is
+	 * @param uri String
+	 * @return String
+	 */
+	public String getUriWithoutQueryString(final String uri) {
 
+		final int indexOf = uri.indexOf('?');
+		return (-1 != indexOf)?
+				uri.substring(0, indexOf):
+				uri;
+
+	} // getUriWithoutQueryString.
+
+	/**
+	 * if the uri has a query string then return it, otherwise null
+	 * @param uri String
+	 * @return String
+	 */
+	public String getQueryStringFromUri(final String uri) {
+
+		final int indexOf = uri.indexOf('?');
+		return (-1 != indexOf && indexOf+1 < uri.length())?
+				uri.substring(indexOf+1):
+				null;
+	}
 }
