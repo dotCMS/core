@@ -255,6 +255,7 @@ public class UserPersistence extends BasePersistence {
 					throw new NoSuchUserException(userId);
 				}else{
 					user = userTransformer.fromMap(list.get(0));
+					UserPool.put(user.getPrimaryKey(), user);
 				}
 			}
 

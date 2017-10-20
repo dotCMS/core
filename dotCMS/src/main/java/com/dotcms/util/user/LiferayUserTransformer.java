@@ -1,7 +1,6 @@
 package com.dotcms.util.user;
 
 import com.dotmarketing.db.DbConnectionFactory;
-import com.liferay.portal.ejb.UserPool;
 import com.liferay.portal.model.User;
 import java.util.Map;
 
@@ -12,10 +11,10 @@ public class LiferayUserTransformer implements UserTransformer {
 
 
     @Override
-    public User fromMap(Map<String, Object> map) {
+    public User fromMap(final Map<String, Object> map) {
         User user = null;
         if (null != map) {
-            user = new com.liferay.portal.model.User();
+            user = new User();
             if (null != map.get("userid")) {
                 user.setUserId((String) map.get("userid"));
             }
@@ -155,7 +154,6 @@ public class LiferayUserTransformer implements UserTransformer {
                 user.setDeleteDate((java.util.Date) map.get("delete_date"));
             }
 
-            UserPool.put(user.getPrimaryKey(), user);
         }
 
         return user;
