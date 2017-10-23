@@ -8,7 +8,6 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -93,7 +92,7 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information " +
@@ -151,7 +150,7 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e
