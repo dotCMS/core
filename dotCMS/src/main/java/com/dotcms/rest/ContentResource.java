@@ -541,7 +541,11 @@ public class ContentResource {
 
 		for(Contentlet c : cons){
 			try {
-				jsonCons.put(contentletToJSON(c, request, response, render, user));
+			    JSONObject jo = contentletToJSON(c, request, response, render, user);
+		        if (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+		            jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
+		        }
+				jsonCons.put(jo);
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -566,7 +570,7 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	public JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
 		Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
@@ -587,10 +591,6 @@ public class ContentResource {
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 			jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
 		}
-		
-        if (s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
-            jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(con));
-        }
 
 		return jo;
 	}
