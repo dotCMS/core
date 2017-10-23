@@ -92,8 +92,8 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information " +
                     "permissions (" + e.getMessage() + ")";
@@ -150,8 +150,8 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e
                     .getMessage() + ")";
