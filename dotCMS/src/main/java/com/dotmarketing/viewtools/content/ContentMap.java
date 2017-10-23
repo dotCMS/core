@@ -205,8 +205,7 @@ public class ContentMap {
 			}else if("url".equalsIgnoreCase(fieldVariableName) && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
-					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name
-					return identifier.getParentPath() + identifier.getAssetName();
+					return identifier.getURI();
 				}else{
 					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
 				}
