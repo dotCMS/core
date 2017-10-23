@@ -58,6 +58,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -488,6 +489,10 @@ public class ContentResource {
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
+			
+			if (s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			    m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
+			}
 
 			Set<String> jsonFields=getJSONFields(s);
 			for(String key : m.keySet())
@@ -561,7 +566,7 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
+	public JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
 		Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
@@ -582,6 +587,10 @@ public class ContentResource {
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 			jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
 		}
+		
+        if (s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+            jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(con));
+        }
 
 		return jo;
 	}
