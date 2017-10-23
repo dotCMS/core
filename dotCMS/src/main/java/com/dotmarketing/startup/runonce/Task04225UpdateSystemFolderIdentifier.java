@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
@@ -12,9 +13,8 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
     public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
+    public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
     public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id)";
-
-
 
     @Override
     public boolean forceRun() {
@@ -26,7 +26,11 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
         DotConnect dc = new DotConnect();
 
         //Drop folder_identifier_fk
-        dc.setSQL(DROP_CONSTRAINT_QUERY);
+        if (DbConnectionFactory.isMySql()) {
+            dc.setSQL(MYSQL_DROP_CONSTRAINT_QUERY);
+        } else {
+            dc.setSQL(DROP_CONSTRAINT_QUERY);
+        }
         Logger.info(this, "Executing Query: " + dc.getSQL());
         dc.loadResult();
 
