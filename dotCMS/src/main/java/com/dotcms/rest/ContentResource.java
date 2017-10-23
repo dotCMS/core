@@ -46,6 +46,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -803,6 +804,9 @@ public class ContentResource {
 	protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
 		boolean live = init.getParamsMap().containsKey("publish");
 		boolean clean=false;
+		
+		boolean allowFrontEndSaving = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+		
 		try {
 
 			// preparing categories
@@ -813,13 +817,13 @@ public class ContentResource {
 					if(UtilMethods.isSet(catValue)) {
 						for(String cat : catValue.split("\\s*,\\s*")) {
 							// take it as catId
-							Category category=APILocator.getCategoryAPI().find(cat, init.getUser(), false);
+							Category category=APILocator.getCategoryAPI().find(cat, init.getUser(), allowFrontEndSaving);
 							if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
 								cats.add(category);
 							}
 							else {
 								// try it as catKey
-								category=APILocator.getCategoryAPI().findByKey(cat, init.getUser(), false);
+								category=APILocator.getCategoryAPI().findByKey(cat, init.getUser(), allowFrontEndSaving);
 								if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
 									cats.add(category);
 								}
@@ -830,8 +834,10 @@ public class ContentResource {
 									hu.setQuery("from "+Category.class.getCanonicalName()+" WHERE category_velocity_var_name=?");
 									hu.setParam(cat);
 									category=(Category)hu.load();
-									if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
-										cats.add(category);
+                                    if(category!=null && InodeUtils.isSet(category.getCategoryId()) 
+                                            && APILocator.getPermissionAPI().doesUserHavePermission
+                                            (category, PermissionAPI.PERMISSION_USE, init.getUser(), allowFrontEndSaving)) {
+                                        cats.add(category);
 									}
 								}
 							}
@@ -869,8 +875,6 @@ public class ContentResource {
 			Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
 
 			HibernateUtil.startTransaction();
-
-			boolean allowFrontEndSaving = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 
 			contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),allowFrontEndSaving);
 
