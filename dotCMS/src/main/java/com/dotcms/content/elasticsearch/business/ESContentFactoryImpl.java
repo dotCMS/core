@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -1424,16 +1425,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param user          The user performing this operation.
      * @param tableName     The name of the temporary table containing the contentlet Inodes.
      */
+    @CloseDBIfOpened
     private void reindexReplacedUserContent(final User userToReplace, final User user, final
     String tableName) {
         final DotConnect dc = new DotConnect();
         final NotificationAPI notAPI = APILocator.getNotificationAPI();
-        final Connection conn = DbConnectionFactory.getConnection();
         try {
             final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
             dc.setSQL("SELECT COUNT(*) AS count FROM " + tableName);
             final List<Map<String, String>> results = dc.loadResults();
             final long totalCount = Long.parseLong(results.get(0).get("count"));
+            final Connection conn = DbConnectionFactory.getConnection();
             try (final PreparedStatement ps = conn.prepareStatement("SELECT inode FROM " +
                     tableName)) {
                 List<Contentlet> contentToIndex = new ArrayList<>();
@@ -1473,14 +1475,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             notAPI.error(String.format("Unable to reindex updated related content for deleted " +
                     "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId() + "/" +
                     userToReplace.getFullName()), user.getUserId());
-        } finally {
-            if (null != conn) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    // Connection could not be closed
-                }
-            }
         }
     }
 
