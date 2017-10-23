@@ -5,6 +5,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
+import java.sql.SQLException;
 import java.util.List;
 
 public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
@@ -24,6 +25,12 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     @Override
     public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
+
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            Logger.error(this,"Error setting autoCommit to true" + e.getMessage());
+        }
 
         //Drop folder_identifier_fk
         if (DbConnectionFactory.isMySql()) {
