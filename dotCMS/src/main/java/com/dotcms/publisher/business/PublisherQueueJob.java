@@ -450,7 +450,7 @@ public class PublisherQueueJob implements StatefulJob {
 	    try{
             Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
             //TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
-            Set<Class<?>> publishers = Sets.newHashSet(
+            final Set<Class<?>> publishers = Sets.newHashSet(
                     PushPublisher.class,
                     AWSS3Publisher.class,
 					StaticPublisher.class);

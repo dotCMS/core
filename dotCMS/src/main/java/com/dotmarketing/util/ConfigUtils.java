@@ -1,7 +1,6 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.business.APILocator;
-
 import java.io.File;
 import java.util.UUID;
 
@@ -92,8 +91,9 @@ public class ConfigUtils {
 
     public static String getStaticPublishPath(){
 
-        String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
-                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "static_publishing");
+		final String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
+				APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+						+ "static_publishing");
 
         File pathDir = new File(path);
         if(!pathDir.exists()){

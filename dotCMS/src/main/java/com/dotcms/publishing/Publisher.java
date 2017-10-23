@@ -49,6 +49,8 @@ public abstract class Publisher implements IPublisher {
     protected static final String DATE_FORMAT_DEFAULT                      = "yyyyMMdd-HHmmss";
     protected static final String DOT_STATIC_DATE = "dot-static-date";
 
+    protected static final int GROUPS_SIZE = 3;
+
 	/**
 	 * This method gets called before any publisher processes
 	 * the config
@@ -260,14 +262,17 @@ public abstract class Publisher implements IPublisher {
      *             An error occurred when retrieving the end-point's properties
      *             or connecting to it.
      */
-    protected Properties getEndPointProperties(PublishingEndPoint endpoint) throws DotDataException {
-        String authToken = PublicEncryptionFactory.decryptString( endpoint.getAuthKey().toString() );
+    protected Properties getEndPointProperties(final PublishingEndPoint endpoint)
+            throws DotDataException {
+        final String authToken = PublicEncryptionFactory
+                .decryptString(endpoint.getAuthKey().toString());
 
-        Properties props = new Properties();
+        final Properties props = new Properties();
         try {
             props.load( new StringReader( authToken ) );
         } catch (IOException e) {
-            throw new DotDataException("Can't read properties from Endpoint: " + endpoint.getAddress());
+            throw new DotDataException(
+                    "Can't read properties from Endpoint: " + endpoint.getAddress(), e);
         }
 
         return props;
@@ -278,7 +283,8 @@ public abstract class Publisher implements IPublisher {
      * @param config {@link PublisherConfig}
      * @return Map
      */
-    protected Map<String, Object> getContextMap(String bucketProp, final PublisherConfig config) {
+    protected Map<String, Object> getContextMap(final String bucketProp,
+            final PublisherConfig config) {
 
         final Map<String, Object> configMap;
 
@@ -295,27 +301,32 @@ public abstract class Publisher implements IPublisher {
             configMap.put(LANGUAGE_COUNTRY, language.getCountry());
 
             // Timestamp variables: https://github.com/dotCMS/core/issues/10465
-            Date bucketDate = (Date) config.get(DOT_STATIC_DATE);
+            final Date bucketDate = (Date) config.get(DOT_STATIC_DATE);
             if (bucketDate != null) {
-                SimpleDateFormat defaultDateFormat = new SimpleDateFormat(DATE_FORMAT_DEFAULT);
+                final SimpleDateFormat defaultDateFormat = new SimpleDateFormat(DATE_FORMAT_DEFAULT);
                 configMap.put(DATE, defaultDateFormat.format(bucketDate));
 
                 if (bucketProp != null) {
                     final List<RegExMatch> regExMatches = RegEX.find(bucketProp, "(\\{("+DATE+"-([^\\}]+))\\})");
-                    for(RegExMatch regExMatch : regExMatches) {
-                        if (regExMatch.getMatch() != null) {
-                            if (regExMatch.getGroups().size() == 3){
-                                String customDateVariableName = regExMatch.getGroups().get(1).getMatch();
-                                String customDateFormatString = regExMatch.getGroups().get(2).getMatch();
+                    for(final RegExMatch regExMatch : regExMatches) {
+                        if (regExMatch.getMatch() != null
+                                && regExMatch.getGroups().size() == GROUPS_SIZE) {
 
-                                try {
-                                    SimpleDateFormat customDateFormat = new SimpleDateFormat(customDateFormatString);
+                            final String customDateVariableName = regExMatch.getGroups().get(1)
+                                    .getMatch();
+                            final String customDateFormatString = regExMatch.getGroups().get(2)
+                                    .getMatch();
 
-                                    configMap.put(customDateVariableName, customDateFormat.format(bucketDate));
-                                } catch (IllegalArgumentException e) {
-                                    Logger.debug(this.getClass(), "Could not parse date-pattern '"
-                                            +customDateVariableName+"' in bucketId ("+ e.getMessage() +")", e);
-                                }
+                            try {
+                                final SimpleDateFormat customDateFormat = new SimpleDateFormat(
+                                        customDateFormatString);
+
+                                configMap.put(customDateVariableName,
+                                        customDateFormat.format(bucketDate));
+                            } catch (IllegalArgumentException e) {
+                                Logger.debug(this.getClass(), "Could not parse date-pattern '"
+                                        + customDateVariableName + "' in bucketId (" + e
+                                        .getMessage() + ")", e);
                             }
                         }
                     }
