@@ -619,7 +619,7 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "PUT");
 	}
 	
@@ -628,12 +628,12 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "POST");
 	}
 	
 	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException{
+			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException, DotSecurityException{
 
         InitDataObject init= webResource.init(params, true, request, false, null);
 		User user=init.getUser();
@@ -1041,7 +1041,7 @@ public class ContentResource {
 		processMap( contentlet, map );
 	}
 
-	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException {
+	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException, DotSecurityException {
 		String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
 		if(!UtilMethods.isSet(stInode)) {
 			String stName=(String)map.get("stName");
@@ -1080,25 +1080,7 @@ public class ContentResource {
 					fieldMap.put(ff.getVelocityVarName(), ff);
 
 				// look for relationships
-				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(st)) {
-					String relname=rel.getRelationTypeValue();
-					String query=(String)map.get(relname);
-					if(UtilMethods.isSet(query)) {
-						try {
-							List<Contentlet> cons=APILocator.getContentletAPI().search(
-									query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-							if(cons.size()>0) {
-								relationships.put(rel, cons);
-							}
-							Logger.info(this, "got "+cons.size()+" related contents");
-						} catch (Exception e) {
-							Logger.warn(this, e.getMessage(), e);
-						}
-					}
-				}
-				contentlet.setProperty(RELATIONSHIP_KEY, relationships);
-
+				contentlet.setProperty(RELATIONSHIP_KEY, addContentRelationships(contentlet, st, map));
 
 				// fill fields
 				for(Map.Entry<String,Object> entry : map.entrySet()) {
@@ -1194,7 +1176,7 @@ public class ContentResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException {
+	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException, DotSecurityException {
 		processMap(contentlet, webResource.processJSON(input));
 	}
 	
@@ -1256,5 +1238,39 @@ public class ContentResource {
 			Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
 			
 		}
+	}
+
+	private Map<Relationship, List<Contentlet>> addContentRelationships(Contentlet contentlet, Structure st, Map<String,Object> map) 
+	        throws DotDataException, DotSecurityException {
+	    Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
+	    List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(st);
+	    for(Relationship rel : rels) {
+	        String relname=rel.getRelationTypeValue();
+	        String query=(String)map.get(relname);
+	        if(UtilMethods.isSet(query)) {
+	            try {
+	                List<Contentlet> cons=APILocator.getContentletAPI().search(
+	                        query, 0, 0, null, APILocator.systemUser(), false);
+	                if(cons.size()>0) {
+	                    relationships.put(rel, cons);
+	                }
+	                Logger.info(this, "got "+cons.size()+" related contents");
+	            } catch (Exception e) {
+	                Logger.warn(this, e.getMessage(), e);
+	            }
+	        } else {
+	            if(!relationships.containsKey(rel)){
+	                relationships.put(rel, new ArrayList<Contentlet>());
+	            }
+	            List<Contentlet> cons = APILocator.getContentletAPI().getRelatedContent(
+	                    contentlet, rel, APILocator.systemUser(), false);
+	            for (Contentlet c : cons) {
+	                List<Contentlet> l = relationships.get(rel);
+	                l.add(c);
+	            }
+	        }
+	    }
+
+	    return relationships;
 	}
 }
