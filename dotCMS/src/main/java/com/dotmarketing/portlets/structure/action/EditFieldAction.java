@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -331,15 +332,15 @@ public class EditFieldAction extends DotPortletAction {
                 }
 
                 try {
-                    if(dataType.equals(Field.DataType.FLOAT.toString())){
+                    if(dataType.equals(DataTypes.FLOAT.toString())){
                         for(int i=1;i<tempVals.length;i+= 2){
                             Float.parseFloat(tempVals[i]);
                         }
-                    }else if(dataType.equals(Field.DataType.INTEGER.toString())){
+                    }else if(dataType.equals(DataTypes.INTEGER.toString())){
                         for(int i=1;i<tempVals.length;i+= 2){
                             Integer.parseInt(tempVals[i]);
                         }
-                    }else if(dataType.equals(Field.DataType.BOOL.toString())){
+                    }else if(dataType.equals(DataTypes.BOOL.toString())){
                         for(int i=1;i<tempVals.length;i+= 2){
                             if(!isDBBoolean(tempVals[i])){
                                 String message = "message.structure.invaliddataboolean";
