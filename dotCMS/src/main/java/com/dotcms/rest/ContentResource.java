@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
@@ -45,6 +47,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -62,7 +65,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -472,7 +474,8 @@ public class ContentResource {
 	}
 
 
-	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws DotDataException, IOException {
+	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) 
+	        throws DotDataException, IOException, DotSecurityException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		xstream.registerConverter(new MapEntryConverter());
@@ -482,19 +485,19 @@ public class ContentResource {
 
 		for(Contentlet c : cons){
 			Map<String, Object> m = new HashMap<>();
-			Structure s = c.getStructure();
+			ContentType type = c.getContentType();
 
 			m.putAll(ContentletUtil.getContentPrintableMap(user, c));
 
-			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
+			if(BaseContentType.WIDGET.equals(type.baseType()) && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
 			
-			if (s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			if (BaseContentType.HTMLPAGE.equals(type.baseType())){
 			    m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
 			}
 
-			Set<String> jsonFields=getJSONFields(s);
+			Set<String> jsonFields=getJSONFields(type);
 			for(String key : m.keySet())
 				if(jsonFields.contains(key))
 					m.put(key, c.getKeyValueProperty(key));
@@ -542,7 +545,7 @@ public class ContentResource {
 		for(Contentlet c : cons){
 			try {
 			    JSONObject jo = contentletToJSON(c, request, response, render, user);
-		        if (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+		        if (BaseContentType.HTMLPAGE.equals(c.getContentType().baseType())){
 		            jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
 		        }
 				jsonCons.put(jo);
@@ -562,20 +565,26 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	public static Set<String> getJSONFields(Structure s) {
+	public static Set<String> getJSONFields(ContentType type) throws DotStateException, DotDataException, DotSecurityException {
 		Set<String> jsonFields=new HashSet<String>();
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
-			if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
-				jsonFields.add(f.getVelocityVarName());
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
+		        find(type.inode()).fields()).asOldFieldList();
+		for(Field f : fields){
+	          if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+	              jsonFields.add(f.getVelocityVarName());
+	          }     
+		}
+
 		return jsonFields;
 	}
 
-	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) 
+	        throws JSONException, IOException, DotDataException, DotSecurityException{
 		JSONObject jo = new JSONObject();
-		Structure s = con.getStructure();
+		ContentType type = con.getContentType();
 		Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
 
-		Set<String> jsonFields=getJSONFields(s);
+		Set<String> jsonFields=getJSONFields(type);
 
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
@@ -588,7 +597,7 @@ public class ContentResource {
 				}
 		}
 
-		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
+		if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equals(render)) {
 			jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
 		}
 
@@ -628,7 +637,8 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) 
+			        throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "PUT");
 	}
 	
@@ -637,12 +647,13 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
 		return multipartPUTandPOST(request, response, multipart, params, "POST");
 	}
 	
 	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException{
+			FormDataMultiPart multipart, String params, String method) 
+			        throws URISyntaxException, DotDataException, DotSecurityException{
 
         InitDataObject init= webResource.init(params, true, request, false, null);
 		User user=init.getUser();
@@ -722,8 +733,10 @@ public class ContentResource {
 					tmp.delete();
 				try {
 					FileUtils.copyInputStreamToFile(input, tmp);
-					for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
-						// filling binarys in order. as they come / as field order says
+				    List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
+				            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+					for(Field ff : fields) {
+						// filling binariess in order. as they come / as field order says
 						String fieldName = ff.getFieldContentlet();
 						if (fieldName.startsWith("binary")
 								&& !usedBinaryFields.contains(fieldName)) {
@@ -816,7 +829,9 @@ public class ContentResource {
 
 			// preparing categories
 			List<Category> cats=new ArrayList<Category>();
-			for(Field field : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
+            List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
+                    find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+			for(Field field : fields) {
 				if(field.getFieldType().equals(FieldType.CATEGORY.toString())) {
 					String catValue=contentlet.getStringProperty(field.getVelocityVarName());
 					if(UtilMethods.isSet(catValue)) {
@@ -1050,7 +1065,8 @@ public class ContentResource {
 		processMap( contentlet, map );
 	}
 
-	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException {
+	protected void processMap(Contentlet contentlet, Map<String,Object> map) 
+	        throws DotDataException, DotSecurityException {
 		String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
 		if(!UtilMethods.isSet(stInode)) {
 			String stName=(String)map.get("stName");
@@ -1059,10 +1075,10 @@ public class ContentResource {
 			}
 		}
 		if(UtilMethods.isSet(stInode)) {
-			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(stInode);
-			if(st!=null && InodeUtils.isSet(st.getInode())) {
+			ContentType type =APILocator.getContentTypeAPI(APILocator.systemUser()).find(stInode);
+			if(type!=null && InodeUtils.isSet(type.inode())) {
 				// basic data
-				contentlet.setStructureInode(st.getInode());
+				contentlet.setStructureInode(type.inode());
 				if(map.containsKey("languageId")) {
 					contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
 				}
@@ -1085,12 +1101,13 @@ public class ContentResource {
 
 				// build a field map for easy lookup
 				Map<String,Field> fieldMap=new HashMap<String,Field>();
+                List<Field> fields = new LegacyFieldTransformer(type.fields()).asOldFieldList();
 				for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
 					fieldMap.put(ff.getVelocityVarName(), ff);
 
 				// look for relationships
 				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(st)) {
+				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(type)) {
 					String relname=rel.getRelationTypeValue();
 					String query=(String)map.get(relname);
 					if(UtilMethods.isSet(query)) {
@@ -1141,7 +1158,7 @@ public class ContentResource {
 												if(folder!=null && InodeUtils.isSet(folder.getInode())) {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
-													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
+													if(BaseContentType.FILEASSET.equals(type.baseType())){
 													    StringBuilder fileUri = new StringBuilder();
 													    fileUri.append(split[1].endsWith("/")?split[1]:split[1]+"/");
 													    fileUri.append(contentlet.getMap().get("fileName").toString());
@@ -1203,7 +1220,8 @@ public class ContentResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException {
+	protected void processJSON(Contentlet contentlet, InputStream input) 
+	        throws JSONException, IOException, DotDataException, DotSecurityException {
 		processMap(contentlet, webResource.processJSON(input));
 	}
 	
