@@ -564,7 +564,7 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	public static Set<String> getJSONFields(ContentType type) throws DotStateException, DotDataException, DotSecurityException {
+	public static Set<String> getJSONFields(ContentType type) throws DotDataException, DotSecurityException {
 		Set<String> jsonFields=new HashSet<String>();
 		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
 		        find(type.inode()).fields()).asOldFieldList();
@@ -1100,10 +1100,10 @@ public class ContentResource {
 
 				// build a field map for easy lookup
 				Map<String,Field> fieldMap=new HashMap<String,Field>();
-                List<Field> fields = new LegacyFieldTransformer(type.fields()).asOldFieldList();
-				for(Field ff : fields)
-					fieldMap.put(ff.getVelocityVarName(), ff);
-
+				for(Field ff : new LegacyFieldTransformer(type.fields()).asOldFieldList()){
+				    fieldMap.put(ff.getVelocityVarName(), ff);
+				}
+					
 				// look for relationships
 				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
 				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(type)) {
