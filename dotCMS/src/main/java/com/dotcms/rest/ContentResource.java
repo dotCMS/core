@@ -47,7 +47,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -207,7 +206,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", 404);
+			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
 			
 	        Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
 	        return  responseBuilder.entity(jo).build();
@@ -230,7 +229,7 @@ public class ContentResource {
 			jo.put("inode", inode);
 			jo.put("id", id);
 			jo.put("message", "locked");
-			jo.put("return", 200);
+			jo.put("return", HttpServletResponse.SC_OK);
 			//Creating an utility response object
 		}
 		
@@ -276,7 +275,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", 404);
+			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
 			
 	        Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
 	        return  responseBuilder.entity(jo).build();
@@ -311,7 +310,7 @@ public class ContentResource {
 			}
 			jo.put("inode", inode);
 			jo.put("id", id);
-			jo.put("return", 200);
+			jo.put("return", HttpServletResponse.SC_OK);
 			//Creating an utility response object
 		}
 		
@@ -355,7 +354,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", 404);
+			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
 			
 			
 		}else{
@@ -378,7 +377,7 @@ public class ContentResource {
 			jo.put("inode", inode);
 			jo.put("id", id);
 			jo.put("message", "unlocked");
-			jo.put("return", 200);
+			jo.put("return", HttpServletResponse.SC_OK);
 			//Creating an utility response object
 		}
 		
