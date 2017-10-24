@@ -472,7 +472,7 @@ public class ContentResource {
 	}
 
 
-	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) 
+	private String getXML(final List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) 
 	        throws DotDataException, IOException, DotSecurityException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
@@ -483,11 +483,11 @@ public class ContentResource {
 
 		for(Contentlet c : cons){
 			Map<String, Object> m = new HashMap<>();
-			ContentType type = c.getContentType();
+			final ContentType type = c.getContentType();
 
 			m.putAll(ContentletUtil.getContentPrintableMap(user, c));
 
-			if(BaseContentType.WIDGET.equals(type.baseType()) && "true".equals(render)) {
+			if(BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true).equalsIgnoreCase(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
 			
@@ -495,7 +495,7 @@ public class ContentResource {
 			    m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
 			}
 
-			Set<String> jsonFields=getJSONFields(type);
+			final Set<String> jsonFields=getJSONFields(type);
 			for(String key : m.keySet())
 				if(jsonFields.contains(key))
 					m.put(key, c.getKeyValueProperty(key));
@@ -595,7 +595,7 @@ public class ContentResource {
 				}
 		}
 
-		if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equals(render)) {
+		if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true).equalsIgnoreCase(render)) {
 			jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
 		}
 
