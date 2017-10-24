@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.portlets.structure.model.Field.DataType;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -318,6 +321,43 @@ public class EditFieldAction extends DotPortletAction {
                  }
             }
 
+            // Validate values entered for decimal/number type check box field
+            if (field.getFieldType().equals(FieldType.RADIO.toString())){
+                String values = fieldForm.getValues();
+                String temp = values.replaceAll("\r\n","|");
+                String[] tempVals = StringUtil.split(temp.trim(), "|");
+
+                if (tempVals.length % 2 == 1){
+                    SessionMessages.add(req, "error", "message.structure.missingdatavalue");
+                    return false;
+                }
+
+                try {
+                    if(dataType.equals(Field.DataType.FLOAT.toString())){
+                        for(int i=1;i<tempVals.length;i+= 2){
+                            Float.parseFloat(tempVals[i]);
+                        }
+                    }else if(dataType.equals(Field.DataType.INTEGER.toString())){
+                        for(int i=1;i<tempVals.length;i+= 2){
+                            Integer.parseInt(tempVals[i]);
+                        }
+                    }else if(dataType.equals(Field.DataType.BOOL.toString())){
+                        for(int i=1;i<tempVals.length;i+= 2){
+                            if(!isDBBoolean(tempVals[i])){
+                                String message = "message.structure.invaliddataboolean";
+                                SessionMessages.add(req, "error", message);
+                                return false;
+                            }
+                        }
+                    }
+
+                }catch (Exception e) {
+                    String message = "message.structure.invaliddata";
+                    SessionMessages.add(req, "error", message);
+                    return false;
+                }
+            }
+
             // check if is a new field to add at the botton of the structure
             // field list
             if (!InodeUtils.isSet(fieldForm.getInode())) {
@@ -550,6 +590,17 @@ public class EditFieldAction extends DotPortletAction {
         }
 
         return h.getTitle()!=null?h.getTitle():"default";
+    }
+
+    /**
+     * Validate if the string is one of the accepted Db boolean values
+     * @param value The boolean string to check
+     * @return true if is a valid boolean, false if not
+     */
+    private boolean isDBBoolean(final String value){
+        return (value.toLowerCase().trim().equals("t") || value.toLowerCase().trim().equals("true")
+                || value.toLowerCase().trim().equals("1") || value.toLowerCase().trim().equals("f")
+                || value.toLowerCase().trim().equals("false")|| value.toLowerCase().trim().equals("0"));
     }
 
 }
