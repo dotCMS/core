@@ -264,9 +264,9 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
      * @see getURI
      */
 	public String getPath(){
-	    if(getAssetName().equals("system folder") && getParentPath().equals("/System folder"))
+	    if(("system folder").equals(getAssetName()) && ("/System folder").equals(getParentPath())){
 	        return "/";
-	    else {
+	    } else {
     		String x = getParentPath() + getAssetName();
     		if("folder".equals(assetType)){
     			if(! x.endsWith("/")){
