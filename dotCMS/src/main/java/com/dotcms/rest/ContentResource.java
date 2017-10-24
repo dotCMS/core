@@ -206,7 +206,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
+			jo.append("return", 404);
 			
 	        Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
 	        return  responseBuilder.entity(jo).build();
@@ -229,7 +229,7 @@ public class ContentResource {
 			jo.put("inode", inode);
 			jo.put("id", id);
 			jo.put("message", "locked");
-			jo.put("return", HttpServletResponse.SC_OK);
+			jo.put("return", 200);
 			//Creating an utility response object
 		}
 		
@@ -275,7 +275,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
+			jo.append("return", 404);
 			
 	        Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
 	        return  responseBuilder.entity(jo).build();
@@ -310,7 +310,7 @@ public class ContentResource {
 			}
 			jo.put("inode", inode);
 			jo.put("id", id);
-			jo.put("return", HttpServletResponse.SC_OK);
+			jo.put("return", 200);
 			//Creating an utility response object
 		}
 		
@@ -354,7 +354,7 @@ public class ContentResource {
 						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
 		if(contentlet==null || contentlet.getIdentifier()==null){
 			jo.append("message", "contentlet not found");
-			jo.append("return", HttpServletResponse.SC_NOT_FOUND);
+			jo.append("return", 404);
 			
 			
 		}else{
@@ -377,7 +377,7 @@ public class ContentResource {
 			jo.put("inode", inode);
 			jo.put("id", id);
 			jo.put("message", "unlocked");
-			jo.put("return", HttpServletResponse.SC_OK);
+			jo.put("return", 200);
 			//Creating an utility response object
 		}
 		
