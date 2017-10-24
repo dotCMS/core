@@ -12,18 +12,17 @@ import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
@@ -186,7 +185,7 @@ public class ContentMap {
                 }
 
                 // Field value is not present in fieldValueMap hashmap
-                if (content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
+                if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())
                         && "fileasset".equalsIgnoreCase(f.getVelocityVarName())) {
                     // http://jira.dotmarketing.net/browse/DOTCMS-7406
                     FileAssetMap fam = FileAssetMap.of(content);
@@ -201,8 +200,9 @@ public class ContentMap {
                     addFieldValue(f, bm);
                     return bm;
                 }
-			//if the property being served is URL and the structure is a page show URL using the identifier information
-			}else if("url".equalsIgnoreCase(fieldVariableName) && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			//if the property being served is URL and the ContentType is a page show URL using the identifier information
+			}else if("url".equalsIgnoreCase(fieldVariableName) 
+			        && BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
 					return identifier.getURI();
