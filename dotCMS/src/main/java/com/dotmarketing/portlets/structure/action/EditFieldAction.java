@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import java.net.URLDecoder;
 import java.util.ArrayList;
