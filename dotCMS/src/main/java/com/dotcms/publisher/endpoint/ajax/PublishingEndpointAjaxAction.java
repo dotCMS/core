@@ -3,6 +3,7 @@ package com.dotcms.publisher.endpoint.ajax;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.repackage.com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -12,12 +13,14 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -125,6 +128,9 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
+        	if (StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(protocol)){
+                validatePublishingEndPointStatic();
+            }
 
 
         	PublishingEndPoint endpoint = new PublishingEndPoint();
@@ -170,6 +176,9 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
+            if (StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(protocol)){
+                validatePublishingEndPointStatic();
+            }
 
 
 			PublishingEndPoint endpoint = new PublishingEndPoint();
@@ -236,4 +245,20 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			}
 		}
 	}
+
+    /**
+     * Checks if dotCMS can read and write under STATIC_PUBLISHING_ROOT_PATH path. If the property
+     * has no value it will check in default folder /assets/static_publishing.
+     */
+    private void validatePublishingEndPointStatic()
+            throws DotDataException, LanguageException {
+
+        final String staticPublishPath = ConfigUtils.getStaticPublishPath();
+        final File staticPublishFolder = new File(staticPublishPath);
+
+        if (!staticPublishFolder.canRead() || !staticPublishFolder.canWrite()) {
+            throw new DotDataException(
+                    LanguageUtil.get(getUser(), "publisher_Endpoint_type_static_cant_read_write"));
+        }
+    }
 }
