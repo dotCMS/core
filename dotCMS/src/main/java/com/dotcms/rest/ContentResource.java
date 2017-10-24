@@ -49,7 +49,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -1102,7 +1101,7 @@ public class ContentResource {
 				// build a field map for easy lookup
 				Map<String,Field> fieldMap=new HashMap<String,Field>();
                 List<Field> fields = new LegacyFieldTransformer(type.fields()).asOldFieldList();
-				for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
+				for(Field ff : fields)
 					fieldMap.put(ff.getVelocityVarName(), ff);
 
 				// look for relationships
