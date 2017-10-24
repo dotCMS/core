@@ -773,7 +773,8 @@ public class ContentResource {
         return singlePUTandPOST(request, response, params, "POST");
     }
     
-    private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response, String params, String method) throws URISyntaxException {
+    private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response, String params, String method) 
+            throws URISyntaxException {
         InitDataObject init= webResource.init(params, true, request, false, null);
 
         Contentlet contentlet=new Contentlet();
