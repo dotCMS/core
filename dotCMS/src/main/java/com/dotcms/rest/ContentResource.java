@@ -1077,7 +1077,7 @@ public class ContentResource {
 			ContentType type =APILocator.getContentTypeAPI(APILocator.systemUser()).find(stInode);
 			if(type!=null && InodeUtils.isSet(type.inode())) {
 				// basic data
-				contentlet.setStructureInode(type.inode());
+				contentlet.setContentTypeId(type.inode());
 				if(map.containsKey("languageId")) {
 					contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
 				}
