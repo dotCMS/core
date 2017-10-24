@@ -472,7 +472,7 @@ public class ContentResource {
 	}
 
 
-	private String getXML(final List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) 
+	private String getXML(final List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, final String render, User user) 
 	        throws DotDataException, IOException, DotSecurityException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
@@ -582,7 +582,7 @@ public class ContentResource {
 		ContentType type = con.getContentType();
 		Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
 
-		Set<String> jsonFields=getJSONFields(type);
+		final Set<String> jsonFields=getJSONFields(type);
 
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
