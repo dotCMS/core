@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -27,6 +28,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     }
 
     @Override
+    @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
 
