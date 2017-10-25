@@ -133,7 +133,9 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 		
 	/**
-	 * Returns the uRI.
+	 * Returns the URI, which is a concatenation
+	 * of parent path (folder) and asset name.
+	 * useful for retrieving file/page URLs
 	 * 
 	 * @return String
 	 */
@@ -252,10 +254,19 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	   return getInode();
 	}
 	
+	   /**
+     * Returns the Identifier URI, 
+     * based on its parent path (folder) and asset name.
+     * Appends a forward slash for folder ids.
+     * Useful for retrieving file/page URLs
+     * 
+     * @return String
+     * @see getURI
+     */
 	public String getPath(){
-	    if(getAssetName().equals("system folder") && getParentPath().equals("/System folder"))
+	    if(("system folder").equals(getAssetName()) && ("/System folder").equals(getParentPath())){
 	        return "/";
-	    else {
+	    } else {
     		String x = getParentPath() + getAssetName();
     		if("folder".equals(assetType)){
     			if(! x.endsWith("/")){
