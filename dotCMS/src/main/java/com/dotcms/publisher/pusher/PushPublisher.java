@@ -291,7 +291,7 @@ public class PushPublisher extends Publisher {
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
 
 				//Triggering event listener when all endpoints are successfully sent
-				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
+				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent(config));
 			} else {
 
 				/*
