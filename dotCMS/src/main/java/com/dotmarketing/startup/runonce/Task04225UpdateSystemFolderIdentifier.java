@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
 
-    public static final String SYSTEM_FOLDER_IDENTIFIER = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
+    public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.SYSTEM_FOLDER_ID;
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
     public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
