@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
@@ -17,7 +18,8 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
     public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
-    public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id)";
+    public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) " +
+            "references identifier(id)";
 
     @Override
     public boolean forceRun() {
@@ -36,7 +38,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
             } else {
                 dc.setSQL(DROP_CONSTRAINT_QUERY);
             }
-            Logger.info(this, "Executing Query: " + dc.getSQL());
+            Logger.info(this, "Executing drop constraint query: " + dc.getSQL());
             dc.loadResult();
             DbConnectionFactory.getConnection().setAutoCommit(false);
         } catch (SQLException e) {
@@ -52,7 +54,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
             dc = new DotConnect();
             DbConnectionFactory.getConnection().setAutoCommit(true);
             dc.setSQL(CREATE_CONSTRAINT_QUERY);
-            Logger.info(this, "Executing Query: " + dc.getSQL());
+            Logger.info(this, "Executing create constraint query: " + dc.getSQL());
             dc.loadResult();
             DbConnectionFactory.getConnection().setAutoCommit(false);
         } catch (SQLException e) {
@@ -67,14 +69,14 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
         DotConnect dc = new DotConnect();
         dc.setSQL(UPDATE_IDENTIFIER_QUERY);
         dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
-        Logger.info(this, "Executing Query: " + dc.getSQL());
+        Logger.info(this, "Executing Update identifier query: " + dc.getSQL());
         dc.loadResult();
 
         //Update folder table
         dc = new DotConnect();
         dc.setSQL(UPDATE_FOLDER_QUERY);
         dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
-        Logger.info(this, "Executing Query: " + dc.getSQL());
+        Logger.info(this, "Executing update folder query: " + dc.getSQL());
         dc.loadResult();
     }
 
@@ -105,6 +107,6 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
 
     @Override
     protected List<String> getTablesToDropConstraints() {
-        return null;
+        return Collections.emptyList();
     }
 }
