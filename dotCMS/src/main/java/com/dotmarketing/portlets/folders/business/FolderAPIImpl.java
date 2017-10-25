@@ -839,7 +839,7 @@ public class FolderAPIImpl implements FolderAPI  {
                                    final boolean respectFrontEndPermissions)
                                    throws DotDataException, DotSecurityException {
 
-        if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
+        if (!doesUserHavePermissions(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
             throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
         }
 
