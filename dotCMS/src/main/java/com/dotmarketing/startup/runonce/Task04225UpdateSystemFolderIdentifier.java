@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -26,23 +27,43 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
 
+        //Drop folder_identifier_fk
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
+            if (DbConnectionFactory.isMySql()) {
+                dc.setSQL(MYSQL_DROP_CONSTRAINT_QUERY);
+            } else {
+                dc.setSQL(DROP_CONSTRAINT_QUERY);
+            }
+            Logger.info(this, "Executing Query: " + dc.getSQL());
+            dc.loadResult();
+            DbConnectionFactory.getConnection().setAutoCommit(false);
         } catch (SQLException e) {
-            Logger.error(this,"Error setting autoCommit to true" + e.getMessage());
+            Logger.error(this,"Error dropping constraint: " + e.getMessage());
+            throw new DotDataException(e);
         }
 
-        //Drop folder_identifier_fk
-        if (DbConnectionFactory.isMySql()) {
-            dc.setSQL(MYSQL_DROP_CONSTRAINT_QUERY);
-        } else {
-            dc.setSQL(DROP_CONSTRAINT_QUERY);
-        }
-        Logger.info(this, "Executing Query: " + dc.getSQL());
-        dc.loadResult();
+        //Update the Ids
+        updateFolderIDs();
 
+        //Add folder_identifier_fk
+        try {
+            dc = new DotConnect();
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+            dc.setSQL(CREATE_CONSTRAINT_QUERY);
+            Logger.info(this, "Executing Query: " + dc.getSQL());
+            dc.loadResult();
+            DbConnectionFactory.getConnection().setAutoCommit(false);
+        } catch (SQLException e) {
+            Logger.error(this,"Error creating constraint: " + e.getMessage());
+            throw new DotDataException(e);
+        }
+    }
+
+    @WrapInTransaction
+    private void updateFolderIDs() throws DotDataException {
         //Update identifier table
-        dc = new DotConnect();
+        DotConnect dc = new DotConnect();
         dc.setSQL(UPDATE_IDENTIFIER_QUERY);
         dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
         Logger.info(this, "Executing Query: " + dc.getSQL());
@@ -54,14 +75,6 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
         dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
         Logger.info(this, "Executing Query: " + dc.getSQL());
         dc.loadResult();
-
-        //Add folder_identifier_fk
-        dc = new DotConnect();
-        dc.setSQL(CREATE_CONSTRAINT_QUERY);
-        Logger.info(this, "Executing Query: " + dc.getSQL());
-        dc.loadResult();
-
-
     }
 
     @Override
