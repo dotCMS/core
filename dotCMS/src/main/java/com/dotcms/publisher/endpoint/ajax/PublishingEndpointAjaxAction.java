@@ -1,31 +1,23 @@
 package com.dotcms.publisher.endpoint.ajax;
 
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
-import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.repackage.com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Properties;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -122,19 +114,11 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
     			return;
         	}
 
-
         	String protocol = request.getParameter("protocol");
-        	String authKey = request.getParameter("authKey");
-        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
-        		validatePublishingEndPointAWSS3(authKey);
-        	}
-        	if (StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(protocol)){
-                validatePublishingEndPointStatic();
-            }
 
-
-        	PublishingEndPoint endpoint = new PublishingEndPoint();
-        	endpoint.setServerName(new StringBuilder(serverName));
+            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+            PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
+            endpoint.setServerName(new StringBuilder(serverName));
         	endpoint.setAddress(request.getParameter("address"));
         	endpoint.setPort(request.getParameter("port"));
         	endpoint.setProtocol(request.getParameter("protocol"));
@@ -143,11 +127,11 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	String sending = request.getParameter("sending");
         	endpoint.setSending("true".equals(sending));
         	endpoint.setGroupId(request.getParameter("environmentId"));
+            //Validate.
+            endpoint.validatePublishingEndPoint();
         	//Save the endpoint.
         	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
         	peAPI.saveEndPoint(endpoint);
-
-
 
 		} catch (DotDataException e) {
 			Logger.info(getClass(), "Error saving EndPoint. Error Message: " +  e.getMessage());
@@ -170,19 +154,11 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
     			return;
         	}
 
+        	final String protocol = request.getParameter("protocol");
 
-        	String protocol = request.getParameter("protocol");
-        	String authKey = request.getParameter("authKey");
-        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
-        		validatePublishingEndPointAWSS3(authKey);
-        	}
-            if (StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(protocol)){
-                validatePublishingEndPointStatic();
-            }
-
-
-			PublishingEndPoint endpoint = new PublishingEndPoint();
-	        endpoint.setId(id);
+            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+            PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
+            endpoint.setId(id);
 			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
 			endpoint.setAddress(request.getParameter("address"));
 			endpoint.setPort(request.getParameter("port"));
@@ -191,6 +167,8 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
 			endpoint.setSending("true".equals(request.getParameter("sending")));
 			endpoint.setGroupId(request.getParameter("environmentId"));
+			//Validate.
+			endpoint.validatePublishingEndPoint();
 			//Update the endpoint.
 			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 			peAPI.updateEndPoint(endpoint);
@@ -201,64 +179,4 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
-	private void validatePublishingEndPointAWSS3(String authKey) throws DotDataException, LanguageException {
-
-		// Parse AWS S3 properties
-		Properties props = new Properties();
-		try {
-			props.load( new StringReader( authKey ) );
-		} catch (IOException e) {
-			throw new DotDataException(
-				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_format_invalid" )
-			);
-		}
-
-
-		// Validate provision of all mandatory AWS S3 properties
-		String token = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN);
-		String secret = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET);
-		String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
-		String bucketValidationName = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_VALIDATION_NAME);
-
-		if (!UtilMethods.isSet(bucketID)) {
-			throw new DotDataException(
-					LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_missing_bucket_id" )
-			);
-		}
-
-		if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
-			// Validate DefaultAWSCredentialsProviderChain configuration
-			DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
-			if (! new AWSS3EndPointPublisher(creds).canConnectSuccessfully(bucketValidationName)) {
-				throw new DotDataException(
-						LanguageUtil.get( getUser(), "publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid" )
-				);
-			}
-		} else {
-			// Validate correctness of AWS S3 connection properties
-			AWSS3Configuration awss3Config =
-					new AWSS3Configuration.Builder().accessKey(token).secretKey(secret).build();
-			if (!new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully(bucketValidationName)) {
-				throw new DotDataException(
-						LanguageUtil.get(getUser(), "publisher_Endpoint_awss3_authKey_properties_invalid")
-				);
-			}
-		}
-	}
-
-    /**
-     * Checks if dotCMS can read and write under STATIC_PUBLISHING_ROOT_PATH path. If the property
-     * has no value it will check in default folder /assets/static_publishing.
-     */
-    private void validatePublishingEndPointStatic()
-            throws DotDataException, LanguageException {
-
-        final String staticPublishPath = ConfigUtils.getStaticPublishPath();
-        final File staticPublishFolder = new File(staticPublishPath);
-
-        if (!staticPublishFolder.canRead() || !staticPublishFolder.canWrite()) {
-            throw new DotDataException(
-                    LanguageUtil.get(getUser(), "publisher_Endpoint_type_static_cant_read_write"));
-        }
-    }
 }

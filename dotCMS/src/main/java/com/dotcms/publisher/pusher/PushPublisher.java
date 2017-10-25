@@ -99,8 +99,8 @@ public class PushPublisher extends Publisher {
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
     private Client restClient;
 
-    private static final String PROTOCOL_HTTP  = "http";
-    private static final String PROTOCOL_HTTPS = "https";
+    public static final String PROTOCOL_HTTP  = "http";
+	public static final String PROTOCOL_HTTPS = "https";
     private static final String HTTP_PORT      = "80";
 	private static final String HTTPS_PORT 	   = "443";
 
