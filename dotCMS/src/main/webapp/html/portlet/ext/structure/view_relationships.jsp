@@ -9,6 +9,7 @@
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 
 <%
+	String currentContentTypeId = request.getParameter("structure_id");
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
@@ -17,131 +18,132 @@
 %>
 
 <script language="javascript">
-function addNewRelationship(contentTypeId)
-{
-	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-	href = href + "<portlet:param name='referer' value='<%=referer%>' />";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship'/>";
-	href = href + "</portlet:actionURL>";
-	href = href + "&contentTypeId=" + contentTypeId;
+    function addNewRelationship()
+    {
+        var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+        href = href + "<portlet:param name='referer' value='<%=referer%>' />";
+        href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship'/>";
+        href = href + "<portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>' /> ";
+        href = href + "</portlet:actionURL>";
 
-	document.location.href = href;
+        document.location.href = href;
 
-}
-function deleteRelationship(inode) {
-	if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.relationship")) %>')) {
-		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-		href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
-	 	href = href + "<portlet:param name='referer' value='<%=referer%>' />";
-	  	href = href + "<portlet:param name='cmd' value='<%=Constants.DELETE%>' />";
-		href = href + "</portlet:actionURL>";
-		href = href + "&inode=" + inode;
-		document.location.href = href;
-	}
-}
+    }
+    function deleteRelationship(inode) {
+        if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.relationship")) %>')) {
+            var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+            href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
+            href = href + "<portlet:param name='referer' value='<%=referer%>' />";
+            href = href + "<portlet:param name='cmd' value='<%=Constants.DELETE%>' />";
+            href = href + "</portlet:actionURL>";
+            href = href + "&inode=" + inode;
 
+            document.location.href = href;
+        }
+    }
 </script>
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structures-Relationships")) %>' />
-<form action="" method="post" name="order">
+	<form action="" method="post" name="order">
 
-<div class="portlet-main">
-	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
-		<div class="portlet-toolbar__actions-primary">
-			
-		</div>
-		<div class="portlet-toolbar__info">
-			
-		</div>
-    	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button" onCLick="addNewRelationship('<%=request.getParameter("structure_id")%>')"   iconClass="plusIcon">
-	           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Relationship")) %>
-	        </button>
-    	</div>
-   </div>
-   <!-- END Toolbar -->
+		<div class="portlet-main">
+			<!-- START Toolbar -->
+			<div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary">
+
+				</div>
+				<div class="portlet-toolbar__info">
+
+				</div>
+				<div class="portlet-toolbar__actions-secondary">
+					<button dojoType="dijit.form.Button" onCLick="addNewRelationship()"   iconClass="plusIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Relationship")) %>
+					</button>
+				</div>
+			</div>
+			<!-- END Toolbar -->
 
 
 
-	<table class="listingTable" >
-		<tr>
-			<th style="text-align:center; white-space:nowrap;" width="6%"><%= LanguageUtil.get(pageContext, "Action") %></th>
-			<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='relation_type_value' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_relation_type_value' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_relation_type_value"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Relationship-Name") %></a></th>
-			<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='parent_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_parent_relation_name' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_parent_relation_name"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Parent-Structure") %></a></th>
-			<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='child_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_child_relation_name' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_child_relation_name"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Child-Structure") %></a></th>
-	 		<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Cardinality") %></th>
-			<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Parent-Required") %></th>
-			<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Child-Required") %></th>
-		</tr>
-		<%
-		if (relationships.size() > 0)
-		{
-			int i = 0;
-			for(Relationship relationship : relationships)
-			{
-				Structure parentStructure = relationship.getParentStructure ();
-				Structure childStructure = relationship.getChildStructure ();
-			%>
-	
-			<tr>
-				<td class="listingTable__actions">
-	                <a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
+			<table class="listingTable" >
+				<tr>
+					<th style="text-align:center; white-space:nowrap;" width="6%"><%= LanguageUtil.get(pageContext, "Action") %></th>
+					<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='relation_type_value' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_relation_type_value' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_relation_type_value"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Relationship-Name") %></a></th>
+					<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='parent_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_parent_relation_name' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_parent_relation_name"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Parent-Structure") %></a></th>
+					<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='child_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /> <portlet:param name='ascending_child_relation_name' value='<%= "true".equalsIgnoreCase((String)request.getAttribute("ascending_child_relation_name"))?"false":"true" %>' /> </portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Child-Structure") %></a></th>
+					<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Cardinality") %></th>
+					<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Parent-Required") %></th>
+					<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Child-Required") %></th>
+				</tr>
+				<%
+					if (relationships.size() > 0)
+					{
+						int i = 0;
+						for(Relationship relationship : relationships)
+						{
+							Structure parentStructure = relationship.getParentStructure ();
+							Structure childStructure = relationship.getChildStructure ();
+				%>
+
+				<tr>
+					<td class="listingTable__actions">
+						<a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
+	                	    <portlet:param name='referer' value='<%=referer%>' />
 	                        <portlet:param name='struts_action' value='/ext/structure/edit_relationship' />
 	                        <portlet:param name='inode' value='<%=relationship.getInode()%>' />
-	                        <portlet:param name='referer' value='<%=referer%>' />
+	                        <portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>'/>
 	                        </portlet:actionURL>">
-	                        <span class="editIcon"></span>
-	                </a>
-	
-	                <a href="javascript:deleteRelationship('<%=relationship.getInode()%>')">
-	                	<span class="deleteIcon"></span>
-					</a>  
-				</td>
-				<td>
+							<span class="editIcon"></span>
+						</a>
+
+						<a href="javascript:deleteRelationship('<%=relationship.getInode()%>')">
+							<span class="deleteIcon"></span>
+						</a>
+					</td>
+					<td>
 						<a class="gamma" href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
 							 	<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />
 							 	<portlet:param name='inode' value='<%=relationship.getInode()%>' />
 							 	<portlet:param name='referer' value='<%=referer%>' />
 							    </portlet:actionURL>">
-						  	<%=relationship.getRelationTypeValue()%>
+							<%=relationship.getRelationTypeValue()%>
 						</a>
-				</td>
-				<td>
+					</td>
+					<td>
 						<a  class="gamma" href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
 							 	<portlet:param name='struts_action' value='/ext/structure/edit_structure' />
 							 	<portlet:param name='inode' value='<%=parentStructure.getInode()%>' />
 							 	<portlet:param name='referer' value='<%=referer%>' />
 							    </portlet:actionURL>">
-							  	<%=parentStructure.getName()%>
+							<%=parentStructure.getName()%>
 						</a>
-				</td>
-				<td>
+					</td>
+					<td>
 						<a  class="gamma" href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
 							 	<portlet:param name='struts_action' value='/ext/structure/edit_structure' />
 							 	<portlet:param name='inode' value='<%=childStructure.getInode()%>' />
 							 	<portlet:param name='referer' value='<%=referer%>' />
 							    </portlet:actionURL>">
-							  	<%=childStructure.getName()%>
+							<%=childStructure.getName()%>
 						</a>
-				</td>
-				<td align="center">
-					<%=relationship.getCardinality() == com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()?"1-N":"M-N"%>
-				</td>
-				<td align="center"><%=(relationship.isParentRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No") %></td>
-				<td align="center"><%=(relationship.isChildRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%></td>
-			</tr>
-			<%}
-			}else{%>
+					</td>
+					<td align="center">
+						<%=relationship.getCardinality() == com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()?"1-N":"M-N"%>
+					</td>
+					<td align="center"><%=(relationship.isParentRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No") %></td>
+					<td align="center"><%=(relationship.isChildRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%></td>
+				</tr>
+				<%}
+				}else{%>
 				<tr>
 					<td colspan="7">
 						<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-not-content-relationships-to-display") %></div>
 					</td>
 				</tr>
-			<%}%>
-	
-	</table>
-</div>
+				<%}%>
 
-</form>
+			</table>
+		</div>
+
+	</form>
 </liferay:box>
