@@ -182,7 +182,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
         final List<Folder> allFolders = folderFactory.findFoldersByHost(host);
         
-        return allFolders.stream().filter (folder ->  
+        return allFolders.stream().filter ((Folder folder) ->  
             doesUserHavePermissions(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)
                 ).collect(CollectionsUtils.toImmutableList()); 
         
@@ -199,7 +199,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
         List<Folder> themesByHost = folderFactory.findThemesByHost(host);
         
-        return themesByHost.stream().filter (folder ->  
+        return themesByHost.stream().filter ((Folder folder ->  
             doesUserHavePermissions(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)
                 ).collect(CollectionsUtils.toImmutableList()); 
     }
