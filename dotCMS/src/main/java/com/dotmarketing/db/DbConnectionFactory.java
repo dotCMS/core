@@ -438,6 +438,38 @@ public class DbConnectionFactory {
 
     }
 
+    /**
+     * Return true if the String represent one on the false
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false value
+     */
+    public static boolean isDBFalse(final String value) {
+        String x = getDBType();
+
+        if (MYSQL.equals(x)) {
+            return value.trim().equals("0") || value.trim().equals("false");
+        } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
+            return value.trim().equals("f") || value.trim().equals("false");
+        } else if (MSSQL.equals(x)) {
+            return value.trim().equals("0");
+        } else if (ORACLE.equals(x)) {
+            return value.trim().equals("0");
+        }
+        return false;
+
+    }
+
+    /**
+     * Return true if the String represent one on the true or false
+     * values accepted by the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false or true value
+     */
+    public static boolean isDBBoolean(final String value) {
+        return isDBTrue(value) || isDBFalse(value);
+    }
+
     public static boolean isOracle() {
         return ORACLE.equals(getDBType());
     }

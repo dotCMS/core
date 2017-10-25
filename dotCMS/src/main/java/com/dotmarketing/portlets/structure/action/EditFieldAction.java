@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.structure.action;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -320,39 +321,9 @@ public class EditFieldAction extends DotPortletAction {
                  }
             }
 
-            // Validate values entered for decimal/number type check box field
+            // Validate values entered for decimal/number/boolean type radio button field
             if (field.getFieldType().equals(FieldType.RADIO.toString())){
-                String values = fieldForm.getValues();
-                String temp = values.replaceAll("\r\n","|");
-                String[] tempVals = StringUtil.split(temp.trim(), "|");
-
-                if (tempVals.length % 2 == 1){
-                    SessionMessages.add(req, "error", "message.structure.missingdatavalue");
-                    return false;
-                }
-
-                try {
-                    if(dataType.equals(DataTypes.FLOAT.toString())){
-                        for(int i=1;i<tempVals.length;i+= 2){
-                            Float.parseFloat(tempVals[i]);
-                        }
-                    }else if(dataType.equals(DataTypes.INTEGER.toString())){
-                        for(int i=1;i<tempVals.length;i+= 2){
-                            Integer.parseInt(tempVals[i]);
-                        }
-                    }else if(dataType.equals(DataTypes.BOOL.toString())){
-                        for(int i=1;i<tempVals.length;i+= 2){
-                            if(!isDBBoolean(tempVals[i])){
-                                String message = "message.structure.invaliddataboolean";
-                                SessionMessages.add(req, "error", message);
-                                return false;
-                            }
-                        }
-                    }
-
-                }catch (Exception e) {
-                    String message = "message.structure.invaliddata";
-                    SessionMessages.add(req, "error", message);
+                if(!isValidRadioField(fieldForm,req)){
                     return false;
                 }
             }
@@ -592,14 +563,53 @@ public class EditFieldAction extends DotPortletAction {
     }
 
     /**
-     * Validate if the string is one of the accepted Db boolean values
-     * @param value The boolean string to check
-     * @return true if is a valid boolean, false if not
+     * Validate if the radio field is valid
+     * @param fieldForm The field form
+     * @param req The action request
+     * @return true if the field is valid, false if not
      */
-    private boolean isDBBoolean(final String value){
-        return (value.toLowerCase().trim().equals("t") || value.toLowerCase().trim().equals("true")
-                || value.toLowerCase().trim().equals("1") || value.toLowerCase().trim().equals("f")
-                || value.toLowerCase().trim().equals("false")|| value.toLowerCase().trim().equals("0"));
+    private boolean isValidRadioField(FieldForm fieldForm, ActionRequest req){
+        boolean isValid = true;
+        final int EVEN_NUMBER = 2;
+        String dataType = fieldForm.getDataType();
+        String values = fieldForm.getValues();
+        String temp = values.replaceAll("\r\n","|");
+        String[] tempVals = StringUtil.split(temp.trim(), "|");
+
+        if (tempVals.length % EVEN_NUMBER == 1){
+            SessionMessages.add(req, "error", "message.structure.missingdatavalue");
+            return false;
+        } else if(dataType.equals(DataTypes.BOOL.toString())){
+            for(int i=1;i<tempVals.length;i+= 2){
+                if(!DbConnectionFactory.isDBBoolean(tempVals[i])){
+                    String message = "message.structure.invaliddataboolean";
+                    SessionMessages.add(req, "error", message);
+                    return false;
+                }
+            }
+        } else if(dataType.equals(DataTypes.FLOAT.toString())){
+            try {
+                for(int i=1;i<tempVals.length;i+= 2){
+                    Float.parseFloat(tempVals[i]);
+                }
+            }catch (NumberFormatException e) {
+                String message = "message.structure.invaliddata";
+                SessionMessages.add(req, "error", message);
+                return false;
+            }
+        } else if(dataType.equals(DataTypes.INTEGER.toString())){
+            try {
+                for(int i=1;i<tempVals.length;i+= 2) {
+                    Integer.parseInt(tempVals[i]);
+                }
+            }catch (NumberFormatException e) {
+                String message = "message.structure.invaliddata";
+                SessionMessages.add(req, "error", message);
+                return false;
+            }
+        }
+
+        return isValid;
     }
 
 }
