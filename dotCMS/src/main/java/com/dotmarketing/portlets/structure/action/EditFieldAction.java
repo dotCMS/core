@@ -72,6 +72,11 @@ public class EditFieldAction extends DotPortletAction {
 
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private FieldAPI fAPI = APILocator.getFieldAPI();
+    private static final String INVALIDATE_DATA_MESSAGE = "message.structure.invaliddata";
+    private static final String INVALIDATE_DATA_BOOLEAN_MESSAGE = "message.structure.invaliddataboolean";
+    private static final String MISSING_DATA_VALUE_MESSAGE = "message.structure.missingdatavalue";
+    private static final String INVALIDATE_DATA_TYPE_MESSAGE = "message.structure.invaliddatatype";
+    private static final String ERROR = "error";
 
 	/**
 	 * Default constructor for Struts to instantiate this action.
@@ -296,7 +301,7 @@ public class EditFieldAction extends DotPortletAction {
                 try {
                     if(dataType.equals(Field.DataType.FLOAT.toString())){
                         if(values.indexOf("\r\n") > -1) {
-                            SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+                            SessionMessages.add(req, ERROR, INVALIDATE_DATA_TYPE_MESSAGE);
                             return false;
                         }
 
@@ -305,7 +310,7 @@ public class EditFieldAction extends DotPortletAction {
                         }
                     }else if(dataType.equals(Field.DataType.INTEGER.toString())){
                         if(values.indexOf("\r\n") > -1) {
-                            SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+                            SessionMessages.add(req, ERROR, INVALIDATE_DATA_TYPE_MESSAGE);
                             return false;
                         }
 
@@ -315,17 +320,14 @@ public class EditFieldAction extends DotPortletAction {
                     }
 
                   }catch (Exception e) {
-                      String message = "message.structure.invaliddata";
-                    SessionMessages.add(req, "error", message);
+                    SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
                     return false;
                  }
             }
 
             // Validate values entered for decimal/number/boolean type radio button field
-            if (field.getFieldType().equals(FieldType.RADIO.toString())){
-                if(!isValidRadioField(fieldForm,req)){
+            if (field.getFieldType().equals(FieldType.RADIO.toString()) && !isValidRadioField(fieldForm,req)){
                     return false;
-                }
             }
 
             // check if is a new field to add at the botton of the structure
@@ -338,7 +340,7 @@ public class EditFieldAction extends DotPortletAction {
                     // http://jira.dotmarketing.net/browse/DOTCMS-3232
                     if (f.getFieldType().equalsIgnoreCase(fieldForm.getFieldType())
                             && f.getFieldType().equalsIgnoreCase(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                        SessionMessages.add(req, "error", "message.structure.duplicate.host_or_folder.field");
+                        SessionMessages.add(req, ERROR, "message.structure.duplicate.host_or_folder.field");
                         return false;
                     }
                     if (f.getSortOrder() > sortOrder)
@@ -451,7 +453,7 @@ public class EditFieldAction extends DotPortletAction {
         Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
         if (!UtilMethods.isSet(field.getIdentifier())) {
         	String message = "message.contenttype.deletefield.error.alreadydeleted";
-            SessionMessages.add(req, "error", message);
+            SessionMessages.add(req, ERROR, message);
             return;
         }
         Structure contentType = StructureFactory.getStructureByInode(field.getStructureInode());
@@ -461,7 +463,7 @@ public class EditFieldAction extends DotPortletAction {
         } catch (Exception ae) {
             if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
                 String message = "message.insufficient.permissions.to.delete";
-                SessionMessages.add(req, "error", message);
+                SessionMessages.add(req, ERROR, message);
                 return;
             }
         }
@@ -469,7 +471,7 @@ public class EditFieldAction extends DotPortletAction {
             DeleteFieldJob.triggerDeleteFieldJob(contentType, field, user);
         } catch(Exception e) {
             Logger.error(this, "Unable to trigger DeleteFieldJob", e);
-            SessionMessages.add(req, "error", "message.structure.deletefield.error");
+            SessionMessages.add(req, ERROR, "message.structure.deletefield.error");
         }
         SessionMessages.add(req, "message", "message.structure.deletefield.async");
     }
@@ -571,41 +573,39 @@ public class EditFieldAction extends DotPortletAction {
     private boolean isValidRadioField(FieldForm fieldForm, ActionRequest req){
         boolean isValid = true;
         final int EVEN_NUMBER = 2;
+        final int ADD_NUMBER = 2;
         String dataType = fieldForm.getDataType();
         String values = fieldForm.getValues();
         String temp = values.replaceAll("\r\n","|");
         String[] tempVals = StringUtil.split(temp.trim(), "|");
 
         if (tempVals.length % EVEN_NUMBER == 1){
-            SessionMessages.add(req, "error", "message.structure.missingdatavalue");
-            return false;
+            SessionMessages.add(req, ERROR, MISSING_DATA_VALUE_MESSAGE);
+            isValid = false;
         } else if(dataType.equals(DataTypes.BOOL.toString())){
-            for(int i=1;i<tempVals.length;i+= 2){
+            for(int i=1;i<tempVals.length;i+= ADD_NUMBER){
                 if(!DbConnectionFactory.isDBBoolean(tempVals[i])){
-                    String message = "message.structure.invaliddataboolean";
-                    SessionMessages.add(req, "error", message);
-                    return false;
+                    SessionMessages.add(req, ERROR, INVALIDATE_DATA_BOOLEAN_MESSAGE);
+                    isValid = false;
                 }
             }
         } else if(dataType.equals(DataTypes.FLOAT.toString())){
             try {
-                for(int i=1;i<tempVals.length;i+= 2){
+                for(int i=1;i<tempVals.length;i+= ADD_NUMBER){
                     Float.parseFloat(tempVals[i]);
                 }
             }catch (NumberFormatException e) {
-                String message = "message.structure.invaliddata";
-                SessionMessages.add(req, "error", message);
-                return false;
+                SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
+                isValid = false;
             }
         } else if(dataType.equals(DataTypes.INTEGER.toString())){
             try {
-                for(int i=1;i<tempVals.length;i+= 2) {
+                for(int i=1;i<tempVals.length;i+= ADD_NUMBER) {
                     Integer.parseInt(tempVals[i]);
                 }
             }catch (NumberFormatException e) {
-                String message = "message.structure.invaliddata";
-                SessionMessages.add(req, "error", message);
-                return false;
+                SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
+                isValid = false;
             }
         }
 

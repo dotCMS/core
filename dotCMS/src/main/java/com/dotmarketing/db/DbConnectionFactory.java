@@ -422,17 +422,23 @@ public class DbConnectionFactory {
 
     }
 
+    /**
+     * Return true if the String represent one of the true
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB true value
+     */
     public static boolean isDBTrue(String value) {
         String x = getDBType();
 
         if (MYSQL.equals(x)) {
-            return value.trim().equals("1") || value.trim().equals("true");
+            return "1".equals(value.trim()) || "true".equals(value.trim());
         } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
-            return value.trim().equals("t") || value.trim().equals("true");
+            return "t".equals(value.trim()) || "true".equals(value.trim());
         } else if (MSSQL.equals(x)) {
-            return value.trim().equals("1");
+            return "1".equals(value.trim());
         } else if (ORACLE.equals(x)) {
-            return value.trim().equals("1");
+            return "1".equals(value.trim());
         }
         return false;
 
@@ -448,13 +454,13 @@ public class DbConnectionFactory {
         String x = getDBType();
 
         if (MYSQL.equals(x)) {
-            return value.trim().equals("0") || value.trim().equals("false");
+            return "0".equals(value.trim()) || "false".equals(value.trim());
         } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
-            return value.trim().equals("f") || value.trim().equals("false");
+            return "f".equals(value.trim()) || "false".equals(value.trim());
         } else if (MSSQL.equals(x)) {
-            return value.trim().equals("0");
+            return "0".equals(value.trim());
         } else if (ORACLE.equals(x)) {
-            return value.trim().equals("0");
+            return "0".equals(value.trim());
         }
         return false;
 
