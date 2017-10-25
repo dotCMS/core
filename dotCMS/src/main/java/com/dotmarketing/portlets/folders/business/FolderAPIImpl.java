@@ -222,9 +222,9 @@ public class FolderAPIImpl implements FolderAPI  {
 
         List<Folder> subFolders = findSubFolders(folder, user, respectFrontEndPermissions);
         List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
-        for (Folder f : toIterateOver) {
-            if (this.permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-                subFolders.addAll(findSubFoldersRecursively(f, user, respectFrontEndPermissions));
+        for (Folder subFolder : toIterateOver) {
+            if (doesUserHavePermissions(subFolder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+                subFolders.addAll(findSubFoldersRecursively(subFolder, user, respectFrontEndPermissions));
             }
         }
         return subFolders;
@@ -245,9 +245,9 @@ public class FolderAPIImpl implements FolderAPI  {
         }
         List<Folder> subFolders = folderFactory.findFoldersByHost(host);
         List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
-        for (Folder f : toIterateOver) {
-            if (this.permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-                subFolders.addAll(findSubFoldersRecursively(f, user, respectFrontEndPermissions));
+        for (Folder subFolder : toIterateOver) {
+            if (doesUserHavePermissions(subFolder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+                subFolders.addAll(findSubFoldersRecursively(subFolder, user, respectFrontEndPermissions));
             }
         }
         return subFolders;
