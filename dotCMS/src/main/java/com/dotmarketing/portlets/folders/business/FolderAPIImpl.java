@@ -94,7 +94,7 @@ public class FolderAPIImpl implements FolderAPI  {
     public Folder findFolderByPath(String path, String hostid, User user, boolean respectFrontEndPermissions) throws DotStateException,
             DotDataException, DotSecurityException {
         if(user==null){
-            user = APILocator.getUserAPI().getSystemUser();
+            user = APILocator.systemUser();
         }
         Host host = APILocator.getHostAPI().find(hostid, user, false);
         return findFolderByPath(path,host,user, respectFrontEndPermissions);
@@ -524,8 +524,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
         final Folder folder = this.folderFactory.find(id);
 
-        if (!this.permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user)) {
-
+        if (!doesUserHavePermissions(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
             throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folder.getPath());
         }
 
