@@ -8,21 +8,26 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.PublishingEndPointValidationException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class PublishingEndpointAjaxAction extends AjaxAction {
+
+    final PublishingEndPointFactory factory = new PublishingEndPointFactory();
 
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -116,7 +121,6 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	String protocol = request.getParameter("protocol");
 
-            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
             PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
             endpoint.setServerName(new StringBuilder(serverName));
         	endpoint.setAddress(request.getParameter("address"));
@@ -128,7 +132,11 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	endpoint.setSending("true".equals(sending));
         	endpoint.setGroupId(request.getParameter("environmentId"));
             //Validate.
-            endpoint.validatePublishingEndPoint();
+            try {
+                endpoint.validatePublishingEndPoint();
+            } catch (PublishingEndPointValidationException e){
+                throw new DotDataException(handlePublishingEndPointValidationException(e));
+            }
         	//Save the endpoint.
         	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
         	peAPI.saveEndPoint(endpoint);
@@ -156,7 +164,6 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	final String protocol = request.getParameter("protocol");
 
-            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
             PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
             endpoint.setId(id);
 			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
@@ -168,7 +175,12 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setSending("true".equals(request.getParameter("sending")));
 			endpoint.setGroupId(request.getParameter("environmentId"));
 			//Validate.
-			endpoint.validatePublishingEndPoint();
+			try {
+                endpoint.validatePublishingEndPoint();
+            } catch (PublishingEndPointValidationException e){
+                throw new DotDataException(handlePublishingEndPointValidationException(e));
+            }
+
 			//Update the endpoint.
 			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 			peAPI.updateEndPoint(endpoint);
@@ -178,5 +190,28 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
 	}
+
+    /**
+     * Iterates over all i18nMessages in the Exception and translate them using {@link
+     * LanguageUtil}.
+     *
+     * @return comma separated {@link String} with all the translations.
+     */
+    private String handlePublishingEndPointValidationException(
+            final PublishingEndPointValidationException e) {
+
+        final List<String> i18nMessages = e.getI18nmessages();
+        final List<String> errorMessages = Lists.newArrayList();
+
+        for (final String i18nMessage : i18nMessages) {
+            try {
+                errorMessages.add(LanguageUtil.get(getUser(), i18nMessage));
+            } catch (LanguageException le) {
+                //If we have a problem, at least display the message code.
+                errorMessages.add(i18nMessage);
+            }
+        }
+        return String.join(",", errorMessages);
+    }
 
 }

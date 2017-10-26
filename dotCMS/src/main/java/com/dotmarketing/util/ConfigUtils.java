@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.business.APILocator;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.util.UUID;
 
@@ -89,18 +90,23 @@ public class ConfigUtils {
 		return path;
 	}
 
-    public static String getStaticPublishPath(){
+    /**
+     * Builds the path using STATIC_PUBLISHING_ROOT_PATH values or default
+     * /assets/static_publishing, created the fodler if it doesn't exist.
+     *
+     * @return {@link} String with the path of Static Publish folder where bundles are going to be
+     * stored.
+     */
+    public static String getStaticPublishPath() {
 
-		final String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
-				APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-						+ "static_publishing");
+        final String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
+                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                        + "static_publishing");
 
-        File pathDir = new File(path);
-        if(!pathDir.exists()){
-            pathDir.mkdirs();
-        }
-        return path;
-    }
+        final File folder = FileUtil.mkDirsIfNeeded(path);
+
+        return folder.getPath();
+    } //getStaticPublishPath.
 
 	public static String getServerId(){
 		String serverId;

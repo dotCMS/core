@@ -1,11 +1,7 @@
 package com.dotcms.publisher.endpoint.bean;
 
-import com.dotmarketing.exception.DotDataException;
-import com.liferay.portal.language.LanguageException;
+import com.dotmarketing.exception.PublishingEndPointValidationException;
 import java.io.Serializable;
-
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
-import com.dotcms.publisher.pusher.PushPublisher;
 
 /**
  * Java Bean for publishing_end_point table
@@ -138,13 +134,15 @@ public abstract class PublishingEndPoint implements Serializable {
     }
 
     /**
-     * TODO
-     * @return
+     * @return {@link com.dotcms.publishing.Publisher} for each implementation.
      */
     public abstract Class getPublisher();
 
     /**
-     * TODO
+     * Validation for each implementation.
+     *
+     * @throws PublishingEndPointValidationException with i18n error messages in order to be
+     * translated in upper layer.
      */
-    public abstract void validatePublishingEndPoint() throws DotDataException, LanguageException;
+    public abstract void validatePublishingEndPoint() throws PublishingEndPointValidationException;
 }
