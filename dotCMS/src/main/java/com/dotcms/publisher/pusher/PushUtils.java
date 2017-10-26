@@ -35,6 +35,7 @@ public class PushUtils {
 			TarArchiveOutputStream taos = new TarArchiveOutputStream(
 				new GZIPOutputStream(new BufferedOutputStream(fos))) ) {
 
+			taos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
 			// TAR originally didn't support long file names, so enable the support for it
 			taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 

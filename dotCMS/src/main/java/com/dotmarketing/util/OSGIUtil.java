@@ -104,7 +104,6 @@ public class OSGIUtil {
         felixProps.put("felix.fileinstall.log.level", "3");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("org.apache.felix.http.whiteboardEnabled", "true");
         felixProps.put("felix.log.level", "4");
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
