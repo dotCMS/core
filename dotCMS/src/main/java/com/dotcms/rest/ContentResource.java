@@ -661,7 +661,6 @@ public class ContentResource {
             throws URISyntaxException, DotDataException, DotSecurityException {
 
         InitDataObject init = webResource.init(params, true, request, false, null);
-        User user = init.getUser();
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
