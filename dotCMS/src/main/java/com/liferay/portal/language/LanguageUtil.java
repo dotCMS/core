@@ -189,6 +189,21 @@ public class LanguageUtil {
         return value;
     }
 
+	/**
+	 * Pretty much the same of get(PageContent, String) but applies if the key exists a sanitizer to avoid escaping issues on the Javascript for the value.
+	 * @param pageContext {@link PageContext}
+	 * @param key {@link String}
+	 * @return String
+	 * @throws LanguageException
+	 */
+    public static String getSanitizeForJS (final PageContext pageContext, final String key)
+			throws LanguageException {
+
+    	final String messageUnsanitize  = get(pageContext,key);
+
+    	return null != messageUnsanitize? messageUnsanitize.replaceAll("'", "\\\\'") : messageUnsanitize;
+	} // getSanitizeForJS.
+
 	public static String get(PageContext pageContext, String key)
 		throws LanguageException {
 		Logger.debug(LanguageUtil.class, key);

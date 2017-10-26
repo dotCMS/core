@@ -689,7 +689,7 @@
                     + '<img src="/contentAsset/image/'+data["contentletInode"]+'/fileAsset/?byInode=1"/>'
                     + '</div>'
                     + '<div class="callOutBox">'
-                    + '<%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>'
+                    + '<%=LanguageUtil.getSanitizeForJS(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>'
                     + '</div>';
 
                 if(dijit.byId(data['contentletInode']+'_Dialog') == undefined){
