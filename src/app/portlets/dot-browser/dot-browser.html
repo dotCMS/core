@@ -1,11 +1,21 @@
 <div class="page-content">
-    <site-selector></site-selector>
-    <breadcrumb></breadcrumb>
+    <app-breadcrumb-hostselector></app-breadcrumb-hostselector>
+    <a (click)="changeViewToTree()">Tree View</a>
+    <a (click)="changeViewToIcon()">Icon View</a>
+    <div class="uploadButton" style=""><button pButton type="button" label="Upload" (click)="displayUpload()"></button></div>
+    <p-dialog header="Upload Files" [closable]="true" [(visible)]="uploadDialog" [responsive]="true" showEffect="fade" [modal]="true" (onAfterHide)="onUploadHide()" width="500">
+        <p-fileUpload #fileUploadWidget name="myfile[]" customUpload="true" (uploadHandler)="onUpload($event)" (onSelect)="addFileToUpload($event)" (onClear)="clearUploads($event)"
+                      multiple="true" maxFileSize="1000000">
+        </p-fileUpload>
+    </p-dialog>
     <div class="ui-g">
-        <div class="ui-g-9">
+        <div class="ui-g-9" *ngIf="siteView == 'tree'">
             <site-datatable></site-datatable>
         </div>
-        <div class="ui-g-3 treeable-detail">
+        <div class="ui-g-9" *ngIf="siteView == 'icon'">
+            <site-datagrid #siteDatagridWidget></site-datagrid>
+        </div>
+        <div class="ui-g-3 treeable-detail" *ngIf="siteView == 'tree'">
             <treeable-detail></treeable-detail>
         </div>
     </div>

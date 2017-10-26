@@ -4,15 +4,16 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotBrowserComponent } from './dot-browser-component';
 
-import { AutoCompleteModule } from 'primeng/primeng';
+import {AutoCompleteModule, DialogModule, FileUploadModule} from 'primeng/primeng';
 import {
+    DotBreadcrumbHostselectorModule,
     DotBreadcrumbModule,
     DotFileModule,
     DotFolderModule,
     DotHttpModule,
     DotNotificationModule,
     DotSettingsStorageModule,
-    DotSiteBrowserModule,
+    DotSiteBrowserModule, DotSiteDatagridModule,
     DotSiteDatatableModule,
     DotSiteSelectorModule,
     DotSiteTreeTableModule,
@@ -40,10 +41,14 @@ const routes: Routes = [
         DotSettingsStorageModule,
         DotSiteBrowserModule,
         DotSiteDatatableModule,
+        DotSiteDatagridModule,
         DotSiteSelectorModule,
         DotSiteTreeTableModule,
         DotTreeableDetailModule,
+        DotBreadcrumbHostselectorModule,
         FormsModule,
+        DialogModule,
+        FileUploadModule,
         ReactiveFormsModule,
         RouterModule.forChild(routes)
     ],

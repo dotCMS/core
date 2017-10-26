@@ -12,7 +12,7 @@
     "e2e": "ng e2e",
     "devversionbump": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",
     "publishdev": "rm -rf dist;npm run build;cp package.json ./dist/package.json;npm run devversionbump;cd dist;npm publish",
-    "dotcms": "npm run build -- -w"
+    "dotcms": "npm run build -- -w --sourcemap=false"
   },
   "private": false,
   "dependencies": {
@@ -48,7 +48,7 @@
     "@types/jasminewd2": "~2.0.2",
     "@types/node": "~6.0.60",
     "codelyzer": "~3.1.1",
-    "dotcms-js": "^4.2.0-b87",
+    "dotcms-js": "^4.2.0-b93",
     "font-awesome": "^4.7.0",
     "jasmine-core": "~2.6.2",
     "jasmine-spec-reporter": "~4.1.0",
