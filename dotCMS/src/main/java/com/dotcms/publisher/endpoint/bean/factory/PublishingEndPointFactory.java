@@ -18,7 +18,7 @@ import com.dotmarketing.util.UtilMethods;
 public class PublishingEndPointFactory {
 
     public PublishingEndPoint getPublishingEndPoint(final String protocol) {
-        if (UtilMethods.isSet(protocol)) {
+        if (!UtilMethods.isSet(protocol)) {
             return null;
         } else if (PushPublisher.PROTOCOL_HTTP.equalsIgnoreCase(protocol)
                 || PushPublisher.PROTOCOL_HTTPS.equalsIgnoreCase(protocol)) {

@@ -4,6 +4,8 @@
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
+<%@page import="com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory"%>
+<%@ page import="com.dotcms.publisher.pusher.PushPublisher" %>
 
 <%
 	String identifier = request.getParameter("id");
@@ -16,7 +18,8 @@
 	Environment currentEnvironment = APILocator.getEnvironmentAPI().findEnvironmentById(environmentId);
 
 	if(currentEndpoint ==null){
-		currentEndpoint = new PublishingEndPoint();
+	    PublishingEndPointFactory publishingEndPointFactory = new PublishingEndPointFactory();
+		currentEndpoint = publishingEndPointFactory.getPublishingEndPoint(PushPublisher.PROTOCOL_HTTP);
 		currentEndpoint.setEnabled(true);
 		currentEndpoint.setPort("");
 		currentEndpoint.setProtocol("");
