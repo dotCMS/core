@@ -108,7 +108,7 @@ public class PageResource {
     }
 
     /**
-     * Returns the String representation of the specified HTML Page, i.e., the source code of the
+     * Returns the JSON representation of the specified HTML Page, i.e., the source code of the
      * rendered page.
      * <p>
      * <pre>
@@ -126,6 +126,7 @@ public class PageResource {
      */
     @NoCache
     @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response renderPage(@Context final HttpServletRequest request, @Context final
     HttpServletResponse response, @PathParam("uri") final String uri) {
