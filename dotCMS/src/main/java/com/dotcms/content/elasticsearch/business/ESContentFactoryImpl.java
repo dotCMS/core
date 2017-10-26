@@ -198,7 +198,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
 	    String name = "";
         try {
-            name = APILocator.getContentletAPI().getName(cont, APILocator.getUserAPI().getSystemUser(), true);
+            // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+            if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())){
+                name = APILocator.getContentletAPI().getName(
+                        cont, APILocator.getUserAPI().getSystemUser(), true);
+            }
         }catch (DotSecurityException e) {
 
         }

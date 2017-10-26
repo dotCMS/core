@@ -1631,20 +1631,23 @@ public class ContentletAjax {
 		catch(DotLockException dse){
 			String errorString = LanguageUtil.get(user,"message.content.locked");
 			saveContentErrors.add(errorString);
-
+			clearBinary = false;
 		}
 		catch(DotSecurityException dse){
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
+			clearBinary = false;
 		}
         catch ( PublishStateException pe ) {
             String errorString = LanguageUtil.get( user, pe.getMessage() );
             saveContentErrors.add( errorString );
+			clearBinary = false;
         }
 		catch ( DotLanguageException e ) {
             saveContentErrors.add( e.getMessage() );
             callbackData.put( "saveContentErrors", saveContentErrors );
             callbackData.put( "referer", referer );
+			clearBinary = false;
             return callbackData;
         }
         catch ( Exception e ) {
@@ -1652,6 +1655,7 @@ public class ContentletAjax {
             saveContentErrors.add( e.getMessage() );
             callbackData.put( "saveContentErrors", saveContentErrors );
             callbackData.put( "referer", referer );
+			clearBinary = false;
             return callbackData;
         }
         catch (Throwable t) {
@@ -1659,6 +1663,7 @@ public class ContentletAjax {
 			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
+			clearBinary = false;
 			return callbackData;
 		}
 

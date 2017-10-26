@@ -106,7 +106,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		if (autoUserId) {
+		if (autoUserId && (userId == null || userId.isEmpty())) {
 			userId =
 				companyId + "." +
 				Long.toString(CounterManagerUtil.increment(

@@ -125,7 +125,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         this.context = context;
 
-        this.classReloadingStrategy = ClassReloadingStrategy.fromInstalledAgent();
+        try {
+            this.classReloadingStrategy = ClassReloadingStrategy.fromInstalledAgent();
+        } catch (Exception e) {
+            //Even if there is not a java agent set we should continue with the plugin processing
+            Logger.error(this,
+                    "Error reading ClassReloadingStrategy from bytebuddy [java agent not set?]", e);
+        }
 
         //Override the classes found in the Override-Classes attribute
         overrideClasses(context);
@@ -318,6 +324,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     protected void addClassTodotCMSClassLoader ( String className ) throws Exception {
+
+        if (null == this.classReloadingStrategy) {
+            Logger.error(this, "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+            return;
+        }
 
         className = className.trim();
 
@@ -667,7 +678,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 try {
                     Language languageObject = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
-                    if(UtilMethods.isSet(languageObject.getLanguageCode())){
+                    if (null != languageObject && UtilMethods
+                            .isSet(languageObject.getLanguageCode())) {
 
                         APILocator.getLanguageAPI().saveLanguageKeys(languageObject,
                                                                      generalKeysToAdd, new HashMap<>(), new HashSet<>());
@@ -812,6 +824,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unpublishBundleServices () throws Exception {
 
         if (null != this.overriddenClasses && !this.overriddenClasses.isEmpty()) {
+
+            if (null == this.classReloadingStrategy) {
+                Logger.error(this,
+                        "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+                return;
+            }
+
             for (String overridenClass : this.overriddenClasses) {
                 try {
                     this.classReloadingStrategy
