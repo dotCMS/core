@@ -922,7 +922,9 @@ function deleteEnvPushHistory(envId) {
 
                         
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
-                            <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                            <%if((environment.getPushToAll() || i == 0)
+                                    && !"awss3".equalsIgnoreCase(endpoint.getProtocol())
+                                    && !"static".equalsIgnoreCase(endpoint.getProtocol())){%>
                                 <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
                                     <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                                 </button>
