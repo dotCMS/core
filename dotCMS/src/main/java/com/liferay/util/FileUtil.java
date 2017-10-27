@@ -799,4 +799,15 @@ public class FileUtil {
 	     }
 	   }
 
+	/**
+	 * @return File (directory) created in file system from the parameter path.
+	 */
+	static public File mkDirsIfNeeded(final String path) {
+		File folder = new File(path);
+		if (!folder.exists()) {
+			folder.mkdirs();
+		}
+		return folder;
+	} //mkDirsIfNeeded.
+
 }
