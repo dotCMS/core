@@ -137,7 +137,7 @@ public class LiferayUserTransformer implements UserTransformer {
                 user.setLastLoginIP((String) map.get("lastloginip"));
             }
             if (null != map.get("failedloginattempts")) {
-                user.setFailedLoginAttempts((Integer) map.get("failedloginattempts"));
+                user.setFailedLoginAttempts(Integer.parseInt(map.get("failedloginattempts").toString()));
             }
             if (null != map.get("agreedtotermsofuse")) {
                 user.setAgreedToTermsOfUse(
