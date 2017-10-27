@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -64,13 +65,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+
 import static com.dotmarketing.util.NumberUtil.*;
 
 @Path("/content")
@@ -91,10 +89,8 @@ public class ContentResource {
     private final ContentHelper contentHelper = ContentHelper.getInstance();
 
     /**
-     * performs a call to APILocator.getContentletAPI().searchIndex() with the
-     * specified parameters.
-     * Example call using curl:
-     * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
+     * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
+     * Example call using curl: curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
      *
      * @param request request object
      * @param query lucene query
@@ -102,36 +98,36 @@ public class ContentResource {
      * @param limit how many results return
      * @param offset how many results skip
      * @return json array of objects. each object with inode and identifier
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws JSONException
      */
     @GET
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response indexSearch ( @Context HttpServletRequest request, @PathParam ("query") String query,
-            @PathParam ("sortby") String sortBy, @PathParam ("limit") int limit,
-            @PathParam ("offset") int offset,
-            @PathParam ("type") String type,
-            @PathParam ("callback") String callback) throws DotSecurityException, DotDataException, JSONException {
+    public Response indexSearch(@Context HttpServletRequest request,
+            @PathParam("query") String query,
+            @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
+            @PathParam("offset") int offset,
+            @PathParam("type") String type,
+            @PathParam("callback") String callback)
+            throws DotSecurityException, DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
-        paramsMap.put( "type", type );
-        paramsMap.put( "callback", callback );
+        paramsMap.put("type", type);
+        paramsMap.put("callback", callback);
         //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+        ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        List<ContentletSearch> searchIndex = APILocator.getContentletAPI().searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
-        JSONArray array=new JSONArray();
-        for(ContentletSearch cs : searchIndex) {
+        List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
+                .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
+        JSONArray array = new JSONArray();
+        for (ContentletSearch cs : searchIndex) {
             array.put(new JSONObject()
-            .put("inode", cs.getInode())
-            .put("identifier", cs.getIdentifier()));
+                    .put("inode", cs.getInode())
+                    .put("identifier", cs.getIdentifier()));
         }
 
-        return responseResource.response( array.toString() );
+        return responseResource.response(array.toString());
     }
 
     /**
@@ -142,36 +138,37 @@ public class ContentResource {
      * curl -XGET http://localhost:8080/api/content/indexcount/+structurename:webpagecontent
      *
      * @param request request obejct
-     * @param query   lucene query to count on
+     * @param query lucene query to count on
      * @return a string with the count
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
     @GET
-    @Path ("/indexcount/{query}")
-    @Produces (MediaType.TEXT_PLAIN)
-    public Response indexCount ( @Context HttpServletRequest request, @PathParam ("query") String query,
-            @PathParam ("type") String type,
-            @PathParam ("callback") String callback ) throws DotDataException, DotSecurityException {
+    @Path("/indexcount/{query}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response indexCount(@Context HttpServletRequest request,
+            @PathParam("query") String query,
+            @PathParam("type") String type,
+            @PathParam("callback") String callback) throws DotDataException, DotSecurityException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
-        paramsMap.put( "type", type );
-        paramsMap.put( "callback", callback );
+        paramsMap.put("type", type);
+        paramsMap.put("callback", callback);
         //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+        ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        return responseResource.response( Long.toString( APILocator.getContentletAPI().indexCount( query, initData.getUser(), true ) ) );
+        return responseResource.response(Long.toString(
+                APILocator.getContentletAPI().indexCount(query, initData.getUser(), true)));
     }
-    
+
 
     @PUT
-    @Path ("/lock/{params:.*}")
-    @Produces (MediaType.APPLICATION_JSON)
+    @Path("/lock/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
 
-    public Response lockContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-
+    public Response lockContent(@Context HttpServletRequest request,
+            @Context HttpServletResponse response, @PathParam("params") String params)
+            throws DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
@@ -181,49 +178,45 @@ public class ContentResource {
         String id = paramsMap.get(RESTParams.ID.getValue());
 
         String inode = paramsMap.get(RESTParams.INODE.getValue());
-        
-        
-        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+
+        ResourceResponse responseResource = new ResourceResponse(paramsMap);
         JSONObject jo = new JSONObject();
         User user = initData.getUser();
-        
 
         long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
+                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
-        if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
-            try{
-                lang= Long.parseLong(language)  ;
-            }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+            try {
+                lang = Long.parseLong(language);
+            } catch (Exception e) {
+                Logger.warn(this.getClass(),
+                        "Invald language passed in, defaulting to, well, the default");
             }
         }
-        
-        
-        Contentlet contentlet = (inode!=null) 
-                ? APILocator.getContentletAPI().find(inode, user, live) 
-                        :APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
-        if(contentlet==null || contentlet.getIdentifier()==null){
+
+        Contentlet contentlet = (inode != null)
+                ? APILocator.getContentletAPI().find(inode, user, live)
+                : APILocator.getContentletAPI()
+                        .findContentletByIdentifier(id, live, lang, user, live);
+        if (contentlet == null || contentlet.getIdentifier() == null) {
             jo.append("message", "contentlet not found");
             jo.append("return", 404);
-            
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
-            return  responseBuilder.entity(jo).build();
-        }else{
-            if(!UtilMethods.isSet(inode)){
+
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+            return responseBuilder.entity(jo).build();
+        } else {
+            if (!UtilMethods.isSet(inode)) {
                 inode = contentlet.getInode();
             }
-            if(!UtilMethods.isSet(id)){
+            if (!UtilMethods.isSet(id)) {
                 id = contentlet.getIdentifier();
-            }   
-                    
+            }
+
             APILocator.getContentletAPI().lock(contentlet, user, live);
-    
-    
-    
-    
-            if(UtilMethods.isSet(callback)){
+
+            if (UtilMethods.isSet(callback)) {
                 jo.put("callback", callback);
             }
             jo.put("inode", inode);
@@ -232,15 +225,17 @@ public class ContentResource {
             jo.put("return", 200);
             //Creating an utility response object
         }
-        
-        return responseResource.response( jo.toString() );
+
+        return responseResource.response(jo.toString());
     }
-    
+
 
     @PUT
-    @Path ("/canLock/{params:.*}")
-    @Produces (MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request,  @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+    @Path("/canLock/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response canLockContent(@Context HttpServletRequest request,
+            @PathParam("params") String params)
+            throws DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
@@ -250,62 +245,61 @@ public class ContentResource {
         String id = paramsMap.get(RESTParams.ID.getValue());
 
         String inode = paramsMap.get(RESTParams.INODE.getValue());
-        
-        
-        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+
+        ResourceResponse responseResource = new ResourceResponse(paramsMap);
         JSONObject jo = new JSONObject();
         User user = initData.getUser();
-        
 
         long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
+                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
-        if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
-            try{
-                lang= Long.parseLong(language)  ;
-            }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+            try {
+                lang = Long.parseLong(language);
+            } catch (Exception e) {
+                Logger.warn(this.getClass(),
+                        "Invald language passed in, defaulting to, well, the default");
             }
         }
-        
-        
-        Contentlet contentlet = (inode!=null) 
-                ? APILocator.getContentletAPI().find(inode, user, live) 
-                        :APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
-        if(contentlet==null || contentlet.getIdentifier()==null){
+
+        Contentlet contentlet = (inode != null)
+                ? APILocator.getContentletAPI().find(inode, user, live)
+                : APILocator.getContentletAPI()
+                        .findContentletByIdentifier(id, live, lang, user, live);
+        if (contentlet == null || contentlet.getIdentifier() == null) {
             jo.append("message", "contentlet not found");
             jo.append("return", 404);
-            
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
-            return  responseBuilder.entity(jo).build();
-        }else{
-            if(!UtilMethods.isSet(inode)){
+
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+            return responseBuilder.entity(jo).build();
+        } else {
+            if (!UtilMethods.isSet(inode)) {
                 inode = contentlet.getInode();
             }
-            if(!UtilMethods.isSet(id)){
+            if (!UtilMethods.isSet(id)) {
                 id = contentlet.getIdentifier();
-            }   
-                    
-            boolean canLock = false;
-            try{
-                canLock = APILocator.getContentletAPI().canLock(contentlet, user);
             }
-            catch(DotLockException e){
-                canLock=false;
+
+            boolean canLock = false;
+            try {
+                canLock = APILocator.getContentletAPI().canLock(contentlet, user);
+            } catch (DotLockException e) {
+                canLock = false;
             }
             jo.put("canLock", canLock);
             jo.put("locked", contentlet.isLocked());
-            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id, contentlet.getLanguageId());
-            if(contentlet.isLocked()){
+            ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(id, contentlet.getLanguageId());
+            if (contentlet.isLocked()) {
                 jo.put("lockedBy", cvi.getLockedBy());
                 jo.put("lockedOn", cvi.getLockedOn());
                 jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
-                
-                
+
+
             }
-    
-            if(UtilMethods.isSet(callback)){
+
+            if (UtilMethods.isSet(callback)) {
                 jo.put("callback", callback);
             }
             jo.put("inode", inode);
@@ -313,15 +307,17 @@ public class ContentResource {
             jo.put("return", 200);
             //Creating an utility response object
         }
-        
-        return responseResource.response( jo.toString() );
-    }
-    
-    @PUT
-    @Path ("/unlock/{params:.*}")
-    @Produces (MediaType.APPLICATION_JSON)
 
-    public Response unlockContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        return responseResource.response(jo.toString());
+    }
+
+    @PUT
+    @Path("/unlock/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
+
+    public Response unlockContent(@Context HttpServletRequest request,
+            @Context HttpServletResponse response, @PathParam("params") String params)
+            throws DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
@@ -329,49 +325,44 @@ public class ContentResource {
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
         String id = paramsMap.get(RESTParams.ID.getValue());
         String inode = paramsMap.get(RESTParams.INODE.getValue());
-        
-        
-        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+
+        ResourceResponse responseResource = new ResourceResponse(paramsMap);
         JSONObject jo = new JSONObject();
         User user = initData.getUser();
-        
 
         long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
+                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
-        if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
-            try{
-                lang= Long.parseLong(language)  ;
-            }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+            try {
+                lang = Long.parseLong(language);
+            } catch (Exception e) {
+                Logger.warn(this.getClass(),
+                        "Invald language passed in, defaulting to, well, the default");
             }
         }
-        
-        
-        Contentlet contentlet = (inode!=null) 
-                ? APILocator.getContentletAPI().find(inode, user, live) 
-                        :APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
-        if(contentlet==null || contentlet.getIdentifier()==null){
+
+        Contentlet contentlet = (inode != null)
+                ? APILocator.getContentletAPI().find(inode, user, live)
+                : APILocator.getContentletAPI()
+                        .findContentletByIdentifier(id, live, lang, user, live);
+        if (contentlet == null || contentlet.getIdentifier() == null) {
             jo.append("message", "contentlet not found");
             jo.append("return", 404);
-            
-            
-        }else{
-            if(!UtilMethods.isSet(inode)){
+
+
+        } else {
+            if (!UtilMethods.isSet(inode)) {
                 inode = contentlet.getInode();
             }
-            if(!UtilMethods.isSet(id)){
+            if (!UtilMethods.isSet(id)) {
                 id = contentlet.getIdentifier();
-            }   
-                    
+            }
+
             APILocator.getContentletAPI().unlock(contentlet, user, live);
-    
-    
-    
-            
-    
-            if(UtilMethods.isSet(callback)){
+
+            if (UtilMethods.isSet(callback)) {
                 jo.put("callback", callback);
             }
             jo.put("inode", inode);
@@ -380,22 +371,21 @@ public class ContentResource {
             jo.put("return", 200);
             //Creating an utility response object
         }
-        
-        return responseResource.response( jo.toString() );
+
+        return responseResource.response(jo.toString());
     }
-    
-    
-    
-    
+
+
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
+    public Response getContent(@Context HttpServletRequest request,
+            @Context HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = this.webResource.init
                 (params, true, request, false, null);
         //Creating an utility response object
-        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
         final String render = paramsMap.get(RESTParams.RENDER.getValue());
@@ -405,9 +395,9 @@ public class ContentResource {
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
-                                        () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
-        final int limit  = toInt(limitStr,  () -> 10);
+        final int limit = toInt(limitStr, () -> 10);
         final int offset = toInt(offsetStr, () -> 0);
         final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
                 !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
@@ -422,44 +412,46 @@ public class ContentResource {
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
 
-        type = UtilMethods.isSet(type)?type:"json";
-        orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
+        type = UtilMethods.isSet(type) ? type : "json";
+        orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
 
         try {
 
-            if(idPassed = UtilMethods.isSet(id)) {
-                Optional.ofNullable(this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                        .findContentletByIdentifier(id, live, language, user, true)))
+            if (idPassed = UtilMethods.isSet(id)) {
+                Optional.ofNullable(
+                        this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
+                                .findContentletByIdentifier(id, live, language, user, true)))
                         .ifPresent(contentlets::add);
-            } else if(inodePassed = UtilMethods.isSet(inode)) {
-                Optional.ofNullable(this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                        .find(inode, user, true)))
+            } else if (inodePassed = UtilMethods.isSet(inode)) {
+                Optional.ofNullable(
+                        this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
+                                .find(inode, user, true)))
                         .ifPresent(contentlets::add);
-            } else if(queryPassed = UtilMethods.isSet(query)) {
-                String tmDate=(String)request.getSession().getAttribute("tm_date");
-                contentlets = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
+            } else if (queryPassed = UtilMethods.isSet(query)) {
+                String tmDate = (String) request.getSession().getAttribute("tm_date");
+                contentlets = ContentUtils.pull(query, offset, limit, orderBy, user, tmDate);
             }
 
-            status = (null == contentlets || contentlets.isEmpty())?
-                    Optional.of(Status.NOT_FOUND): status;
+            status = (null == contentlets || contentlets.isEmpty()) ?
+                    Optional.of(Status.NOT_FOUND) : status;
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
             status = Optional.of(Status.UNAUTHORIZED);
         } catch (Exception e) {
-            if(idPassed) {
+            if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
-            } else if(queryPassed) {
+            } else if (queryPassed) {
                 Logger.warn(this, "Can't find Content with Inode: " + inode);
-            } else if(inodePassed) {
-                Logger.warn(this, "Error searching Content : "  + e.getMessage());
+            } else if (inodePassed) {
+                Logger.warn(this, "Error searching Content : " + e.getMessage());
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
 
         /* Converting the Contentlet list to XML or JSON */
         try {
-            if("xml".equals(type)) {
+            if ("xml".equals(type)) {
                 result = getXML(contentlets, request, response, render, user);
             } else {
                 result = getJSON(contentlets, request, response, render, user);
@@ -468,11 +460,12 @@ public class ContentResource {
             Logger.warn(this, "Error converting result to XML/JSON");
         }
 
-        return responseResource.response( result, null, status );
+        return responseResource.response(result, null, status);
     }
 
 
-    private String getXML(final List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) 
+    private String getXML(final List<Contentlet> cons, HttpServletRequest request,
+            HttpServletResponse response, String render, User user)
             throws DotDataException, IOException, DotSecurityException {
         XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
@@ -481,24 +474,27 @@ public class ContentResource {
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
         sb.append("<contentlets>");
 
-        for(Contentlet c : cons){
+        for (Contentlet c : cons) {
             Map<String, Object> m = new HashMap<>();
             final ContentType type = c.getContentType();
 
             m.putAll(ContentletUtil.getContentPrintableMap(user, c));
 
-            if(BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true).equalsIgnoreCase(render)) {
-                m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
+            if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                    .equalsIgnoreCase(render)) {
+                m.put("parsedCode", WidgetResource.parseWidget(request, response, c));
             }
-            
-            if (BaseContentType.HTMLPAGE.equals(type.baseType())){
+
+            if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
                 m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
             }
 
-            final Set<String> jsonFields=getJSONFields(type);
-            for(String key : m.keySet())
-                if(jsonFields.contains(key))
+            final Set<String> jsonFields = getJSONFields(type);
+            for (String key : m.keySet()) {
+                if (jsonFields.contains(key)) {
                     m.put(key, c.getKeyValueProperty(key));
+                }
+            }
 
             sb.append(xstream.toXML(m));
         }
@@ -506,7 +502,6 @@ public class ContentResource {
         sb.append("</contentlets>");
         return sb.toString();
     }
-
 
 
     private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
@@ -517,14 +512,14 @@ public class ContentResource {
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
         sb.append("<contentlet>");
         Map<String, Object> m = new HashMap<String, Object>();
-        m.put("inode",con.getInode());
-        m.put("identifier",con.getIdentifier());
+        m.put("inode", con.getInode());
+        m.put("identifier", con.getIdentifier());
         sb.append(xstream.toXML(m));
         sb.append("</contentlet>");
         return sb.toString();
     }
-    
-    private String getJSONContentIds(Contentlet con) throws IOException{
+
+    private String getJSONContentIds(Contentlet con) throws IOException {
         JSONObject json = new JSONObject();
         try {
             json.put("inode", con.getInode());
@@ -536,14 +531,16 @@ public class ContentResource {
         return json.toString();
     }
 
-    private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException, DotDataException{
+    private String getJSON(List<Contentlet> cons, HttpServletRequest request,
+            HttpServletResponse response, String render, User user)
+            throws IOException, DotDataException {
         JSONObject json = new JSONObject();
         JSONArray jsonCons = new JSONArray();
 
-        for(Contentlet c : cons){
+        for (Contentlet c : cons) {
             try {
                 JSONObject jo = contentletToJSON(c, request, response, render, user);
-                if (BaseContentType.HTMLPAGE.equals(c.getContentType().baseType())){
+                if (BaseContentType.HTMLPAGE.equals(c.getContentType().baseType())) {
                     jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
                 }
                 jsonCons.put(jo);
@@ -563,56 +560,63 @@ public class ContentResource {
         return json.toString();
     }
 
-    public static Set<String> getJSONFields(ContentType type) throws DotDataException, DotSecurityException {
-        Set<String> jsonFields=new HashSet<String>();
-        List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
-                find(type.inode()).fields()).asOldFieldList();
-        for(Field f : fields){
-              if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-                  jsonFields.add(f.getVelocityVarName());
-              }     
+    public static Set<String> getJSONFields(ContentType type)
+            throws DotDataException, DotSecurityException {
+        Set<String> jsonFields = new HashSet<String>();
+        List<Field> fields = new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).
+                        find(type.inode()).fields()).asOldFieldList();
+        for (Field f : fields) {
+            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
+                jsonFields.add(f.getVelocityVarName());
+            }
         }
 
         return jsonFields;
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) 
-            throws JSONException, IOException, DotDataException, DotSecurityException{
+    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
+            HttpServletResponse response, String render, User user)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
         JSONObject jo = new JSONObject();
         ContentType type = con.getContentType();
-        Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
+        Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con);
 
-        Set<String> jsonFields=getJSONFields(type);
+        Set<String> jsonFields = getJSONFields(type);
 
-        for(String key : map.keySet()) {
-            if(Arrays.binarySearch(ignoreFields, key) < 0)
-                if(jsonFields.contains(key)) {
-                    Logger.info(ContentResource.class, key+" is a json field: "+map.get(key).toString());
+        for (String key : map.keySet()) {
+            if (Arrays.binarySearch(ignoreFields, key) < 0) {
+                if (jsonFields.contains(key)) {
+                    Logger.info(ContentResource.class,
+                            key + " is a json field: " + map.get(key).toString());
                     jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
-                }
-                else {
+                } else {
                     jo.put(key, map.get(key));
                 }
+            }
         }
 
-        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true).equalsIgnoreCase(render)) {
-            jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
+        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                .equalsIgnoreCase(render)) {
+            jo.put("parsedCode", WidgetResource.parseWidget(request, response, con));
         }
 
         return jo;
     }
 
-    public class MapEntryConverter implements Converter{
+    public class MapEntryConverter implements Converter {
+
         public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
             return AbstractMap.class.isAssignableFrom(clazz);
         }
 
-        public void marshal(Object value, HierarchicalStreamWriter writer, MarshallingContext context) {
+        public void marshal(Object value, HierarchicalStreamWriter writer,
+                MarshallingContext context) {
             @SuppressWarnings("unchecked")
-            Map<String,Object> map = (Map<String,Object>) value;
-            for (Entry<String,Object> entry : map.entrySet()) {
+            Map<String, Object> map = (Map<String, Object>) value;
+            for (Entry<String, Object> entry : map.entrySet()) {
                 writer.startNode(entry.getKey().toString());
-                writer.setValue(entry.getValue()!=null?entry.getValue().toString():"");
+                writer.setValue(entry.getValue() != null ? entry.getValue().toString() : "");
                 writer.endNode();
             }
         }
@@ -620,7 +624,7 @@ public class ContentResource {
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
             Map<String, String> map = new HashMap<String, String>();
 
-            while(reader.hasMoreChildren()) {
+            while (reader.hasMoreChildren()) {
                 reader.moveDown();
                 map.put(reader.getNodeName(), reader.getValue());
                 reader.moveUp();
@@ -634,106 +638,119 @@ public class ContentResource {
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
-            FormDataMultiPart multipart,@PathParam("params") String params) 
-                    throws URISyntaxException, DotDataException, DotSecurityException {
+    public Response multipartPUT(@Context HttpServletRequest request,
+            @Context HttpServletResponse response,
+            FormDataMultiPart multipart, @PathParam("params") String params)
+            throws URISyntaxException, DotDataException, DotSecurityException {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
-    
+
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-            FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException, DotSecurityException {
+    public Response multipartPOST(@Context HttpServletRequest request,
+            @Context HttpServletResponse response,
+            FormDataMultiPart multipart, @PathParam("params") String params)
+            throws URISyntaxException, DotDataException, DotSecurityException {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
-    
-    private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-            FormDataMultiPart multipart, String params, String method) 
-                    throws URISyntaxException, DotDataException, DotSecurityException{
 
-        InitDataObject init= webResource.init(params, true, request, false, null);
-        User user=init.getUser();
-        Contentlet contentlet=new Contentlet();
+    private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
+            FormDataMultiPart multipart, String params, String method)
+            throws URISyntaxException, DotDataException, DotSecurityException {
+
+        InitDataObject init = webResource.init(params, true, request, false, null);
+        Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
-        
+
         Map<String, Object> map = new HashMap<String, Object>();
         List<String> usedBinaryFields = new ArrayList<String>();
-        for(BodyPart part : multipart.getBodyParts()) {
-            ContentDisposition cd=part.getContentDisposition();
-            String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
+        for (BodyPart part : multipart.getBodyParts()) {
+            ContentDisposition cd = part.getContentDisposition();
+            String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
+                    .get("name") : "";
 
-            if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
+            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
+                    .equals("json")) {
                 try {
-                    processJSON(contentlet,part.getEntityAs(InputStream.class));
+                    processJSON(contentlet, part.getEntityAs(InputStream.class));
                 } catch (JSONException e) {
 
-                    Logger.error( this.getClass(), "Error processing JSON for Stream", e );
+                    Logger.error(this.getClass(), "Error processing JSON for Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_BAD_REQUEST);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (IOException e) {
 
-                    Logger.error( this.getClass(), "Error processing Stream", e );
+                    Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
+            } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name
+                    .equals("xml")) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
-                    if(e instanceof DotSecurityException){
-                        SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
+                    if (e instanceof DotSecurityException) {
+                        SecurityLogger.logInfo(this.getClass(),
+                                "Invalid XML POSTED to ContentTypeResource from " + request
+                                        .getRemoteAddr());
                     }
-                    Logger.error( this.getClass(), "Error processing Stream", e );
+                    Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
+            } else if (part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+                    || name.equals("urlencoded")) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
-                    Logger.error( this.getClass(), "Error processing Stream", e );
+                    Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            }
-            else if(part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
+            } else if (part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
                 try {
                     map.put(name, part.getEntityAs(String.class));
-                    processMap( contentlet, map );
+                    processMap(contentlet, map);
                 } catch (Exception e) {
-                    Logger.error( this.getClass(), "Error processing Plain Tex", e );
+                    Logger.error(this.getClass(), "Error processing Plain Tex", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            }
-            else if(part.getContentDisposition()!=null) {
-                InputStream input=part.getEntityAs(InputStream.class);
-                String filename=part.getContentDisposition().getFileName();
-                java.io.File tmp=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                        + java.io.File.separator + user.getUserId()
-                        + java.io.File.separator + System.currentTimeMillis()
-                        + java.io.File.separator + filename);
-                if(tmp.exists())
+            } else if (part.getContentDisposition() != null) {
+                InputStream input = part.getEntityAs(InputStream.class);
+                String filename = part.getContentDisposition().getFileName();
+                java.io.File tmpFolder = new File(
+                        APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+                tmpFolder.mkdirs();
+                java.io.File tmp = new File(
+                        tmpFolder.getAbsolutePath() + File.separator + filename);
+                if (tmp.exists()) {
                     tmp.delete();
+                }
                 try {
                     FileUtils.copyInputStreamToFile(input, tmp);
-                    List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
-                            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
-                    for(Field ff : fields) {
+                    List<Field> fields = new LegacyFieldTransformer(
+                            APILocator.getContentTypeAPI(APILocator.systemUser()).
+                                    find(contentlet.getContentType().inode()).fields())
+                            .asOldFieldList();
+                    for (Field ff : fields) {
                         // filling binariess in order. as they come / as field order says
                         String fieldName = ff.getFieldContentlet();
                         if (fieldName.startsWith("binary")
@@ -745,115 +762,127 @@ public class ContentResource {
                     }
                 } catch (IOException e) {
 
-                    Logger.error( this.getClass(), "Error processing Stream", e );
+                    Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-                    responseBuilder.entity( e.getMessage() );
+                    Response.ResponseBuilder responseBuilder = Response
+                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
             }
-        }       
+        }
 
-        return saveContent(contentlet,init);
+        return saveContent(contentlet, init);
     }
 
     @PUT
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
-    @Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
-    public Response singlePUT(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
+            MediaType.APPLICATION_XML})
+    public Response singlePUT(@Context HttpServletRequest request,
+            @Context HttpServletResponse response, @PathParam("params") String params)
+            throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
-    
+
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
-    @Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
-    public Response singlePOST(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
+            MediaType.APPLICATION_XML})
+    public Response singlePOST(@Context HttpServletRequest request,
+            @Context HttpServletResponse response, @PathParam("params") String params)
+            throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "POST");
     }
-    
-    private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response, String params, String method) 
-            throws URISyntaxException {
-        InitDataObject init= webResource.init(params, true, request, false, null);
 
-        Contentlet contentlet=new Contentlet();
+    private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
+            String params, String method)
+            throws URISyntaxException {
+        InitDataObject init = webResource.init(params, true, request, false, null);
+
+        Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
-        
+
         try {
-            if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
+            if (request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
                 processJSON(contentlet, request.getInputStream());
-            }
-            else if(request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
-                try{
+            } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
+                try {
                     processXML(contentlet, request.getInputStream());
-                }
-                catch(DotSecurityException se){
-                    SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
+                } catch (DotSecurityException se) {
+                    SecurityLogger.logInfo(this.getClass(),
+                            "Invalid XML POSTED to ContentTypeResource from " + request
+                                    .getRemoteAddr());
                     throw new DotSecurityException("");
                 }
-            }
-            else if(request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-                if(method.equals("PUT")){
+            } else if (request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+                if (method.equals("PUT")) {
                     processForm(contentlet, request.getInputStream());
-                }
-                else if(method.equals("POST")){
+                } else if (method.equals("POST")) {
                     processFormPost(contentlet, request, false);
                 }
-                
+
             }
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
 
-            Logger.error( this.getClass(), "Error processing JSON for Stream", e );
+            Logger.error(this.getClass(), "Error processing JSON for Stream", e);
 
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-            responseBuilder.entity( e.getMessage() );
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
+            responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
-        } catch ( Exception e ) {
+        } catch (Exception e) {
 
-            Logger.error( this.getClass(), "Error processing Stream", e );
+            Logger.error(this.getClass(), "Error processing Stream", e);
 
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-            responseBuilder.entity( e.getMessage() );
+            Response.ResponseBuilder responseBuilder = Response
+                    .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
         }
 
-        return saveContent(contentlet,init);
+        return saveContent(contentlet, init);
     }
 
-    protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
+    protected Response saveContent(Contentlet contentlet, InitDataObject init)
+            throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
-        boolean clean=false;
+        boolean clean = false;
         try {
 
             // preparing categories
-            List<Category> cats=new ArrayList<Category>();
-            List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).
-                    find(contentlet.getContentType().inode()).fields()).asOldFieldList();
-            for(Field field : fields) {
-                if(field.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                    String catValue=contentlet.getStringProperty(field.getVelocityVarName());
-                    if(UtilMethods.isSet(catValue)) {
-                        for(String cat : catValue.split("\\s*,\\s*")) {
+            List<Category> cats = new ArrayList<Category>();
+            List<Field> fields = new LegacyFieldTransformer(
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).
+                            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+            for (Field field : fields) {
+                if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                    String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+                    if (UtilMethods.isSet(catValue)) {
+                        for (String cat : catValue.split("\\s*,\\s*")) {
                             // take it as catId
-                            Category category=APILocator.getCategoryAPI().find(cat, init.getUser(), false);
-                            if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                            Category category = APILocator.getCategoryAPI()
+                                    .find(cat, init.getUser(), false);
+                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                                 cats.add(category);
-                            }
-                            else {
+                            } else {
                                 // try it as catKey
-                                category=APILocator.getCategoryAPI().findByKey(cat, init.getUser(), false);
-                                if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                                category = APILocator.getCategoryAPI()
+                                        .findByKey(cat, init.getUser(), false);
+                                if (category != null && InodeUtils
+                                        .isSet(category.getCategoryId())) {
                                     cats.add(category);
-                                }
-                                else {
+                                } else {
                                     // try it as variable
                                     // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                    HibernateUtil hu=new HibernateUtil(Category.class);
-                                    hu.setQuery("from "+Category.class.getCanonicalName()+" WHERE category_velocity_var_name=?");
+                                    HibernateUtil hu = new HibernateUtil(Category.class);
+                                    hu.setQuery("from " + Category.class.getCanonicalName()
+                                            + " WHERE category_velocity_var_name=?");
                                     hu.setParam(cat);
-                                    category=(Category)hu.load();
-                                    if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                                    category = (Category) hu.load();
+                                    if (category != null && InodeUtils
+                                            .isSet(category.getCategoryId())) {
                                         cats.add(category);
                                     }
                                 }
@@ -865,126 +894,144 @@ public class ContentResource {
             }
 
             // running a workflow action?
-            for(WorkflowAction action : APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser())) {
-                if(init.getParamsMap().containsKey(action.getName().toLowerCase())) {
+            for (WorkflowAction action : APILocator.getWorkflowAPI()
+                    .findAvailableActions(contentlet, init.getUser())) {
+                if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
 
                     contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, action.getId());
 
-                    if(action.isCommentable()) {
-                        String comment=init.getParamsMap().get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
-                        if(UtilMethods.isSet(comment)) {
+                    if (action.isCommentable()) {
+                        String comment = init.getParamsMap()
+                                .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
+                        if (UtilMethods.isSet(comment)) {
                             contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
                         }
                     }
 
-                    if(action.isAssignable()) {
-                        String assignTo=init.getParamsMap().get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
-                        if(UtilMethods.isSet(assignTo)) {
+                    if (action.isAssignable()) {
+                        String assignTo = init.getParamsMap()
+                                .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
+                        if (UtilMethods.isSet(assignTo)) {
                             contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
                         }
                     }
 
-                    live=false; // avoid manually publishing
+                    live = false; // avoid manually publishing
                     break;
                 }
             }
 
-            Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
+            Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
+                    .get(RELATIONSHIP_KEY);
 
             HibernateUtil.startTransaction();
 
-            boolean allowFrontEndSaving = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+            boolean allowFrontEndSaving = Config
+                    .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),allowFrontEndSaving);
+            contentlet = APILocator.getContentletAPI()
+                    .checkin(contentlet, relationships, cats, new ArrayList<Permission>(),
+                            init.getUser(), allowFrontEndSaving);
 
-            if(live)
-                APILocator.getContentletAPI().publish(contentlet, init.getUser(), allowFrontEndSaving);
+            if (live) {
+                APILocator.getContentletAPI()
+                        .publish(contentlet, init.getUser(), allowFrontEndSaving);
+            }
 
             HibernateUtil.closeAndCommitTransaction();
             clean = true;
-        } catch ( DotContentletStateException e ) {
+        } catch (DotContentletStateException e) {
 
-            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+            Logger.error(this.getClass(), "Error saving Contentlet" + e);
 
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_CONFLICT );
-            responseBuilder.entity( e.getMessage() );
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
+            responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
-        } catch ( IllegalArgumentException e ) {
+        } catch (IllegalArgumentException e) {
 
-            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+            Logger.error(this.getClass(), "Error saving Contentlet" + e);
 
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_CONFLICT );
-            responseBuilder.entity( e.getMessage() );
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
+            responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
-        } catch ( DotSecurityException e ) {
+        } catch (DotSecurityException e) {
 
-            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+            Logger.error(this.getClass(), "Error saving Contentlet" + e);
 
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_FORBIDDEN );
-            responseBuilder.entity( e.getMessage() );
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_FORBIDDEN);
+            responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
-        } catch ( Exception e ) {
-            Logger.warn( this, e.getMessage(), e );
+        } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
             return Response.serverError().build();
-        }
-        finally {
+        } finally {
             try {
-                if(!clean)
+                if (!clean) {
                     HibernateUtil.rollbackTransaction();
+                }
                 HibernateUtil.closeSession();
-            }catch(Exception e) {
+            } catch (Exception e) {
                 Logger.warn(this, e.getMessage(), e);
             }
         }
 
         // waiting for the index
         try {
-            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),contentlet.isLive());
+            APILocator.getContentletAPI()
+                    .isInodeIndexed(contentlet.getInode(), contentlet.isLive());
         } catch (Exception ex) {
             return Response.serverError().build();
         }
 
-        if(init.getParamsMap().containsKey("type") || init.getParamsMap().containsKey("callback")){
-            if(init.getParamsMap().containsKey("callback") && !init.getParamsMap().containsKey("type")){
-                Map<String,String> map = init.getParamsMap();
+        if (init.getParamsMap().containsKey("type") || init.getParamsMap()
+                .containsKey("callback")) {
+            if (init.getParamsMap().containsKey("callback") && !init.getParamsMap()
+                    .containsKey("type")) {
+                Map<String, String> map = init.getParamsMap();
                 map.put("type", "jsonp");
                 init.setParamsMap(map);
             }
 
             String type = init.getParamsMap().get(RESTParams.TYPE.getValue());
-            String result ="";
+            String result = "";
             try {
-                if("xml".equals(type)) {
-                    
+                if ("xml".equals(type)) {
+
                     result = getXMLContentIds(contentlet);
-                    return Response.ok(result,MediaType.APPLICATION_XML)
-                            .location(new URI("content/inode/"+contentlet.getInode()+"/type/xml"))
+                    return Response.ok(result, MediaType.APPLICATION_XML)
+                            .location(
+                                    new URI("content/inode/" + contentlet.getInode() + "/type/xml"))
                             .header("inode", contentlet.getInode())
                             .header("identifier", contentlet.getIdentifier())
                             .status(Status.OK).build();
-                } else if("text".equals(type)){
-                    
-                    return Response.ok("inode:"+contentlet.getInode()+",identifier:"+contentlet.getIdentifier(),MediaType.TEXT_PLAIN)
-                            .location(new URI("content/inode/"+contentlet.getInode()+"/type/text"))
+                } else if ("text".equals(type)) {
+
+                    return Response
+                            .ok("inode:" + contentlet.getInode() + ",identifier:" + contentlet
+                                    .getIdentifier(), MediaType.TEXT_PLAIN)
+                            .location(new URI("content/inode/" + contentlet.getInode()
+                                    + "/type/text"))
                             .header("inode", contentlet.getInode())
                             .header("identifier", contentlet.getIdentifier())
                             .status(Status.OK).build();
-                }else {
+                } else {
 
                     result = getJSONContentIds(contentlet);
 
-                    if(type.equals("jsonp")){
+                    if (type.equals("jsonp")) {
 
                         String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
-                        return Response.ok(callback+"("+result+")","application/javascript")
-                                .location(new URI("content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
+                        return Response.ok(callback + "(" + result + ")", "application/javascript")
+                                .location(new URI("content/inode/" + contentlet.getInode()
+                                        + "/type/jsonp/callback/" + callback))
                                 .header("inode", contentlet.getInode())
                                 .header("identifier", contentlet.getIdentifier())
                                 .status(Status.OK).build();
-                    }else{
+                    } else {
 
-                        return Response.ok(result,MediaType.APPLICATION_JSON)
-                                .location(new URI("content/inode/"+contentlet.getInode()+"/type/json"))
+                        return Response.ok(result, MediaType.APPLICATION_JSON)
+                                .location(new URI("content/inode/" + contentlet.getInode()
+                                        + "/type/json"))
                                 .header("inode", contentlet.getInode())
                                 .header("identifier", contentlet.getIdentifier())
                                 .status(Status.OK).build();
@@ -994,8 +1041,8 @@ public class ContentResource {
                 Logger.warn(this, "Error converting result to XML/JSON");
                 return Response.serverError().build();
             }
-        }else {
-            return Response.seeOther(new URI("content/inode/"+contentlet.getInode()))
+        } else {
+            return Response.seeOther(new URI("content/inode/" + contentlet.getInode()))
                     .header("inode", contentlet.getInode())
                     .header("identifier", contentlet.getIdentifier())
                     .status(Status.OK).build();
@@ -1003,120 +1050,131 @@ public class ContentResource {
     }
 
     @SuppressWarnings("unchecked")
-    protected void processXML(Contentlet contentlet, InputStream inputStream) throws IOException, DotSecurityException, DotDataException {
-        
-        
+    protected void processXML(Contentlet contentlet, InputStream inputStream)
+            throws IOException, DotSecurityException, DotDataException {
+
         String input = IOUtils.toString(inputStream, "UTF-8");
         // deal with XXE or SSRF security vunerabilities in XML docs
         // besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
         // Mingle Card 512
         String upper = input.trim().toUpperCase();
-        if(upper.contains("<!DOCTYPE") || upper.contains("<!ENTITY") || upper.startsWith("<?XML")){
+        if (upper.contains("<!DOCTYPE") || upper.contains("<!ENTITY") || upper
+                .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream=new XStream(new DomDriver());
+        XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
-        Map<String,Object> root=(Map<String,Object>) xstream.fromXML(input);
-        processMap(contentlet,root);
+        Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
+        processMap(contentlet, root);
     }
 
-    protected void processForm ( Contentlet contentlet, InputStream input ) throws Exception {
+    protected void processForm(Contentlet contentlet, InputStream input) throws Exception {
 
         Map<String, Object> map = new HashMap<String, Object>();
-        for ( String param : IOUtils.toString( input ).split( "&" ) ) {
+        for (String param : IOUtils.toString(input).split("&")) {
 
-            int index = param.indexOf( "=" );
+            int index = param.indexOf("=");
 
             //Verify if we have a value
-            if ( index != -1 ) {
-                String key = URLDecoder.decode( param.substring( 0, index ), "UTF-8" );
-                String value = URLDecoder.decode( param.substring( index + 1, param.length() ), "UTF-8" );
-                map.put( key, value );
+            if (index != -1) {
+                String key = URLDecoder.decode(param.substring(0, index), "UTF-8");
+                String value = URLDecoder
+                        .decode(param.substring(index + 1, param.length()), "UTF-8");
+                map.put(key, value);
             }
         }
-        processMap( contentlet, map );
+        processMap(contentlet, map);
     }
-    
-    protected void processFormPost ( Contentlet contentlet, HttpServletRequest request, boolean multiPart) throws Exception {
+
+    protected void processFormPost(Contentlet contentlet, HttpServletRequest request,
+            boolean multiPart) throws Exception {
 
         Map<String, Object> map = new HashMap<String, Object>();
-        
-        if(multiPart){
+
+        if (multiPart) {
             ArrayList<Part> partList = new ArrayList<Part>(request.getParts());
-            
-            for(Part part : partList){
+
+            for (Part part : partList) {
                 String partName = part.getName();
                 String partValue = part.getHeader(partName);
-                map.put( partName, partValue );
+                map.put(partName, partValue);
             }
-            
-        }else{
+
+        } else {
             Enumeration<String> parameterNames = request.getParameterNames();
 
             while (parameterNames.hasMoreElements()) {
                 String paramName = parameterNames.nextElement();
                 String paramValue = request.getParameter(paramName);
-                map.put( paramName, paramValue );
-            }   
-        }
-        
-        processMap( contentlet, map );
-    }
-
-    protected void processMap(Contentlet contentlet, Map<String,Object> map) 
-            throws DotDataException, DotSecurityException {
-        String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
-        if(!UtilMethods.isSet(stInode)) {
-            String stName=(String)map.get("stName");
-            if(UtilMethods.isSet(stName)) {
-                stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName).getInode();
+                map.put(paramName, paramValue);
             }
         }
-        if(UtilMethods.isSet(stInode)) {
-            ContentType type =APILocator.getContentTypeAPI(APILocator.systemUser()).find(stInode);
-            if(type!=null && InodeUtils.isSet(type.inode())) {
+
+        processMap(contentlet, map);
+    }
+
+    protected void processMap(Contentlet contentlet, Map<String, Object> map)
+            throws DotDataException, DotSecurityException {
+        String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
+        if (!UtilMethods.isSet(stInode)) {
+            String stName = (String) map.get("stName");
+            if (UtilMethods.isSet(stName)) {
+                stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName)
+                        .getInode();
+            }
+        }
+        if (UtilMethods.isSet(stInode)) {
+            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(stInode);
+            if (type != null && InodeUtils.isSet(type.inode())) {
                 // basic data
                 contentlet.setContentTypeId(type.inode());
-                if(map.containsKey("languageId")) {
-                    contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
-                }
-                else {
-                    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                if (map.containsKey("languageId")) {
+                    contentlet.setLanguageId(Long.parseLong((String) map.get("languageId")));
+                } else {
+                    contentlet.setLanguageId(
+                            APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 }
 
                 // check for existing identifier
-                if(map.containsKey("identifier")) {
+                if (map.containsKey("identifier")) {
                     contentlet.setIdentifier(String.valueOf(map.get("identifier")));
                     try {
-                        Contentlet existing=APILocator.getContentletAPI().findContentletByIdentifier((String)map.get("identifier"), false,
-                                contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+                        Contentlet existing = APILocator.getContentletAPI()
+                                .findContentletByIdentifier((String) map.get("identifier"), false,
+                                        contentlet.getLanguageId(),
+                                        APILocator.getUserAPI().getSystemUser(), false);
                         APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
                         contentlet.setInode("");
                     } catch (Exception e) {
-                        Logger.debug(this.getClass(), "can't get existing content for ident "+map.get("identifier")+" lang "+contentlet.getLanguageId() + " - creating new one");
+                        Logger.debug(this.getClass(),
+                                "can't get existing content for ident " + map.get("identifier")
+                                        + " lang " + contentlet.getLanguageId()
+                                        + " - creating new one");
                     }
                 }
 
                 // build a field map for easy lookup
-                Map<String,Field> fieldMap=new HashMap<String,Field>();
-                for(Field ff : new LegacyFieldTransformer(type.fields()).asOldFieldList()){
+                Map<String, Field> fieldMap = new HashMap<String, Field>();
+                for (Field ff : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
                     fieldMap.put(ff.getVelocityVarName(), ff);
                 }
-                    
+
                 // look for relationships
-                Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-                for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(type)) {
-                    String relname=rel.getRelationTypeValue();
-                    String query=(String)map.get(relname);
-                    if(UtilMethods.isSet(query)) {
+                Map<Relationship, List<Contentlet>> relationships = new HashMap<Relationship, List<Contentlet>>();
+                for (Relationship rel : FactoryLocator.getRelationshipFactory()
+                        .byContentType(type)) {
+                    String relname = rel.getRelationTypeValue();
+                    String query = (String) map.get(relname);
+                    if (UtilMethods.isSet(query)) {
                         try {
-                            List<Contentlet> cons=APILocator.getContentletAPI().search(
-                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-                            if(cons.size()>0) {
+                            List<Contentlet> cons = APILocator.getContentletAPI().search(
+                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(),
+                                    false);
+                            if (cons.size() > 0) {
                                 relationships.put(rel, cons);
                             }
-                            Logger.info(this, "got "+cons.size()+" related contents");
+                            Logger.info(this, "got " + cons.size() + " related contents");
                         } catch (Exception e) {
                             Logger.warn(this, e.getMessage(), e);
                         }
@@ -1124,93 +1182,110 @@ public class ContentResource {
                 }
                 contentlet.setProperty(RELATIONSHIP_KEY, relationships);
 
-
                 // fill fields
-                for(Map.Entry<String,Object> entry : map.entrySet()) {
-                    String key=entry.getKey();
-                    Object value=entry.getValue();
-                    Field ff=fieldMap.get(key);
-                    if(ff!=null) {
-                        if(ff.getFieldType().equals(FieldType.HOST_OR_FOLDER.toString())) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    String key = entry.getKey();
+                    Object value = entry.getValue();
+                    Field ff = fieldMap.get(key);
+                    if (ff != null) {
+                        if (ff.getFieldType().equals(FieldType.HOST_OR_FOLDER.toString())) {
                             // it can be hostId, folderId, hostname, hostname:/folder/path
                             try {
-                                User sysuser=APILocator.getUserAPI().getSystemUser();
-                                Host hh=APILocator.getHostAPI().find(value.toString(), sysuser, false);
-                                if(hh!=null && InodeUtils.isSet(hh.getIdentifier())) {
+                                User sysuser = APILocator.getUserAPI().getSystemUser();
+                                Host hh = APILocator.getHostAPI()
+                                        .find(value.toString(), sysuser, false);
+                                if (hh != null && InodeUtils.isSet(hh.getIdentifier())) {
                                     contentlet.setHost(hh.getIdentifier());
-                                }
-                                else {
-                                    Folder folder=null;
+                                } else {
+                                    Folder folder = null;
                                     try {
-                                        folder=APILocator.getFolderAPI().find(value.toString(), sysuser, false);
-                                    } catch(Exception ex) {}
-                                    if(folder!=null && InodeUtils.isSet(folder.getInode())) {
+                                        folder = APILocator.getFolderAPI()
+                                                .find(value.toString(), sysuser, false);
+                                    } catch (Exception ex) {
+                                    }
+                                    if (folder != null && InodeUtils.isSet(folder.getInode())) {
                                         contentlet.setFolder(folder.getInode());
                                         contentlet.setHost(folder.getHostId());
-                                    }
-                                    else {
-                                        if(value.toString().contains(":")) {
-                                            String[] split=value.toString().split(":");
-                                            hh=APILocator.getHostAPI().findByName(split[0],sysuser, false);
-                                            if(hh!=null && InodeUtils.isSet(hh.getIdentifier())) {
-                                                folder=APILocator.getFolderAPI().findFolderByPath(split[1], hh, sysuser, false);
-                                                if(folder!=null && InodeUtils.isSet(folder.getInode())) {
+                                    } else {
+                                        if (value.toString().contains(":")) {
+                                            String[] split = value.toString().split(":");
+                                            hh = APILocator.getHostAPI()
+                                                    .findByName(split[0], sysuser, false);
+                                            if (hh != null && InodeUtils
+                                                    .isSet(hh.getIdentifier())) {
+                                                folder = APILocator.getFolderAPI()
+                                                        .findFolderByPath(split[1], hh, sysuser,
+                                                                false);
+                                                if (folder != null && InodeUtils
+                                                        .isSet(folder.getInode())) {
                                                     contentlet.setHost(hh.getIdentifier());
                                                     contentlet.setFolder(folder.getInode());
-                                                    if(BaseContentType.FILEASSET.equals(type.baseType())){
+                                                    if (BaseContentType.FILEASSET
+                                                            .equals(type.baseType())) {
                                                         StringBuilder fileUri = new StringBuilder();
-                                                        fileUri.append(split[1].endsWith("/")?split[1]:split[1]+"/");
-                                                        fileUri.append(contentlet.getMap().get("fileName").toString());
-                                                        Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,fileUri.toString());
-                                                        if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
-                                                            contentlet.setIdentifier(existingIdent.getId());
+                                                        fileUri.append(
+                                                                split[1].endsWith("/") ? split[1]
+                                                                        : split[1] + "/");
+                                                        fileUri.append(
+                                                                contentlet.getMap().get("fileName")
+                                                                        .toString());
+                                                        Identifier existingIdent = APILocator
+                                                                .getIdentifierAPI()
+                                                                .find(hh, fileUri.toString());
+                                                        if (existingIdent != null && UtilMethods
+                                                                .isSet(existingIdent.getId())
+                                                                && UtilMethods.isSet(contentlet
+                                                                .getIdentifier())) {
+                                                            contentlet.setIdentifier(
+                                                                    existingIdent.getId());
                                                         }
                                                     }
                                                 }
                                             }
-                                        }
-                                        else {
-                                            hh=APILocator.getHostAPI().findByName(value.toString(), sysuser, false);
-                                            if(hh!=null && InodeUtils.isSet(hh.getIdentifier())) {
+                                        } else {
+                                            hh = APILocator.getHostAPI()
+                                                    .findByName(value.toString(), sysuser, false);
+                                            if (hh != null && InodeUtils
+                                                    .isSet(hh.getIdentifier())) {
                                                 contentlet.setHost(hh.getIdentifier());
                                             }
                                         }
                                     }
                                 }
-                            }
-                            catch(Exception ex) {
+                            } catch (Exception ex) {
                                 // just pass
                             }
-                        }
-                        else if(ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                        } else if (ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
                             contentlet.setStringProperty(ff.getVelocityVarName(), value.toString());
-                        }
-                        else if((ff.getFieldType().equals(FieldType.FILE.toString()) || ff.getFieldType().equals(FieldType.IMAGE.toString())) &&
+                        } else if ((ff.getFieldType().equals(FieldType.FILE.toString()) || ff
+                                .getFieldType().equals(FieldType.IMAGE.toString())) &&
                                 value.toString().startsWith("//")) {
-                            boolean found=false;
+                            boolean found = false;
                             try {
-                                String str=value.toString().substring(2);
-                                String hostname=str.substring(0,str.indexOf('/'));
-                                String uri=str.substring(str.indexOf('/'));
-                                Host host=APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
-                                if(host!=null && InodeUtils.isSet(host.getIdentifier())) {
-                                    Identifier ident=APILocator.getIdentifierAPI().find(host, uri);
-                                    if(ident!=null && InodeUtils.isSet(ident.getId())) {
-                                        contentlet.setStringProperty(ff.getVelocityVarName(), ident.getId());
-                                        found=true;
+                                String str = value.toString().substring(2);
+                                String hostname = str.substring(0, str.indexOf('/'));
+                                String uri = str.substring(str.indexOf('/'));
+                                Host host = APILocator.getHostAPI().findByName(hostname,
+                                        APILocator.getUserAPI().getSystemUser(), false);
+                                if (host != null && InodeUtils.isSet(host.getIdentifier())) {
+                                    Identifier ident = APILocator.getIdentifierAPI()
+                                            .find(host, uri);
+                                    if (ident != null && InodeUtils.isSet(ident.getId())) {
+                                        contentlet.setStringProperty(ff.getVelocityVarName(),
+                                                ident.getId());
+                                        found = true;
                                     }
                                 }
-                                if(!found) {
-                                    throw new Exception("asset "+value+" not found");
+                                if (!found) {
+                                    throw new Exception("asset " + value + " not found");
                                 }
 
-                            }
-                            catch(Exception ex) {
+                            } catch (Exception ex) {
                                 throw new RuntimeException(ex);
                             }
-                        }
-                        else {
-                            APILocator.getContentletAPI().setContentletProperty(contentlet, ff, value);
+                        } else {
+                            APILocator.getContentletAPI()
+                                    .setContentletProperty(contentlet, ff, value);
                         }
                     }
                 }
@@ -1219,68 +1294,61 @@ public class ContentResource {
     }
 
     @SuppressWarnings("unchecked")
-    protected void processJSON(Contentlet contentlet, InputStream input) 
+    protected void processJSON(Contentlet contentlet, InputStream input)
             throws JSONException, IOException, DotDataException, DotSecurityException {
         processMap(contentlet, webResource.processJSON(input));
     }
-    
+
     private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {
-        try{
+        try {
             contentlet.setStringProperty(HOST_HEADER, request.getHeader("Host"));
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set HOST_HEADER" + HOST_HEADER + e);
-            
+
         }
-        
-        try{
+
+        try {
             //request.getCookies() could return null.
-            if(UtilMethods.isSet(request.getCookies())){
+            if (UtilMethods.isSet(request.getCookies())) {
                 contentlet.setStringProperty(COOKIES, request.getCookies().toString());
             } else {
                 //There are some cases where the cookies are not in the request, for example using curl without -b or --cookie.
                 Logger.warn(this.getClass(), "COOKIES are not in the REQUEST");
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set COOKIES " + e);
-            
+
         }
-        try{
+        try {
             contentlet.setStringProperty(REQUEST_METHOD, request.getMethod());
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set REQUEST_METHOD" + e);
-            
+
         }
-        try{
+        try {
             contentlet.setStringProperty(REFERER, request.getHeader("Referer"));
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set REFERER" + e);
-            
+
         }
-        try{
+        try {
             contentlet.setStringProperty(USER_AGENT, request.getHeader("User-Agent"));
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set USER_AGENT" + e);
-            
+
         }
-        try{
+        try {
             contentlet.setStringProperty(IP_ADDRESS, request.getRemoteHost());
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set IP_ADDRESS" + e);
-            
+
         }
-        
-        try{
+
+        try {
             contentlet.setStringProperty(ACCEPT_LANGUAGE, request.getHeader("Accept-Language"));
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
-            
+
         }
     }
 }

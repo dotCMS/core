@@ -214,6 +214,8 @@ public class TaskLocatorUtil {
         ret.add(Task04210CreateDefaultLanguageVariable.class);
 		ret.add(Task04215MySQLMissingConstraints.class);
 		ret.add(Task04220RemoveDeleteInactiveClusterServersJob.class);
+		ret.add(Task04225UpdateSystemFolderIdentifier.class);
+
 		return ret;
 	}
 
