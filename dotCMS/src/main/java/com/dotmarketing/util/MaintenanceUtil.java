@@ -693,7 +693,7 @@ public class MaintenanceUtil {
 		DotConnect dc = new DotConnect();
 		dc.executeStatement(query);
 		query = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM field " + 
-		        "WHERE field.inode = inode.inode) and inode.type like '%s' ",Inode.Type.FIELD.getTableName());
+		        "WHERE field.inode = inode.inode) and inode.type = '%s' ",Inode.Type.FIELD.getTableName());
         dc.executeStatement(query);
 	}
 
