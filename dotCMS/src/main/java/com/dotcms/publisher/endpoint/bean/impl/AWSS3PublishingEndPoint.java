@@ -27,6 +27,11 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
     @Override
     public void validatePublishingEndPoint() throws PublishingEndPointValidationException {
 
+        if (!UtilMethods.isSet(getAuthKey().toString())){
+            throw new PublishingEndPointValidationException(
+                "publisher_Endpoint_awss3_authKey_missing_properties");
+        }
+
         // Parse AWS S3 properties
         Properties props = new Properties();
         try {

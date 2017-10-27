@@ -10,9 +10,11 @@ import com.dotcms.publisher.pusher.PushPublisher;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class PublishingEndPointFactoryTest {
+
     @Test
     public void getPublishingEndPoint_whenProtocolNotSet_returnNull() throws Exception {
         PublishingEndPointFactory factory = new PublishingEndPointFactory();
@@ -34,14 +36,14 @@ public class PublishingEndPointFactoryTest {
     }
 
     @Test
-    public void getPublishingEndPoint_whenProtocolIsAWS_S3_return_PushPublishingEndPoint() throws Exception {
+    public void getPublishingEndPoint_whenProtocolIsAWS_S3_return_AWSS3PublishingEndPoint() throws Exception {
         PublishingEndPointFactory factory = new PublishingEndPointFactory();
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(AWSS3Publisher.PROTOCOL_AWS_S3);
         assertTrue(endPoint instanceof AWSS3PublishingEndPoint);
     }
 
     @Test
-    public void getPublishingEndPoint_whenProtocolIsStatic_return_PushPublishingEndPoint() throws Exception {
+    public void getPublishingEndPoint_whenProtocolIsStatic_return_StaticPublishingEndPoint() throws Exception {
         PublishingEndPointFactory factory = new PublishingEndPointFactory();
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(StaticPublisher.PROTOCOL_STATIC);
         assertTrue(endPoint instanceof StaticPublishingEndPoint);
