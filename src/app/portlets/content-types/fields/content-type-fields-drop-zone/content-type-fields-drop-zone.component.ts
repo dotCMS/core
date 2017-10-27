@@ -1,22 +1,12 @@
 ///<reference path="../shared/field-type.model.ts"/>
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
-import {
-    Component,
-    SimpleChanges,
-    Input,
-    Output,
-    EventEmitter,
-    OnInit,
-    OnChanges,
-    ViewChild
-} from '@angular/core';
+import { Component, SimpleChanges, Input, Output, EventEmitter, OnInit, OnChanges, ViewChild } from '@angular/core';
 import { FieldDragDropService } from '../service';
 import { FieldRow, Field, FieldType } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { MessageService } from '../../../../api/services/messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
-
 
 /**
  * Display all the Field Types
@@ -25,15 +15,15 @@ import { FieldPropertyService } from '../service/field-properties.service';
  * @class FieldTypesContainerComponent
  */
 @Component({
-    selector: 'content-type-fields-drop-zone',
+    selector: 'dot-content-type-fields-drop-zone',
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
-    templateUrl: './content-type-fields-drop-zone.component.html',
+    templateUrl: './content-type-fields-drop-zone.component.html'
 })
 export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements OnInit, OnChanges {
     displayDialog = false;
     fieldRows: FieldRow[] = [];
     formData: Field;
-    public currentFieldType: FieldType;
+    currentFieldType: FieldType;
 
     @ViewChild('fieldPropertiesForm') propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
@@ -41,7 +31,11 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     @Output() saveFields = new EventEmitter<Field[]>();
     @Output() removeFields = new EventEmitter<Field[]>();
 
-    constructor(private fieldDragDropService: FieldDragDropService, messageService: MessageService, private fieldPropertyService: FieldPropertyService) {
+    constructor(
+        messageService: MessageService,
+        private fieldDragDropService: FieldDragDropService,
+        private fieldPropertyService: FieldPropertyService
+    ) {
         super(
             [
                 'contenttypes.dropzone.action.save',
@@ -90,6 +84,84 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         this.toggleDialog();
     }
 
+    /**
+     * Get the field to be edited
+     * @param {Field} fieldToEdit
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    editField(fieldToEdit: Field): void {
+        const fields = this.getFields();
+        this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
+        this.toggleDialog();
+    }
+
+    /**
+     * Set the field to be edited
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    setDroppedField(): void {
+        const fields = this.getFields();
+        this.formData = fields.find(field => FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field));
+        if (this.formData) {
+            this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
+        }
+    }
+
+    /**
+     * Remove the last dropped field added without ID
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    removeFieldsWithoutId(): void {
+        const fieldRows: any = this.fieldRows;
+        // TODO needs an improvement for performance reasons
+        fieldRows.forEach(row => {
+            row.columns.forEach((col, colIndex) => {
+                col.fields.forEach((field, fieldIndex) => {
+                    if (!field.id) {
+                        row.columns[colIndex].fields.splice(fieldIndex, 1);
+                    }
+                });
+            });
+        });
+
+        this.formData = null;
+        this.propertiesForm.destroy();
+    }
+
+    // TODO: Remove if we will not use this anymore.
+    getDialogHeader(): string {
+        const dialogTitle =
+            this.formData && this.formData.id
+                ? this.i18nMessages['contenttypes.dropzone.action.edit']
+                : this.i18nMessages['contenttypes.dropzone.action.create.field'];
+        return `${dialogTitle}`;
+    }
+
+    /**
+     * Tigger the removeFields event with fieldToDelete
+     * @param fieldToDelete
+     */
+    removeField(fieldToDelete: Field): void {
+        this.removeFields.emit([fieldToDelete]);
+    }
+
+    /**
+     * Tigger the removeFields event with all the fields in fieldRow
+     * @param fieldToDelete
+     */
+    removeFieldRow(fieldRow: FieldRow): void {
+        this.fieldRows.splice(this.fieldRows.indexOf(fieldRow), 1);
+        const fieldsToDelete: Field[] = [];
+
+        fieldsToDelete.push(fieldRow.lineDivider);
+        fieldRow.columns.forEach(fieldColumn => {
+            fieldsToDelete.push(fieldColumn.tabDivider);
+            fieldColumn.fields.forEach(field => fieldsToDelete.push(field));
+        });
+        this.removeFields.emit(fieldsToDelete);
+    }
+
     private moveFields(): void {
         const fields = this.getFields().filter((field, index) => {
             const currentSortOrder = index + 1;
@@ -130,7 +202,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         const result: Field[] = [];
 
         fields.forEach((field, index) => {
-           if (FieldUtil.isNewField(field)) {
+            if (FieldUtil.isNewField(field)) {
                 field.sortOrder = index + 1;
                 const fieldToPush = FieldUtil.isRowOrColumn(field) ? field : Object.assign(field, fieldToSave);
                 result.push(fieldToPush);
@@ -140,64 +212,8 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         return result;
     }
 
-    /**
-     * Get the field to be edited
-     * @param {Field} fieldToEdit
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    editField(fieldToEdit: Field): void {
-        const fields = this.getFields();
-        this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
-        this.toggleDialog();
-    }
-
-    /**
-     * Set the field to be edited
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    setDroppedField(): void {
-        const fields = this.getFields();
-        this.formData = fields.find(field => FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field));
-        if (this.formData) {
-            this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
-        }
-    }
-
-    /**
-     * Show or hide dialog
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
     private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
-    }
-
-    /**
-     * Remove the last dropped field added without ID
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    removeFieldsWithoutId(): void {
-        const fieldRows: any = this.fieldRows;
-        // TODO needs an improvement for performance reasons
-        fieldRows.forEach((row) => {
-            row.columns.forEach((col, colIndex) => {
-                col.fields.forEach((field, fieldIndex) => {
-                    if (!field.id) {
-                        row.columns[colIndex].fields.splice(fieldIndex, 1);
-                    }
-                });
-            });
-        });
-
-        this.formData = null;
-        this.propertiesForm.destroy();
-    }
-
-    // TODO: Remove if we will not use this anymore.
-    getDialogHeader(): string {
-        const dialogTitle = this.formData && this.formData.id ?
-            this.i18nMessages['contenttypes.dropzone.action.edit'] : this.i18nMessages['contenttypes.dropzone.action.create.field'];
-        return `${dialogTitle}`;
     }
 
     private getRowFields(fields: Field[]): FieldRow[] {
@@ -214,7 +230,6 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     }
 
     private getFields(): Field[] {
-
         const fields: Field[] = [];
 
         this.fieldRows.forEach((fieldRow, rowIndex) => {
@@ -227,30 +242,5 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         });
 
         return fields;
-    }
-
-    /**
-     * Tigger the removeFields event with fieldToDelete
-     * @param fieldToDelete
-     */
-    removeField(fieldToDelete: Field): void {
-        this.removeFields.emit([fieldToDelete]);
-    }
-
-    /**
-     * Tigger the removeFields event with all the fields in fieldRow
-     * @param fieldToDelete
-     */
-    removeFieldRow(fieldRow: FieldRow): void {
-        this.fieldRows.splice(this.fieldRows.indexOf(fieldRow), 1);
-        const fieldsToDelete: Field[] = [];
-
-        fieldsToDelete.push(fieldRow.lineDivider);
-        fieldRow.columns.forEach(fieldColumn => {
-            fieldsToDelete.push(fieldColumn.tabDivider);
-            fieldColumn.fields.forEach(field => fieldsToDelete.push(field));
-        });
-
-        this.removeFields.emit(fieldsToDelete);
     }
 }

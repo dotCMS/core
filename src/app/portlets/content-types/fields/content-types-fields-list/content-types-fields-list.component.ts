@@ -1,4 +1,4 @@
-import { FieldService, FieldDragDropService, FieldPropertyService } from '../service';
+import { FieldService, FieldPropertyService } from '../service';
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
@@ -19,7 +19,7 @@ import { Field, FieldType } from '../';
 export class ContentTypesFieldsListComponent implements  OnInit {
     fieldTypes: Field[];
 
-    constructor(public fieldService: FieldService, private fieldDragDropService: FieldDragDropService) {
+    constructor(public fieldService: FieldService) {
 
     }
 
@@ -31,7 +31,5 @@ export class ContentTypesFieldsListComponent implements  OnInit {
                     name: fieldType.label
                 };
             }));
-
-        this.fieldDragDropService.setFieldBagOptions();
    }
 }

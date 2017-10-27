@@ -107,6 +107,16 @@ describe('FieldDragDropService', () => {
         });
     });
 
+    it('should set bag options for fields and rows', () => {
+        spyOn(this.fieldDragDropService, 'setFieldRowBagOptions');
+        spyOn(this.fieldDragDropService, 'setFieldBagOptions');
+
+        this.fieldDragDropService.setBagOptions();
+
+        expect(this.fieldDragDropService.setFieldBagOptions).toHaveBeenCalledTimes(1);
+        expect(this.fieldDragDropService.setFieldRowBagOptions).toHaveBeenCalledTimes(1);
+    });
+
     it('should emit fieldDropFromSource', () => {
         this.fieldDragDropService.fieldDropFromSource$.subscribe(() => this.fieldDropFromSource = true);
 

@@ -26,6 +26,61 @@ export class FieldDragDropService {
         });
     }
 
+    /**
+     * Set options for fields bag and rows bag
+     *
+     * @memberof FieldDragDropService
+     */
+    setBagOptions(): void {
+        this.setFieldBagOptions();
+        this.setFieldRowBagOptions();
+    }
+
+    /**
+     * Set the options for the 'fields-bag' dragula group
+     * @memberof FieldDragDropService
+     */
+    setFieldBagOptions(): void {
+        const fieldBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_BAG_NAME);
+        if (!fieldBagOpts) {
+            this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
+                copy: this.shouldCopy,
+                accepts: this.shouldAccepts,
+                moves: this.shouldMovesField
+            });
+        }
+    }
+
+    /**
+     * Set the options for the 'fields-row-bag' dragula group
+     * @memberof FieldDragDropService
+     */
+    setFieldRowBagOptions(): void {
+        const fieldRowBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_ROW_BAG_NAME);
+        if (!fieldRowBagOpts) {
+            this.dragulaService.setOptions(FieldDragDropService.FIELD_ROW_BAG_NAME, {
+                copy: this.shouldCopy,
+                moves: this.shouldMoveRow
+            });
+        }
+    }
+
+    get fieldDropFromSource$(): Observable<any> {
+        return this._fieldDropFromSource.asObservable();
+    }
+
+    get fieldDropFromTarget$(): Observable<any> {
+        return this._fieldDropFromTarget.asObservable();
+    }
+
+    get fieldRowDropFromSource$(): Observable<any> {
+        return this._fieldRowDropFromSource.asObservable();
+    }
+
+    get fieldRowDropFromTarget$(): Observable<any> {
+        return this._fieldRowDropFromTarget.asObservable();
+    }
+
     private handleDrop(dragType: string, source: string) {
         if (dragType === 'fields-bag') {
             this.handleDropField(dragType, source);
@@ -51,60 +106,12 @@ export class FieldDragDropService {
         }
     }
 
-    /**
-     * Set the options for the 'fields-bag' dragula group
-     * @memberof FieldDragDropService
-     */
-    setFieldBagOptions(): void {
-        const fieldBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_BAG_NAME);
-
-        if (!fieldBagOpts) {
-            this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
-                copy: this.shouldCopy,
-                accepts: this.shouldAccepts,
-                moves: this.shouldMovesField
-            });
-        }
-    }
-
-    /**
-     * Set the options for the 'fields-row-bag' dragula group
-     * @memberof FieldDragDropService
-     */
-    setFieldRowBagOptions(): void {
-        const fieldRowBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_ROW_BAG_NAME);
-
-        if (!fieldRowBagOpts) {
-            this.dragulaService.setOptions(FieldDragDropService.FIELD_ROW_BAG_NAME, {
-                copy: this.shouldCopy,
-                moves: this.shouldMoveRow
-            });
-        }
-    }
-
-    get fieldDropFromSource$(): Observable<any> {
-        return this._fieldDropFromSource.asObservable();
-    }
-
-    get fieldDropFromTarget$(): Observable<any> {
-        return this._fieldDropFromTarget.asObservable();
-    }
-
-    get fieldRowDropFromSource$(): Observable<any> {
-        return this._fieldRowDropFromSource.asObservable();
-    }
-
-    get fieldRowDropFromTarget$(): Observable<any> {
-        return this._fieldRowDropFromTarget.asObservable();
-    }
-
     private shouldCopy(
         el: HTMLElement,
         source: HTMLElement,
         handle: HTMLElement,
         sibling: HTMLElement
     ): boolean {
-
         return source.dataset.dragType === 'source';
     }
 

@@ -76,27 +76,4 @@ describe('ContentTypesFieldsListComponent', () => {
         expect('fields-bag').toEqual(ulElement.attributes['ng-reflect-dragula']);
         expect('source').toEqual(ulElement.attributes['data-drag-type']);
     });
-
-    it('should set the Dragula options', () => {
-        const dragulaName = 'fields-bag';
-        const dragulaOptions = {
-                copy: true,
-                moves: (el, target, source, sibling) => {
-                    return target.dataset.dragType === 'source';
-                },
-            };
-
-        const fieldTypesService = fixture.debugElement.injector.get(FieldService);
-        spyOn(fieldTypesService, 'loadFieldTypes').and.returnValue(Observable.of([]));
-
-        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
-        spyOn(fieldDragDropService, 'setFieldBagOptions');
-
-        comp.ngOnInit();
-
-        fixture.detectChanges();
-
-        expect(fieldDragDropService.setFieldBagOptions).toHaveBeenCalled();
-
-    });
 });

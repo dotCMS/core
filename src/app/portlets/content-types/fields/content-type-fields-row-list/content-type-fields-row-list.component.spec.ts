@@ -41,15 +41,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect('source').toEqual(ul.attributes['data-drag-type']);
     });
 
-    it('should set drag and drop options', () => {
-        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
-        spyOn(fieldDragDropService, 'setFieldRowBagOptions');
-
-        comp.ngOnInit();
-
-        expect(fieldDragDropService.setFieldRowBagOptions).toHaveBeenCalled();
-    });
-
     it('should has a list of items', () => {
         const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldRowBagOptions');

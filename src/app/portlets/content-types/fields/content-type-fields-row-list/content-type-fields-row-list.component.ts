@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
-import { FieldService, FieldDragDropService } from '../service';
+import { FieldService } from '../service';
 import { FieldRow } from '../shared';
 
 /**
@@ -18,7 +18,7 @@ export class ContentTypeFieldsRowListComponent implements OnInit {
     rows: number[] = [4, 3, 2, 1];
     fieldRows: FieldRow[];
 
-    constructor(private fieldDragDropService: FieldDragDropService) {
+    constructor() {
 
     }
 
@@ -27,7 +27,6 @@ export class ContentTypeFieldsRowListComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.fieldDragDropService.setFieldRowBagOptions();
         this.fieldRows = this.rows.map(nColumns => new FieldRow(nColumns));
     }
 }

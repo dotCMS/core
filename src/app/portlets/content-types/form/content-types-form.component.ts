@@ -1,22 +1,42 @@
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { Component, ViewChild, Input, Output, EventEmitter, Renderer2, OnInit, OnChanges } from '@angular/core';
-import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    OnInit,
+    OnChanges,
+    ElementRef,
+    ViewChild,
+    AfterViewInit,
+    OnDestroy
+} from '@angular/core';
+import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
-import { Observable } from 'rxjs/Observable';
-import { SplitButtonModule, MenuItem, ConfirmationService, SelectItem } from 'primeng/primeng';
+import * as _ from 'lodash';
+import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { SelectItem } from 'primeng/primeng';
+import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { MessageService } from '../../../api/services/messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+
+// TODO: move this to models
+import { Field } from '../fields';
 
 /**
- * Form component to create or edit content types
- *
- * @export
- * @class ContentTypesFormComponent
- * @extends {BaseComponent}
- */
+  * Form component to create or edit content types
+  *
+  * @export
+  * @class ContentTypesFormComponent
+  * @extends {BaseComponent}
+  * @implements {OnInit}
+  * @implements {OnChanges}
+  * @implements {AfterViewInit}
+  * @implements {OnDestroy}
+  */
 @Component({
     animations: [
         trigger('enterAnimation', [
@@ -38,33 +58,37 @@ import { SiteSelectorComponent } from '../../../view/components/_common/site-sel
         ])
     ],
     providers: [SiteSelectorComponent],
-    selector: 'content-types-form',
+    selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html'
 })
-export class ContentTypesFormComponent extends BaseComponent implements OnInit, OnChanges {
+export class ContentTypesFormComponent extends BaseComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+    @ViewChild('name') name: ElementRef;
     @Input() data: any;
-    @Input() icon: string;
-    @Input() name: string;
-    @Input() type: string;
+    @Input() fields: Field[];
     @Output() onSubmit: EventEmitter<any> = new EventEmitter();
-    @Output() onDelete: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('contentTypesForm') contentTypesForm: NgForm;
+    dateVarOptions: SelectItem[] = [];
+    form: FormGroup;
+    formState = 'collapsed';
+    isButtonDisabled = true;
+    placeholder: string;
+    submitAttempt = false;
+    templateInfo = {
+        icon: '',
+        placeholder: '',
+        action: ''
+    };
+    workflowOptions: SelectItem[] = [];
 
-    public actionButtonLabel: string;
-    public form: FormGroup;
-    public formState = 'collapsed';
-    public submitAttempt = false;
-    public formOptions: MenuItem[];
-    public dateVarOptions: SelectItem[] = [];
-    private workflowOptions: SelectItem[] = [];
+    private originalValue: any;
 
     constructor(
-        public messageService: MessageService,
-        private renderer: Renderer2,
+        private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
-        private dotcmsConfig: DotcmsConfig
+        private contentTypesInfoService: ContentTypesInfoService,
+        public messageService: MessageService,
+        private hotkeysService: HotkeysService
     ) {
         super(
             [
@@ -86,154 +110,174 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
                 'contenttypes.action.edit',
                 'contenttypes.action.delete',
                 'contenttypes.form.name.error.required',
-                'contenttypes.action.form.hide'
+                'contenttypes.action.form.cancel',
+                'contenttypes.content.file',
+                'contenttypes.content.content',
+                'contenttypes.content.form',
+                'contenttypes.content.persona',
+                'contenttypes.content.widget',
+                'contenttypes.content.page'
             ],
             messageService
         );
     }
 
     ngOnInit(): void {
-        this.initWorkflowtFieldOptions();
+        this.initFormGroup();
+        this.initWorkflowField();
+        this.setTemplateInfo();
+        this.bindActionButtonState();
+        this.bindKeyboardEvents();
 
-        this.messageService.messageMap$.subscribe(res => {
-            this.actionButtonLabel = this.isEditMode
-                ? this.i18nMessages['contenttypes.action.update']
-                : this.i18nMessages['contenttypes.action.save'];
-            this.formOptions = [
-                {
-                    command: this.toggleForm.bind(this),
-                    label: this.i18nMessages['contenttypes.action.edit']
-                },
-                {
-                    command: () => {
-                        this.onDelete.emit();
-                    },
-                    label: this.i18nMessages['contenttypes.action.delete']
-                }
-            ];
-        });
+        if (!this.isEditMode()) {
+            this.toggleForm();
+        }
+    }
 
-        this.dotcmsConfig.getConfig().subscribe(this.updateFormControls.bind(this));
+    ngAfterViewInit() {
+        if (!this.isEditMode()) {
+            this.name.nativeElement.focus();
+        }
     }
 
     ngOnChanges(changes): void {
-        const isFirstChange =
-            (changes.data && changes.data.firstChange) ||
-            (changes.name && changes.name.firstChange) ||
-            (changes.type && changes.type.firstChange) ||
-            (changes.icon && changes.icon.firstChange);
-
-        if (isFirstChange) {
-            this.initFormGroup();
+        if (changes.fields && !changes.fields.firstChange) {
+            this.setDateVarFieldsState();
         }
+    }
 
-        if (changes.data && changes.data.currentValue) {
-            this.populateForm();
-            this.addEditModeSpecificFields();
-            this.actionButtonLabel = this.isEditMode
-                ? this.i18nMessages['contenttypes.action.update']
-                : this.i18nMessages['contenttypes.action.save'];
-        }
+    ngOnDestroy() {
+        this.hotkeysService.remove(this.hotkeysService.get('esc'));
+    }
 
-        if (changes.type && changes.type.currentValue === 'content') {
-            this.addContentSpecificFields();
+    /**
+     * Cancel the editing of the the form and collapsed
+     *
+     * @memberof ContentTypesFormComponent
+     */
+    cancelForm(): void {
+        this.toggleForm();
+        this.name.nativeElement.blur();
+
+        if (this.isEditMode() && this.isFormValueUpdated()) {
+            this.form.patchValue(this.originalValue);
         }
+    }
+
+    /**
+     * Set the form in edit mode, expand it and focus the first field
+     *
+     * @memberof ContentTypesFormComponent
+     */
+    editForm(): void {
+        this.toggleForm();
+        this.name.nativeElement.focus();
+    }
+
+    /**
+     * Check if the form is in edit mode
+     *
+     * @returns {boolean}
+     * @memberof ContentTypesFormComponent
+     */
+    isEditMode(): boolean {
+        return !!(this.data && this.data.id);
     }
 
     /**
      * Reset from to basic state
+     *
      * @memberof ContentTypesFormComponent
      */
-    public resetForm(): void {
+    resetForm(): void {
         this.formState = 'collapsed';
         this.submitAttempt = false;
+        this.originalValue = this.form.value;
+        this.setButtonState();
+    }
+
+    /**
+     * Set the icon, labels and placeholder in the template
+     *
+     * @memberof ContentTypesFormComponent
+     */
+    setTemplateInfo(): void {
+        this.messageService.messageMap$.subscribe(() => {
+            const type = this.data.baseType.toLowerCase();
+
+            this.templateInfo = {
+                icon: this.contentTypesInfoService.getIcon(type),
+                placeholder: `${this.i18nMessages[`contenttypes.content.${type}`]} ${this.i18nMessages[
+                    'contenttypes.form.name'
+                ]} *`,
+                action: this.isEditMode()
+                    ? this.i18nMessages['contenttypes.action.update']
+                    : this.i18nMessages['contenttypes.action.save']
+            };
+        });
     }
 
     /**
      * Set the variable property base on the name and sbmit the form if it's valid
+     *
      * @memberof ContentTypesFormComponent
      */
-    public submitContent($event): void {
+    submitContent($event): void {
         if (!this.submitAttempt) {
             this.submitAttempt = true;
         }
 
         if (this.form.valid) {
-            this.onSubmit.emit({
-                originalEvent: $event,
-                value: this.form.value
-            });
+            this.onSubmit.emit(this.form.value);
         }
     }
 
     /**
      * Toggle the variable that expand or collapse the form
+     *
      * @memberof ContentTypesFormComponent
      */
-    public toggleForm(): void {
+    toggleForm(): void {
         this.formState = this.formState === 'collapsed' ? 'expanded' : 'collapsed';
     }
 
-    /**
-     * Function to update the dropdown fields manually, from the parent component.
-     */
-    public updateFormFields(): void {
-        this.dateVarOptions = this.getDateVarOptions(this.data.fields);
-        if (this.dateVarOptions.length > 0) {
-            this.form.get('publishDateVar').enable();
-            this.form.get('expireDateVar').enable();
-        }
-    }
-
-    get isEditMode(): boolean {
-        return !!this.data && this.data.id;
-    }
-
-    private addContentSpecificFields(): void {
-        this.form.addControl(
-            'detailPage',
-            new FormControl((this.data && this.data.detailPage) || '')
-        );
-        this.form.addControl(
-            'urlMapPattern',
-            new FormControl((this.data && this.data.urlMapPattern) || '')
-        );
-    }
-
-    private addEditModeSpecificFields(): void {
-        this.dateVarOptions = this.getDateVarOptions(this.data.fields);
-
-        const publishDateVar = new FormControl({
-            disabled: !this.dateVarOptions.length,
-            value: this.data.publishDateVar || null
+    private bindActionButtonState(): void {
+        this.form.valueChanges.subscribe(() => {
+            this.setButtonState();
         });
-        const expireDateVar = new FormControl({
-            disabled: !this.dateVarOptions.length,
-            value: this.data.expireDateVar || null
-        });
-        this.form.addControl('publishDateVar', publishDateVar);
-        this.form.addControl('expireDateVar', expireDateVar);
     }
 
-    private getDateVarOptions(fields): SelectItem[] {
-        const dateVarOptions = fields
-            .filter(item => {
-                return (
-                    item.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' &&
-                    item.indexed
-                );
+    private setButtonState() {
+        this.isButtonDisabled = this.isEditMode() ? !this.form.valid || !this.isFormValueUpdated() : !this.form.valid;
+    }
+
+    private bindKeyboardEvents(): void {
+        this.hotkeysService.add(
+            new Hotkey(['esc'], (event: KeyboardEvent, combo: string): boolean => {
+                if (this.formState === 'expanded' && this.isEditMode()) {
+                    this.cancelForm();
+                }
+                return false;
             })
-            .map(item => {
-                return {
-                    label: item.name,
-                    value: item.variable
-                };
-            });
+        );
+    }
+
+    private getDateVarFieldOption(field: Field): SelectItem {
+        return {
+            label: field.name,
+            value: field.variable
+        };
+    }
+
+    private getDateVarOptions(): SelectItem[] {
+        const dateVarOptions = this.fields
+            .filter((field: Field) => this.isDateVarField(field))
+            .map((field: Field) => this.getDateVarFieldOption(field));
 
         if (dateVarOptions.length) {
             dateVarOptions.unshift({
                 label: '',
-                value: null
+                value: ''
             });
         }
 
@@ -245,53 +289,118 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         const publishDateVar = this.form.get('publishDateVar');
 
         if (field === 'publishDateVar' && expireDateVar.value === $event.value) {
-            expireDateVar.patchValue(null);
+            expireDateVar.patchValue('');
         }
         if (field === 'expireDateVar' && publishDateVar.value === $event.value) {
-            publishDateVar.patchValue(null);
+            publishDateVar.patchValue('');
         }
     }
 
     private initFormGroup(): void {
         this.form = this.fb.group({
-            description: '',
-            host: '',
-            name: ['', [Validators.required]],
-            workflow: ''
+            clazz: this.data.clazz || '',
+            description: this.data.description || '',
+            expireDateVar: [{ value: this.data.description || '', disabled: true }],
+            host: this.data.host || '',
+            name: [this.data.name || '', [Validators.required]],
+            publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
+            workflow: [{ value: this.data.workflow || '', disabled: true }],
+            defaultType: this.data.defaultType,
+            fixed: this.data.fixed,
+            folder: this.data.folder,
+            system: this.data.system
         });
+
+        if (this.isBaseTypeContent()) {
+            this.setBaseTypeContentSpecificFields();
+        }
+
+        if (this.isEditMode() && !this.originalValue) {
+            this.originalValue = this.form.value;
+        }
+
+        if (this.fields && this.fields.length) {
+            this.setDateVarFieldsState();
+        }
     }
 
-    private initWorkflowtFieldOptions(): void {
+    private initWorkflowField(): void {
         this.workflowOptions = [
             {
                 label: 'Select Workflow',
-                value: null
+                value: ''
             }
         ];
+
+        this.dotcmsConfig
+            .getConfig()
+            .take(1)
+            .subscribe(res => {
+                this.updateWorkflowFormControl(res.license);
+            });
     }
 
-    private populateForm(): void {
-        const formData: any = {
-            description: this.data.description || '',
-            host: this.data.host || '',
-            name: this.data.name || '',
-            workflow: this.data.workflow || ''
-        };
-
-        if (this.form.get('detailPage')) {
-            formData.detailPage = this.data.detailPage || '';
-        }
-
-        if (this.form.get('urlMapPattern')) {
-            formData.urlMapPattern = this.data.urlMapPattern || '';
-        }
-
-        this.form.setValue(formData);
+    private isBaseTypeContent(): boolean {
+        return this.data && this.data.baseType === 'CONTENT';
     }
 
-    private updateFormControls(res): void {
-        if (res.license.isCommunity) {
-            this.form.get('workflow').disable();
+    private isDateVarField(field: Field): boolean {
+        return field.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' && field.indexed;
+    }
+
+    private isFormValueUpdated(): boolean {
+        return !_.isEqual(this.form.value, this.originalValue);
+    }
+
+    private isNewDateVarFields(newOptions: SelectItem[]): boolean {
+        return this.dateVarOptions.length !== newOptions.length;
+    }
+
+    private setBaseTypeContentSpecificFields(): void {
+        this.form.addControl('detailPage', new FormControl((this.data && this.data.detailPage) || ''));
+        this.form.addControl('urlMapPattern', new FormControl((this.data && this.data.urlMapPattern) || ''));
+    }
+
+    private setDateVarFieldsState(): void {
+        const dateVarNewOptions = this.getDateVarOptions();
+
+        if (this.isNewDateVarFields(dateVarNewOptions)) {
+            this.dateVarOptions = dateVarNewOptions;
+        }
+
+        const publishDateVar = this.form.get('publishDateVar');
+        const expireDateVar = this.form.get('expireDateVar');
+
+        if (this.dateVarOptions.length) {
+            publishDateVar.enable();
+            expireDateVar.enable();
+
+            if (this.originalValue) {
+                this.originalValue.publishDateVar = publishDateVar.value;
+                this.originalValue.expireDateVar = expireDateVar.value;
+            }
+        } else {
+            publishDateVar.disable();
+            expireDateVar.disable();
+
+            if (this.originalValue) {
+                delete this.originalValue.publishDateVar;
+                delete this.originalValue.expireDateVar;
+            }
+        }
+
+        this.setButtonState();
+    }
+
+    private updateWorkflowFormControl(license): void {
+        if (!license.isCommunity) {
+            const workflowControl = this.form.get('workflow');
+            workflowControl.enable();
+
+            if (this.originalValue) {
+                this.originalValue.workflow = workflowControl.value;
+            }
+            this.setButtonState();
         }
     }
 }

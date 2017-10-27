@@ -2,78 +2,75 @@
     <div [innerHTML]="i18nMessages['contenttypes.hint.URL.map.pattern.hint1']"></div>
 </p-overlayPanel>
 
-<form [formGroup]="form" class="content-type__form container-fluid" (ngSubmit)="submitContent($event)" id="content-type-form-form" novalidate>
+<form [formGroup]="form" class="content-type__form container-fluid" (ngSubmit)="submitContent($event)" id="content-type-form" novalidate>
     <div class="content-type__form-header" id="content-type-form-header">
         <div class="ui-g">
             <div class="ui-g-6">
                 <div class="form__group content-type__form-title">
-                    <i class="fa" [ngClass]="icon"></i>
-                    <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="name ? name + ' ' + i18nMessages['contenttypes.form.name'] : ''" name="name"
-                        formControlName="name" />
+                    <i class="fa" [ngClass]="templateInfo.icon"></i>
+                    <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="templateInfo.placeholder" name="name" formControlName="name" tabindex="1" #name class="mousetrap" />
                     <field-validation-message [message]="i18nMessages['contenttypes.form.name.error.required']" [field]="form.get('name')"></field-validation-message>
                 </div>
             </div>
-            <div class="ui-g-6 content-type__form-actions">
-                <!-- 
-                    [menuStyle] we need to align the menu options to the left because absoluted positioned
-                    elements are "hidden" with the overflow: auto of the parent
-                -->
-                <p-splitButton iconButton *ngIf="data" [model]="formOptions" [menuStyle]="{'margin-left':'-130px'}"></p-splitButton>
+            <div class="ui-g-6" *ngIf="isEditMode()">
+                <div class="content-type__form-actions">
+                    <button type="button" pButton flat label="Edit" (click)="editForm()" icon="fa-edit" id="form-edit-button" [disabled]="formState === 'expanded'"></button>
+                </div>
             </div>
         </div>
     </div>
-    <div class="content-type__full-form" [class.content-type__full-form--expanded]="formState === 'expanded'" [@enterAnimation]="formState" id="content-type-form-full">
+    <div class="content-type__full-form" [class.content-type__full-form--expanded]="formState === 'expanded'" [@enterAnimation]="formState">
         <div class="ui-g">
             <div class="ui-g-6">
-                <div class="form__group" *ngIf="isEditMode">
+                <div class="form__group" *ngIf="isEditMode()">
                     <b>{{i18nMessages['contenttypes.content.variable']}}:</b>
                     <label>{{data.variable }}</label>
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-description" class="form__label">{{i18nMessages['contenttypes.form.label.description']}}</label>
-                    <input pInputText type="text" id="content-type-form-description" name="description" formControlName="description" />
+                    <input pInputText type="text" id="content-type-form-description" name="description" formControlName="description" tabindex="2" class="mousetrap" />
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-host" class="form__label">{{i18nMessages['contenttypes.form.field.host_folder.label']}}</label>
-                    <site-selector-component id="content-type-form-host" formControlName="host" [system]="true"></site-selector-component> 
+                    <site-selector-component id="content-type-form-host" formControlName="host" [system]="true" tabindex="3"></site-selector-component> 
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-workflow" class="form__label">{{i18nMessages['contenttypes.form.label.workflow']}}</label>
-                    <p-dropdown [options]="workflowOptions" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow"></p-dropdown>
+                    <p-dropdown [options]="workflowOptions" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow" tabindex="4"></p-dropdown>
                 </div>
                 <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{i18nMessages['contenttypes.form.hint.error.only.default.scheme.available.in.Community']}}</span>
             </div>
             <div class="ui-g-6">
-                <div class="form__group" *ngIf="isEditMode">
+                <div class="form__group" *ngIf="isEditMode()">
                     <b>{{i18nMessages['contenttypes.form.identifier']}}:</b>
                     <label>{{data.id }}</label>
                 </div>
-                <div class="form__group" *ngIf="isEditMode">
+                <div class="form__group">
                     <div class="ui-g-6">
                         <label for="content-type-form-publish-date-field" class="form__label">{{i18nMessages['contenttypes.form.label.publish.date.field']}}</label>
-                        <p-dropdown [options]="dateVarOptions" id="content-type-form-publish-date-field" name="publishDateVar" formControlName="publishDateVar" (onChange)="handleDateVarChange($event, 'publishDateVar')" [style]="{'min-width':'90px'}"></p-dropdown>
+                        <p-dropdown [options]="dateVarOptions" id="content-type-form-publish-date-field" name="publishDateVar" formControlName="publishDateVar" (onChange)="handleDateVarChange($event, 'publishDateVar')" [style]="{'min-width':'90px'}" tabindex="5"></p-dropdown>
                     </div>
                     <div class="ui-g-6">
                         <label for="content-type-form-expire-date-field" class="form__label">{{i18nMessages['contenttypes.form.field.expire.date.field']}}</label>
-                        <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}"></p-dropdown>
+                        <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}" tabindex="6"></p-dropdown>
                     </div>                    
                 </div>
-                <span class="form__group-hint" *ngIf="isEditMode && !dateVarOptions.length">{{i18nMessages['contenttypes.form.message.no.date.fields.defined']}}</span>
+                <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{i18nMessages['contenttypes.form.message.no.date.fields.defined']}}</span>
 
                 <div class="form__group" *ngIf="form.get('detailPage')">
                     <label for="content-type-form-detail-page" class="form__label">{{i18nMessages['contenttypes.form.field.detail.page']}}</label>
-                    <input pInputText type="text" id="content-type-form-detail-page" name="detailPage" formControlName="detailPage" />
+                    <input pInputText type="text" id="content-type-form-detail-page" name="detailPage" formControlName="detailPage" tabindex="7" class="mousetrap" />
                 </div>
                 <div class="form__group" *ngIf="form.get('urlMapPattern')">
                     <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
                     <label for="content-type-form-url-map-pattern" class="form__label">{{i18nMessages['contenttypes.form.label.URL.pattern']}}</label>
-                    <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern"/>
+                    <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern" tabindex="8" class="mousetrap" />
                 </div>
             </div>
         </div>
         <div class="form__buttons">
-            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.form.hide']}}" (click)="toggleForm()"></button>
-            <button pButton type="submit" id="content-type-form-submit" label="{{actionButtonLabel}}"></button>
+            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.form.cancel']}}" (click)="cancelForm()" *ngIf="isEditMode()"></button>
+            <button pButton type="submit" id="content-type-form-submit" [label]="templateInfo.action" [disabled]="isButtonDisabled" tabindex="9"></button>
         </div>
     </div>
 </form>

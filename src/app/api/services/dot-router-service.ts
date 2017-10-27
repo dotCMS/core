@@ -57,7 +57,7 @@ export class DotRouterService {
         return url === '/';
     }
 
-    gotoPortlet(link: string, replaceUrl: boolean): Promise<boolean> {
+    gotoPortlet(link: string, replaceUrl?: boolean): Promise<boolean> {
         return this.router.navigate([link], { replaceUrl: replaceUrl });
     }
 

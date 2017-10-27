@@ -6,6 +6,9 @@ import {
     Output,
     EventEmitter,
     Input,
+    OnInit,
+    AfterViewInit,
+    AfterContentInit
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
@@ -32,9 +35,9 @@ import { Observable } from 'rxjs/Observable';
     ],
     selector: 'site-selector-component',
     styleUrls: ['./site-selector.component.scss'],
-    templateUrl: 'site-selector.component.html',
+    templateUrl: 'site-selector.component.html'
 })
-export class SiteSelectorComponent implements ControlValueAccessor {
+export class SiteSelectorComponent implements ControlValueAccessor, OnInit, AfterContentInit {
     private static readonly MIN_CHARECTERS_TO_SERACH = 3;
 
     @Input() archive: boolean = null;
@@ -49,12 +52,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     totalRecords: number;
     sitesCurrentPage: Site[];
 
-    propagateChange = (_: any) => {};
+    constructor(private siteService: SiteService, public paginationService: PaginatorService) {}
 
-    constructor(
-        private siteService: SiteService,
-        public paginationService: PaginatorService
-    ) {}
+    propagateChange = (_: any) => {};
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
@@ -65,17 +65,13 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
         this.getSitesList();
 
-        if (this.siteService.currentSite) {
-            this.currentSite = Observable.of(this.siteService.currentSite);
-            this.propagateChange(this.siteService.currentSite);
-        } else {
-            this.siteService.switchSite$.subscribe(site => {
-                this.currentSite = Observable.of(site);
-                this.propagateChange(site.identifier);
-            });
-        }
-
         this.siteService.refreshSites$.subscribe(site => this.handleSitesRefresh());
+    }
+
+    ngAfterContentInit() {
+        if (!this.currentSite) {
+            this.setCurrentSiteAsDefault();
+        }
     }
 
     /**
@@ -83,7 +79,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     handleSitesRefresh(): void {
-        this.paginationService.getCurrentPage().subscribe((items) => {
+        this.paginationService.getCurrentPage().subscribe(items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
             this.totalRecords = this.paginationService.totalRecords;
@@ -115,13 +111,13 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @param {number} [page=1]
      * @memberof SiteSelectorComponent
      */
-    getSitesList(filter = '',  offset = 0): void {
+    getSitesList(filter = '', offset = 0): void {
         // Set filter if undefined
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe( items => {
+        this.paginationService.getWithOffset(offset).subscribe(items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
-            this.totalRecords = this.totalRecords | this.paginationService.totalRecords;
+            this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
         });
     }
 
@@ -167,8 +163,21 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     private selectCurrentSite(siteId: string): void {
         const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
+        this.propagateChange(siteId);
         this.currentSite = selectedInCurrentPage
             ? Observable.of(selectedInCurrentPage)
             : this.siteService.getSiteById(siteId);
+    }
+
+    private setCurrentSiteAsDefault() {
+        if (this.siteService.currentSite) {
+            this.currentSite = Observable.of(this.siteService.currentSite);
+            this.propagateChange(this.siteService.currentSite.identifier);
+        } else {
+            this.siteService.switchSite$.subscribe(site => {
+                this.currentSite = Observable.of(site);
+                this.propagateChange(site.identifier);
+            });
+        }
     }
 }
