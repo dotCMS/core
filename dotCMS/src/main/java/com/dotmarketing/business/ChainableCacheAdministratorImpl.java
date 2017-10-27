@@ -92,7 +92,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		}
 
 	}
-	@WrapInTransaction
+
 	public void setCluster(Server localServer) throws Exception {
 			Logger.info(this, "***\t Starting Cluster Setup");
 

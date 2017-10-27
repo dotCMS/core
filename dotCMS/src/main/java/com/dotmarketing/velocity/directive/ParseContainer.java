@@ -12,36 +12,30 @@ import com.dotmarketing.util.Config;
 
 public class ParseContainer extends DotDirective {
 
+	final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
 
-  final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
+	private static final long serialVersionUID = 1L;
 
-  private static final long serialVersionUID = 1L;
+	@Override
+	public final String getName() {
 
+		return "parseContainer";
+	}
 
-  @Override
-  public final String getName() {
+	public void init(RuntimeServices rs, InternalContextAdapter context, Node node) throws TemplateInitException {
+		super.init(rs, context, node);
 
-    return "parseContainer";
-  }
+	}
 
-
-
-  public void init(RuntimeServices rs, InternalContextAdapter context, Node node) throws TemplateInitException {
-    super.init(rs, context, node);
-
-  }
-
-
-  @Override
-  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String argument) {
-
-    return (params.live) 
-        ? "/live/" + argument + "." + EXTENSION
-        : "/working/" + argument + "." + EXTENSION;
-
-
-
-  }
+	@Override
+	String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,
+			final String argument) {
+		if (argument.contains("/")) {
+			
+		}else{
+		
+			return (params.live) ? "/live/" + argument + "." + EXTENSION : "/working/" + argument + "." + EXTENSION;
+		}
+	}
 
 }
-
