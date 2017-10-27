@@ -1,0 +1,84 @@
+@import "mixins";
+@import "variables";
+
+$row-height: 70px;
+
+:host {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    margin-bottom: $basic-padding;
+    padding: 0 $basic-padding * 2;
+    max-height: $row-height;
+}
+
+.dot-add-rows__container {
+    border: 1px solid $gray-light;
+    overflow: hidden;
+    height: $row-height;
+    position: relative;
+}
+
+.dot-add-rows-button__container, .dot-add-rows-columns-list__container {
+    display: flex;
+    position: absolute;
+    width: 100%;
+    transition: top 200ms ease-in-out, bottom 200ms ease-out;
+}
+
+.dot-add-rows-button__container {
+    text-align: center;
+    height: $row-height;
+    align-items: center;
+    justify-content: center;
+    top: -$row-height;
+
+    &.dot-add-rows__add {
+        top: 0;
+    }
+}
+
+.dot-add-rows-columns-list__container {
+    @include naked-list;
+    bottom: -#{$row-height};
+
+    &.dot-add-rows__select {
+        bottom: 0;
+    }
+}
+
+.dot-add-rows-columns-list__item {
+    cursor: pointer;
+    height: $row-height;
+    display: flex;
+    flex-grow: 1;
+    padding: $basic-padding * 2;
+    border-right: 1px $gray-light solid;
+    outline: none;
+
+    &:last-child {
+        border-right: none;
+    }
+
+    .dot-add-rows-columns-list__item-col {
+        background-color: $gray-light;
+        flex-grow: 1;
+        margin: 0 $basic-padding / 2;
+    
+        &:first-child {
+            margin-left: 0;
+        }
+    
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+
+    &.active {
+        background-color: $brand-primary;
+
+        .dot-add-rows-columns-list__item-col {
+            background-color: $gray-lightest;
+        }
+    }
+}

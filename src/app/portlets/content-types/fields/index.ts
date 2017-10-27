@@ -4,4 +4,5 @@ export * from './content-type-fields-row';
 export * from './content-type-field-dragabble-item';
 export * from './content-type-fields-row-list';
 export * from './content-type-fields-properties-form';
+export * from './content-type-fields-add-row';
 export * from './shared';
