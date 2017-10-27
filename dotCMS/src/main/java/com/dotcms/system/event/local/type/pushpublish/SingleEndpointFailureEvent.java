@@ -1,5 +1,10 @@
 package com.dotcms.system.event.local.type.pushpublish;
 
+import com.dotcms.publisher.business.PublishQueueElement;
+
+import java.util.Date;
+import java.util.List;
+
 /**
  * Object used to represent an event to be triggered when an endpoint fails during push publishing
  *
@@ -7,11 +12,10 @@ package com.dotcms.system.event.local.type.pushpublish;
  */
 public class SingleEndpointFailureEvent extends PushPublishEvent {
 
-    public SingleEndpointFailureEvent(String name) {
-        setName(name);
+    public SingleEndpointFailureEvent(List<PublishQueueElement> publishQueueElements) {
+        this.setName(SingleEndpointFailureEvent.class.getCanonicalName());
+        this.setPublishQueueElements(publishQueueElements);
+        this.setDate(new Date());
     }
 
-    public SingleEndpointFailureEvent() {
-        this(SingleEndpointFailureEvent.class.getCanonicalName());
-    }
 }

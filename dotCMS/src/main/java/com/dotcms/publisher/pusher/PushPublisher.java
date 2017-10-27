@@ -307,13 +307,13 @@ public class PushPublisher extends Publisher {
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when all endpoints failed during the process
-					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent());
+					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent(config.getAssets()));
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when at least one endpoint is successfully sent but others failed
-					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent());
+					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent(config.getAssets()));
 				}
 			}
 			return this.config;

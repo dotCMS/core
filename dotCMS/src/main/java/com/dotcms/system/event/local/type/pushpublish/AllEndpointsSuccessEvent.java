@@ -2,6 +2,8 @@ package com.dotcms.system.event.local.type.pushpublish;
 
 import com.dotcms.publishing.PublisherConfig;
 
+import java.util.Date;
+
 /**
  * Object used to represent an event to be triggered when bundles were sent successfully to all
  * endpoints
@@ -14,6 +16,8 @@ public class AllEndpointsSuccessEvent extends PushPublishEvent {
 
     public AllEndpointsSuccessEvent(PublisherConfig config) {
         setName(AllEndpointsSuccessEvent.class.getCanonicalName());
+        setPublishQueueElements(config.getAssets());
+        setDate(new Date());
         setConfig(config);
     }
 

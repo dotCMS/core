@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.type.pushpublish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
+
 import java.util.Date;
 import java.util.List;
 
@@ -28,8 +29,7 @@ public class PushPublishEvent {
         return publishQueueElements;
     }
 
-    public void setPublishQueueElements(
-            List<PublishQueueElement> publishQueueElements) {
+    public void setPublishQueueElements(List<PublishQueueElement> publishQueueElements) {
         this.publishQueueElements = publishQueueElements;
     }
 

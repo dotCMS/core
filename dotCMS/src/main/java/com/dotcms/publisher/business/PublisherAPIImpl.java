@@ -309,7 +309,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
 
 		  //Triggering event listener
-		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent());
+		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent(getQueueElementsByBundleId(bundleId)));
 		  return resultMap;
     }
 

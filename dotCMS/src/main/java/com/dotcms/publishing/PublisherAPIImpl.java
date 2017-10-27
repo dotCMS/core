@@ -31,7 +31,7 @@ public class PublisherAPIImpl implements PublisherAPI {
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
         //Triggering event listener when the publishing process starts
-        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent());
+        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent(config.getAssets()));
 
         try {
 
@@ -127,7 +127,7 @@ public class PublisherAPIImpl implements PublisherAPI {
             config.setBundlers( confBundlers );
 
             //Triggering event listener when the publishing process ends
-            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent());
+            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent(config.getAssets()));
             PushPublishLogger.log( this.getClass(), "Completed Publishing Task", config.getId() );
         } catch ( Exception e ) {
             Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
