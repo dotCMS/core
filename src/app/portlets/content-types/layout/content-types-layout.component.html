@@ -1,6 +1,6 @@
 <div class="content-type" id="content-type">
     <p-tabView>
-        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.fields']}}">
+        <p-tabPanel class="content-type__properties" header="{{i18nMessages['contenttypes.tab.fields.header']}}">
             <div class="content-type__fields-layout" id="content-type-form-layout">
                 <div class="content-type__fields-main" id="content-type-form-main">
                     <ng-content></ng-content>
@@ -13,10 +13,13 @@
                 </div>
             </div>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.permissions']}}" *ngIf="contentTypeId">
+        <p-tabPanel class="content-type__relationships" header="{{i18nMessages['contenttypes.tab.relationship.header']}}" *ngIf="contentTypeId">
+            <dot-iframe [src]="relationshipURL"></dot-iframe>
+        </p-tabPanel>
+        <p-tabPanel class="content-type__permissions" header="{{i18nMessages['contenttypes.tab.permissions.header']}}" *ngIf="contentTypeId">
             <dot-iframe [src]="permissionURL"></dot-iframe>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.publisher.push.history']}}" *ngIf="contentTypeId">
+        <p-tabPanel class="content-type__push_history" header="{{i18nMessages['contenttypes.tab.publisher.push.history.header']}}" *ngIf="contentTypeId">
             <dot-iframe [src]="pushHistoryURL"></dot-iframe>
         </p-tabPanel>
     </p-tabView>

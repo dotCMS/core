@@ -6,7 +6,7 @@
                     <ng-template ngFor let-menuItem [ngForOf]="menu.menuItems">
                         <a ripple (click)="onClick($event, menuItem.id)" [routerLink]="menuItem.menuLink" 
                             [class.main-nav__submenu--active]="isActive(menuItem.id)">
-                            {{menuItem.name}}
+                            {{menuItem.label}}
                         </a>
                     </ng-template>
                 </div>

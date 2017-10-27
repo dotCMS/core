@@ -8,7 +8,7 @@ import { DotMenu, DotMenuItem } from '../../shared/models/navigation';
 export class DotMenuService {
     menu$: Observable<DotMenu[]>;
 
-    private urlMenus = 'v1/CORE_WEB/menu';
+    private urlMenus = 'v1/menu';
 
     constructor(private coreWebService: CoreWebService) {}
 
@@ -71,6 +71,17 @@ export class DotMenuService {
     reloadMenu(): Observable<DotMenu[]> {
         this.menu$ = null;
         return this.loadMenu();
+    }
+
+    /**
+     * Return the DotMenu's ID of a Portlet
+     * @param portletId MenuItems id
+     */
+    getDotMenuId(portletId: string): Observable<string> {
+        return this.loadMenu()
+            .flatMap((menus: DotMenu[]) => menus)
+            .find((menu: DotMenu) => menu.menuItems.some(menuItem => menuItem.id === portletId))
+            .map((menu: DotMenu) => menu.id);
     }
 
     private getMenuItems(): Observable<DotMenuItem> {
