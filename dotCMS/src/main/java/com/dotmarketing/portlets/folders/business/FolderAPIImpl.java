@@ -472,16 +472,16 @@ public class FolderAPIImpl implements FolderAPI  {
             HibernateUtil.getSession().clear();
             final List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
             for (final Link linker : links) {
-                Link link = (Link) linker;
-
-                    final Identifier identifier = APILocator.getIdentifierAPI().find(link);
-                    if (!InodeUtils.isSet(identifier.getInode())) {
-                        Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
-                                + " doesn't have a valid identifier associated.");
-                        continue;
-                    }
-                    permissionAPI.removePermissions(link);
-                    APILocator.getMenuLinkAPI().delete(link, user, false);
+                final Link link = (Link) linker;
+                final Identifier identifier = APILocator.getIdentifierAPI().find(link);
+                
+                if (!InodeUtils.isSet(identifier.getInode())) {
+                    Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
+                    + " doesn't have a valid identifier associated.");
+                    continue;
+                }
+                permissionAPI.removePermissions(link);
+                APILocator.getMenuLinkAPI().delete(link, user, false);
             }
 
             /******** delete possible orphaned identifiers under the folder *********/
