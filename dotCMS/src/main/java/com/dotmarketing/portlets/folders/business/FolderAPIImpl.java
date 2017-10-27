@@ -80,10 +80,9 @@ public class FolderAPIImpl implements FolderAPI  {
 
             // SYSTEM_FOLDER means if the user has permissions to the host, then they can see host.com/
             if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()) && 
-                    !Host.SYSTEM_HOST.equals(host.getIdentifier())) {
-                if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+                    !Host.SYSTEM_HOST.equals(host.getIdentifier()) && 
+                    !permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                     throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read folder " + folder.getPath());
-                }
             }
         }
 
@@ -126,20 +125,25 @@ public class FolderAPIImpl implements FolderAPI  {
     public Folder findParentFolder(final Treeable asset, final User user, final boolean respectFrontEndPermissions) 
             throws DotIdentifierStateException, DotDataException, DotSecurityException {
         Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
-        if(id==null) return null;
-        if(id.getParentPath()==null || ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())){
+        
+        if(id==null || id.getParentPath()==null || ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())){
             return null;
         }
+        
         Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
-        Folder folder = folderFactory.findFolderByPath(id.getParentPath(), host);
+        final Folder folder = folderFactory.findFolderByPath(id.getParentPath(), host);
 
-        if(folder == null || !UtilMethods.isSet(folder.getInode())) return null;
+        if(folder == null || !UtilMethods.isSet(folder.getInode())){
+            return null;
+        }
+        
         if (!doesUserHavePermissions(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
             final String userId = user.getUserId() != null ? user.getUserId(): "";
             final String path = folder.getPath() != null ? folder.getPath() : id.getParentPath();
             Logger.error(this, "User " + userId  + " does not have permission to read Folder " + path + " Please check the folder exists.");
             throw new DotSecurityException("User " + userId + " does not have permission to read Folder " + path);
         }
+        
         return folder;
 
     }
@@ -197,7 +201,7 @@ public class FolderAPIImpl implements FolderAPI  {
             throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname());
         }
 
-        List<Folder> themesByHost = folderFactory.findThemesByHost(host);
+        final List<Folder> themesByHost = folderFactory.findThemesByHost(host);
         
         return themesByHost.stream().filter ((Folder folder) ->  
             doesUserHavePermissions(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)
@@ -222,7 +226,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
         List<Folder> subFolders = findSubFolders(folder, user, respectFrontEndPermissions);
         List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
-        for (Folder subFolder : toIterateOver) {
+        for (final Folder subFolder : toIterateOver) {
             if (doesUserHavePermissions(subFolder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                 subFolders.addAll(findSubFoldersRecursively(subFolder, user, respectFrontEndPermissions));
             }
@@ -426,7 +430,7 @@ public class FolderAPIImpl implements FolderAPI  {
                 
                 CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
                 //remove value in the parent folder from the children listing
-                Folder parentFolder = !ROOT_PATH.equals(ident.getParentPath()) ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
+                final Folder parentFolder = !ROOT_PATH.equals(ident.getParentPath()) ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
                 if(parentFolder != null){
                     CacheLocator.getNavToolCache().removeNav(faker.getHostId(), parentFolder.getInode());
                 }
@@ -470,28 +474,25 @@ public class FolderAPIImpl implements FolderAPI  {
             for (final Link linker : links) {
                 Link link = (Link) linker;
 
-                    Identifier identifier = APILocator.getIdentifierAPI().find(link);
+                    final Identifier identifier = APILocator.getIdentifierAPI().find(link);
                     if (!InodeUtils.isSet(identifier.getInode())) {
                         Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
                                 + " doesn't have a valid identifier associated.");
                         continue;
                     }
-
                     permissionAPI.removePermissions(link);
                     APILocator.getMenuLinkAPI().delete(link, user, false);
-
-
             }
 
             /******** delete possible orphaned identifiers under the folder *********/
             HibernateUtil.getSession().clear();
-            Identifier ident=APILocator.getIdentifierAPI().find(folder);
-            List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
-            for(Identifier orphan : orphanList) {
+            final Identifier ident = APILocator.getIdentifierAPI().find(folder);
+            final List<Identifier> orphanList = APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
+            for(final Identifier orphan : orphanList) {
                 APILocator.getIdentifierAPI().delete(orphan);
                 HibernateUtil.getSession().clear();
                 try {
-                    DotConnect dc = new DotConnect();
+                    final DotConnect dc = new DotConnect();
                     dc.setSQL("delete from identifier where id=?");
                     dc.addParam(orphan.getId());
                     dc.loadResult();
@@ -503,10 +504,12 @@ public class FolderAPIImpl implements FolderAPI  {
 
             /************ Structures *****************/
             
-        } catch (Exception e) {
-            Logger.error(FolderAPI.class, e.getMessage(), e);
-            throw new DotStateException(e.getMessage());
-
+        } catch (DotSecurityException e) {
+            Logger.error(this, "A DotSecurityException error has been detected: " +e.getMessage(), e);
+            throw new DotSecurityException(e.getMessage());
+        } catch (DotDataException e2) {
+            Logger.error(this, "A DotDataException error has been detected: " + e2.getMessage(), e2);
+            throw new DotDataException(e2.getMessage());
         }
 
     }
@@ -543,15 +546,15 @@ public class FolderAPIImpl implements FolderAPI  {
     public void save(final Folder folder, final String existingId,
                      final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-        Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+        final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         if(id ==null || !UtilMethods.isSet(id.getId())){
             throw new DotStateException("Folder must already have an identifier before saving");
         }
 
-        Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
-        Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
+        final Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
+        final Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
         
-        Permissionable parent = ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())
+        final Permissionable parent = ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())
                 ? host : parentFolder;
 
         if(parent ==null){
@@ -559,18 +562,18 @@ public class FolderAPIImpl implements FolderAPI  {
         }
         if (!this.permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
                 || !this.permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
-            String userId = user.getUserId() != null ? user.getUserId() : "";
-            String parentFolderAsString =ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())
+            final String userId = user.getUserId() != null ? user.getUserId() : "";
+            final String parentFolderAsString =ROOT_PATH.equals(id.getParentPath()) || SYSTEM_FOLDER_PATH.equals(id.getParentPath())
                     ? host.getName(): parentFolder.getPath();
             throw new AddContentToFolderPermissionException(userId, parentFolderAsString);
         }
 
-        boolean isNew = folder.getInode() == null;
+        final boolean isNew = folder.getInode() == null;
         folder.setModDate(new Date());
         folder.setName(folder.getName().toLowerCase());
         folderFactory.save(folder, existingId);
 
-        SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+        final SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
         systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
                 new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
     }
