@@ -1,19 +1,17 @@
 import { Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation } from '@angular/core';
 import { LoginData } from './login-container.component';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
-
-
+import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-login-component',
     templateUrl: 'login.component.html'
-})
-export /**
+}) /**
  * The login component allows the user to fill all
  * the info required to log in the dotCMS angular backend
  */
-class LoginComponent {
+export class LoginComponent {
     @Input() isLoginInProgress = false;
     @Input() message = '';
     @Input() passwordChanged = false;
@@ -71,7 +69,8 @@ class LoginComponent {
     constructor(
         private loginService: LoginService,
         private ngZone: NgZone,
-        private loggerService: LoggerService
+        private loggerService: LoggerService,
+        private dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {
         this.language = '';
         this.renderPageData();
@@ -153,8 +152,7 @@ class LoginComponent {
                 this.cancelButton = dataI18n.cancel;
                 this.serverLabel = dataI18n.Server;
                 this.mandatoryFieldError = dataI18n['error.form.mandatory'];
-                this.communityLicenseInfoMessage =
-                    dataI18n['angular.login.component.community.licence.message'];
+                this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
                 this.resetPasswordSuccess = dataI18n['reset-password-success'];
                 this.resetEmailMessage = dataI18n['a-new-password-has-been-sent-to-x'];
 
