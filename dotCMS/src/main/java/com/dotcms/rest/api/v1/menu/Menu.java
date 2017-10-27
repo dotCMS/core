@@ -13,7 +13,7 @@ public class Menu {
     private String tabIcon;
     private List<MenuItem> menuItems;
     private String url;
-    private Layout layout;
+    private final Layout layout;
 
     /**
      * Generate a new menu Tab element
@@ -21,7 +21,7 @@ public class Menu {
      * @param layout layout link to the Tab Menu
      * @param url 
      */
-    public Menu(String tabName, String tabIcon, String url, Layout layout) {
+    public Menu(String tabName, String tabIcon, String url, final Layout layout) {
         this.tabName = tabName;
         this.tabIcon = tabIcon;
         this.url = url;
