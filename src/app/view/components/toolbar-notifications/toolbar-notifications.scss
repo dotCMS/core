@@ -1,6 +1,8 @@
 @import "mixins";
 @import "variables";
 
+$notification-padding: $basic-padding * 2;
+
 :host {
     position: relative;
 
@@ -17,7 +19,7 @@
     }
 
     .toolbar-notifications {
-        padding: $basic-padding * 2;
+        padding: $notification-padding 0 $notification-padding $notification-padding ;
         width: 350px;
 
         &:before {
@@ -36,6 +38,7 @@
         display: flex;
         margin-bottom: rem-cal(10px);
         justify-content: space-between;
+        padding-right: $notification-padding;
     }
 
     .toolbar-notifications__title {
@@ -45,7 +48,7 @@
     }
 
     .toolbar-notifications__footer{
-        text-align: center; 
+        text-align: center;
     }
 
     .toolbar-notifications__footer button{

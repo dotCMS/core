@@ -107,7 +107,7 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     getFieldType(fieldTypeClass: string): FieldType {
-        return this.fieldTypes.get(fieldTypeClass);;
+        return this.fieldTypes.get(fieldTypeClass);
     }
 
     /**

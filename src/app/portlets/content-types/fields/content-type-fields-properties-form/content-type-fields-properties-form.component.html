@@ -1,7 +1,7 @@
  <form [formGroup]="form" (ngSubmit)="saveFieldProperties()" class="content-type-fields__properties-form" novalidate>  
     <div class="ui-g">
         <div class="ui-g-12" #properties>
-            <div [ngClass]="{'form__group': !checkboxFields.includes(property)}" *ngFor="let property of fieldProperties">
+            <div [ngClass]="{'form__group': checkboxFields.indexOf(property) == -1}" *ngFor="let property of fieldProperties">
                 <ng-container 
                     dynamicFieldProperty
                     [propertyName]="property"
