@@ -720,7 +720,7 @@ public class MultiTreeFactory {
     private static void refreshPageInCache(String id, Long languageId) throws DotDataException, DotSecurityException {
         Identifier ident = APILocator.getIdentifierAPI().find(id);
         Contentlet content = APILocator.getContentletAPI()
-                .findContentletByIdentifier(ident.getId(), true, languageId, APILocator.systemUser(), false);
+                .findContentletByIdentifier(ident.getId(), false, languageId, APILocator.systemUser(), false);
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(content);
         PageServices.invalidateAll(htmlPage);
     }
