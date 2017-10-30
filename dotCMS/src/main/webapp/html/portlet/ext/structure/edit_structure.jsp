@@ -609,13 +609,17 @@
 										<html:hidden property="system" styleId="system" />
 									</dd>
 								</dl>
+                                <%
+                                    String structureName = UtilMethods.isSet(form.getName()) ? UtilMethods.makeHtmlSafe(form.getName()) : "";
+                                    String structureDescription = UtilMethods.isSet(form.getDescription()) ? UtilMethods.makeHtmlSafe(form.getDescription()) : "";
+                                    %>
 								<dl>
 									<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-									<dd><input type="text" dojoType="dijit.form.TextBox" name="name" maxlength="255" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
+									<dd><input type="text" dojoType="dijit.form.TextBox" name="name" maxlength="255" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= structureName %>" /></dd>
 								</dl>
 								<dl>
 									<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-									<dd><input type="text" dojoType="dijit.form.TextBox" name="description" maxlength="255" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
+									<dd><input type="text" dojoType="dijit.form.TextBox" name="description" maxlength="255" style="width:250px" value="<%= structureDescription %>" /></dd>
 								</dl>
 								<% if(UtilMethods.isSet(structure.getInode())) { %>
 								<dl>
