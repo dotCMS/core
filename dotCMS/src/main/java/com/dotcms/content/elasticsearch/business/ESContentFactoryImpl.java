@@ -1,20 +1,43 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.*;
+import com.dotmarketing.business.query.ComplexCriteria;
+import com.dotmarketing.business.query.Criteria;
+import com.dotmarketing.business.query.GenericQueryFactory.Query;
+import com.dotmarketing.business.query.SimpleCriteria;
+import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.*;
+import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -33,55 +56,15 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
 
-import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.query.ComplexCriteria;
-import com.dotmarketing.business.query.Criteria;
-import com.dotmarketing.business.query.GenericQueryFactory.Query;
-import com.dotmarketing.business.query.SimpleCriteria;
-import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Calendar;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -1369,25 +1352,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	   updateUserReferences(userToReplace,systemUser.getUserId(), systemUser );
 	}
 
-        /**
-         * Method will replace user references of the given User in Contentlets
-         * with the replacement user id
-         * @param userToReplace the user to replace
-         * @param replacementUserId Replacement User Id
-         * @param user the user requesting the operation
-         * @exception DotDataException There is a data inconsistency
-         * @throws DotSecurityException
-         */
-	protected void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
-        DotConnect dc = new DotConnect();
+    /**
+     * Replaces the references of a given user in contentlets
+     * with the ID of the user that will replace it.
+     *
+     * @param userToReplace     The user that is being replaced.
+     * @param replacementUserId The user ID that will replace the user that will be deleted.
+     * @param user              The user performing this operation.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have th required permissions to
+     *                              perform this action.
+     */
+    protected void updateUserReferences(final User userToReplace, final String replacementUserId,
+                                        final User user)
+            throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+        final DotConnect dc = new DotConnect();
         try {
-
-            String tempKeyword = DbConnectionFactory.getTempKeyword();
+            final String tempKeyword = DbConnectionFactory.getTempKeyword();
             // CTU content-to-update table
             final String tableName = (DbConnectionFactory.isMsSql()?"#":"") + "CTU_"
                 + UtilMethods.getRandomNumber(10000000);
 
-            StringBuilder createTempTable = new StringBuilder();
+            final StringBuilder createTempTable = new StringBuilder();
 
             if (DbConnectionFactory.isMsSql()) {
                 createTempTable.append("SELECT inode INTO ");
@@ -1401,99 +1387,100 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 createTempTable.append(" TABLE ");
                 createTempTable.append(tableName);
                 createTempTable.append(DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : " ");
-                createTempTable.append("as select inode from contentlet ");
-                createTempTable.append("where mod_user = '");
+                createTempTable.append("AS SELECT inode FROM contentlet ");
+                createTempTable.append("WHERE mod_user = '");
                 createTempTable.append(userToReplace.getUserId());
                 createTempTable.append("'");
             }
 
             dc.executeStatement(createTempTable.toString());
 
-            dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
+            dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ? ");
             dc.addParam(replacementUserId);
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
+            dc.setSQL("UPDATE contentlet_version_info SET locked_by = ? WHERE locked_by = ?");
             dc.addParam(replacementUserId);
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            FlushCacheRunnable reindexContent = new FlushCacheRunnable() {
-                @Override
-                public void run() {
+            HibernateUtil.addSyncCommitListener(() -> {
 
-                    NotificationAPI notAPI = APILocator.getNotificationAPI();
+                reindexReplacedUserContent(userToReplace, user, tableName);
 
-                    try {
-                        ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
-
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("select count(*) as count from " + tableName);
-                        List<Map<String,String>> results = dc.loadResults();
-                        long totalCount = Long.parseLong(results.get(0).get("count"));
-
-                        Connection conn = DbConnectionFactory.getConnection();
-                        try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
-
-                            List<Contentlet> contentToIndex = new ArrayList<>();
-                            int batchSize = 100;
-                            int completed = 0;
-
-                            try (ResultSet rs = ps.executeQuery()) {
-                                for (int i = 1; rs.next(); i++) {
-                                    String inode = rs.getString("inode");
-                                    cc.remove(inode);
-                                    Contentlet content = find(inode);
-                                    contentToIndex.add(content);
-                                    contentToIndex.addAll(indexAPI.loadDeps(content));
-
-                                    if (i % batchSize == 0) {
-                                        indexAPI.indexContentList(contentToIndex, null, false);
-                                        completed += batchSize;
-                                        contentToIndex = new ArrayList<>();
-                                        HibernateUtil.getSession().clear();
-                                        Logger.info(this,
-                                            String.format("Reindexing related content after deletion of user %s. "
-                                                + "Completed: " + completed + " out of " + totalCount,
-                                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-                                    }
-                                }
-
-                                // index remaining records if any
-                                if(!contentToIndex.isEmpty()) {
-                                    indexAPI.indexContentList(contentToIndex, null, false);
-                                }
-                            }
-                        }
-
-                        dc.setSQL("DROP TABLE " + tableName);
-                        dc.loadResult();
-
-                        Logger.info(this, String.format("Reindex of updated related content after deleting user %s "
-                                + " has finished successfully.",
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-
-                    } catch (Exception e) {
-                        Logger.error(this.getClass(),e.getMessage(),e);
-                        notAPI.error(String.format("Unable to Reindex updated related content for deleted user '%s'. "
-                            + "Please run a full Reindex.",
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName()), user.getUserId());
-                    }
-                }
-            };
-
-            HibernateUtil.addCommitListener(reindexContent);
-
-
+            });
         } catch (DotDataException | SQLException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
     }
 
-	@Override
-    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    /**
+     * Performs a re-indexation of contents whose user references have been updated with a new
+     * user ID. This change requires contents to be re-indexed for them to have the correct
+     * information. The Inodes of such contentlets are stored in a temporary table.
+     *
+     * @param userToReplace The user whose references will be removed.
+     * @param user          The user performing this operation.
+     * @param tableName     The name of the temporary table containing the contentlet Inodes.
+     */
+    @CloseDBIfOpened
+    private void reindexReplacedUserContent(final User userToReplace, final User user, final
+    String tableName) {
+        final DotConnect dc = new DotConnect();
+        final NotificationAPI notAPI = APILocator.getNotificationAPI();
+        try {
+            final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+            dc.setSQL("SELECT COUNT(*) AS count FROM " + tableName);
+            final List<Map<String, String>> results = dc.loadResults();
+            final long totalCount = Long.parseLong(results.get(0).get("count"));
+            final Connection conn = DbConnectionFactory.getConnection();
+            try (final PreparedStatement ps = conn.prepareStatement("SELECT inode FROM " +
+                    tableName)) {
+                List<Contentlet> contentToIndex = new ArrayList<>();
+                final int batchSize = 100;
+                int completed = 0;
+                try (final ResultSet rs = ps.executeQuery()) {
+                    for (int i = 1; rs.next(); i++) {
+                        final String inode = rs.getString("inode");
+                        cc.remove(inode);
+                        final Contentlet content = find(inode);
+                        contentToIndex.add(content);
+                        contentToIndex.addAll(indexAPI.loadDeps(content));
+                        if (i % batchSize == 0) {
+                            indexAPI.indexContentList(contentToIndex, null, false);
+                            completed += batchSize;
+                            contentToIndex = new ArrayList<>();
+                            HibernateUtil.getSession().clear();
+                            Logger.info(this, String.format("Reindexing related content after " +
+                                    "deletion of user '%s'. " + "Completed: " + completed + " out of " +
+                                    totalCount, userToReplace.getUserId() + "/" + userToReplace
+                                    .getFullName()));
+                        }
+                    }
+                    // index remaining records if any
+                    if (!contentToIndex.isEmpty()) {
+                        indexAPI.indexContentList(contentToIndex, null, false);
+                    }
+                }
+            }
+            dc.setSQL("DROP TABLE " + tableName);
+            dc.loadResult();
+            Logger.info(this, String.format("Reindexing of updated related content after " +
+                    "deleting user '%s' " + " has finished successfully.", userToReplace.getUserId() +
+                    "/" + userToReplace.getFullName()));
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            notAPI.error(String.format("Unable to reindex updated related content for deleted " +
+                    "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId() + "/" +
+                    userToReplace.getFullName()), user.getUserId());
+        }
+    }
+
+    @Override
+    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException,
+            DotSecurityException {
 	    return save(contentlet,null);
 	}
 
