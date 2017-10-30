@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { HttpRequestUtils, LoginService, LoggerService, HttpCode, ResponseView } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../../../../api/services/dot-router-service';
+import { DotNavigationService } from '../../dot-navigation/dot-navigation.service';
 import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 @Component({
@@ -29,6 +30,7 @@ export class LoginContainerComponent {
 
     constructor(
         private dotRouterService: DotRouterService,
+        private dotNavigationService: DotNavigationService,
         private httprequestUtils: HttpRequestUtils,
         private loggerService: LoggerService,
         private loginService: LoginService,
@@ -55,7 +57,7 @@ export class LoginContainerComponent {
             .subscribe(
                 (result: any) => {
                     this.message = '';
-                    this.dotRouterService.goToMain();
+                    this.dotLoadingIndicatorService.hide();
                 },
                 (error: ResponseView) => {
                     if (error.status === HttpCode.BAD_REQUEST || error.status === HttpCode.UNAUTHORIZED) {

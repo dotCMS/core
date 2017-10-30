@@ -6,7 +6,7 @@ import { LoginPageComponent } from './view/components/login/login-page-component
 import { LogOutContainer } from './view/components/login/login-component/log-out-container';
 import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
-import { ContentletGuardService} from './api/services/guards/contentlet-guard.service';
+import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -14,8 +14,7 @@ import { DefaultGuardService } from './api/services/guards/default-guard.service
 const AUTH_MODULES: Routes = [
     {
         path: 'forgotPassword',
-        loadChildren:
-            'app/view/components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
+        loadChildren: 'app/view/components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
     },
     {
         path: 'login',
@@ -23,8 +22,7 @@ const AUTH_MODULES: Routes = [
     },
     {
         path: 'resetPassword/:token',
-        loadChildren:
-            'app/view/components/login/reset-password-component/reset-password.module#ResetPasswordModule'
+        loadChildren: 'app/view/components/login/reset-password-component/reset-password.module#ResetPasswordModule'
     },
     {
         path: '',
@@ -55,15 +53,11 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'pl',
-        loadChildren:
-            'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
+        loadChildren: 'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
     },
     {
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
         path: 'notLicensed',
-        loadChildren:
-            'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
+        loadChildren: 'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
     },
     {
         canActivate: [MenuGuardService],
@@ -103,7 +97,6 @@ const PORTLETS_IFRAME = [
 ];
 
 const appRoutes: Routes = [
-
     {
         canActivate: [PublicAuthGuardService],
         children: AUTH_MODULES,
@@ -130,7 +123,7 @@ const appRoutes: Routes = [
         canActivate: [AuthGuardService],
         component: MainComponentLegacy,
         children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR],
-        path: '',
+        path: ''
     },
     {
         canActivate: [DefaultGuardService],

@@ -8,6 +8,7 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { DotcmsEventsService } from 'dotcms-js/core/dotcms-events.service';
 import { Auth } from 'dotcms-js/core/login.service';
+import { Router, NavigationEnd } from '@angular/router';
 
 @Injectable()
 export class DotNavigationService {
@@ -18,11 +19,17 @@ export class DotNavigationService {
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
-        private location: PlatformLocation
+        private location: PlatformLocation,
+        private router: Router
     ) {
-        this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
-            this.setMenu(menu);
-        });
+        router.events
+            .filter(event => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
+            .take(1)
+            .subscribe((event: NavigationEnd) => {
+                this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
+                    this.setMenu(menu);
+                });
+            });
 
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
             this.reloadNavigation();
@@ -76,7 +83,8 @@ export class DotNavigationService {
     }
 
     /**
-     * Reloads and return a new version of the menu
+     * Reloads and return a new version of the menu and
+     * decide where to go if the user do not have access to the current route.
      *
      * @returns {Observable<DotMenu[]>}
      * @memberof DotNavigationService
@@ -85,14 +93,22 @@ export class DotNavigationService {
         this.dotMenuService.reloadMenu().subscribe((menu: DotMenu[]) => {
             this.dotMenuService
                 .isPortletInMenu(
-                    this.dotRouterService.currentPortlet.id ||
-                    this.dotRouterService.getPortletId(this.location.hash)
+                    this.dotRouterService.currentPortlet.id || this.dotRouterService.getPortletId(this.location.hash)
                 )
                 .subscribe((isPortletInMenu: boolean) => {
                     if (!isPortletInMenu) {
-                        this.goToFirstPortlet().then(res => {
-                            this.setMenu(menu);
-                        });
+                        if (this.dotRouterService.previousSavedURL) {
+                            this.dotRouterService
+                                .gotoPortlet(this.dotRouterService.previousSavedURL, true)
+                                .then((res: boolean) => {
+                                    if (res) {
+                                        this.dotRouterService.previousSavedURL = null;
+                                        this.setMenu(menu);
+                                    }
+                                });
+                        } else {
+                            this.goToFirstPortlet().then(() => this.setMenu(menu));
+                        }
                     } else {
                         this.setMenu(menu);
                     }
@@ -124,9 +140,7 @@ export class DotNavigationService {
     }
 
     private getFirstMenuLink(): Observable<string> {
-        return this.dotMenuService
-            .loadMenu()
-            .map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
+        return this.dotMenuService.loadMenu().map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
     }
 
     private getMenuLink(menuItemId: string): string {

@@ -4,11 +4,11 @@ import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { PortletNav } from '../../shared/models/navigation';
 import { DotMenuService } from './dot-menu.service';
 import { Subject } from 'rxjs/Subject';
-import { DotNavigationService } from '../../view/components/dot-navigation/dot-navigation.service';
 
 @Injectable()
 export class DotRouterService {
     portletReload$ = new Subject();
+    private _previousSavedURL: string;
 
     constructor(
         private router: Router,
@@ -33,8 +33,8 @@ export class DotRouterService {
         this.portletReload$.next();
     }
 
-    goToMain(): void {
-        this.router.navigate(['/']);
+    goToMain(): Promise<boolean> {
+        return this.router.navigate([this._previousSavedURL || '/']);
     }
 
     goToLogin(parameters?: any): void {
@@ -72,5 +72,17 @@ export class DotRouterService {
     getPortletId(url: string): string {
         const urlSegments = url.split('/').filter(item => item !== '' && item !== '#' && item !== 'c');
         return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
+    }
+
+    set previousSavedURL(url: string) {
+        this._previousSavedURL = url;
+    }
+
+    get previousSavedURL(): string {
+        return this._previousSavedURL;
+    }
+
+    isPublicPage(): boolean {
+        return this.currentPortlet.url.startsWith('/public');
     }
 }

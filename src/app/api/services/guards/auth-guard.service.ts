@@ -11,10 +11,11 @@ import { DotRouterService } from './../dot-router-service';
 export class AuthGuardService implements CanActivate {
     constructor(private dotRouterService: DotRouterService, private loginService: LoginService) {}
 
-    canActivate(): Observable<boolean> {
+    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.map(isLogin => {
             if (!isLogin) {
                 this.dotRouterService.goToLogin();
+                this.dotRouterService.previousSavedURL = state.url;
             }
             return isLogin;
         });

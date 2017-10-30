@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { AuthGuardService } from './auth-guard.service';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './../dot-router-service';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 @Injectable()
 class MockLoginService {
@@ -22,26 +23,32 @@ describe('ValidAuthGuardService', () => {
     let authGuardService: AuthGuardService;
     let dotRouterService: DotRouterService;
     let loginService: LoginService;
+    let mockRouterStateSnapshot: RouterStateSnapshot;
+    let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 AuthGuardService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: LoginService, useClass: MockLoginService },
+                { provide: LoginService, useClass: MockLoginService }
             ]
         });
 
         authGuardService = TestBed.get(AuthGuardService);
         dotRouterService = TestBed.get(DotRouterService);
         loginService = TestBed.get(LoginService);
+        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+            'toString'
+        ]);
     });
 
     it('should allow access to the requested route, User is logged in', () => {
         let result: boolean;
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(true));
         authGuardService
-            .canActivate()
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe(res => (result = res));
         expect(result).toBe(true);
     });
@@ -50,7 +57,7 @@ describe('ValidAuthGuardService', () => {
         let result: boolean;
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(false));
         authGuardService
-            .canActivate()
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe(res => (result = res));
         expect(dotRouterService.goToLogin).toHaveBeenCalled();
         expect(result).toBe(false);
