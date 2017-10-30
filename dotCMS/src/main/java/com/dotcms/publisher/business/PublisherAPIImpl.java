@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AddedToQueueEvent;
+import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;

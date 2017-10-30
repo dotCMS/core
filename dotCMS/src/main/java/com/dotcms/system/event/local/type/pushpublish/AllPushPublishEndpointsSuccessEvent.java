@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.type.pushpublish;
 
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.system.event.local.type.publish.PublishEvent;
 
 import java.util.Date;
 
@@ -10,12 +11,12 @@ import java.util.Date;
  *
  * @author nollymar
  */
-public class AllEndpointsSuccessEvent extends PushPublishEvent {
+public class AllPushPublishEndpointsSuccessEvent extends PublishEvent {
 
     private PublisherConfig config = null;
 
-    public AllEndpointsSuccessEvent(PublisherConfig config) {
-        setName(AllEndpointsSuccessEvent.class.getCanonicalName());
+    public AllPushPublishEndpointsSuccessEvent(PublisherConfig config) {
+        setName(AllPushPublishEndpointsSuccessEvent.class.getCanonicalName());
         setPublishQueueElements(config.getAssets());
         setDate(new Date());
         setConfig(config);

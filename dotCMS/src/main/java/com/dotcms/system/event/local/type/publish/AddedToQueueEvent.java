@@ -1,4 +1,4 @@
-package com.dotcms.system.event.local.type.pushpublish;
+package com.dotcms.system.event.local.type.publish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 
@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author nollymar
  */
-public class AddedToQueueEvent extends PushPublishEvent {
+public class AddedToQueueEvent extends PublishEvent {
 
     public AddedToQueueEvent(List<PublishQueueElement> publishQueueElements){
         this.setName(AddedToQueueEvent.class.getCanonicalName());

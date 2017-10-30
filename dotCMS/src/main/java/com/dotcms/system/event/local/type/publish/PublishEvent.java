@@ -1,4 +1,4 @@
-package com.dotcms.system.event.local.type.pushpublish;
+package com.dotcms.system.event.local.type.publish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 
@@ -11,7 +11,7 @@ import java.util.List;
  *
  * @author nollymar
  */
-public class PushPublishEvent {
+public class PublishEvent {
 
     private String name = null;
     private List<PublishQueueElement> publishQueueElements = null;
