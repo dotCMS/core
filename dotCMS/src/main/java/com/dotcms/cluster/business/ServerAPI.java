@@ -12,11 +12,7 @@ public interface ServerAPI {
 
 	public Server getServer(String serverId) throws DotDataException;
 
-	public void createServerUptime() throws DotDataException;
-
 	public String readServerId();
-
-	public void updateHeartbeat() throws DotDataException;
 
 	public List<Server> getAliveServers() throws DotDataException;
 
@@ -53,6 +49,8 @@ public interface ServerAPI {
      */
     Server getCurrentServer() throws DotDataException;
 
-    Server getOrCreateServer(String serverId) throws DotDataException;
+	Server getOrCreateMyServer() throws DotDataException;
+
+
 
 }
