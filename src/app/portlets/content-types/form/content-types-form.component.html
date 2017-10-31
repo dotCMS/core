@@ -69,8 +69,8 @@
             </div>
         </div>
         <div class="form__buttons">
-            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.form.cancel']}}" (click)="cancelForm()" *ngIf="isEditMode()"></button>
-            <button pButton type="submit" id="content-type-form-submit" [label]="templateInfo.action" [disabled]="isButtonDisabled" tabindex="9"></button>
+            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.form.cancel']}}" (click)="cancelForm()" *ngIf="isEditMode()" tabindex="9"></button>
+            <button pButton type="submit" id="content-type-form-submit" [label]="templateInfo.action" [disabled]="isButtonDisabled" tabindex="10"></button>
         </div>
     </div>
 </form>
