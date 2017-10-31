@@ -966,32 +966,32 @@ public class HibernateUtil {
 	public static void closeSession()  throws DotHibernateException{
 		try{
 			// if there is nothing to close
-			if (sessionHolder.get() == null){
+			if (null == sessionHolder.get()){
 				return;
 			}
 			Session session = getSession();
 
-			if (session != null) {
-					session.flush();
-					if (!session.connection().getAutoCommit()) {
-						Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
-						session.connection().commit();
-						session.connection().setAutoCommit(true);
-						if(asyncCommitListeners.get().size()>0) {
-							finalizeCommitListeners();
-						}
+			if (null != session) {
+				session.flush();
+				if (!session.connection().getAutoCommit()) {
+					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
+					session.connection().commit();
+					session.connection().setAutoCommit(true);
+					if (!syncCommitListeners.get().isEmpty() || !asyncCommitListeners.get().isEmpty()) {
+						finalizeCommitListeners();
 					}
-					DbConnectionFactory.closeConnection();
-					session.close();
-					session = null;
-					sessionHolder.set(null);
+				}
+				DbConnectionFactory.closeConnection();
+				session.close();
+				session = null;
+				sessionHolder.set(null);
 			}
 		}catch (Exception e) {
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
-		}
-		finally {
-		    asyncCommitListeners.get().clear();
+		} finally {
+		    syncCommitListeners.get().clear();
+			asyncCommitListeners.get().clear();
 		    rollbackListeners.get().clear();
 		}
 	}
@@ -1018,13 +1018,13 @@ public class HibernateUtil {
 
 	public static void startTransaction()  throws DotHibernateException{
 		try{
-
 		/*
 		 * Transactions are now used by default
 		 *
 		 */
 			getSession().connection().setAutoCommit(false);
 			rollbackListeners.get().clear();
+			syncCommitListeners.get().clear();
 			asyncCommitListeners.get().clear();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
@@ -1040,18 +1040,18 @@ public class HibernateUtil {
 
 		try{
 			// if there is nothing to close
-			if (sessionHolder.get() == null){
+			if (null == sessionHolder.get()) {
 				return;
 			}
 			Session session = getSession();
 
-			if (session != null) {
+			if (null != session) {
 				session.flush();
 				if (!session.connection().getAutoCommit()) {
 					Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
 					session.connection().commit();
 					session.connection().setAutoCommit(true);
-					if(asyncCommitListeners.get().size()>0) {
+					if (!asyncCommitListeners.get().isEmpty() || !syncCommitListeners.get().isEmpty()) {
 						finalizeCommitListeners();
 					}
 				}
@@ -1059,8 +1059,8 @@ public class HibernateUtil {
 		}catch (Exception e) {
 			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
-		}
-		finally {
+		} finally {
+			syncCommitListeners.get().clear();
 			asyncCommitListeners.get().clear();
 			rollbackListeners.get().clear();
 		}
@@ -1107,7 +1107,8 @@ public class HibernateUtil {
 	}
 
 	public static void sessionCleanupAndRollback()  throws DotHibernateException{
-	    asyncCommitListeners.get().clear();
+		syncCommitListeners.get().clear();
+		asyncCommitListeners.get().clear();
 		Logger.debug(HibernateUtil.class, "sessionCleanupAndRollback");
 		Session session = getSession();
 		session.clear();
