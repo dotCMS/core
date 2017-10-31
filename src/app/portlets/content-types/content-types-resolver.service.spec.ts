@@ -63,6 +63,7 @@ describe('ContentTypeResolver', () => {
                 object: 'right?'
             })
         );
+
         contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
             expect(fakeContentType).toEqual({
                 fake: 'content-type',
@@ -70,6 +71,23 @@ describe('ContentTypeResolver', () => {
             });
         });
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
+    });
+
+    it('should redirect to content-types if content type it\'s not found', () => {
+        activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
+
+        spyOn(dotRouterService, 'gotoPortlet');
+
+        spyOn(crudService, 'getDataById').and.returnValue(
+            Observable.throw({})
+        );
+
+        contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
+            expect(fakeContentType).toEqual(null);
+        });
+
+        expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', true);
     });
 
     it('should get and return null and go to home', () => {

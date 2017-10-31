@@ -42,6 +42,10 @@ export class ContentTypeResolver implements Resolve<ContentType> {
                     this.dotRouterService.gotoPortlet('/content-types-angular');
                     return null;
                 }
+            })
+            .catch(() => {
+                this.dotRouterService.gotoPortlet('/content-types-angular', true);
+                return Observable.of(null);
             });
     }
 
