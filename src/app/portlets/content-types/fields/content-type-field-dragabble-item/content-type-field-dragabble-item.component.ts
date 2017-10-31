@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Field } from '../shared';
@@ -23,5 +23,16 @@ export class ContentTypesFieldDragabbleItemComponent extends BaseComponent {
 
     constructor(messageService: MessageService, public fieldService: FieldService) {
         super(['contenttypes.action.edit', 'contenttypes.action.delete'], messageService);
+    }
+
+    @HostListener('click', ['$event'])
+    onClick($event: MouseEvent) {
+        $event.stopPropagation();
+        this.edit.emit(this.field);
+    }
+
+    removeItem($event: MouseEvent): void {
+        this.remove.emit(this.field);
+        $event.stopPropagation();
     }
 }

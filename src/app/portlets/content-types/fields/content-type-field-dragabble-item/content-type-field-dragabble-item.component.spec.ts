@@ -127,7 +127,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     it(
         'should has a edit button',
         fakeAsync(() => {
-            const field = {
+            const mockField = {
                 fieldType: 'fieldType',
                 fixed: true,
                 indexed: true,
@@ -136,7 +136,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 velocityVarName: 'velocityName'
             };
 
-            comp.field = field;
+            comp.field = mockField;
 
             fixture.detectChanges();
 
@@ -150,7 +150,29 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
             tick();
 
-            expect(resp).toEqual(field);
+            expect(resp).toEqual(mockField);
         })
     );
+
+    it('should edit field on host click', () => {
+        const mockField = {
+            fieldType: 'fieldType',
+            fixed: true,
+            indexed: true,
+            name: 'Field name',
+            required: true,
+            velocityVarName: 'velocityName'
+        };
+
+        comp.field = mockField;
+
+        fixture.detectChanges();
+
+        let resp: Field;
+        comp.edit.subscribe(field => (resp = field));
+
+        de.nativeElement.click();
+
+        expect(resp).toEqual(mockField);
+    });
 });

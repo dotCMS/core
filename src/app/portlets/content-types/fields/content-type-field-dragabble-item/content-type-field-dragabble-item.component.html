@@ -11,12 +11,12 @@
         class="field__actions-delete"
         icon="fa-trash"
         [tooltipText]="i18nMessages['contenttypes.action.delete']"
-        (click)="this.remove.emit(this.field)">
+        (click)="removeItem($event)">
     </icon-button-tooltip>
     <icon-button-tooltip 
         class="field__actions-edit"
         icon="fa-edit"
         [tooltipText]="i18nMessages['contenttypes.action.edit']"
-        (click)="this.edit.emit(this.field)">
+        (click)="this.onClick($event)">
     </icon-button-tooltip>
 </div>
