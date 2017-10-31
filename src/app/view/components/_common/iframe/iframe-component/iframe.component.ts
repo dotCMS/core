@@ -23,6 +23,7 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
 export class IframeComponent implements OnInit  {
     @ViewChild('iframeElement') iframeElement: ElementRef;
     @Input() src: string;
+    @Input() isLoading = false;
 
     iframeURL: SafeResourceUrl;
     showOverlay = false;
