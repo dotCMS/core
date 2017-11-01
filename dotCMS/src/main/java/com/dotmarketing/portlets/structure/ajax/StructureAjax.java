@@ -177,9 +177,11 @@ public class StructureAjax {
 		}
 
 		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
-			if(scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())){
-				allowImport = false;
+			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
+			for(WorkflowScheme scheme : schemes) {
+				if (scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())) {
+					allowImport = false;
+				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());

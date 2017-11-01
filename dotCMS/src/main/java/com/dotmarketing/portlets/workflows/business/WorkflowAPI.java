@@ -148,7 +148,7 @@ public interface WorkflowAPI {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public WorkflowScheme findSchemeForStruct(Structure struct) throws DotDataException;
+	public List<WorkflowScheme> findSchemeForStruct(Structure struct) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
@@ -176,7 +176,7 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 			DotSecurityException;
 
-	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
+	public void saveSchemeForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
 

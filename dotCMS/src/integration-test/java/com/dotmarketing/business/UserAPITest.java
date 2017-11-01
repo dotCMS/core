@@ -351,7 +351,9 @@ public class UserAPITest extends IntegrationTestBase {
 		FieldFactory.saveField(field2);
 		FieldsCache.addField(field2);
 
-		workflowAPI.saveSchemeForStruct(st, ws);
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		workflowAPI.saveSchemeForStruct(st, schemes);
 
 		/**
 		 * Add container

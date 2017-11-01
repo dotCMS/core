@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.structure.action;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -374,16 +375,16 @@ public class EditStructureAction extends DotPortletAction {
 			//structureForm.setInode(type.inode());
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+			List<WorkflowScheme> schemes = new ArrayList<>();
+			String[] schemeIds = req.getParameterValues("workflowScheme");
 
-			String schemeId = req.getParameter("workflowScheme");
-
-			if (scheme != null && UtilMethods.isSet(schemeId) && !schemeId.equals(scheme.getId())) {
-				scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
-				APILocator.getWorkflowAPI().saveSchemeForStruct(structure, scheme);
+			for(String schemeId : schemeIds) {
+				if (UtilMethods.isSet(schemeId)) {
+					WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
+					schemes.add(scheme);
+				}
 			}
-
-			
+			APILocator.getWorkflowAPI().saveSchemeForStruct(structure, schemes);
 			
 			/**
 			 * 

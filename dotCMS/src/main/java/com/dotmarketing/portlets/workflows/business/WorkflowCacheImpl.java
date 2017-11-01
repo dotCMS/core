@@ -28,14 +28,12 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return scheme;
 	}
 
-	protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) {
+	protected List<WorkflowScheme> addForStructure(String struct, List<WorkflowScheme> schemes) {
 		String key = struct;
 
 		// Add the key to the cache
-		cache.put(key, scheme.getId(), getPrimaryGroup());
-		cache.put(scheme.getId(), scheme, getPrimaryGroup());
-
-		return scheme;
+		cache.put(key, schemes, getPrimaryGroup());
+		return schemes;
 		
 	}
 	
@@ -62,11 +60,11 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 
 	
-	protected WorkflowScheme getSchemeByStruct(String structId) {
+	protected List<WorkflowScheme> getSchemesByStruct(String structId) {
 
 
 		try {
-			return  (WorkflowScheme) cache.get((String) cache.get(structId, getPrimaryGroup()), getPrimaryGroup());
+			return  (List<WorkflowScheme>) cache.get(structId, getPrimaryGroup());
 		} catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}

@@ -436,32 +436,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
-	public WorkflowScheme findSchemeForStruct(String structId) throws DotDataException {
-
+	public List<WorkflowScheme> findSchemeForStruct(String structId) throws DotDataException {
+		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			return this.findDefaultScheme();
+			schemes.add(this.findDefaultScheme());
+			return schemes;
 		}
 
-		WorkflowScheme scheme = null;
-		scheme = cache.getSchemeByStruct(structId);
+		schemes = cache.getSchemesByStruct(structId);
 
-		if (scheme != null) {
-			return scheme;
+		if (schemes != null) {
+			return schemes;
 		}
 
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_SCHEME_BY_STRUCT);
 		db.addParam(structId);
 		try {
-			scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
+			schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
 		} catch (final Exception er) {
-
-			scheme = this.findDefaultScheme();
-
+			schemes.add(this.findDefaultScheme());
 		}
 
-		cache.addForStructure(structId, scheme);
-		return scheme;
+		cache.addForStructure(structId, schemes);
+		return schemes;
 
 	}
 
@@ -487,7 +485,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
 		WorkflowStep step = cache.getStep(contentlet);
-		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode());
+		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode()).get(0);
 		if ((step == null) || !step.getSchemeId().equals(scheme.getId())) {
 			try {
 				final DotConnect db = new DotConnect();
@@ -936,7 +934,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException {
+	public void saveSchemeForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
 
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
@@ -948,12 +946,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(struc);
 			db.loadResult();
 
-			db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
-			db.addParam(UUIDGenerator.generateUuid());
-			db.addParam(scheme.getId());
-			db.addParam(struc);
-			db.loadResult();
-
+            for(WorkflowScheme scheme : schemes) {
+				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
+				db.addParam(UUIDGenerator.generateUuid());
+				db.addParam(scheme.getId());
+				db.addParam(struc);
+				db.loadResult();
+			}
 			// update all tasks for the content type and reset their step to
 			// null
 			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT);

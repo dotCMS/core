@@ -38,8 +38,8 @@ public abstract class WorkflowCache implements Cachable{
 	abstract public void remove(WorkflowStep step);
 	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void remove(WorkflowTask task) ;
-	abstract protected WorkflowScheme getSchemeByStruct(String key) ;
-	abstract protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) ;
+	abstract protected List<WorkflowScheme> getSchemesByStruct(String key) ;
+	abstract protected List<WorkflowScheme> addForStructure(String struct, List<WorkflowScheme> scheme) ;
 	abstract protected void removeStructure(String struct);
 	protected void flushSteps(){
 		CacheLocator.getCacheAdministrator().flushGroup(STEP_GROUP);

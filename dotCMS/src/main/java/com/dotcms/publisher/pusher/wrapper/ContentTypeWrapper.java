@@ -10,8 +10,8 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 public class ContentTypeWrapper {
 	private ContentType contentType;
 	private List<Field> fields;
-	private String workflowSchemaId;
-	private String workflowSchemaName;
+	private List<String> workflowSchemaIds;
+	private List<String> workflowSchemaNames;
 	private Operation operation;
 	private List<FieldVariable> fieldVariables;
 	
@@ -31,12 +31,12 @@ public class ContentTypeWrapper {
         this.fieldVariables = fieldVariables;
     }
 
-	public String getWorkflowSchemaName() {
-        return workflowSchemaName;
+	public List<String> getWorkflowSchemaNames() {
+        return workflowSchemaNames;
     }
 
-    public void setWorkflowSchemaName(String workflowSchemaName) {
-        this.workflowSchemaName = workflowSchemaName;
+    public void setWorkflowSchemaNames(List<String> workflowSchemaNames) {
+        this.workflowSchemaNames = workflowSchemaNames;
     }
 
     public ContentType getContentType() {
@@ -63,12 +63,12 @@ public class ContentTypeWrapper {
         this.operation = operation;		
     }
 
-    public String getWorkflowSchemaId() {
-        return workflowSchemaId;
+    public List<String> getWorkflowSchemaIds() {
+        return workflowSchemaIds;
     }
 
-    public void setWorkflowSchemaId(String workflowSchemaId) {
-        this.workflowSchemaId = workflowSchemaId;
+    public void setWorkflowSchemaIds(List<String> workflowSchemaIds) {
+        this.workflowSchemaIds = workflowSchemaIds;
     }
     
 }

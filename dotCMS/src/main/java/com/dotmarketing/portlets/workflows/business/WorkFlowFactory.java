@@ -59,11 +59,11 @@ public interface WorkFlowFactory {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public WorkflowScheme findSchemeForStruct(String id) throws DotDataException;
+	public List<WorkflowScheme> findSchemeForStruct(String id) throws DotDataException;
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
-	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException;
+	public void saveSchemeForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 

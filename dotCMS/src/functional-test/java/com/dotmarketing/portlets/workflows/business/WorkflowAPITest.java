@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -152,7 +153,9 @@ public class WorkflowAPITest {
 			FieldFactory.saveField(title);
 			FieldsCache.addField(title);
 		}
-		APILocator.getWorkflowAPI().saveSchemeForStruct(st, ws);
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		APILocator.getWorkflowAPI().saveSchemeForStruct(st, schemes);
 		/*
 		 * Create test content and set it up in scheme step
 		 */

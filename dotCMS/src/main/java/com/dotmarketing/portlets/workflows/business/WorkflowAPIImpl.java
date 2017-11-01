@@ -197,27 +197,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveSchemeForStruct(final Structure struc, final WorkflowScheme scheme) throws DotDataException {
+	public void saveSchemeForStruct(final Structure struc, final List<WorkflowScheme> schemes) throws DotDataException {
 
 		try {
-			workFlowFactory.saveSchemeForStruct(struc.getInode(), scheme);
+			workFlowFactory.saveSchemeForStruct(struc.getInode(), schemes);
 		} catch(DotDataException e){
 			throw e;
 		}
 	}
 
 	@CloseDBIfOpened
-	public WorkflowScheme findSchemeForStruct(final Structure structure) throws DotDataException {
+	public List<WorkflowScheme> findSchemeForStruct(final Structure structure) throws DotDataException {
 
-
+        List<WorkflowScheme> schemes = new ArrayList<>();
 		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			return findDefaultScheme();
+			schemes.add(findDefaultScheme());
+			return schemes;
 		}
 		try{
-			return workFlowFactory.findSchemeForStruct(structure.getInode());
+			schemes = workFlowFactory.findSchemeForStruct(structure.getInode());
+			if(schemes.isEmpty()){
+				schemes.add(findDefaultScheme());
+			}
+			return schemes;
 		}
 		catch(Exception e){
-			return findDefaultScheme();
+			schemes.add(findDefaultScheme());
+			return schemes;
 		}
 	}
 
@@ -945,7 +951,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
 
-		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure());
+		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure()).get(0);
 		WorkflowStep entryStep = null;
 		List<WorkflowStep> wfSteps = findSteps(scheme);
 

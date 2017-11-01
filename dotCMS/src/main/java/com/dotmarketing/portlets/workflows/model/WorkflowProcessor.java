@@ -87,7 +87,8 @@ public class WorkflowProcessor {
 
 		try {
 			this.user = firingUser;
-			scheme = getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
+			WorkflowStep step = getWorkflowAPI().findStepByContentlet(contentlet);
+			scheme = getWorkflowAPI().findScheme(step.getSchemeId());
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);

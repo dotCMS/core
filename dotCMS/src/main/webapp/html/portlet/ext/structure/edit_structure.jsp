@@ -66,7 +66,8 @@
 	else{
 		wfSchemes.add(APILocator.getWorkflowAPI().findDefaultScheme());
 	}
-	WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+	List<WorkflowScheme> stWorkflowSchemes = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+
 	List<Role> roles = APILocator.getRoleAPI().findAllAssignableRoles(false);
 	request.setAttribute ("roles", roles);
 	StructureForm form = (StructureForm)request.getAttribute("StructureForm");
@@ -670,9 +671,18 @@
 									<dt><%= LanguageUtil.get(pageContext, "Workflow-Scheme") %>:</dt>
 									<dd>
 										<%	if(LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level){ %>
-										<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.FilteringSelect" value="<%=wfScheme.getId()%>">
-											<%for(WorkflowScheme scheme : wfSchemes){ %>
-											<option value="<%=scheme.getId()%>"><%=scheme.getName() %></option>
+										<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable">
+											<%for(WorkflowScheme scheme : wfSchemes){
+											    String selected="";
+											    for(WorkflowScheme selectedScheme : stWorkflowSchemes){
+											        if(selectedScheme.getId().equals(scheme.getId())){
+														selected="selected=\"selected\"";
+														break;
+													}
+												}
+
+											%>
+											<option value="<%=scheme.getId()%>" <%=selected%> ><%=scheme.getName() %></option>
 											<%} %>
 										</select>
 										<%}else{ %>
