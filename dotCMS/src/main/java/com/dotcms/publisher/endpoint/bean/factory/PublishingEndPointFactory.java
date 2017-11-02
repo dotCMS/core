@@ -18,10 +18,9 @@ import com.dotmarketing.util.UtilMethods;
 public class PublishingEndPointFactory {
 
     public PublishingEndPoint getPublishingEndPoint(final String protocol) {
-        if (!UtilMethods.isSet(protocol)) {
-            return null;
-        } else if (PushPublisher.PROTOCOL_HTTP.equalsIgnoreCase(protocol)
-                || PushPublisher.PROTOCOL_HTTPS.equalsIgnoreCase(protocol)) {
+        if (!UtilMethods.isSet(protocol)
+            || PushPublisher.PROTOCOL_HTTP.equalsIgnoreCase(protocol)
+            || PushPublisher.PROTOCOL_HTTPS.equalsIgnoreCase(protocol)) {
             return new PushPublishingEndPoint();
         } else if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
             return new AWSS3PublishingEndPoint();
