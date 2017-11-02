@@ -18,7 +18,8 @@ public class PublishingEndPointFactoryTest {
     @Test
     public void getPublishingEndPoint_whenProtocolNotSet_returnNull() throws Exception {
         PublishingEndPointFactory factory = new PublishingEndPointFactory();
-        assertNull(factory.getPublishingEndPoint(""));
+        PublishingEndPoint endPoint = factory.getPublishingEndPoint("");
+        assertTrue(endPoint instanceof PushPublishingEndPoint);
     }
 
     @Test

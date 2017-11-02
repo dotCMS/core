@@ -64,6 +64,7 @@ public class BundlePublisherResource {
 			@QueryParam("type") String type,
 			@QueryParam("callback") String callback,
 			@QueryParam("BUNDLE_NAME") String bundleName,
+			@QueryParam("FORCE_PUSH") boolean forcePush,
 			@Context HttpServletRequest req
 	) {
     	try {
@@ -104,6 +105,7 @@ public class BundlePublisherResource {
 		                    b.setName(bundleName);
 		                    b.setPublishDate(Calendar.getInstance().getTime());
 		                    b.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
+		                    b.setForcePush(forcePush);
 		                    APILocator.getBundleAPI().saveBundle(b);
 					    }
 					}

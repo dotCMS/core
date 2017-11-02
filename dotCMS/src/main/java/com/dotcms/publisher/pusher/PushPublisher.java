@@ -232,6 +232,7 @@ public class PushPublisher extends Publisher {
 	        					.queryParam("BUNDLE_NAME", b.getName())
 	        					.queryParam("ENDPOINT_ID", endpoint.getId())
 	        					.queryParam("FILE_NAME", bundle.getName())
+								.queryParam("FORCE_PUSH", b.isForcePush())
 	        			;
 
 	        			Response response = webTarget.request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
