@@ -1155,23 +1155,45 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } catch (Exception e) {
             throw new DotDataException("Unable to instantiate identifier",e);
         }
-        HibernateUtil dh = new HibernateUtil(Identifier.class);
+        DotConnect dc = new DotConnect();
 
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+        String sql = "SELECT " + tableName + ".* from " + tableName + " " + tableName + ", tree tree, inode "
         + tableName + "_1_ where tree.parent = ? and "+ tableName+"_1_.type ='"+tableName+"' and tree.child = " + tableName + ".id and " + tableName
         + "_1_.inode = " + tableName + ".id and tree.relation_type = ?";
 
         Logger.debug(this, "HibernateUtilSQL:getChildOfClassByRelationType\n " + sql + "\n");
 
-        dh.setSQLQuery(sql);
+        dc.setSQL(sql);
 
         Logger.debug(this, "contentlet inode:  " + contentlet.getInode() + "\n");
 
-        dh.setParam(contentlet.getInode());
-        dh.setParam(relationshipType);
+        dc.addParam(contentlet.getIdentifier());
+        dc.addParam(relationshipType);
 
-        return (Identifier)dh.load();
+        return convertDotConnectMapToPOJO(dc.loadResults());
 	}
+
+    /**
+     *
+     * @param results
+     * @return
+     */
+    private Identifier convertDotConnectMapToPOJO(List<Map<String,String>> results){
+
+        if(results == null || results.size()==0){
+            return null;
+        }
+
+        Map<String, String> map = results.get(0);
+        Identifier identifier = new Identifier();
+        identifier.setAssetName(map.get("asset_name"));
+        identifier.setAssetType(map.get("asset_type"));
+        identifier.setHostId(map.get("host_inode"));
+        identifier.setId(map.get("id"));
+        identifier.setParentPath(map.get("parent_path"));
+
+        return identifier;
+    }
 
 	@Override
 	protected List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException {
@@ -1433,8 +1455,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         List<Map<String,String>> results = dc.loadResults();
                         long totalCount = Long.parseLong(results.get(0).get("count"));
 
-                        Connection conn = DbConnectionFactory.getConnection();
-                        try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
+
+                        try(Connection conn = DbConnectionFactory.getConnection(); PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
 
                             List<Contentlet> contentToIndex = new ArrayList<>();
                             int batchSize = 100;
@@ -2307,15 +2329,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
-        Connection conn = DbConnectionFactory.getConnection();
+
         
-        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
+        try(Connection conn = DbConnectionFactory.getConnection(); PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery();PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());)
             {
-            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
+
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);

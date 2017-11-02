@@ -1,13 +1,10 @@
 package com.dotmarketing.business;
 
-import java.util.Date;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import java.util.List;
 
 /**
  * Provides data source level access to information related to Identifiers in
@@ -23,25 +20,19 @@ public abstract class IdentifierFactory {
 
 	/**
 	 * Retrieves all identifiers matching a URI pattern.
-	 * 
+	 *
+	 * @param assetType
 	 * @param uri
 	 *            - Can contain a * at the beginning or end.
 	 * @param include
 	 *            - Should find all that match pattern if true or all that do
 	 *            not match pattern if false.
-	 * @param assetType
 	 * @param site
-	 * @param hasLive
-	 *            - Pull only if the identifier has a published version.
-	 * @param pullDeleted
-	 * @param startDate
-	 *            - Used to search between dates.
-	 * @param endDate
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,
-			boolean pullDeleted, boolean include, Host site, Date startDate, Date endDate) throws DotDataException;
+	abstract protected List<Identifier> findByURIPattern(String assetType, String uri,
+			boolean include, Host site) throws DotDataException;
 
 	/**
 	 * 
@@ -52,41 +43,22 @@ public abstract class IdentifierFactory {
 	abstract protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
 	/**
-	 * Retrieves all identifiers matching a URI pattern.
-	 * 
-	 * @param uri
-	 *            - Can contain a * at the beginning or end.
-	 * @param include
-	 *            - Should find all that match pattern if true or all that do
-	 *            not match pattern if false.
-	 * @param assetType
-	 * @param hasLive
-	 *            - Pull only if the identifier has a published version.
-	 * @param pullDeleted
-	 * @param site
-	 * @return
-	 * @throws DotDataException
-	 */
-	abstract protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,
-			boolean pullDeleted, boolean include, Host site) throws DotDataException;
-
-	/**
 	 * Retrieves the identifier matching the URI by looking in cache first, then
 	 * in database. It will load the cache for future use.
 	 * 
 	 * @param site
 	 * @param uri
 	 */
-	abstract protected Identifier findByURI(Host site, String uri) throws DotHibernateException;
+	abstract protected Identifier findByURI(Host site, String uri) throws DotDataException;
 
 	/**
 	 * Retrieves the identifier matching the URI by looking in cache first, then
 	 * in database. It will load the cache for future use.
 	 * 
-	 * @param site
+	 * @param siteId
 	 * @param uri
 	 */
-	abstract protected Identifier findByURI(String siteId, String uri) throws DotHibernateException;
+	abstract protected Identifier findByURI(String siteId, String uri) throws DotDataException;
 
 	/**
 	 * Retrieves the identifier matching the URI by looking in cache. Returns
@@ -158,9 +130,9 @@ public abstract class IdentifierFactory {
 	 * Retrieves the identifier matching the URI by looking in cache first, then
 	 * in database. It will load the cache for future use.
 	 * 
-	 * @param versionable
+	 * @param identifier
 	 */
-	abstract protected Identifier find(String x) throws DotStateException, DotDataException;
+	abstract protected Identifier find(String identifier) throws DotStateException, DotDataException;
 
 	/**
 	 * Creates a new Identifier for a given versionable asset under a given
@@ -229,9 +201,9 @@ public abstract class IdentifierFactory {
 	/**
 	 * 
 	 * @return
-	 * @throws DotHibernateException
+	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> loadAllIdentifiers() throws DotHibernateException;
+	abstract protected List<Identifier> loadAllIdentifiers() throws DotDataException;
 
 	/**
 	 * 
@@ -249,9 +221,10 @@ public abstract class IdentifierFactory {
 	abstract protected Identifier saveIdentifier(Identifier identifier) throws DotDataException;
 
 	/**
-	 * 
+	 * Deletes all relationships with this identifier. Accordingly, the object will be removed from
+	 * the identifier table through a DB trigger
+	 *
 	 * @param ident
-	 * @throws DotDataException
 	 */
 	abstract protected void deleteIdentifier(Identifier ident) throws DotDataException;
 
@@ -260,10 +233,10 @@ public abstract class IdentifierFactory {
 	 * @param siteId
 	 * @param parent_path
 	 * @return
-	 * @throws DotHibernateException
+	 * @throws DotDataException
 	 */
 	abstract protected List<Identifier> findByParentPath(String siteId, String parent_path)
-			throws DotHibernateException;
+			throws DotDataException;
 
 	/**
 	 * This method hits the DB, table identifier to get the Asset Type.

@@ -2,8 +2,19 @@ package com.dotmarketing.portlets.links.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.fasterxml.jackson.databind.util.BeanUtil;
+import com.google.common.base.CaseFormat;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +56,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
+import java.util.stream.Collectors;
+import org.apache.xpath.operations.Bool;
 
 
 /**
@@ -121,22 +133,115 @@ public class LinkFactory {
  
     public static java.util.List getLinkChildrenByCondition(Inode o,String condition) {
         try {
-            HibernateUtil dh = new HibernateUtil(Link.class);
-            dh.setSQLQuery(
-			"SELECT {links.*} from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(
+			"SELECT links.* from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
 			"links_1_.inode = links.inode and links_1_.type='links' and " +
-			"identifier.host_inode =(select host_inode from identifier where id = ?) and " +
-			 condition + " order by url, sort_order");
+			"identifier.host_inode =(select host_inode from identifier where id = ?)" +
+                    (condition!=null && !condition.isEmpty()? " and " + condition:"") + " order by url, sort_order");
 
-            dh.setParam(APILocator.getIdentifierAPI().find((Folder)o).getPath());
-            dh.setParam(o.getIdentifier());
+            dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
+            dc.addParam(o.getIdentifier());
 
-            return dh.list();
+            return convertDotConnectMapToPOJO(dc.loadResults(), Link.class);
         } catch (Exception e) {
 			Logger.error(LinkFactory.class, "getLinkChildrenByCondition failed:" + e, e);
         }
 
         return new java.util.ArrayList();
+    }
+
+    /**
+     *
+     * @param results
+     * @return
+     */
+    private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+            throws Exception {
+
+        DateFormat df;
+        //Link object;
+
+        List<Object> ret;
+        Map<String, String> properties;
+
+        ret = new ArrayList<>();
+
+        if(results == null || results.size()==0){
+            return ret;
+        }
+
+        df = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (Map<String, String> map : results) {
+            Constructor<?> ctor = classToUse.getConstructor();
+            Object object = ctor.newInstance();
+
+            /*object = new Link();
+
+            object.setInode(map.get("inode"));
+
+            if (map.get("show_on_menu") != null){
+                object.setShowOnMenu((Boolean.parseBoolean(map.get("show_on_menu"))));
+            }
+
+            object.setTitle(map.get("title"));
+
+            if (map.get("mod_date") != null){
+                object.setModDate(df.parse(map.get("mod_date")));
+            }
+
+            object.setModUser(map.get("mod_user"));
+
+            if (map.get("sort_order") != null){
+                object.setSortOrder(Integer.parseInt(map.get("sort_order")));
+            }
+
+            object.setFriendlyName(map.get("friendly_name"));
+            object.setIdentifier(map.get("identifier"));
+            object.setProtocal(map.get("protocal"));
+            object.setUrl(map.get("url"));
+            object.setTarget(map.get("target"));
+            object.setInternalLinkIdentifier(map.get("internal_link_identifier"));
+            object.setLinkType(map.get("link_type"));
+            object.setLinkCode(map.get("link_code"));*/
+
+            properties = map.keySet().stream().collect(Collectors
+                    .toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
+
+            for (String property: properties.keySet()){
+                if (properties.get(property) != null){
+                    if (isFieldPresent(classToUse, String.class, property)){
+                        PropertyUtils.setProperty(object, property, properties.get(property));
+                    }else if (isFieldPresent(classToUse, Integer.TYPE, property)){
+                        PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
+                    }else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
+                        PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
+                    }else if (isFieldPresent(classToUse, Date.class, property)){
+                        PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
+                    }else{
+                        Logger.warn(LinkFactory.class, "Property " + property + "not set for " + classToUse.getName());
+                    }
+                }
+            }
+
+            ret.add(object);
+        }
+        return ret;
+    }
+
+    private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+            throws NoSuchFieldException {
+
+        try{
+            return classToUse.getDeclaredField(property).getType() == fieldType;
+        }catch(NoSuchFieldException e){
+            if (classToUse.getSuperclass()!=null) {
+                return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
+            }
+        }
+        return false;
     }
 
    	public static java.util.List getLinkByCondition(String condition) {
