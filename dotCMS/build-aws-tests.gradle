@@ -24,7 +24,7 @@ buildscript {
 		maven { url "https://plugins.gradle.org/m2/" }
 	}
 	dependencies {
-		classpath "jp.classmethod.aws:gradle-aws-plugin:0.+"
+		classpath "jp.classmethod.aws:gradle-aws-plugin:0.36"
 		classpath "org.hidetake:gradle-ssh-plugin:2.7.0"
 		classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
 	}
