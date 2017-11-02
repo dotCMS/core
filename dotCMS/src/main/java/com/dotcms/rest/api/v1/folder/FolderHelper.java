@@ -118,4 +118,25 @@ public class FolderHelper {
         return new FolderResults(savedFolders, errors);
     }
 
+    /**
+     * Return the folder for the passes in URI.
+     *
+     * @param siteName Folder to lookup the URI on
+     * @param user
+     * @param uri The URI (Path) to get the folder for. If you pass / will return the SystemFolder
+     * @return List of assets that the given user has permissions to see under a URI on a Host. (Currently this only returns Folder and File assets)
+     * @throws com.dotmarketing.exception.DotDataException if one is thrown when the sites are search
+     * @throws com.dotmarketing.exception.DotSecurityException if one is thrown when the sites are search
+     */
+    public Folder loadFolderByURI(String siteName, User user, String uri) throws DotDataException, DotSecurityException {
+        Host host = hostAPI.findByName(siteName,user,true);
+        Folder ret = null;
+        if(uri.equals("/")){
+            ret = folderAPI.findSystemFolder();
+        }else{
+            ret = folderAPI.findFolderByPath(uri,host,user,true);
+        }
+        return ret;
+    }
+
 }

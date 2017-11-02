@@ -115,7 +115,7 @@ public class ContentletUtil {
 				if(cats!=null && !cats.isEmpty()) {
 					try {
 
-						final Category parentCategory        = APILocator.getCategoryAPI().findByKey(f.getVelocityVarName(), user, true);
+						final Category parentCategory        = APILocator.getCategoryAPI().find(f.getValues(), user, true);
 						final List<Category> childCategories = new ArrayList<>();
 						for (Category category : cats) {
 

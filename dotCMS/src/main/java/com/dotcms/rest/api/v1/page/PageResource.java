@@ -92,8 +92,8 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information " +
                     "permissions (" + e.getMessage() + ")";
@@ -108,7 +108,7 @@ public class PageResource {
     }
 
     /**
-     * Returns the String representation of the specified HTML Page, i.e., the source code of the
+     * Returns the JSON representation of the specified HTML Page, i.e., the source code of the
      * rendered page.
      * <p>
      * <pre>
@@ -126,6 +126,7 @@ public class PageResource {
      */
     @NoCache
     @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response renderPage(@Context final HttpServletRequest request, @Context final
     HttpServletResponse response, @PathParam("uri") final String uri) {
@@ -150,8 +151,8 @@ public class PageResource {
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e
                     .getMessage() + ")";

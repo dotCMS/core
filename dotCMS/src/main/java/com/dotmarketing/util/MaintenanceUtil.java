@@ -689,9 +689,12 @@ public class MaintenanceUtil {
 	 *             An error occurred when executing the fix queries.
 	 */
 	public static void deleteOrphanContentTypeFields() throws SQLException {
+	    String query = "DELETE FROM field WHERE NOT EXISTS (SELECT * FROM structure WHERE structure.inode = field.structure_inode)";
 		DotConnect dc = new DotConnect();
-		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM structure)");
-		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM inode)");
+		dc.executeStatement(query);
+		query = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM field " + 
+		        "WHERE field.inode = inode.inode) and inode.type = '%s' ",Inode.Type.FIELD.getTableName());
+        dc.executeStatement(query);
 	}
 
 }

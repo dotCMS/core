@@ -12,18 +12,17 @@ import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
@@ -166,7 +165,14 @@ public class ContentMap {
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				ContentletVersionInfo cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				if(cvi == null) {
+				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
+				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
+				    }
+				}
+
 				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.getWorkingInode()  : cvi.getLiveInode();
 				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 					
@@ -186,7 +192,7 @@ public class ContentMap {
                 }
 
                 // Field value is not present in fieldValueMap hashmap
-                if (content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
+                if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())
                         && "fileasset".equalsIgnoreCase(f.getVelocityVarName())) {
                     // http://jira.dotmarketing.net/browse/DOTCMS-7406
                     FileAssetMap fam = FileAssetMap.of(content);
@@ -201,12 +207,12 @@ public class ContentMap {
                     addFieldValue(f, bm);
                     return bm;
                 }
-			//if the property being served is URL and the structure is a page show URL using the identifier information
-			}else if("url".equalsIgnoreCase(fieldVariableName) && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			//if the property being served is URL and the ContentType is a page show URL using the identifier information
+			}else if("url".equalsIgnoreCase(fieldVariableName) 
+			        && BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
-					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name
-					return identifier.getParentPath() + identifier.getAssetName();
+					return identifier.getURI();
 				}else{
 					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
 				}

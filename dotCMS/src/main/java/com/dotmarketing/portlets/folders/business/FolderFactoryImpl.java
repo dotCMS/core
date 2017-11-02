@@ -52,11 +52,9 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -942,7 +940,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			folder1.setShowOnMenu(false);
 
 			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = UUIDGenerator.generateUuid();
+			String uuid = FolderAPI.SYSTEM_FOLDER_ID;
 			dc.setSQL(IdentifierQuery);
 			dc.addParam(uuid);
 			dc.addParam("/System folder");

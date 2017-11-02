@@ -98,6 +98,6 @@ public class LanguagesResource {
         }
 
         return res;
-    } // getMessages.
+    } // getI18nmessages.
 
 } // E:O:F:LanguagesResource.

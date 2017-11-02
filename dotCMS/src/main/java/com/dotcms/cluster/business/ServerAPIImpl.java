@@ -51,13 +51,17 @@ public class ServerAPIImpl implements ServerAPI {
 	    final Server tryServer = getServer(readServerId());
 
         if(tryServer == null || tryServer.getServerId() == null)  {
+
         	createMyServer();
+
         }
 
         return getServer(readServerId());
     }
 
+
 	private void createMyServer() throws DotDataException {
+
 		
 		
 		

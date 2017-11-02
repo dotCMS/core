@@ -1,17 +1,17 @@
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
+<%@page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher"%>
+<%@page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
-<%@page import="com.dotcms.publisher.environment.bean.Environment"%>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
+<%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
+<%@page import="com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory"%>
+<%@ page import="com.dotcms.publisher.pusher.PushPublisher" %>
 
 <%
 	String identifier = request.getParameter("id");
 	String environmentId = request.getParameter("environmentId");
 	String isSender = request.getParameter("isSender");
+	Boolean isServer = Boolean.parseBoolean(isSender);
 
 	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 	PublishingEndPoint currentEndpoint = peAPI.findEndPointById(identifier);
@@ -19,7 +19,8 @@
 	Environment currentEnvironment = APILocator.getEnvironmentAPI().findEnvironmentById(environmentId);
 
 	if(currentEndpoint ==null){
-		currentEndpoint = new PublishingEndPoint();
+	    PublishingEndPointFactory publishingEndPointFactory = new PublishingEndPointFactory();
+		currentEndpoint = publishingEndPointFactory.getPublishingEndPoint(PushPublisher.PROTOCOL_HTTP);
 		currentEndpoint.setEnabled(true);
 		currentEndpoint.setPort("");
 		currentEndpoint.setProtocol("");
@@ -119,10 +120,11 @@
 
     function setAddressRow(changedType) {
 
-        if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
+        if ((currentProtocol === "awss3" || currentProtocol === "static")
+            && isPlatformLicenseLevel()) {
 
             if (changedType) {
-                dijit.byId("address").set("value", "s3.aws.amazon.com");
+                dijit.byId("address").set("value", "static.dotcms.com");
                 dijit.byId("port").set("value", "80");
 
                 dojo.byId("addressRow").hide();
@@ -144,7 +146,7 @@
 		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
 
 			dojo.style("authKeyHttpSpan", "display", "none");
-			dojo.style("authKeyAwsS3Span", "display", "");
+			dojo.style("authKeyStaticSpan", "display", "");
 
 			if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
 
@@ -155,10 +157,20 @@
 					"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=us-west-2"
 				);
 			}
-		} else {
+		} else if(currentProtocol === "static" && isPlatformLicenseLevel()){
+            dojo.style("authKeyHttpSpan", "display", "none");
+            dojo.style("authKeyStaticSpan", "display", "");
+
+            if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
+
+                dijit.byId("authKey").set("value",
+                    "<%=StaticPublisher.DOTCMS_STATIC_PUBLISH_TO%>=dotcms-static-{hostname}-{languageIso}"
+                );
+            }
+        } else {
 
 			dojo.style("authKeyHttpSpan", "display", "");
-			dojo.style("authKeyAwsS3Span", "display", "none");
+			dojo.style("authKeyStaticSpan", "display", "none");
 
             if (changedType || !isPlatformLicenseLevel()) {
                 if(dijit.byId("authKey")){
@@ -195,8 +207,10 @@
 			dojo.byId("authPropertiesRow").hide();
 		<% } %>
 
-		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
-			dojo.byId("addressRow").hide();				
+		if ((currentProtocol === "awss3" || currentProtocol === "static")
+            && isPlatformLicenseLevel()) {
+
+		    dojo.byId("addressRow").hide();
 		}
 
 		setAddressRow(false);
@@ -226,7 +240,7 @@
 			<%} %>
 			<dl>
 				<dt>
-					<label for="serverName"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:</label>
+					<label for="serverName"><%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Name") : LanguageUtil.get(pageContext, "publisher_Endpoint_Name") %>:</label>
 				</dt>
 				<dd>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
@@ -234,7 +248,8 @@
 						   id="serverName"
 						   style="width:300px;"
 						   value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
+						   promptMessage="<%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Validation_Name_Prompt_Message") :
+						    							   LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Name_Prompt_Message") %>"
 					/>
 				</dd>
 			</dl>
@@ -250,8 +265,9 @@
 						<%} %>
 						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_http") %></option>
 						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_https") %></option>
-						<%if(LicenseUtil.getLevel() > LicenseLevel.PRIME.level){ %>
+						<%if(LicenseUtil.getLevel() >= LicenseLevel.PLATFORM.level){ %>
 							<option value="awss3" <%=("awss3".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3") %></option>
+							<option value="static" <%=("static".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_static") %></option>
 						<%}else{ %>
 							<option value="" disabled=true><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3_requires_platform_license") %></option>
 						<%} %>
@@ -294,8 +310,8 @@
 					<span id="authKeyHttpSpan">
 						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:</label>
 					</span>
-					<span id="authKeyAwsS3Span" style="display:none;">
-						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_awss3") %>:</label>
+					<span id="authKeyStaticSpan" style="display:none;">
+						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %>:</label>
 					</span>
 				</dt>
 				<dd>
