@@ -37,6 +37,7 @@ fileTree("../libs/buildlibs").include('jtds-*.jar', 'mysql-conn*.jar', 'ojdbc*.j
 
 
 apply plugin: "java"
+apply plugin: "jp.classmethod.aws.s3"
 apply plugin: "jp.classmethod.aws.ec2"
 apply plugin: "jp.classmethod.aws.rds"
 apply plugin: "org.hidetake.ssh"
