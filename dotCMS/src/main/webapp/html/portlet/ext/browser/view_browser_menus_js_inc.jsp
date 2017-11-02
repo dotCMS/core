@@ -45,12 +45,19 @@
 
 	<%
 	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
-	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	List<WorkflowScheme> fileWorkflows = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	boolean isWfMandatory = false;
+	for(WorkflowScheme fileWorkflow : fileWorkflows){
+	    if(fileWorkflow.isMandatory()){
+	        isWfMandatory = true;
+	        break;
+	    }
+	}
 	String frameName = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	
 	%>
 
-	var filesMandatoryWorkflow = <%=fileWorkflow.isMandatory()%>
+	var filesMandatoryWorkflow = <%=isWfMandatory%>
 
 
 	function getUserRolesValuesCallBack(response) {

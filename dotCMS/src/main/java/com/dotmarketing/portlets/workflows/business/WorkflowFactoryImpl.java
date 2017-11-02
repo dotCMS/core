@@ -445,7 +445,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		schemes = cache.getSchemesByStruct(structId);
 
-		if (schemes != null) {
+		if (schemes != null && !schemes.isEmpty()) {
 			return schemes;
 		}
 
@@ -454,6 +454,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.addParam(structId);
 		try {
 			schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
+			if(schemes.isEmpty()){
+				schemes.add(this.findDefaultScheme());
+			}
 		} catch (final Exception er) {
 			schemes.add(this.findDefaultScheme());
 		}
@@ -485,7 +488,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
 		WorkflowStep step = cache.getStep(contentlet);
+		/* BEGIN - TODO this part need to be done in a different way */
 		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode()).get(0);
+		/* END - TODO this part need to be done in a different way */
 		if ((step == null) || !step.getSchemeId().equals(scheme.getId())) {
 			try {
 				final DotConnect db = new DotConnect();

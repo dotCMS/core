@@ -21,7 +21,16 @@ String selectedStructure = (request.getParameter("selectedStructure") != null &&
 		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
-WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);
+/* BEGIN - TODO this part need to be done in a different way */
+List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(s);
+boolean isWfMandatory = false;
+for(WorkflowScheme scheme : schemes){
+    if(scheme.isMandatory()){
+		isWfMandatory=true;
+        break;
+	}
+}
+/* END - TODO this part need to be done in a different way */
 
 boolean hasExplicitRequiredFields = false;//GIT-191
 List<Field> fields = FieldsCache.getFieldsByStructureInode(selectedStructure);
@@ -155,7 +164,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                         <% } %>
 					</script>
                 </button>
-                <%if(!scheme.isMandatory()) {%>
+                <%if(!isWfMandatory) {%>
            		<button dojoType="dijit.form.Button" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">

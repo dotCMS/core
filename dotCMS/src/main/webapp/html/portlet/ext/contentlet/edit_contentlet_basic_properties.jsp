@@ -96,14 +96,18 @@
 		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
 	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
-	
-	WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
-	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet); 
+/* BEGIN - TODO this part need to be done in a different way */
+	WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure).get(0);
+	/* END - TODO this part need to be done in a different way */
+	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
 
 	WorkflowStep wfStep = null;
 	List<WorkflowAction> wfActions = null;
 	try{
-		wfStep = APILocator.getWorkflowAPI().findStepByContentlet(contentlet); 
+		wfStep = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+		/* BEGIN - TODO this part need to be done in a different way */
+		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
+		/* END - TODO this part need to be done in a different way */
 		wfActions = APILocator.getWorkflowAPI().findActions(wfStep, user); 
 	}
 	catch(Exception e){

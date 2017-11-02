@@ -118,7 +118,10 @@ function cancel() {
                     <%=title%>
                 </td>
                 <td width="30%">
-                    <%if(con != null && APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()){ %>
+                    <% /* BEGIN - TODO this part need to be done in a different way */
+                        if(con != null && APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStepByContentlet(con).getSchemeId()).isMandatory()){
+                       /* END - TODO this part need to be done in a different way */
+                    %>
                         <span style="color:red"><%= LanguageUtil.get(pageContext, "Cannot-Publish-In-A-Workflow") %></span>
                     
                     <%} else if(con != null && !APILocator.getPermissionAPI().doesUserHavePermission(con, APILocator.getPermissionAPI().PERMISSION_PUBLISH, user)){%>
