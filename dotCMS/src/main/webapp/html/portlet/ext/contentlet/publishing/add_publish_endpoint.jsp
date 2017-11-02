@@ -11,6 +11,7 @@
 	String identifier = request.getParameter("id");
 	String environmentId = request.getParameter("environmentId");
 	String isSender = request.getParameter("isSender");
+	Boolean isServer = Boolean.parseBoolean(isSender);
 
 	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 	PublishingEndPoint currentEndpoint = peAPI.findEndPointById(identifier);
@@ -239,7 +240,7 @@
 			<%} %>
 			<dl>
 				<dt>
-					<label for="serverName"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:</label>
+					<label for="serverName"><%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Name") : LanguageUtil.get(pageContext, "publisher_Endpoint_Name") %>:</label>
 				</dt>
 				<dd>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
@@ -247,7 +248,8 @@
 						   id="serverName"
 						   style="width:300px;"
 						   value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
+						   promptMessage="<%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Validation_Name_Prompt_Message") :
+						    							   LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Name_Prompt_Message") %>"
 					/>
 				</dd>
 			</dl>
