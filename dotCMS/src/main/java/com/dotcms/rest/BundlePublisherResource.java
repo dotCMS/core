@@ -44,11 +44,14 @@ public class BundlePublisherResource {
      * server on this end point and if the security tokens match. If all the validations are correct the bundle will be add it<br/>
      * to the {@link PublishThread Publish Thread}.
      *
-     * @param bundle         Bundle file stream
-     * @param fileDetail     Bundle file Details
+     * @param fileName       File name to be published
      * @param auth_token_enc Authentication token
      * @param groupId        Group who sent the Bundle
      * @param endpointId     End-point who sent the Bundle
+	 * @param type			 response type
+	 * @param callback 		 response callback
+	 * @param bundleName	 The name for the Bundle to publish
+	 * @param forcePush 	 true/false to Force the push
      * @param req            HttpRequest
      * @return Returns a {@link Response} object with a 200 status code if success or a 500 error code if anything fails on the Publish process
      * @see PublishThread
