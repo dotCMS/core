@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
@@ -28,38 +29,44 @@
         overflow: scroll;
         max-height: 300px;
     }
+    
+	.loader {
+	    width: 30px;
+	    height: 30px;
+	    margin:auto;
+	    animation: spin 2s linear infinite;
+	}
+	
+	@keyframes spin {
+	    0% { transform: rotate(0deg); }
+	    100% { transform: rotate(360deg); }
+	}
+    
 </style>
 
 <script type="text/javascript">
 
         var actionPanelTable;
-        var initialRow;
-        var myServerId;
+        dojo.require("dojox.widget.Standby");
 
         /**
             ActionPanel JS Object
         **/
         dojo.declare("com.dotcms.ui.ActionPanel", null, {
-            lastRow:undefined,
-            jspToShow:undefined,
+
+            jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp",
+            nodeData:undefined,
+            licenseData:undefined,
+            actionPanelHtml:undefined,
+            myServerId : "<%=APILocator.getServerAPI().readServerId()%>",
             ff : 0,
-            constructor: function(/* Object */args){
-
-                this.alwaysShow = args.alwaysShow;
-                this.jspToShow = args.jspToShow;
-
-                if(this.alwaysShow){
-                    dojo.ready(function(){
-                        if( dojo.byId("row-"+initialRow) != undefined){
-                            actionPanelTable.toggle(initialRow);
-                        }
-                    })
-                }
+            targetNode:undefined,
+            constructor: function(args){
+                this.targetNode = dojo.byId("actionPanel");
 
                 if(dojo.isMozilla) {
                     this.ff=-1;
                 }
-
                 /**
                     Handle scolling and resize
                 **/
@@ -70,38 +77,42 @@
                 dojo.connect(window, 'onresize', this, function(event) {
                     this.initPanel();
                 });
-
+                this.drawNodeTable();
             },
 
 
-            /** Setting this true will show the first row automatically **/
-            alwaysShow:false,
-
+            
+            
+            
             /**
                 hide/show action Panel
             **/
             toggle:function(row){
-                if(this.jspToShow == undefined){
-                    return;
-                }
+				var nodeStatus;
+				if(row==undefined){
+					row = this.myServerId;
+				}
 
-                dojo.addClass("actionPanel", "hideMe");
+                
+   				if(this.nodeData != undefined){
+	                for(i=0;i<this.nodeData.length;i++){
+	                	if(row==this.nodeData[i].serverId){
+	                		nodeStatus= this.nodeData[i];
+	                	}
+	                }
+   				}
+                
+                dojo.addClass("actionPanel", "");
                 dojo.destroy("display-arrow");
 
                 // deactivate last clicked row,
                 if(this.lastRow != undefined){
                     dojo.removeClass('row-' + this.lastRow, "active");
-                    if( ! this.alwaysShow){
-                        if(this.lastRow == row){
-                            this.lastRow = null;
-                            return;
-                        }
-                    }
                 }
-
-                dojo.addClass('row-' + row, "active");
-                this.lastRow=row;
-
+				if(dojo.byId('row-' + row)!=undefined){
+	                dojo.addClass('row-' + row, "active");
+	                this.lastRow=row;
+				}
 				// Set Container Height
 				var x = window.innerHeight - 140;
 				dojo.style("container", "height", x + "px");
@@ -125,114 +136,67 @@
                     },"actionPanelContent");
 
 
-                var nodeStatus;
 
-                xhrArgs = {
-                    url : "/api/cluster/getNodeStatus/id/"+row,
-                    handleAs : "json",
-                    sync: true,
-                    load : function(data) {
-                        nodeStatus = data;
-                    },
-                    error : function(error) {
-                        targetNode.innerHTML = "An unexpected error occurred: " + error;
-                    }
-                };
 
-                deferred = dojo.xhrGet(xhrArgs);
 
-                var licenseStatus;
+				var result = actionPanelTable.actionPanelHtml;
+                var output = '';
+				if(this.nodeData != undefined && this.licenseData !=undefined && this.actionPanelHtml!=undefined){
+				console.log(nodeStatus);
+                require(["dojo/_base/lang"], function(lang){
+                      output = lang.replace(
+                        result,
+                        {
+                          cache: {
+                            status:  nodeStatus.cacheStatus,
+                            clusterName:  nodeStatus.cacheClusterName,
+                            numberOfNodes: nodeStatus.cacheNumberOfNodes,
+                            open:   nodeStatus.cacheOpen,
+                            address:   nodeStatus.cacheAddress,
+                            receivedBytes:   nodeStatus.cacheReceivedBytes,
+                            port:   nodeStatus.cachePort
+                          },
 
-                licxhr = {
-                    url : "/api/cluster/licenseRepoStatus",
-                    handleAs : "json",
-                    sync: true,
-                    load : function(data) {
-                        licenseStatus = data;
-                    },
-                    error : function(error) {
-                        targetNode.innerHTML = "An unexpected error occurred: " + error;
-                    }
-                };
+                          es: {
+                            status: nodeStatus.esStatus,
+                            clusterName: nodeStatus.esClusterName,
+                            numberOfNodes: nodeStatus.esNumberOfNodes,
+                            activeShards: nodeStatus.esActiveShards,
+                            activePrimaryShards: nodeStatus.esActivePrimaryShards,
+                            port: nodeStatus.esPort
+                          },
 
-                dojo.xhrGet(licxhr);
+                          assets: {
+                              status: nodeStatus.assetsStatus,
+                              canRead: nodeStatus.assetsCanRead,
+                              canWrite: nodeStatus.assetsCanWrite,
+                              path: nodeStatus.assetsPath
+                          },
+	
+                          licenseRepo: {
+                              total: actionPanelTable.licenseData.total,
+                              available: actionPanelTable.licenseData.available
+                          },
 
-                var canRewire = row==myServerId;
+                          server: {
+                              serverID: nodeStatus.serverId.substring(0,8),
+                              displayServerId : nodeStatus.displayServerId,
+                              host: nodeStatus.friendlyName
+                          }
 
-                // Execute a HTTP GET request
-                dojo.xhr.get({
-                    preventCache:true,
-                    url: this.jspToShow+'?rewireable='+canRewire,
-                    load: function(result) {
-                        var output = '';
-
-                        require(["dojo/_base/lang"], function(lang){
-                              output = lang.replace(
-                                result,
-                                {
-                                  cache: {
-                                    status:  nodeStatus.cacheStatus,
-                                    clusterName:  nodeStatus.cacheClusterName,
-                                    numberOfNodes: nodeStatus.cacheNumberOfNodes,
-                                    open:   nodeStatus.cacheOpen,
-                                    address:   nodeStatus.cacheAddress,
-                                    receivedBytes:   nodeStatus.cacheReceivedBytes,
-                                    port:   nodeStatus.cachePort
-                                  },
-
-                                  es: {
-                                    status: nodeStatus.esStatus,
-                                    clusterName: nodeStatus.esClusterName,
-                                    numberOfNodes: nodeStatus.esNumberOfNodes,
-                                    activeShards: nodeStatus.esActiveShards,
-                                    activePrimaryShards: nodeStatus.esActivePrimaryShards,
-                                    port: nodeStatus.esPort
-                                  },
-
-                                  assets: {
-                                      status: nodeStatus.assetsStatus,
-                                      canRead: nodeStatus.assetsCanRead,
-                                      canWrite: nodeStatus.assetsCanWrite,
-                                      path: nodeStatus.assetsPath
-                                  },
-
-                                  licenseRepo: {
-                                      total: licenseStatus.total,
-                                      available: licenseStatus.available
-                                  },
-
-                                  server: {
-                                      serverID: nodeStatus.serverId.substring(0,8),
-                                      displayServerId : nodeStatus.displayServerId,
-                                      host: nodeStatus.friendlyName
-                                  }
-
-                                }
-                              );
-                            });
-
-                        dojo.byId("actionPanelContainer").innerHTML = output;
-                        if(nodeStatus.cacheServersNotResponded){
-                            dojo.byId("myCacheDialogName").innerHTML = nodeStatus.cacheServersNotResponded;
-
-                            var myShowCacheButton = dojo.byId("myShowCacheButton");
-                            dojo.connect(myShowCacheButton, "onclick", function(evt){
-                                var myCacheDialog = dijit.byId("myCacheDialog");
-                                myCacheDialog.show();
-                            });
                         }
-                        
-                    }
-                });
-
+                      );
+                    });
+				}
+				
+                dojo.byId("actionPanelContainer").innerHTML = output;
                 actionPanelTable.initPanel();
-
-                dojo.removeClass("actionPanel", "hideMe");
-
                 dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
 
             },
 
+
+            
             /**
                 Move actionpanel/arrow around - does not hide/show
             **/
@@ -274,112 +238,155 @@
                     dojo.style("actionPanelContent", "height", panelPage.h + "px");
                 });
                 actionPanelTable.placeActionPanel();
+            },
+            
+            refreshData : function(){
+            	this.loadNodeData();
+            	this.loadLicenseData();
+            	this.loadActionPanelHtml();
+            },
+
+            
+            loadNodeData : function() {
+                xhrArgs = {
+                    url : "/api/cluster/getNodesStatus/",
+                    handleAs : "json",
+                    sync: false,
+                    load : function(data) {
+						actionPanelTable.nodeData=data;
+						actionPanelTable.drawNodeTable();
+						actionPanelTable.toggle();
+                    },
+                    error : function(error) {
+                    	actionPanel.innerHTML = "An unexpected error occurred: " + error;
+                    }
+                };
+                dojo.xhrGet(xhrArgs);
+            },
+            
+            loadLicenseData : function() {
+                licxhr = {
+                        url : "/api/cluster/licenseRepoStatus",
+                        handleAs : "json",
+                        sync: true,
+                        load : function(data) {
+                        	actionPanelTable.licenseData = data;
+                        	actionPanelTable.toggle();
+                        },
+                        error : function(error) {
+                        	actionPanel.innerHTML = "An unexpected error occurred: " + error;
+                        }
+                    };
+                    dojo.xhrGet(licxhr);
+            },
+            
+            loadActionPanelHtml : function(){
+                // Execute a HTTP GET request
+                dojo.xhr.get({
+                    preventCache:true,
+                    url: this.jspToShow+'?rewireable='+false,
+                    load: function(result) {
+                    	actionPanelTable.actionPanelHtml=result;
+                    	actionPanelTable.toggle();
+                    }
+                });
+            },
+            
+            drawNodeTable : function() {
+            	nodeList = this.nodeData;
+            	 
+                var nodesTableHTML = "<table class='listingTable actionTable network__listing'> "
+                    + "<tr>"
+                        + "<th width='7%'>&nbsp;</th>"
+                        + "<th width='7%'>&nbsp;</th>"
+                        + "<th width='15%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+                        + "<th width='15%'><%= LanguageUtil.get(pageContext, "license-serial") %></th>"
+                        + "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
+                        + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
+                        + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
+                        + "<th width='6%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "status") %></th>"
+
+                        <!-- /Add these up to 100% -->
+
+                        <%-- the width of the inner div is the only thing you have to set to change the width --%>
+                        + "<th id='actionPanelTableHeader' network-action__header><div style='width:400px;'></div></th>"
+                    + "</tr>";
+
+                    if(nodeList ==undefined){
+                    	  nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><div class='loader'></div></td></tr>";
+                    	  
+                    	
+                    	
+                    }
+                    
+                    
+                    dojo.forEach(nodeList, function(item, index){
+
+                        if(index==0) {
+                            initialRow = item.serverId;
+                        }
+
+                        if(item.myself) {
+                            myServerId = item.serverId;
+                        }
+
+
+
+                        nodesTableHTML += ""
+                        + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
+                            + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
+                            + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
+                            + "<td>" + item.displayServerId + "</td>"
+                            + "<td>" + item.licenseId + "</td>"
+                            + "<td>" + item.friendlyName + "</td>"
+                            + "<td align='left'>"+item.ipAddress+"</td>"
+                            + "<td align='left'>"+item.contacted+"</td>"
+                            + "<td align='center'><i class='statusIcon " + item.status + "'></i></td>"
+                            + "<td id='td-"+index+"'></td>"
+                        + "</tr>";
+
+                        nodesTableHTML += "<input type='hidden' id='serverId-"+index+"' value='"+item.serverId+"'>"
+                    });
+
+                    nodesTableHTML += "</table>";
+
+                    var nodesTable = dojo.create("div", { innerHTML: nodesTableHTML });
+
+                    dojo.empty(dojo.byId("container"));
+                    dojo.place(nodesTable, dojo.byId("container"));
+
+                    var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "network-action " });
+                    var arrowDiv = dojo.create("div", { id: "arrow", innerHtml: "<img src='/html/images/skin/arrow.png'/>" });
+                    var actionPanelContentDiv = dojo.create("div", { id: "actionPanelContent", style: "overflow:auto" });
+
+                    dojo.place(arrowDiv, actionPanelDiv);
+                    dojo.place(actionPanelContentDiv, actionPanelDiv);
+                    dojo.place(actionPanelDiv, dojo.byId("container"));
+
             }
         });
 
-        function renderNodesStatus() {
 
-            //Node List
-            var nodeList;
-
-            xhrArgs = {
-                url : "/api/cluster/getNodesStatus/",
-                handleAs : "json",
-                sync: true,
-                load : function(data) {
-                    nodeList = data;
-                    var nodesTableHTML = "<table class='listingTable actionTable network__listing'> "
-                        + "<tr>"
-                            + "<th width='7%'>&nbsp;</th>"
-                            + "<th width='7%'>&nbsp;</th>"
-                            + "<th width='15%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
-                            + "<th width='15%'><%= LanguageUtil.get(pageContext, "license-serial") %></th>"
-                            + "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
-                            + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
-                            + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
-                            + "<th width='6%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "status") %></th>"
-                            + "<th width='10%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "configuration_cluster_delete") %></th>"
-                            <!-- /Add these up to 100% -->
-
-                            <%-- the width of the inner div is the only thing you have to set to change the width --%>
-                            + "<th id='actionPanelTableHeader' network-action__header><div style='width:400px;'></div></th>"
-                        + "</tr>";
-
-                        dojo.forEach(nodeList, function(item, index){
-
-                            if(index==0) {
-                                initialRow = item.serverId;
-                            }
-
-                            if(item.myself) {
-                                myServerId = item.serverId;
-                            }
-
-                            var deleteServer = "<td align='center'></td>";
-                            
-                            if(item.heartbeat && item.heartbeat == "false"){
-                                deleteServer = "<td align='center'><img onclick='removeFromCluster(\""+item.serverId+"\");' src='/html/images/icons/cross.png'></td>";
-                            }
-
-                            nodesTableHTML += ""
-                            + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
-                                + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
-                                + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
-                                + "<td>" + item.displayServerId + "</td>"
-                                + "<td>" + item.licenseId + "</td>"
-                                + "<td>" + item.friendlyName + "</td>"
-                                + "<td align='left'>"+item.ipAddress+"</td>"
-                                + "<td align='left'>"+item.contacted+"</td>"
-                                + "<td align='center'><i class='statusIcon " + item.status + "'></i></td>"
-                                + deleteServer
-                                + "<td id='td-"+index+"'></td>"
-                            + "</tr>";
-
-                            nodesTableHTML += "<input type='hidden' id='serverId-"+index+"' value='"+item.serverId+"'>"
-                        });
-
-                        nodesTableHTML += "</table>";
-
-                        var nodesTable = dojo.create("div", { innerHTML: nodesTableHTML });
-
-                        dojo.empty(dojo.byId("container"));
-                        dojo.place(nodesTable, dojo.byId("container"));
-
-                        var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "network-action hideMe" });
-                        var arrowDiv = dojo.create("div", { id: "arrow", innerHtml: "<img src='/html/images/skin/arrow.png'/>" });
-                        var actionPanelContentDiv = dojo.create("div", { id: "actionPanelContent", style: "overflow:auto" });
-
-                        dojo.place(arrowDiv, actionPanelDiv);
-                        dojo.place(actionPanelContentDiv, actionPanelDiv);
-                        dojo.place(actionPanelDiv, dojo.byId("container"));
-
-                },
-                error : function(error) {
-                    targetNode.innerHTML = "An unexpected error occurred: " + error;
-                }
-            };
-
-            deferred = dojo.xhrGet(xhrArgs);
-
-        }
-
+        
+        
         require(["dojo/ready"], function(ready){
               ready(function(){
-                  renderNodesStatus();
 
                  /**
                     Set the jsp to load up when the action panel is activated
                  **/
-                  actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
-
+                  actionPanelTable = new com.dotcms.ui.ActionPanel();
+          
+                  actionPanelTable.refreshData();
+                 	
+                 
               });
+              
+              
         });
 
 
-        function refreshStatus(serverId) {
-             renderNodesStatus();
-             actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
-        }
+
 
         /*
             Displays the error message sent from the server
@@ -399,16 +406,7 @@
             dojo.byId("errorDetail").hide()
         };
 
-        function removeFromCluster(serverId){
-            if(!confirm('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "configuration_cluster_remove_server_confirm")) %>')) return;
-            dojo.xhrPost({
-                url: "/api/cluster/remove/serverid/"+serverId,
-                load: function() {
-                    renderNodesStatus();
-                    actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
-                }
-            });
-        }
+
         
 </script>
 
@@ -417,7 +415,7 @@
 </div>
 
 <div id="container">
-    <div id="actionPanel" class="network-action hideMe">
+    <div id="actionPanel" class="network-action">
         <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
         <div id="actionPanelContent" style="overflow:auto;"></div>
     </div>
