@@ -1,0 +1,10 @@
+<span *ngIf="actions.length > 1">
+    <p-menu #menu popup="popup" [model]="actions" class="action-menu__list"></p-menu>
+    <button type="button" pButton [icon]="icon" (click)="menu.toggle($event)"></button>
+</span>
+
+<icon-button-tooltip  *ngIf="actions.length === 1"
+    [icon]="actions[0].icon" 
+    [tooltipText]="actions[0].label"
+    (click)="handleActionCommand(actions[0], item, $event)">
+</icon-button-tooltip>

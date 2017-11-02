@@ -8,6 +8,7 @@ import { ListingDataTableComponent } from './listing-data-table.component';
 import { MessageService } from '../../../api/services/messages-service';
 import { NgModule } from '@angular/core';
 import { DataTableModule, InputTextModule } from 'primeng/primeng';
+import { ActionMenuButtonModule } from './../_common/action-menu-button/action-menu-button.module';
 
 @NgModule({
     declarations: [
@@ -22,6 +23,7 @@ import { DataTableModule, InputTextModule } from 'primeng/primeng';
         DataTableModule,
         FormsModule,
         InputTextModule,
+        ActionMenuButtonModule
     ],
     providers: [
         CrudService,

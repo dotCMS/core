@@ -1,10 +1,15 @@
-import { ActionButtonComponent } from '../../../view/components/_common/action-button/action-button.component';
-import { ActionHeaderComponent } from '../../../view/components/listing-data-table/action-header/action-header';
+import { Observable } from 'rxjs';
+import { CrudService } from './../../../api/services/crud/crud.service';
+import { ContentType } from './../shared/content-type.model';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ListingDataTableModule } from './../../../view/components/listing-data-table/listing-data-table.module';
+import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
+import { MenuItem } from 'primeng/primeng';
+import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { ContentTypesPortletComponent } from './content-types.component';
-import { CrudService } from '../../../api/services/crud';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
@@ -15,6 +20,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;
     let fixture: ComponentFixture<ContentTypesPortletComponent>;
+    let de: DebugElement;
+    let el: HTMLElement;
+    let crudService: CrudService;
 
     beforeEach(() => {
         let messageServiceMock = new MockMessageService({
@@ -27,24 +35,29 @@ describe('ContentTypesPortletComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                ActionHeaderComponent,
-                ActionButtonComponent,
                 ContentTypesPortletComponent,
-                ListingDataTableComponent
             ],
-            imports: [RouterTestingModule.withRoutes([
-                { path: 'test', component: ContentTypesPortletComponent }
-            ])],
+            imports: [
+                RouterTestingModule.withRoutes([
+                    { path: 'test', component: ContentTypesPortletComponent },
+                ]),
+                BrowserAnimationsModule,
+                ListingDataTableModule
+            ],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
                  CrudService,
                  FormatDateService,
-                 ContentTypesInfoService
+                 ContentTypesInfoService,
+                 DotConfirmationService
             ],
         });
 
         fixture = DOTTestBed.createComponent(ContentTypesPortletComponent);
         comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        el = de.nativeElement;
+        crudService = fixture.debugElement.injector.get(CrudService);
     });
 
     it('should display a listing-data-table.component', () => {
@@ -52,7 +65,7 @@ describe('ContentTypesPortletComponent', () => {
 
         expect('v1/contenttype').toEqual(de.nativeElement.getAttribute('url'));
 
-        let columns = comp.contentTypeColumns;
+        const columns = comp.contentTypeColumns;
         expect(5).toEqual(columns.length);
 
         expect('name').toEqual(columns[0].fieldName);
@@ -71,5 +84,39 @@ describe('ContentTypesPortletComponent', () => {
         expect('modDate').toEqual(columns[4].fieldName);
         expect('Last Edit Date').toEqual(columns[4].header);
         expect('13%').toEqual(columns[4].width);
+    });
+
+    it('should remove the content type on click command function', () => {
+        const fakeActions: MenuItem[] = [{
+            icon: 'fa-trash',
+            label: 'Remove',
+            command: () => {}
+        }];
+
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+
+        const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+            conf.accept();
+        });
+
+        spyOn(crudService, 'delete').and.returnValue(Observable.of(mockContentType));
+
+        comp.rowActions[0].command(mockContentType);
+
+        fixture.detectChanges();
+
+        expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
     });
 });

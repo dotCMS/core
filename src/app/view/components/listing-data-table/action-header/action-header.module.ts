@@ -2,7 +2,8 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActionButtonModule } from '../../_common/action-button/action-button.module';
 import { ActionHeaderComponent } from './action-header';
-import { ConfirmDialogModule, SplitButtonModule } from 'primeng/primeng';
+import { SplitButtonModule } from 'primeng/primeng';
+import { DotConfirmationService } from '../../../../api/services/dot-confirmation/';
 
 @NgModule({
     bootstrap: [],
@@ -15,8 +16,7 @@ import { ConfirmDialogModule, SplitButtonModule } from 'primeng/primeng';
     imports: [
         CommonModule,
         ActionButtonModule,
-        SplitButtonModule,
-        ConfirmDialogModule
+        SplitButtonModule
     ],
     providers: []
 })

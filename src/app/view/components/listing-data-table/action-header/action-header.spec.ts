@@ -1,8 +1,8 @@
+import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
 import { ActionButtonModule } from '../../_common/action-button/action-button.module';
 import { ActionHeaderComponent } from './action-header';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed, async } from '@angular/core/testing';
-import { ConfirmationService } from 'primeng/components/common/api';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { MessageService } from '../../../../api/services/messages-service';
@@ -35,7 +35,7 @@ describe('ActionHeaderComponent', () => {
             ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
-                ConfirmationService
+                DotConfirmationService
             ]
         });
 

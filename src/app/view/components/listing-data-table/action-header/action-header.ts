@@ -1,6 +1,5 @@
+import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
 import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
-
-import { ConfirmationService } from 'primeng/primeng';
 
 import { BaseComponent } from '../../_common/_base/base-component';
 import { MessageService } from '../../../../api/services/messages-service';
@@ -18,8 +17,14 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    constructor(messageService: MessageService, private confirmationService: ConfirmationService) {
-        super(['selected'], messageService);
+    constructor(messageService: MessageService, private dotConfirmationService: DotConfirmationService) {
+        super(
+            [
+                'selected',
+                'contenttypes.action.delete',
+                'contenttypes.action.cancel'
+            ], messageService
+        );
     }
 
     ngOnChanges(changes: SimpleChanges): any {
@@ -42,12 +47,16 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
                         model.command = ($event) => {
                             const originalEvent = $event;
 
-                            this.confirmationService.confirm({
+                            this.dotConfirmationService.confirm({
                                 accept: () => {
                                     callback(originalEvent);
                                 },
                                 header: model.deleteOptions.confirmHeader,
                                 message: model.deleteOptions.confirmMessage,
+                                footerLabel: {
+                                    acceptLabel: this.i18nMessages['contenttypes.action.delete'],
+                                    rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                                }
                             });
                         };
                     }

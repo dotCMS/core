@@ -1,0 +1,32 @@
+@import "variables";
+@import "primeng-theme/utils/_theme-variables";
+
+:host {
+    position: relative;
+    display: block;
+
+    .listing-datatable__icon {
+        text-align: center;
+        width: 16px;
+    }
+   
+    .ui-button {
+        box-shadow: none;
+        border-radius: 50%;
+        height: $field-height;
+        width: $field-height;
+
+        &:hover {
+            background: rgba($black, 0.1);
+            box-shadow: none;
+        }
+    }
+
+    ::ng-deep .action-menu__list {
+        .ui-menu-dynamic {
+            // Reset styles to be absolute to parent button <action-menu-button>
+            top: 23px !important; 
+            left: -145px !important;
+        }
+    }
+}

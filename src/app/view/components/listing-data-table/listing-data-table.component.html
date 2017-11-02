@@ -14,7 +14,7 @@
              [globalFilter]="gf"
              [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1">
 
-    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
+    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column> 
 
     <ng-template ngFor let-col [ngForOf]="columns">
         <p-column 
@@ -28,5 +28,16 @@
             </ng-template>
         </p-column>
     </ng-template>
+
+    <p-column *ngIf="actions && actions.length > 0" styleClass="listing-datatable__action-column" [style]="{'width': '5%'}">
+        <ng-template pTemplate="header"></ng-template>
+        <ng-template let-item="rowData" pTemplate="body">
+            <action-menu-button  
+                class="listing-datatable__action-button"
+                [actions]="actions" 
+                [item]="item">
+            </action-menu-button>
+        </ng-template>
+    </p-column>
 
 </p-dataTable>

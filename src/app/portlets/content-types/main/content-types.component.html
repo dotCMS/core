@@ -1,9 +1,11 @@
-<listing-data-table 
+<listing-data-table
+    #listing
     (rowWasClicked)="editContentType($event)"
     [actionHeaderOptions]="actionHeaderOptions"
     [columns]="contentTypeColumns"
     [paginationPerPage]="40"
     sortField="modDate" 
     sortOrder="DESC"
-    url="v1/contenttype">
+    url="v1/contenttype"
+    [actions]="rowActions">
 </listing-data-table>

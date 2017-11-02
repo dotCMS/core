@@ -1,9 +1,12 @@
+import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
+import { IconButtonTooltipModule } from './../_common/icon-button-tooltip/icon-button-tooltip.module';
+import { ActionMenuButtonComponent } from './../_common/action-menu-button/action-menu-button.component';
 import { ActionButtonComponent } from '../_common/action-button/action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { CrudService } from '../../../api/services/crud/crud.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DataTableModule, SharedModule } from 'primeng/primeng';
+import { DataTableModule, SharedModule, MenuModule, MenuItem } from 'primeng/primeng';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
@@ -26,19 +29,27 @@ describe('Listing Component', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent, ActionButtonComponent, ListingDataTableComponent],
+            declarations: [
+                ActionHeaderComponent,
+                ActionButtonComponent,
+                ListingDataTableComponent,
+                ActionMenuButtonComponent
+            ],
             imports: [
                 DataTableModule,
                 SharedModule,
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: ListingDataTableComponent }
-                ])
+                ]),
+                IconButtonTooltipModule,
+                MenuModule
             ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
                 CrudService,
                 FormatDateService,
-                PaginatorService
+                PaginatorService,
+                DotConfirmationService
             ]
         });
 
@@ -48,13 +59,13 @@ describe('Listing Component', () => {
         el = de.nativeElement;
 
         this.items = [
-            { field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3' },
-            { field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3' },
-            { field1: 'item3-value1', field2: 'item3-value2', field3: 'item3-value3' },
-            { field1: 'item4-value1', field2: 'item4-value2', field3: 'item4-value3' },
-            { field1: 'item5-value1', field2: 'item5-value2', field3: 'item5-value3' },
-            { field1: 'item6-value1', field2: 'item6-value2', field3: 'item6-value3' },
-            { field1: 'item7-value1', field2: 'item7-value2', field3: 'item7-value3' }
+            { field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3', field4: 'item1-value4' },
+            { field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3', field4: 'item1-value4' },
+            { field1: 'item3-value1', field2: 'item3-value2', field3: 'item3-value3', field4: 'item1-value4' },
+            { field1: 'item4-value1', field2: 'item4-value2', field3: 'item4-value3', field4: 'item1-value4' },
+            { field1: 'item5-value1', field2: 'item5-value2', field3: 'item5-value3', field4: 'item1-value4' },
+            { field1: 'item6-value1', field2: 'item6-value2', field3: 'item6-value3', field4: 'item1-value4' },
+            { field1: 'item7-value1', field2: 'item7-value2', field3: 'item7-value3', field4: 'item1-value4' }
         ];
 
         this.paginatorService = fixture.debugElement.injector.get(PaginatorService);
@@ -65,7 +76,8 @@ describe('Listing Component', () => {
         this.columns = [
             { fieldName: 'field1', header: 'Field 1', width: '45%' },
             { fieldName: 'field2', header: 'Field 2', width: '10%' },
-            { fieldName: 'field3', header: 'Field 3', width: '45%' }
+            { fieldName: 'field3', header: 'Field 3', width: '30%' },
+            { fieldName: 'field4', header: 'Field 4', width: '5%' },
         ];
 
         this.url = '/test/';
@@ -102,7 +114,7 @@ describe('Listing Component', () => {
         expect(5).toEqual(rows.length);
 
         const headers = rows[0].querySelectorAll('th');
-        expect(4).toEqual(headers.length);
+        expect(5).toEqual(headers.length);
 
         comp.columns.forEach((col, index) =>
             expect(!index ? '' : comp.columns[index - 1].header).toEqual(
@@ -116,7 +128,7 @@ describe('Listing Component', () => {
                 const item = this.items[rowIndex - 1];
 
                 cells.forEach((cell, cellIndex) => {
-                    if (cellIndex) {
+                    if (cellIndex && cellIndex < 5) {
                         expect(cells[cellIndex].querySelector('span').textContent).toContain(
                             item[comp.columns[cellIndex - 1].fieldName]
                         );
@@ -158,7 +170,7 @@ describe('Listing Component', () => {
         expect(5).toEqual(rows.length, 'tr');
 
         const headers = rows[0].querySelectorAll('th');
-        expect(4).toEqual(headers.length, 'th');
+        expect(5).toEqual(headers.length, 'th');
 
         comp.columns.forEach((col, index) =>
             expect(!index ? '' : comp.columns[index - 1].header).toEqual(
@@ -172,7 +184,7 @@ describe('Listing Component', () => {
                 const item = this.items[rowIndex - 1];
 
                 cells.forEach((cell, cellIndex) => {
-                    if (cellIndex) {
+                    if (cellIndex && cellIndex < 5) {
                         const textContent = cells[cellIndex].querySelector('span').textContent;
                         const itemCOntent = item[comp.columns[cellIndex - 1].fieldName];
                         expect(textContent).toContain(itemCOntent);
@@ -212,9 +224,68 @@ describe('Listing Component', () => {
         expect(5).toEqual(rows.length);
 
         const headers = rows[0].querySelectorAll('th');
-        expect(3).toEqual(headers.length);
+        expect(4).toEqual(headers.length);
 
         const checkboxs = fixture.debugElement.queryAll(By.css('input[type="checkbox"]'));
         expect(0).toEqual(checkboxs.length);
+    });
+
+   it('should add a column if actions are received', () => {
+        const fakeActions: MenuItem[] = [{
+            icon: 'fa-trash',
+            label: 'Remove',
+            command: () => {}
+        }];
+        spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
+            return Observable.create(observer => {
+                observer.next(Object.assign([], this.items));
+            });
+        });
+
+        comp.columns = this.columns;
+
+        comp.ngOnChanges({
+            columns: new SimpleChange(null, comp.columns, true)
+        });
+
+        fixture.detectChanges();
+
+        const rows = el.querySelectorAll('tr');
+        expect(rows[0].cells.length).toEqual(4);
+
+        comp.actions = fakeActions;
+        fixture.detectChanges();
+
+        expect(rows[0].cells.length).toEqual(5);
+    });
+
+    it('should receive an action an execute the command after clickling over the action button', () => {
+        const fakeActions: MenuItem[] = [{
+            icon: 'fa-trash',
+            label: 'Remove',
+            command: () => {}
+        }];
+        spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
+            return Observable.create(observer => {
+                observer.next(Object.assign([], this.items));
+            });
+        });
+
+        comp.columns = this.columns;
+        comp.actions = fakeActions;
+
+        comp.ngOnChanges({
+            columns: new SimpleChange(null, comp.columns, true)
+        });
+
+        fixture.detectChanges();
+        const rows = el.querySelectorAll('tr');
+        const actionButton = de.query(By.css('action-menu-button'));
+
+        const spy = spyOn(fakeActions[0], 'command');
+
+        actionButton.nativeElement.children[0].click();
+
+        expect(spy).toHaveBeenCalled();
     });
 });
