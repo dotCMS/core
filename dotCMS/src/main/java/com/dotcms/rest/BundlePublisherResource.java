@@ -64,11 +64,11 @@ public class BundlePublisherResource {
 			@QueryParam("type") String type,
 			@QueryParam("callback") String callback,
 			@QueryParam("BUNDLE_NAME") String bundleName,
-			@QueryParam("FORCE_PUSH") boolean forcePush,
+			@QueryParam("FORCE_PUSH") final boolean forcePush,
 			@Context HttpServletRequest req
 	) {
     	try {
-    		try (InputStream bundle = req.getInputStream()) {
+    		try (InputStream bundleStream = req.getInputStream()) {
 		        //Creating an utility response object
 		        Map<String, String> paramsMap = new HashMap<String, String>();
 		        paramsMap.put( "type", type );
@@ -87,7 +87,7 @@ public class BundlePublisherResource {
 					PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
 					if(!isValidToken(auth_token, remoteIP, mySelf)) {
-						bundle.close();
+						bundleStream.close();
 		                return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
 		            }
 
@@ -100,18 +100,18 @@ public class BundlePublisherResource {
 					    // save bundle if it doesn't exists
 		                Bundle foundBundle = APILocator.getBundleAPI().getBundleById( bundleFolder );
 		                if ( foundBundle == null || foundBundle.getId() == null ) {
-		                    Bundle b = new Bundle();
-		                    b.setId(bundleFolder);
-		                    b.setName(bundleName);
-		                    b.setPublishDate(Calendar.getInstance().getTime());
-		                    b.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
-		                    b.setForcePush(forcePush);
-		                    APILocator.getBundleAPI().saveBundle(b);
+		                    Bundle bundle = new Bundle();
+							bundle.setId(bundleFolder);
+							bundle.setName(bundleName);
+							bundle.setPublishDate(Calendar.getInstance().getTime());
+							bundle.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
+							bundle.setForcePush(forcePush);
+		                    APILocator.getBundleAPI().saveBundle(bundle);
 					    }
 					}
 
 					//Write file on FS
-					FileUtil.writeToFile(bundle, bundlePath+fileName);
+					FileUtil.writeToFile(bundleStream, bundlePath+fileName);
 
 					//Start thread
 					if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
