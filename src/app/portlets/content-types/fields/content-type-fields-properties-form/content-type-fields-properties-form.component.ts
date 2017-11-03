@@ -89,7 +89,6 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
             this.initFormGroup(properties);
             this.sortProperties(properties);
         }
-
     }
 
     ngOnInit(): void {
@@ -98,8 +97,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
 
     /**
      * Emit the form data to be saved
-     * @param {*} value
-     * @param {boolean} isValid
+     *
      * @memberof ContentTypeFieldsPropertiesFormComponent
      */
     saveFieldProperties(): void {

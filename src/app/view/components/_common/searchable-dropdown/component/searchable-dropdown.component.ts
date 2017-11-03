@@ -37,8 +37,7 @@ import { OverlayPanel } from 'primeng/primeng';
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html'
 })
-export class SearchableDropdownComponent extends BaseComponent
-    implements ControlValueAccessor, OnChanges, OnInit {
+export class SearchableDropdownComponent extends BaseComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input() data: string[];
     @Input() labelPropertyName;
     @Input() valuePropertyName;
@@ -58,11 +57,12 @@ export class SearchableDropdownComponent extends BaseComponent
 
     value: any = {};
     valueString = '';
-    propagateChange = (_: any) => { };
 
     constructor(messageService: MessageService) {
         super(['search'], messageService);
     }
+
+    propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
         if (change.placeholder && change.placeholder.currentValue) {
@@ -116,7 +116,7 @@ export class SearchableDropdownComponent extends BaseComponent
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void { }
+    registerOnTouched(): void {}
 
     /**
      * Call when a option is clicked, if this option is not the same of the current value then

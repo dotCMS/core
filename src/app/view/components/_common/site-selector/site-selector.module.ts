@@ -11,19 +11,13 @@ import { SiteSelectorComponent } from './site-selector.component';
         SiteSelectorComponent,
     ],
     exports: [
-        SiteSelectorComponent,
-        SearchableDropDownModule
+        SiteSelectorComponent
     ],
     imports: [
         CommonModule,
         FormsModule,
         SearchableDropDownModule
-    ],
-    providers: [
-        SiteService,
-        DotcmsConfig,
-        IframeOverlayService,
-    ],
+    ]
 })
 
 export class SiteSelectorModule {}

@@ -15,9 +15,11 @@ import { FieldValidationMessageModule } from '../../../view/components/_common/f
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
-import { SiteSelectorModule } from '../../../view/components/_common/site-selector/site-selector.module';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { HotkeysService } from 'angular2-hotkeys';
+import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
+import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteServiceMock } from '../../../test/site-service.mock';
 
 class HotkeysServiceMock {
     add() {}
@@ -51,6 +53,8 @@ describe('ContentTypesFormComponent', () => {
                 'contenttypes.action.update': 'Update'
             });
 
+            const siteServiceMock = new SiteServiceMock();
+
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypesFormComponent],
                 imports: [
@@ -62,12 +66,13 @@ describe('ContentTypesFormComponent', () => {
                     OverlayPanelModule,
                     ReactiveFormsModule,
                     TabViewModule,
-                    SiteSelectorModule
+                    SiteSelectorFieldModule
                 ],
                 providers: [
                     { provide: LoginService, useClass: LoginServiceMock },
                     { provide: MessageService, useValue: messageServiceMock },
                     { provide: HotkeysService, useClass: HotkeysServiceMock },
+                    { provide: SiteService, useValue: siteServiceMock },
                     DotcmsConfig,
                     ContentTypesInfoService,
                     SocketFactory

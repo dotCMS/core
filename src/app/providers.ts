@@ -23,7 +23,6 @@ import { StringFormat } from './api/util/stringFormat';
 
 
 const PROVIDERS: any[] = [
-    // common env directives
     AccountService,
     ColorUtil,
     ConfirmationService,

@@ -3,15 +3,16 @@
         <div class="layout__toolbar-inner">
             <div class="toolbar__host">
                 <button pButton iconButton icon="fa-bars" class="inverse" (click)="handleMainButtonClick($event)"></button>
-                <site-selector-component
+                <dot-site-selector
                     #siteSelector
+                    class="toolbar__site-selector"
                     (change)="siteChange($event)"
                     (hide)="iframeOverlayService.hide()"
                     (show)="iframeOverlayService.show()"
                     [archive]="false"
                     [live]="true"
                     [system]="false">
-                </site-selector-component>
+                </dot-site-selector>
             </div>
             <div class="toolbar__actions">
                 <dot-toolbar-notifications></dot-toolbar-notifications>

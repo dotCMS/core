@@ -22,7 +22,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 
-describe('Site Selector Component', () => {
+describe('SiteSelectorComponent', () => {
     let comp: SiteSelectorComponent;
     let fixture: ComponentFixture<SiteSelectorComponent>;
     let de: DebugElement;
@@ -61,11 +61,12 @@ describe('Site Selector Component', () => {
 
         fixture.detectChanges();
 
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
-        expect(paginatorService.extraParams.get('live')).toBe('false');
-        expect(paginatorService.extraParams.get('system')).toBe('false');
+        expect(paginatorService.extraParams.get('live')).toBe(null);
+        expect(paginatorService.extraParams.get('system')).toBe(null);
     });
 
     it('should set extra params to paginator service (system default)', () => {
@@ -74,10 +75,10 @@ describe('Site Selector Component', () => {
 
         fixture.detectChanges();
 
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
-        expect(paginatorService.extraParams.get('live')).toBe('false');
+        expect(paginatorService.extraParams.get('live')).toBe(null);
         expect(paginatorService.extraParams.get('system')).toBe('true');
     });
 
@@ -95,7 +96,7 @@ describe('Site Selector Component', () => {
         const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
 
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
 
         fixture.detectChanges();
@@ -128,7 +129,7 @@ describe('Site Selector Component', () => {
         const filter = 'filter';
         const page = 1;
 
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
@@ -158,7 +159,7 @@ describe('Site Selector Component', () => {
         const filter = 'filter';
         const first = 2;
 
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
@@ -180,7 +181,7 @@ describe('Site Selector Component', () => {
     }));
 
     it('should be assign to filter if empty', fakeAsync(() => {
-        const paginatorService = de.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));

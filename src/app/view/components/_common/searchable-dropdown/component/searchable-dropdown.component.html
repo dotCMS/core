@@ -5,7 +5,8 @@
     (onAfterHide)="hideDialogHandler()">
     <header class="searchable-dropdown__search">
         <i class="fa fa-search searchable-dropdown__search-icon"></i>
-        <input #searchInput pInputText [placeholder]="i18nMessages['search']" type="text" class="searchable-dropdown__search-field"/>
+        <input #searchInput pInputText placeholder="{{i18nMessages['search']}}" type="text" class="searchable-dropdown__search-field"/>
+        
     </header>
     <p-dataList
         (onLazyLoad)="paginate($event)"

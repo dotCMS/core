@@ -76,7 +76,7 @@ describe('LoginAsComponent', () => {
                 userId: '1'
             }
         ];
-        const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+        const paginatorService: PaginatorService = fixture.debugElement.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
         comp.ngOnInit();
@@ -102,7 +102,7 @@ describe('LoginAsComponent', () => {
                 }
             ];
 
-            const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+            const paginatorService: PaginatorService = fixture.debugElement.injector.get(PaginatorService);
             spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
             const searchableDropdown = de.query(By.css('searchable-dropdown'));
@@ -132,7 +132,7 @@ describe('LoginAsComponent', () => {
                 }
             ];
 
-            const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+            const paginatorService: PaginatorService = fixture.debugElement.injector.get(PaginatorService);
             spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
             const searchableDropdown = de.query(By.css('searchable-dropdown'));

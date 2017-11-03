@@ -8,13 +8,16 @@ import {
     Input,
     OnInit,
     AfterViewInit,
-    AfterContentInit
+    AfterContentInit,
+    SimpleChanges,
+    OnChanges
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -33,15 +36,16 @@ import { Observable } from 'rxjs/Observable';
             useExisting: forwardRef(() => SiteSelectorComponent)
         }
     ],
-    selector: 'site-selector-component',
+    selector: 'dot-site-selector',
     styleUrls: ['./site-selector.component.scss'],
     templateUrl: 'site-selector.component.html'
 })
-export class SiteSelectorComponent implements ControlValueAccessor, OnInit, AfterContentInit {
+export class SiteSelectorComponent implements OnInit, OnChanges {
     private static readonly MIN_CHARECTERS_TO_SERACH = 3;
 
-    @Input() archive: boolean = null;
-    @Input() live: boolean = null;
+    @Input() archive: boolean;
+    @Input() id: string;
+    @Input() live: boolean;
     @Input() system = true;
     @Output() change: EventEmitter<Site> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
@@ -66,11 +70,17 @@ export class SiteSelectorComponent implements ControlValueAccessor, OnInit, Afte
         this.getSitesList();
 
         this.siteService.refreshSites$.subscribe(site => this.handleSitesRefresh());
+
+        if (this.id) {
+            this.selectCurrentSite(this.id);
+        } else if (!this.currentSite) {
+            this.setCurrentSiteAsDefault();
+        }
     }
 
-    ngAfterContentInit() {
-        if (!this.currentSite) {
-            this.setCurrentSiteAsDefault();
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes && changes.id && changes.id.currentValue) {
+            this.selectCurrentSite(changes.id.currentValue);
         }
     }
 
@@ -127,32 +137,8 @@ export class SiteSelectorComponent implements ControlValueAccessor, OnInit, Afte
      * @memberof SiteSelectorComponent
      */
     siteChange(site: Site): void {
-        const value = site.identifier;
         this.change.emit(site);
-        this.propagateChange(value);
     }
-
-    /**
-     * Write a new value to the element
-     * @param {*} value
-     * @memberof SearchableDropdownComponent
-     */
-    writeValue(value: string): void {
-        if (value) {
-            this.selectCurrentSite(value);
-        }
-    }
-
-    /**
-     * Set the function to be called when the control receives a change event.
-     * @param {any} fn
-     * @memberof SearchableDropdownComponent
-     */
-    registerOnChange(fn): void {
-        this.propagateChange = fn;
-    }
-
-    registerOnTouched(): void {}
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
         return (
@@ -163,7 +149,6 @@ export class SiteSelectorComponent implements ControlValueAccessor, OnInit, Afte
 
     private selectCurrentSite(siteId: string): void {
         const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
-        this.propagateChange(siteId);
         this.currentSite = selectedInCurrentPage
             ? Observable.of(selectedInCurrentPage)
             : this.siteService.getSiteById(siteId);
@@ -172,11 +157,11 @@ export class SiteSelectorComponent implements ControlValueAccessor, OnInit, Afte
     private setCurrentSiteAsDefault() {
         if (this.siteService.currentSite) {
             this.currentSite = Observable.of(this.siteService.currentSite);
-            this.propagateChange(this.siteService.currentSite.identifier);
+            this.siteChange(this.siteService.currentSite);
         } else {
-            this.siteService.switchSite$.subscribe(site => {
+            this.siteService.switchSite$.first().subscribe((site: Site) => {
                 this.currentSite = Observable.of(site);
-                this.propagateChange(site.identifier);
+                this.siteChange(site);
             });
         }
     }

@@ -11,7 +11,7 @@ import { IconButtonTooltipModule } from '../../view/components/_common/icon-butt
 import { ListingDataTableModule } from '../../view/components/listing-data-table/listing-data-table.module';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { SiteSelectorModule } from '../../view/components/_common/site-selector/site-selector.module';
+import { SiteSelectorFieldModule } from '../../view/components/_common/site-selector-field/site-selector-field.module';
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
 import { FieldService, FieldDragDropService, FieldPropertyService } from './fields/service';
@@ -54,6 +54,7 @@ import {
 } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '../../view/components/_common/iframe';
 import { DotTextareaContentModule } from '../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';
 
 @NgModule({
     declarations: [
@@ -111,7 +112,8 @@ import { DotTextareaContentModule } from '../../view/components/_common/dot-text
         OverlayPanelModule,
         RadioButtonModule,
         ReactiveFormsModule,
-        SiteSelectorModule,
+        SearchableDropDownModule,
+        SiteSelectorFieldModule,
         ContentTypeFieldsAddRowModule,
         SplitButtonModule,
         TabViewModule,
