@@ -111,12 +111,14 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
                 'contenttypes.action.delete',
                 'contenttypes.form.name.error.required',
                 'contenttypes.action.form.cancel',
-                'contenttypes.content.file',
+                'contenttypes.content.fileasset',
                 'contenttypes.content.content',
                 'contenttypes.content.form',
                 'contenttypes.content.persona',
                 'contenttypes.content.widget',
-                'contenttypes.content.page'
+                'contenttypes.content.htmlpage',
+                'contenttypes.content.key_value',
+                'contenttypes.content.vanity_url'
             ],
             messageService
         );

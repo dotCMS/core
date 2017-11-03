@@ -1,138 +1,129 @@
-import { ContentType } from './../shared/content-type.model';
 import { ListingDataTableComponent } from './../../../view/components/listing-data-table/listing-data-table.component';
 import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
 import { CrudService } from './../../../api/services/crud';
 import { MenuItem } from 'primeng/primeng';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 
 import { ActionHeaderOptions } from '../../../shared/models/action-header';
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DataTableColumn } from '../../../shared/models/data-table';
 import { MessageService } from '../../../api/services/messages-service';
+import { Observable } from 'rxjs/Observable';
+import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
+import { ButtonModel } from '../../../shared/models/action-header/button.model';
 
 /**
  * List of Content Types
  * use: listing-data-table.component
  * @export
  * @class ContentTypesPortletComponent
- * @extends {BaseComponent}
+
  */
 @Component({
     selector: 'content-types',
     styleUrls: ['./content-types.component.scss'],
     templateUrl: 'content-types.component.html'
 })
-export class ContentTypesPortletComponent extends BaseComponent {
+export class ContentTypesPortletComponent implements OnInit {
+    @ViewChild('listing') listing: ListingDataTableComponent;
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
     public rowActions: MenuItem[];
-    @ViewChild('listing') listing: ListingDataTableComponent;
+
+    private i18nKeys = [
+        'contenttypes.fieldname.structure.name',
+        'contenttypes.content.variable',
+        'contenttypes.form.label.description',
+        'contenttypes.fieldname.entries',
+        'message.structure.delete.structure.and.content',
+        'message.structure.cantdelete',
+        'contenttypes.content.fileasset',
+        'contenttypes.content.content',
+        'contenttypes.content.persona',
+        'contenttypes.content.widget',
+        'contenttypes.content.htmlpage',
+        'contenttypes.content.key_value',
+        'contenttypes.content.vanity_url',
+        'contenttypes.content.form',
+        'contenttypes.confirm.message.delete',
+        'contenttypes.confirm.message.delete.content',
+        'contenttypes.confirm.message.delete.warning',
+        'contenttypes.action.delete',
+        'contenttypes.action.cancel',
+        'Content-Type'
+    ];
 
     constructor(
-        messageService: MessageService,
+        public messageService: MessageService,
         private router: Router,
         private route: ActivatedRoute,
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotConfirmationService: DotConfirmationService
-    ) {
-        super(
-            [
-                'contenttypes.fieldname.structure.name',
-                'contenttypes.content.variable',
-                'contenttypes.form.label.description',
-                'contenttypes.fieldname.entries',
-                'message.structure.delete.structure.and.content',
-                'message.structure.cantdelete',
-                'contenttypes.content.file',
-                'contenttypes.content.content',
-                'contenttypes.content.persona',
-                'contenttypes.content.widget',
-                'contenttypes.content.page',
-                'contenttypes.confirm.message.delete',
-                'contenttypes.confirm.message.delete.content',
-                'contenttypes.confirm.message.delete.warning',
-                'contenttypes.action.delete',
-                'contenttypes.action.cancel',
-                'Content-Type'
-            ],
-            messageService
-        );
+        private dotConfirmationService: DotConfirmationService,
+        private dotContentletService: DotContentletService
+    ) {}
+
+    ngOnInit() {
+        Observable.forkJoin(
+            this.messageService.getMessages(this.i18nKeys),
+            this.dotContentletService.getAllContentTypes()
+        ).subscribe(res => {
+            const baseTypes: StructureTypeView[] = res[1];
+            this.actionHeaderOptions = {
+                primary: {
+                    command: $event => {
+                        this.createContentType($event);
+                    },
+                    model: this.setContentTypes(baseTypes)
+                }
+            };
+            this.contentTypeColumns = this.setContentTypeColumns();
+            this.rowActions = [
+                {
+                    label: 'Remove',
+                    icon: 'fa-trash',
+                    command: item => this.removeConfirmation(item)
+                }
+            ];
+        });
     }
 
-    /**
-     * Callback call from BaseComponent when the messages are received.
-     * @memberOf ContentTypesPortletComponent
-     */
-    onMessage(): void {
-        this.actionHeaderOptions = {
-            primary: {
+    private setContentTypes(s: StructureTypeView[]): ButtonModel[] {
+        return s.map(structureTypeView => {
+            return {
                 command: $event => {
-                    this.createContentType($event);
+                    this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
-                model: [
-                    {
-                        command: $event => {
-                            this.createContentType('content', $event);
-                        },
-                        icon: 'fa-newspaper-o',
-                        label: this.i18nMessages['contenttypes.content.content']
-                    },
-                    {
-                        command: $event => {
-                            this.createContentType('widget', $event);
-                        },
-                        icon: 'fa-cog',
-                        label: this.i18nMessages['contenttypes.content.widget']
-                    },
-                    {
-                        command: $event => {
-                            this.createContentType('file', $event);
-                        },
-                        icon: 'fa-file-o',
-                        label: this.i18nMessages['contenttypes.content.file']
-                    },
-                    {
-                        command: $event => {
-                            this.createContentType('page', $event);
-                        },
-                        icon: 'fa-file-text-o',
-                        label: this.i18nMessages['contenttypes.content.page']
-                    },
-                    {
-                        command: $event => {
-                            this.createContentType('persona', $event);
-                        },
-                        icon: 'fa-user',
-                        label: this.i18nMessages['contenttypes.content.persona']
-                    }
-                ]
-            }
-        };
+                icon: this.contentTypesInfoService.getIcon(structureTypeView.name),
+                label: this.messageService.get('contenttypes.content.' + structureTypeView.name.toLocaleLowerCase())
+            };
+        });
+    }
 
-        this.contentTypeColumns = [
+    private setContentTypeColumns(): DataTableColumn[] {
+        return [
             {
                 fieldName: 'name',
-                header: this.i18nMessages['contenttypes.fieldname.structure.name'],
+                header: this.messageService.get('contenttypes.fieldname.structure.name'),
                 icon: (item: any): string => this.contentTypesInfoService.getIcon(item.baseType),
                 sortable: true
             },
             {
                 fieldName: 'variable',
-                header: this.i18nMessages['contenttypes.content.variable'],
+                header: this.messageService.get('contenttypes.content.variable'),
                 sortable: true
             },
             {
                 fieldName: 'description',
-                header: this.i18nMessages['contenttypes.form.label.description'],
+                header: this.messageService.get('contenttypes.form.label.description'),
                 sortable: true
             },
             {
                 fieldName: 'nEntries',
-                header: this.i18nMessages['contenttypes.fieldname.entries'],
+                header: this.messageService.get('contenttypes.fieldname.entries'),
                 width: '7%'
             },
             {
@@ -141,14 +132,6 @@ export class ContentTypesPortletComponent extends BaseComponent {
                 header: 'Last Edit Date',
                 sortable: true,
                 width: '13%'
-            }
-        ];
-
-        this.rowActions = [
-            {
-                label: 'Remove',
-                icon: 'fa-trash',
-                command: (item) => this.removeConfirmation(item)
             }
         ];
     }
@@ -168,13 +151,15 @@ export class ContentTypesPortletComponent extends BaseComponent {
             accept: () => {
                 this.removeContentType(item);
             },
-            header: this.i18nMessages['message.structure.cantdelete'],
-            message: `${this.i18nMessages['contenttypes.confirm.message.delete']} ${this.i18nMessages['Content-Type']}
-                        ${this.i18nMessages['contenttypes.confirm.message.delete.content']}
-                        <span>${this.i18nMessages['contenttypes.confirm.message.delete.warning']}</span>`,
+            header: this.messageService.get('message.structure.cantdelete'),
+            message: `${this.messageService.get('contenttypes.confirm.message.delete')} ${this.messageService.get(
+                'Content-Type'
+            )}
+                        ${this.messageService.get('contenttypes.confirm.message.delete.content')}
+                        <span>${this.messageService.get('contenttypes.confirm.message.delete.warning')}</span>`,
             footerLabel: {
-                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
-                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                acceptLabel: this.messageService.get('contenttypes.action.delete'),
+                rejectLabel: this.messageService.get('contenttypes.action.cancel')
             }
         });
     }

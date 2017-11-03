@@ -12,10 +12,16 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { ContentTypesPortletComponent } from './content-types.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FormatDateService } from '../../../api/services/format-date-service';
-import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Injectable } from '@angular/core';
+import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+
+@Injectable()
+class MockDotContentletService {
+    getContentTypes() {}
+}
 
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;
@@ -23,6 +29,7 @@ describe('ContentTypesPortletComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let crudService: CrudService;
+    let dotContentletService: DotContentletService;
 
     beforeEach(() => {
         let messageServiceMock = new MockMessageService({
@@ -30,27 +37,24 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
-            'mod_date': 'Last Edit Date'
+            mod_date: 'Last Edit Date'
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypesPortletComponent,
-            ],
+            declarations: [ContentTypesPortletComponent],
             imports: [
-                RouterTestingModule.withRoutes([
-                    { path: 'test', component: ContentTypesPortletComponent },
-                ]),
+                RouterTestingModule.withRoutes([{ path: 'test', component: ContentTypesPortletComponent }]),
                 BrowserAnimationsModule,
                 ListingDataTableModule
             ],
             providers: [
-                 {provide: MessageService, useValue: messageServiceMock},
-                 CrudService,
-                 FormatDateService,
-                 ContentTypesInfoService,
-                 DotConfirmationService
-            ],
+                { provide: MessageService, useValue: messageServiceMock },
+                CrudService,
+                FormatDateService,
+                ContentTypesInfoService,
+                DotConfirmationService,
+                { provide: DotContentletService, useClass: MockDotContentletService }
+            ]
         });
 
         fixture = DOTTestBed.createComponent(ContentTypesPortletComponent);
@@ -58,10 +62,19 @@ describe('ContentTypesPortletComponent', () => {
         de = fixture.debugElement;
         el = de.nativeElement;
         crudService = fixture.debugElement.injector.get(CrudService);
+        dotContentletService = fixture.debugElement.injector.get(DotContentletService);
+        spyOn(dotContentletService, 'getContentTypes').and.returnValue(
+            Observable.of([
+                { name: 'CONTENT', label: 'Content', types: [] },
+                { name: 'WIDGET', label: 'Widget', types: [] },
+                { name: 'FORM', label: 'Form', types: [] }
+            ])
+        );
     });
 
     it('should display a listing-data-table.component', () => {
         let de = fixture.debugElement.query(By.css('listing-data-table'));
+        comp.ngOnInit();
 
         expect('v1/contenttype').toEqual(de.nativeElement.getAttribute('url'));
 
@@ -87,11 +100,14 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should remove the content type on click command function', () => {
-        const fakeActions: MenuItem[] = [{
-            icon: 'fa-trash',
-            label: 'Remove',
-            command: () => {}
-        }];
+        comp.ngOnInit();
+        const fakeActions: MenuItem[] = [
+            {
+                icon: 'fa-trash',
+                label: 'Remove',
+                command: () => {}
+            }
+        ];
 
         const mockContentType: ContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -107,7 +123,7 @@ describe('ContentTypesPortletComponent', () => {
         };
 
         const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
 
@@ -118,5 +134,11 @@ describe('ContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
+    });
+
+    it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
+        comp.ngOnInit();
+        expect(dotContentletService.getContentTypes).toHaveBeenCalled();
+        expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
     });
 });

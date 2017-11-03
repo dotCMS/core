@@ -47,6 +47,18 @@ export class DotContentletService {
     }
 
     /**
+     * Gets all content types excluding the RECENT ones
+     *
+     * @returns {Observable<StructureTypeView[]>}
+     */
+    getAllContentTypes(): Observable<StructureTypeView[]> {
+        return this.getContentTypes()
+            .flatMap((structures: StructureTypeView[]) => structures)
+            .filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
+            .toArray();
+    }
+
+    /**
      * Get the extra content types
      *
      * @returns {Observable<StructureTypeView[]>}
