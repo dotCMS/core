@@ -21,10 +21,7 @@ import { Observable } from 'rxjs/Observable';
  * @class MockMessageService
  */
 export class MockMessageService {
-
-    constructor(private messages: MessageConfig) {
-
-    }
+    constructor(private messages: MessageConfig) {}
 
     public getMessages(keys: string[]): Observable<any> {
         return Observable.of(this.messages);
@@ -32,6 +29,10 @@ export class MockMessageService {
 
     get messageMap$(): Observable<any> {
         return Observable.of(this.messages);
+    }
+
+    get(key: string): string {
+        return this.messages[key];
     }
 }
 

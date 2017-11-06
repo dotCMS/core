@@ -20,7 +20,7 @@ import { DotContentletService } from '../../../api/services/dot-contentlet.servi
 
 @Injectable()
 class MockDotContentletService {
-    getContentTypes() {}
+    getAllContentTypes() {}
 }
 
 describe('ContentTypesPortletComponent', () => {
@@ -63,7 +63,7 @@ describe('ContentTypesPortletComponent', () => {
         el = de.nativeElement;
         crudService = fixture.debugElement.injector.get(CrudService);
         dotContentletService = fixture.debugElement.injector.get(DotContentletService);
-        spyOn(dotContentletService, 'getContentTypes').and.returnValue(
+        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
             Observable.of([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
@@ -138,7 +138,7 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
         comp.ngOnInit();
-        expect(dotContentletService.getContentTypes).toHaveBeenCalled();
+        expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
         expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
     });
 });
