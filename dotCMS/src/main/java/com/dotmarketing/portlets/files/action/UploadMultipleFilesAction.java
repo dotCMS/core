@@ -173,8 +173,6 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	public void _saveFileAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user, String subcmd)
 	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException, IOException {
 
-	    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-
 	    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
         HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
         HttpSession session = httpReq.getSession();
@@ -281,7 +279,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
                         contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
                         if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
-                            APILocator.getVersionableAPI().setLive( contentlet );
+                            APILocator.getContentletAPI().publish(contentlet, user, false);
                         }
 
                         HibernateUtil.closeAndCommitTransaction();
