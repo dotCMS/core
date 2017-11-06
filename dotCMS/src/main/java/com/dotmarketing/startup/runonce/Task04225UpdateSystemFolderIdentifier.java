@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
     public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
-    public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
+    public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY ";
     public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) " +
             "references identifier(id)";
 
@@ -32,17 +33,30 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
 
-        //Drop folder_identifier_fk
         try {
-            DbConnectionFactory.getConnection().setAutoCommit(true);
-            if (DbConnectionFactory.isMySql()) {
-                dc.setSQL(MYSQL_DROP_CONSTRAINT_QUERY);
-            } else {
-                dc.setSQL(DROP_CONSTRAINT_QUERY);
+            //Check if FK: folder_identifier_fk exists
+            boolean foundFK = false;
+            final List<ForeignKey> listForeignKeys = this.getForeingKeys(DbConnectionFactory.getConnection(),
+                    Arrays.asList("folder"), false);
+            for (ForeignKey key : listForeignKeys) {
+                if ("folder_identifier_fk".equalsIgnoreCase(key.fkName())) {
+                    foundFK = true;
+                    break;
+                }
             }
-            Logger.info(this, "Executing drop constraint query: " + dc.getSQL());
-            dc.loadResult();
-            DbConnectionFactory.getConnection().setAutoCommit(false);
+
+            //Drop FK: folder_identifier_fk
+            if (foundFK) {
+                DbConnectionFactory.getConnection().setAutoCommit(true);
+                if (DbConnectionFactory.isMySql()) {
+                    dc.setSQL(MYSQL_DROP_CONSTRAINT_QUERY);
+                } else {
+                    dc.setSQL(DROP_CONSTRAINT_QUERY);
+                }
+                Logger.info(this, "Executing drop constraint query: " + dc.getSQL());
+                dc.loadResult();
+                DbConnectionFactory.getConnection().setAutoCommit(false);
+            }
         } catch (SQLException e) {
             Logger.error(this,"Error dropping constraint: " + e.getMessage());
             throw new DotDataException(e);
@@ -51,7 +65,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
         //Update the Ids
         updateFolderIDs();
 
-        //Add folder_identifier_fk
+        //Add FK: folder_identifier_fk
         try {
             dc = new DotConnect();
             DbConnectionFactory.getConnection().setAutoCommit(true);
