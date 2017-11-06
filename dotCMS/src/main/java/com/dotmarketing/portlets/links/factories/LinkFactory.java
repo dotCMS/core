@@ -2,29 +2,13 @@ package com.dotmarketing.portlets.links.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.fasterxml.jackson.databind.util.BeanUtil;
-import com.google.common.base.CaseFormat;
-import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -38,14 +22,12 @@ import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -54,10 +36,19 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.base.CaseFormat;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.xpath.operations.Bool;
 
 
 /**
@@ -71,7 +62,7 @@ public class LinkFactory {
 	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -161,8 +152,6 @@ public class LinkFactory {
             throws Exception {
 
         DateFormat df;
-        //Link object;
-
         List<Object> ret;
         Map<String, String> properties;
 
@@ -178,35 +167,6 @@ public class LinkFactory {
             Constructor<?> ctor = classToUse.getConstructor();
             Object object = ctor.newInstance();
 
-            /*object = new Link();
-
-            object.setInode(map.get("inode"));
-
-            if (map.get("show_on_menu") != null){
-                object.setShowOnMenu((Boolean.parseBoolean(map.get("show_on_menu"))));
-            }
-
-            object.setTitle(map.get("title"));
-
-            if (map.get("mod_date") != null){
-                object.setModDate(df.parse(map.get("mod_date")));
-            }
-
-            object.setModUser(map.get("mod_user"));
-
-            if (map.get("sort_order") != null){
-                object.setSortOrder(Integer.parseInt(map.get("sort_order")));
-            }
-
-            object.setFriendlyName(map.get("friendly_name"));
-            object.setIdentifier(map.get("identifier"));
-            object.setProtocal(map.get("protocal"));
-            object.setUrl(map.get("url"));
-            object.setTarget(map.get("target"));
-            object.setInternalLinkIdentifier(map.get("internal_link_identifier"));
-            object.setLinkType(map.get("link_type"));
-            object.setLinkCode(map.get("link_code"));*/
-
             properties = map.keySet().stream().collect(Collectors
                     .toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
 
@@ -221,7 +181,7 @@ public class LinkFactory {
                     }else if (isFieldPresent(classToUse, Date.class, property)){
                         PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
                     }else{
-                        Logger.warn(LinkFactory.class, "Property " + property + "not set for " + classToUse.getName());
+                        Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
                     }
                 }
             }
@@ -284,34 +244,7 @@ public class LinkFactory {
 
 		return new Link();
 	}
-/*
-	public static java.util.List getLinksAndPermissionsPerRole(Role[] roles) {
 
-		java.util.List entries = new java.util.ArrayList();
-		com.dotmarketing.portlets.folders.model.Folder rootFolder = com.dotmarketing.portlets.folders.factories.FolderFactory.getRootFolder();
-		java.util.List folders = com.dotmarketing.portlets.folders.factories.FolderFactory.getFoldersByParent(rootFolder.getInode());
-		return com.dotmarketing.portlets.folders.factories.FolderFactory.getFoldersAndEntriesAndPermissionsByRoles(folders,entries,roles,Link.class);
-	}
-*/
-
-    public static java.util.List existsLink(String uri,String hostId) {
-        HibernateUtil dh = new HibernateUtil(Link.class);
-        String parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
-		String assetName = uri.substring(uri.lastIndexOf("/")+1);
-        List<Link> list=null ;
-        try {
-			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and asset_name = ? and host_inode = ? ");
-			dh.setParam(parentPath);
-			dh.setParam(assetName);
-			dh.setParam(hostId);
-			list = ((java.util.List) dh.list());
-		} catch (DotHibernateException e) {
-			Logger.error(LinkFactory.class, "existsLink failed:" + e, e);
-		}
-        return list;
-    }
-    
-    
     public static Link getLinkByFriendlyName(String friendlyName) {
         HibernateUtil dh = new HibernateUtil(Link.class);
         Link link =null;

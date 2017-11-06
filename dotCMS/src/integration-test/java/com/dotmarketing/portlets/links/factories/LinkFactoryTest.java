@@ -48,25 +48,25 @@ public class LinkFactoryTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        containerAPI = APILocator.getContainerAPI();
+        containerAPI  = APILocator.getContainerAPI();
         contentletAPI = APILocator.getContentletAPI();
-        folderAPI = APILocator.getFolderAPI();
-        hostAPI = APILocator.getHostAPI();
+        folderAPI     = APILocator.getFolderAPI();
+        hostAPI       = APILocator.getHostAPI();
         identifierAPI = APILocator.getIdentifierAPI();
-        languageAPI = APILocator.getLanguageAPI();
-        templateAPI = APILocator.getTemplateAPI();
-        userAPI = APILocator.getUserAPI();
-        systemUser = userAPI.getSystemUser();
+        languageAPI   = APILocator.getLanguageAPI();
+        templateAPI   = APILocator.getTemplateAPI();
+        userAPI       = APILocator.getUserAPI();
+        systemUser    = userAPI.getSystemUser();
     }
 
     @Test
     public void testGetLinkChildrenByCondition() throws Exception {
 
-        Container container = null;
+        Container container     = null;
         Contentlet contentAsset = null;
-        Folder ftest = null;
-        Link link = null;
-        Template template = null;
+        Folder ftest            = null;
+        Link link               = null;
+        Template template       = null;
 
         Host host;
         Identifier internalLinkIdentifier;
@@ -163,7 +163,7 @@ public class LinkFactoryTest extends IntegrationTestBase {
             List<Link> links = LinkFactory.getLinkChildrenByCondition(ftest, "");
 
             Assert.assertNotNull(links);
-            Assert.assertFalse(links.isEmpty() || links.size() == 0);
+            Assert.assertFalse(links.isEmpty());
             Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
             Assert.assertEquals(link.getInode(), links.get(0).getInode());
         } finally {

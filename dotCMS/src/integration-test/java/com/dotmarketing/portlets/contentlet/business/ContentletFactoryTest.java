@@ -1,22 +1,15 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotmarketing.beans.Identifier;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
-import java.util.ArrayList;
-import java.util.Date;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba.
@@ -112,60 +105,5 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         //Validations
         assertNotNull( foundContentlet );
         assertEquals( foundContentlet.getInode(), contentlet.getInode() );
-    }
-
-    @Test
-    public void testGetRelatedIdentifier() throws DotSecurityException, DotDataException {
-
-        Contentlet childContentlet = null;
-        Contentlet parentContentlet = null;
-        List<Contentlet> contentRelationships = null;
-        Relationship testRelationship = null;
-        Structure testStructure = null;
-
-        try {
-            //First lets create a test structure
-            testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
-
-            //Now a new test contentlets
-            parentContentlet = createContentlet( testStructure, null, false );
-            childContentlet = createContentlet( testStructure, null, false );
-
-            //Create the relationship
-            testRelationship = createRelationShip( testStructure, false );
-
-            //Create the contentlet relationships
-            contentRelationships = new ArrayList<>();
-            contentRelationships.add( childContentlet );
-            ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
-
-            //Relate contents to our test contentlet
-            for ( ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : contentletRelationships.getRelationshipsRecords() ) {
-                //Testing the relate content...
-                contentletAPI.relateContent( parentContentlet, contentletRelationshipRecords, user, false );
-            }
-
-            Identifier identifier = contentletFactory.getRelatedIdentifier(parentContentlet, "parent-child");
-
-            Assert.assertEquals(childContentlet.getIdentifier(), identifier.getId());
-        } finally {
-            if (parentContentlet != null && testRelationship != null && contentRelationships != null
-                    && !contentRelationships.isEmpty()) {
-                contentletAPI
-                        .deleteRelatedContent(childContentlet, testRelationship, true, user, false);
-            }
-
-            if (parentContentlet != null) {
-                contentletAPI.delete(parentContentlet, user, false);
-            }
-
-            if (childContentlet != null) {
-                contentletAPI.delete(childContentlet, user, false);
-            }
-
-            if (testStructure != null) {
-                StructureFactory.deleteStructure(testStructure);
-            }
-        }
     }
 }

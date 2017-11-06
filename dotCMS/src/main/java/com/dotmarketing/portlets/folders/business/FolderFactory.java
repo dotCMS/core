@@ -104,10 +104,10 @@ public abstract class FolderFactory {
 	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException{
 		return null;
 	}
-	protected List<Folder> findSubFolders(Host host, boolean showOnMenu)throws DotHibernateException  {
+	protected List<Folder> findSubFolders(Host host, Boolean showOnMenu)throws DotHibernateException  {
 		return null;
 	}
-	protected List<Folder> findSubFolders(Folder folder, boolean showOnMenu) throws DotStateException, DotDataException{
+	protected List<Folder> findSubFolders(Folder folder, Boolean showOnMenu) throws DotStateException, DotDataException{
 	    return null;
 	}
 
