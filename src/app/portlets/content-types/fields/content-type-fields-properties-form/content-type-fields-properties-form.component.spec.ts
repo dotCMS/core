@@ -3,7 +3,7 @@ import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-
 import { ComponentFixture, async } from '@angular/core/testing';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ValidationErrors, Validators, FormControl } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { MessageService } from '../../../../api/services/messages-service';
 import { Field } from '../index';
@@ -135,6 +135,14 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
             expect('property1').toBe(comp.fieldProperties[0]);
             expect('property2').toBe(comp.fieldProperties[1]);
+        });
+
+        xit('should auto select and disable indexed checkbox', () => {
+            // TODO: It needs a real mock of FieldPropertyService
+        });
+
+        xit('should auto select and disable require checkbox', () => {
+            // TODO: It needs a real mock of FieldPropertyService
         });
     });
 });

@@ -12,7 +12,7 @@ import {
   OnInit,
   ViewEncapsulation
 } from '@angular/core';
-import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
+import { FormGroup, FormControl, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { MessageService } from '../../../../api/services/messages-service';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Field } from '../shared';
@@ -134,6 +134,8 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
             formFields['clazz'] = this.formFieldData.clazz;
         }
         this.form = this.fb.group(formFields);
+
+        this.handleAutoCheckValues();
     }
 
     private sortProperties(properties: string[]): void {
@@ -141,5 +143,41 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         .sort((property1, proeprty2) =>
             this.fieldPropertyService.getOrder(property1) - this.fieldPropertyService.getOrder(proeprty2));
 
+    }
+
+    private handleAutoCheckValues(): void {
+        if (this.form.get('searchable')) {
+            this.form.get('searchable').valueChanges.subscribe(res => this.setIndexedValueChecked(res));
+        }
+        if (this.form.get('listed')) {
+            this.form.get('listed').valueChanges.subscribe(res => this.setIndexedValueChecked(res));
+        }
+        if (this.form.get('unique')) {
+            this.form.get('unique').valueChanges.subscribe(res => this.handleUniqueValuesChecked(res));
+        }
+    }
+
+    private setIndexedValueChecked(propertyValue: boolean): void {
+        if (this.form.get('indexed')) {
+            this.form.get('indexed').setValue(propertyValue);
+            this.handleDisabledIndexed(propertyValue);
+        }
+    }
+
+    private handleUniqueValuesChecked(propertyValue: boolean): void {
+        this.setIndexedValueChecked(propertyValue);
+
+        if (this.form.get('required')) {
+            this.form.get('required').setValue(propertyValue);
+            this.handleDisabledRequired(propertyValue);
+        }
+    }
+
+    private handleDisabledIndexed(disable: boolean): void {
+        disable ? this.form.get('indexed').disable() : this.form.get('indexed').enable();
+    }
+
+    private handleDisabledRequired(disable: boolean): void {
+        disable ? this.form.get('required').disable() : this.form.get('required').enable();
     }
 }

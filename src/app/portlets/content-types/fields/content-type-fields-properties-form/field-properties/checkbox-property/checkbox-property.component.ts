@@ -1,4 +1,4 @@
-import { Component, Input, SimpleChanges } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
 import { MessageService } from '../../../../../../api/services/messages-service';
 import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
