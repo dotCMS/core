@@ -19,7 +19,7 @@ public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
     public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
-    public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY ";
+    public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
     public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) " +
             "references identifier(id)";
 
