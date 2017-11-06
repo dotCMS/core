@@ -2224,7 +2224,8 @@ create table workflow_action(
 	commentable number(1,0) default 0,
 	requires_checkout number(1,0) default 0,
 	icon varchar2(255) default 'defaultWfIcon',
-	use_role_hierarchy_assign number(1,0) default 0
+	use_role_hierarchy_assign number(1,0) default 0,
+  scheme_id VARCHAR(36) NOT NULL
 );
 create index wk_idx_act_step on workflow_action(step_id);
 
@@ -2254,8 +2255,7 @@ create table workflow_scheme_x_structure(
 	structure_id varchar2(36) not null references structure(inode)
 );
 
-create unique index wk_idx_scheme_str_2 on
-	workflow_scheme_x_structure(structure_id);
+create index wk_idx_scheme_str_2 on workflow_scheme_x_structure(structure_id);
 
 
 
@@ -2504,3 +2504,9 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
+
+CREATE TABLE workflow_action_step (
+    action_id VARCHAR(36) NOT NULL,
+    step_id VARCHAR(36) NOT NULL,
+    CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)
+);
