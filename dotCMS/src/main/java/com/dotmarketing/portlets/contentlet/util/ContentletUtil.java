@@ -17,6 +17,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,8 +89,9 @@ public class ContentletUtil {
 	 * @return Contentlet with the values in place.
 	 *
 	 * @throws DotDataException
+	 * @throws IOException 
      */
-	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException {
+	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException, IOException {
 		Map<String, Object> m = new HashMap<>();
 
 		c.setTags();
@@ -98,8 +101,9 @@ public class ContentletUtil {
 		Structure s = c.getStructure();
 
 		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
+			if(f.getFieldType().equals(Field.FieldType.BINARY.toString()) && c.get(f.getVelocityVarName())!=null){
+			  File x = c.getBinary(f.getVelocityVarName());
+				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName() + "/" + x.getName()	);
 				m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
 			} else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 
