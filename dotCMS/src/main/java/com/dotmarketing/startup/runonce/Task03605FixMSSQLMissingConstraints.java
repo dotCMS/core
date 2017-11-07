@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.util.Config;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,12 @@ public class Task03605FixMSSQLMissingConstraints extends AbstractJDBCStartupTask
 
 	@Override
 	public String getMSSQLScript() {
-		return  "ALTER TABLE workflow_task ALTER COLUMN assigned_to NVARCHAR(36) NULL;"
+		final String UPDATE_MISSING_WORKFLOW_ASSIGNMENTS = "UPDATE workflow_task SET assigned_to = "
+				+ " (SELECT id FROM cms_role WHERE role_name = '" + Config.getStringProperty("CMS_ADMINISTRATOR_ROLE") + "') "
+				+ " WHERE assigned_to NOT IN (SELECT id FROM cms_role); ";
+
+		return  UPDATE_MISSING_WORKFLOW_ASSIGNMENTS
+				+ "ALTER TABLE workflow_task ALTER COLUMN assigned_to NVARCHAR(36) NULL;"
 				+ "ALTER TABLE workflow_task ALTER COLUMN status NVARCHAR(36) NULL;"
 				+ "ALTER TABLE workflow_task ALTER COLUMN webasset NVARCHAR(36) NULL;"
 				+ "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);"
