@@ -1016,15 +1016,15 @@ public class Task03600UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE schemes_ir ALTER COLUMN endpoint_id NVARCHAR(36) NOT NULL;"
 
 				+ "DROP TABLE htmlpages_ir; "
-				+ "CREATE TABLE htmlpages_ir(html_page nvarchar(255), local_working_inode nvarchar(36), local_live_inode nvarchar(36), "
+				+ "CREATE TABLE htmlpages_ir(html_page nvarchar(255), local_working_inode nvarchar(36) not null, local_live_inode nvarchar(36), "
 				+ "remote_working_inode nvarchar(36), remote_live_inode nvarchar(36),local_identifier nvarchar(36),"
-				+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36), language_id bigint, "
+				+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36) not null, language_id bigint, "
 				+ "PRIMARY KEY (local_working_inode, language_id, endpoint_id));"
 
 				+ "DROP TABLE fileassets_ir; "
-				+ "create table fileassets_ir(file_name nvarchar(255), local_working_inode nvarchar(36), local_live_inode nvarchar(36), "
+				+ "create table fileassets_ir(file_name nvarchar(255), local_working_inode nvarchar(36) not null, local_live_inode nvarchar(36), "
 				+ "remote_working_inode nvarchar(36), remote_live_inode nvarchar(36),local_identifier nvarchar(36), "
-				+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36), language_id bigint, "
+				+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36) not null, language_id bigint, "
 				+ "PRIMARY KEY (local_working_inode, language_id, endpoint_id));"
 				
 				+ "ALTER TABLE cluster_server_action ALTER COLUMN server_action_id NVARCHAR(36) NOT NULL;"
