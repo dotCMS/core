@@ -12,7 +12,7 @@ import com.dotmarketing.util.Config;
 
 public class ParseContainer extends DotDirective {
 
-	final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
+	private final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
 
 	private static final long serialVersionUID = 1L;
 
@@ -30,12 +30,7 @@ public class ParseContainer extends DotDirective {
 	@Override
 	String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,
 			final String argument) {
-		if (argument.contains("/")) {
-			
-		}else{
-		
-			return (params.live) ? "/live/" + argument + "." + EXTENSION : "/working/" + argument + "." + EXTENSION;
-		}
+		return (params.live) ? "/live/" + argument + "." + EXTENSION : "/working/" + argument + "." + EXTENSION;
 	}
 
 }
