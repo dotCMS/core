@@ -1,30 +1,41 @@
 package com.dotmarketing.portlets.containers.business;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Inode.Type;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.CaseFormat;
 import com.liferay.portal.model.User;
+import java.lang.reflect.Constructor;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
@@ -42,22 +53,30 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv " +
+		DotConnect dc = new DotConnect();
+		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv " +
 				"where vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
 				"vv.identifier = ident.id and host_inode = '" + parentPermissionable.getIdentifier() + "'";
-		hu.setSQLQuery(sql);
-		return hu.list();
+		dc.setSQL(sql);
+		try {
+			return convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers() throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
+		DotConnect dc = new DotConnect();
+		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
 				"where vv.working_inode= " + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
 				"dot_containers_1_.type='containers' order by " + Inode.Type.CONTAINERS.getTableName() + ".title";
-		hu.setSQLQuery(sql);
-		return hu.list();
+		dc.setSQL(sql);
+		try {
+			return convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 	}
     @Override
     @SuppressWarnings("unchecked")
@@ -105,34 +124,60 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
 			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<Object>();
+			paramValues = new ArrayList<>();
 			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(counter==0){
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("'");
 						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("'");
 						}else{
-							conditionBuffer.append(" lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}else{
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("'");
 						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("'");
 						}else{
-							conditionBuffer.append(" OR lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" OR lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" OR asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" OR asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}
 
@@ -142,58 +187,78 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset from asset in class " + Container.class.getName() + ", " +
-				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +", vinfo in class "+ContainerVersionInfo.class.getName());
+		query.append("select asset from ");
+		query.append(Type.CONTAINERS.getTableName());
+		query.append(" asset, inode, identifier, ");
+		query.append(Type.CONTAINERS.getVersionTableName());
+		query.append(" vinfo");
+
 		if(UtilMethods.isSet(parent)){
 
 			//Search for the given ContentType inode
 			ContentType foundContentType = contentTypeAPI.find(parent);
 
-			if ( null != foundContentType && InodeUtils.isSet(foundContentType.inode()) )
-				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id"
-						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '" + parent + "' ) ");
-			else
-				query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
-						"and asset.identifier = identifier.id and tree.parent = '" + parent + "' and tree.child=asset.inode");
+			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
+				query.append(
+						" where asset.inode = inode.inode and asset.identifier = identifier.id");
+				query.append(
+						" and exists ( from container_structures cs where cs.container_id = asset.identifier");
+				query.append(" and cs.structure_id = '");
+				query.append(parent);
+				query.append("' ) ");
+			}else {
+				query.append(" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id");
+				query.append(" and tree.parent = '");
+				query.append(parent);
+				query.append("' and tree.child=asset.inode");
+			}
 		}else{
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
-		query.append(" and vinfo.identifier=identifier.id and vinfo.workingInode=asset.inode ");
-		if(!includeArchived)
-		    query.append(" and vinfo.deleted="+DbConnectionFactory.getDBFalse());
+		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
+		if(!includeArchived) {
+			query.append(" and vinfo.deleted=");
+			query.append(DbConnectionFactory.getDBFalse());
+		}
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.hostId = '"+ hostId +"'");
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId);
+			query.append("'");
 		}
 		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '"+ inode +"'");
+			query.append(" and asset.inode = '");
+			query.append(inode);
+			query.append("'");
 		}
 		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '"+ identifier +"'");
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append("'");
 		}
 		if(!UtilMethods.isSet(orderBy)){
-			orderBy = "modDate desc";
+			orderBy = "mod_date desc";
 		}
 
-		List<Container> resultList = new ArrayList<Container>();
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		String type;
+		List<Container> resultList;
+		DotConnect dc = new DotConnect();
 		int countLimit = 100;
 		int size = 0;
 		try {
-			type = ((Inode) Container.class.newInstance()).getType();
-			query.append(" and asset.type='"+type+ "' " + conditionBuffer.toString() + " order by asset." + orderBy);
-			dh.setQuery(query.toString());
+			query.append(conditionBuffer.toString());
+			query.append(" order by asset.");
+			query.append(orderBy);
+			dc.setSQL(query.toString());
 
 			if(paramValues!=null && paramValues.size()>0){
 				for (Object value : paramValues) {
-					dh.setParam((String)value);
+					dc.addParam((String)value);
 				}
 			}
 
 			while(!done) {
-				dh.setFirstResult(internalOffset);
-				dh.setMaxResults(internalLimit);
-				resultList = dh.list();
+				dc.setStartRow(internalOffset);
+				dc.setMaxRows(internalLimit);
+				resultList = convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -291,6 +356,67 @@ public class ContainerFactoryImpl implements ContainerFactory {
             Logger.error(ContainerFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
+	}
+
+	/**
+	 *
+	 * @param results
+	 * @return
+	 */
+	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+			throws Exception {
+
+		DateFormat df;
+		List<Object> ret;
+		Map<String, String> properties;
+
+		ret = new ArrayList<>();
+
+		if(results == null || results.size()==0){
+			return ret;
+		}
+
+		df = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (Map<String, String> map : results) {
+			Constructor<?> ctor = classToUse.getConstructor();
+			Object object = ctor.newInstance();
+
+			properties = map.keySet().stream().collect(Collectors
+					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
+
+			for (String property: properties.keySet()){
+				if (properties.get(property) != null){
+					if (isFieldPresent(classToUse, String.class, property)){
+						PropertyUtils.setProperty(object, property, properties.get(property));
+					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Date.class, property)){
+						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
+					}else{
+						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
+					}
+				}
+			}
+
+			ret.add(object);
+		}
+		return ret;
+	}
+
+	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+			throws NoSuchFieldException {
+
+		try{
+			return classToUse.getDeclaredField(property).getType() == fieldType;
+		}catch(NoSuchFieldException e){
+			if (classToUse.getSuperclass()!=null) {
+				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
+			}
+		}
+		return false;
 	}
 
 }

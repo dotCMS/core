@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.google.common.base.CaseFormat;
+import java.lang.reflect.Constructor;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -14,7 +19,6 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
@@ -36,14 +40,13 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -170,7 +173,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param containerTitle
 	 * @param destination
 	 * @return
@@ -178,36 +181,109 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 */
 	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
-	private String getAppendToContainerTitle(String containerTitle, Host destination) throws DotDataException {
+	private String getAppendToContainerTitle(String containerTitle, Host destination)
+			throws DotDataException {
+		List<Container> containers;
 		String temp = new String(containerTitle);
 		String result = "";
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv "+
-					 "where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-			          Inode.Type.CONTAINERS.getTableName() + ".identifier = ident.id and host_inode = ? order by title ";
-		dh.setSQLQuery(sql);
-		dh.setParam(destination.getIdentifier());
+		DotConnect dc = new DotConnect();
+		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from "
+				+ Inode.Type.CONTAINERS.getTableName()
+				+ ", inode dot_containers_1_, identifier ident, container_version_info vv " +
+				"where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS
+				.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName()
+				+ ".inode = dot_containers_1_.inode and " +
+				Inode.Type.CONTAINERS.getTableName()
+				+ ".identifier = ident.id and host_inode = ? order by title ";
+		dc.setSQL(sql);
+		dc.addParam(destination.getIdentifier());
 
-		List<Container> containers = dh.list();
+		try {
+			containers = convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 
 		boolean isContainerTitle = false;
 
-		for (; !isContainerTitle;) {
+		for (; !isContainerTitle; ) {
 			isContainerTitle = true;
 			temp += result;
 
-			for (Container container: containers) {
+			for (Container container : containers) {
 				if (container.getTitle().equals(temp)) {
 					isContainerTitle = false;
 					break;
 				}
 			}
 
-			if (!isContainerTitle)
+			if (!isContainerTitle) {
 				result += " (COPY)";
+			}
 		}
 
 		return result;
+	}
+
+	/**
+	 *
+	 * @param results
+	 * @return
+	 */
+	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+			throws Exception {
+
+		DateFormat df;
+		List<Object> ret;
+		Map<String, String> properties;
+
+		ret = new ArrayList<>();
+
+		if(results == null || results.size()==0){
+			return ret;
+		}
+
+		df = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (Map<String, String> map : results) {
+			Constructor<?> ctor = classToUse.getConstructor();
+			Object object = ctor.newInstance();
+
+			properties = map.keySet().stream().collect(Collectors
+					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
+
+			for (String property: properties.keySet()){
+				if (properties.get(property) != null){
+					if (isFieldPresent(classToUse, String.class, property)){
+						PropertyUtils.setProperty(object, property, properties.get(property));
+					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Date.class, property)){
+						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
+					}else{
+						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
+					}
+				}
+			}
+
+			ret.add(object);
+		}
+		return ret;
+	}
+
+	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+			throws NoSuchFieldException {
+
+		try{
+			return classToUse.getDeclaredField(property).getType() == fieldType;
+		}catch(NoSuchFieldException e){
+			if (classToUse.getSuperclass()!=null) {
+				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
+			}
+		}
+		return false;
 	}
 
 	@CloseDBIfOpened
@@ -247,18 +323,27 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotStateException, DotDataException, DotSecurityException  {
+	public List<Container> getContainersInTemplate(Template parentTemplate)
+			throws DotStateException, DotDataException, DotSecurityException {
 
-		HibernateUtil dh = new HibernateUtil(TemplateContainers.class);
-		dh.setSQLQuery("select {template_containers_2_.*} from template_containers, identifier template_containers_1_,identifier template_containers_2_ " +
-					   "where template_containers.template_id = template_containers_1_.id and " +
-					   "template_containers.container_id = template_containers_2_.id " +
-					   "and template_containers.template_id = ? ");
-		dh.setParam(parentTemplate.getIdentifier());
-		List<Identifier> identifiers = dh.list();
+		DotConnect dc = new DotConnect();
+		dc.setSQL(
+				"select template_containers_2_.* from template_containers, identifier template_containers_1_,identifier template_containers_2_ "
+						+
+						"where template_containers.template_id = template_containers_1_.id and " +
+						"template_containers.container_id = template_containers_2_.id " +
+						"and template_containers.template_id = ? ");
+		dc.addParam(parentTemplate.getIdentifier());
+		List<Identifier> identifiers = null;
+		try {
+			identifiers = convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 		List<Container> containers = new ArrayList<Container>();
-		for(Identifier id : identifiers) {
-			Container cont = (Container) APILocator.getVersionableAPI().findWorkingVersion(id,APILocator.getUserAPI().getSystemUser(),false);
+		for (Identifier id : identifiers) {
+			Container cont = (Container) APILocator.getVersionableAPI()
+					.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
 			containers.add(cont);
 		}
 		return containers;

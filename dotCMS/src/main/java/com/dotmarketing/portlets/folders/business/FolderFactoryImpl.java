@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotmarketing.beans.Inode.Type;
 import com.google.common.base.CaseFormat;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -274,7 +275,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("select folder.* from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
+				dc.setSQL("select folder.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
 				dc.addParam(assetName.toLowerCase());
 				dc.addParam(parentPath.toLowerCase());
@@ -316,7 +317,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 
 					dc = new DotConnect();
-					dc.setSQL("select folder.* from folder, inode folder_1_, identifier identifier"
+					dc.setSQL("select folder.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
 							+ " where asset_name = ?"
 							+ " and parent_path = ?"
 							+ " and folder_1_.type = 'folder'"
@@ -1011,7 +1012,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			dc.addParam(folder1.getiDate());
 			dc.addParam(folder1.getType());
 			dc.loadResult();
-			String hostQuery = "INSERT INTO FOLDER(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
+			String hostQuery = "INSERT INTO " + Type.FOLDER.getTableName() + "(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
 			dc.setSQL(hostQuery);
 			dc.addParam(folder1.getInode());
 			dc.addParam(folder1.getName());

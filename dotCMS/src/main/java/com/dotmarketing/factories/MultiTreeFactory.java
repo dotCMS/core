@@ -384,31 +384,24 @@ public class MultiTreeFactory {
 		try {
 			String tableName = "";
 			String sql = "";
-			if(c.getName().contains("Identifier")){
-			  tableName = "identifier"; 
-			}else{
+			if(!c.getName().contains("Identifier")){
 			  tableName = ((Inode) c.newInstance()).getType();
 			}
 			HibernateUtil dh = new HibernateUtil(c);
-			if(tableName.equalsIgnoreCase("identifier")){
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree "
-				+ " where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".id and " 
-				+ " order by multi_tree.tree_order";
-			}else {
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "
-				+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " 
-				+ tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
-			}
-            
+
+			sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "
+			+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and "
+			+ tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
+
 			Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
-			
+
 			dh.setSQLQuery(sql);
             
-			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getId() + "\n");
+            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getId() + "\n");
+
+			dh.setParam(p1.getId());
+			dh.setParam(p2.getId());
 
 			return dh.list();
 		}

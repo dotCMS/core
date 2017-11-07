@@ -8,6 +8,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
@@ -55,6 +56,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+import com.google.common.base.CaseFormat;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -70,8 +72,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -82,6 +86,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -434,123 +439,133 @@ public class CMSMaintenanceAjax {
 				while (it.hasNext()) {
 					Map.Entry pairs = (Map.Entry) it.next();
 					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class)
-					        && !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
+					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
+							.equals(ClickstreamRequest.class)
+							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
 						_tablesToDump.add(x);
 
 				}
 				XStream _xstream = null;
-				HibernateUtil _dh = null;
+				DotConnect _dc = null;
 				List _list = null;
 				File _writing = null;
 				BufferedOutputStream _bout = null;
 
 				for (Class clazz : _tablesToDump) {
-				    if(clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz.equals(FieldVariable.class)){
-				        continue;
-				    }
+					if (clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz
+							.equals(FieldVariable.class)) {
+						continue;
+					}
 					//http://jira.dotmarketing.net/browse/DOTCMS-5031
-	                if(PermissionReference.class.equals(clazz)){
-	                	continue;
-	                }
+					if (PermissionReference.class.equals(clazz)) {
+						continue;
+					}
 
-	                if(com.dotmarketing.portlets.contentlet.business.Contentlet.class.equals(clazz)){
-	                	Logger.debug(this, "Processing contentlets. This will take a little bit longer...");
-	                }
+					if (com.dotmarketing.portlets.contentlet.business.Contentlet.class
+							.equals(clazz)) {
+						Logger.debug(this,
+								"Processing contentlets. This will take a little bit longer...");
+					}
 
 					_xstream = new XStream(new DomDriver());
 
 					//http://jira.dotmarketing.net/browse/DOTCMS-6059
-					if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-						_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Set.class, java.util.Set.class);
-						_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.List.class, java.util.List.class);
-						_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Map.class, java.util.Map.class);
+					if (clazz.equals(DashboardSummary404.class) || clazz
+							.equals(DashboardUserPreferences.class)) {
+						_xstream.addDefaultImplementation(
+								com.dotcms.repackage.net.sf.hibernate.collection.Set.class,
+								java.util.Set.class);
+						_xstream.addDefaultImplementation(
+								com.dotcms.repackage.net.sf.hibernate.collection.List.class,
+								java.util.List.class);
+						_xstream.addDefaultImplementation(
+								com.dotcms.repackage.net.sf.hibernate.collection.Map.class,
+								java.util.Map.class);
 						Mapper mapper = _xstream.getMapper();
 						_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 						_xstream.registerConverter(new HibernateMapConverter(mapper));
 					}
 
-					int i= 0;
+					int i = 0;
 					int step = 1000;
-					int total =0;
+					int total = 0;
 					java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
 					/* we will only export 10,000,000 items of any given type */
-					for(i=0;i < 10000000;i=i+step){
+					for (i = 0; i < 10000000; i = i + step) {
 
-	                    _dh = new HibernateUtil(clazz);
-	                    _dh.setFirstResult(i);
-	                    _dh.setMaxResults(step);
+						_dc = new DotConnect();
+						_dc.setStartRow(i);
+						_dc.setMaxRows(step);
 
-	                    //This line was previously like;
-	                    //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
-	                    //This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
-	                    //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
-	                    //ordering is done only on the first field for the tables, which is INODE
-	                    if(com.dotmarketing.beans.Tree.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
-	                    }
-	                    else if(MultiTree.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
-	                    }
-	                    else if(TagInode.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-	                    }
-	                    else if(TemplateVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
-	                    }
-	                    else if(ContainerVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
-	                    }
-	                    else if(LinkVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
-	                    }
-	                    else if(CalendarReminder.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
-	                    } else if(Identifier.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by parent_path, id");
-	                    } else {
-	                        _dh.setQuery("from " + clazz.getName() + " order by 1");
+						//This line was previously like;
+						//_dh.setQuery("from " + clazz.getName() + " order by 1,2");
+						//This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
+						//by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
+						//ordering is done only on the first field for the tables, which is INODE
+						if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
+							_dc.setSQL("from " + clazz.getName()
+									+ " order by parent, child, relation_type");
+						} else if (MultiTree.class.equals(clazz)) {
+							_dc.setSQL("from " + clazz.getName()
+									+ " order by parent1, parent2, child, relation_type");
+						} else if (TagInode.class.equals(clazz)) {
+							_dc.setSQL("from " + clazz.getName() + " order by inode, tag_id");
+						} else if (TemplateVersionInfo.class.equals(clazz)) {
+							_dc.setSQL(
+									"SELECT template_version_info.* from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
+						} else if (ContainerVersionInfo.class.equals(clazz)) {
+							_dc.setSQL(
+									"SELECT container_version_info.* from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
+						} else if (LinkVersionInfo.class.equals(clazz)) {
+							_dc.setSQL(
+									"SELECT link_version_info.* from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
+						} else if (CalendarReminder.class.equals(clazz)) {
+							_dc.setSQL("from " + clazz.getName()
+									+ " order by user_id, event_id, send_date");
+						} else if (Identifier.class.equals(clazz)) {
+							_dc.setSQL("from " + clazz.getName() + " order by parent_path, id");
+						} else {
+							_dc.setSQL("from " + clazz.getName() + " order by 1");
 
-	                    }
+						}
 
-	                    _list = _dh.list();
-	                    if(_list.size() ==0){
-	                        try {
-	                        _bout.close();
-	                        }
-	                        catch( java.lang.NullPointerException npe){}
-	                        _list = null;
-	                        _dh = null;
-	                        _bout = null;
+						_list = convertDotConnectMapToPOJO(_dc.loadResults(), clazz);
+						if (_list.size() == 0) {
+							try {
+								_bout.close();
+							} catch (java.lang.NullPointerException npe) {
+							}
+							_bout = null;
 
-	                        break;
-	                    }
+							break;
+						}
 
-	                    if(_list != null && _list.size() > 0 && _list.get(0) instanceof Comparable){
-	                    	java.util.Collections.sort(_list);
-	                    }
+						if (_list != null && _list.size() > 0 && _list
+								.get(0) instanceof Comparable) {
+							java.util.Collections.sort(_list);
+						}
 
-	    				_writing = new File(backupTempFilePath + File.separator +  clazz.getName() + "_" + formatter.format(i) + ".xml");
-	    				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+						_writing = new File(
+								backupTempFilePath + File.separator + clazz.getName() + "_"
+										+ formatter.format(i) + ".xml");
+						_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
 
-	    				total = total + _list.size();
+						total = total + _list.size();
 
-	    				try {
-	                        Thread.sleep(10);
-	                    } catch (InterruptedException e) {
-	                    	Logger.warn(this, "An error ocurred trying to create XML files");
-	                        Logger.error(this,e.getMessage(),e);
-	                    }
+						try {
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							Logger.warn(this, "An error occurred trying to create XML files");
+							Logger.error(this, e.getMessage(), e);
+						}
 
-	                    try {
-                            _xstream.toXML(_list, _bout);
-                        } finally {
-	    				    CloseUtils.closeQuietly(_bout);
-                        }
+						try {
+							_xstream.toXML(_list, _bout);
+						} finally {
+							CloseUtils.closeQuietly(_bout);
+						}
 
-	    				_list = null;
-	    				_dh = null;
-	    				_bout = null;
+						_bout = null;
 
 					}
 					Logger.info(this, "writing : " + total + " records for " + clazz.getName());
@@ -561,13 +576,14 @@ public class CMSMaintenanceAjax {
 				_list = PublicCompanyFactory.getCompanies();
 				List<Company> companies = new ArrayList<Company>(_list);
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator +  Company.class.getName() + ".xml");
+				_writing = new File(
+						backupTempFilePath + File.separator + Company.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
@@ -575,13 +591,14 @@ public class CMSMaintenanceAjax {
 				_list = APILocator.getUserAPI().findAllUsers();
 				_list.add(APILocator.getUserAPI().getDefaultUser());
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator +  User.class.getName() + ".xml");
+				_writing = new File(
+						backupTempFilePath + File.separator + User.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
@@ -593,11 +610,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Counter.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
@@ -607,11 +624,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Address.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
@@ -629,11 +646,11 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Image.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
@@ -650,50 +667,54 @@ public class CMSMaintenanceAjax {
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
 				/* portlet_preferences */
 
-				try{
+				try {
 					_list = PortletPreferencesLocalManagerUtil.getPreferences();
-				}catch(Exception e){
-					Logger.error(this,"Error in retrieveing all portlet preferences");
+				} catch (Exception e) {
+					Logger.error(this, "Error in retrieveing all portlet preferences");
 				}
 				_xstream = new XStream(new DomDriver());
 				_writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
 				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-                try {
-                    _xstream.toXML(_list, _bout);
-                } finally {
-                    CloseUtils.closeQuietly(_bout);
-                }
+				try {
+					_xstream.toXML(_list, _bout);
+				} finally {
+					CloseUtils.closeQuietly(_bout);
+				}
 				_list = null;
 				_bout = null;
 
-	            
 				//backup content types
-	            File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
-	            new ContentTypeImportExportUtil().exportContentTypes(file);
+				File file = new File(backupTempFilePath + File.separator + "ContentTypes-"
+						+ ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
+				new ContentTypeImportExportUtil().exportContentTypes(file);
 
 				//backup workflow
-				file = new File(backupTempFilePath + File.separator + "WorkflowSchemeImportExportObject.json");
+				file = new File(backupTempFilePath + File.separator
+						+ "WorkflowSchemeImportExportObject.json");
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 
 				//Backup Rules.
-				file = new File(backupTempFilePath + File.separator + "RuleImportExportObject.json");
+				file = new File(
+						backupTempFilePath + File.separator + "RuleImportExportObject.json");
 				RulesImportExportUtil.getInstance().export(file);
 
 			} catch (HibernateException e) {
-				Logger.error(this,e.getMessage(),e);
+				Logger.error(this, e.getMessage(), e);
 			} catch (SystemException e) {
-				Logger.error(this,e.getMessage(),e);
-			} finally {
+				Logger.error(this, e.getMessage(), e);
+			}catch(Exception e){
+				Logger.error(this, e.getMessage(), e);
+			}finally {
 				DbConnectionFactory.closeSilently();
 			}
 
@@ -714,6 +735,67 @@ public class CMSMaintenanceAjax {
             } finally {
                 CloseUtils.closeQuietly(out);
             }
+		}
+
+	/**
+	 *
+	 * @param results
+	 * @return
+	 */
+	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+			throws Exception {
+
+		DateFormat df;
+		List<Object> ret;
+		Map<String, String> properties;
+
+		ret = new ArrayList<>();
+
+		if(results == null || results.size()==0){
+			return ret;
+		}
+
+		df = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (Map<String, String> map : results) {
+			Constructor<?> ctor = classToUse.getConstructor();
+			Object object = ctor.newInstance();
+
+			properties = map.keySet().stream().collect(Collectors
+					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
+
+			for (String property: properties.keySet()){
+				if (properties.get(property) != null){
+					if (isFieldPresent(classToUse, String.class, property)){
+						PropertyUtils.setProperty(object, property, properties.get(property));
+					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Date.class, property)){
+						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
+					}else{
+						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
+					}
+				}
+			}
+
+			ret.add(object);
+		}
+		return ret;
+	}
+
+	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+			throws NoSuchFieldException {
+
+		try{
+			return classToUse.getDeclaredField(property).getType() == fieldType;
+		}catch(NoSuchFieldException e){
+			if (classToUse.getSuperclass()!=null) {
+				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
+			}
+		}
+		return false;
 	}
 
 }

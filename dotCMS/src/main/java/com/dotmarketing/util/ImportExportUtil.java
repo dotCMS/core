@@ -487,7 +487,8 @@ public class ImportExportUtil {
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
                 Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-                HibernateUtil.saveWithPrimaryKey(ident, ident.getId());
+
+                APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -1412,7 +1413,7 @@ public class ImportExportUtil {
 	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
 	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
                                 	}
-                                    HibernateUtil.saveWithPrimaryKey(identifier, prop);
+                                	APILocator.getIdentifierAPI().save(identifier);
                                 }else{
                                     Logger.debug(this, "Saving the object: " +
                                                 obj.getClass() + ", with the id: " + prop);

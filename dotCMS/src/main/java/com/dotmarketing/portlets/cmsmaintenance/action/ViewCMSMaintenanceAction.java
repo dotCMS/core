@@ -13,6 +13,7 @@ import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
@@ -63,6 +64,7 @@ import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
+import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -81,8 +83,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -93,6 +97,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -577,7 +582,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			}
 			XStream _xstream = null;
-			HibernateUtil _dh = null;
+			DotConnect dc = null;
 			List _list = null;
 			File _writing = null;
 			BufferedOutputStream _bout = null;
@@ -616,9 +621,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				/* we will only export 10,000,000 items of any given type */
 				for(i=0;i < 10000000;i=i+step){
 
-                    _dh = new HibernateUtil(clazz);
-                    _dh.setFirstResult(i);
-                    _dh.setMaxResults(step);
+                    dc = new DotConnect();
+					dc.setStartRow(i);
+					dc.setMaxRows(step);
 
                     //This line was previously like;
                     //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
@@ -626,34 +631,32 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
                     //ordering is done only on the first field for the tables, which is INODE
                     if(com.dotmarketing.beans.Tree.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
+						dc.setSQL("from " + clazz.getName() + " order by parent, child, relation_type");
                     }
                     else if(MultiTree.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
+						dc.setSQL("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
                     }
                     else if(TagInode.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
+						dc.setSQL("from " + clazz.getName() + " order by inode, tag_id");
                     }
                     else if(Tag.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
+						dc.setSQL("from " + clazz.getName() + " order by tag_id, tagname");
                     }
                     else if(CalendarReminder.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
+						dc.setSQL("from " + clazz.getName() + " order by user_id, event_id, send_date");
                     } 
                     else if(Identifier.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent_path, id");
+						dc.setSQL("from " + clazz.getName() + " order by parent_path, id");
                     } else {
-                    	_dh.setQuery("from " + clazz.getName() + " order by 1");
+						dc.setSQL("from " + clazz.getName() + " order by 1");
                     }
 
-                    _list = _dh.list();
+                    _list = convertDotConnectMapToPOJO(dc.loadResults(),clazz);
                     if(_list.size() ==0){
                         try {
                         _bout.close();
                         }
                         catch( java.lang.NullPointerException npe){}
-                        _list = null;
-                        _dh = null;
                         _bout = null;
 
                         break;
@@ -681,8 +684,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                         _bout.close();
                     }
 
-    				_list = null;
-    				_dh = null;
     				_bout = null;
 
 				}
@@ -702,8 +703,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* Users */
 			_list = APILocator.getUserAPI().findAllUsers();
@@ -714,14 +713,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             try {
                 _xstream.toXML(_list, _bout);
             } finally {
-                _bout.close();
-            }
-			_list = null;
-			_bout = null;
-
+				_bout.close();
+			}
 
 			/* users_roles */
-			DotConnect dc = new DotConnect();
+			dc = new DotConnect();
 
 			/* counter */
 			dc.setSQL("select * from counter");
@@ -734,8 +730,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* counter */
 			dc.setSQL("select * from address");
@@ -748,8 +742,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* pollschoice */
 			dc.setSQL("select * from pollschoice");
@@ -762,8 +754,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* pollsdisplay */
 			dc.setSQL("select * from pollsdisplay");
@@ -776,8 +766,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* pollsquestion */
 			dc.setSQL("select * from pollsquestion");
@@ -790,8 +778,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* pollsvote */
 			dc.setSQL("select * from pollsvote");
@@ -804,8 +790,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* image */
 			_list = ImageLocalManagerUtil.getImages();
@@ -825,8 +809,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* portlet */
 
@@ -846,8 +828,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			/* portlet_preferences */
 
@@ -864,8 +844,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
             } finally {
                 _bout.close();
             }
-			_list = null;
-			_bout = null;
 
 			//backup content types
             File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
@@ -885,16 +863,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			
 			file = new File(backupTempFilePath + "/index_live.json");
 			new ESIndexAPI().backupIndex(info.live, file);
-
-
-			
-			
-			
-			
 			
 		} catch (HibernateException e) {
 			Logger.error(this,e.getMessage(),e);
 		} catch (SystemException e) {
+			Logger.error(this,e.getMessage(),e);
+		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
 
@@ -1016,6 +990,67 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr.flush();
 			pr.close();
 		}
+	}
+
+	/**
+	 *
+	 * @param results
+	 * @return
+	 */
+	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+			throws Exception {
+
+		DateFormat df;
+		List<Object> ret;
+		Map<String, String> properties;
+
+		ret = new ArrayList<>();
+
+		if(results == null || results.size()==0){
+			return ret;
+		}
+
+		df = new SimpleDateFormat("yyyy-MM-dd");
+
+		for (Map<String, String> map : results) {
+			Constructor<?> ctor = classToUse.getConstructor();
+			Object object = ctor.newInstance();
+
+			properties = map.keySet().stream().collect(Collectors
+					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
+
+			for (String property: properties.keySet()){
+				if (properties.get(property) != null){
+					if (isFieldPresent(classToUse, String.class, property)){
+						PropertyUtils.setProperty(object, property, properties.get(property));
+					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
+						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
+					}else if (isFieldPresent(classToUse, Date.class, property)){
+						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
+					}else{
+						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
+					}
+				}
+			}
+
+			ret.add(object);
+		}
+		return ret;
+	}
+
+	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+			throws NoSuchFieldException {
+
+		try{
+			return classToUse.getDeclaredField(property).getType() == fieldType;
+		}catch(NoSuchFieldException e){
+			if (classToUse.getSuperclass()!=null) {
+				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
+			}
+		}
+		return false;
 	}
 
 }
