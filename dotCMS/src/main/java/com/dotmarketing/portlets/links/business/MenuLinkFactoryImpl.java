@@ -1,22 +1,12 @@
 package com.dotmarketing.portlets.links.business;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotmarketing.common.db.DotConnect;
-import com.google.common.base.CaseFormat;
-import java.lang.reflect.Constructor;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -26,12 +16,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
@@ -213,7 +206,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = convertDotConnectMapToPOJO(dc.loadResults(),Link.class);
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(),Link.class);
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -262,66 +255,4 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		return assets;
 
 	}
-
-	/**
-	 *
-	 * @param results
-	 * @return
-	 */
-	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
-			throws Exception {
-
-		DateFormat df;
-		List<Object> ret;
-		Map<String, String> properties;
-
-		ret = new ArrayList<>();
-
-		if(results == null || results.size()==0){
-			return ret;
-		}
-
-		df = new SimpleDateFormat("yyyy-MM-dd");
-
-		for (Map<String, String> map : results) {
-			Constructor<?> ctor = classToUse.getConstructor();
-			Object object = ctor.newInstance();
-
-			properties = map.keySet().stream().collect(Collectors
-					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
-
-			for (String property: properties.keySet()){
-				if (properties.get(property) != null){
-					if (isFieldPresent(classToUse, String.class, property)){
-						PropertyUtils.setProperty(object, property, properties.get(property));
-					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Date.class, property)){
-						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-					}else{
-						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-					}
-				}
-			}
-
-			ret.add(object);
-		}
-		return ret;
-	}
-
-	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
-			throws NoSuchFieldException {
-
-		try{
-			return classToUse.getDeclaredField(property).getType() == fieldType;
-		}catch(NoSuchFieldException e){
-			if (classToUse.getSuperclass()!=null) {
-				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-			}
-		}
-		return false;
-	}
-
 }

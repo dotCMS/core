@@ -1,12 +1,13 @@
 package com.dotmarketing.factories;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -41,34 +42,25 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.services.TemplateServices;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.base.CaseFormat;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
-import java.lang.reflect.Constructor;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -79,7 +71,7 @@ public class WebAssetFactory {
 	public enum Direction {
 		PREVIOUS,
 		NEXT
-	};
+	}
 
 	public enum AssetType {
 		HTMLPAGE("HTMLPAGE"),
@@ -118,7 +110,7 @@ public class WebAssetFactory {
 	private final static int MAX_LIMIT_COUNT = 100;
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -841,7 +833,8 @@ public class WebAssetFactory {
 				dc.setMaxRows(internalLimit);
 
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				List<WebAsset> list = convertDotConnectMapToPOJO(dc.loadResults(), c);
+				List<WebAsset> list = ConvertToPOJOUtil
+						.convertDotConnectMapToPOJO(dc.loadResults(), c);
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
@@ -868,67 +861,6 @@ public class WebAssetFactory {
 
 		return new ArrayList<>();
 
-	}
-
-	/**
-	 *
-	 * @param results
-	 * @return
-	 */
-	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
-			throws Exception {
-
-		DateFormat df;
-		List<Object> ret;
-		Map<String, String> properties;
-
-		ret = new ArrayList<>();
-
-		if(results == null || results.size()==0){
-			return ret;
-		}
-
-		df = new SimpleDateFormat("yyyy-MM-dd");
-
-		for (Map<String, String> map : results) {
-			Constructor<?> ctor = classToUse.getConstructor();
-			Object object = ctor.newInstance();
-
-			properties = map.keySet().stream().collect(Collectors
-					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
-
-			for (String property: properties.keySet()){
-				if (properties.get(property) != null){
-					if (isFieldPresent(classToUse, String.class, property)){
-						PropertyUtils.setProperty(object, property, properties.get(property));
-					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Date.class, property)){
-						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-					}else{
-						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-					}
-				}
-			}
-
-			ret.add(object);
-		}
-		return ret;
-	}
-
-	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
-			throws NoSuchFieldException {
-
-		try{
-			return classToUse.getDeclaredField(property).getType() == fieldType;
-		}catch(NoSuchFieldException e){
-			if (classToUse.getSuperclass()!=null) {
-				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-			}
-		}
-		return false;
 	}
 
 	public static boolean isAbstractAsset(WebAsset asset) {

@@ -1,17 +1,5 @@
 package com.dotmarketing.portlets.containers.business;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.google.common.base.CaseFormat;
-import java.lang.reflect.Constructor;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -42,11 +30,16 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -199,7 +192,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.addParam(destination.getIdentifier());
 
 		try {
-			containers = convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
+			containers = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
 		} catch (Exception e) {
 			throw new DotDataException(e);
 		}
@@ -223,67 +216,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		return result;
-	}
-
-	/**
-	 *
-	 * @param results
-	 * @return
-	 */
-	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
-			throws Exception {
-
-		DateFormat df;
-		List<Object> ret;
-		Map<String, String> properties;
-
-		ret = new ArrayList<>();
-
-		if(results == null || results.size()==0){
-			return ret;
-		}
-
-		df = new SimpleDateFormat("yyyy-MM-dd");
-
-		for (Map<String, String> map : results) {
-			Constructor<?> ctor = classToUse.getConstructor();
-			Object object = ctor.newInstance();
-
-			properties = map.keySet().stream().collect(Collectors
-					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
-
-			for (String property: properties.keySet()){
-				if (properties.get(property) != null){
-					if (isFieldPresent(classToUse, String.class, property)){
-						PropertyUtils.setProperty(object, property, properties.get(property));
-					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Date.class, property)){
-						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-					}else{
-						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-					}
-				}
-			}
-
-			ret.add(object);
-		}
-		return ret;
-	}
-
-	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
-			throws NoSuchFieldException {
-
-		try{
-			return classToUse.getDeclaredField(property).getType() == fieldType;
-		}catch(NoSuchFieldException e){
-			if (classToUse.getSuperclass()!=null) {
-				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-			}
-		}
-		return false;
 	}
 
 	@CloseDBIfOpened
@@ -336,7 +268,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.addParam(parentTemplate.getIdentifier());
 		List<Identifier> identifiers = null;
 		try {
-			identifiers = convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+			identifiers = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
 		} catch (Exception e) {
 			throw new DotDataException(e);
 		}

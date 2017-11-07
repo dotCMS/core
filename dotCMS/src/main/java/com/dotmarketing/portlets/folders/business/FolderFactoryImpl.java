@@ -1,12 +1,49 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Inode.Type;
-import com.google.common.base.CaseFormat;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.cache.FolderCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.AssetsComparator;
+import com.dotmarketing.util.ConvertToPOJOUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,50 +58,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotIdentifierStateException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.cache.FolderCache;
-
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
-
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.AssetsComparator;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -165,73 +158,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
-			return convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
 		}catch(Exception e){
 			Logger.error(this, e.getMessage(), e);
 		}
 
 		return new ArrayList<>();
-	}
-
-	/**
-	 *
-	 * @param results
-	 * @return
-	 */
-	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
-			throws Exception {
-
-		DateFormat df;
-		List<Object> ret;
-		Map<String, String> properties;
-
-		ret = new ArrayList<>();
-
-		if(results == null || results.size()==0){
-			return ret;
-		}
-
-		df = new SimpleDateFormat("yyyy-MM-dd");
-
-		for (Map<String, String> map : results) {
-			Constructor<?> ctor = classToUse.getConstructor();
-			Object object = ctor.newInstance();
-
-			properties = map.keySet().stream().collect(Collectors
-					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
-
-			for (String property: properties.keySet()){
-				if (properties.get(property) != null){
-					if (isFieldPresent(classToUse, String.class, property)){
-						PropertyUtils.setProperty(object, property, properties.get(property));
-					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Date.class, property)){
-						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-					}else{
-						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-					}
-				}
-			}
-
-			ret.add(object);
-		}
-		return ret;
-	}
-
-	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
-			throws NoSuchFieldException {
-
-		try{
-			return classToUse.getDeclaredField(property).getType() == fieldType;
-		}catch(NoSuchFieldException e){
-			if (classToUse.getSuperclass()!=null) {
-				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-			}
-		}
-		return false;
 	}
 
 	@Override
@@ -281,7 +213,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
-				result = convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+				result = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -328,7 +260,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
-					result = convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+					result = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -720,9 +652,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	/***
-	 * This methos update recursively the inner folders of the specified folder
+	 * This method update recursively the inner folders of the specified folder
 	 *
-	 * @param folder
+	 * @param oldFolder
+	 * @param newFolder
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
@@ -1168,7 +1101,7 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
-			return convertDotConnectMapToPOJO(dc.loadResults(), clazz);
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), clazz);
 		}catch(Exception e){
         	Logger.error(this, e.getMessage(), e);
 		}

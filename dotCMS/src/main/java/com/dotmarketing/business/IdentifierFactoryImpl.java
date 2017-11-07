@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -62,30 +63,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
 
-		return convertDotConnectMapToPOJO(dc.loadResults());
-	}
-
-	/**
-	 * 
-	 * @param results
-	 * @return
-	 */
-	private List<Identifier> convertDotConnectMapToPOJO(List<Map<String,String>> results){
-		List<Identifier> ret = new ArrayList<>();
-		if(results == null || results.size()==0){
-			return ret;
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
 		}
-		
-		for (Map<String, String> map : results) {
-			Identifier i = new Identifier();
-			i.setAssetName(map.get("asset_name"));
-			i.setAssetType(map.get("asset_type"));
-			i.setHostId(map.get("host_inode"));
-			i.setId(map.get("id"));
-			i.setParentPath(map.get("parent_path"));
-			ret.add(i);
-		}
-		return ret;
 	}
 
 	@Override
@@ -172,7 +154,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetName);
 		dc.addParam(siteId);
 
-		List<Identifier> results = convertDotConnectMapToPOJO(dc.loadResults());
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 
 		if (results != null && results.size() > 0){
 			identifier = results.get(0);
@@ -198,8 +185,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
-        return convertDotConnectMapToPOJO(dc.loadResults());
-    }
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
+	}
 
 	@Override
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
@@ -211,13 +202,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where id = ?");
 		dc.addParam(identifier);
 
-		List<Identifier> results = convertDotConnectMapToPOJO(dc.loadResults());
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 
 		if (results != null && results.size() > 0){
 			return  results.get(0);
 		}
 
-		return null;
+		return new Identifier();
 	}
 
 	@Override
@@ -398,7 +394,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier");
 
-		return convertDotConnectMapToPOJO(dc.loadResults());
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
 
 	}
 

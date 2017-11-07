@@ -8,7 +8,6 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
@@ -50,13 +49,13 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.HibernateCollectionConverter;
 import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
-import com.google.common.base.CaseFormat;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -72,10 +71,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.sql.SQLException;
-import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -86,7 +83,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -529,7 +525,8 @@ public class CMSMaintenanceAjax {
 
 						}
 
-						_list = convertDotConnectMapToPOJO(_dc.loadResults(), clazz);
+						_list = ConvertToPOJOUtil
+								.convertDotConnectMapToPOJO(_dc.loadResults(), clazz);
 						if (_list.size() == 0) {
 							try {
 								_bout.close();
@@ -736,66 +733,4 @@ public class CMSMaintenanceAjax {
                 CloseUtils.closeQuietly(out);
             }
 		}
-
-	/**
-	 *
-	 * @param results
-	 * @return
-	 */
-	private static List<Object> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
-			throws Exception {
-
-		DateFormat df;
-		List<Object> ret;
-		Map<String, String> properties;
-
-		ret = new ArrayList<>();
-
-		if(results == null || results.size()==0){
-			return ret;
-		}
-
-		df = new SimpleDateFormat("yyyy-MM-dd");
-
-		for (Map<String, String> map : results) {
-			Constructor<?> ctor = classToUse.getConstructor();
-			Object object = ctor.newInstance();
-
-			properties = map.keySet().stream().collect(Collectors
-					.toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
-
-			for (String property: properties.keySet()){
-				if (properties.get(property) != null){
-					if (isFieldPresent(classToUse, String.class, property)){
-						PropertyUtils.setProperty(object, property, properties.get(property));
-					}else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-						PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-					}else if (isFieldPresent(classToUse, Date.class, property)){
-						PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-					}else{
-						Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-					}
-				}
-			}
-
-			ret.add(object);
-		}
-		return ret;
-	}
-
-	private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
-			throws NoSuchFieldException {
-
-		try{
-			return classToUse.getDeclaredField(property).getType() == fieldType;
-		}catch(NoSuchFieldException e){
-			if (classToUse.getSuperclass()!=null) {
-				return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-			}
-		}
-		return false;
-	}
-
 }
