@@ -168,12 +168,12 @@ public abstract class VelocityServlet extends HttpServlet {
         }
 
 		
-		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() <= LicenseLevel.PROFESSIONAL.level) {
+		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
-		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() <= LicenseLevel.PRIME.level) {
+		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
