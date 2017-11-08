@@ -133,10 +133,20 @@ public class WorkflowAction implements Permissionable, Serializable{
 		this.name = name;
 	}
 
+	/**
+	 * Reflects the old relation between Action and step
+	 * @deprecated this is keep just by legacy reason, new apps should not use it
+	 */
+	@Deprecated
 	public String getStepId() {
 		return stepId;
 	}
 
+	/**
+	 * Reflects the old relation between Action and step
+	 * @deprecated this is keep just by legacy reason, new apps should not use it
+	 */
+	@Deprecated
 	public void setStepId(String stepId) {
 		this.stepId = stepId;
 	}

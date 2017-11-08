@@ -1,183 +1,102 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class WfActionAjax extends WfBaseAction {
-	 public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
-	public void reorder(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String actionId = request.getParameter("actionId");
-		String o = request.getParameter("order");
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+
+    private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+    private final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+    public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
+
+    public void reorder(final HttpServletRequest request,
+                         final HttpServletResponse response) throws ServletException, IOException {
+
+		final  String actionId = request.getParameter("actionId");
+		final String orderParam = request.getParameter("order");
 
 		try {
-			int order = Integer.parseInt(o);
-			//anyone with permission the workflowscheme portlet can reoirder actions
-			WorkflowAction action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
+			final int order = Integer.parseInt(orderParam);
+			//anyone with permission the workflowscheme portlet can reorder actions
+			final WorkflowAction action =
+                    this.workflowAPI.findAction(actionId, APILocator.getUserAPI().getSystemUser());
 
-				wapi.reorderAction(action, order);
+            this.workflowAPI.reorderAction(action, order);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
-
-	}
-
+	} // reorder.
 
 	
-	
-	
-	public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String actionId = request.getParameter("actionId");
+	public void delete(final HttpServletRequest request,
+                       final HttpServletResponse response) throws ServletException, IOException {
 
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+		final String actionId = request.getParameter("actionId");
 
 		try {
 
-			WorkflowAction action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
-			WorkflowStep step = wapi.findStep(action.getStepId());
+			final WorkflowAction action =
+                    this.workflowAPI.findAction(actionId, APILocator.getUserAPI().getSystemUser());
+            final WorkflowStep step =
+                    this.workflowAPI.findStep(action.getStepId());
 
-			
-			
-			
-			wapi.deleteAction(action);
+            this.workflowAPI.deleteAction(action);
 			writeSuccess(response, step.getSchemeId() );
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
+	} // delete.
 
-	}
+    @WrapInTransaction
+	public void save(final HttpServletRequest request,
+					 final HttpServletResponse response) throws ServletException, IOException {
 
-	public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+        final WorkflowActionForm.Builder builder = new WorkflowActionForm.Builder();
 
-		String actionName = request.getParameter("actionName");
-		String actionId = request.getParameter("actionId");
-		String whoCanUseTmp = request.getParameter("whoCanUse");
-		List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
-		String actionIcon = request.getParameter("actionIconSelect");
-		boolean actionAssignable = (request.getParameter("actionAssignable") != null);
-		boolean actionCommentable = (request.getParameter("actionCommentable") != null);
-		boolean requiresCheckout = (request.getParameter("actionRequiresCheckout") != null);
-		boolean roleHierarchyForAssign = false;
-		if(actionAssignable){
-			roleHierarchyForAssign = (request.getParameter("actionRoleHierarchyForAssign") != null);
-		}
-		String actionNextAssign = request.getParameter("actionAssignToSelect");
-		String actionNextStep = request.getParameter("actionNextStep");
-		if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
-			actionNextAssign = actionNextAssign.replaceAll("role-", "");
-		}
-		String actionCondition = request.getParameter("actionCondition");
-		String stepId = request.getParameter("stepId");
-		WorkflowAction newAction = new WorkflowAction();
+        builder.actionName(request.getParameter("actionName"))
+                .actionId  (request.getParameter("actionId"))
+                .schemeId  (request.getParameter("schemeId"))
+                .actionIcon(request.getParameter("actionIconSelect"))
+                .actionAssignable (request.getParameter("actionAssignable") != null)
+                .actionCommentable(request.getParameter("actionCommentable") != null)
+                .requiresCheckout (request.getParameter("actionRequiresCheckout") != null)
+                .actionRoleHierarchyForAssign(request.getParameter("actionRoleHierarchyForAssign") != null)
+                .actionNextStep(request.getParameter  ("actionNextStep"))
+                .actionNextAssign(request.getParameter("actionAssignToSelect"))
+                .actionCondition(request.getParameter ("actionCondition"));
 
-		boolean isNew = true;
-		try {
+		final String whoCanUseTmp       = request.getParameter("whoCanUse");
+		final List<String> whoCanUse    = Arrays.asList(whoCanUseTmp.split(","));
+		builder.whoCanUse(whoCanUse);
 
-			WorkflowAction origAction = APILocator.getWorkflowAPI().findAction(actionId, APILocator.getUserAPI().getSystemUser());
-			BeanUtils.copyProperties(newAction, origAction);
-			if(origAction !=null || !origAction.isNew()){
-				isNew=false;
-			}
-		} catch (Exception e) {
-			
-			Logger.debug(this.getClass(), "Unable to find action" + actionId);
-		}
-		newAction.setName(actionName);
-		newAction.setAssignable(actionAssignable);
-		newAction.setCommentable(actionCommentable);
-		newAction.setIcon(actionIcon);
-		newAction.setNextStep(actionNextStep);
-		newAction.setStepId(stepId);
-		newAction.setCondition(actionCondition);
-		newAction.setRequiresCheckout(requiresCheckout);
-		newAction.setRoleHierarchyForAssign(roleHierarchyForAssign);
-		try {
-			newAction.setNextAssign(resolveRole(actionNextAssign).getId());
-			if(!UtilMethods.isSet(newAction.getNextAssign())){
-				newAction.setNextAssign(null);
-			}
-			List<Permission> permissions = new ArrayList<Permission>();
-            for ( String perm : whoCanUse ) {
-                if ( !UtilMethods.isSet( perm ) ) {
-                    continue;
-                }
+        WorkflowAction newAction        = null;
 
-                Role role = resolveRole( perm );
-                Permission p = new Permission( newAction.getId(), role.getId(), PermissionAPI.PERMISSION_USE );
+        try {
 
-                boolean exists = false;
-                for ( Permission curr : permissions ) {
-                    exists = exists || curr.getRoleId().equals( p.getRoleId() );
-                }
+            newAction  = this.workflowHelper.save(builder.build());
+            response.getWriter().println("SUCCESS:" + newAction.getId());
+        } catch (Exception e) {
 
-                if ( !exists ) {
-                    permissions.add( p );
-                }
-            }
-
-            wapi.saveAction(newAction, permissions);
-
-			if(isNew){
-				WorkflowActionClass wac = new WorkflowActionClass();
-				wac.setActionId(newAction.getId());
-				wac.setClazz(NotifyAssigneeActionlet.class.getName());
-				wac.setName(NotifyAssigneeActionlet.class.newInstance().getName());
-				wac.setOrder(0);
-				wapi.saveActionClass(wac);
-				
-			}
-			
-			
-			response.getWriter().println("SUCCESS:" + newAction.getId());
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-			writeError(response, e.getMessage());
-		}
-	}
-	
-	
-	
-	
-	private Role resolveRole(String id) throws DotDataException{
-		Role test = null;
-		
-		String newid = id.substring(id.indexOf("-") + 1, id.length());
-		
-		if(id.startsWith("user-")){
-			test = APILocator.getRoleAPI().loadRoleByKey(newid);
-		}
-		else if(id.startsWith("role-")){
-			test = APILocator.getRoleAPI().loadRoleById(newid);
-		}else{
-			test = APILocator.getRoleAPI().loadRoleById(id);
-		}
-		return test;
-		
-	}
-	
-	
+            Logger.error(this.getClass(), e.getMessage(), e);
+            writeError(response, e.getMessage());
+        }
+    } // save.
 }

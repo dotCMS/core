@@ -513,14 +513,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveAction(final WorkflowAction action, final List<Permission> perms) throws DotDataException {
+	public void saveAction(final WorkflowAction action,
+						   final List<Permission> permissions) throws DotDataException {
 		try {
+
 			this.saveAction(action);
+
 			APILocator.getPermissionAPI().removePermissions(action);
-			if(perms != null){
-				for (Permission p : perms) {
-					p.setInode(action.getId());
-					APILocator.getPermissionAPI().save(p, action, APILocator.getUserAPI().getSystemUser(), false);
+			if(permissions != null){
+				for (Permission permission : permissions) {
+
+					permission.setInode(action.getId());
+					APILocator.getPermissionAPI().save
+							(permission, action, APILocator.getUserAPI().getSystemUser(), false);
 				}
 			}
 		} catch (Exception e) {
@@ -530,7 +535,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	private void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
+	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 		workFlowFactory.saveAction(action);
 	}
 

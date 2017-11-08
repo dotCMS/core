@@ -42,12 +42,13 @@ import com.liferay.portal.model.User;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
-	private static WorkflowCache cache = null;
-	private static WorkflowSQL sql = null;
+	private final WorkflowCache cache;
+	private final WorkflowSQL   sql;
 
 	public WorkflowFactoryImpl() {
-		sql = WorkflowSQL.getInstance();
-		cache = CacheLocator.getWorkFlowCache();
+
+		this.sql   = WorkflowSQL.getInstance();
+		this.cache = CacheLocator.getWorkFlowCache();
 	}
 
 	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException {
@@ -741,18 +742,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void saveAction(WorkflowAction action) throws DotDataException,AlreadyExistException {
+	public boolean existsAction (final String actionId) {
+
+		boolean exists = false;
+
+		try {
+
+			exists = null != this.findAction(actionId);
+		} catch (final Exception e) {
+			Logger.debug(this.getClass(), e.getMessage(), e);
+		}
+
+		return exists;
+	} // existsAction.
+
+	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(action.getId())) {
-			try {
-				final WorkflowAction test = this.findAction(action.getId());
-				if (test != null) {
-					isNew = false;
-				}
-			} catch (final Exception e) {
-				Logger.debug(this.getClass(), e.getMessage(), e);
-			}
+
+			isNew = !this.existsAction(action.getId());
 		} else {
 			action.setId(UUIDGenerator.generateUuid());
 		}
@@ -761,7 +770,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		if (isNew) {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
-			db.addParam(action.getStepId());
+			db.addParam(action.getSchemeId());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
 			db.addParam(action.getNextStep());
@@ -775,7 +784,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
-			db.addParam(action.getStepId());
+			db.addParam(action.getSchemeId());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
 			db.addParam(action.getNextStep());
@@ -789,13 +798,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getId());
 			db.loadResult();
 		}
-		WorkflowStep proxy = new WorkflowStep();
+
+		final WorkflowStep proxy = new WorkflowStep();
 		proxy.setId(action.getStepId());
 		cache.removeActions(proxy);
 
 		// update workflowScheme mod date
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 
 	}

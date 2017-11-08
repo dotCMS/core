@@ -52,8 +52,8 @@ abstract class WorkflowSQL {
 	protected static String SELECT_STEPS_BY_SCHEME= "select * from workflow_step where scheme_id = ? order by  my_order";
 	protected static String SELECT_ACTIONS_BY_STEP= "select * from workflow_action where step_id = ? order by  my_order";
 	protected static String SELECT_ACTION= "select * from workflow_action where id = ? ";
-	protected static String INSERT_ACTION= "insert into workflow_action (id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?)";
-	protected static String UPDATE_ACTION= "update  workflow_action set step_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=? where id=?";
+	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?)";
+	protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=? where id=?";
 	protected static String DELETE_ACTION= "delete from workflow_action where id = ? ";
 
 	protected static String SELECT_STEP= "select * from workflow_step where id = ? ";
