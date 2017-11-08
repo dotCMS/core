@@ -57,7 +57,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -2277,15 +2276,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
-        Connection conn = DbConnectionFactory.getConnection();
+
         
-        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
+        try(Connection conn = DbConnectionFactory.getConnection();PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery();PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate()))
             {
-            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
+
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
