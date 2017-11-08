@@ -160,10 +160,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
 		return workFlowFactory.findTaskByContentlet(contentlet);
 	}
-
+    /* BEGIN TODO check if is required*/
 	@CloseDBIfOpened
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException{
 		return workFlowFactory.findStepByContentlet(contentlet);
+	}
+	/* END TODO check if is required*/
+	@CloseDBIfOpened
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
+		return workFlowFactory.findStepsByContentlet(contentlet);
 	}
 
 	public WorkflowTask findTaskById(String id) throws DotDataException {
@@ -433,6 +438,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return actions;
 	}
 
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+			DotSecurityException {
+		List<WorkflowAction> actions = new ArrayList<>();
+        for(WorkflowStep step : steps) {
+			actions.addAll(workFlowFactory.findActions(step));
+		}
+		actions = APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
+		return actions;
+	}
+
 
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
@@ -464,8 +480,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		boolean hasLock = user.getUserId().equals(lockedUserId);
-		WorkflowStep step= findStepByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions = findActions(step, user);
+		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		List<WorkflowAction> unfilteredActions = findActions(steps, user);
 
 		if(hasLock || isNew){
 			return unfilteredActions;

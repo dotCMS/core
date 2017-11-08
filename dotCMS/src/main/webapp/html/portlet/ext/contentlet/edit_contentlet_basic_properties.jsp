@@ -101,14 +101,18 @@
 	/* END - TODO this part need to be done in a different way */
 	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
 
+	List<WorkflowStep> wfSteps = null;
 	WorkflowStep wfStep = null;
 	List<WorkflowAction> wfActions = null;
 	try{
-		wfStep = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+		wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 		/* BEGIN - TODO this part need to be done in a different way */
-		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
+		if(wfSteps.size() == 1) {
+			wfStep = wfSteps.get(0);
+			scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
+		}
 		/* END - TODO this part need to be done in a different way */
-		wfActions = APILocator.getWorkflowAPI().findActions(wfStep, user); 
+		wfActions = APILocator.getWorkflowAPI().findActions(wfSteps, user);
 	}
 	catch(Exception e){
 		wfActions = new ArrayList();

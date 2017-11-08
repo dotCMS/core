@@ -88,21 +88,26 @@ public class WorkflowProcessor {
 		try {
 			this.user = firingUser;
 			/* BEGIN - TODO this part need to be done in a different way */
-			WorkflowStep step = getWorkflowAPI().findStepByContentlet(contentlet);
-			scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+			WorkflowStep step = null;
+			List<WorkflowStep> steps = getWorkflowAPI().findStepsByContentlet(contentlet);
+			if(steps.size() == 1) {
+				step = steps.get(0);
+				scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+			}
 			/* END - TODO this part need to be done in a different way */
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
-			if (!UtilMethods.isSet(workflowActionId) && task.isNew()){
+			/* BEGIN - TODO this part need to be done in a different way */
+			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null !=  scheme){
 				workflowActionId=scheme.getEntryActionId();
 			}
-
+            /* END - TODO this part need to be done in a different way */
 
 
 
 			if (!UtilMethods.isSet(workflowActionId)) {
-				if (scheme.isMandatory() ) {
+				if (null !=  scheme && scheme.isMandatory() ) {
 					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.mandatory.action.type") + contentlet.getStructure().getName());
 				}
 

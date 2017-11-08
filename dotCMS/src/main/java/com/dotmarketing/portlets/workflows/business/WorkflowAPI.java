@@ -36,7 +36,10 @@ public interface WorkflowAPI {
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
+	/* BEGIN TODO check if is required*/
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
+	/* END TODO check if is required*/
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
 
 	/**
 	 * Finds a workflow by id
@@ -173,7 +176,12 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
+	/* BEGIN TODO check if is required*/
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
+			DotSecurityException;
+	/* END TODO check if is required*/
+
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
 			DotSecurityException;
 
 	public void saveSchemeForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;

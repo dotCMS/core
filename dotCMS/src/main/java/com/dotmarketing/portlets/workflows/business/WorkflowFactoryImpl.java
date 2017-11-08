@@ -486,6 +486,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
+	/* BEGIN TODO need be reviewed if is going to be used */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
 		WorkflowStep step = cache.getStep(contentlet);
 		/* BEGIN - TODO this part need to be done in a different way */
@@ -523,6 +524,41 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			cache.addStep(contentlet, step);
 		}
 		return step;
+	}
+	/* END TODO need be reviewed if is going to be used */
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+		List<WorkflowStep> steps = new ArrayList<>();
+		WorkflowStep step = cache.getStep(contentlet);
+		final List<WorkflowScheme> schemes = this.findSchemeForStruct(contentlet.getContentTypeId());
+		if (step == null) {
+			try {
+				final DotConnect db = new DotConnect();
+				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
+				db.addParam(contentlet.getIdentifier());
+				step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+
+				cache.addStep(contentlet, step);
+				steps.add(step);
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage());
+			}
+
+			if (step == null) {
+				try {
+					for(WorkflowScheme scheme : schemes) {
+						step = this.findSteps(scheme).get(0);
+						steps.add(step);
+					}
+				} catch (final Exception e) {
+					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
+				}
+			}
+
+
+		}else {
+			steps.add(step);
+		}
+		return steps;
 	}
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
