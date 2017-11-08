@@ -1,9 +1,7 @@
 package com.dotcms.publisher.endpoint.bean;
 
+import com.dotmarketing.exception.PublishingEndPointValidationException;
 import java.io.Serializable;
-
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
-import com.dotcms.publisher.pusher.PushPublisher;
 
 /**
  * Java Bean for publishing_end_point table
@@ -12,7 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
  *
  *         Oct 26, 2012 - 9:57:07 AM
  */
-public class PublishingEndPoint implements Serializable {
+public abstract class PublishingEndPoint implements Serializable {
 
     /**
      *
@@ -134,16 +132,17 @@ public class PublishingEndPoint implements Serializable {
         }
         return sb;
     }
-    
+
     /**
-     * Get the endpoint publisher class
-     * @return the endpoint publisher class
+     * @return {@link com.dotcms.publishing.Publisher} for each implementation.
      */
-    public Class getPublisher() {
-        if ( AWSS3Publisher.PROTOCOL_AWS_S3.equals(this.getProtocol()) ) {
-            return AWSS3Publisher.class;
-        } else {
-        	return PushPublisher.class;
-        }
-    }
+    public abstract Class getPublisher();
+
+    /**
+     * Validation for each implementation.
+     *
+     * @throws PublishingEndPointValidationException with i18n error messages in order to be
+     * translated in upper layer.
+     */
+    public abstract void validatePublishingEndPoint() throws PublishingEndPointValidationException;
 }

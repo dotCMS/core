@@ -506,10 +506,6 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>MainServlet</servlet-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</servlet-mapping>
 	
 	<servlet-mapping>
 	  <servlet-name>dwr-invoker</servlet-name>
@@ -520,6 +516,15 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>MainServlet</servlet-name>
+		<url-pattern>/dotCMS/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>MainServlet</servlet-name>
+		<url-pattern>/dotAdmin/c/*</url-pattern>
+	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>ImageServlet</servlet-name>
 		<url-pattern>/image/*</url-pattern>

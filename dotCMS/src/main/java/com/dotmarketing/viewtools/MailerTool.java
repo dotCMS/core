@@ -1,7 +1,6 @@
 package com.dotmarketing.viewtools;
 
 import java.util.Date;
-import java.util.Properties;
 
 import javax.mail.Message;
 import javax.mail.Session;
@@ -10,12 +9,10 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.util.Logger;
-import com.liferay.util.JNDIUtil;
 
 /**
  * Simple Email Sender ViewTool for DotCMS
@@ -50,25 +47,27 @@ public class MailerTool implements ViewTool {
 	 */
 	public String sendEmail(String to, String from, String subject,
 			String message, Boolean html) {
-		Session s = null;
+		Session session = null;
+		Context ctx = null;
 		try {
-			Context ctx = (Context) new InitialContext();
-			s = (javax.mail.Session) JNDIUtil.lookup(ctx, "mail/MailSession");
-		} catch (NamingException e1) {
-			Logger.error(this,e1.getMessage(),e1);
-		}
+			ctx = (Context) new InitialContext().lookup("java:comp/env");
+			session = (javax.mail.Session) ctx.lookup("mail/MailSession");
+		} catch (Exception e1) {
+			try {
+				Logger.debug(this, "Using the jndi intitialContext().");
+				ctx = new InitialContext();
+				session = (javax.mail.Session) ctx.lookup("mail/MailSession");
+			} catch (Exception e) {
+				Logger.error(this, "Exception occured finding a mailSession in JNDI context.");
+				Logger.error(this, e1.getMessage(), e1);
 
-		if(s ==null){
-			Logger.debug(this, "No Mail Session Available.");
-			return "";
-		}
-		String smtpServer = s.getProperty("mail.smtp.host");
+			}
 
-		/* Attach to the session */
-		Properties props = System.getProperties();
-		props.put("mail.host", smtpServer);
-		props.setProperty("mail.transport.protocol", "smtp");
-		Session session = Session.getDefaultInstance(props, null);
+		}
+		if (session == null) {
+
+			return "Unable to Send Message: no session";
+		}
 
 		/* Create a new message */
 		Message msg = new MimeMessage(session);

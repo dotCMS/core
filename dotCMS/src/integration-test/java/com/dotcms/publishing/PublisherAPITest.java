@@ -12,6 +12,7 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -131,11 +132,13 @@ public class PublisherAPITest extends IntegrationTestBase {
             environmentAPI.saveEnvironment(environment, permissions);
 
             // Now we need to create the end point.
-            PublishingEndPoint endpoint = new PublishingEndPoint();
+            final String protocol = "http";
+            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+            PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
             endpoint.setServerName(new StringBuilder("Publish Endpoint"));
             endpoint.setAddress("127.0.0.1");
             endpoint.setPort("8765");
-            endpoint.setProtocol("http");
+            endpoint.setProtocol(protocol);
             endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("1111")));
             endpoint.setEnabled(true);
             endpoint.setSending(false);

@@ -101,18 +101,6 @@ public class SubmitContentAction extends SecureAction{
 		ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 		af.setRedirect(true);
 
-		int index = referrer.lastIndexOf('/');
-		String htmlServlet = null;
-		if (index < 0)
-			htmlServlet = referrer;
-		else
-			htmlServlet = referrer.substring(index + 1);
-
-		if (htmlServlet.indexOf('.') < 0) {
-			//If is a servlet
-			referrer += "/";
-		}
-
 		String params="";
 		HibernateUtil.startTransaction();
 
