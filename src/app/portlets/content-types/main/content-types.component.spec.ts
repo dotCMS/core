@@ -32,7 +32,7 @@ describe('ContentTypesPortletComponent', () => {
     let dotContentletService: DotContentletService;
 
     beforeEach(() => {
-        let messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockMessageService({
             'contenttypes.form.label.description': 'Description',
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
@@ -73,10 +73,10 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should display a listing-data-table.component', () => {
-        let de = fixture.debugElement.query(By.css('listing-data-table'));
+        const listingDataTable = fixture.debugElement.query(By.css('listing-data-table'));
         comp.ngOnInit();
 
-        expect('v1/contenttype').toEqual(de.nativeElement.getAttribute('url'));
+        expect('v1/contenttype').toEqual(listingDataTable.nativeElement.getAttribute('url'));
 
         const columns = comp.contentTypeColumns;
         expect(5).toEqual(columns.length);
@@ -129,7 +129,7 @@ describe('ContentTypesPortletComponent', () => {
 
         spyOn(crudService, 'delete').and.returnValue(Observable.of(mockContentType));
 
-        comp.rowActions[0].command(mockContentType);
+        comp.rowActions[0].menuItem.command(mockContentType);
 
         fixture.detectChanges();
 

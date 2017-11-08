@@ -1,5 +1,6 @@
-import { Component, Input, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
+import { DotDataTableAction } from '../../../../shared/models/data-table/dot-data-table-action';
 
 /**
  * The ActionMenuButtonComponent is a configurable button with
@@ -12,11 +13,11 @@ import { MenuItem } from 'primeng/primeng';
     styleUrls: ['./action-menu-button.component.scss'],
     templateUrl: 'action-menu-button.component.html'
 })
-
-export class ActionMenuButtonComponent {
-    @Input() actions?: MenuItem[];
+export class ActionMenuButtonComponent implements OnInit {
+    filteredActions: MenuItem[];
     @Input() item: any;
     @Input() icon? = 'fa-ellipsis-v';
+    @Input() actions?: DotDataTableAction[];
 
     /**
      * Set action command with content type item as param
@@ -24,8 +25,16 @@ export class ActionMenuButtonComponent {
      * @param item
      * @param
      */
-    handleActionCommand(action, item, $event): any {
+    handleActionCommand(item, $event): any {
         $event.stopPropagation();
-        return action.command(item);
+        return this.filteredActions[0].command(item);
+    }
+
+    ngOnInit() {
+        this.filteredActions = this.actions
+            .filter(
+                dotDataTableAction => (dotDataTableAction.shouldShow ? dotDataTableAction.shouldShow(this.item) : true)
+            )
+            .map(dotDataTableAction => dotDataTableAction.menuItem);
     }
 }

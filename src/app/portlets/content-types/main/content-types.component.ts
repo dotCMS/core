@@ -13,6 +13,7 @@ import { Observable } from 'rxjs/Observable';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
 import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
+import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
 
 /**
  * List of Content Types
@@ -31,7 +32,7 @@ export class ContentTypesPortletComponent implements OnInit {
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
-    public rowActions: MenuItem[];
+    public rowActions: DotDataTableAction[];
 
     private i18nKeys = [
         'contenttypes.fieldname.structure.name',
@@ -83,9 +84,12 @@ export class ContentTypesPortletComponent implements OnInit {
             this.contentTypeColumns = this.setContentTypeColumns();
             this.rowActions = [
                 {
-                    label: 'Remove',
-                    icon: 'fa-trash',
-                    command: item => this.removeConfirmation(item)
+                    menuItem: {
+                        label: 'Remove',
+                        icon: 'fa-trash',
+                        command: item => this.removeConfirmation(item)
+                    },
+                    shouldShow: item => !item.fixed  && !item.defaultType
                 }
             ];
         });
