@@ -158,7 +158,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
 		}catch(Exception e){
 			Logger.error(this, e.getMessage(), e);
 		}
@@ -213,7 +213,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
-				result = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+				result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -260,7 +260,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
-					result = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Folder.class);
+					result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -1103,7 +1103,7 @@ public class FolderFactoryImpl extends FolderFactory {
         try {
 			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), clazz);
 		}catch(Exception e){
-        	Logger.error(this, e.getMessage(), e);
+        	Logger.warn(this, e.getMessage(), e);
 		}
 
 		return new ArrayList<>();
@@ -1138,5 +1138,4 @@ public class FolderFactoryImpl extends FolderFactory {
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
 	}
-
 }

@@ -34,7 +34,7 @@ import java.util.Map;
 
 /**
  * Implementation class for the {@link IdentifierFactory}.
- * 
+ *
  * @author root
  * @version 1.x
  * @since Mar 22, 2012
@@ -48,7 +48,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean include, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
-		
+
 		if(DbConnectionFactory.isMySql()){
 			bob.append("where concat(parent_path, asset_name) ");
 		}else if (DbConnectionFactory.isMsSql()) {
@@ -63,11 +63,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
+		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
 	}
 
 	@Override
@@ -90,7 +86,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param value
 	 * @return
 	 */
@@ -99,7 +95,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param hostId
 	 * @param uri
 	 * @return
@@ -115,7 +111,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param x
 	 * @return
 	 */
@@ -154,18 +150,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetName);
 		dc.addParam(siteId);
 
-		List<Identifier> results = null;
-		try {
-			results = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
+		List<Identifier> results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
 
 		if (results != null && results.size() > 0){
 			identifier = results.get(0);
 		}
 
-		
+
 		if(identifier==null || !InodeUtils.isSet(identifier.getId())) {
 		    identifier = build404(siteId,uri);
 		}
@@ -185,12 +176,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
-	}
+        return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+    }
 
 	@Override
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
@@ -202,18 +189,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where id = ?");
 		dc.addParam(identifier);
 
-		List<Identifier> results = null;
-		try {
-			results = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
+		List<Identifier> results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
 
 		if (results != null && results.size() > 0){
 			return  results.get(0);
 		}
 
-		return new Identifier();
+		return null;
 	}
 
 	@Override
@@ -238,14 +220,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	protected Identifier loadFromCache(Versionable versionable) {
 		String idStr= ic.getIdentifierFromInode(versionable);
 		if(idStr ==null) return null;
-		return check404(ic.getIdentifier(idStr)); 
+		return check404(ic.getIdentifier(idStr));
 	}
 
 	@Override
 	protected Identifier loadFromCacheFromInode(String inode) {
 		String idStr= ic.getIdentifierFromInode(inode);
 		if(idStr ==null) return null;
-		return check404(ic.getIdentifier(idStr)); 
+		return check404(ic.getIdentifier(idStr));
 	}
 
 	@Override
@@ -262,7 +244,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		else{
 			id= find(versionable.getVersionId());
 		}
-		
+
 		return id;
 	}
 
@@ -323,7 +305,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		if(Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(site.getIdentifier())){
 			throw new DotStateException("A folder cannot be saved on the system host.");
-			
+
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
@@ -394,11 +376,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier");
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
+		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
 
 	}
 

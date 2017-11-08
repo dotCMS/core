@@ -26,6 +26,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				"vv.identifier = ident.id and host_inode = '" + parentPermissionable.getIdentifier() + "'";
 		dc.setSQL(sql);
 		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
-		} catch (Exception e) {
+			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
 	}
@@ -67,8 +68,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				"dot_containers_1_.type='containers' order by " + Inode.Type.CONTAINERS.getTableName() + ".title";
 		dc.setSQL(sql);
 		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
-		} catch (Exception e) {
+			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
 	}
@@ -252,8 +253,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil
-						.convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)

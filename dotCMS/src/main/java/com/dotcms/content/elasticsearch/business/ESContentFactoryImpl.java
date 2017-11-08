@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -307,7 +306,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
                 // APILocator.getHostAPI().findSystemHost() method, because this
-                // method will create a system host if not exist which cause 
+                // method will create a system host if not exist which cause
                 // a infinite loop.
                 contentlet.setHost(Host.SYSTEM_HOST);
             } else {
@@ -1016,14 +1015,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected List<Contentlet> findPageContentlets(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
 			long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    
-	    
+
+
        if(Config.getBooleanProperty("FIND_PAGE_CONTENTLETS_FROM_CACHE", false)){
             return findPageContentletFromCache(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
        }
-	    
-	    
-	    
+
+
+
 	    StringBuilder condition = new StringBuilder();
         if (working) {
             condition.append("contentletvi.working_inode=contentlet.inode")
@@ -1074,12 +1073,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> findPageContentletFromCache(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
         StringBuilder condition = new StringBuilder();
-        
+
         if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
             orderby = " multi_tree.tree_order ";
         }
         languageId = (languageId==0) ?  langAPI.getDefaultLanguage().getId() : languageId;
-        
+
 
         condition
             .append("select contentlet_version_info.{0} as mynode from contentlet_version_info, multi_tree ")
@@ -1104,7 +1103,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         db.addParam(false);
         db.addParam(HTMLPageIdentifier);
         db.addParam(containerIdentifier);
-        
+
         List<Map<String,Object>> res = db.loadObjectResults();
         List<Contentlet> cons = new ArrayList<>();
         for(Map<String,Object> map :res ){
@@ -1115,11 +1114,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         return cons;
     }
-	
-	
-	
-	
-	
+
+
+
+
+
 	@Override
 	protected List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotStateException, DotSecurityException {
 	    return getContentletsByIdentifier(identifier, null);
@@ -1171,15 +1170,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.addParam(contentlet.getIdentifier());
         dc.addParam(relationshipType);
 
-        try {
-            List<Identifier> result = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-            if (result != null && !result.isEmpty()){
-                result.get(0);
-            }
-        } catch (Exception e) {
-            throw new DotDataException(e);
+        return convertDotConnectMapToPOJO(dc.loadResults());
+	}
+
+    /**
+     *
+     * @param results
+     * @return
+     */
+    private Identifier convertDotConnectMapToPOJO(List<Map<String,String>> results){
+
+        if(results == null || results.size()==0){
+            return null;
         }
-        return new Identifier();
+
+        Map<String, String> map = results.get(0);
+        Identifier identifier = new Identifier();
+        identifier.setAssetName(map.get("asset_name"));
+        identifier.setAssetType(map.get("asset_type"));
+        identifier.setHostId(map.get("host_inode"));
+        identifier.setId(map.get("id"));
+        identifier.setParentPath(map.get("parent_path"));
+
+        return identifier;
     }
 
 	@Override

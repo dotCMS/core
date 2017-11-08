@@ -34,6 +34,7 @@ import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -192,8 +193,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.addParam(destination.getIdentifier());
 
 		try {
-			containers = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Container.class);
-		} catch (Exception e) {
+			containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
 
@@ -266,12 +267,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 						"template_containers.container_id = template_containers_2_.id " +
 						"and template_containers.template_id = ? ");
 		dc.addParam(parentTemplate.getIdentifier());
-		List<Identifier> identifiers = null;
-		try {
-			identifiers = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), Identifier.class);
-		} catch (Exception e) {
-			throw new DotDataException(e);
-		}
+
+		List<Identifier> identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+
 		List<Container> containers = new ArrayList<Container>();
 		for (Identifier id : identifiers) {
 			Container cont = (Container) APILocator.getVersionableAPI()
