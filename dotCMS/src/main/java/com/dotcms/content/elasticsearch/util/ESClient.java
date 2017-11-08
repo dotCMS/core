@@ -224,7 +224,7 @@ public class ESClient {
 			String serverId = ConfigUtils.getServerId();
 			//This line is added because when someone add a license the node is already up and working and reset the existing port
 			shutDownNode();
-			currentServer = serverAPI.getServer(serverId);
+			currentServer = serverAPI.getCurrentServer();
 
             String bindAddressFromProperty = Config.getStringProperty("es.network.host", null, false);
 
@@ -337,8 +337,9 @@ public class ESClient {
 	public void removeClusterNode() {
 	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
     	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
-    	    shutDownNode();
+
 	    }
+	    shutDownNode();
 	}
 
 	/**
