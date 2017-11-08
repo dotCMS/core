@@ -1,27 +1,37 @@
 @import "mixins";
 @import "variables";
 
-.layout__toolbar {
+.toolbar {
     z-index: 1004; // Menu and dropdown options in primeng use 1003.
-}
 
-.layout__toolbar-inner {
-    display: flex;
-    flex-grow: 1;
-    justify-content: space-between;
-}
-
-.toolbar__actions,
-.toolbar__host {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-.toolbar__actions {
-    toolbar-user {
-        margin: 0 $basic-padding;
+    .ui-toolbar {
+        padding-left: 0;
     }
+}
+
+.toolbar__button {
+    left: 50%;
+    opacity: 1;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity $basic-speed ease-in;
+    z-index: 2;
+}
+
+.toolbar__button--hide {
+    opacity: 0;
+    z-index: 1;
+}
+
+.toolbar__button-wrapper {
+    align-items: center;
+    border-right: solid 1px rgba($white, 0.2);
+    display: flex;
+    height: $toolbar-height;
+    margin-right: $basic-padding * 2;
+    position: relative;
+    width: $toolbar-height;
 }
 
 .toolbar__host {
@@ -31,9 +41,32 @@
     }
 }
 
+.toolbar__host,
+.toolbar__secondary-actions {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+}
+
+.toolbar__inner {
+    display: flex;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+.toolbar__main-actions {
+    display: flex;
+}
+
+.toolbar__secondary-actions {
+    toolbar-user {
+        margin: 0 $basic-padding;
+    }
+}
+
 .toolbar__site-selector {
-    .ui-button-text,
-    .site-selector__title {
+    .site-selector__title,
+    .ui-button-text {
         color: $white;
         font-size: $font-size-large;
         text-overflow: ellipsis;

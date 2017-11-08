@@ -1,20 +1,29 @@
-<header class="layout__toolbar">
+<header class="toolbar">
     <p-toolbar>
-        <div class="layout__toolbar-inner">
-            <div class="toolbar__host">
-                <button pButton iconButton icon="fa-bars" class="inverse" (click)="handleMainButtonClick($event)"></button>
-                <dot-site-selector
-                    #siteSelector
-                    class="toolbar__site-selector"
-                    (change)="siteChange($event)"
-                    (hide)="iframeOverlayService.hide()"
-                    (show)="iframeOverlayService.show()"
-                    [archive]="false"
-                    [live]="true"
-                    [system]="false">
-                </dot-site-selector>
+        <div class="toolbar__inner">
+            <div class="toolbar__main-actions">
+                <div class="toolbar__button-wrapper">
+                    <div class="toolbar__button" [class.toolbar__button--hide]="collapsed">
+                        <button pButton iconButton icon="fa-arrow-left" class="inverse" (click)="handleMainButtonClick($event)"></button>
+                    </div>
+                    <div class="toolbar__button" [class.toolbar__button--hide]="!collapsed">
+                        <button pButton iconButton icon="fa-bars" class="inverse" (click)="handleMainButtonClick($event)"></button>
+                    </div>
+                </div>
+                <div class="toolbar__host">
+                    <dot-site-selector
+                        #siteSelector
+                        class="toolbar__site-selector"
+                        (change)="siteChange($event)"
+                        (hide)="iframeOverlayService.hide()"
+                        (show)="iframeOverlayService.show()"
+                        [archive]="false"
+                        [live]="true"
+                        [system]="false">
+                    </dot-site-selector>
+                </div>
             </div>
-            <div class="toolbar__actions">
+            <div class="toolbar__secondary-actions">
                 <dot-toolbar-notifications></dot-toolbar-notifications>
                 <toolbar-user></toolbar-user>
                 <dot-toolbar-add-contentlet></dot-toolbar-add-contentlet>
