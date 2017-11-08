@@ -35,7 +35,7 @@ public class ServerAPIImpl implements ServerAPI {
 		serverFactory = FactoryLocator.getServerFactory();
 	}
 
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public void saveServer(Server server) throws DotDataException {
 		serverFactory.saveServer(server);
 	}
@@ -45,19 +45,23 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getServer(serverId);
 	}
 
-	@WrapInTransaction
+
 	@Override
     public Server getOrCreateMyServer() throws DotDataException {
 	    final Server tryServer = getServer(readServerId());
 
         if(tryServer == null || tryServer.getServerId() == null)  {
-        	createMyServerTransaction();
+
+        	createMyServer();
+
         }
 
         return getServer(readServerId());
     }
 
-	private void createMyServerTransaction() throws DotDataException {
+
+	private void createMyServer() throws DotDataException {
+
 		
 		
 		
