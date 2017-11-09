@@ -24,7 +24,7 @@ public interface Paginator<T> {
      * @return
      */
     public abstract PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset,
-                                                   String orderby, OrderDirection direction, Map<String, Object> extraParams);
+                                                   String orderby, OrderDirection direction, Map<String, Object> extraParams) throws PaginationException;
 
     default PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset){
         return getItems(user, filter,  limit,  offset, null, null);

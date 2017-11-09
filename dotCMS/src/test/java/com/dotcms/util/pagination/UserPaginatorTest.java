@@ -54,11 +54,11 @@ public class UserPaginatorTest {
 
     @Test
     public void testGetItems() throws DotDataException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        String filter = "filter";
-        int limit = 5;
-        int offset = 4;
-        User user = new User();
-        long totalRecords = 10;
+        final String filter = "filter";
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+        final long totalRecords = 10;
 
         List<Map> usersMap = new ArrayList<>();
         usersMap.add( mock( Map.class ) );
@@ -96,11 +96,10 @@ public class UserPaginatorTest {
 
     @Test
     public void testGetItemsException() throws DotDataException {
-        String filter = "filter";
-        boolean showArchived = false;
-        int limit = 5;
-        int offset = 4;
-        User user = new User();
+        final String filter = "filter";
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
 
         when(userAPI.getUsersByName( filter, offset, limit, user, false ))
                 .thenThrow(new DotDataException(""));

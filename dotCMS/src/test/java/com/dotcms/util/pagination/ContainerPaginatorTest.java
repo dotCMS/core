@@ -23,14 +23,14 @@ public class ContainerPaginatorTest {
 
     @Test
     public void testGetContainers() throws DotDataException, DotSecurityException {
-        int totalRecords = 10;
-        User user = mock(User.class);
-        String filter = "filter";
-        Map<String, Object> params = map("title", filter);
-        String hostId = "1";
-        int offset = 5;
-        int limit = 10;
-        String orderby = "title";
+        final int totalRecords = 10;
+        final User user = mock(User.class);
+        final String filter = "filter";
+        final Map<String, Object> params = map("title", filter);
+        final String hostId = "1";
+        final int offset = 5;
+        final int limit = 10;
+        final String orderby = "title";
 
         PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);
@@ -51,14 +51,14 @@ public class ContainerPaginatorTest {
 
     //@Test
     public void testGetContainersNullDirection() throws DotDataException, DotSecurityException {
-        int totalRecords = 10;
-        User user = mock(User.class);
-        String filter = "filter";
-        Map<String, Object> params = map("title", filter);
-        String hostId = "1";
-        int offset = 5;
-        int limit = 10;
-        String orderby = "title";
+        final int totalRecords = 10;
+        final User user = mock(User.class);
+        final String filter = "filter";
+        final Map<String, Object> params = map("title", filter);
+        final String hostId = "1";
+        final int offset = 5;
+        final int limit = 10;
+        final String orderby = "title";
 
         PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);

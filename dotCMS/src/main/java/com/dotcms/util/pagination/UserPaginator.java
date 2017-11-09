@@ -41,7 +41,7 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
      * @return
      *
      */
-    private long getTotalRecords(String nameFilter) {
+    private long getTotalRecords(final String nameFilter) {
         try {
             return userAPI.getCountUsersByName(nameFilter);
         } catch (DotDataException e) {
@@ -66,16 +66,16 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
      * @return
      */
     @Override
-    public PaginatedArrayList<Map<String, Object>> getItems(User user, String filter, int limit, int offset) {
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset) {
 
         try {
-            List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
-            List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
-            List<Map<String, Object>> usersMap = users.stream()
+            final List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
+            final List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
+            final List<Map<String, Object>> usersMap = users.stream()
                     .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
 
-            PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
+            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
             result.addAll(usersMap);
             result.setTotalResults(this.getTotalRecords(filter));
             return result;

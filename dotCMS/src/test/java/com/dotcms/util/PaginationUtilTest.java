@@ -34,29 +34,29 @@ public class PaginationUtilTest {
 
     @Test
     public void testPage(){
-        HttpServletRequest req = mock( HttpServletRequest.class );
-        User user = new User();
-        String filter = "filter";
-        int page = 2;
-        int perPage = 5;
-        String orderBy = "name";
-        OrderDirection direction = OrderDirection.ASC;
-        int offset = (page - 1) * perPage;
-        long totalRecords = 10;
-        StringBuffer baseURL = new StringBuffer("/baseURL");
+        final HttpServletRequest req = mock( HttpServletRequest.class );
+        final User user = new User();
+        final String filter = "filter";
+        final int page = 2;
+        final int perPage = 5;
+        final String orderBy = "name";
+        final OrderDirection direction = OrderDirection.ASC;
+        final int offset = (page - 1) * perPage;
+        final long totalRecords = 10;
+        final StringBuffer baseURL = new StringBuffer("/baseURL");
 
         String headerLink = "</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"first\",</baseURL?filter=filter&per_page=5&orderby=name&page=2&direction=ASC>;rel=\"last\",</baseURL?filter=filter&per_page=5&orderby=name&page=pageValue&direction=ASC>;rel=\"x-page\",</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"prev\"";
 
-        PaginatedArrayList items = new PaginatedArrayList<>();
+        final PaginatedArrayList items = new PaginatedArrayList<>();
         items.add(new Object());
         items.setTotalResults(totalRecords);
 
         when( req.getRequestURL() ).thenReturn( baseURL );
         when( paginator.getItems( user, filter, perPage, offset, orderBy, direction, map() ) ).thenReturn( items );
 
-        Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 
-        Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
+        final Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
 
         assertEquals( items, entity );
         assertEquals( response.getHeaderString("X-Pagination-Per-Page"), String.valueOf( perPage ) );

@@ -23,38 +23,41 @@ public class ContainerPaginator implements Paginator<Container> {
 
     public static final String HOST_PARAMETER_ID = "host";
 
-    private ContainerFactory containerFactory;
+    private final ContainerFactory containerFactory;
 
     public ContainerPaginator() {
         containerFactory = FactoryLocator.getContainerFactory();
     }
 
     @VisibleForTesting
-    public ContainerPaginator(ContainerFactory containerFactory) {
+    public ContainerPaginator(final ContainerFactory containerFactory) {
         this.containerFactory = containerFactory;
     }
 
     @Override
-    public PaginatedArrayList<Container> getItems(User user, String filter, int limit, int offset, String orderby,
-                                                  OrderDirection direction, Map<String, Object> extraParams) {
+    public PaginatedArrayList<Container> getItems(final User user, final String filter, final int limit, final int offset,
+                                                  final String orderby, final OrderDirection direction,
+                                                  final Map<String, Object> extraParams) {
         String hostId = null;
 
         if (extraParams != null) {
             hostId = (String) extraParams.get(HOST_PARAMETER_ID);
         }
 
-        Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("title", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
-            orderByDirection += " " + direction.toString().toLowerCase();
+            orderByDirection = new StringBuffer(orderByDirection)
+                    .append(" ")
+                    .append(direction.toString().toLowerCase()).toString();
         }
 
         try {
             return (PaginatedArrayList) containerFactory.findContainers(user, false, params, hostId,
                     null, null, null, offset, limit, orderByDirection);
         } catch (DotSecurityException|DotDataException e) {
-            throw new RuntimeException(e);
+            throw new PaginationException(e);
         }
     }
 }

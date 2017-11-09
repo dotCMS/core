@@ -42,7 +42,7 @@ public class CategoriesPaginator implements Paginator<Category> {
                 categoriesSort = direction == OrderDirection.DESC ? "-" + orderby : orderby;
             }
 
-            PaginatedArrayList<Category> result = new PaginatedArrayList<>();
+            final PaginatedArrayList<Category> result = new PaginatedArrayList<>();
             final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
             result.setTotalResults(topLevelCategories.getTotalCount());
             result.addAll(topLevelCategories.getCategories());

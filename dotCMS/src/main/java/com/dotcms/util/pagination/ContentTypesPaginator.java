@@ -69,7 +69,7 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
                 orderByEntries(direction, contentTypesTransform);
             }
 
-            PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
+            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
             result.addAll(contentTypesTransform);
             result.setTotalResults(this.getTotalRecords(queryCondition));
 
@@ -79,7 +79,7 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
         }
     }
 
-    private void orderByEntries(OrderDirection direction, List<Map<String, Object>> contentTypesTransform) {
+    private void orderByEntries(final OrderDirection direction, final List<Map<String, Object>> contentTypesTransform) {
         contentTypesTransform.sort((contentType1, contentType2) -> {
             long l1 = (long) contentType1.get(N_ENTRIES_FIELD_NAME);
             long l2 = (long) contentType2.get(N_ENTRIES_FIELD_NAME);
@@ -87,10 +87,10 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
         });
     }
 
-    private void setEntriesAttribute(User user, List<Map<String, Object>> contentTypesTransform) throws DotDataException {
+    private void setEntriesAttribute(final User user, final List<Map<String, Object>> contentTypesTransform) throws DotDataException {
         Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
 
-        for (Map<String, Object> contentTypeEntry : contentTypesTransform) {
+        for (final Map<String, Object> contentTypeEntry : contentTypesTransform) {
             if (entriesByContentTypes != null) {
                 String key = ((String) contentTypeEntry.get("variable")).toLowerCase();
                 Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
@@ -100,7 +100,7 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
         }
     }
 
-    private List<Map<String, Object>> transformContentTypesToMap(List<ContentType> contentTypes) {
+    private List<Map<String, Object>> transformContentTypesToMap(final List<ContentType> contentTypes) {
         return new JsonContentTypeTransformer(contentTypes)
                         .mapList()
                         .stream()
