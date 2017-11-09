@@ -38,7 +38,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  * and actions that the front-end can perform on the {@link com.dotmarketing.portlets.containers.model.Container}.
  *
  */
-@Path("/v1/container")
+@Path("/v1/containers")
 public class ContainerResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -81,7 +81,7 @@ public class ContainerResource implements Serializable {
      *     <li>host: filter by host's id</li>
      * </ul>
      *
-     * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
+     * Url example: v1/container?filter=test&page=2&orderby=title
      *
      * @param request
      * @return
