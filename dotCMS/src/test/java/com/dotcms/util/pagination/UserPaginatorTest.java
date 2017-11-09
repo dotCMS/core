@@ -55,10 +55,10 @@ public class UserPaginatorTest {
     @Test
     public void testGetItems() throws DotDataException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String filter = "filter";
-        boolean showArchived = false;
         int limit = 5;
         int offset = 4;
         User user = new User();
+        long totalRecords = 10;
 
         List<Map> usersMap = new ArrayList<>();
         usersMap.add( mock( Map.class ) );
@@ -69,6 +69,7 @@ public class UserPaginatorTest {
 
         List<String> rolesId = list(adminRoleId, loadCMSAdminRoleId);
         PaginatedArrayList<User> users = new PaginatedArrayList<>();
+        users.setTotalResults(totalRecords);
 
         for (int i = 0; i < usersMap.size(); i++) {
             Map map = usersMap.get(i);
@@ -85,21 +86,12 @@ public class UserPaginatorTest {
         when(userAPI.getUsersByName( filter, offset, limit, user, false ))
                 .thenReturn( users );
 
-        Collection<Map<String, Object>> items = userPaginator.getItems(user, filter, limit, offset);
+        when(userAPI.getCountUsersByName( filter )).thenReturn( totalRecords );
+
+        PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(user, filter, limit, offset);
 
         assertEquals(usersMap, items);
-    }
-
-    @Test
-    public void testGetTotalRecords() throws DotDataException {
-        String filter = "filter";
-        long result = 10;
-
-        when(userAPI.getCountUsersByName( filter )).thenReturn( result );
-
-        long totalRecords = userPaginator.getTotalRecords(filter);
-
-        assertEquals(result, totalRecords);
+        assertEquals(items.getTotalResults(), totalRecords);
     }
 
     @Test
@@ -115,20 +107,6 @@ public class UserPaginatorTest {
 
         try {
             userPaginator.getItems(user, filter, limit, offset);
-            assertTrue(false);
-        } catch (DotRuntimeException e) {
-            assertTrue(true);
-        }
-    }
-
-    @Test
-    public void testGetTotalRecordsException() throws DotDataException {
-        String filter = "filter";
-
-        when(userAPI.getCountUsersByName( filter )).thenThrow(new DotDataException(""));
-
-        try {
-            userPaginator.getTotalRecords(filter);
             assertTrue(false);
         } catch (DotRuntimeException e) {
             assertTrue(true);

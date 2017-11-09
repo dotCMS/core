@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
 /**
@@ -32,13 +33,8 @@ public class CategoriesPaginator implements Paginator<Category> {
     }
 
     @Override
-    public long getTotalRecords(final String filter) {
-        return lastTotalRecords.get();
-    }
-
-    @Override
-    public Collection<Category> getItems(final User user, final String filter, final int limit, final int offset,
-                                         final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
+    public PaginatedArrayList<Category> getItems(final User user, final String filter, final int limit, final int offset,
+                                                 final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
         try {
             String categoriesSort = null;
 
@@ -46,10 +42,12 @@ public class CategoriesPaginator implements Paginator<Category> {
                 categoriesSort = direction == OrderDirection.DESC ? "-" + orderby : orderby;
             }
 
+            PaginatedArrayList<Category> result = new PaginatedArrayList<>();
             final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
-            lastTotalRecords.set(topLevelCategories.getTotalCount());
+            result.setTotalResults(topLevelCategories.getTotalCount());
+            result.addAll(topLevelCategories.getCategories());
 
-            return topLevelCategories.getCategories();
+            return result;
         } catch (DotDataException|DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
