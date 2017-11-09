@@ -504,7 +504,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			if (step == null) {
 				try {
+					/* BEGIN - TODO this part need to be done in a different way, need to use default action */
 					step = this.findSteps(scheme).get(0);
+					/* END - TODO this part need to be done in a different way */
 				} catch (final Exception e) {
 					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
 				}
@@ -512,7 +514,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			// if the existing task belongs to another workflow schema, update
 			// to the latest schema
-			if (!step.getSchemeId().equals(scheme.getId())) {
+			/* BEGIN - TODO this part need to be done in a different way */
+			/*if (!step.getSchemeId().equals(scheme.getId())) {
 				step = this.findSteps(scheme).get(0);
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.RESET_CONTENTLET_STEPS);
@@ -520,7 +523,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(contentlet.getIdentifier());
 				db.loadResult();
 
-			}
+			}*/
+			/* END - TODO this part need to be done in a different way */
 			cache.addStep(contentlet, step);
 		}
 		return step;

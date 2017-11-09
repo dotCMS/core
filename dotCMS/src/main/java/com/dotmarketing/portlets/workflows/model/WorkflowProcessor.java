@@ -153,6 +153,9 @@ public class WorkflowProcessor {
 			nextStep = getWorkflowAPI().findStep(action.getNextStep());
 			step = getWorkflowAPI().findStep(action.getStepId());
 			actionClasses = getWorkflowAPI().findActionClasses(action);
+			if(null == scheme) {
+                scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+            }
 
 			if(task != null && UtilMethods.isSet(task.getId())){
 				history = getWorkflowAPI().findWorkflowHistory(task);

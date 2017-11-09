@@ -47,8 +47,29 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException;
 	/* BEGIN TODO check if is required*/
+
+	/**
+	 * This method will get the current workflow step of the contentlet.
+	 * If the contentlet doesn't have a workflow step associated, then it will
+	 * bring the step associated to the contentlet Content Type default workflow
+	 * action.
+	 *
+	 * @param contentlet The contentlet to check
+	 * @return The current contentlet workflow step
+	 * @throws DotDataException
+	 */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
     /* END TODO check if is required*/
+
+	/**
+	 * This method will get the current workflow step of the contentlet.
+	 * If the contentlet doesn't have a workflow step associated, then it will
+	 * display all the first workflow steps associated to the contentlet Content Type.
+	 *
+	 * @param contentlet The current contentlet
+	 * @return A list of step available for the contentlet
+	 * @throws DotDataException
+	 */
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
 
 	public void saveComment(WorkflowComment comment) throws DotDataException;
