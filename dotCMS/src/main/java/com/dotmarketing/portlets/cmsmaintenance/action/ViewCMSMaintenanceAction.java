@@ -568,7 +568,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		try {
 
 			/* get a list of all our tables */
-			Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+			Map map = new HashMap();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
+
+			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 			Iterator it = map.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry pairs = (Map.Entry) it.next();
@@ -577,7 +582,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					_tablesToDump.add(x);
 
 			}
+
 			XStream _xstream = null;
+			HibernateUtil _dh = null;
 			DotConnect dc = null;
 			List _list = null;
 			File _writing = null;
@@ -617,9 +624,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				/* we will only export 10,000,000 items of any given type */
 				for(i=0;i < 10000000;i=i+step){
 
-                    dc = new DotConnect();
-					dc.setStartRow(i);
-					dc.setMaxRows(step);
+					_dh = new HibernateUtil(clazz);
+					_dh.setFirstResult(i);
+					_dh.setMaxResults(step);
 
                     //This line was previously like;
                     //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
@@ -627,27 +634,34 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
                     //ordering is done only on the first field for the tables, which is INODE
                     if(com.dotmarketing.beans.Tree.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by parent, child, relation_type");
+						_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
                     }
                     else if(MultiTree.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
+						_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
                     }
                     else if(TagInode.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by inode, tag_id");
+						_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
                     }
                     else if(Tag.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by tag_id, tagname");
+						_dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
                     }
                     else if(CalendarReminder.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by user_id, event_id, send_date");
+						_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
                     } 
                     else if(Identifier.class.equals(clazz)){
-						dc.setSQL("from " + clazz.getName() + " order by parent_path, id");
-                    } else {
-						dc.setSQL("from " + clazz.getName() + " order by 1");
+						dc = new DotConnect();
+						dc.setSQL("select * from identifier order by parent_path, id")
+								.setStartRow(i).setMaxRows(step);
+					} else {
+						_dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
 
-                    _list = ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(),clazz);
+					if(Identifier.class.equals(clazz)){
+						_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+					}else{
+						_list = _dh.list();
+					}
+
                     if(_list.size() ==0){
                         try {
                         _bout.close();

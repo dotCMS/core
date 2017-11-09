@@ -78,6 +78,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -430,7 +431,13 @@ public class CMSMaintenanceAjax {
 			try {
 
 				/* get a list of all our tables */
-				Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+				Map map = new HashMap();
+
+				//Including Identifier.class because it is not mapped with Hibernate anymore
+				map.put(Identifier.class, null);
+
+				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 				Iterator it = map.entrySet().iterator();
 				while (it.hasNext()) {
 					Map.Entry pairs = (Map.Entry) it.next();
@@ -442,6 +449,7 @@ public class CMSMaintenanceAjax {
 
 				}
 				XStream _xstream = null;
+				HibernateUtil _dh = null;
 				DotConnect _dc = null;
 				List _list = null;
 				File _writing = null;
@@ -489,9 +497,9 @@ public class CMSMaintenanceAjax {
 					/* we will only export 10,000,000 items of any given type */
 					for (i = 0; i < 10000000; i = i + step) {
 
-						_dc = new DotConnect();
-						_dc.setStartRow(i);
-						_dc.setMaxRows(step);
+						_dh = new HibernateUtil(clazz);
+						_dh.setFirstResult(i);
+						_dh.setMaxResults(step);
 
 						//This line was previously like;
 						//_dh.setQuery("from " + clazz.getName() + " order by 1,2");
@@ -499,34 +507,33 @@ public class CMSMaintenanceAjax {
 						//by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
 						//ordering is done only on the first field for the tables, which is INODE
 						if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
-							_dc.setSQL("from " + clazz.getName()
-									+ " order by parent, child, relation_type");
+							_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
 						} else if (MultiTree.class.equals(clazz)) {
-							_dc.setSQL("from " + clazz.getName()
-									+ " order by parent1, parent2, child, relation_type");
+							_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
 						} else if (TagInode.class.equals(clazz)) {
-							_dc.setSQL("from " + clazz.getName() + " order by inode, tag_id");
+							_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
 						} else if (TemplateVersionInfo.class.equals(clazz)) {
-							_dc.setSQL(
-									"SELECT template_version_info.* from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
+							_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
 						} else if (ContainerVersionInfo.class.equals(clazz)) {
-							_dc.setSQL(
-									"SELECT container_version_info.* from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
+							_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
 						} else if (LinkVersionInfo.class.equals(clazz)) {
-							_dc.setSQL(
-									"SELECT link_version_info.* from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
+							_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
 						} else if (CalendarReminder.class.equals(clazz)) {
-							_dc.setSQL("from " + clazz.getName()
-									+ " order by user_id, event_id, send_date");
+							_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
 						} else if (Identifier.class.equals(clazz)) {
-							_dc.setSQL("from " + clazz.getName() + " order by parent_path, id");
+							_dc = new DotConnect();
+							_dc.setSQL("select * from identifier order by parent_path, id")
+									.setStartRow(i).setMaxRows(step);
 						} else {
-							_dc.setSQL("from " + clazz.getName() + " order by 1");
-
+							_dh.setQuery("from " + clazz.getName() + " order by 1");
 						}
 
-						_list = ConvertToPOJOUtil
-								.convertDotConnectMapToPOJO(_dc.loadResults(), clazz);
+						if(Identifier.class.equals(clazz)){
+							_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(_dc.loadResults());
+						}else{
+							_list = _dh.list();
+						}
+
 						if (_list.size() == 0) {
 							try {
 								_bout.close();

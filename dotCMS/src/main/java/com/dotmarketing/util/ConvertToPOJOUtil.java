@@ -34,6 +34,26 @@ public class ConvertToPOJOUtil {
     public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
             throws Exception {
 
+        if (Folder.class.equals(classToUse)){
+            return (List<T>) convertDotConnectMapToFolder(results);
+        }
+
+        if (Container.class.equals(classToUse)){
+            return (List<T>) convertDotConnectMapToContainer(results);
+        }
+
+        if (Link.class.equals(classToUse)){
+            return (List<T>) convertDotConnectMapToLink(results);
+        }
+
+        if (Identifier.class.equals(classToUse)){
+            return (List<T>) convertDotConnectMapToIdentifier(results);
+        }
+
+        if (Template.class.equals(classToUse)){
+            return (List<T>) convertDotConnectMapToTemplate(results);
+        }
+
         DateFormat df;
         List<T> ret;
         Map<String, String> properties;

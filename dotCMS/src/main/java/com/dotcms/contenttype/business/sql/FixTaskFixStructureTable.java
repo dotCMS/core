@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.FixAudit;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -107,11 +108,14 @@ public class FixTaskFixStructureTable  implements FixTask {
 				// return before - after;
 			}
 			Map map = new HashMap();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
 			try {
-				map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 			} catch (HibernateException e) {
 				throw new DotDataException(e.getMessage(),e);
 			}
+
 			Iterator it = map.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry pairs = (Map.Entry) it.next();

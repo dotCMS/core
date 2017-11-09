@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -33,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -312,7 +314,13 @@ public class ImportExportXMLServlet extends HttpServlet {
 		try {
 
 			/* get a list of all our tables */
-			Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+			Map map = new HashMap();
+
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
+
+			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 			Iterator it = map.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry pairs = (Map.Entry) it.next();
@@ -484,9 +492,12 @@ public class ImportExportXMLServlet extends HttpServlet {
 			/* get a list of all our tables */
 			try {
 				Set<Class> _tablesToDump = new HashSet<Class>();
-				Map map;
+				Map map = new HashMap();
 
-				map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+				//Including Identifier.class because it is not mapped with Hibernate anymore
+				map.put(Identifier.class, null);
+
+				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 
 				Iterator it = map.entrySet().iterator();
 				while (it.hasNext()) {
