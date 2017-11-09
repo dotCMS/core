@@ -218,15 +218,16 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         final DefaultVanityUrl vanityUrl = new DefaultVanityUrl();
         vanityUrl.setContentTypeId(contentlet.getContentTypeId());
-        String uri = (contentlet.getStringProperty("uri") !=null)
-            ? contentlet.getStringProperty("uri").toLowerCase()
-                : null;
-                  
         try {
-            this.contentletAPI.copyProperties(vanityUrl, contentlet.getMap());
+          this.contentletAPI.copyProperties(vanityUrl, contentlet.getMap());
         } catch (Exception e) {
             throw new DotStateException("Vanity Url Copy Failed", e);
         }
+        
+        final String uri = (contentlet.getStringProperty("uri") !=null)
+            ? contentlet.getStringProperty("uri").toLowerCase()
+                : null;
+                  
         vanityUrl.setURI(uri);
         vanityUrl.setHost(contentlet.getHost());
         vanityUrl.setFolder(contentlet.getFolder());
