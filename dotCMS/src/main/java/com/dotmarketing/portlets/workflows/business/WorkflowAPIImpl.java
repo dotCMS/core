@@ -421,11 +421,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
-	DotSecurityException {
+	DotSecurityException { // todo: this should be change to see the intermediate table
 		List<WorkflowAction> actions = workFlowFactory.findActions(step);
 		actions = APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
 		return actions;
 	}
+
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
+			DotSecurityException {
+
+		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
+		return APILocator.getPermissionAPI().filterCollection(actions,
+				PermissionAPI.PERMISSION_USE, true, user);
+	} // findActions.
 
 
 	/**

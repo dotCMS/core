@@ -188,7 +188,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
 
 	show : function() {
-
 		var href = this.baseJsp;
 		if (this.showArchived) {
 			href = href + "?showArchived=true";
@@ -650,12 +649,12 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 	},
 
-	viewAction : function(stepId, actionId) {
-		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
+	viewAction : function(schemeId, actionId) {
+		mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId + "&actionId=" + actionId + "&" + Math.random());
 
 	},
 
-	saveAction : function(stepId) {
+	saveAction : function(schemeId) {
 
 		var myForm = dijit.byId("addEditAction");
 
@@ -673,7 +672,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 							actionAdmin.saveError(dataOrError);
 						} else {
 							var actionId  = dataOrError.split(":")[1];
-							actionAdmin.viewAction(stepId, actionId);
+							actionAdmin.viewAction(schemeId, actionId);
 							showDotCMSSystemMessage("Saved");
 						}
 					} else {

@@ -38,8 +38,7 @@
         Logger.debug( this.getClass(), "can't find action" );
     }
 
-	WorkflowScheme scheme = new WorkflowScheme();
-	scheme = wapi.findScheme(schemeId);
+	final WorkflowScheme scheme = wapi.findScheme(schemeId);
 
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
 	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
@@ -307,7 +306,7 @@
 								<%=LanguageUtil.get(pageContext, "Delete")%>
 							</a>
 							<%} %>
-							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=stepId %>');">
+							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
 							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>

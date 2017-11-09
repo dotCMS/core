@@ -39,6 +39,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
@@ -66,6 +67,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private WorkflowAction convertAction(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowAction action = new WorkflowAction();
 		row.put("stepId", row.get("step_id"));
+		row.put("schemeId", row.get("scheme_id"));
 		row.put("condition", row.get("condition_to_progress"));
 		row.put("nextStep", row.get("next_step_id"));
 		row.put("nextAssign", row.get("next_assign"));
@@ -182,15 +184,20 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return dc.getInt("mycount");
 	}
 
-	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
+	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 		String stepId = action.getStepId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION);
 		db.addParam(action.getId());
 		db.loadResult();
-		WorkflowStep proxy = new WorkflowStep();
-		proxy.setId(action.getStepId());
-		cache.removeActions(proxy);
+
+		final WorkflowStep proxyStep = new WorkflowStep();
+		proxyStep.setId(action.getStepId());
+		cache.removeActions(proxyStep);
+
+		final WorkflowScheme proxyScheme = new WorkflowScheme();
+		proxyScheme.setId(action.getSchemeId());
+		cache.removeActions(proxyScheme);
 
 		// update scheme mod date
 		WorkflowStep step = findStep(stepId);
@@ -385,6 +392,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 		return actions;
 	}
+
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme) throws DotDataException {
+
+		List<WorkflowAction> actions = cache.getActions(scheme);
+		if(null == actions) {
+
+			final DotConnect db = new DotConnect();
+			db.setSQL(sql.SELECT_ACTIONS_BY_SCHEME);
+			db.addParam(scheme.getId());
+			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
+
+			if(actions == null) {
+				actions= new ArrayList<WorkflowAction>();
+			}
+
+			cache.addActions(scheme, actions);
+		}
+
+		return actions;
+	} // findActions.
 
 	public WorkflowScheme findDefaultScheme() throws DotDataException {
 		WorkflowScheme scheme = cache.getDefaultScheme();
@@ -771,6 +798,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
 			db.addParam(action.getSchemeId());
+			db.addParam(StringPool.BLANK); // we are not longer using the stepId, the relationship now is with schemeId
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
 			db.addParam(action.getNextStep());
@@ -799,9 +827,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		}
 
-		final WorkflowStep proxy = new WorkflowStep();
-		proxy.setId(action.getStepId());
-		cache.removeActions(proxy);
+		final WorkflowStep proxyStep = new WorkflowStep();
+		proxyStep.setId(action.getStepId());
+		cache.removeActions(proxyStep);
+
+		final WorkflowScheme proxyScheme = new WorkflowScheme();
+		proxyScheme.setId(action.getSchemeId());
+		cache.removeActions(proxyScheme);
 
 		// update workflowScheme mod date
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
@@ -848,8 +880,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		// update workflowScheme mod date
 		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 

@@ -30,13 +30,16 @@ public abstract class WorkflowCache implements Cachable{
 	abstract protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task);
 	abstract protected WorkflowStep add(WorkflowStep step);
 	abstract protected List<WorkflowAction> addActions(WorkflowStep step, List<WorkflowAction> actions);
+	abstract protected List<WorkflowAction> addActions(WorkflowScheme scheme, List<WorkflowAction> actions);
 	abstract protected List<WorkflowAction> getActions(WorkflowStep step);
+	abstract protected List<WorkflowAction> getActions(WorkflowScheme scheme);
 	
 	abstract public void clearCache();
 	abstract protected void remove(Contentlet contentlet);
 	public abstract void remove(WorkflowScheme scheme);
 	abstract public void remove(WorkflowStep step);
 	abstract protected void removeActions(WorkflowStep step);
+	abstract protected void removeActions(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowTask task) ;
 	abstract protected WorkflowScheme getSchemeByStruct(String key) ;
 	abstract protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) ;

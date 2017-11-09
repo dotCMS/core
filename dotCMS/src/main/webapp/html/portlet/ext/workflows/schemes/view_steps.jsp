@@ -15,7 +15,9 @@
 	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
 	WorkflowScheme scheme = new WorkflowScheme();
 	scheme = wapi.findScheme(schemeId);
-	List<WorkflowStep> steps = wapi.findSteps(scheme);
+	final List<WorkflowStep> steps = wapi.findSteps(scheme);
+	final List<WorkflowAction> schemaActions =
+			wapi.findActions(scheme, APILocator.getUserAPI().getSystemUser());
 	WorkflowAction entryAction = null;
 	if(scheme.isMandatory() && UtilMethods.isSet(scheme.getEntryActionId())){
 		try{
@@ -164,6 +166,43 @@
    <!-- END Toolbar -->
 </div>
 
+<!-- schema actions -->
+<div id="wfStepsBoundingBoxMain" >
+
+	<div class="wfStepBoundingBox" >
+		<div class="wfStepTitle ">
+			<div  style="float:left;width:89%;" class="showPointer wfStepTitleDivs">
+				<span style="border-bottom:dotted 1px gray;">Schema Workflow Actions</span>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<table class="wfActionList" id="<%= "jsNode" + scheme.getId()  %>" dojoType="dojo.dnd.Source" class="dndContainer container" accept="actionOrderClass<%=scheme.getId()%>">
+			<tbody>
+
+			<%for(WorkflowAction action : schemaActions){ %>
+			<tr class="dojoDndItem actionOrderClass<%=scheme.getId()%> actionOrderClass" id="id_<%=action.getId()%>_<%=scheme.getId()%>">
+				<td class="wfXBox showPointer" onclick="actionAdmin.deleteAction('<%=action.getId()%>')"><span class="deleteIcon"></span></td>
+				<td onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" class="showPointer">
+					<span class="<%=action.getIcon()%>"></span>
+					<%=action.getName() %>
+					<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>
+					<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.45;"><span class="saveIcon"></span></div><%} %>
+				</td>
+			</tr>
+			<%} %>
+			</tbody>
+		</table>
+		<div class="wfAddActionButtonRow">
+			<button dojoType="dijit.form.Button"
+					onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '');" iconClass="addIcon">
+				<%=LanguageUtil.get(pageContext, "Add-Workflow-Action")%>
+			</button>
+		</div>
+	</div>
+
+</div>
+
+<hr/>
 
 <div id="wfStepsBoundingBoxMain" >
 	

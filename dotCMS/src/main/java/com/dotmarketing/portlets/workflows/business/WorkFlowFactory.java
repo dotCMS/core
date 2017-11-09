@@ -75,6 +75,13 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException;
 
+	/**
+	 * Finds the Actions associated to the schema
+	 * @param scheme {@link WorkflowScheme}
+	 * @return List of WorkflowAction
+	 */
+	List<WorkflowAction> findActions(WorkflowScheme scheme) throws DotDataException;
+
 	public WorkflowAction findAction(String id) throws DotDataException;
 
 	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
@@ -146,4 +153,6 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+
 }

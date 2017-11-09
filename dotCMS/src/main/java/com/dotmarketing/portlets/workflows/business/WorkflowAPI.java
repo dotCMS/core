@@ -176,6 +176,17 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 			DotSecurityException;
 
+	/**
+	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @return List of WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowScheme scheme, User user) throws DotDataException,
+			DotSecurityException;
+
 	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
 
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;

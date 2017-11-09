@@ -95,6 +95,11 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		if(step != null)
 			cache.remove(step.getId(), ACTION_GROUP);
 	}
+
+	protected void removeActions(final WorkflowScheme scheme) {
+		if(scheme != null)
+			cache.remove(scheme.getId(), ACTION_GROUP);
+	}
 	
 	protected void remove(WorkflowTask task) {
 		cache.remove(task.getWebasset(), TASK_GROUP);
@@ -244,11 +249,31 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		
 	}
 
+	protected List<WorkflowAction> addActions(final WorkflowScheme scheme,
+											  final List<WorkflowAction> actions) {
+
+		if(scheme == null || actions==null)return null;
+
+		cache.put(scheme.getId(), actions, ACTION_GROUP);
+		return actions;
+	}
+
 	@Override
 	protected List<WorkflowAction> getActions(WorkflowStep step) {
 		if(step == null ) return null;
 		try {
 			return (List<WorkflowAction>) cache.get(step.getId(), ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
+		}
+		return null;
+	}
+
+	@Override
+	protected List<WorkflowAction> getActions(WorkflowScheme scheme) {
+		if(scheme == null ) return null;
+		try {
+			return (List<WorkflowAction>) cache.get(scheme.getId(), ACTION_GROUP);
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
 		}

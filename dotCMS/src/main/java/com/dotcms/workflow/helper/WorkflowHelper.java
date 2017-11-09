@@ -10,15 +10,19 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -94,6 +98,27 @@ public class WorkflowHelper {
 
         return role;
     } // resolveRole.
+
+    public List<WorkflowAction> findActionsByScheme(final String schemeId,
+                                                    final User user) {
+
+        List<WorkflowAction> actions = null;
+        final WorkflowScheme workflowSchemeProxy = new WorkflowScheme();
+
+        try {
+
+            workflowSchemeProxy.setId(schemeId);
+            actions =
+                    this.workflowAPI.findActions(workflowSchemeProxy, (null == user)?
+                            APILocator.getUserAPI().getSystemUser(): user);
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+
+        return actions;
+    } // findActionsByScheme.
 
     public WorkflowAction save (final WorkflowActionForm workflowActionForm) {
 
