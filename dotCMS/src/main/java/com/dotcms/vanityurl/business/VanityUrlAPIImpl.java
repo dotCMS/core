@@ -157,7 +157,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     public boolean isVanityUrl(final String url, final Host host, final long languageId) {
 
         final String uri = (url.length() > 1 && url.endsWith(URL_SUFFIX))?
-                url.substring(0, url.length() - 1):url;
+                url.substring(0, url.length() - 1).toLowerCase():url.toLowerCase();
+
         final String siteId = this.getSiteId(host);
 
         // tries first cache.
@@ -217,11 +218,16 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         final DefaultVanityUrl vanityUrl = new DefaultVanityUrl();
         vanityUrl.setContentTypeId(contentlet.getContentTypeId());
+        String uri = (contentlet.getStringProperty("uri") !=null)
+            ? contentlet.getStringProperty("uri").toLowerCase()
+                : null;
+                  
         try {
             this.contentletAPI.copyProperties(vanityUrl, contentlet.getMap());
         } catch (Exception e) {
             throw new DotStateException("Vanity Url Copy Failed", e);
         }
+        vanityUrl.setURI(uri);
         vanityUrl.setHost(contentlet.getHost());
         vanityUrl.setFolder(contentlet.getFolder());
 
@@ -299,9 +305,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     @CloseDBIfOpened
     @Override
-    public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
+    public CachedVanityUrl getLiveCachedVanityUrl(final String uriIn, final Host site,
             final long languageId, final User user) {
-
+        final String uri = uriIn.toLowerCase();
         final String siteId = this.getSiteId(site);
 
         //First lets try with the cache

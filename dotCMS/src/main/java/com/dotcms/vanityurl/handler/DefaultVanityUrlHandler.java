@@ -32,7 +32,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
         CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
                 .getLiveCachedVanityUrl(("/".equals(uri) ? CMS_HOME_PAGE
-                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
+                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri).toLowerCase(), host,
                         languageId, user);
 
         return handle(vanityUrl, response, host, languageId);
