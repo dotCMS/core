@@ -266,7 +266,7 @@
 
 			//Check bundle permissions
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			Map<String, String> bundleAssets = c.getStatusPojo() == null  || c.getStatusPojo().geAssets() ==null ? new HashMap<String, String>() : c.getStatusPojo().getAssets();
+			Map<String, String> bundleAssets = c.getStatusPojo() == null  || c.getStatusPojo().getAssets() ==null ? new HashMap<String, String>() : c.getStatusPojo().getAssets();
 
 			PermissionableProxy pp = new PermissionableProxy();
 			for(String key : bundleAssets.keySet()) {
