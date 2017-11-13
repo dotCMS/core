@@ -36,7 +36,7 @@ public interface WorkflowAPI {
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
-	/* BEGIN TODO check if is required*/
+	/* BEGIN - TODO check if is required*/
 	/**
 	 * This method will get the current workflow step of the contentlet.
 	 * If the contentlet doesn't have a workflow step associated, then it will
@@ -48,7 +48,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
-	/* END TODO check if is required*/
+	/* END - TODO check if is required*/
 
 	/**
 	 * This method will get the current workflow step of the contentlet.
@@ -60,6 +60,14 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Check if the schemeId pass exist n the list of workflow scheme.
+	 * @param schemeId WorkflowScheme ID to validate
+	 * @param schemes List of WorkflowScheme to compare
+	 * @return true if the scheme Id exist false if not
+	 */
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes);
 
 	/**
 	 * Finds a workflow by id
@@ -196,7 +204,7 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
-	/* BEGIN TODO check if is required*/
+	/* BEGIN - TODO check if is required*/
 	/**
 	 * Find the list of Workflow Actions available for the current user on the specified workflow step
 	 * @param step The current step
@@ -207,7 +215,7 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 			DotSecurityException;
-	/* END TODO check if is required*/
+	/* END - TODO check if is required*/
 
 	/**
 	 * Find the list of Workflow Actions available for the current user ont the list of steps

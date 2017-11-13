@@ -22,9 +22,9 @@ public abstract class WorkflowCache implements Cachable{
 
 	public abstract WorkflowScheme getScheme(String key);
 	abstract protected WorkflowStep getStep(String key);
-	abstract protected WorkflowStep getStep(Contentlet con);
+	abstract protected List<WorkflowStep> getSteps(Contentlet con);
 	abstract protected WorkflowTask getTask(Contentlet key);
-	abstract protected WorkflowStep addStep(Contentlet contentlet, WorkflowStep step);
+	abstract protected List<WorkflowStep> addSteps(Contentlet contentlet, List<WorkflowStep> steps);
 	abstract protected WorkflowStep addStep(WorkflowStep step) ;
 	abstract protected WorkflowTask addTask(WorkflowTask step) ;
 	abstract protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task);

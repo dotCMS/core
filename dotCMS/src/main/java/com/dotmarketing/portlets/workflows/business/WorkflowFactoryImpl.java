@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -486,18 +487,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
-	/* BEGIN TODO need be reviewed if is going to be used */
+	/* BEGIN - TODO need be reviewed if is going to be used */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
-		WorkflowStep step = cache.getStep(contentlet);
-		/* BEGIN - TODO this part need to be done in a different way */
-		final WorkflowScheme scheme = this.findSchemeForStruct(contentlet.getStructureInode()).get(0);
-		/* END - TODO this part need to be done in a different way */
-		if ((step == null) || !step.getSchemeId().equals(scheme.getId())) {
+		List<WorkflowStep> steps = cache.getSteps(contentlet);
+        WorkflowStep step =null;
+        if(steps != null && steps.size() == 1){
+            step = steps.get(0);
+        }
+		final List<WorkflowScheme> schemes = this.findSchemeForStruct(contentlet.getStructureInode());
+		if ((step == null) || !existSchemeIdOnSchemesList(step.getSchemeId(),schemes)) {
 			try {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
 				step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+                steps.add(step);
 			} catch (final Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
@@ -505,44 +509,44 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (step == null) {
 				try {
 					/* BEGIN - TODO this part need to be done in a different way, need to use default action */
-					step = this.findSteps(scheme).get(0);
+					step = this.findSteps(schemes.get(0)).get(0);
 					/* END - TODO this part need to be done in a different way */
 				} catch (final Exception e) {
 					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
 				}
 			}
 
-			// if the existing task belongs to another workflow schema, update
-			// to the latest schema
-			/* BEGIN - TODO this part need to be done in a different way */
-			/*if (!step.getSchemeId().equals(scheme.getId())) {
-				step = this.findSteps(scheme).get(0);
-				final DotConnect db = new DotConnect();
-				db.setSQL(sql.RESET_CONTENTLET_STEPS);
-				db.addParam(step.getId());
-				db.addParam(contentlet.getIdentifier());
-				db.loadResult();
+            // if the existing task belongs to another workflow schema, then blank
+            // the workflow task status
+            if (steps != null  &&  steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
+                final DotConnect db = new DotConnect();
+                db.setSQL(sql.RESET_CONTENTLET_STEPS);
+                db.addParam(StringPool.BLANK);
+                db.addParam(contentlet.getIdentifier());
+                db.loadResult();
+                steps = new ArrayList<>();
+            }
 
-			}*/
-			/* END - TODO this part need to be done in a different way */
-			cache.addStep(contentlet, step);
+			cache.addSteps(contentlet, steps);
 		}
 		return step;
 	}
-	/* END TODO need be reviewed if is going to be used */
+	/* END - TODO need be reviewed if is going to be used */
+
+	//Modify step cache to aceept a list of steps
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
 		List<WorkflowStep> steps = new ArrayList<>();
-		WorkflowStep step = cache.getStep(contentlet);
+        List<WorkflowStep> currentSteps = cache.getSteps(contentlet);
 		final List<WorkflowScheme> schemes = this.findSchemeForStruct(contentlet.getContentTypeId());
-		if (step == null) {
+		if (currentSteps == null) {
+            WorkflowStep step = null;
 			try {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
-				step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+                step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+                steps.add(step);
 
-				cache.addStep(contentlet, step);
-				steps.add(step);
 			} catch (final Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
@@ -553,6 +557,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 						step = this.findSteps(scheme).get(0);
 						steps.add(step);
 					}
+					//Add to cache list of steps
 				} catch (final Exception e) {
 					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
 				}
@@ -560,10 +565,34 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 
 		}else {
-			steps.add(step);
+			steps.addAll(currentSteps);
 		}
+        // if the existing task belongs to another workflow schema, then blank
+        // the workflow task status
+		if (steps != null  && steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
+		    final DotConnect db = new DotConnect();
+		    db.setSQL(sql.RESET_CONTENTLET_STEPS);
+            db.addParam(StringPool.BLANK);
+            db.addParam(contentlet.getIdentifier());
+            db.loadResult();
+            steps = new ArrayList<>();
+		}
+
+        cache.addSteps(contentlet, steps);
+
 		return steps;
 	}
+
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
+	    boolean exist = false;
+	    for(WorkflowScheme scheme : schemes){
+	        if(schemeId.equals(scheme.getId())){
+	            exist = true;
+	            break;
+            }
+        }
+        return exist;
+    }
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
 		final DotConnect db = new DotConnect();

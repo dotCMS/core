@@ -160,15 +160,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
 		return workFlowFactory.findTaskByContentlet(contentlet);
 	}
-    /* BEGIN TODO check if is required*/
+    /* BEGIN - TODO check if is required*/
 	@CloseDBIfOpened
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException{
 		return workFlowFactory.findStepByContentlet(contentlet);
 	}
-	/* END TODO check if is required*/
+	/* END - TODO check if is required*/
 	@CloseDBIfOpened
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
 		return workFlowFactory.findStepsByContentlet(contentlet);
+	}
+
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
+		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
 
 	public WorkflowTask findTaskById(String id) throws DotDataException {

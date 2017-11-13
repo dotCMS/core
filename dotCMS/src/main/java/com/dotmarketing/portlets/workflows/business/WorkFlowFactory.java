@@ -46,7 +46,7 @@ public interface WorkFlowFactory {
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException;
 
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException;
-	/* BEGIN TODO check if is required*/
+	/* BEGIN - TODO check if is required*/
 
 	/**
 	 * This method will get the current workflow step of the contentlet.
@@ -59,7 +59,7 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
-    /* END TODO check if is required*/
+    /* END - TODO check if is required*/
 
 	/**
 	 * This method will get the current workflow step of the contentlet.
@@ -71,6 +71,14 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Check if the schemeId pass exist n the list of workflow scheme.
+	 * @param schemeId WorkflowScheme ID to validate
+	 * @param schemes List of WorkflowScheme to compare
+	 * @return true if the scheme Id exist false if not
+	 */
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes);
 
 	public void saveComment(WorkflowComment comment) throws DotDataException;
 
