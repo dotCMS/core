@@ -1,0 +1,28 @@
+@import "mixins";
+@import "variables";
+
+:host {
+    display: block;
+    position: relative;
+    z-index: 1;
+
+    ::ng-deep {
+        .ui-toolbar {
+            box-shadow: $md-shadow-1;
+            height: 60px;
+            margin-bottom: 2px;
+        }
+
+        .ui-toolbar-group-right {
+            .ui-button {
+                margin-left: $basic-padding;
+            }
+        }
+    }
+}
+
+.edit-page-toolbar__page-title {
+    color: $body-font-color;
+    font-size: $font-size-large;
+    font-weight: bold;
+}

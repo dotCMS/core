@@ -1,16 +1,24 @@
 .ui-toolbar {
-  align-items: center;
-  background-color: $toolbar-background;
-  color: $toolbar-color;
-  display: flex;
-  height: $toolbar-height;
-  padding: 0 $basic-padding * 2;
+    display: flex;
+    padding: 0 $basic-padding * 2;
 
-  &.ui-corner-all {
-    border-radius: 0;
-  }
+    &.ui-corner-all {
+        border-radius: 0;
+    }
+}
 
-  .btn {
-    color: $toolbar-background;
-  }
+
+.ui-toolbar-group-left,
+.ui-toolbar-group-right {
+    align-items: center;
+    display: flex;
+    flex: 1;
+}
+
+.ui-toolbar-group-left {
+    justify-content: flex-start;
+}
+
+.ui-toolbar-group-right {
+    justify-content: flex-end;
 }

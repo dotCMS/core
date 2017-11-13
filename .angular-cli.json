@@ -14,7 +14,7 @@
             "test": "test.ts",
             "tsconfig": "tsconfig.app.json",
             "testTsconfig": "tsconfig.spec.json",
-            "prefix": "app",
+            "prefix": "dot",
             "styles": ["styles.scss"],
             "stylePreprocessorOptions": {
                 "includePaths": [

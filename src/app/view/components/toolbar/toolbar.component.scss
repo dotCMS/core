@@ -5,7 +5,18 @@
     z-index: 1004; // Menu and dropdown options in primeng use 1003.
 
     .ui-toolbar {
+        background-color: $toolbar-background;
+        color: $toolbar-color;
+        height: $toolbar-height;
         padding-left: 0;
+    }
+}
+
+.toolbar__actions {
+    display: flex;
+
+    & > * {
+        margin: 0 $basic-padding / 2;
     }
 }
 
@@ -41,27 +52,10 @@
     }
 }
 
-.toolbar__host,
-.toolbar__secondary-actions {
+.toolbar__host {
     align-items: center;
     display: flex;
     flex-direction: row;
-}
-
-.toolbar__inner {
-    display: flex;
-    flex-grow: 1;
-    justify-content: space-between;
-}
-
-.toolbar__main-actions {
-    display: flex;
-}
-
-.toolbar__secondary-actions {
-    toolbar-user {
-        margin: 0 $basic-padding;
-    }
 }
 
 .toolbar__site-selector {
