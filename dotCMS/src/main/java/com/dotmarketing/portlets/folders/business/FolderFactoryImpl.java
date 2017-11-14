@@ -263,6 +263,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
+					}else{
+						folder = new Folder();
 					}
 
 					// if it is found add it to folder cache

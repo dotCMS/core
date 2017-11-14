@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
  */
 public class ConvertToPOJOUtil {
 
+    public static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     /**
      * Creates new instances of T given a List<Map> of DB results
      * @param results
@@ -54,7 +56,6 @@ public class ConvertToPOJOUtil {
             return (List<T>) convertDotConnectMapToTemplate(results);
         }
 
-        DateFormat df;
         List<T> ret;
         Map<String, String> properties;
 
@@ -63,8 +64,6 @@ public class ConvertToPOJOUtil {
         if(results == null || results.size()==0){
             return ret;
         }
-
-        df = new SimpleDateFormat("yyyy-MM-dd");
 
         for (Map<String, String> map : results) {
             Constructor<?> ctor = classToUse.getConstructor();
@@ -123,11 +122,8 @@ public class ConvertToPOJOUtil {
     public static List<Link> convertDotConnectMapToLink(List<Map<String,String>> results)
             throws ParseException {
 
-        DateFormat df;
         List<Link> ret;
 
-
-        df  = new SimpleDateFormat("yyyy-MM-dd");
         ret = new ArrayList<>();
 
         if(results != null && !results.isEmpty()){
@@ -180,7 +176,8 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Identifier> convertDotConnectMapToIdentifier(List<Map<String,String>> results){
+    public static List<Identifier> convertDotConnectMapToIdentifier(List<Map<String,String>> results)
+            throws ParseException {
         List<Identifier> ret = new ArrayList<>();
         if(results == null || results.size()==0){
             return ret;
@@ -193,6 +190,15 @@ public class ConvertToPOJOUtil {
             i.setHostId(map.get("host_inode"));
             i.setId(map.get("id"));
             i.setParentPath(map.get("parent_path"));
+
+            if (map.get("syspublish_date") != null && !map.get("syspublish_date").isEmpty()){
+                i.setSysPublishDate(df.parse(map.get("syspublish_date") ));
+            }
+
+            if (map.get("sysexpire_date") != null && !map.get("sysexpire_date").isEmpty()){
+                i.setSysExpireDate(df.parse(map.get("sysexpire_date") ));
+            }
+
             ret.add(i);
         }
         return ret;
@@ -202,10 +208,8 @@ public class ConvertToPOJOUtil {
             throws ParseException {
 
         Folder folder;
-        DateFormat df;
         List<Folder> ret;
 
-        df  = new SimpleDateFormat("yyyy-MM-dd");
         ret = new ArrayList<>();
 
         if(results != null && !results.isEmpty()){
@@ -242,10 +246,8 @@ public class ConvertToPOJOUtil {
     public static List<Container> convertDotConnectMapToContainer(List<Map<String,String>> results)
             throws ParseException {
         Container container;
-        DateFormat df;
         List<Container> ret;
 
-        df  = new SimpleDateFormat("yyyy-MM-dd");
         ret = new ArrayList<>();
 
         if(results != null && !results.isEmpty()){
@@ -302,10 +304,8 @@ public class ConvertToPOJOUtil {
     public static List<Template> convertDotConnectMapToTemplate(List<Map<String,String>> results)
             throws ParseException {
         Template template;
-        DateFormat df;
         List<Template> ret;
 
-        df  = new SimpleDateFormat("yyyy-MM-dd");
         ret = new ArrayList<>();
 
         if(results != null && !results.isEmpty()){

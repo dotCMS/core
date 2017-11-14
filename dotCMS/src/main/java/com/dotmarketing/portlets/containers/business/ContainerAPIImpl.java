@@ -259,6 +259,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public List<Container> getContainersInTemplate(Template parentTemplate)
 			throws DotStateException, DotDataException, DotSecurityException {
 
+		List<Identifier> identifiers = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(
 				"select template_containers_2_.* from template_containers, identifier template_containers_1_,identifier template_containers_2_ "
@@ -268,9 +269,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 						"and template_containers.template_id = ? ");
 		dc.addParam(parentTemplate.getIdentifier());
 
-		List<Identifier> identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		try{
+			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		}catch(ParseException e){
+			throw new DotDataException(e);
+		}
 
-		List<Container> containers = new ArrayList<Container>();
+		List<Container> containers = new ArrayList<>();
 		for (Identifier id : identifiers) {
 			Container cont = (Container) APILocator.getVersionableAPI()
 					.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);

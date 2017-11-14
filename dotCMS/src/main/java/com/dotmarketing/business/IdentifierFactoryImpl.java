@@ -28,6 +28,7 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
 
-		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 	}
 
 	@Override
@@ -150,7 +155,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetName);
 		dc.addParam(siteId);
 
-		List<Identifier> results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 
 		if (results != null && results.size() > 0){
 			identifier = results.get(0);
@@ -176,8 +186,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
-        return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
-    }
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
+	}
 
 	@Override
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
@@ -189,7 +203,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier where id = ?");
 		dc.addParam(identifier);
 
-		List<Identifier> results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 
 		if (results != null && results.size() > 0){
 			return  results.get(0);
@@ -376,8 +395,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier");
 
-		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
-
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 	}
 
 	@Override

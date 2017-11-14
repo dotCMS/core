@@ -92,14 +92,7 @@ public class HostAPITest {
         	Logger.error(HostAPITest.class, e.getMessage());
         }
 
-        Thread.sleep(600); // wait a bit for the index
-        
-        host = APILocator.getHostAPI().find(hostIdent, user, false);
-        
-        if(host!=null){
-        	APILocator.getHostAPI().delete(host, user, false);
-        	Thread.sleep(10000);
-        }
+        Thread.sleep(6000); // wait a bit for the index
         
         host = APILocator.getHostAPI().find(hostIdent, user, false);
         

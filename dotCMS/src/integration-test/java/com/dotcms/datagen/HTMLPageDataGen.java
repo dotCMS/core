@@ -65,6 +65,13 @@ public class HTMLPageDataGen extends ContentletDataGen {
     public HTMLPageDataGen(Folder folder, Template template) {
         this();
         this.folder = folder;
+        try {
+            this.host = APILocator.getHostAPI().find(folder.getHostId(), user , false);
+        } catch (DotDataException e) {
+            e.printStackTrace();
+        } catch (DotSecurityException e) {
+            e.printStackTrace();
+        }
         this.template = template;
     }
 
