@@ -215,6 +215,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04215MySQLMissingConstraints.class);
 		ret.add(Task04220RemoveDeleteInactiveClusterServersJob.class);
 		ret.add(Task04225UpdateSystemFolderIdentifier.class);
+		ret.add(Task04230FixVanityURLInconsistencies.class);
 
 		return ret;
 	}
