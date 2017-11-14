@@ -11,7 +11,7 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
     private static final String UPDATE_QUERY = "SELECT contentlet.text2, identifier.host_inode"
             + " FROM contentlet, identifier"
             + " WHERE contentlet.identifier = identifier.id"
-            + " AND contentlet.structure_inode IN (select inode from structure where structuretype=7)"
+            + " AND EXISTS (select 1 from structure where structuretype=7 AND structure.inode = contentlet.structure_inode)"
             + " AND contentlet.text2 != identifier.host_inode;";
 
     @Override
