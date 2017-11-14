@@ -200,7 +200,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             dc.addParam(uuid); // identifier
             dc.addParam("/"); // parent_path
             dc.addParam("content." + inode); // asset_name
-            dc.addParam(Host.SYSTEM_HOST); // host_inode
+            dc.addParam(site); // host_inode
             dc.addParam("contentlet"); // asset_type
             dc.loadResult();
 
