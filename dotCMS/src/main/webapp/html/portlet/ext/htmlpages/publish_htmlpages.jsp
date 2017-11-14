@@ -120,15 +120,13 @@ function cancel() {
                     <%=title%>
                 </td>
                 <td width="30%">
-                    <% /* BEGIN - TODO this part need to be done in a different way */
-                        WorkflowScheme scheme = null;
+                    <%  WorkflowScheme scheme = null;
                         List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(con);
                         if(null != steps && !steps.isEmpty() && steps.size() == 1){
                             scheme = APILocator.getWorkflowAPI().findScheme(steps.get(0).getSchemeId());
                         }
 
                         if(con != null && null != scheme && scheme.isMandatory()){
-                       /* END - TODO this part need to be done in a different way */
                     %>
                         <span style="color:red"><%= LanguageUtil.get(pageContext, "Cannot-Publish-In-A-Workflow") %></span>
                     

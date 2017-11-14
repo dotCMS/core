@@ -15,10 +15,7 @@ boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocat
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
-/* BEGIN - TODO this part need to be done in a different way */
 List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
-
-/* end - TODO this part need to be done in a different way */
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet); 
 
 List<WorkflowStep> wfSteps = null;
@@ -30,12 +27,10 @@ try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user); 
 	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
-	/* BEGIN - TODO this part need to be done in a different way */
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
 		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
 	}
-	/* END - TODO this part need to be done in a different way */
 }
 catch(Exception e){
 	wfActions = new ArrayList();

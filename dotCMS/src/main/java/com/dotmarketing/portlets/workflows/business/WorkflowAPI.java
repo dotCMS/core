@@ -190,7 +190,6 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
-	/* BEGIN - TODO check if is required*/
 	/**
 	 * Find the list of Workflow Actions available for the current user on the specified workflow step
 	 * @param step The current step
@@ -201,7 +200,6 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 			DotSecurityException;
-	/* END - TODO check if is required*/
 
 	/**
 	 * Find the list of Workflow Actions available for the current user ont the list of steps

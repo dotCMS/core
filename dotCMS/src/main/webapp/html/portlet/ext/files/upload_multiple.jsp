@@ -21,7 +21,6 @@ String selectedStructure = (request.getParameter("selectedStructure") != null &&
 		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
-/* BEGIN - TODO this part need to be done in a different way */
 List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(s);
 boolean isWfMandatory = false;
 for(WorkflowScheme scheme : schemes){
@@ -30,7 +29,6 @@ for(WorkflowScheme scheme : schemes){
         break;
 	}
 }
-/* END - TODO this part need to be done in a different way */
 
 boolean hasExplicitRequiredFields = false;//GIT-191
 List<Field> fields = FieldsCache.getFieldsByStructureInode(selectedStructure);

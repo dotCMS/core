@@ -84,7 +84,6 @@ public class BrowserAPI {
             
             try {
                 if (contentlet != null) {
-                	/* BEGIN - TODO  check if this need to be done on a diferent way */
                 	List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(
 							contentlet);
                 	if(null != steps && !steps.isEmpty() && steps.size() == 1) {
@@ -94,7 +93,6 @@ public class BrowserAPI {
 						wfActions = APILocator.getWorkflowAPI()
 								.findAvailableActions(contentlet, user);
 					}
-					/* END - TODO  check if this need to be done on a diferent way */
                 }
             } catch (Exception e) {
                 Logger.error(this, "Could not load workflow actions : ", e);

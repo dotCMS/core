@@ -965,9 +965,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
-
-		/* BEGIN - TODO this part need to be done in a different way */
-		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure()).get(0);
+		WorkflowScheme scheme = null;
+		List<WorkflowScheme> schemes = findSchemeForStruct(contentlet.getStructure());
+		if(null !=  schemes && schemes.size() ==1){
+			scheme =  schemes.get(0);
+		}else{
+			return null;
+		}
 		/* END - TODO this part need to be done in a different way */
 		WorkflowStep entryStep = null;
 		List<WorkflowStep> wfSteps = findSteps(scheme);

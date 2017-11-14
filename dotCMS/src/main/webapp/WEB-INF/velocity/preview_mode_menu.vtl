@@ -24,19 +24,15 @@
 #if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
     #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
 #end
-## BEGIN - TODO this part need to be done in a different way
 #set($wfSchemes = $workflowtool.findSchemeForStruct($dotPageContent.structure))
 #set($wfScheme = '')
-## END - TODO this part need to be done in a different way
 
 #set($wfSteps = $workflowtool.findStepsByContentlet($dotPageContent.contentObject))
 
-## BEGIN - TODO this part need to be done in a different way */
 #if($wfSteps && $wfSteps.size() == 1)
     #set($wfStep = $wfSteps.get(0))
     #set($wfScheme = $workflowtool.findScheme($wfStep.getSchemeId()))
 #end
-##END - TODO this part need to be done in a different way
 
 #set($wfActions = $workflowtool.findActions($wfSteps, $backendUser))
 #set($isLocked = $contents.isLocked($dotPageContent.inode))

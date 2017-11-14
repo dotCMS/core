@@ -31,7 +31,7 @@
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
 	Role assignedTo 	= APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
-/* BEGIN - TODO this part need to be done in a different way */
+
 	List<WorkflowStep> steps 	= APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	WorkflowStep step = null;
     WorkflowScheme scheme = null;
@@ -39,7 +39,7 @@
 		step = steps.get(0);
         scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
 	}
-/* END - TODO this part need to be done in a different way */
+
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
 
