@@ -182,7 +182,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset from ");
+		query.append("select asset.* from ");
 		query.append(Type.CONTAINERS.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.CONTAINERS.getVersionTableName());
