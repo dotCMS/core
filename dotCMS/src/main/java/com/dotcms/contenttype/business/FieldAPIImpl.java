@@ -75,16 +75,16 @@ public class FieldAPIImpl implements FieldAPI {
 
 	    		if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
-                        fieldFactory.moveSortOrderForward(field.sortOrder(), oldField.sortOrder());
+                        fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
                     } else {
-                        fieldFactory.moveSortOrderBackward(oldField.sortOrder(), field.sortOrder());
+                        fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder(), field.sortOrder());
                     }
                 }
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }else {
-            fieldFactory.moveSortOrderForward(field.sortOrder());
+            fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
 		Field result = fieldFactory.save(field);
@@ -176,7 +176,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
 	      }
 
-          fieldFactory.moveSortOrderBackward(oldField.sortOrder());
+          fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
           fieldFactory.delete(field);
 
           ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
