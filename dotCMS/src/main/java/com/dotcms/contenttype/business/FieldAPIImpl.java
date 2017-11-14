@@ -72,20 +72,10 @@ public class FieldAPIImpl implements FieldAPI {
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
-
-	    		if (oldField.sortOrder() != field.sortOrder()){
-	    		    if (oldField.sortOrder() > field.sortOrder()) {
-                        fieldFactory.moveSortOrderForward(field.sortOrder(), oldField.sortOrder());
-                    } else {
-                        fieldFactory.moveSortOrderBackward(oldField.sortOrder(), field.sortOrder());
-                    }
-                }
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
-	    }else {
-            fieldFactory.moveSortOrderForward(field.sortOrder());
-        }
+	    }
 
 		Field result = fieldFactory.save(field);
 		//update Content Type mod_date to detect the changes done on the field
@@ -176,13 +166,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
 	      }
 
-          fieldFactory.moveSortOrderBackward(oldField.sortOrder());
-          fieldFactory.delete(field);
-
-          ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
-                  String.format("User %s/%s eleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
-                          field.name(), structure.getName()));
-
+	  fieldFactory.delete(field);
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);
 
