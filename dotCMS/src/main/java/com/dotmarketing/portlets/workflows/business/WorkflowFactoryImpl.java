@@ -487,53 +487,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
-	/* BEGIN - TODO need be reviewed if is going to be used */
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
-		List<WorkflowStep> steps = cache.getSteps(contentlet);
-        WorkflowStep step =null;
-        if(steps != null && steps.size() == 1){
-            step = steps.get(0);
-        }
-		final List<WorkflowScheme> schemes = this.findSchemeForStruct(contentlet.getStructureInode());
-		if ((step == null) || !existSchemeIdOnSchemesList(step.getSchemeId(),schemes)) {
-			try {
-				final DotConnect db = new DotConnect();
-				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
-				db.addParam(contentlet.getIdentifier());
-				step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
-                steps.add(step);
-			} catch (final Exception e) {
-				Logger.debug(this.getClass(), e.getMessage());
-			}
-
-			if (step == null) {
-				try {
-					/* BEGIN - TODO this part need to be done in a different way, need to use default action */
-					step = this.findSteps(schemes.get(0)).get(0);
-					/* END - TODO this part need to be done in a different way */
-				} catch (final Exception e) {
-					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
-				}
-			}
-
-            // if the existing task belongs to another workflow schema, then blank
-            // the workflow task status
-            if (steps != null  &&  steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
-                final DotConnect db = new DotConnect();
-                db.setSQL(sql.RESET_CONTENTLET_STEPS);
-                db.addParam(StringPool.BLANK);
-                db.addParam(contentlet.getIdentifier());
-                db.loadResult();
-                steps = new ArrayList<>();
-            }
-
-			cache.addSteps(contentlet, steps);
-		}
-		return step;
-	}
-	/* END - TODO need be reviewed if is going to be used */
-
-	//Modify step cache to aceept a list of steps
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
 		List<WorkflowStep> steps = new ArrayList<>();
         List<WorkflowStep> currentSteps = cache.getSteps(contentlet);

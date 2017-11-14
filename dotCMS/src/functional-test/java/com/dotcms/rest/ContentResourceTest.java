@@ -629,7 +629,9 @@ public class ContentResourceTest {
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
         // must be in the first step
-        Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
+        List<WorkflowStep> contentSteps = APILocator.getWorkflowAPI().findStepsByContentlet(cont);
+        assertTrue(contentSteps.size() == 1);
+        Assert.assertEquals(step1.getId(), contentSteps.get(0).getId());
 
         boolean assigned=false;
 

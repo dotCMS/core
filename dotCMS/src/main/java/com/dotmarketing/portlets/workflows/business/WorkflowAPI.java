@@ -36,20 +36,6 @@ public interface WorkflowAPI {
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
-	/* BEGIN - TODO check if is required*/
-	/**
-	 * This method will get the current workflow step of the contentlet.
-	 * If the contentlet doesn't have a workflow step associated, then it will
-	 * bring the step associated to the contentlet Content Type default workflow
-	 * action.
-	 *
-	 * @param contentlet The contentlet to check
-	 * @return The current contentlet workflow step
-	 * @throws DotDataException
-	 */
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
-	/* END - TODO check if is required*/
-
 	/**
 	 * This method will get the current workflow step of the contentlet.
 	 * If the contentlet doesn't have a workflow step associated, then it will

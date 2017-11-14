@@ -435,7 +435,9 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
-		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		List<WorkflowStep> contentSteps = workflowAPI.findStepsByContentlet(contentAsset2);
+		assertTrue(contentSteps.size() == 1);
+		WorkflowStep  currentStep = contentSteps.get(0);
 
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
@@ -491,7 +493,10 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
 		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
 
-		WorkflowStep step = workflowAPI.findStepByContentlet(contentAsset2);
+		contentSteps = workflowAPI.findStepsByContentlet(contentAsset2);
+		assertTrue(contentSteps.size() == 1);
+		WorkflowStep  step = contentSteps.get(0);
+
 		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
 		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
 
@@ -555,7 +560,9 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
 			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
 
-			step = workflowAPI.findStepByContentlet(content);
+			contentSteps = workflowAPI.findStepsByContentlet(content);
+			assertTrue(contentSteps.size() == 1);
+			step = contentSteps.get(0);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
 			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
 

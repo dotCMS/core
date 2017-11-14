@@ -107,7 +107,7 @@
 	try{
 		wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 		/* BEGIN - TODO this part need to be done in a different way */
-		if(wfSteps.size() == 1) {
+		if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 			wfStep = wfSteps.get(0);
 			scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
 		}

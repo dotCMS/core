@@ -184,7 +184,9 @@ public class WorkflowAPITest {
 		contentlet1.setStringProperty("wfActionAssign", role.getId());
 		wapi.fireWorkflowNoCheckin(contentlet1, systemUser);
 
-		WorkflowStep  currentStep = wapi.findStepByContentlet(contentlet1);
+		List<WorkflowStep> contentSteps = wapi.findStepsByContentlet(contentlet1);
+		Assert.assertTrue(contentSteps.size() == 1);
+		WorkflowStep  currentStep = contentSteps.get(0);
 		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 
 		/*
@@ -222,7 +224,9 @@ public class WorkflowAPITest {
 			 * </br> <b> Step : 'Publish' is being referenced by: X Contentlet(s) </br></br>
 			 */
 		}
-		currentStep = wapi.findStepByContentlet(contentlet1);
+		contentSteps = wapi.findStepsByContentlet(contentlet1);
+		Assert.assertTrue(contentSteps.size() == 1);
+		currentStep = contentSteps.get(0);
 		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 		
 		/*

@@ -84,12 +84,17 @@ public class BrowserAPI {
             
             try {
                 if (contentlet != null) {
-                    wfStep = APILocator.getWorkflowAPI().findStepByContentlet(
-                            contentlet);
-                    wfScheme = APILocator.getWorkflowAPI().findScheme(
-                            wfStep.getSchemeId());
-                    wfActions = APILocator.getWorkflowAPI()
-                            .findAvailableActions(contentlet, user);
+                	/* BEGIN - TODO  check if this need to be done on a diferent way */
+                	List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(
+							contentlet);
+                	if(null != steps && !steps.isEmpty() && steps.size() == 1) {
+						wfStep = steps.get(0);
+						wfScheme = APILocator.getWorkflowAPI().findScheme(
+								wfStep.getSchemeId());
+						wfActions = APILocator.getWorkflowAPI()
+								.findAvailableActions(contentlet, user);
+					}
+					/* END - TODO  check if this need to be done on a diferent way */
                 }
             } catch (Exception e) {
                 Logger.error(this, "Could not load workflow actions : ", e);
@@ -325,8 +330,8 @@ public class BrowserAPI {
 					}
 					pageMap.put("isContentlet", page instanceof Contentlet);
 					
-					if(wfdata!=null) {
-    		            pageMap.put("wfMandatoryWorkflow", wfdata.wfScheme.isMandatory());
+					if(wfdata!=null ) {
+    		            pageMap.put("wfMandatoryWorkflow", null != wfdata.wfScheme?wfdata.wfScheme.isMandatory():false);
     		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
     	                pageMap.put("contentEditable", wfdata.contentEditable);
 					}

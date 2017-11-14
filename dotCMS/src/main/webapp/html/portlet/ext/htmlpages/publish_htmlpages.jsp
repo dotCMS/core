@@ -9,6 +9,8 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.util.ArrayList"%>
 <%@ page import="com.dotmarketing.util.*" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.WorkflowStep" %>
 <%
     String referer = request.getParameter("referer");
     String[] publishInodes = request.getParameterValues("publishInode");
@@ -119,7 +121,13 @@ function cancel() {
                 </td>
                 <td width="30%">
                     <% /* BEGIN - TODO this part need to be done in a different way */
-                        if(con != null && APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStepByContentlet(con).getSchemeId()).isMandatory()){
+                        WorkflowScheme scheme = null;
+                        List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(con);
+                        if(null != steps && !steps.isEmpty() && steps.size() == 1){
+                            scheme = APILocator.getWorkflowAPI().findScheme(steps.get(0).getSchemeId());
+                        }
+
+                        if(con != null && null != scheme && scheme.isMandatory()){
                        /* END - TODO this part need to be done in a different way */
                     %>
                         <span style="color:red"><%= LanguageUtil.get(pageContext, "Cannot-Publish-In-A-Workflow") %></span>

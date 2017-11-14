@@ -47,8 +47,8 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findTaskByContentlet(contentlet);
 	}
 
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
-		return wapi.findStepByContentlet(contentlet);
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+		return wapi.findStepsByContentlet(contentlet);
 	}
 
 	public WorkflowTask findTaskById(String id) throws DotDataException {

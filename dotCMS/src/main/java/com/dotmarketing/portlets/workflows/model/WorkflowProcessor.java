@@ -90,7 +90,7 @@ public class WorkflowProcessor {
 			/* BEGIN - TODO this part need to be done in a different way */
 			WorkflowStep step = null;
 			List<WorkflowStep> steps = getWorkflowAPI().findStepsByContentlet(contentlet);
-			if(steps.size() == 1) {
+			if(null != steps && !steps.isEmpty() && steps.size() == 1) {
 				step = steps.get(0);
 				scheme = getWorkflowAPI().findScheme(step.getSchemeId());
 			}

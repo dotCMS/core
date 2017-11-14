@@ -32,8 +32,13 @@
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
 	Role assignedTo 	= APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
 /* BEGIN - TODO this part need to be done in a different way */
-	WorkflowStep step 	= APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
-	WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStepByContentlet(contentlet).getSchemeId());
+	List<WorkflowStep> steps 	= APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
+	WorkflowStep step = null;
+    WorkflowScheme scheme = null;
+	if(null != steps && !steps.isEmpty() && steps.size() ==1){
+		step = steps.get(0);
+        scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
+	}
 /* END - TODO this part need to be done in a different way */
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
@@ -240,7 +245,7 @@
 	                <%--Start workflow tasks --%>
 					<%boolean hasAction = false; %>
 					<%if(canEdit) {%>
-						<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+						<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 							<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: doEdit">
 								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Content")) %>
 							</div>
