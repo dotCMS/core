@@ -84,7 +84,6 @@ public class ContentResource {
     private static final String REFERER = "referer";
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
-    private static final int PAIR = 2;
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
@@ -490,7 +489,7 @@ public class ContentResource {
 
             //Lucene parameters are separated by blankSpace
             int startIndex = luceneQuery.indexOf(stInodeKey) + stInodeKey.length();
-            int endIndex = luceneQuery.indexOf(" ", startIndex);
+            int endIndex = luceneQuery.indexOf(' ', startIndex);
             String inode = (endIndex < 0) ? luceneQuery.substring(startIndex) : luceneQuery.substring(startIndex, endIndex);
 
             ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
@@ -501,30 +500,6 @@ public class ContentResource {
             }
         }
 
-        /*
-        //Lucene parameters are separated by blankSpace
-        String [] params = luceneQuery.split(" ");
-        for (String paramStr : params) {
-
-            if (paramStr.contains(Contentlet.STRUCTURE_INODE_KEY + ":")) {
-                //Parameter is in the FORMAT  stInode:inode
-                String[] param = paramStr.split(":"); //Param and value pair separated by :
-                if (param.length == 2) {
-                    String inode = param[1];
-
-                    if (UtilMethods.isSet(inode)) {
-                        ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
-                        if (type != null && InodeUtils.isSet(type.inode())) {
-                            //Replace to FORMAT   ContentType:variableName
-                            luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
-                            luceneQuery = luceneQuery.replace(inode, type.variable());
-                            break;
-                        }
-                    }
-                }
-            }
-
-        }*/
         return luceneQuery;
     }
 
