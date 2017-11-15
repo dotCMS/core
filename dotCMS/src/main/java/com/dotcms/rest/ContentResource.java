@@ -1182,10 +1182,16 @@ public class ContentResource {
             throws DotDataException, DotSecurityException {
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
         if (!UtilMethods.isSet(stInode)) {
-            String stName = (String) map.get("stName");
+            String stName = (String) map.get(Contentlet.STRUCTURE_NAME_KEY);
             if (UtilMethods.isSet(stName)) {
                 stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName)
                         .getInode();
+            } else {
+                String contentType = (String) map.get(Contentlet.CONTENT_TYPE_KEY);
+                if (UtilMethods.isSet(contentType)) {
+                    stInode = CacheLocator.getContentTypeCache()
+                            .getStructureByVelocityVarName(contentType).getInode();
+                }
             }
         }
         if (UtilMethods.isSet(stInode)) {
