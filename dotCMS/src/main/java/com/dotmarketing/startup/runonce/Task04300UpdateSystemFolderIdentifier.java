@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class Task04225UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
+public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
 
     public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.SYSTEM_FOLDER_ID;
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
