@@ -15,6 +15,9 @@ public class WorkflowActionForm extends Validated {
     @NotNull
     private final String        schemeId;
 
+    // you can send an optional stepId for a new Action when you want to associated the action to the step in the same transaction.
+    private final String        stepId;
+
     @NotNull
     private final String        actionName;
     private final List<String>  whoCanUse;
@@ -32,6 +35,10 @@ public class WorkflowActionForm extends Validated {
     private final String        actionNextStep;
     private final String        actionNextAssign;
     private final String        actionCondition;
+
+    public String getStepId() {
+        return stepId;
+    }
 
     public String getActionId() {
         return actionId;
@@ -85,10 +92,30 @@ public class WorkflowActionForm extends Validated {
         return actionCondition;
     }
 
+    @Override
+    public String toString() {
+        return "WorkflowActionForm{" +
+                "actionId='" + actionId + '\'' +
+                ", schemeId='" + schemeId + '\'' +
+                ", actionName='" + actionName + '\'' +
+                ", whoCanUse=" + whoCanUse +
+                ", actionIcon='" + actionIcon + '\'' +
+                ", actionAssignable=" + actionAssignable +
+                ", actionCommentable=" + actionCommentable +
+                ", requiresCheckout=" + requiresCheckout +
+                ", actionRoleHierarchyForAssign=" + actionRoleHierarchyForAssign +
+                ", roleHierarchyForAssign=" + roleHierarchyForAssign +
+                ", actionNextStep='" + actionNextStep + '\'' +
+                ", actionNextAssign='" + actionNextAssign + '\'' +
+                ", actionCondition='" + actionCondition + '\'' +
+                '}';
+    }
+
     public WorkflowActionForm(final Builder builder) {
 
         this.actionId           = builder.actionId;
         this.schemeId           = builder.schemeId;
+        this.stepId             = builder.stepId;
         this.actionName         = builder.actionName;
         this.whoCanUse          = builder.whoCanUse;
         this.actionIcon         = builder.actionIcon;
@@ -107,6 +134,10 @@ public class WorkflowActionForm extends Validated {
 
         @JsonProperty()
         private String        actionId;
+
+        @JsonProperty()
+        private String        stepId;
+
         @JsonProperty(required = true)
         private String schemeId;
 
@@ -130,6 +161,11 @@ public class WorkflowActionForm extends Validated {
         private String        actionNextAssign;
         @JsonProperty()
         private String        actionCondition;
+
+        public Builder stepId(String stepId) {
+            this.stepId = stepId;
+            return this;
+        }
 
         public Builder actionId(String actionId) {
             this.actionId = actionId;

@@ -10,11 +10,13 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
+	final StringBuilder actionsDropDownOptions
+			= new StringBuilder("<option value='new'>New Action</option>"); // todo: i18n
+
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	String schemeId = request.getParameter("schemeId");
-	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
-	WorkflowScheme scheme = new WorkflowScheme();
-	scheme = wapi.findScheme(schemeId);
+	String schemeId  = request.getParameter("schemeId");
+	WorkflowScheme defaultScheme   = wapi.findDefaultScheme();
+	WorkflowScheme scheme          = wapi.findScheme(schemeId);
 	final List<WorkflowStep> steps = wapi.findSteps(scheme);
 	final List<WorkflowAction> schemaActions =
 			wapi.findActions(scheme, APILocator.getUserAPI().getSystemUser());
@@ -179,7 +181,10 @@
 		<table class="wfActionList" id="<%= "jsNode" + scheme.getId()  %>" dojoType="dojo.dnd.Source" class="dndContainer container" accept="actionOrderClass<%=scheme.getId()%>">
 			<tbody>
 
-			<%for(WorkflowAction action : schemaActions){ %>
+			<%for(WorkflowAction action : schemaActions){
+
+				actionsDropDownOptions.append("<option value='").append(action.getId()).append("'>").append(action.getName()).append("</option>");
+			%>
 			<tr class="dojoDndItem actionOrderClass<%=scheme.getId()%> actionOrderClass" id="id_<%=action.getId()%>_<%=scheme.getId()%>">
 				<td class="wfXBox showPointer" onclick="actionAdmin.deleteAction('<%=action.getId()%>')"><span class="deleteIcon"></span></td>
 				<td onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" class="showPointer">
@@ -236,9 +241,15 @@
 					<%} %>
 				</tbody>
 			</table>
+
+
 			<div class="wfAddActionButtonRow">
+				<select name="step-action-<%=step.getId()%>" id="step-action-<%=step.getId()%>">
+					<%=actionsDropDownOptions.toString()%>
+				</select>
+
 				<button dojoType="dijit.form.Button"
-				 onClick="actionAdmin.viewAction('<%=step.getId()%>', '');" iconClass="addIcon">
+				 onClick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');" iconClass="addIcon">
 				<%=LanguageUtil.get(pageContext, "Add-Workflow-Action")%>
 				</button>
 			</div>

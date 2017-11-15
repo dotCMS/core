@@ -3,19 +3,23 @@ package com.dotcms.workflow.helper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -25,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.dotmarketing.db.HibernateUtil.addAsyncCommitListener;
+
 /**
  * Helper for Workflow Actions
  * @author jsanca
@@ -33,6 +39,38 @@ public class WorkflowHelper {
 
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;
+
+    public List<WorkflowAction> findActions(final String stepId, final User user) {
+
+        WorkflowStep workflowStep    = null;
+        List<WorkflowAction> actions = null;
+
+        try {
+
+            Logger.debug(this, "Looking for the stepId: " + stepId);
+            workflowStep = this.workflowAPI.findStep(stepId);
+        } catch (Exception e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        if (null != workflowStep) {
+
+            try {
+
+                Logger.debug(this, "Looking for the actions associated to the step: " + stepId);
+                actions = this.workflowAPI.findActions(workflowStep, user);
+            } catch (DotDataException  | DotSecurityException e) {
+
+                Logger.error(this, e.getMessage(), e);
+                throw new DotWorkflowException(e.getMessage(), e);
+            }
+        } else {
+            throw new DoesNotExistException("Workflow-does-not-exists-step");
+        }
+
+        return (null == actions)? Collections.emptyList(): actions;
+    }
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -79,6 +117,12 @@ public class WorkflowHelper {
         return new IsNewAndCloneItResult(isNew, newAction);
     } // isNewAndCloneIt.
 
+    /**
+     * Resolve the role based on the id
+     * @param id String
+     * @return Role
+     * @throws DotDataException
+     */
     protected Role resolveRole(final String id) throws DotDataException {
 
         Role role = null;
@@ -99,6 +143,12 @@ public class WorkflowHelper {
         return role;
     } // resolveRole.
 
+    /**
+     * Finds the actions by scheme
+     * @param schemeId String
+     * @param user     User
+     * @return List of WorkflowAction
+     */
     public List<WorkflowAction> findActionsByScheme(final String schemeId,
                                                     final User user) {
 
@@ -114,13 +164,19 @@ public class WorkflowHelper {
         } catch (DotDataException | DotSecurityException e) {
 
             Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
 
         return actions;
     } // findActionsByScheme.
 
-    public WorkflowAction save (final WorkflowActionForm workflowActionForm) {
+    /**
+     * Save a WorkflowActionForm returning the WorkflowAction created.
+     * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
+     * @param workflowActionForm WorkflowActionForm
+     * @return WorkflowAction (workflow action created)
+     */
+    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
@@ -164,25 +220,50 @@ public class WorkflowHelper {
 
             if(isNew) {
 
+                // if should be associated to a stepId right now
+                if (UtilMethods.isSet(workflowActionForm.getStepId())) {
+
+                    Logger.debug(this, "The Action: " + newAction.getId() +
+                            ", is going to be associated to the step: " + workflowActionForm.getStepId());
+                    this.workflowAPI.saveActionToStep(newAction.getId(),
+                            workflowActionForm.getStepId(), user);
+                }
+
                 Logger.debug(this, "Saving new WorkflowActionClass, for the Workflow action: "
                         + newAction.getId());
 
-                WorkflowActionClass workflowActionClass = new WorkflowActionClass();
-                workflowActionClass.setActionId(newAction.getId());
-                workflowActionClass.setClazz(NotifyAssigneeActionlet.class.getName());
-                workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
-                workflowActionClass.setOrder(0);
-                this.workflowAPI.saveActionClass(workflowActionClass);
+                addAsyncCommitListener(() -> {
+                    WorkflowActionClass workflowActionClass = new WorkflowActionClass();
+                    workflowActionClass.setActionId(newAction.getId());
+                    workflowActionClass.setClazz(NotifyAssigneeActionlet.class.getName());
+                    try {
+                        workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
+                        workflowActionClass.setOrder(0);
+                        this.workflowAPI.saveActionClass(workflowActionClass);
+                    } catch (Exception e) {
+                        Logger.error(this.getClass(), e.getMessage(), e);
+                        throw new DotWorkflowException(e.getMessage(), e);
+                    }
+                });
+
+
+
             }
-
-
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
 
         return newAction;
     } // save.
+
+    public void saveActionToStep(final WorkflowActionStepForm workflowActionStepForm, final User user) {
+
+        this.workflowAPI.saveActionToStep(workflowActionStepForm.getActionId(),
+                workflowActionStepForm.getStepId(), user);
+    } // addActionToStep.
+
+
 
     private void processPermission(final WorkflowAction newAction,
                                    final List<Permission> permissions,
@@ -221,4 +302,6 @@ public class WorkflowHelper {
             return action;
         }
     } // IsNewAndCloneItResult.
+
+
 } // E:O:F:WorkflowHelper.

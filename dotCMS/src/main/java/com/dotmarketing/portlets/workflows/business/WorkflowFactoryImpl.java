@@ -357,6 +357,20 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	public WorkflowAction findAction(final String actionId,
+									 final String stepId) throws DotDataException {
+
+		final DotConnect db = new DotConnect();
+		db.setSQL(sql.SELECT_ACTION_BY_STEP);
+		db.addParam(actionId).addParam(stepId);
+
+		try {
+			return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class).get(0);
+		} catch (IndexOutOfBoundsException ioob) {
+			return null;
+		}
+	}
+
 	public WorkflowActionClass findActionClass(String id) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASS);
@@ -378,7 +392,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (WorkflowActionClassParameter) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class).get(0);
 	}
 
-	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException {
+	public List<WorkflowAction> findActions(final WorkflowStep step) throws DotDataException {
 
 		List<WorkflowAction> actions = cache.getActions(step);
 		if(actions ==null){
@@ -782,6 +796,28 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		return exists;
 	} // existsAction.
+
+	public void saveAction(final WorkflowAction workflowAction,
+						   final WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException {
+
+		final DotConnect db = new DotConnect();  // todo: there is an issue with the cache
+		db.setSQL(sql.INSERT_ACTION_FOR_STEP)
+				.addParam(workflowAction.getId())
+				.addParam(workflowStep.getId())
+				.loadResult();
+
+		final WorkflowStep proxyStep = new WorkflowStep();
+		proxyStep.setId(workflowStep.getId());
+		cache.removeActions(proxyStep);
+
+		final WorkflowScheme proxyScheme = new WorkflowScheme();
+		proxyScheme.setId(workflowAction.getSchemeId());
+		cache.removeActions(proxyScheme);
+
+		// update workflowScheme mod date
+		final WorkflowScheme scheme = findScheme(workflowAction.getSchemeId());
+		saveScheme(scheme);
+	} // saveAction
 
 	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 

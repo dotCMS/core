@@ -654,6 +654,36 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 	},
 
+    addOrAssociatedAction : function(schemeId, stepId, actionsDropDownOptionsId) {
+
+		let actionsDropDownOptions = document.getElementById (actionsDropDownOptionsId);
+		let actionId               = actionsDropDownOptions.options[actionsDropDownOptions.selectedIndex].value;
+		if ('new' === actionId) {
+			mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId +  "&stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
+		} else {
+
+			var xhrArgs = {
+				url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=addActionToStep&stepId=" + stepId + "&actionId=" + actionId ,
+				handle : function(dataOrError, ioArgs) {
+					if (dojo.isString(dataOrError)) {
+
+						if (dataOrError.indexOf("FAILURE") == 0) {
+							showDotCMSSystemMessage(dataOrError, true);
+						} else {
+							mainAdmin.refresh();
+						}
+					} else {
+						this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+
+					}
+				}
+			};
+
+			dojo.xhrPost(xhrArgs);
+
+		}
+	},
+
 	saveAction : function(schemeId) {
 
 		var myForm = dijit.byId("addEditAction");

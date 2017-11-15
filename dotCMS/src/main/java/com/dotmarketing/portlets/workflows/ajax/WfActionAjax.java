@@ -4,12 +4,13 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ public class WfActionAjax extends WfBaseAction {
 
     private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
     private final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+	private final UserWebAPI userWebAPI     = WebAPILocator.getUserWebAPI();
 
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 
@@ -74,6 +76,7 @@ public class WfActionAjax extends WfBaseAction {
         builder.actionName(request.getParameter("actionName"))
                 .actionId  (request.getParameter("actionId"))
                 .schemeId  (request.getParameter("schemeId"))
+				.stepId    (request.getParameter("stepId"))
                 .actionIcon(request.getParameter("actionIconSelect"))
                 .actionAssignable (request.getParameter("actionAssignable") != null)
                 .actionCommentable(request.getParameter("actionCommentable") != null)
@@ -88,10 +91,11 @@ public class WfActionAjax extends WfBaseAction {
 		builder.whoCanUse(whoCanUse);
 
         WorkflowAction newAction        = null;
+		final User user      = this.userWebAPI.getUser(request);
 
         try {
 
-            newAction  = this.workflowHelper.save(builder.build());
+            newAction  = this.workflowHelper.save(builder.build(), user);
             response.getWriter().println("SUCCESS:" + newAction.getId());
         } catch (Exception e) {
 

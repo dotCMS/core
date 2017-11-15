@@ -170,6 +170,18 @@ public interface WorkflowAPI {
 
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Finds an action associated to the steps.
+	 * The action will be validated against the user permissions.
+	 * @param actionId String action id
+	 * @param stepId   String step  id
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
+
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
@@ -293,4 +305,13 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Save (associated) the action to the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 */
+	void saveActionToStep(String actionId, String stepId, User user);
 }

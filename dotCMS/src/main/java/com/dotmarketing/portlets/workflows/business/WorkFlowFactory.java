@@ -84,7 +84,26 @@ public interface WorkFlowFactory {
 
 	public WorkflowAction findAction(String id) throws DotDataException;
 
+	/**
+	 * Finds an action associated to a steps
+	 * Null if does not exists.
+	 * @param actionId actionId
+	 * @param stepId   stepID
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 */
+	public WorkflowAction findAction(String actionId, String stepId) throws DotDataException;
+
 	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Save (associated) the workflowAction to the workflow step
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 */
+	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException;
+
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
@@ -153,6 +172,7 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
 
 
 }
