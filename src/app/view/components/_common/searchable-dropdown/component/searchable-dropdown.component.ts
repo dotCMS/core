@@ -45,6 +45,7 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     @Input() rows: number;
     @Input() totalRecords: number;
     @Input() placeholder = '';
+    @Input() persistentPlaceholder: boolean;
     @Input() width: string;
     @Output() change: EventEmitter<any> = new EventEmitter();
     @Output() filterChange: EventEmitter<string> = new EventEmitter();

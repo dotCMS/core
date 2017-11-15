@@ -12,7 +12,7 @@
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
-        [paginator]="true" 
+        [paginator]="totalRecords > rows" 
         [rows]="rows"
         [totalRecords]="totalRecords"
         [value]="data"
@@ -25,7 +25,7 @@
 
 <button ripple pButton
     (click)="searchPanel.toggle($event)"
-    [label]="valueString"
+    [label]="persistentPlaceholder ? placeholder : valueString"
     icon="fa-caret-down" 
     iconPos="right" 
     type="button" 
