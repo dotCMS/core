@@ -84,6 +84,7 @@ public class ContentResource {
     private static final String REFERER = "referer";
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
+    private static final int PAIR = 2;
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
@@ -475,6 +476,32 @@ public class ContentResource {
             return null;
         }
 
+        //Look for stName
+        if (luceneQuery.contains(Contentlet.STRUCTURE_NAME_KEY + ":")) {
+            //Parameter is in the FORMAT  stName:variableName
+            //Replace to FORMAT  ContentType:variableName
+            luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
+        }
+
+        //Look for stInode
+        String stInodeKey = Contentlet.STRUCTURE_INODE_KEY + ":";
+        if (luceneQuery.contains(stInodeKey)) {
+            //Parameter is in the FORMAT  stInode:inode
+
+            //Lucene parameters are separated by blankSpace
+            int startIndex = luceneQuery.indexOf(stInodeKey) + stInodeKey.length();
+            int endIndex = luceneQuery.indexOf(" ", startIndex);
+            String inode = (endIndex < 0) ? luceneQuery.substring(startIndex) : luceneQuery.substring(startIndex, endIndex);
+
+            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+            if (type != null && InodeUtils.isSet(type.inode())) {
+                //Replace to FORMAT   ContentType:variableName
+                luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
+                luceneQuery = luceneQuery.replace(inode, type.variable());
+            }
+        }
+
+        /*
         //Lucene parameters are separated by blankSpace
         String [] params = luceneQuery.split(" ");
         for (String paramStr : params) {
@@ -496,13 +523,8 @@ public class ContentResource {
                     }
                 }
             }
-            if (paramStr.contains(Contentlet.STRUCTURE_INODE_NAME + ":")) {
-                //Parameter is in the FORMAT  stName:variableName
-                //Replace to FORMAT  ContentType:variableName
-                luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_NAME + ":", "ContentType:");
-                break;
-            }
-        }
+
+        }*/
         return luceneQuery;
     }
 
