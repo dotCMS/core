@@ -39,7 +39,7 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
 
         //Verify if we have inconsistencies to process
         dc.setSQL(FIND_INCONSISTENCIES_QUERY);
-        List<Map<String, Object>> sqlResults = dc.loadObjectResults();
+        final List<Map<String, Object>> sqlResults = dc.loadObjectResults();
         if (null != sqlResults) {
 
             Logger.info(this,
@@ -47,10 +47,10 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
                             sqlResults.size(),
                             dc.getSQL()));
 
-            for (Map<String, Object> sqlResult : sqlResults) {
+            for (final Map<String, Object> sqlResult : sqlResults) {
 
-                String identifierId = sqlResult.get("identifierid").toString();
-                String siteId = sqlResult.get("siteid").toString();
+                final String identifierId = sqlResult.get("identifierid").toString();
+                final String siteId = sqlResult.get("siteid").toString();
 
                 //Update the host id of the identifier with the inconsistency
                 updateIdentifierHostInode(identifierId, siteId);
@@ -64,7 +64,7 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
             throws DotDataException {
 
         //Update identifier table
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(UPDATE_IDENTIFIER_QUERY);
         dc.addParam(hostInode);
         dc.addParam(identifierId);
