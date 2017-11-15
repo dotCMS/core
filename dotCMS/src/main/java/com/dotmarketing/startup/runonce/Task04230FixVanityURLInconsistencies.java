@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Fixes and inconsistency on Vanity URLs where the host_inode on the Identifier table is different
+ * from the site field of the Vanity URL contentlet.
  * @author Jonathan Gamba 11/14/17
  */
 public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTask {
