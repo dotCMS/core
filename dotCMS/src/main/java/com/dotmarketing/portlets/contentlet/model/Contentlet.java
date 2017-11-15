@@ -48,6 +48,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
+    public static final String STRUCTURE_INODE_NAME = "stName";
     public static final String LAST_REVIEW_KEY = "lastReview";
     public static final String NEXT_REVIEW_KEY = "nextReview";
     public static final String REVIEW_INTERNAL_KEY = "reviewInternal";

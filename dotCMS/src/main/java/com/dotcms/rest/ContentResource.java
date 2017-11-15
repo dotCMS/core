@@ -429,7 +429,8 @@ public class ContentResource {
                         .ifPresent(contentlets::add);
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");
-                contentlets = ContentUtils.pull(query, offset, limit, orderBy, user, tmDate);
+                String luceneQuery = processQuery(query);
+                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
             }
 
             status = (null == contentlets || contentlets.isEmpty()) ?
@@ -463,6 +464,47 @@ public class ContentResource {
         return responseResource.response(result, null, status);
     }
 
+    /**
+     * This methods receives a Lucene query.
+     * It processes the query looking for special scenarios like structure fields (i.e: stInode, stName) and replace them with valid Content fields
+     * @param luceneQuery
+     * @return luceneQuery
+     */
+    private String processQuery(String luceneQuery) throws DotDataException, DotSecurityException {
+        if (luceneQuery == null) {
+            return null;
+        }
+
+        //Lucene parameters are separated by blankSpace
+        String [] params = luceneQuery.split(" ");
+        for (String paramStr : params) {
+
+            if (paramStr.contains(Contentlet.STRUCTURE_INODE_KEY + ":")) {
+                //Parameter is in the FORMAT  stInode:inode
+                String[] param = paramStr.split(":"); //Param and value pair separated by :
+                if (param.length == 2) {
+                    String inode = param[1];
+
+                    if (UtilMethods.isSet(inode)) {
+                        ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+                        if (type != null && InodeUtils.isSet(type.inode())) {
+                            //Replace to FORMAT   ContentType:variableName
+                            luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
+                            luceneQuery = luceneQuery.replace(inode, type.variable());
+                            break;
+                        }
+                    }
+                }
+            }
+            if (paramStr.contains(Contentlet.STRUCTURE_INODE_NAME + ":")) {
+                //Parameter is in the FORMAT  stName:variableName
+                //Replace to FORMAT  ContentType:variableName
+                luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_NAME + ":", "ContentType:");
+                break;
+            }
+        }
+        return luceneQuery;
+    }
 
     private String getXML(final List<Contentlet> cons, HttpServletRequest request,
             HttpServletResponse response, String render, User user)
