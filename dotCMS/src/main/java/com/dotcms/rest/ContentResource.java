@@ -479,7 +479,7 @@ public class ContentResource {
         if (luceneQuery.contains(Contentlet.STRUCTURE_NAME_KEY + ":")) {
             //Parameter is in the FORMAT  stName:variableName
             //Replace to FORMAT  ContentType:variableName
-            luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
+            luceneQuery = luceneQuery.replaceAll(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
         }
 
         //Look for stInode
