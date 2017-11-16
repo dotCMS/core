@@ -685,12 +685,14 @@ public class MultiTreeFactory {
      *            
      */
 	private static void updateVersionTs(String id, Long languageId) throws DotDataException {
-	    Identifier ident = APILocator.getIdentifierAPI().find(id);
+
         ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(ident.getId(), languageId);
-        versionInfo.setVersionTs(new Date());
-        APILocator.getVersionableAPI().saveContentletVersionInfo(
-                versionInfo);
+                .getContentletVersionInfo(id, languageId);
+        if(versionInfo!=null){
+          versionInfo.setVersionTs(new Date());
+          APILocator.getVersionableAPI().saveContentletVersionInfo(
+                  versionInfo);
+        }
 	}
 	
     /**
@@ -718,11 +720,15 @@ public class MultiTreeFactory {
      *            
      */
     private static void refreshPageInCache(String id, Long languageId) throws DotDataException, DotSecurityException {
-        Identifier ident = APILocator.getIdentifierAPI().find(id);
-        Contentlet content = APILocator.getContentletAPI()
-                .findContentletByIdentifier(ident.getId(), false, languageId, APILocator.systemUser(), false);
-        IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(content);
-        PageServices.invalidateAll(htmlPage);
+        try{
+          Contentlet content = APILocator.getContentletAPI()
+                  .findContentletByIdentifier(id, false, languageId, APILocator.systemUser(), false);
+          IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(content);
+          PageServices.invalidateAll(htmlPage);
+        }
+        catch(Exception e){
+          Logger.warn(MultiTreeFactory.class, "unable to flush page cache - moving on: " + e.getMessage());
+        }
     }
 	
 }
