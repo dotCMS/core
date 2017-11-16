@@ -107,7 +107,22 @@ public interface WorkFlowFactory {
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
+	/**
+	 * Deletes a single action
+	 * Pre: not any relationship must be for the action (for instance all the action references on the steps should be previously removed)
+	 * @param action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes the actions related to the step
+	 * @param step {@link WorkflowStep}
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	void deleteActions(WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 	

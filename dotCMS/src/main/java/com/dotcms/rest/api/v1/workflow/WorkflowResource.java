@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.Beta;
 import com.liferay.portal.model.User;
@@ -29,8 +30,6 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -64,6 +63,97 @@ public class WorkflowResource {
         this.responseUtil   = responseUtil;
         this.workflowAPI    = workflowAPI;
     }
+
+    /**
+     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @GET
+    @Path("/steps/scheme/{schemeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findStepsByScheme(@Context final HttpServletRequest request,
+                                     @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowStep> steps;
+
+        try {
+
+            Logger.debug(this, "Getting the workflow steps for the scheme: " + schemeId);
+            steps     = this.workflowHelper.findSteps(schemeId);
+
+            response  =
+                    Response.ok(new ResponseEntityView(steps)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findStepsByScheme, schemeId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findStepsByScheme, schemeId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findSteps.
+
+    /**
+     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param actionId String
+     * @return Response
+     */
+    @GET
+    @Path("/action/{actionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAction(@Context final HttpServletRequest request,
+                                     @PathParam("actionId") final String actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        WorkflowAction action;
+        final Locale locale = LocaleUtil.getLocale(request);
+        final User   user   = initDataObject.getUser();
+
+        try {
+
+            Logger.debug(this, "Finding the workflow action " + actionId);
+            action    = this.workflowAPI.findAction(actionId, user);
+
+            response  = (null == action)?
+                    this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND, locale, user.getUserId(), "Workflow-does-not-exists-action"):
+                    Response.ok(new ResponseEntityView(action)).build(); // 200
+        } catch (DotSecurityException e) {
+
+            Logger.error(this.getClass(),
+                    "DotSecurityException on findActionByStep, actionId: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findActionByStep, actionId: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAction.
 
     /**
      * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
@@ -133,7 +223,6 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         Response response;
         List<WorkflowAction> actions;
-        final Locale locale = LocaleUtil.getLocale(request);
         final User   user   = initDataObject.getUser();
 
         try {
@@ -152,7 +241,7 @@ public class WorkflowResource {
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
-                    "DoesNotExistException on findActionsByStep, stepId: " + stepId +
+                    "Exception on findActionsByStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
                     ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
@@ -174,7 +263,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionsByScheme(@Context final HttpServletRequest request,
-                                              @PathParam("schemeId") String schemeId) {
+                                              @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -210,9 +299,8 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response save(@Context final HttpServletRequest request,
-                                         final WorkflowActionForm workflowActionForm) {
+                               final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -248,7 +336,6 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @WrapInTransaction
     public final Response saveActionToStep(@Context final HttpServletRequest request,
                                final WorkflowActionStepForm workflowActionStepForm) {
 
@@ -265,7 +352,7 @@ public class WorkflowResource {
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
-                    "Exception on saveActionToStep, workflowActionForm: " + workflowActionStepForm +
+                    "Exception on saveAction, workflowActionForm: " + workflowActionStepForm +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
                     ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
@@ -273,7 +360,49 @@ public class WorkflowResource {
         }
 
         return response;
-    } // saveActionToStep
+    } // saveAction
 
+
+    /**
+     * Deletes a step
+     * @param request                   HttpServletRequest
+     * @param stepId                   String
+     * @return Response
+     */
+    @DELETE
+    @Path("/step/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteStep(@Context final HttpServletRequest request,
+                                           @PathParam("stepId") String stepId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+
+            Logger.debug(this, "Deleting the step: " + stepId);
+            this.workflowHelper.deleteStep(stepId);
+            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on deleteStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // saveAction
 
 } // E:O:F:WorkflowResource.

@@ -27,6 +27,7 @@ public class WfStepAjax extends WfBaseAction {
 
 	private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
 	private final UserWebAPI     userWebAPI     = WebAPILocator.getUserWebAPI();
+	private final WorkflowAPI    workflowAPI 	= APILocator.getWorkflowAPI();
 
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 	
@@ -82,23 +83,20 @@ public class WfStepAjax extends WfBaseAction {
 		}
 			
 	}
-	
-	public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String stepId = request.getParameter("stepId");
 
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
-		
+	public void delete(final HttpServletRequest request,
+					   final HttpServletResponse response) throws ServletException, IOException {
+
+		final String stepId = request.getParameter("stepId");
+
 		try {
 
-			WorkflowStep step = wapi.findStep(stepId);
-			wapi.deleteStep(step);
-		} catch (DotDataException e) {
+			this.workflowHelper.deleteStep (stepId);
+		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage());
 			writeError(response, "</br> Delete Failed : </br>"+  e.getMessage());
 		}
-		
-		
-	}
+	} // delete.
 
 	/**
 	 * Associated an existing action to the step.
@@ -110,7 +108,6 @@ public class WfStepAjax extends WfBaseAction {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	@WrapInTransaction
 	public void addActionToStep(final HttpServletRequest request,
 								final HttpServletResponse response) throws ServletException, IOException {
 

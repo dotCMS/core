@@ -67,7 +67,7 @@ public class WfActionAjax extends WfBaseAction {
 		}
 	} // delete.
 
-    @WrapInTransaction
+
 	public void save(final HttpServletRequest request,
 					 final HttpServletResponse response) throws ServletException, IOException {
 

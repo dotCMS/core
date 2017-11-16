@@ -1,5 +1,6 @@
 package com.dotcms.workflow.helper;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -9,7 +10,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,6 +40,67 @@ public class WorkflowHelper {
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;
 
+
+    private static class SingletonHolder {
+        private static final WorkflowHelper INSTANCE = new WorkflowHelper();
+    }
+
+    public static WorkflowHelper getInstance() {
+        return WorkflowHelper.SingletonHolder.INSTANCE;
+    }
+
+    private WorkflowHelper() {
+        this( APILocator.getWorkflowAPI(), APILocator.getRoleAPI());
+    }
+
+    @VisibleForTesting
+    protected WorkflowHelper(final WorkflowAPI workflowAPI,
+                             final RoleAPI     roleAPI) {
+
+        this.workflowAPI = workflowAPI;
+        this.roleAPI     = roleAPI;
+    }
+
+    /**
+     * Deletes the step
+     * @param stepId String
+     */
+    @WrapInTransaction
+    public void deleteStep(final String stepId) {
+
+        WorkflowStep workflowStep = null;
+
+        try {
+
+            Logger.debug(this, "Looking for the stepId: " + stepId);
+            workflowStep = this.workflowAPI.findStep(stepId);
+        } catch (Exception e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        if (null != workflowStep) {
+
+            try {
+
+                Logger.debug(this, "deleting step: " + stepId);
+                this.workflowAPI.deleteStep(workflowStep);
+            } catch (DotDataException e) {
+                Logger.error(this, e.getMessage(), e);
+                throw new DotWorkflowException(e.getMessage(), e);
+            }
+        } else {
+
+            throw new DoesNotExistException("Workflow-does-not-exists-step");
+        }
+    } // deleteStep.
+
+    /**
+     * Finds the action associated to the stepId
+     * @param stepId String
+     * @param user   User
+     * @return List of WorkflowAction
+     */
     public List<WorkflowAction> findActions(final String stepId, final User user) {
 
         WorkflowStep workflowStep    = null;
@@ -70,27 +131,45 @@ public class WorkflowHelper {
         }
 
         return (null == actions)? Collections.emptyList(): actions;
-    }
+    } // findActions.
 
-    private static class SingletonHolder {
-        private static final WorkflowHelper INSTANCE = new WorkflowHelper();
-    }
+    /**
+     * Finds the steps by schemeId
+     * @param schemeId String
+     * @return List of WorkflowStep
+     */
+    public List<WorkflowStep> findSteps(final String schemeId) {
 
-    public static WorkflowHelper getInstance() {
-        return WorkflowHelper.SingletonHolder.INSTANCE;
-    }
 
-    private WorkflowHelper() {
-        this( APILocator.getWorkflowAPI(), APILocator.getRoleAPI());
-    }
+        List<WorkflowStep> workflowSteps  = null;
+        WorkflowScheme     workflowScheme = null;
 
-    @VisibleForTesting
-    protected WorkflowHelper(final WorkflowAPI workflowAPI,
-                             final RoleAPI     roleAPI) {
+        try {
 
-        this.workflowAPI = workflowAPI;
-        this.roleAPI     = roleAPI;
-    }
+            Logger.debug(this, "Looking for the schemeId: " + schemeId);
+            workflowScheme = this.workflowAPI.findScheme(schemeId);
+        } catch (DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        if (null != workflowScheme) {
+
+            try {
+
+                workflowSteps = this.workflowAPI.findSteps(workflowScheme);
+            } catch (DotDataException e) {
+
+                Logger.error(this, e.getMessage(), e);
+                throw new DotWorkflowException(e.getMessage(), e);
+            }
+        } else {
+
+            throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+        }
+
+        return workflowSteps;
+    } // findSteps.
 
     /**
      * Returns if the action associated to the actionId parameter is new and clone the retrieved action into a new one.
@@ -176,6 +255,7 @@ public class WorkflowHelper {
      * @param workflowActionForm WorkflowActionForm
      * @return WorkflowAction (workflow action created)
      */
+    @WrapInTransaction
     public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
@@ -225,7 +305,7 @@ public class WorkflowHelper {
 
                     Logger.debug(this, "The Action: " + newAction.getId() +
                             ", is going to be associated to the step: " + workflowActionForm.getStepId());
-                    this.workflowAPI.saveActionToStep(newAction.getId(),
+                    this.workflowAPI.saveAction(newAction.getId(),
                             workflowActionForm.getStepId(), user);
                 }
 
@@ -245,9 +325,6 @@ public class WorkflowHelper {
                         throw new DotWorkflowException(e.getMessage(), e);
                     }
                 });
-
-
-
             }
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
@@ -257,9 +334,10 @@ public class WorkflowHelper {
         return newAction;
     } // save.
 
+    @WrapInTransaction
     public void saveActionToStep(final WorkflowActionStepForm workflowActionStepForm, final User user) {
 
-        this.workflowAPI.saveActionToStep(workflowActionStepForm.getActionId(),
+        this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
                 workflowActionStepForm.getStepId(), user);
     } // addActionToStep.
 

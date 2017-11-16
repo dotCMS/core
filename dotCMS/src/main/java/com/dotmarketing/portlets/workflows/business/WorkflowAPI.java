@@ -201,7 +201,23 @@ public interface WorkflowAPI {
 
 	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
 
+	/**
+	 * Saves an single action the action is associated to the schema by default
+	 * @param action WorkflowAction
+	 * @param perms List of Permission
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 */
+	void saveAction(String actionId, String stepId, User user);
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
@@ -306,12 +322,4 @@ public interface WorkflowAPI {
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Save (associated) the action to the step
-	 * If any of them does not exists (action or step) throws DoesNotExistException
-	 * @param actionId String
-	 * @param stepId   String
-	 * @param user     User
-	 */
-	void saveActionToStep(String actionId, String stepId, User user);
 }

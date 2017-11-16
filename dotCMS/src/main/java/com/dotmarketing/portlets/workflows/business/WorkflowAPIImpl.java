@@ -261,31 +261,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 				if(otherStep.equals(step))
 					continue;
+
 				for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 					if(a.getNextStep().equals(step.getId())){
 						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
 								" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
 					}
-
 				}
 			}
 			
-			int contentletsRefeceningStep = getCountContentletsReferencingStep(step);
-			if(contentletsRefeceningStep > 0){
-				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+contentletsRefeceningStep+" contenlet(s)</b> </br></br>");
+			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
+			if(countContentletsReferencingStep > 0){
+				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+countContentletsReferencingStep+" contenlet(s)</b> </br></br>");
 			}
 
-			List<WorkflowAction> actions = workFlowFactory.findActions(step);
-			for(WorkflowAction action : actions){
-				List<WorkflowActionClass> actionClasses = workFlowFactory.findActionClasses(action);
-				for(WorkflowActionClass actionClass : actionClasses){
-					workFlowFactory.deleteWorkflowActionClassParameters(actionClass);
-					workFlowFactory.deleteActionClass(actionClass);
-				}
-				workFlowFactory.deleteAction(action);
-			}
-
-			workFlowFactory.deleteStep(step);
+			this.workFlowFactory.deleteActions(step);
+			this.workFlowFactory.deleteStep(step);
 		}
 		catch(Exception e){
 			throw new DotDataException(e.getMessage(), e);
@@ -554,7 +545,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveActionToStep(final String actionId, final String stepId, final User user) {
+	public void saveAction(final String actionId, final String stepId, final User user) {
 
 		WorkflowAction workflowAction = null;
 		WorkflowStep   workflowStep   = null;
@@ -600,7 +591,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
 		}
-	} // saveActionToStep.
+	} // saveAction.
 
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {

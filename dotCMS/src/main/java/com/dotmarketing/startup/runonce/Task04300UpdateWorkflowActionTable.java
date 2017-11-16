@@ -27,6 +27,7 @@ import java.util.Map;
  * @version 4.3.0
  * @since Nov 1st, 2017
  */
+// todo: missing a fk between workflow_action_step and actions and steps
 public class Task04300UpdateWorkflowActionTable implements StartupTask {
 
     private static final String MYSQL_FIND_INTERMEDIATE_TABLE = "SELECT table_name FROM information_schema.tables WHERE table_name = 'workflow_action_step' LIMIT 1";
