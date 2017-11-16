@@ -429,7 +429,8 @@ public class ContentResource {
                         .ifPresent(contentlets::add);
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");
-                contentlets = ContentUtils.pull(query, offset, limit, orderBy, user, tmDate);
+                String luceneQuery = processQuery(query);
+                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
             }
 
             status = (null == contentlets || contentlets.isEmpty()) ?
@@ -463,6 +464,44 @@ public class ContentResource {
         return responseResource.response(result, null, status);
     }
 
+    /**
+     * This methods receives a Lucene query.
+     * It processes the query looking for special scenarios like structure fields (i.e: stInode, stName) and replace them with valid Content fields
+     * @param luceneQuery
+     * @return luceneQuery
+     */
+    private String processQuery(String luceneQuery) throws DotDataException, DotSecurityException {
+        if (luceneQuery == null) {
+            return null;
+        }
+
+        //Look for stName
+        if (luceneQuery.contains(Contentlet.STRUCTURE_NAME_KEY + ":")) {
+            //Parameter is in the FORMAT  stName:variableName
+            //Replace to FORMAT  ContentType:variableName
+            luceneQuery = luceneQuery.replaceAll(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
+        }
+
+        //Look for stInode
+        String stInodeKey = Contentlet.STRUCTURE_INODE_KEY + ":";
+        if (luceneQuery.contains(stInodeKey)) {
+            //Parameter is in the FORMAT  stInode:inode
+
+            //Lucene parameters are separated by blankSpace
+            int startIndex = luceneQuery.indexOf(stInodeKey) + stInodeKey.length();
+            int endIndex = luceneQuery.indexOf(' ', startIndex);
+            String inode = (endIndex < 0) ? luceneQuery.substring(startIndex) : luceneQuery.substring(startIndex, endIndex);
+
+            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+            if (type != null && InodeUtils.isSet(type.inode())) {
+                //Replace to FORMAT   ContentType:variableName
+                luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
+                luceneQuery = luceneQuery.replace(inode, type.variable());
+            }
+        }
+
+        return luceneQuery;
+    }
 
     private String getXML(final List<Contentlet> cons, HttpServletRequest request,
             HttpServletResponse response, String render, User user)
@@ -1118,10 +1157,16 @@ public class ContentResource {
             throws DotDataException, DotSecurityException {
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
         if (!UtilMethods.isSet(stInode)) {
-            String stName = (String) map.get("stName");
+            String stName = (String) map.get(Contentlet.STRUCTURE_NAME_KEY);
             if (UtilMethods.isSet(stName)) {
                 stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName)
                         .getInode();
+            } else {
+                String contentType = (String) map.get(Contentlet.CONTENT_TYPE_KEY);
+                if (UtilMethods.isSet(contentType)) {
+                    stInode = CacheLocator.getContentTypeCache()
+                            .getStructureByVelocityVarName(contentType).getInode();
+                }
             }
         }
         if (UtilMethods.isSet(stInode)) {
