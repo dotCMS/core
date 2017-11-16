@@ -56,14 +56,14 @@ public class IdentifierFactoryTest {
     @Test
     public void testFindByURIPatternSuccessWhenInclude()
             throws DotDataException, DotSecurityException {
-        List<Identifier> identifiers = factory
+        final List<Identifier> identifiers = factory
                 .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", true,
                         defaultHost);
 
         Assert.assertNotNull(identifiers);
         Assert.assertFalse(identifiers.isEmpty());
 
-        Identifier identifier = identifiers.get(0);
+        final Identifier identifier = identifiers.get(0);
         Assert.assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
         Assert.assertEquals("products", identifier.getAssetName());
         Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
@@ -72,7 +72,7 @@ public class IdentifierFactoryTest {
     @Test
     public void testFindByURIPatternSuccessWhenNotInclude()
             throws DotDataException, DotSecurityException {
-        List<Identifier> identifiers = factory
+        final List<Identifier> identifiers = factory
                 .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", false,
                         defaultHost);
 
@@ -87,7 +87,7 @@ public class IdentifierFactoryTest {
 
         //Flush cache for this contentlet to force look up in database
         ic.removeFromCacheByURI(defaultHost.getIdentifier(), "/products");
-        Identifier identifier = factory.findByURI(defaultHost.getIdentifier(), "/products");
+        final Identifier identifier = factory.findByURI(defaultHost.getIdentifier(), "/products");
 
         Assert.assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
         Assert.assertEquals("products", identifier.getAssetName());
@@ -100,7 +100,7 @@ public class IdentifierFactoryTest {
         //Flush cache for this contentlet to force look up in database
         ic.removeFromCacheByURI(defaultHost.getIdentifier(), "/products");
 
-        Identifier identifier = factory.findByURI(systemHost.getIdentifier(), "/products");
+        final Identifier identifier = factory.findByURI(systemHost.getIdentifier(), "/products");
 
         Assert.assertTrue(identifier.getId() != null && identifier.getId().isEmpty());
         Assert.assertNull(identifier.getAssetName());
@@ -110,7 +110,7 @@ public class IdentifierFactoryTest {
     @Test
     public void testFindByParentPathFound() throws DotDataException {
 
-        List<Identifier> identifiers = factory
+        final List<Identifier> identifiers = factory
                 .findByParentPath(defaultHost.getIdentifier(), "/blogs");
 
         Assert.assertTrue(identifiers != null && !identifiers.isEmpty());
@@ -120,7 +120,7 @@ public class IdentifierFactoryTest {
     @Test
     public void testFindByParentPathNotFound() throws DotDataException {
 
-        List<Identifier> identifiers = factory
+        final List<Identifier> identifiers = factory
                 .findByParentPath(systemHost.getIdentifier(), "/blogs");
 
         Assert.assertTrue(identifiers == null || identifiers.isEmpty());
@@ -128,7 +128,7 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testLoadFromDbFound() throws DotDataException {
-        Identifier identifier = factory.loadFromDb(defaultHost.getIdentifier());
+        final Identifier identifier = factory.loadFromDb(defaultHost.getIdentifier());
 
         Assert.assertNotNull(identifier);
         Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
@@ -142,7 +142,7 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testLoadFromDbVersionableFound() throws DotDataException {
-        Identifier identifier = factory.loadFromDb(defaultHost);
+        final Identifier identifier = factory.loadFromDb(defaultHost);
 
         Assert.assertNotNull(identifier);
         Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
@@ -503,7 +503,7 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testLoadAllIdentifiers() throws DotDataException {
-        List<Identifier> identifiers = factory.loadAllIdentifiers();
+        final List<Identifier> identifiers = factory.loadAllIdentifiers();
 
         Assert.assertNotNull(identifiers);
         Assert.assertTrue(identifiers.size() > 0);
@@ -511,21 +511,21 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testIsIdentifierFound() {
-        boolean found = factory.isIdentifier(defaultHost.getIdentifier());
+        final boolean found = factory.isIdentifier(defaultHost.getIdentifier());
 
         Assert.assertTrue(found);
     }
 
     @Test
     public void testIsIdentifierWhenNull() {
-        boolean found = factory.isIdentifier(null);
+        final boolean found = factory.isIdentifier(null);
 
         Assert.assertFalse(found);
     }
 
     @Test
     public void testGetAssetTypeFromDB() throws DotDataException {
-        String assetType = factory.getAssetTypeFromDB(defaultHost.getIdentifier());
+       final String assetType = factory.getAssetTypeFromDB(defaultHost.getIdentifier());
 
         Assert.assertNotNull(assetType);
         Assert.assertEquals("contentlet", assetType);
@@ -534,14 +534,14 @@ public class IdentifierFactoryTest {
 
     @Test
     public void testGetAssetTypeFromDBWhenNull() throws DotDataException {
-        String assetType = factory.getAssetTypeFromDB(null);
+        final String assetType = factory.getAssetTypeFromDB(null);
 
         Assert.assertNull(assetType);
 
     }
 
     private void deleteIdentifier(Identifier identifier) throws DotDataException {
-        DotConnect db = new DotConnect();
+        final DotConnect db = new DotConnect();
         db.setSQL("delete from identifier where id = ?");
         db.addParam(identifier.getId());
         db.loadResult();

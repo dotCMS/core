@@ -431,7 +431,7 @@ public class CMSMaintenanceAjax {
 			try {
 
 				/* get a list of all our tables */
-				Map map = new HashMap();
+				final Map map = new HashMap();
 
 				//Including Identifier.class because it is not mapped with Hibernate anymore
 				map.put(Identifier.class, null);
@@ -444,8 +444,9 @@ public class CMSMaintenanceAjax {
 					Class x = (Class) pairs.getKey();
 					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
 							.equals(ClickstreamRequest.class)
-							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
+							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class)) {
 						_tablesToDump.add(x);
+					}
 
 				}
 				XStream _xstream = null;
@@ -478,13 +479,13 @@ public class CMSMaintenanceAjax {
 							.equals(DashboardUserPreferences.class)) {
 						_xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.Set.class,
-								java.util.Set.class);
+								Set.class);
 						_xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.List.class,
-								java.util.List.class);
+								List.class);
 						_xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.Map.class,
-								java.util.Map.class);
+								Map.class);
 						Mapper mapper = _xstream.getMapper();
 						_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 						_xstream.registerConverter(new HibernateMapConverter(mapper));

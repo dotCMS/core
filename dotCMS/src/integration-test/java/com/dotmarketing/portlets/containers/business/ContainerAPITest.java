@@ -132,7 +132,7 @@ public class ContainerAPITest extends ContentletBaseTest {
     public void delete() throws Exception {
     	HibernateUtil.startTransaction();
 
-        Container saved = createContainer();
+        final Container saved = createContainer();
 
         String inode=saved.getInode();
         String identifier=saved.getIdentifier();
@@ -147,9 +147,9 @@ public class ContainerAPITest extends ContentletBaseTest {
     public void testCopy() throws Exception {
         HibernateUtil.startTransaction();
 
-        Container source = createContainer();
+        final Container source = createContainer();
 
-        Container target = containerAPI.copy(source, defaultHost, user, false);
+        final Container target = containerAPI.copy(source, defaultHost, user, false);
 
         assertNotNull(target);
         assertNotNull(target.getTitle());
@@ -165,21 +165,21 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void testFindContainersUnder() throws DotDataException {
-        List<Container> results = containerAPI.findContainersUnder(defaultHost);
+        final List<Container> results = containerAPI.findContainersUnder(defaultHost);
         assertNotNull(results);
         assertFalse(results.isEmpty());
     }
 
     @Test
     public void testFindAllContainers() throws DotDataException, DotSecurityException {
-        List<Container> results = containerAPI.findAllContainers(user, false);
+        final List<Container> results = containerAPI.findAllContainers(user, false);
         assertNotNull(results);
         assertFalse(results.isEmpty());
     }
 
     @Test
     public void testFindContainers() throws DotDataException, DotSecurityException {
-        List<Container> results = containerAPI
+        final List<Container> results = containerAPI
                 .findContainers(user, false, null, defaultHost.getIdentifier(), null, null, null, 0,
                         -1, null);
         assertNotNull(results);
@@ -194,9 +194,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
+        final Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
-        List<ContainerStructure> csList = new ArrayList<>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(st.getInode());
         cs.setCode("this is the code");

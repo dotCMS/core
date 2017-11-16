@@ -119,7 +119,7 @@ public class LinkFactory {
     public static java.util.List getLinkChildrenByCondition(Inode o,String condition) {
         try {
 
-            DotConnect dc = new DotConnect();
+            final DotConnect dc = new DotConnect();
             dc.setSQL(
 			"SELECT links.* from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
 			"links_1_.inode = links.inode and links_1_.type='links' and " +

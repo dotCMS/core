@@ -60,7 +60,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 	
     @Test
     public void saveTemplate() throws Exception {
-        Host host= hostAPI.findDefaultHost(user, false);
+        final Host host= hostAPI.findDefaultHost(user, false);
         String body="<html><body> I'm mostly empty </body></html>";
         String title="empty test template "+UUIDGenerator.generateUuid();
 
@@ -136,7 +136,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         template.setTitle(title);
         template.setBody(body);
 
-        Template saved= templateAPI.saveTemplate(template, host, user, false);
+        final Template saved= templateAPI.saveTemplate(template, host, user, false);
 
         final String tInode=template.getInode(),tIdent=template.getIdentifier();
 
@@ -172,7 +172,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     @Test
     public void testFindTemplates() throws DotDataException, DotSecurityException {
-        List<Template> result = templateAPI
+        final List<Template> result = templateAPI
                 .findTemplates(user, false, null, host.getIdentifier(), null, null, null, 0, -1,
                         null);
 
@@ -183,14 +183,14 @@ public class TemplateAPITest extends IntegrationTestBase {
     @Test
     public void testFindWorkingTemplateByName() throws Exception {
         Template template = new Template();
-        TemplateFactory templateFactory = new TemplateFactoryImpl();
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
         template.setTitle("empty test template " + UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
 
         try {
             template = templateAPI.saveTemplate(template, host, user, false);
 
-            Template result = templateFactory.findWorkingTemplateByName(template.getTitle(), host);
+            final Template result = templateFactory.findWorkingTemplateByName(template.getTitle(), host);
 
             assertNotNull(result);
             assertEquals(template.getInode(), result.getInode());
@@ -203,7 +203,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     @Test
     public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
-        List<Template> result = templateAPI.findTemplatesAssignedTo(host);
+        final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
 
         assertNotNull(result);
         assertTrue(!result.isEmpty());

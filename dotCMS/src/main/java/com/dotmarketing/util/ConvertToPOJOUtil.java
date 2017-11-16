@@ -33,7 +33,7 @@ public class ConvertToPOJOUtil {
      * @return
      * @throws Exception
      */
-    public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results, Class classToUse)
+    public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results, final Class classToUse)
             throws Exception {
 
         if (Folder.class.equals(classToUse)){
@@ -65,14 +65,14 @@ public class ConvertToPOJOUtil {
             return ret;
         }
 
-        for (Map<String, String> map : results) {
+        for (final Map<String, String> map : results) {
             Constructor<?> ctor = classToUse.getConstructor();
-            T object = (T) ctor.newInstance();
+            final T object = (T) ctor.newInstance();
 
             properties = map.keySet().stream().collect(Collectors
                     .toMap(key -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, key), key ->map.get(key)));
 
-            for (String property: properties.keySet()){
+            for (final String property: properties.keySet()){
                 if (properties.get(property) != null){
                     if (isFieldPresent(classToUse, String.class, property)){
                         PropertyUtils.setProperty(object, property, properties.get(property));
@@ -101,7 +101,7 @@ public class ConvertToPOJOUtil {
      * @return
      * @throws NoSuchFieldException
      */
-    private static boolean isFieldPresent(Class classToUse, Class fieldType, String property)
+    private static boolean isFieldPresent(final Class classToUse, Class fieldType, String property)
             throws NoSuchFieldException {
 
         try{
@@ -119,7 +119,7 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Link> convertDotConnectMapToLink(List<Map<String,String>> results)
+    public static List<Link> convertDotConnectMapToLink(final List<Map<String,String>> results)
             throws ParseException {
 
         List<Link> ret;
@@ -128,7 +128,7 @@ public class ConvertToPOJOUtil {
 
         if(results != null && !results.isEmpty()){
             for (Map<String, String> map : results) {
-                Link link = new Link();
+                final Link link = new Link();
                 link.setInode(map.get("inode"));
 
                 if (map.get("show_on_menu") != null && !map.get("show_on_menu").isEmpty()){
@@ -176,15 +176,15 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Identifier> convertDotConnectMapToIdentifier(List<Map<String,String>> results)
+    public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String,String>> results)
             throws ParseException {
-        List<Identifier> ret = new ArrayList<>();
+        final List<Identifier> ret = new ArrayList<>();
         if(results == null || results.size()==0){
             return ret;
         }
 
         for (Map<String, String> map : results) {
-            Identifier i = new Identifier();
+            final Identifier i = new Identifier();
             i.setAssetName(map.get("asset_name"));
             i.setAssetType(map.get("asset_type"));
             i.setHostId(map.get("host_inode"));
@@ -204,7 +204,7 @@ public class ConvertToPOJOUtil {
         return ret;
     }
 
-    public static List<Folder> convertDotConnectMapToFolder(List<Map<String,String>> results)
+    public static List<Folder> convertDotConnectMapToFolder(final List<Map<String,String>> results)
             throws ParseException {
 
         Folder folder;
@@ -243,7 +243,7 @@ public class ConvertToPOJOUtil {
         return ret;
     }
 
-    public static List<Container> convertDotConnectMapToContainer(List<Map<String,String>> results)
+    public static List<Container> convertDotConnectMapToContainer(final List<Map<String,String>> results)
             throws ParseException {
         Container container;
         List<Container> ret;
@@ -301,7 +301,7 @@ public class ConvertToPOJOUtil {
         return ret;
     }
 
-    public static List<Template> convertDotConnectMapToTemplate(List<Map<String,String>> results)
+    public static List<Template> convertDotConnectMapToTemplate(final List<Map<String,String>> results)
             throws ParseException {
         Template template;
         List<Template> ret;

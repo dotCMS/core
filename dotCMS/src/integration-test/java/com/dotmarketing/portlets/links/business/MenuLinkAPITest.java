@@ -139,7 +139,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
 
     @Test
     public void testFindLinks() throws DotDataException, DotSecurityException {
-        List<Link> result = mAPI
+        final List<Link> result = mAPI
                 .findLinks(user, false, null, hAPI.findDefaultHost(user, false).getIdentifier(), null, null, null, 0, -1, null);
 
         assertNotNull(result);

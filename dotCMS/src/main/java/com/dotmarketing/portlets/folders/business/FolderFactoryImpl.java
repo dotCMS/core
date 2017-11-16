@@ -119,7 +119,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Folder> findSubFolders(Folder folder, Boolean showOnMenu)
+	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu)
 			throws DotStateException, DotDataException {
 		Identifier id = APILocator.getIdentifierAPI().find(folder);
 		return getSubFolders(showOnMenu, id.getPath(), id.getHostId(), null);
@@ -127,16 +127,16 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Folder> findSubFolders(Host host, Boolean showOnMenu)
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)
 			throws DotHibernateException {
 
 		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
 	}
 
-	private List<Folder> getSubFolders(Boolean showOnMenu, String path, String hostId, String order) {
+	private List<Folder> getSubFolders(Boolean showOnMenu, String path, final String hostId, String order) {
 		DotConnect dc    = new DotConnect();
 		String condition = "";
-		String orderBy   = " order by ";
+		StringBuilder orderBy   = new StringBuilder(" order by ");
 
 		if (UtilMethods.isSet(showOnMenu)) {
 			condition = "show_on_menu = " + (showOnMenu ? DbConnectionFactory
@@ -144,9 +144,9 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
 
 		if (!UtilMethods.isSet(order)){
-			orderBy += "sort_order, name";
+			orderBy.append("sort_order, name");
 		}else{
-			orderBy += order;
+			orderBy.append(order);
 		}
 
 		dc.setSQL(

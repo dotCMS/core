@@ -28,7 +28,7 @@ public class WebAssetFactoryTest extends IntegrationTestBase {
 
     @Test
     public void testGetAssetsWorkingWithPermission() {
-        List<WebAsset> webAssetList = WebAssetFactory
+        final List<WebAsset> webAssetList = WebAssetFactory
                 .getAssetsWorkingWithPermission(Template.class, 10, 0, "title", null, systemUser);
 
         Assert.assertNotNull(webAssetList);

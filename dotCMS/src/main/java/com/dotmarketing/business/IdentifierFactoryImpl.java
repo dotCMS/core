@@ -46,7 +46,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	private IdentifierCache ic = CacheLocator.getIdentifierCache();
 
 	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean include, Host host) throws DotDataException {
+	protected List<Identifier> findByURIPattern(final String assetType, String uri, boolean include, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 
@@ -136,12 +136,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier findByURI(Host host, String uri) throws DotDataException {
+	protected Identifier findByURI(final Host host, String uri) throws DotDataException {
 		return findByURI(host.getIdentifier(), uri);
 	}
 
 	@Override
-	protected Identifier findByURI(String siteId, String uri) throws DotDataException {
+	protected Identifier findByURI(final String siteId, String uri) throws DotDataException {
 		Identifier identifier = ic.getIdentifier(siteId, uri);
 		if (identifier != null) {
 			return check404(identifier);
@@ -176,7 +176,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected List<Identifier> findByParentPath(String siteId, String parent_path) throws DotDataException {
+	protected List<Identifier> findByParentPath(final String siteId, String parent_path) throws DotDataException {
 	    if(!parent_path.endsWith("/")) {
 	        parent_path=parent_path+"/";
 	    }
@@ -421,7 +421,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier find(String identifier) throws DotStateException, DotDataException {
+	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
 		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
 			return check404(id);
@@ -435,7 +435,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier saveIdentifier(Identifier id) throws DotDataException {
+	protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
 		String query;
 		if (id != null) {
 			if (UtilMethods.isSet(id.getId())) {
@@ -465,7 +465,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				dc.loadResult();
 			}catch(DotDataException e){
 				Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
-				throw new DotDataException(e.toString());
+				throw new DotDataException(e);
 			}
 
 

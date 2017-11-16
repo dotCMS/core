@@ -99,7 +99,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		boolean done = false;
 
 		StringBuffer conditionBuffer = new StringBuffer();
-		String condition = !includeArchived?" asset.inode=versioninfo.working_inode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():"  asset.inode=versioninfo.working_inode ";
+		final String condition = !includeArchived?" asset.inode=versioninfo.working_inode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():"  asset.inode=versioninfo.working_inode ";
 		conditionBuffer.append(condition);
 
 		List<Object> paramValues =null;
@@ -115,7 +115,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 							conditionBuffer.append(entry.getKey());
 							conditionBuffer.append(" = '");
 							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
+							conditionBuffer.append('\'');
 						}else{
 							conditionBuffer.append(" lower(asset.");
 							conditionBuffer.append(entry.getKey());
@@ -158,10 +158,9 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		StringBuffer query = new StringBuffer();
 		query.append("select asset.* from links asset, inode, identifier,link_version_info versioninfo");
 		if(UtilMethods.isSet(parent)){
-			query.append(" ,tree where asset.inode=inode.inode ");
-			query.append("and asset.identifier = identifier.id and tree.parent = '");
-			query.append(parent);
-			query.append("' and tree.child=asset.inode");
+			query.append(" ,tree where asset.inode=inode.inode ")
+					.append("and asset.identifier = identifier.id and tree.parent = '")
+					.append(parent).append("' and tree.child=asset.inode");
 
 		}else{
 			query.append(" where asset.inode=inode.inode and asset.identifier = identifier.id");
@@ -170,7 +169,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		if(UtilMethods.isSet(hostId)){
 			query.append(" and identifier.host_inode = '");
 			query.append(hostId);
-			query.append("'");
+			query.append('\'');
 		}
 		if(UtilMethods.isSet(inode)){
 			query.append(" and asset.inode = '");
@@ -187,7 +186,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		}
 
 		List<Link> resultList;
-		DotConnect dc = new DotConnect();
+		final DotConnect dc = new DotConnect();
 		int countLimit = 100;
 		int size = 0;
 		try {

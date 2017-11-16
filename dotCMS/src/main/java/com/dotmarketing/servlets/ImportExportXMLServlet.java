@@ -314,7 +314,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 		try {
 
 			/* get a list of all our tables */
-			Map map = new HashMap();
+			final Map map = new HashMap();
 
 			//Including Identifier.class because it is not mapped with Hibernate anymore
 			map.put(Identifier.class, null);

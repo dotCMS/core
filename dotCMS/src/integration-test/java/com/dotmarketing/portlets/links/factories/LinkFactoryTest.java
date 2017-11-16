@@ -98,8 +98,8 @@ public class LinkFactoryTest extends IntegrationTestBase {
             container.setPreLoop("preloop code");
             container.setPostLoop("postloop code");
 
-            List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-            ContainerStructure cs = new ContainerStructure();
+            final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+            final ContainerStructure cs = new ContainerStructure();
             cs.setStructureId(
                     CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget")
                             .getInode());
@@ -111,9 +111,9 @@ public class LinkFactoryTest extends IntegrationTestBase {
             /**
              * Create new template
              */
-            String templateBody = "<html><body> #parseContainer('" + container.getIdentifier()
+            final String templateBody = "<html><body> #parseContainer('" + container.getIdentifier()
                     + "') </body></html>";
-            String templateTitle = "template" + id;
+            final String templateTitle = "template" + id;
 
             //Create template
             template = new Template();
@@ -160,7 +160,7 @@ public class LinkFactoryTest extends IntegrationTestBase {
             link.setUrl(myURL.toString());
             WebAssetFactory.createAsset(link, userId, ftest);
 
-            List<Link> links = LinkFactory.getLinkChildrenByCondition(ftest, "");
+            final List<Link> links = LinkFactory.getLinkChildrenByCondition(ftest, "");
 
             Assert.assertNotNull(links);
             Assert.assertFalse(links.isEmpty());

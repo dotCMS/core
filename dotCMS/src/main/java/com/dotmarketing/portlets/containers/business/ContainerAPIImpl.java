@@ -175,12 +175,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 */
 	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
-	private String getAppendToContainerTitle(String containerTitle, Host destination)
+	private String getAppendToContainerTitle(final String containerTitle, Host destination)
 			throws DotDataException {
 		List<Container> containers;
 		String temp = new String(containerTitle);
 		String result = "";
-		DotConnect dc = new DotConnect();
+		final DotConnect dc = new DotConnect();
 		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from "
 				+ Inode.Type.CONTAINERS.getTableName()
 				+ ", inode dot_containers_1_, identifier ident, container_version_info vv " +
@@ -256,7 +256,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<Container> getContainersInTemplate(Template parentTemplate)
+	public List<Container> getContainersInTemplate(final Template parentTemplate)
 			throws DotStateException, DotDataException, DotSecurityException {
 
 		List<Identifier> identifiers = new ArrayList<>();
@@ -275,9 +275,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			throw new DotDataException(e);
 		}
 
-		List<Container> containers = new ArrayList<>();
+		final List<Container> containers = new ArrayList<>();
 		for (Identifier id : identifiers) {
-			Container cont = (Container) APILocator.getVersionableAPI()
+			final Container cont = (Container) APILocator.getVersionableAPI()
 					.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
 			containers.add(cont);
 		}

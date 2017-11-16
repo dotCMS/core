@@ -36,12 +36,12 @@ public class CMISQueryProcessorTest extends IntegrationTestBase {
     @Test
     public void testDocumentQuery() {
 
-        CMISQueryProcessor processor = new CMISQueryProcessor();
+        final CMISQueryProcessor processor = new CMISQueryProcessor();
 
-        ObjectList result = processor
+        final ObjectList result = processor
                 .query(cmisManager.getTypeManager(), systemUser.getEmailAddress(),
                         "select * from " + BaseTypeId.CMIS_DOCUMENT.value(),
-                        Boolean.valueOf(false), Boolean.valueOf(false),
+                        Boolean.FALSE, Boolean.FALSE,
                         IncludeRelationships.NONE, "", BigInteger.valueOf(1000),
                         BigInteger.valueOf(0));
 

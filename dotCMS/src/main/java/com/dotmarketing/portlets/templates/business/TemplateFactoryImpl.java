@@ -73,10 +73,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived)
+	public List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived)
 			throws DotDataException {
-		DotConnect dc = new DotConnect();
-		String query = !includeArchived ? templatesUnderHostSQL + " and vi.deleted = "
+		final DotConnect dc = new DotConnect();
+		final String query = !includeArchived ? templatesUnderHostSQL + " and vi.deleted = "
 				+ DbConnectionFactory.getDBFalse() : templatesUnderHostSQL;
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
@@ -132,7 +132,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.addParam(host.getIdentifier());
 		dc.addParam(name);
 		try{
-			List<Template> result = ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
+			final List<Template> result = ConvertToPOJOUtil
+					.convertDotConnectMapToTemplate(dc.loadResults());
 			if (result!= null && !result.isEmpty()){
 				return result.get(0);
 			}
@@ -157,7 +158,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		boolean done = false;
 
 		StringBuffer conditionBuffer = new StringBuffer();
-		String condition = !includeArchived?" asset.inode=versioninfo.working_inode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():" asset.inode=versioninfo.working_inode  ";
+		final String condition = !includeArchived ?
+				" asset.inode=versioninfo.working_inode and versioninfo.deleted = "
+						+ DbConnectionFactory.getDBFalse()
+				: " asset.inode=versioninfo.working_inode  ";
 		conditionBuffer.append(condition);
 
 		List<Object> paramValues =null;

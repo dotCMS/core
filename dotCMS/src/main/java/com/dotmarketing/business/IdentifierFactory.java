@@ -31,7 +31,7 @@ public abstract class IdentifierFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByURIPattern(String assetType, String uri,
+	abstract protected List<Identifier> findByURIPattern(final String assetType, String uri,
 			boolean include, Host site) throws DotDataException;
 
 	/**
@@ -49,7 +49,7 @@ public abstract class IdentifierFactory {
 	 * @param site
 	 * @param uri
 	 */
-	abstract protected Identifier findByURI(Host site, String uri) throws DotDataException;
+	abstract protected Identifier findByURI(final Host site, String uri) throws DotDataException;
 
 	/**
 	 * Retrieves the identifier matching the URI by looking in cache first, then
@@ -58,7 +58,7 @@ public abstract class IdentifierFactory {
 	 * @param siteId
 	 * @param uri
 	 */
-	abstract protected Identifier findByURI(String siteId, String uri) throws DotDataException;
+	abstract protected Identifier findByURI(final String siteId, String uri) throws DotDataException;
 
 	/**
 	 * Retrieves the identifier matching the URI by looking in cache. Returns
@@ -132,7 +132,7 @@ public abstract class IdentifierFactory {
 	 * 
 	 * @param identifier
 	 */
-	abstract protected Identifier find(String identifier) throws DotStateException, DotDataException;
+	abstract protected Identifier find(final String identifier) throws DotStateException, DotDataException;
 
 	/**
 	 * Creates a new Identifier for a given versionable asset under a given
@@ -218,7 +218,7 @@ public abstract class IdentifierFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected Identifier saveIdentifier(Identifier identifier) throws DotDataException;
+	abstract protected Identifier saveIdentifier(final Identifier identifier) throws DotDataException;
 
 	/**
 	 * Deletes all relationships with this identifier. Accordingly, the object will be removed from
@@ -235,7 +235,7 @@ public abstract class IdentifierFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByParentPath(String siteId, String parent_path)
+	abstract protected List<Identifier> findByParentPath(final String siteId, String parent_path)
 			throws DotDataException;
 
 	/**
