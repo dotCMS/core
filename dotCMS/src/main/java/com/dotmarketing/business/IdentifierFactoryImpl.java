@@ -210,11 +210,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			throw new DotDataException(e);
 		}
 
-		if (results != null && results.size() > 0){
-			return  results.get(0);
-		}
+		return  (results != null && results.size() > 0)?results.get(0):null;
 
-		return null;
 	}
 
 	@Override
@@ -277,11 +274,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Identifier identifier = new Identifier();
 
-		if (existingId !=  null) {
-			identifier.setId(existingId);
-		}else {
-			identifier.setId(UUIDGenerator.generateUuid());
-		}
+		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
+
 		Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);

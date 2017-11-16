@@ -49,10 +49,23 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@SuppressWarnings("unchecked")
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv " +
-				"where vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-				"vv.identifier = ident.id and host_inode = '" + parentPermissionable.getIdentifier() + "'";
-		dc.setSQL(sql);
+		StringBuilder sql = new StringBuilder();
+
+		sql.append("SELECT ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".* from ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(
+				", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".inode and ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".inode = dot_containers_1_.inode and ");
+		sql.append("vv.identifier = ident.id and host_inode = '");
+		sql.append(parentPermissionable.getIdentifier() );
+		sql.append('\'');
+		dc.setSQL(sql.toString());
+
 		try {
 			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
 		} catch (ParseException e) {
@@ -63,10 +76,20 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers() throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
-				"where vv.working_inode= " + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-				"dot_containers_1_.type='containers' order by " + Inode.Type.CONTAINERS.getTableName() + ".title";
-		dc.setSQL(sql);
+		StringBuilder sql = new StringBuilder();
+		sql.append("SELECT ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".* from ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".inode and ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers' order by ");
+		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(".title");
+		dc.setSQL(sql.toString());
+
 		try {
 			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
 		} catch (ParseException e) {
@@ -163,7 +186,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			conditionBuffer.append(" ) ");
 		}
 
-		StringBuffer query = new StringBuffer();
+		StringBuilder query = new StringBuilder();
 		query.append("select asset.* from ").append(Type.CONTAINERS.getTableName())
 				.append(" asset, inode, identifier, ").append(Type.CONTAINERS.getVersionTableName())
 				.append(" vinfo");
@@ -269,8 +292,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
     public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
         HibernateUtil dh = new HibernateUtil(Container.class);
-        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE "
-        		+ " exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = c.identifier and cs.structureId = ? ) ");
+
+        StringBuilder query = new StringBuilder();
+
+        query.append("FROM c IN CLASS ");
+		query.append(Container.class);
+		query.append(" WHERE  exists ( from cs in class ");
+		query.append(ContainerStructure.class.getName());
+		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ) ");
+        dh.setQuery(query.toString());
         dh.setParam(structureInode);
         return dh.list();
     }

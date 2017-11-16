@@ -100,7 +100,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		return folder;
 	}
 
-
 	@SuppressWarnings("unchecked")
 	@Override
 	@Deprecated
@@ -137,6 +136,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		DotConnect dc    = new DotConnect();
 		String condition = "";
 		StringBuilder orderBy   = new StringBuilder(" order by ");
+		StringBuilder query = new StringBuilder();
 
 		if (UtilMethods.isSet(showOnMenu)) {
 			condition = "show_on_menu = " + (showOnMenu ? DbConnectionFactory
@@ -149,10 +149,14 @@ public class FolderFactoryImpl extends FolderFactory {
 			orderBy.append(order);
 		}
 
-		dc.setSQL(
-				"SELECT folder.* from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-						+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? "
-						+ (!condition.isEmpty()?"and " + condition:condition) + orderBy);
+		query.append("SELECT folder.* from folder folder, inode folder_1_, identifier identifier ").
+				append("where folder.identifier = identifier.id and ").
+				append("folder_1_.type = 'folder' and folder_1_.inode = folder.inode and ").
+				append("identifier.parent_path = ? and identifier.host_inode = ? ");
+
+		query.append((!condition.isEmpty()?" and " + condition:condition) + orderBy);
+
+		dc.setSQL(query.toString());
 		dc.addParam(path);
 		dc.addParam(hostId);
 
@@ -162,7 +166,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			Logger.error(this, e.getMessage(), e);
 		}
 
-		return new ArrayList<>();
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -1107,7 +1111,7 @@ public class FolderFactoryImpl extends FolderFactory {
         	Logger.warn(this, e.getMessage(), e);
 		}
 
-		return new ArrayList<>();
+		return Collections.emptyList();
     }
 
 

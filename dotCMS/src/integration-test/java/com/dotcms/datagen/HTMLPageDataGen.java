@@ -67,11 +67,10 @@ public class HTMLPageDataGen extends ContentletDataGen {
         this.folder = folder;
         try {
             this.host = APILocator.getHostAPI().find(folder.getHostId(), user , false);
-        } catch (DotDataException e) {
-            e.printStackTrace();
-        } catch (DotSecurityException e) {
-            e.printStackTrace();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
         }
+
         this.template = template;
     }
 

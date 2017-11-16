@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import java.sql.SQLException;
 import java.util.Date;
 
@@ -442,27 +443,51 @@ public class MultiTreeFactory {
 
 		try {
 			String tableName = "";
-			String sql = "";
-			if(!c.getName().contains("Identifier")){
-			  tableName = ((Inode) c.newInstance()).getType();
-			}
-			HibernateUtil dh = new HibernateUtil(c);
+			StringBuilder sql = new StringBuilder();
 
-			sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "
-			+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and "
-			+ tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
+			if(c.getName().contains("Identifier")){
+				tableName = "identifier";
+			}else{
+				tableName = ((Inode) c.newInstance()).getType();
+			}
+			DotConnect dc = new DotConnect();
+
+			if(tableName.equalsIgnoreCase("identifier")){
+				sql.append("SELECT ");
+				sql.append(tableName);
+				sql.append(".* from ");
+				sql.append(tableName);
+				sql.append(", multi_tree multi_tree ")
+						.append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ");
+				sql.append(tableName);
+				sql.append(".id order by multi_tree.tree_order");
+			}else {
+				sql.append("SELECT ");
+				sql.append(tableName);
+				sql.append(".* from ");
+				sql.append(tableName);
+				sql.append(", multi_tree multi_tree, inode ");
+				sql.append(tableName);
+				sql.append("_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ");
+				sql.append(tableName);
+				sql.append(".inode and ");
+				sql.append(tableName);
+				sql.append("_1_.inode = ");
+				sql.append(tableName);
+				sql.append(".inode order by multi_tree.tree_order");
+			}
 
 			Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
 
-			dh.setSQLQuery(sql);
+			dc.setSQL(sql.toString());
             
 			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getId() + "\n");
             Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getId() + "\n");
 
-			dh.setParam(p1.getId());
-			dh.setParam(p2.getId());
+			dc.addParam(p1.getId());
+			dc.addParam(p2.getId());
 
-			return dh.list();
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), c);
 		}
 		catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);

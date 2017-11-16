@@ -537,7 +537,7 @@ public class CMSMaintenanceAjax {
 
 						if (_list.size() == 0) {
 							try {
-								_bout.close();
+								CloseUtils.closeQuietly(_bout);
 							} catch (java.lang.NullPointerException npe) {
 							}
 							_bout = null;
