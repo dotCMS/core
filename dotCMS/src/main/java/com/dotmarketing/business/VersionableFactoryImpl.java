@@ -295,7 +295,17 @@ public class VersionableFactoryImpl extends VersionableFactory {
          contv = (ContentletVersionInfo)dh.load();
          return contv;
     }
+    @Override
+    protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
 
+         HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? ");
+         dh.setParam(identifier);
+
+         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+         return (List<ContentletVersionInfo>)dh.list();
+
+    }
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
     	Identifier ident = this.iapi.find(cvInfo.getIdentifier());
