@@ -64,6 +64,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
@@ -102,8 +103,9 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
+
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -1554,12 +1556,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (Contentlet cont : contentlets) {
                 Structure st = cont.getStructure();
                 List<Field> fields = st.getFields();
-                List<Map<String, Object>> filelist = new ArrayList<Map<String, Object>>();
-                ContentletAndBinary contentwbin = new ContentletAndBinary();
-                contentwbin.setMap(cont.getMap());
-                Boolean arebinfiles = false;
-                java.io.File file = null;
+                List<File> filelist = new ArrayList<File>();
 
+                java.io.File file = null;
                 for (Field field : fields) {
                     if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
                         try {
@@ -1568,41 +1567,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Logger.debug(this, ex.getMessage(), ex);
                         }
                         if (file != null) {
-                            byte[] bytes = null;
-                            try {
-                                bytes = FileUtil.getBytes(file);
-                            } catch (IOException e) {
-                            }
-                            Map<String, Object> temp = new HashMap<String, Object>();
-                            temp.put(file.getName(), bytes);
-                            filelist.add(temp);
-                            arebinfiles = true;
+                            filelist.add(file);
+
                         }
                     }
                 }
-                if (!arebinfiles) {
-                    java.io.File _writing = new java.io.File(backupPath + java.io.File.separator
-                            + cont.getIdentifier().toString() + ".xml");
+                
+               File papa =  new java.io.File(backupPath + java.io.File.separator
+                    + cont.getIdentifier());
+               papa.mkdirs();
+                  java.io.File _writingwbin = new java.io.File(papa,  cont.getIdentifier().toString()  + ".xml");
 
-                    try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))) {
-                        _xstream.toXML(cont, _bout);
-                    } catch (IOException e) {
-                        Logger.error(this,
-                                "Error processing the file for contentlet with Identifier: " + cont.getIdentifier(), e);
+                  try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writingwbin.toPath()))) {
+                    _xstream.toXML(cont, _bout);
+                    for(File f : filelist){
+                      File child = new File(papa, f.getName());
+                      FileUtil.move(f,child );
                     }
-                } else {
-                    java.io.File _writingwbin = new java.io.File(backupPath + java.io.File.separator
-                            + cont.getIdentifier().toString() + "_bin" + ".xml");
-
-                    try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writingwbin.toPath()))) {
-                        contentwbin.setBinaryFilesList(filelist);
-                        _xstream.toXML(contentwbin, _bout);
-                        arebinfiles = false;
-                    } catch (IOException e) {
-                        Logger.error(this,
-                                "Error processing the file for contentlet with Identifier: " + cont.getIdentifier(), e);
-                    }
-                }
+                  } catch (IOException e) {
+                      Logger.error(this,
+                              "Error processing the file for contentlet with Identifier: " + cont.getIdentifier(), e);
+                  }
             }
         }
         // Delete all the versions of the contentlets to delete
@@ -3209,8 +3194,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             String velocityVarNm = field.getVelocityVarName();
                             java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                            if(incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                             // throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
+                            }
                             java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
 
+                            
                             java.io.File metadata=null;
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                                 metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
@@ -3537,6 +3526,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } // end syncronized block
 
+        if(contentlet.isFileAsset()){
+          
+          FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+          
+          Logger.info(this.getClass(), "file Asset saved:" + contentlet.getIdentifier());
+          Logger.info(this.getClass(), "file Asset saved:" + asset.getFileName() + " : " + asset.getFileAsset() );
+          Logger.info(this.getClass(), "file Asset saved:" + asset.getFileAsset().length() );
+          
+          
+        }
+        
+        
+        
+        
+        
+        
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
