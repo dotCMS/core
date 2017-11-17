@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,8 +57,9 @@ public class ConvertToPOJOUtil {
      * @return
      * @throws Exception
      */
-    public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results, final Class classToUse)
-            throws ParseException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, NoSuchFieldException {
+    public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results,
+            final Class classToUse) throws ParseException, IllegalAccessException,
+            InvocationTargetException, InstantiationException, NoSuchMethodException, NoSuchFieldException {
 
         List<T> ret = null;
 
@@ -94,7 +96,8 @@ public class ConvertToPOJOUtil {
 
     @NotNull
     private static <T> List<T> getMapFields(List<Map<String, String>> results, Class classToUse)
-            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchFieldException, ParseException {
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+            InvocationTargetException, NoSuchFieldException, ParseException {
         List<T> ret;
         Map<String, String> properties;
         ret = new ArrayList<>();
@@ -106,7 +109,8 @@ public class ConvertToPOJOUtil {
             properties = map.entrySet().stream().collect(Collectors
                     .toMap(entry -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, entry.getKey()), entry ->map.get(entry.getKey())));
 
-            for (final String property: properties.keySet()){
+            for (final Entry entry: properties.entrySet()){
+                String property = (String) entry.getKey();
                 if (properties.get(property) != null){
                     if (isFieldPresent(classToUse, String.class, property)){
                         PropertyUtils.setProperty(object, property, properties.get(property));

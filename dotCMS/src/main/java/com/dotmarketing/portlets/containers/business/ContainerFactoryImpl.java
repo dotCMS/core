@@ -193,7 +193,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			conditionBuffer.append(" ) ");
 		}
 
-		StringBuilder query = new StringBuilder();
+		final StringBuilder query = new StringBuilder();
 		query.append("select asset.* from ");
 		query.append(Type.CONTAINERS.getTableName());
 		query.append(" asset, inode, identifier, ");
