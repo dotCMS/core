@@ -640,6 +640,37 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		return;
 	},
+
+	deleteActionForStep : function (actionId, stepId){
+		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
+			return;
+		}
+		var xhrArgs = {
+			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+
+
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						showDotCMSSystemMessage(dataOrError, true);
+
+
+					} else {
+						actionAdmin.deleteSuccess(dataOrError);
+					}
+				} else {
+					this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-scheme")%>");
+
+				}
+			}
+		};
+		dojo.xhrPut(xhrArgs);
+
+		return;
+	},
+
+
+
 	deleteSuccess : function(message) {
 		console.log(message);
 		console.log(message.split(":")[1]);

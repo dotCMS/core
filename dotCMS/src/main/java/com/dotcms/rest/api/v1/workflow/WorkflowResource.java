@@ -375,7 +375,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteStep(@Context final HttpServletRequest request,
-                                           @PathParam("stepId") String stepId) {
+                                           @PathParam("stepId") final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -403,6 +403,51 @@ public class WorkflowResource {
         }
 
         return response;
-    } // saveAction
+    } // deleteStep
+
+    /**
+     * Deletes an action associated to the step
+     * @param request                   HttpServletRequest
+     * @param stepId                   String
+     * @return Response
+     */
+    @DELETE
+    @Path("/action/{actionId}/step/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteAction(@Context final HttpServletRequest request,
+                                     @PathParam("actionId") final String actionId,
+                                     @PathParam("stepId")   final String stepId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+
+            Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
+            this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on deleteAction, action: " + actionId
+                            + ", stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteAction, action: " + actionId
+                            + " stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // deleteAction
 
 } // E:O:F:WorkflowResource.

@@ -117,6 +117,13 @@ public interface WorkFlowFactory {
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
 
 	/**
+	 * Deletes an action from the step (the relationship)
+	 * @param action WorkflowAction
+	 * @param step   WorkflowStep
+	 */
+	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
+
+	/**
 	 * Deletes the actions related to the step
 	 * @param step {@link WorkflowStep}
 	 * @throws DotDataException

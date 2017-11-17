@@ -221,7 +221,20 @@ public interface WorkflowAPI {
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
+	/**
+	 * Deletes the action associated to the scheme
+	 * @param action WorkflowAction
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes the action reference to the step, but the action associated to the scheme will continue alive.
+	 * @param action WorkflowAction action to delete
+	 * @param step   WorkflowStep   from the step to delete the action
+	 */
+	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
@@ -321,5 +334,6 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
 
 }

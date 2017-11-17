@@ -516,9 +516,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
 		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true)) {
+		if (null != action && !APILocator.getPermissionAPI().doesUserHavePermission
+				(action, PermissionAPI.PERMISSION_USE, user, true)) {
+
 			throw new DotSecurityException("User " + user + " cannot read action " + action.getName());
 		}
+		
 		return action;
 	}
 
@@ -617,6 +620,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		workFlowFactory.deleteAction(action);
 	}
+
+	@WrapInTransaction
+	public void deleteAction(final WorkflowAction action,
+							 final WorkflowStep step) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, "Deleting the action: " + action.getId() +
+					", from the step: " + step.getId());
+
+		this.workFlowFactory.deleteAction(action, step);
+
+	} // deleteAction.
 
 	@CloseDBIfOpened
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {

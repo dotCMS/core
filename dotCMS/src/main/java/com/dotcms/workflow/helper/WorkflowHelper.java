@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -39,7 +40,6 @@ public class WorkflowHelper {
 
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;
-
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -94,6 +94,52 @@ public class WorkflowHelper {
             throw new DoesNotExistException("Workflow-does-not-exists-step");
         }
     } // deleteStep.
+
+    /**
+     * Deletes the action which is part of the step, but the action still being part of the scheme.
+     * @param actionId String action id
+     * @param stepId   String step   id
+     * @param user     User   the user that makes the request
+     * @return WorkflowStep
+     */
+    @WrapInTransaction
+    public WorkflowStep deleteAction(final String actionId,
+                                     final String stepId,
+                                     final User user) {
+
+        WorkflowAction action = null;
+        WorkflowStep step     = null;
+
+        try {
+
+            Logger.debug(this, "Looking for the actionId: " + actionId);
+            action =
+                    this.workflowAPI.findAction(actionId, user);
+
+            Logger.debug(this, "Looking for the stepId: " + stepId);
+            step =
+                    this.workflowAPI.findStep(stepId);
+
+            if (null == action) {
+                throw new DoesNotExistException("Workflow-does-not-exists-action");
+            }
+
+            if (null == step) {
+                throw new DoesNotExistException("Workflow-does-not-exists-step");
+            }
+
+            Logger.debug(this, "Deleting the action: " + actionId
+                    + " for the stepId: " + stepId);
+
+            this.workflowAPI.deleteAction(action, step);
+        } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return step;
+    } // deleteAction.
 
     /**
      * Finds the action associated to the stepId

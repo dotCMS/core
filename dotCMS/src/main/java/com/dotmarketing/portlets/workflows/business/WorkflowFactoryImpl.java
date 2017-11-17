@@ -205,6 +205,23 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	public void deleteAction(final WorkflowAction action, final WorkflowStep step) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, "Deleting the action: " + action.getId() +
+						", from the step: " + step.getId());
+
+		new DotConnect().setSQL(sql.DELETE_ACTION_STEP)
+				.addParam(action.getId()).addParam(step.getId()).loadResult();
+
+		Logger.debug(this, "Cleaning the actions from the step CACHE: " + step.getId());
+		cache.removeActions(step);
+
+		Logger.debug(this, "Updating the scheme: " + step.getSchemeId());
+		// update scheme mod date
+		final WorkflowScheme scheme = findScheme(step.getSchemeId());
+		saveScheme(scheme);
+	} // deleteAction
+
 	@Override
 	public void deleteActions(final WorkflowStep step) throws DotDataException, AlreadyExistException {
 

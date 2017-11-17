@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -46,6 +45,31 @@ public class WfActionAjax extends WfBaseAction {
 		}
 	} // reorder.
 
+	/**
+	 * Deletes just the action associated to the step, but the action still alive as part of the scheme.
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	public void deleteActionForStep(final HttpServletRequest request,
+					   final HttpServletResponse response) throws ServletException, IOException {
+
+		final String actionId = request.getParameter("actionId");
+		final String stepId   = request.getParameter("stepId");
+		WorkflowStep workflowStep = null;
+
+		try {
+
+			final User user = this.userWebAPI.getUser(request);
+			workflowStep    = this.workflowHelper.deleteAction
+					(actionId, stepId, user);
+			writeSuccess(response, workflowStep.getSchemeId() );
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			writeError(response, e.getMessage());
+		}
+	} // delete.
 	
 	public void delete(final HttpServletRequest request,
                        final HttpServletResponse response) throws ServletException, IOException {
