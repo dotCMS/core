@@ -43,6 +43,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -100,6 +101,14 @@ public class FolderFactoryImpl extends FolderFactory {
 		return folder;
 	}
 
+	/**
+	 *
+	 * @param folder
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	@Deprecated
@@ -162,7 +171,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		try{
 			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
-		}catch(Exception e){
+		}catch(ParseException | DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
 
@@ -220,6 +229,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
+				}else{
+					folder = new Folder();
 				}
 
 				// if it is found add it to folder cache
@@ -267,8 +278,6 @@ public class FolderFactoryImpl extends FolderFactory {
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
-					}else{
-						folder = new Folder();
 					}
 
 					// if it is found add it to folder cache

@@ -50,18 +50,18 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder sql = new StringBuilder();
+		String tableName = Type.CONTAINERS.getTableName();
 
 		sql.append("SELECT ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".* from ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(
 				", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".inode and ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
-		sql.append(".inode = dot_containers_1_.inode and ");
-		sql.append("vv.identifier = ident.id and host_inode = '");
+		sql.append(tableName);
+		sql.append(".inode = dot_containers_1_.inode and vv.identifier = ident.id and host_inode = '");
 		sql.append(parentPermissionable.getIdentifier() );
 		sql.append('\'');
 		dc.setSQL(sql.toString());
@@ -77,16 +77,18 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public List<Container> findAllContainers() throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder sql = new StringBuilder();
+		String tableName = Type.CONTAINERS.getTableName();
+
 		sql.append("SELECT ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".* from ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".inode and ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers' order by ");
-		sql.append(Inode.Type.CONTAINERS.getTableName());
+		sql.append(tableName);
 		sql.append(".title");
 		dc.setSQL(sql.toString());
 
@@ -135,9 +137,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		boolean done = false;
 
 		StringBuffer conditionBuffer = new StringBuffer();
-		/*String condition = !includeArchived?" asset.working = " + DbConnectionFactory.getDBTrue() + " and asset.deleted = " +DbConnectionFactory.getDBFalse():
-			" asset.working = " + DbConnectionFactory.getDBTrue();*/
-		//conditionBuffer.append(condition);
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
@@ -147,13 +146,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(counter==0){
 					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append('\'');
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
+						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
+								.equalsIgnoreCase("identifier")) {
 							conditionBuffer.append(" asset.");
 							conditionBuffer.append(entry.getKey());
 							conditionBuffer.append(" = '");
@@ -173,18 +167,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					}
 				}else{
 					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
+						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
+								.equalsIgnoreCase("identifier")) {
 							conditionBuffer.append(" OR asset.");
 							conditionBuffer.append(entry.getKey());
 							conditionBuffer.append(" = '");
 							conditionBuffer.append(entry.getValue());
 							conditionBuffer.append('\'');
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("\'");
 						}else{
 							conditionBuffer.append(" OR lower(asset.");
 							conditionBuffer.append(entry.getKey());
