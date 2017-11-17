@@ -110,6 +110,8 @@
 			dojo.style("sendGroupRow", "display", "flex");
 		}
 		else{
+            dojo.style("addressFromSpan", "display", "");
+            dojo.style("addressToSpan", "display", "none");
 			dojo.style("protocolRow", "display", "none");
 			dojo.style("portSpan", "display", "none");
 			dojo.style("addressRow", "display", "");
