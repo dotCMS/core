@@ -133,7 +133,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      * 
      * @see MultiTreeFactory#updateHTMLPageVersionTS(String)
-     * @see MultiTreeFactory#refreshPageInCache(String, Long)
+     * @see MultiTreeFactory#refreshPageInCache(String)
      */
     public static void deleteMultiTreeByParent1(Identifier parent, Long languageId)
             throws DotDataException, DotSecurityException {
@@ -687,8 +687,8 @@ public class MultiTreeFactory {
             }
         }
 
-        List<Contentlet> cons = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
-		for (Contentlet pageContent : cons) {
+        List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
+		for (Contentlet pageContent : contentlets) {
 			IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
 			PageServices.invalidateAll(htmlPage);
 		}
