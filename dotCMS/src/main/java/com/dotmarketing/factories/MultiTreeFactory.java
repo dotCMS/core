@@ -1,8 +1,11 @@
 package com.dotmarketing.factories;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -23,6 +26,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.Lists;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree
@@ -674,11 +678,17 @@ public class MultiTreeFactory {
      *            
      */
     private static void refreshPageInCache(String pageIdentifier) throws DotDataException, DotSecurityException {
-        Identifier ident = APILocator.getIdentifierAPI().find(pageIdentifier);
-        List<Contentlet> allPageVersions = APILocator.getContentletAPI()
-                .findAllVersions(ident, APILocator.getUserAPI().getSystemUser(), false);
+        Set<String> inodes = new HashSet<String>();
+        List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
+        for (ContentletVersionInfo versionInfo : infos) {
+            inodes.add(versionInfo.getWorkingInode());
+            if(versionInfo.getLiveInode() != null){
+              inodes.add(versionInfo.getLiveInode());
+            }
+        }
 
-		for (Contentlet pageContent : allPageVersions) {
+        List<Contentlet> cons = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
+		for (Contentlet pageContent : cons) {
 			IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
 			PageServices.invalidateAll(htmlPage);
 		}
