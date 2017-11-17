@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;

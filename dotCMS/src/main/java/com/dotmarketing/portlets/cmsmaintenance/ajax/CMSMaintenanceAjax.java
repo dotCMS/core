@@ -427,7 +427,7 @@ public class CMSMaintenanceAjax {
 			validateUser();
 			Logger.info(this, "Starting createXMLFiles()");
 
-			Set<Class> _tablesToDump = new HashSet<Class>();
+			Set<Class> tablesToDump = new HashSet<Class>();
 			try {
 
 				/* get a list of all our tables */
@@ -445,18 +445,18 @@ public class CMSMaintenanceAjax {
 					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
 							.equals(ClickstreamRequest.class)
 							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class)) {
-						_tablesToDump.add(x);
+						tablesToDump.add(x);
 					}
 
 				}
-				XStream _xstream = null;
-				HibernateUtil _dh = null;
-				DotConnect _dc = null;
-				List _list = null;
-				File _writing = null;
-				BufferedOutputStream _bout = null;
+				XStream xstream = null;
+				HibernateUtil dh = null;
+				DotConnect dc = null;
+				List list = null;
+				File writing = null;
+				BufferedOutputStream bout = null;
 
-				for (Class clazz : _tablesToDump) {
+				for (Class clazz : tablesToDump) {
 					if (clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz
 							.equals(FieldVariable.class)) {
 						continue;
@@ -472,23 +472,23 @@ public class CMSMaintenanceAjax {
 								"Processing contentlets. This will take a little bit longer...");
 					}
 
-					_xstream = new XStream(new DomDriver());
+					xstream = new XStream(new DomDriver());
 
 					//http://jira.dotmarketing.net/browse/DOTCMS-6059
 					if (clazz.equals(DashboardSummary404.class) || clazz
 							.equals(DashboardUserPreferences.class)) {
-						_xstream.addDefaultImplementation(
+						xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.Set.class,
 								Set.class);
-						_xstream.addDefaultImplementation(
+						xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.List.class,
 								List.class);
-						_xstream.addDefaultImplementation(
+						xstream.addDefaultImplementation(
 								com.dotcms.repackage.net.sf.hibernate.collection.Map.class,
 								Map.class);
-						Mapper mapper = _xstream.getMapper();
-						_xstream.registerConverter(new HibernateCollectionConverter(mapper));
-						_xstream.registerConverter(new HibernateMapConverter(mapper));
+						Mapper mapper = xstream.getMapper();
+						xstream.registerConverter(new HibernateCollectionConverter(mapper));
+						xstream.registerConverter(new HibernateMapConverter(mapper));
 					}
 
 					int i = 0;
@@ -498,9 +498,9 @@ public class CMSMaintenanceAjax {
 					/* we will only export 10,000,000 items of any given type */
 					for (i = 0; i < 10000000; i = i + step) {
 
-						_dh = new HibernateUtil(clazz);
-						_dh.setFirstResult(i);
-						_dh.setMaxResults(step);
+						dh = new HibernateUtil(clazz);
+						dh.setFirstResult(i);
+						dh.setMaxResults(step);
 
 						//This line was previously like;
 						//_dh.setQuery("from " + clazz.getName() + " order by 1,2");
@@ -508,54 +508,54 @@ public class CMSMaintenanceAjax {
 						//by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
 						//ordering is done only on the first field for the tables, which is INODE
 						if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
-							_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
+							dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
 						} else if (MultiTree.class.equals(clazz)) {
-							_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
+							dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
 						} else if (TagInode.class.equals(clazz)) {
-							_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
+							dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
 						} else if (TemplateVersionInfo.class.equals(clazz)) {
-							_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
+							dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
 						} else if (ContainerVersionInfo.class.equals(clazz)) {
-							_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
+							dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
 						} else if (LinkVersionInfo.class.equals(clazz)) {
-							_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
+							dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
 						} else if (CalendarReminder.class.equals(clazz)) {
-							_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
+							dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
 						} else if (Identifier.class.equals(clazz)) {
-							_dc = new DotConnect();
-							_dc.setSQL("select * from identifier order by parent_path, id")
+							dc = new DotConnect();
+							dc.setSQL("select * from identifier order by parent_path, id")
 									.setStartRow(i).setMaxRows(step);
 						} else {
-							_dh.setQuery("from " + clazz.getName() + " order by 1");
+							dh.setQuery("from " + clazz.getName() + " order by 1");
 						}
 
 						if(Identifier.class.equals(clazz)){
-							_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(_dc.loadResults());
+							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
 						}else{
-							_list = _dh.list();
+							list = dh.list();
 						}
 
-						if (_list.size() == 0) {
+						if (list.size() == 0) {
 							try {
-								CloseUtils.closeQuietly(_bout);
+								CloseUtils.closeQuietly(bout);
 							} catch (java.lang.NullPointerException npe) {
 							}
-							_bout = null;
+							bout = null;
 
 							break;
 						}
 
-						if (_list != null && _list.size() > 0 && _list
+						if (list != null && list.size() > 0 && list
 								.get(0) instanceof Comparable) {
-							java.util.Collections.sort(_list);
+							java.util.Collections.sort(list);
 						}
 
-						_writing = new File(
+						writing = new File(
 								backupTempFilePath + File.separator + clazz.getName() + "_"
 										+ formatter.format(i) + ".xml");
-						_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+						bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 
-						total = total + _list.size();
+						total = total + list.size();
 
 						try {
 							Thread.sleep(10);
@@ -565,12 +565,12 @@ public class CMSMaintenanceAjax {
 						}
 
 						try {
-							_xstream.toXML(_list, _bout);
+							xstream.toXML(list, bout);
 						} finally {
-							CloseUtils.closeQuietly(_bout);
+							CloseUtils.closeQuietly(bout);
 						}
 
-						_bout = null;
+						bout = null;
 
 					}
 					Logger.info(this, "writing : " + total + " records for " + clazz.getName());
@@ -578,68 +578,68 @@ public class CMSMaintenanceAjax {
 
 				/* Run Liferay's Tables */
 				/* Companies */
-				_list = PublicCompanyFactory.getCompanies();
-				List<Company> companies = new ArrayList<Company>(_list);
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(
+				list = PublicCompanyFactory.getCompanies();
+				List<Company> companies = new ArrayList<Company>(list);
+				xstream = new XStream(new DomDriver());
+				writing = new File(
 						backupTempFilePath + File.separator + Company.class.getName() + ".xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 				/* Users */
-				_list = APILocator.getUserAPI().findAllUsers();
-				_list.add(APILocator.getUserAPI().getDefaultUser());
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(
+				list = APILocator.getUserAPI().findAllUsers();
+				list.add(APILocator.getUserAPI().getDefaultUser());
+				xstream = new XStream(new DomDriver());
+				writing = new File(
 						backupTempFilePath + File.separator + User.class.getName() + ".xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
-				DotConnect dc = new DotConnect();
+				dc = new DotConnect();
 
 				/* counter */
 				dc.setSQL("select * from counter");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator + "Counter.xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				list = dc.getResults();
+				xstream = new XStream(new DomDriver());
+				writing = new File(backupTempFilePath + File.separator + "Counter.xml");
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 				/* counter */
 				dc.setSQL("select * from address");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator + "Address.xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				list = dc.getResults();
+				xstream = new XStream(new DomDriver());
+				writing = new File(backupTempFilePath + File.separator + "Address.xml");
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 
 				/* image */
-				_list = ImageLocalManagerUtil.getImages();
+				list = ImageLocalManagerUtil.getImages();
 
 				/*
 				 * The changes in this part were made for Oracle databases. Oracle has problems when
@@ -648,16 +648,16 @@ public class CMSMaintenanceAjax {
 				 * http://jira.dotmarketing.net/browse/DOTCMS-1911
 				 */
 
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator + "Image.xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				xstream = new XStream(new DomDriver());
+				writing = new File(backupTempFilePath + File.separator + "Image.xml");
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 				/* portlet */
 
@@ -668,35 +668,35 @@ public class CMSMaintenanceAjax {
 				 * http://jira.dotmarketing.net/browse/DOTCMS-1911
 				 */
 				dc.setSQL("select * from portlet");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				list = dc.getResults();
+				xstream = new XStream(new DomDriver());
+				writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 				/* portlet_preferences */
 
 				try {
-					_list = PortletPreferencesLocalManagerUtil.getPreferences();
+					list = PortletPreferencesLocalManagerUtil.getPreferences();
 				} catch (Exception e) {
 					Logger.error(this, "Error in retrieveing all portlet preferences");
 				}
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+				xstream = new XStream(new DomDriver());
+				writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
+				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
 				try {
-					_xstream.toXML(_list, _bout);
+					xstream.toXML(list, bout);
 				} finally {
-					CloseUtils.closeQuietly(_bout);
+					CloseUtils.closeQuietly(bout);
 				}
-				_list = null;
-				_bout = null;
+				list = null;
+				bout = null;
 
 				//backup content types
 				File file = new File(backupTempFilePath + File.separator + "ContentTypes-"
@@ -713,13 +713,9 @@ public class CMSMaintenanceAjax {
 						backupTempFilePath + File.separator + "RuleImportExportObject.json");
 				RulesImportExportUtil.getInstance().export(file);
 
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
-			} catch (SystemException e) {
-				Logger.error(this, e.getMessage(), e);
-			}catch(Exception e){
-				Logger.error(this, e.getMessage(), e);
-			}finally {
+			} finally {
 				DbConnectionFactory.closeSilently();
 			}
 

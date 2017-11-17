@@ -874,14 +874,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			file = new File(backupTempFilePath + "/index_live.json");
 			new ESIndexAPI().backupIndex(info.live, file);
 			
-		} catch (HibernateException e) {
-			Logger.error(this,e.getMessage(),e);
-		} catch (SystemException e) {
-			Logger.error(this,e.getMessage(),e);
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
-
 	}
 
 

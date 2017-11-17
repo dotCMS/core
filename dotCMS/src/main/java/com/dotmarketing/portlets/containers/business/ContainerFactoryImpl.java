@@ -148,36 +148,54 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				if(counter==0){
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.").append(entry.getKey()).append(" = '")
-									.append(entry.getValue()).append("'");
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" asset.").append(entry.getKey()).append(" = '")
-									.append(entry.getValue()).append('\'');
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else{
-							conditionBuffer.append(" lower(asset.").append(entry.getKey())
-									.append(") like ? ");
+							conditionBuffer.append(" lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" asset.").append(entry.getKey()).append(" = ")
-								.append(entry.getValue());
+						conditionBuffer.append(" asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}else{
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset.").append(entry.getKey())
-									.append(" = '").append(entry.getValue()).append("'");
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" OR asset.").append(entry.getKey())
-									.append(" = '").append(entry.getValue()).append("'");
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("\'");
 						}else{
-							conditionBuffer.append(" OR lower(asset.").append(entry.getKey())
-									.append(") like ? ");
+							conditionBuffer.append(" OR lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" OR asset.").append(entry.getKey()).append(" = ")
-								.append(entry.getValue());
+						conditionBuffer.append(" OR asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}
 
@@ -187,9 +205,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		StringBuilder query = new StringBuilder();
-		query.append("select asset.* from ").append(Type.CONTAINERS.getTableName())
-				.append(" asset, inode, identifier, ").append(Type.CONTAINERS.getVersionTableName())
-				.append(" vinfo");
+		query.append("select asset.* from ");
+		query.append(Type.CONTAINERS.getTableName());
+		query.append(" asset, inode, identifier, ");
+		query.append(Type.CONTAINERS.getVersionTableName());
+		query.append(" vinfo");
 
 		if(UtilMethods.isSet(parent)){
 
@@ -201,28 +221,36 @@ public class ContainerFactoryImpl implements ContainerFactory {
 						" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
 								" and exists ( from container_structures cs where cs.container_id = asset.identifier")
-						.append(" and cs.structure_id = '").append(parent).append("' ) ");
+						.append(" and cs.structure_id = '");
+				query.append(parent);
+				query.append("' ) ");
 			}else {
 				query.append(
 						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
-						.append(" and tree.parent = '").append(parent)
-						.append("' and tree.child=asset.inode");
+						.append(" and tree.parent = '");
+				query.append(parent);
+				query.append("' and tree.child=asset.inode");
 			}
 		}else{
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
 		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
 		if(!includeArchived) {
-			query.append(" and vinfo.deleted=").append(DbConnectionFactory.getDBFalse());
+			query.append(" and vinfo.deleted=");
+			query.append(DbConnectionFactory.getDBFalse());
 		}
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.host_inode = '").append(hostId).append('\'');
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId).append('\'');
 		}
 		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '").append(inode).append('\'');
+			query.append(" and asset.inode = '");
+			query.append(inode).append('\'');
 		}
 		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '").append(identifier).append("'");
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append('\'');
 		}
 		if(!UtilMethods.isSet(orderBy)){
 			orderBy = "mod_date desc";
@@ -233,7 +261,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		int countLimit = 100;
 		int size = 0;
 		try {
-			query.append(conditionBuffer.toString()).append(" order by asset.").append(orderBy);
+			query.append(conditionBuffer.toString());
+			query.append(" order by asset.");
+			query.append(orderBy);
 			dc.setSQL(query.toString());
 
 			if(paramValues!=null && paramValues.size()>0){
@@ -316,17 +346,25 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
-        
+        StringBuilder query = new StringBuilder();
+
+        query.append("select distinct(identifier) from ");
+		query.append(Inode.Type.CONTAINERS.getTableName());
+		query.append(" where mod_user = ?");
         try {
-           dc.setSQL("select distinct(identifier) from " + Inode.Type.CONTAINERS.getTableName() + " where mod_user = ?");
+           dc.setSQL(query.toString());
            dc.addParam(userId);
            List<HashMap<String, String>> containers = dc.loadResults();
-           
-           dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = ? where mod_user = ? ");
+
+           query = new StringBuilder();
+           query.append("UPDATE ");
+           query.append(Inode.Type.CONTAINERS.getTableName());
+           query.append(" set mod_user = ? where mod_user = ? ");
+           dc.setSQL(query.toString());
            dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
-           
+
            dc.setSQL("update container_version_info set locked_by=? where locked_by  = ?");
            dc.addParam(replacementUserId);
            dc.addParam(userId);

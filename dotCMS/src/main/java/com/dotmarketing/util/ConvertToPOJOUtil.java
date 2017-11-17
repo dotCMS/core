@@ -24,6 +24,26 @@ import java.util.stream.Collectors;
 public class ConvertToPOJOUtil {
 
     public static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String SYSPUBLISH_DATE = "syspublish_date";
+    private static final String SYSEXPIRE_DATE = "sysexpire_date";
+    private static final String TITLE = "title";
+    private static final String MOD_DATE = "mod_date";
+    private static final String MOD_USER = "mod_user";
+    private static final String SORT_ORDER = "sort_order";
+    private static final String IDENTIFIER = "identifier";
+    private static final String SHOW_ON_MENU = "show_on_menu";
+    private static final String FRIENDLY_NAME = "friendly_name";
+    private static final String DRAWED = "drawed";
+    private static final String MAX_CONTENTLETS = "max_contentlets";
+    private static final String USE_DIV = "use_div";
+    private static final String STATICIFY = "staticify";
+    private static final String ADD_CONTAINER_LINKS = "add_container_links";
+    private static final String CONTAINERS_ADDED = "containers_added";
+    private static final String INODE = "inode";
+
+    private ConvertToPOJOUtil(){
+
+    }
 
     /**
      * Creates new instances of T given a List<Map> of DB results
@@ -61,7 +81,7 @@ public class ConvertToPOJOUtil {
 
         ret = new ArrayList<>();
 
-        if(results == null || results.size()==0){
+        if(results == null || results.isEmpty()){
             return ret;
         }
 
@@ -110,6 +130,7 @@ public class ConvertToPOJOUtil {
             if (classToUse.getSuperclass()!=null) {
                 return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
             }
+            Logger.debug(e, e.getMessage());
         }
         return false;
     }
@@ -129,27 +150,27 @@ public class ConvertToPOJOUtil {
         if(results != null && !results.isEmpty()){
             for (Map<String, String> map : results) {
                 final Link link = new Link();
-                link.setInode(map.get("inode"));
+                link.setInode(map.get(INODE));
 
-                if (map.get("show_on_menu") != null && !map.get("show_on_menu").isEmpty()){
-                    link.setShowOnMenu(Boolean.parseBoolean(map.get("show_on_menu")));
+                if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()){
+                    link.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
                 }
 
-                link.setTitle(map.get("title"));
+                link.setTitle(map.get(TITLE));
 
-                if (map.get("mod_date") != null && !map.get("mod_date").isEmpty()){
-                    link.setModDate(df.parse(map.get("mod_date")));
+                if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
+                    link.setModDate(df.parse(map.get(MOD_DATE)));
                 }
 
-                link.setModUser(map.get("mod_user"));
+                link.setModUser(map.get(MOD_USER));
 
-                if (map.get("sort_order") != null && !map.get("sort_order").isEmpty()){
-                    link.setSortOrder(Integer.parseInt(map.get("sort_order")));
+                if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
+                    link.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
                 }
 
-                link.setFriendlyName(map.get("friendly_name"));
+                link.setFriendlyName(map.get(FRIENDLY_NAME));
 
-                link.setIdentifier(map.get("identifier"));
+                link.setIdentifier(map.get(IDENTIFIER));
 
                 link.setProtocal(map.get("protocal"));
 
@@ -179,7 +200,7 @@ public class ConvertToPOJOUtil {
     public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String,String>> results)
             throws ParseException {
         final List<Identifier> ret = new ArrayList<>();
-        if(results == null || results.size()==0){
+        if(results == null || results.isEmpty()){
             return ret;
         }
 
@@ -191,12 +212,12 @@ public class ConvertToPOJOUtil {
             i.setId(map.get("id"));
             i.setParentPath(map.get("parent_path"));
 
-            if (map.get("syspublish_date") != null && !map.get("syspublish_date").isEmpty()){
-                i.setSysPublishDate(df.parse(map.get("syspublish_date") ));
+            if (map.get(SYSPUBLISH_DATE) != null && !map.get(SYSPUBLISH_DATE).isEmpty()){
+                i.setSysPublishDate(df.parse(map.get(SYSPUBLISH_DATE) ));
             }
 
-            if (map.get("sysexpire_date") != null && !map.get("sysexpire_date").isEmpty()){
-                i.setSysExpireDate(df.parse(map.get("sysexpire_date") ));
+            if (map.get(SYSEXPIRE_DATE) != null && !map.get(SYSEXPIRE_DATE).isEmpty()){
+                i.setSysExpireDate(df.parse(map.get(SYSEXPIRE_DATE) ));
             }
 
             ret.add(i);
@@ -215,26 +236,26 @@ public class ConvertToPOJOUtil {
         if(results != null && !results.isEmpty()){
             for (Map<String, String> map : results) {
                 folder = new Folder();
-                folder.setInode(map.get("inode"));
+                folder.setInode(map.get(INODE));
                 folder.setName(map.get("name"));
-                folder.setTitle(map.get("title"));
+                folder.setTitle(map.get(TITLE));
 
-                if (map.get("show_on_menu") != null && !map.get("show_on_menu").isEmpty()) {
-                    folder.setShowOnMenu(Boolean.parseBoolean(map.get("show_on_menu")));
+                if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
+                    folder.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
                 }
 
-                if (map.get("sort_order") != null && !map.get("sort_order").isEmpty()){
-                    folder.setSortOrder(Integer.parseInt(map.get("sort_order")));
+                if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
+                    folder.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
                 }
 
                 folder.setFilesMasks(map.get("files_masks"));
 
-                folder.setIdentifier(map.get("identifier"));
+                folder.setIdentifier(map.get(IDENTIFIER));
 
                 folder.setDefaultFileType(map.get("default_file_type"));
 
-                if (map.get("mod_date") != null && !map.get("mod_date").isEmpty()){
-                    folder.setModDate(df.parse(map.get("mod_date")));
+                if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
+                    folder.setModDate(df.parse(map.get(MOD_DATE)));
                 }
 
                 ret.add(folder);
@@ -253,38 +274,38 @@ public class ConvertToPOJOUtil {
         if(results != null && !results.isEmpty()){
             for (Map<String, String> map : results) {
                 container = new Container();
-                container.setInode(map.get("inode"));
+                container.setInode(map.get(INODE));
                 container.setCode(map.get("code"));
                 container.setPreLoop(map.get("pre_loop"));
                 container.setPostLoop(map.get("post_loop"));
-                if (map.get("show_on_menu") != null && !map.get("show_on_menu").isEmpty()) {
-                    container.setShowOnMenu(Boolean.parseBoolean(map.get("show_on_menu")));
+                if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
+                    container.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
                 }
 
-                container.setTitle(map.get("title"));
+                container.setTitle(map.get(TITLE));
 
-                if (map.get("mod_date") != null && !map.get("mod_date").isEmpty()){
-                    container.setModDate(df.parse(map.get("mod_date")));
+                if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
+                    container.setModDate(df.parse(map.get(MOD_DATE)));
                 }
 
-                container.setModUser(map.get("mod_user"));
+                container.setModUser(map.get(MOD_USER));
 
-                if (map.get("sort_order") != null && !map.get("sort_order").isEmpty()){
-                    container.setSortOrder(Integer.parseInt(map.get("sort_order")));
+                if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
+                    container.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
                 }
 
-                container.setFriendlyName(map.get("friendly_name"));
+                container.setFriendlyName(map.get(FRIENDLY_NAME));
 
-                if (map.get("max_contentlets") != null && !map.get("max_contentlets").isEmpty()){
-                    container.setMaxContentlets(Integer.parseInt(map.get("max_contentlets")));
+                if (map.get(MAX_CONTENTLETS) != null && !map.get(MAX_CONTENTLETS).isEmpty()){
+                    container.setMaxContentlets(Integer.parseInt(map.get(MAX_CONTENTLETS)));
                 }
 
-                if (map.get("use_div") != null && !map.get("use_div").isEmpty()) {
-                    container.setUseDiv(Boolean.parseBoolean(map.get("use_div")));
+                if (map.get(USE_DIV) != null && !map.get(USE_DIV).isEmpty()) {
+                    container.setUseDiv(Boolean.parseBoolean(map.get(USE_DIV)));
                 }
 
-                if (map.get("staticify") != null && !map.get("staticify").isEmpty()) {
-                    container.setStaticify(Boolean.parseBoolean(map.get("staticify")));
+                if (map.get(STATICIFY) != null && !map.get(STATICIFY).isEmpty()) {
+                    container.setStaticify(Boolean.parseBoolean(map.get(STATICIFY)));
                 }
 
                 container.setSortContentletsBy(map.get("sort_contentlets_by"));
@@ -293,7 +314,7 @@ public class ConvertToPOJOUtil {
 
                 container.setNotes(map.get("notes"));
 
-                container.setIdentifier(map.get("identifier"));
+                container.setIdentifier(map.get(IDENTIFIER));
 
                 ret.add(container);
             }
@@ -311,44 +332,44 @@ public class ConvertToPOJOUtil {
         if(results != null && !results.isEmpty()){
             for (Map<String, String> map : results) {
                 template = new Template();
-                template.setInode(map.get("inode"));
+                template.setInode(map.get(INODE));
 
-                if (map.get("show_on_menu") != null && !map.get("show_on_menu").isEmpty()) {
-                    template.setShowOnMenu(Boolean.parseBoolean(map.get("show_on_menu")));
+                if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
+                    template.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
                 }
 
-                template.setTitle(map.get("title"));
+                template.setTitle(map.get(TITLE));
 
-                if (map.get("mod_date") != null && !map.get("mod_date").isEmpty()){
-                    template.setModDate(df.parse(map.get("mod_date")));
+                if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
+                    template.setModDate(df.parse(map.get(MOD_DATE)));
                 }
 
-                template.setModUser(map.get("mod_user"));
+                template.setModUser(map.get(MOD_USER));
 
-                if (map.get("sort_order") != null && !map.get("sort_order").isEmpty()){
-                    template.setSortOrder(Integer.parseInt(map.get("sort_order")));
+                if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
+                    template.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
                 }
 
-                template.setFriendlyName(map.get("friendly_name"));
+                template.setFriendlyName(map.get(FRIENDLY_NAME));
 
                 template.setBody(map.get("body"));
                 template.setHeader(map.get("header"));
                 template.setFooter(map.get("footer"));
                 template.setImage(map.get("image"));
-                template.setIdentifier(map.get("identifier"));
+                template.setIdentifier(map.get(IDENTIFIER));
 
-                if (map.get("drawed") != null && !map.get("drawed").isEmpty()) {
-                    template.setDrawed(Boolean.parseBoolean(map.get("drawed")));
+                if (map.get(DRAWED) != null && !map.get(DRAWED).isEmpty()) {
+                    template.setDrawed(Boolean.parseBoolean(map.get(DRAWED)));
                 }
 
                 template.setDrawedBody(map.get("drawed_body"));
 
-                if (map.get("add_container_links") != null && !map.get("add_container_links").isEmpty()){
-                    template.setCountAddContainer(Integer.parseInt(map.get("add_container_links")));
+                if (map.get(ADD_CONTAINER_LINKS) != null && !map.get(ADD_CONTAINER_LINKS).isEmpty()){
+                    template.setCountAddContainer(Integer.parseInt(map.get(ADD_CONTAINER_LINKS)));
                 }
 
-                if (map.get("containers_added") != null && !map.get("containers_added").isEmpty()){
-                    template.setCountContainers(Integer.parseInt(map.get("containers_added")));
+                if (map.get(CONTAINERS_ADDED) != null && !map.get(CONTAINERS_ADDED).isEmpty()){
+                    template.setCountContainers(Integer.parseInt(map.get(CONTAINERS_ADDED)));
                 }
 
                 template.setHeadCode(map.get("head_code"));

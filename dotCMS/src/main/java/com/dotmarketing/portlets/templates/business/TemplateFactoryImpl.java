@@ -27,6 +27,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,7 +84,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		try {
 			return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
-		} catch (Exception e) {
+		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
 	}

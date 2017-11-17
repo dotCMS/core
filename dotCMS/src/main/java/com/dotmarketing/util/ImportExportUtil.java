@@ -1418,9 +1418,7 @@ public class ImportExportUtil {
 	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
 	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
                                 	}
-                                    LocalTransaction.wrap(() -> {
-                                        APILocator.getIdentifierAPI().save(identifier);
-                                    });
+                                    LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{
                                     HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +

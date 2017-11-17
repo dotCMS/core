@@ -162,7 +162,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			throw new DotDataException(e);
 		}
 
-		if (results != null && results.size() > 0){
+		if (results != null && !results.isEmpty()){
 			identifier = results.get(0);
 		}
 
@@ -210,7 +210,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			throw new DotDataException(e);
 		}
 
-		return  (results != null && results.size() > 0)?results.get(0):null;
+		return  (results != null && !results.isEmpty())?results.get(0):null;
 
 	}
 

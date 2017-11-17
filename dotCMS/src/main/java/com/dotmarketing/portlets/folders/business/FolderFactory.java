@@ -70,6 +70,7 @@ public abstract class FolderFactory {
 	 *
 	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
 	 */
+	@Deprecated
 	protected List<Folder> getSubFolders(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
 		return null;
 	}

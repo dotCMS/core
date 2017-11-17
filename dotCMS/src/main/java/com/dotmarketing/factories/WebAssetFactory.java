@@ -106,9 +106,6 @@ public class WebAssetFactory {
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
 	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
-	private static final int ITERATION_LIMIT = 500;
-	private final static int MAX_LIMIT_COUNT = 100;
-
 	/**
 	 * @param permissionAPIRef the permissionAPI to set
 	 */
