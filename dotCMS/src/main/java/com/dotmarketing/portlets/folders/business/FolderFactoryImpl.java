@@ -976,15 +976,18 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException {
-		List<Folder> folderList= getSubFolders(null, "/", host.getIdentifier(), null);
-		Collections.sort(folderList, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+		List<Folder> folderList = getSubFolders(null, "/", host.getIdentifier(), null);
+		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
+				.compareToIgnoreCase(folder2.getName()));
 		return folderList;
 	}
 
 	@SuppressWarnings("unchecked")
 	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException {
-		List<Folder> folderList= getSubFolders(null, "/application/themes/", host.getIdentifier(), null);
-		Collections.sort(folderList, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+		List<Folder> folderList = getSubFolders(null, "/application/themes/", host.getIdentifier(),
+				null);
+		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
+				.compareToIgnoreCase(folder2.getName()));
 		return folderList;
 	}
 
