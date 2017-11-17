@@ -655,19 +655,13 @@ public class MultiTreeFactory {
      *            
      */
 	private static void updateHTMLPageVersionTS(String id) throws DotDataException, DotSecurityException {
-		Identifier identifier = APILocator.getIdentifierAPI().find(id);
-		List<Contentlet> allContentletVersions = APILocator.getContentletAPI()
-			.findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-
-		for (Contentlet contentlet : allContentletVersions) {
-			ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
-				.getContentletVersionInfo(id, contentlet.getLanguageId());
+	  List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
+		for (ContentletVersionInfo versionInfo : infos) {
 			if(versionInfo!=null) {
 				versionInfo.setVersionTs(new Date());
 				APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);
 			}
 		}
-
 	}
 	
     /**
