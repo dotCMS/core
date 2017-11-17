@@ -328,6 +328,29 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
+     * This method test the findActions methods
+     */
+    @Test
+    public void findActions() throws DotDataException, DotSecurityException {
+
+        List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme3);
+        List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
+        assertTrue(null != actions && actions.size() == 3);
+
+        User contributorUser = roleAPI.findUsersForRole(contributor).get(0);
+        assertTrue(null != contributorUser && UtilMethods.isSet(contributorUser.getUserId()));
+
+        actions = workflowAPI.findActions(steps, contributorUser);
+        assertTrue(null != actions && actions.size() == 1);
+
+        User reviewerUser = roleAPI.findUsersForRole(reviewer).get(0);
+        assertTrue(null != contributorUser && UtilMethods.isSet(contributorUser.getUserId()));
+
+        actions = workflowAPI.findActions(steps, reviewerUser);
+        assertTrue(null != actions && actions.size() == 2);
+    }
+
+    /**
      * Validate if the scheme is present in the list of schemes
      *
      * @param scheme WorkflowScheme to check
@@ -451,7 +474,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
         WorkflowAction action = null;
         try {
             action = new WorkflowAction();
-            action.setId(UUIDGenerator.generateUuid());
             action.setName(name);
             action.setOwner(whoCanUse.getId());
             action.setOrder(order);
@@ -463,9 +485,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             action.setAssignable(false);
             workflowAPI.saveAction(action,
                     Arrays.asList(new Permission[]{
-                            new Permission(
-                                    action.getPermissionType(),
-                                    action.getId(),
+                            new Permission(action.getId(),
                                     whoCanUse.getId(),
                                     PermissionAPI.PERMISSION_USE)}));
         } catch (AlreadyExistException e) {
