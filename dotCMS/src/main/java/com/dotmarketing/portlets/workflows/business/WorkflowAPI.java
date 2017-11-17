@@ -37,7 +37,7 @@ public interface WorkflowAPI {
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
 	/**
-	 * This method will get the current workflow step of the contentlet.
+	 * This method will get a list with the current contentlet workflow step.
 	 * If the contentlet doesn't have a workflow step associated, then it will
 	 * display all the first workflow steps associated to the contentlet Content Type.
 	 *
@@ -212,6 +212,13 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
 			DotSecurityException;
 
+	/**
+	 * This method associate a list of Workflow Schemes to a Structure
+	 *
+	 * @param struc The Structure
+	 * @param schemes List of Workflow Schemes to be associated to the Structure
+	 * @throws DotDataException
+	 */
 	public void saveSchemeForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
