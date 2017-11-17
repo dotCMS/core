@@ -376,4 +376,13 @@ public interface VersionableAPI {
 	 */
 	public void removeVersionInfoFromCache(String identifier);
 	
+	/**
+	 * Will return a list of all ContentletVersionInfo for a given piece of content (if there are multiple languages) 
+	 * @param identifier
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+    public List<ContentletVersionInfo> findContentletVersionInfos(String identifier) throws DotDataException, DotStateException;
+	
 }
