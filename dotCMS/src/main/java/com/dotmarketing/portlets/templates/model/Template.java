@@ -24,6 +24,8 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	private static final long serialVersionUID = 1L;
 
+	private static String ANONYMOUS_PREFIX = "anonymous_layout_";
+
 	/** nullable persistent field */
 	private String body;
 
@@ -65,6 +67,11 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public Template() {
 		this.image = "";
 		super.setType("template");
+		super.setTitle(ANONYMOUS_PREFIX + System.currentTimeMillis());
+	}
+
+	public boolean isAnonymous () {
+		return getTitle().startsWith(ANONYMOUS_PREFIX);
 	}
 
     public String getURI(Folder folder) {

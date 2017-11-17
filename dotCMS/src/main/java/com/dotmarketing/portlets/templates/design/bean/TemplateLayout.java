@@ -12,17 +12,17 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  */
 public class TemplateLayout {
 
-    public String pageWidth;
-    public String width;
-    public String layout;
+    private String pageWidth;
+    private String width;
+    private String layout;
 
-    public String title;
+    private String title;
 
-    public boolean header;
-    public boolean footer;
+    private boolean header;
+    private boolean footer;
 
-    public TemplateLayoutColumn body;
-    public TemplateLayoutColumn sidebar;
+    private Body body;
+    private Sidebar sidebar;
 
     public String getPageWidth () {
         return pageWidth;
@@ -98,45 +98,51 @@ public class TemplateLayout {
         this.footer = footer;
     }
 
-    public TemplateLayoutColumn getBody () {
+    public Body getBody () {
         return body;
     }
 
-    public void setBody ( List<TemplateLayoutRow> bodyRows ) {
+    public void setBody (Body body) {
+        this.body = body;
+    }
 
-        this.body = new TemplateLayoutColumn();
-        this.body.setType( TemplateLayoutColumn.TYPE_BODY );
+    public void setBodyRows ( List<TemplateLayoutRow> bodyRows ) {
+
+        this.body = new Body();
         this.body.setRows( bodyRows );
     }
 
-    public TemplateLayoutColumn getSidebar () {
+    public Sidebar getSidebar () {
         return sidebar;
     }
 
-    public void setSidebar ( List<String> containers, Boolean isPreview ) {
+    public void setSidebar (Sidebar sidebar) {
+        this.sidebar = sidebar;
+    }
 
-        this.sidebar = new TemplateLayoutColumn();
-        this.sidebar.setType( TemplateLayoutColumn.TYPE_SIDEBAR );
+    public void setContainers ( List<String> containers, Boolean isPreview ) {
+
+        this.sidebar = new Sidebar();
         this.sidebar.setContainers( containers );
         this.sidebar.setPreview( isPreview );
 
         if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T1 ) ) {//layout-160-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
+            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
             this.sidebar.setWidthPercent( 20 );
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T2 ) ) {//layout-240-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
+            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
             this.sidebar.setWidthPercent( 30 );
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T3 ) ) {//layout-300-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
+            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
             this.sidebar.setWidthPercent( 40 );
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T4 ) ) {//layout-160-right
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
+            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
             this.sidebar.setWidthPercent( 20 );
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T5 ) ) {//layout-240-right
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
+            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
             this.sidebar.setWidthPercent( 30 );
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T6 ) ) {//layout-300-right*/
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
+            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
             this.sidebar.setWidthPercent( 40 );
         }
 

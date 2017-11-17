@@ -8,43 +8,35 @@ import java.util.List;
  * Created by Jonathan Gamba
  * Date: 10/25/12
  */
-public class TemplateLayoutColumn {
+public class TemplateLayoutColumn extends ContainerHolder {
 
-    public static String TYPE_BODY = "body";//Main body column
-    public static String TYPE_COLUMN = "column";//Normal column inside a row
-    public static String TYPE_SIDEBAR = "sidebar";//Sidebar column
-
-    //ONLY FOR SIDEBARS!!!
-    public static String LOCATION_RIGHT = "right";
-    public static String LOCATION_LEFT = "left";
-    //ONLY FOR SIDEBARS!!!
-
-    public boolean preview;
-    public String type;
-    public String location;//ONLY FOR SIDEBARS!!!
-    public List<String> containers;
-    public Integer widthPercent;
-    public Integer width;
-
-    public List<TemplateLayoutRow> rows;
-
-    public List<String> getContainers () {
-        return containers;
-    }
-
-    public void setContainers ( List<String> containers ) {
-        this.containers = containers;
-    }
-
-    public boolean isPreview () {
-        return preview;
-    }
-
-    public void setPreview ( boolean preview ) {
-        this.preview = preview;
-    }
+    private Integer widthPercent;
+    private Integer width;
+    private int leftIndex;
 
     public Integer getWidthPercent () {
+        if (widthPercent == null || widthPercent == 0){
+            switch (this.width) {
+                case 12:
+                    this.widthPercent = 100;
+                    break;
+                case 9:
+                    this.widthPercent = 75;
+                    break;
+                case 8:
+                    this.widthPercent = 66;
+                    break;
+                case 6:
+                    this.widthPercent = 50;
+                    break;
+                case 4:
+                    this.widthPercent = 33;
+                    break;
+                case 3:
+                    this.widthPercent = 25;
+            }
+        }
+
         return widthPercent;
     }
 
@@ -60,49 +52,12 @@ public class TemplateLayoutColumn {
         this.width = width;
     }
 
-    public String getType () {
-        return type;
+
+    public int getLeftIndex() {
+        return leftIndex;
     }
 
-    public void setType ( String type ) {
-        this.type = type;
+    public void setLeftIndex(int leftIndex) {
+        this.leftIndex = leftIndex;
     }
-
-    public String getLocation () {
-        return location;
-    }
-
-    public void setLocation ( String location ) {
-        this.location = location;
-    }
-
-    public List<TemplateLayoutRow> getRows () {
-        return rows;
-    }
-
-    public void setRows ( List<TemplateLayoutRow> rows ) {
-        this.rows = rows;
-    }
-
-    public Boolean isSidebar () {
-        return this.type != null && this.type.equals( TYPE_SIDEBAR );
-    }
-
-    public String draw () throws Exception {
-
-        StringBuffer sb = new StringBuffer();
-        if ( this.containers != null ) {
-            for ( String container: this.containers ) {
-
-                if ( this.preview ) {
-                    sb.append( PreviewTemplateUtil.getMockBodyContent() );
-                } else {
-                    sb.append( "#parseContainer('" ).append( container ).append( "')" );
-                }
-            }
-        }
-
-        return sb.toString();
-    }
-
 }

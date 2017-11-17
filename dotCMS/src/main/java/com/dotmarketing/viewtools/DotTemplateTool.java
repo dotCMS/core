@@ -1,5 +1,6 @@
 package com.dotmarketing.viewtools;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.transform.JsonTransformer;
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParseException;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonMappingException;
+import com.dotmarketing.exception.DotRuntimeException;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -29,6 +34,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by Jonathan Gamba
@@ -89,33 +95,57 @@ public class DotTemplateTool implements ViewTool {
     public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
         String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
-        if(layout==null){
-        String title = null;
-        String drawedBody;
+
+        if(layout==null) {
+            String title = null;
+            String drawedBody;
+            if (UtilMethods.isSet(themeInode)) {
+                Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
+
+                Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
+
+                if (!template.getInode().equals(themeInode)) {
+                    template = (Template) InodeFactory.getInode(themeInode, Template.class);
+                }
+
+                drawedBody = ((Template) template).getDrawedBody();
+                title = template.getTitle();
+            } else {
+                drawedBody = (String) request.getAttribute("designedBody");
+                if (request.getAttribute("title") != null) {
+                    title = (String) request.getAttribute("title");
+                }
+            }
+
+            //Parse and return the layout for this template
+
+            try {
+                layout = getTemplateLayoutFromJSON(drawedBody);
+            } catch (IOException e) {
+                layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
+            }
+
+            layout.setTitle(title);
+            layoutCache.put(key, layout);
+        }
+
+        return layout;
+    }
+
+    private static TemplateLayout getTemplateLayoutFromJSON(String json)  throws IOException{
+        return JsonTransformer.mapper.readValue(json, TemplateLayout.class);
+
+    }
+
+    private static String getTemplateBody(String themeInode) throws DotDataException, DotSecurityException {
         if ( UtilMethods.isSet( themeInode ) ) {
-            Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
-            
+            Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
             Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
 
-            if ( !template.getInode().equals( themeInode ) ) {
-                template = (Template) InodeFactory.getInode( themeInode, Template.class );
-            }
-
-            drawedBody = ((Template) template).getDrawedBody();
-            title = template.getTitle();
+            return ((Template) template).getDrawedBody();
         } else {
-            drawedBody = (String) request.getAttribute( "designedBody" );
-            if ( request.getAttribute( "title" ) != null ) {
-                title = (String) request.getAttribute( "title" );
-            }
+            return (String) request.getAttribute( "designedBody" );
         }
-
-        //Parse and return the layout for this template
-        layout = DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
-        layout.setTitle( title );
-        layoutCache.put(key, layout);
-        }
-        return layout;
     }
 
     /**
