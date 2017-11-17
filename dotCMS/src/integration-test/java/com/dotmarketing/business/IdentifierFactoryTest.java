@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -38,17 +39,20 @@ public class IdentifierFactoryTest {
     private static User systemUser;
     private static FolderAPI folderAPI;
     private static HostAPI hostAPI;
+    private static ContentTypeAPI contentTypeAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        factory = new IdentifierFactoryImpl();
-        folderAPI = APILocator.getFolderAPI();
-        hostAPI = APILocator.getHostAPI();
-        systemUser = APILocator.systemUser();
+        factory        = new IdentifierFactoryImpl();
+        systemUser     = APILocator.systemUser();
+        contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        folderAPI      = APILocator.getFolderAPI();
+        hostAPI        = APILocator.getHostAPI();
+
         defaultHost = hostAPI.findDefaultHost(systemUser, false);
-        systemHost = hostAPI.findSystemHost();
+        systemHost  = hostAPI.findSystemHost();
 
         ic = CacheLocator.getIdentifierCache();
     }
@@ -202,8 +206,7 @@ public class IdentifierFactoryTest {
         tempFile = File.createTempFile(fileName, "txt");
         parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
 
-        newContentlet.setContentTypeId(CacheLocator.getContentTypeCache()
-                .getStructureByVelocityVarName(FileAssetAPI.BINARY_FIELD).getInode());
+        newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).id());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
         newContentlet.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, parentFolder.getInode());
         newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + ".txt");
@@ -439,37 +442,6 @@ public class IdentifierFactoryTest {
             }
         }
     }
-
-    /*@Test
-    public void testCreateNewLinkIdentifierForHost()
-            throws DotSecurityException, DotDataException {
-
-        Identifier identifier;
-        WebAsset newWebAsset;
-
-        identifier = null;
-        newWebAsset = new Link();
-        newWebAsset.setInode(UUIDGenerator.generateUuid());
-
-        try {
-            //Creates new identifier
-            identifier = factory.createNewIdentifier(newWebAsset, defaultHost);
-
-            Assert.assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newWebAsset.getVersionId());
-            Assert.assertFalse(newWebAsset.getVersionId().isEmpty());
-            Assert.assertEquals("links", identifier.getAssetType());
-            Assert.assertNotNull(identifier.getURI());
-            Assert.assertNotNull(identifier.getAssetType());
-
-        } finally {
-            //Deletes the created identifier
-            if (identifier != null) {
-                factory.deleteIdentifier(identifier);
-            }
-        }
-    }*/
 
     @Test
     public void testCreateNewHostIdentifierForHost()
