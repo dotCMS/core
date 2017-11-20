@@ -116,9 +116,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   @CloseDBIfOpened
-  public ContentType find(final String inode) throws DotSecurityException, DotDataException {
+  public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
 
-    final ContentType type = this.contentTypeFactory.find(inode);
+    final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
     if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
 

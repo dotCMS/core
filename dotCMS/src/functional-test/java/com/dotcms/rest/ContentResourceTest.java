@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
@@ -83,6 +84,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -117,6 +120,63 @@ public class ContentResourceTest {
         hostAPI = APILocator.getHostAPI();
         contentletAPI = APILocator.getContentletAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
+    }
+
+    @Test
+    public void getContent() throws Exception {
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+        assertNotNull(structure);
+
+        //Get Contentlets by ContentType
+        String response = webTarget.path("/query/+contentType:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 1: " + response);
+        JSONObject json = new JSONObject(response);
+        assertNotNull(json);
+
+        JSONArray contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        int length = contentlets.length();
+        assertTrue(length > 0);
+
+
+        //Get Contentlets by Structure Name
+        response = webTarget.path("/query/+stName:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 2: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
+        //Get Contentlets by Structure inode
+        response = webTarget.path("/query/+stInode:"+ structure.getInode() +"/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 3: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
     }
 
     @Test
