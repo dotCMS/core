@@ -286,44 +286,55 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     @Test
     public void findStepsByContentlet() throws DotDataException, DotSecurityException {
-        List<WorkflowScheme> worflowSchemes = new ArrayList<>();
-        worflowSchemes.add(workflowScheme1);
-        worflowSchemes.add(workflowScheme2);
-        worflowSchemes.add(workflowScheme3);
+        Contentlet c1 = new Contentlet();
+        Contentlet c2 = new Contentlet();
+        try {
+            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
+            worflowSchemes.add(workflowScheme1);
+            worflowSchemes.add(workflowScheme2);
+            worflowSchemes.add(workflowScheme3);
 
         /* Associate the schemas to the content type */
-        workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+            workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
 
-        long time = System.currentTimeMillis();
-        Contentlet c1=new Contentlet();
-        c1.setLanguageId(1);
-        c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest1_"+time);
-        c1.setContentTypeId(contentType.id());
-        c1 = contentletAPI.checkin(c1, user, false);
+            long time = System.currentTimeMillis();
 
-        Contentlet c2=new Contentlet();
-        c2.setLanguageId(1);
-        c2.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest1_2"+time);
-        c2.setContentTypeId(contentType.id());
-        c2 = contentletAPI.checkin(c2, user, false);
+            //create contentlets
+            c1.setLanguageId(1);
+            c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest1_" + time);
+            c1.setContentTypeId(contentType.id());
+            c1 = contentletAPI.checkin(c1, user, false);
 
-        contentletAPI.isInodeIndexed(c1.getInode());
-        contentletAPI.isInodeIndexed(c2.getInode());
+            c2.setLanguageId(1);
+            c2.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest2_" + time);
+            c2.setContentTypeId(contentType.id());
+            c2 = contentletAPI.checkin(c2, user, false);
 
-        Contentlet c = APILocator.getContentletAPI().checkout(c2.getInode(), user, false);
+            contentletAPI.isInodeIndexed(c1.getInode());
+            contentletAPI.isInodeIndexed(c2.getInode());
 
-        c.setStringProperty("wfActionId", workflowScheme2Step1Action1.getId());
-        c.setStringProperty("wfActionComments", "Test"+time);
+            Contentlet c = APILocator.getContentletAPI().checkout(c2.getInode(), user, false);
 
-        c2 = APILocator.getContentletAPI().checkin(c, user, false);
+            //set step action for content2
+            c.setStringProperty("wfActionId", workflowScheme2Step1Action1.getId());
+            c.setStringProperty("wfActionComments", "Test" + time);
 
+            c2 = APILocator.getContentletAPI().checkin(c, user, false);
 
-        List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(c1);
-        assertTrue(steps.size() == 3);
+            //check steps available for content without step
+            List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(c1);
+            assertTrue(steps.size() == 3);
 
-        steps = workflowAPI.findStepsByContentlet(c2);
-        assertTrue(steps.size() == 1);
-        assertTrue(workflowScheme2Step2.getName().equals(steps.get(0).getName()));
+            //get step for content with a selection action
+            steps = workflowAPI.findStepsByContentlet(c2);
+            assertTrue(steps.size() == 1);
+            assertTrue(workflowScheme2Step2.getName().equals(steps.get(0).getName()));
+        }finally {
+            contentletAPI.archive(c1,user,false);
+            contentletAPI.delete(c1,user,false);
+            contentletAPI.archive(c2,user,false);
+            contentletAPI.delete(c2,user,false);
+        }
 
     }
 
@@ -334,18 +345,23 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findActions() throws DotDataException, DotSecurityException {
 
         List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme3);
+        //check available actions for admin user
         List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
         assertTrue(null != actions && actions.size() == 3);
 
+        //get a contributor users
         User contributorUser = roleAPI.findUsersForRole(contributor).get(0);
         assertTrue(null != contributorUser && UtilMethods.isSet(contributorUser.getUserId()));
 
+        //Check valid action for restricted user
         actions = workflowAPI.findActions(steps, contributorUser);
         assertTrue(null != actions && actions.size() == 1);
 
+        //Get a reviewer  user
         User reviewerUser = roleAPI.findUsersForRole(reviewer).get(0);
         assertTrue(null != contributorUser && UtilMethods.isSet(contributorUser.getUserId()));
 
+        //check valid action for
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
     }
