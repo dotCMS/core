@@ -98,10 +98,49 @@ public class WorkflowHelper {
     /**
      * Deletes the action which is part of the step, but the action still being part of the scheme.
      * @param actionId String action id
-     * @param stepId   String step   id
      * @param user     User   the user that makes the request
      * @return WorkflowStep
      */
+    @WrapInTransaction
+    public void deleteAction(final String actionId,
+                                     final User user) {
+
+        WorkflowAction action = null;
+
+        try {
+
+            Logger.debug(this, "Looking for the action: " + actionId);
+            action = this.workflowAPI.findAction
+                    (actionId, user);
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        if (null != action) {
+
+            try {
+
+                Logger.debug(this, "Deleting the action: " + actionId);
+                this.workflowAPI.deleteAction(action);
+            } catch (DotDataException | AlreadyExistException e) {
+
+                Logger.error(this, e.getMessage(), e);
+                throw new DotWorkflowException(e.getMessage(), e);
+            }
+        } else {
+
+            throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    } // deleteAction.
+
+        /**
+         * Deletes the action which is part of the step, but the action still being part of the scheme.
+         * @param actionId String action id
+         * @param stepId   String step   id
+         * @param user     User   the user that makes the request
+         * @return WorkflowStep
+         */
     @WrapInTransaction
     public WorkflowStep deleteAction(final String actionId,
                                      final String stepId,

@@ -521,7 +521,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			throw new DotSecurityException("User " + user + " cannot read action " + action.getName());
 		}
-		
+
 		return action;
 	}
 
@@ -607,18 +607,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
+	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, "Removing the WorkflowAction: " + action.getId());
 
 		final List<WorkflowActionClass> workflowActionClasses =
 				findActionClasses(action);
 
+		Logger.debug(this, "Removing the WorkflowActionClass, for action: " + action.getId());
+
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
-			for(WorkflowActionClass clazz : workflowActionClasses){
-				deleteActionClass(clazz);
+			for(WorkflowActionClass actionClass : workflowActionClasses) {
+				this.deleteActionClass(actionClass);
 			}
 		}
 
-		workFlowFactory.deleteAction(action);
+		Logger.debug(this,
+				"Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
+		this.workFlowFactory.deleteAction(action);
 	}
 
 	@WrapInTransaction

@@ -450,4 +450,46 @@ public class WorkflowResource {
         return response;
     } // deleteAction
 
+    /**
+     * Deletes an action associated to the scheme and all references into steps
+     * @param request                   HttpServletRequest
+     * @param actionId                  String
+     * @return Response
+     */
+    @DELETE
+    @Path("/action/{actionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteAction(@Context final HttpServletRequest request,
+                                       @PathParam("actionId") final String actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+
+            Logger.debug(this, "Deleting the action: " + actionId);
+            this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on deleteAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // deleteAction
+
 } // E:O:F:WorkflowResource.

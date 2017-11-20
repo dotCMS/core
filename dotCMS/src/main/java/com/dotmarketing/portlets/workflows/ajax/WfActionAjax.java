@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -61,6 +62,8 @@ public class WfActionAjax extends WfBaseAction {
 
 		try {
 
+			Logger.debug(this, "Deleting the action: " + actionId +
+							", for the step: " + stepId);
 			final User user = this.userWebAPI.getUser(request);
 			workflowStep    = this.workflowHelper.deleteAction
 					(actionId, stepId, user);
@@ -70,7 +73,14 @@ public class WfActionAjax extends WfBaseAction {
 			writeError(response, e.getMessage());
 		}
 	} // delete.
-	
+
+	/**
+	 * This method deletes the action associated to the scheme and all references to the steps.
+	 * @param request  HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void delete(final HttpServletRequest request,
                        final HttpServletResponse response) throws ServletException, IOException {
 
@@ -78,13 +88,11 @@ public class WfActionAjax extends WfBaseAction {
 
 		try {
 
-			final WorkflowAction action =
-                    this.workflowAPI.findAction(actionId, APILocator.getUserAPI().getSystemUser());
-            final WorkflowStep step =
-                    this.workflowAPI.findStep(action.getStepId());
+			Logger.debug(this, "Deleting the action: " + actionId);
+			this.workflowHelper.deleteAction(actionId, this.userWebAPI.getUser(request));
 
-            this.workflowAPI.deleteAction(action);
-			writeSuccess(response, step.getSchemeId() );
+
+			writeSuccess(response, StringPool.BLANK);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());

@@ -185,23 +185,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
-		String stepId = action.getStepId();
-		final DotConnect db = new DotConnect();
-		db.setSQL(sql.DELETE_ACTION);
-		db.addParam(action.getId());
-		db.loadResult();
 
-		final WorkflowStep proxyStep = new WorkflowStep();
-		proxyStep.setId(action.getStepId());
-		cache.removeActions(proxyStep);
+		Logger.debug(this,
+				"Removing action steps dependencies, for the action: " + action.getId());
+
+		final List<Map<String, Object>> stepIdList =
+				new DotConnect().setSQL(sql.SELECT_STEPS_ID_BY_ACTION)
+				.addParam(action.getId()).loadObjectResults();
+
+		if (null != stepIdList && stepIdList.size() > 0) {
+			new DotConnect().setSQL(sql.DELETE_ACTIONS_BY_STEP)
+					.addParam(action.getId()).loadResult();
+
+			for (Map<String, Object> stepIdRow : stepIdList) {
+				Logger.debug(this,
+						"Removing action steps cache " + stepIdRow.get("stepid"));
+				final WorkflowStep proxyStep = new WorkflowStep();
+				proxyStep.setId((String)stepIdRow.get("stepid"));
+				cache.removeActions(proxyStep);
+			}
+		}
+
+		Logger.debug(this,
+				"Removing the action: " + action.getId());
+
+		new DotConnect().setSQL(sql.DELETE_ACTION)
+				.addParam(action.getId()).loadResult();
 
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());
 		cache.removeActions(proxyScheme);
 
 		// update scheme mod date
-		WorkflowStep step = findStep(stepId);
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 
@@ -250,9 +266,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 
 		// update scheme mod date
-		WorkflowAction action = findAction(actionId);
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		final WorkflowAction action = findAction(actionId);
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 

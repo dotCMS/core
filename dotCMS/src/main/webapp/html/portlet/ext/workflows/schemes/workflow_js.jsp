@@ -625,14 +625,11 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 					if (dataOrError.indexOf("FAILURE") == 0) {
 						showDotCMSSystemMessage(dataOrError, true);
-
-
 					} else {
-						actionAdmin.deleteSuccess(dataOrError);
+						mainAdmin.refresh();
 					}
 				} else {
 					this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-scheme")%>");
-
 				}
 			}
 		};
@@ -670,6 +667,13 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	},
 
 
+	deleteSuccess : function(message) {
+		console.log(message);
+		console.log(message.split(":")[1]);
+		stepAdmin.showViewSteps(message.split(":")[1]);
+
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Deleted")%>");
+	},
 
 	deleteSuccess : function(message) {
 		console.log(message);
