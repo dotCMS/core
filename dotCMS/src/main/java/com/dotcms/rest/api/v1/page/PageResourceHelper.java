@@ -192,11 +192,11 @@ public class PageResourceHelper implements Serializable {
                     containerStructures, rendered));
         }
         TemplateLayout layout = null;
-        if (null != template.getTheme()) {
-            final DotTemplateTool dotTemplateTool = new DotTemplateTool();
-            dotTemplateTool.init(velocityContext);
-            layout = DotTemplateTool.themeLayout(template.getInode());
-        }
+
+        final DotTemplateTool dotTemplateTool = new DotTemplateTool();
+        dotTemplateTool.init(velocityContext);
+        layout = DotTemplateTool.themeLayout(template.getInode());
+
         return new PageView(site, template, mappedContainers, page, layout);
     }
 
