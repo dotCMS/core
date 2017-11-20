@@ -62,12 +62,12 @@ public interface ContentTypeAPI {
   /**
    * Find a Content Type given the inode
    * 
-   * @param inode The Inode representing the Structure to find
+   * @param inodeOrVar Either the Inode or the Velocity var name representing the Structure to find
    * @return Content Type Object
    * @throws DotSecurityException The user does not have permissions to perform this action.
    * @throws DotDataException Error occurred when performing the action.
    */
-  ContentType find(String inode) throws DotSecurityException, DotDataException;
+  ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
    * Finds All the Content Types that exists in the system

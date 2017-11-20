@@ -7,6 +7,7 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
@@ -118,14 +119,16 @@ public class PaginationUtil {
 		final int minIndex = getMinIndex(pageValue, perPageValue);
 		final String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
-		Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
-		items =  !UtilMethods.isSet(items) ? Collections.emptyList() : items;
-		final long totalRecords = paginator.getTotalRecords(sanitizefilter);
+		PaginatedArrayList items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+
+		items =  !UtilMethods.isSet(items) ? new PaginatedArrayList() : items;
+		final long totalRecords = items.getTotalResults();
+
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
 		return Response.
-				ok(new ResponseEntityView(items))
+				ok(new ResponseEntityView((Object) items))
 				.header(LINK_HEADER_NAME, linkHeaderValue)
 				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
 				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
