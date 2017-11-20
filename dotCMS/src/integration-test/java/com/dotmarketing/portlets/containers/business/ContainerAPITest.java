@@ -11,6 +11,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
@@ -39,11 +40,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
 
@@ -86,11 +85,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
 
@@ -130,23 +127,30 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void delete() throws Exception {
-    	HibernateUtil.startTransaction();
+        Container container = LocalTransaction.wrapReturnWithListeners(() -> {
+            final Container saved = createContainer();
 
-        final Container saved = createContainer();
+            if (containerAPI.delete(saved, user, false))
+                return saved;
+            else
+                throw new DotDataException("An error occurred deleting container");
+        });
 
-        String inode=saved.getInode();
-        String identifier=saved.getIdentifier();
-
-        assertTrue(containerAPI.delete(saved, user, false));
-
-        AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getValue());
-        HibernateUtil.closeAndCommitTransaction();
+        AssetUtil.assertDeleted(container.getInode(), container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
     }
 
     @Test
     public void testCopy() throws Exception {
-        HibernateUtil.startTransaction();
+        LocalTransaction.wrap(() -> {
+            try {
+                copyContainer();
+            } catch (DotSecurityException e) {
+                throw new DotDataException(e);
+            }
+        });
+    }
 
+    private void copyContainer() throws DotSecurityException, DotDataException {
         final Container source = createContainer();
 
         final Container target = containerAPI.copy(source, defaultHost, user, false);
@@ -156,11 +160,8 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertNotNull(target.getInode());
         assertTrue(target.getTitle().contains(source.getTitle()));
         assertNotEquals(source.getInode(), target.getInode());
-
         containerAPI.delete(source, user, false);
         containerAPI.delete(target, user, false);
-
-        HibernateUtil.closeAndCommitTransaction();
     }
 
     @Test
@@ -194,11 +195,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        final Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
         final List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
         return containerAPI.save(container, csList, defaultHost, user, false);

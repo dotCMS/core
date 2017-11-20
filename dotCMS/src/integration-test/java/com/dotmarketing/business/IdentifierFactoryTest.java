@@ -247,9 +247,8 @@ public class IdentifierFactoryTest {
         pageName = "tempPage" + System.currentTimeMillis();
         parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
 
-        newContentlet.setContentTypeId(CacheLocator.getContentTypeCache()
-                .getStructureByVelocityVarName(
-                        HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).getInode());
+        newContentlet.setContentTypeId(contentTypeAPI.find(
+                        HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
         newContentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageName);
 
         try {
@@ -382,8 +381,7 @@ public class IdentifierFactoryTest {
         fileName = "tempFile" + System.currentTimeMillis();
         tempFile = File.createTempFile(fileName, "txt");
 
-        newContentlet.setContentTypeId(CacheLocator.getContentTypeCache()
-                .getStructureByVelocityVarName(FileAssetAPI.BINARY_FIELD).getInode());
+        newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).inode());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
         newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + ".txt");
         newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + ".txt");
@@ -420,9 +418,8 @@ public class IdentifierFactoryTest {
         newContentlet = new HTMLPageAsset();
         pageName = "tempPage" + System.currentTimeMillis();
 
-        newContentlet.setContentTypeId(CacheLocator.getContentTypeCache()
-                .getStructureByVelocityVarName(
-                        HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).getInode());
+        newContentlet.setContentTypeId(contentTypeAPI.find(
+                        HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
         newContentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageName);
 
         try {
