@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +22,15 @@ public class TemplateLayoutRow {
 
     private Integer[] gridWidths;
     private List<TemplateLayoutColumn> columns;
+
+    @JsonCreator
+    public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
+        this.columns = columns;
+    }
+
+    public TemplateLayoutRow() {
+        this(null);
+    }
 
     public int getIdentifier () {
         return identifier;
@@ -92,8 +104,10 @@ public class TemplateLayoutRow {
             columns = new ArrayList<TemplateLayoutColumn>();
         }
 
+        int leftIndex = columns.size() + 1;
+
         //Creating a new column for this row
-        TemplateLayoutColumn column = new TemplateLayoutColumn(containers, gridWidths[columns.size()], 0);
+        TemplateLayoutColumn column = new TemplateLayoutColumn(containers, gridWidths[columns.size()], leftIndex);
 
         //Is preview mode??
         column.setPreview( isPreview );

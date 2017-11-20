@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Created by Jonathan Gamba
@@ -14,7 +16,10 @@ public class TemplateLayoutColumn extends ContainerHolder {
 
     private Integer widthPercent;
     private Integer width;
-    private int leftIndex;
+    private int leftIndex = -1;
+
+    private Map<Integer, Integer> mapWithWidthPercent = map(12, 100, 9, 75, 8, 66, 6,50, 4, 33, 3,25);
+    private Map<Integer, Integer> mapWidthPercentWith = map(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
 
     @JsonCreator
     public TemplateLayoutColumn(@JsonProperty("containers") List<String> containers,
@@ -28,35 +33,18 @@ public class TemplateLayoutColumn extends ContainerHolder {
 
     public Integer getWidthPercent () {
         if (widthPercent == null || widthPercent == 0){
-            switch (this.width) {
-                case 12:
-                    this.widthPercent = 100;
-                    break;
-                case 9:
-                    this.widthPercent = 75;
-                    break;
-                case 8:
-                    this.widthPercent = 66;
-                    break;
-                case 6:
-                    this.widthPercent = 50;
-                    break;
-                case 4:
-                    this.widthPercent = 33;
-                    break;
-                case 3:
-                    this.widthPercent = 25;
-            }
+            this.widthPercent = this.mapWithWidthPercent.get(this.width);
         }
 
         return widthPercent;
     }
 
-    public void setWidthPercent ( Integer widthPercent ) {
-        this.widthPercent = widthPercent;
-    }
-
     public Integer getWidth () {
+
+        if (width == null || width == 0) {
+            this.width = this.mapWidthPercentWith.get(this.widthPercent);
+        }
+
         return width;
     }
 
