@@ -16,7 +16,7 @@ public class TemplateLayoutColumn extends ContainerHolder {
 
     private Integer widthPercent;
     private Integer width;
-    private int leftIndex = -1;
+    private int leftOffset = -1;
 
     private Map<Integer, Integer> mapWithWidthPercent = map(12, 100, 9, 75, 8, 66, 6,50, 4, 33, 3,25);
     private Map<Integer, Integer> mapWidthPercentWith = map(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
@@ -24,11 +24,11 @@ public class TemplateLayoutColumn extends ContainerHolder {
     @JsonCreator
     public TemplateLayoutColumn(@JsonProperty("containers") List<String> containers,
                                 @JsonProperty("widthPercent") final int widthPercent,
-                                @JsonProperty("leftIndex") final int leftIndex) {
+                                @JsonProperty("leftOffset") final int leftIndex) {
         super(containers);
 
         this.widthPercent = widthPercent;
-        this.leftIndex = leftIndex;
+        this.leftOffset = leftIndex;
     }
 
     public Integer getWidthPercent () {
@@ -48,7 +48,7 @@ public class TemplateLayoutColumn extends ContainerHolder {
         return width;
     }
 
-    public int getLeftIndex() {
-        return leftIndex;
+    public int getLeftOffset() {
+        return leftOffset;
     }
 }

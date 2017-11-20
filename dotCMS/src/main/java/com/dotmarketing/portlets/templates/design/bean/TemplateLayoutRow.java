@@ -104,7 +104,11 @@ public class TemplateLayoutRow {
             columns = new ArrayList<TemplateLayoutColumn>();
         }
 
-        int leftIndex = columns.size() + 1;
+        int leftIndex = 1;
+
+        for (TemplateLayoutColumn column : columns) {
+            leftIndex += column.getWidth();
+        }
 
         //Creating a new column for this row
         TemplateLayoutColumn column = new TemplateLayoutColumn(containers, gridWidths[columns.size()], leftIndex);
