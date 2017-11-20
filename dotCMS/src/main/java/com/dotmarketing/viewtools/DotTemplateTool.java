@@ -9,9 +9,7 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParseException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonMappingException;
-import com.dotmarketing.exception.DotRuntimeException;
+
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -34,7 +32,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by Jonathan Gamba
@@ -92,7 +89,7 @@ public class DotTemplateTool implements ViewTool {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
+    public static TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
         String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
 
@@ -108,7 +105,7 @@ public class DotTemplateTool implements ViewTool {
                     template = (Template) InodeFactory.getInode(themeInode, Template.class);
                 }
 
-                drawedBody = ((Template) template).getDrawedBody();
+                drawedBody = template.getDrawedBody();
                 title = template.getTitle();
             } else {
                 drawedBody = (String) request.getAttribute("designedBody");
@@ -135,17 +132,6 @@ public class DotTemplateTool implements ViewTool {
     private static TemplateLayout getTemplateLayoutFromJSON(String json)  throws IOException{
         return JsonTransformer.mapper.readValue(json, TemplateLayout.class);
 
-    }
-
-    private static String getTemplateBody(String themeInode) throws DotDataException, DotSecurityException {
-        if ( UtilMethods.isSet( themeInode ) ) {
-            Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-            Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
-
-            return ((Template) template).getDrawedBody();
-        } else {
-            return (String) request.getAttribute( "designedBody" );
-        }
     }
 
     /**

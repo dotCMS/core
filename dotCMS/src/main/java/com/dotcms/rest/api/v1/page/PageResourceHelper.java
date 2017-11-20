@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.repackage.groovy.json.JsonException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.ContainerStructure;
@@ -18,7 +17,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -31,18 +29,16 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.viewtools.DotTemplateTool;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
 
+import javax.rmi.CORBA.Util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -62,11 +58,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 public class PageResourceHelper implements Serializable {
 
     private static final long serialVersionUID = 296763857542258211L;
-
-    private static final String REQUEST_LAYOUT_PROPERTY_NAME = "layout";
-    private static final String REQUEST_TITLE_PROPERTY_NAME = "title";
-    private static final String REQUEST_THEME_PROPERTY_NAME = "theme";
-    private static final String REQUEST_HOST_ID_PROPERTY_NAME = "hostId";
 
     private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
     private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
@@ -221,7 +212,7 @@ public class PageResourceHelper implements Serializable {
         return objectWriter.writeValueAsString(pageView);
     }
 
-    public Template saveTemplate(final User user, String pageId, final String requestJson)
+    public Template saveTemplate(final User user, String pageId, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
@@ -232,7 +223,7 @@ public class PageResourceHelper implements Serializable {
         }
 
         try {
-            Template templateSaved = this.saveTemplate(page, user, requestJson);
+            Template templateSaved = this.saveTemplate(page, user, pageForm);
 
             String templateId = page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
 
@@ -248,35 +239,25 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    public Template saveTemplate(Contentlet page, final User user, final String requestJson)
+    public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         try {
-            final JSONObject  requestJsonObject = new JSONObject(requestJson);
-
-            Host host = getHost(requestJsonObject, user);
-
-            validateLayoutJson(requestJsonObject);
-            String newTemplateName = requestJsonObject.has(REQUEST_TITLE_PROPERTY_NAME) ?
-                    requestJsonObject.get(REQUEST_TITLE_PROPERTY_NAME).toString() : null;
-
-            Template template = getTemplate(page, user, newTemplateName);
-            setTemplatePropertiesFromJson(template, requestJsonObject);
+            final Host host = getHost(pageForm.getHostId(), user);
+            Template template = getTemplate(page, user, pageForm);
 
             return this.templateAPI.saveTemplate(template, host, user, false);
-        } catch (JSONException e) {
-            throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
         } catch (Exception e) {
             throw new DotRuntimeException(e);
         }
     }
 
-    public Template saveTemplate(final User user, final String requestJson)
+    public Template saveTemplate(final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
-        return this.saveTemplate(null, user, requestJson);
+        return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(Contentlet page, User user, String newTemplateName) throws DotDataException, DotSecurityException {
+    private Template getTemplate(Contentlet page, User user, PageForm form) throws DotDataException, DotSecurityException {
 
         Template result = null;
         String templateId = page != null ? page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD) : null;
@@ -284,67 +265,26 @@ public class PageResourceHelper implements Serializable {
         if (UtilMethods.isSet(templateId)) {
             result = this.templateAPI.findWorkingTemplate(templateId, user, false);
 
-            if (!UtilMethods.isSet(newTemplateName) && !result.isAnonymous()) {
+            if (!UtilMethods.isSet(form.getTitle()) && !result.isAnonymous()) {
                 result = new Template();
             }
         } else {
             result = new Template();
         }
 
+        result.setTitle(form.getTitle());
+        result.setTheme(form.getThemeId());
+        result.setDrawedBody(form.getLayout());
+
         return result;
     }
 
-    private Host getHost(JSONObject requestJsonObject, User user) {
+    private Host getHost(final String hostId, User user) {
         try {
-            if (requestJsonObject.has(REQUEST_HOST_ID_PROPERTY_NAME)) {
-                String hostId = requestJsonObject.remove(REQUEST_HOST_ID_PROPERTY_NAME).toString();
-
-                return hostAPI.find(hostId, user, false);
-            } else {
-                return hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-            }
+            return UtilMethods.isSet(hostId) ? hostAPI.find(hostId, user, false) :
+                        hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             throw new DotRuntimeException(e);
-        }
-    }
-
-    private void setTemplatePropertiesFromJson(Template template, JSONObject requestJsonObject)  {
-        try {
-            String jsonLayout = requestJsonObject.get(REQUEST_LAYOUT_PROPERTY_NAME).toString();
-
-            if (jsonLayout == null) {
-                throw new BadRequestException("An error occurred when proccessing the JSON request");
-            }
-
-            if (requestJsonObject.has(REQUEST_TITLE_PROPERTY_NAME)) {
-                template.setTitle(requestJsonObject.get(REQUEST_TITLE_PROPERTY_NAME).toString());
-            }
-
-            if (requestJsonObject.has(REQUEST_THEME_PROPERTY_NAME)) {
-                template.setTheme(requestJsonObject.get(REQUEST_THEME_PROPERTY_NAME).toString());
-            }
-
-            template.setDrawedBody(jsonLayout);
-        } catch ( JSONException e) {
-            throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
-        }
-    }
-
-    private String validateLayoutJson(JSONObject requestJsonObject) throws BadRequestException, IOException {
-
-        try {
-
-            if (!requestJsonObject.has(REQUEST_LAYOUT_PROPERTY_NAME) || requestJsonObject.has("body")
-                    || requestJsonObject.has("drawedBody")) {
-
-                throw new BadRequestException("An error occurred when proccessing the JSON request");
-            }
-
-            String jsonLayout = requestJsonObject.get(REQUEST_LAYOUT_PROPERTY_NAME).toString();
-            JsonTransformer.mapper.readValue(jsonLayout, TemplateLayout.class);
-            return jsonLayout;
-        } catch (JSONException e) {
-            throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
         }
     }
 }

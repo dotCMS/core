@@ -93,12 +93,7 @@ public class TemplateLayoutRow {
         }
 
         //Creating a new column for this row
-        TemplateLayoutColumn column = new TemplateLayoutColumn();
-        column.setContainers( containers );
-
-        //Now calculate the width percent for this column
-        column.setWidthPercent( gridWidths[columns.size()] );
-
+        TemplateLayoutColumn column = new TemplateLayoutColumn(containers, gridWidths[columns.size()], 0);
 
         //Is preview mode??
         column.setPreview( isPreview );

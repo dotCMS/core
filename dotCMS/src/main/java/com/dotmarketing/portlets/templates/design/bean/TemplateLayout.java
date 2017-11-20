@@ -86,7 +86,7 @@ public class TemplateLayout {
         return header;
     }
 
-    public void setHeader ( boolean header ) {
+    public void setHeader ( final boolean header ) {
         this.header = header;
     }
 
@@ -94,7 +94,7 @@ public class TemplateLayout {
         return footer;
     }
 
-    public void setFooter ( boolean footer ) {
+    public void setFooter ( final boolean footer ) {
         this.footer = footer;
     }
 
@@ -102,11 +102,11 @@ public class TemplateLayout {
         return body;
     }
 
-    public void setBody (Body body) {
+    public void setBody (final Body body) {
         this.body = body;
     }
 
-    public void setBodyRows ( List<TemplateLayoutRow> bodyRows ) {
+    public void setBodyRows ( final List<TemplateLayoutRow> bodyRows ) {
 
         this.body = new Body();
         this.body.setRows( bodyRows );
@@ -116,35 +116,36 @@ public class TemplateLayout {
         return sidebar;
     }
 
-    public void setSidebar (Sidebar sidebar) {
+    public void setSidebar (final Sidebar sidebar) {
         this.sidebar = sidebar;
     }
 
-    public void setContainers ( List<String> containers, Boolean isPreview ) {
-
-        this.sidebar = new Sidebar();
-        this.sidebar.setContainers( containers );
-        this.sidebar.setPreview( isPreview );
+    public void setContainers ( final List<String> containers, final Boolean isPreview ) {
+        String location = null;
+        int widthPercent  = 0;
 
         if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T1 ) ) {//layout-160-left
-            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 20 );
+            location = Sidebar.LOCATION_LEFT;
+            widthPercent = 20;
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T2 ) ) {//layout-240-left
-            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 30 );
+            location = Sidebar.LOCATION_LEFT;
+            widthPercent = 30;
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T3 ) ) {//layout-300-left
-            this.sidebar.setLocation( Sidebar.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 40 );
+            location =  Sidebar.LOCATION_LEFT;
+            widthPercent = 40;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T4 ) ) {//layout-160-right
-            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 20 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 20;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T5 ) ) {//layout-240-right
-            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 30 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 30;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T6 ) ) {//layout-300-right*/
-            this.sidebar.setLocation( Sidebar.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 40 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 40;
         }
+
+        this.sidebar = new Sidebar(containers, location, 0, widthPercent);
+        this.sidebar.setPreview( isPreview );
 
     }
 

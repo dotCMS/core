@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -15,8 +16,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
@@ -204,6 +207,14 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	public void setDrawedBody(String drawedBody) {
 		this.drawedBody = drawedBody;
+	}
+
+	public void setDrawedBody(TemplateLayout templateLayout) {
+		try {
+			this.drawedBody = JsonTransformer.mapper.writeValueAsString(templateLayout);
+		} catch (JsonProcessingException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	public Integer getCountAddContainer() {

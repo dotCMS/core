@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -12,21 +10,14 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.*;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -75,6 +66,8 @@ public class PageResource {
      * @param request  The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri      The path to the HTML Page whose information will be retrieved.
+     * @param live     If it is false look for live and working page version, otherwise just look for live version,
+     *                 true is the default value
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -134,6 +127,8 @@ public class PageResource {
      * @param request  The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri      The path to the HTML Page whose information will be retrieved.
+     * @param live     If it is false look for live and working page version, otherwise just look for live version,
+     *                 true is the default value
      * @return All the <b>rendered</b> objects on an associated HTML Page.
      */
     @NoCache
@@ -183,7 +178,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
     public Response saveLayout(@Context final HttpServletRequest request, @PathParam("pageId") final String pageId,
-                               final String json) {
+                               final PageForm form) {
 
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -192,7 +187,7 @@ public class PageResource {
 
         try {
 
-            Template templateSaved = this.pageResourceHelper.saveTemplate(user, pageId, json);
+            final Template templateSaved = this.pageResourceHelper.saveTemplate(user, pageId, form);
             res = Response.ok(new ResponseEntityView(templateSaved)).build();
 
         } catch (DotSecurityException e) {
@@ -201,18 +196,24 @@ public class PageResource {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (BadRequestException | DotDataException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (Exception e) {
+        } catch (IOException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;
     }
 
+    /**
+     * Save a new template
+     * @param request
+     * @param form
+     * @return
+     */
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, final String json) {
+    public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) {
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
@@ -220,14 +221,14 @@ public class PageResource {
 
         try {
 
-            Template templateSaved = this.pageResourceHelper.saveTemplate(user, json);
+            final Template templateSaved = this.pageResourceHelper.saveTemplate(user, form);
             res = Response.ok(new ResponseEntityView(templateSaved)).build();
 
         } catch (DotSecurityException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (BadRequestException | DotDataException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (Exception e) {
+        } catch (IOException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 

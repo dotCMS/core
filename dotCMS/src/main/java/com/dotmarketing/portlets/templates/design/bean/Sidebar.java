@@ -1,42 +1,43 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
- * Created by freddyrodriguez on 11/13/17.
+ * It's a {@link com.dotmarketing.portlets.templates.model.Template}'s Sidebar
  */
 public class Sidebar extends ContainerHolder {
 
-    //ONLY FOR SIDEBARS!!!
     public static String LOCATION_RIGHT = "right";
     public static String LOCATION_LEFT = "left";
-    //ONLY FOR SIDEBARS!!!
 
     public String location;
     public Integer widthPercent;
     public Integer width;
 
-    public String getLocation() {
-        return location;
+    @JsonCreator
+    public Sidebar(@JsonProperty("containers") List<String> containers,
+                   @JsonProperty("location") final String location,
+                   @JsonProperty("width") final int width,
+                   @JsonProperty("widthPercent") final int widthPercent) {
+        super(containers);
+
+        this.location = location;
+        this.widthPercent = widthPercent;
+        this.width = width;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public String getLocation() {
+        return location;
     }
 
     public Integer getWidthPercent() {
         return widthPercent;
     }
 
-    public void setWidthPercent(Integer widthPercent) {
-        this.widthPercent = widthPercent;
-    }
-
     public Integer getWidth() {
         return width;
-    }
-
-    public void setWidth(Integer width) {
-        this.width = width;
     }
 }

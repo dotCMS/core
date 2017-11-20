@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.templates.design.bean;
 import java.util.List;
 
 /**
- * Created by freddyrodriguez on 11/13/17.
+ * It's a {@link com.dotmarketing.portlets.templates.model.Template}'s Body
  */
 public class Body {
     private List<TemplateLayoutRow> rows;
