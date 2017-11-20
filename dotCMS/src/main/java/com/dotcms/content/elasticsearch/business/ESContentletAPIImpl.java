@@ -3527,20 +3527,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } // end syncronized block
 
         if(contentlet.isFileAsset()){
-          
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-          
-          Logger.info(this.getClass(), "file Asset saved:" + contentlet.getIdentifier());
-          Logger.info(this.getClass(), "file Asset saved:" + asset.getFileName() + " : " + asset.getFileAsset() );
-          Logger.info(this.getClass(), "file Asset saved:" + asset.getFileAsset().length() );
-          
-          
         }
         
-        
-        
-        
-        
+
         
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
