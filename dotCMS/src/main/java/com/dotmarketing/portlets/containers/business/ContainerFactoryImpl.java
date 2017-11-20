@@ -212,7 +212,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			} else if (offset > 0) {
 				size = toReturn.subList(offset, toReturn.size()).size();
 			}
-			assets.setTotalResults(size);
+			assets.setTotalResults(toReturn.size());
 
 			if(limit!=-1) {
 				int from = offset<toReturn.size()?offset:0;
