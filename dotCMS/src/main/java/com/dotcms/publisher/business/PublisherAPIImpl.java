@@ -605,7 +605,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"left join publishing_queue_audit a "+
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
-			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) and p.publish_date is not null "+
+			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) "+
+			"and p.publish_date is not null and p.publish_date <= ? "+
 			"order by publish_date ASC,operation ASC";
 
 	@Override
@@ -616,6 +617,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
 			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
+			dc.addParam(new Date());
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
