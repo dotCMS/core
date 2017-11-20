@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -32,17 +33,17 @@ public class ContainerPaginatorTest {
         final int limit = 10;
         final String orderby = "title";
 
-        PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
+        final PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);
 
-        ContainerFactory containerFactory = mock(ContainerFactory.class);
+        final ContainerAPI containerAPI = mock(ContainerAPI.class);
 
-        when(containerFactory.findContainers(user, false, params, hostId,
+        when(containerAPI.findContainers(user, false, params, hostId,
                 null, null, null, offset, limit, "title asc")).thenReturn(containersExpected);
 
-        ContainerPaginator containerPaginator = new ContainerPaginator( containerFactory );
+        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
 
-        PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby,
+        final PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
 
         assertEquals(containersExpected, containers);
@@ -60,17 +61,17 @@ public class ContainerPaginatorTest {
         final int limit = 10;
         final String orderby = "title";
 
-        PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
+        final PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);
 
-        ContainerFactory containerFactory = mock(ContainerFactory.class);
+        final ContainerAPI containerAPI = mock(ContainerAPI.class);
 
-        when(containerFactory.findContainers(user, false, params, hostId,
+        when(containerAPI.findContainers(user, false, params, hostId,
                 null, null, null, offset, limit, "title")).thenReturn(containersExpected);
 
-        ContainerPaginator containerPaginator = new ContainerPaginator( containerFactory );
+        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
 
-        PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby, null, map());
+        final PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby, null, map());
 
         assertEquals(containersExpected, containers);
         assertEquals(containers.getTotalResults(), totalRecords);

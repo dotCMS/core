@@ -5,7 +5,7 @@ package com.dotcms.util.pagination;
  */
 public class PaginationException extends RuntimeException{
 
-    public PaginationException(Throwable cause) {
+    public PaginationException(final Throwable cause) {
         super(cause);
     }
 }

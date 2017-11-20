@@ -95,26 +95,21 @@ public class ContainerResource implements Serializable {
                                           @QueryParam(PaginationUtil.FILTER)   final String filter,
                                           @QueryParam(PaginationUtil.PAGE) final int page,
                                           @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                          @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-                                          @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-                                          @QueryParam(ContainerPaginator.HOST_PARAMETER_ID) String hostId) {
+                                          @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+                                          @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+                                          @QueryParam(ContainerPaginator.HOST_PARAMETER_ID) final String hostId) {
 
         final InitDataObject initData = webResource.init(null, true, request, true, null);
-
-        Response response = null;
-
         final User user = initData.getUser();
 
         try {
-            Map<String, Object> extraParams = map(ContainerPaginator.HOST_PARAMETER_ID, hostId);
-            response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
+            final Map<String, Object> extraParams = map(ContainerPaginator.HOST_PARAMETER_ID, hostId);
+            return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
                     OrderDirection.valueOf(direction), extraParams);
         } catch (Exception e) {
-
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
             Logger.error(this, e.getMessage(), e);
-        }
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 
-        return response;
+        }
     }
 }

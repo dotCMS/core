@@ -50,8 +50,8 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
     }
 
     @Override
-    public PaginatedArrayList<Map<String, Object>> getItems(User user, String filter, int limit, int offset,
-                                                    String orderby, OrderDirection direction, Map<String, Object> extraParams) {
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, int limit, int offset,
+                                                    final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
 
         return getItems(user, filter, limit, offset);
     }
@@ -85,10 +85,10 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
     }
 
     @Nullable
-    private Map<String, Object> getUserObjectMap(List<String> rolesId, User userItem) {
+    private Map<String, Object> getUserObjectMap(final List<String> rolesId, final User userItem) {
         try{
-            Map<String, Object> userMap = userItem.toMap();
-            String id = userItem.getUserId();
+            final Map<String, Object> userMap = userItem.toMap();
+            final String id = userItem.getUserId();
             userMap.put("requestPassword", roleAPI.doesUserHaveRoles(id, rolesId));
 
             return userMap;
