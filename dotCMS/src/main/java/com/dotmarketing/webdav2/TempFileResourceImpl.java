@@ -1,4 +1,4 @@
-package com.dotmarketing.webdav;
+package com.dotmarketing.webdav2;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -36,22 +36,20 @@ import java.util.Map;
  */
 public class TempFileResourceImpl implements FileResource, LockableResource {
     
-	private DotWebdavHelper dotDavHelper;
+	private final DotWebDavObject davObject;
 	private final File file;
-    private final String url;
     private boolean isAutoPub = false;
     private PermissionAPI perAPI; 
     private Method method ;
-    public TempFileResourceImpl(File file, String url, boolean isAutoPub) {
+    public TempFileResourceImpl(File file, DotWebDavObject davObject) {
         if( file.isDirectory() ){
         	Logger.error(this, "Trying to get a temp file which is actually a directory!!!");
         	throw new IllegalArgumentException("Static resource must be a file, this is a directory: " + file.getAbsolutePath());
         }
-        dotDavHelper = new DotWebdavHelper();
+        this.davObject = davObject;
         perAPI = APILocator.getPermissionAPI();
         this.file = file;
-        this.url = url;
-        this.isAutoPub = isAutoPub;
+
         
          method = HttpManager.request().getMethod();
         
@@ -93,7 +91,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     
     public Object authenticate(String username, String password) {
     	try {
-			return dotDavHelper.authorizePrincipal(username, password);
+			return davObject.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -168,7 +166,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 				String p = fr.getPath();
 				if(!p.endsWith("/"))
 					p = p + "/";
-				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
+				davObject.copyTempFileToStorage(file, p + name);
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -213,7 +211,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 				String p = fr.getPath();
 				if(!p.endsWith("/"))
 					p = p + "/";
-				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
+				davObject.copyTempFileToStorage(file, p + name);
 				file.delete();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -256,22 +254,22 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-//		return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+		return davObject.lock(timeout, lockInfo, getUniqueId());
+//		return davObject.lock(lockInfo, user, file.getIdentifier() + "");
 	}
 
 	public LockResult refreshLock(String token) {
-		return dotDavHelper.refreshLock(getUniqueId());
-//		return dotDavHelper.refreshLock(token);
+		return davObject.refreshLock(getUniqueId());
+//		return davObject.refreshLock(token);
 	}
 
 	public void unlock(String tokenId) {
-		dotDavHelper.unlock(getUniqueId());
-//		dotDavHelper.unlock(tokenId);
+		davObject.unlock(getUniqueId());
+//		davObject.unlock(tokenId);
 	}
 
 	public LockToken getCurrentLock() {
-		return dotDavHelper.getCurrentLock(getUniqueId());
+		return davObject.getCurrentLock(getUniqueId());
 	}
 
 

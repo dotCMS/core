@@ -3,57 +3,6 @@ package com.dotmarketing.webdav;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
-import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.Versionable;
-import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,17 +20,58 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+import java.util.regex.Pattern;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
+
+import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Versionable;
+import com.dotmarketing.cache.FolderCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.velocity.DotResourceCache;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class DotWebdavHelper {
 
-	private static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
-	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
-		protected Perl5Matcher initialValue() {
-			return new Perl5Matcher();
-		}
-	};
-	private  com.dotcms.repackage.org.apache.oro.text.regex.Pattern tempResourcePattern;
+
 	private File tempHolderDir;
 	private String tempFolderPath = "dotwebdav";
 
@@ -101,7 +91,7 @@ public class DotWebdavHelper {
 	 * MD5 message digest provider.
 	 */
 	private static MessageDigest md5Helper;
-
+	private final static Pattern tempResourcePattern =  Pattern.compile("/\\(.*\\)|/._\\(.*\\)|/\\.|^\\.|^\\(.*\\)");
 
 	private Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo>();
 
@@ -110,13 +100,7 @@ public class DotWebdavHelper {
 	}
 
 	public DotWebdavHelper() {
-		Perl5Compiler c = new Perl5Compiler();
-		try{
-			tempResourcePattern = c.compile("/\\(.*\\)|/._\\(.*\\)|/\\.|^\\.|^\\(.*\\)",Perl5Compiler.READ_ONLY_MASK);
-    	}catch (MalformedPatternException mfe) {
-    		Logger.fatal(this,"Unable to instaniate webdav servlet : " + mfe.getMessage(),mfe);
-			Logger.error(this,mfe.getMessage(),mfe);
-		}
+
 
     	try {
 			tempHolderDir = File.createTempFile("placeHolder", "dot");
@@ -153,96 +137,37 @@ public class DotWebdavHelper {
 		}
 	}
 
-	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException {
-		User _user;
+	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException, com.liferay.portal.NoSuchUserException {
 
-		boolean useEmailAsLogin = true;
-		Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			useEmailAsLogin = false;
-		}
-		try {
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-				Authenticator authenticator;
-				authenticator = (Authenticator) new com.dotcms.repackage.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
-					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
-				} else {
-					authenticator.authenticateByUserId(comp.getCompanyId(), username, passwd);
-				}
-			}
-		}catch (AuthException ae) {
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		}catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotSecurityException(e.getMessage(),e);
-		}
-		UserAPI userAPI=APILocator.getUserAPI();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			_user = userAPI.loadUserById(username,userAPI.getSystemUser(),false);
-		} else {
-			_user = userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
-		}
-
-        if (_user == null) {
-            throw new DotSecurityException("The user was returned NULL");
-        }
-
-        // Validate password and rehash when is needed
-        if (LoginFactory.passwordMatch(passwd, _user)) {
-            return _user;
-        } else {
-            Logger.debug(this, "The user's passwords didn't match");
-            throw new DotSecurityException("The user's passwords didn't match");
-        }
+	    
+	  if( APILocator.getLoginServiceAPI().doLogin(username, passwd)){
+	      return APILocator.getLoginServiceAPI().getLoggedInUser();
+	  }
+	  throw new NoSuchUserException("not authorized");
+		
 	}
 
-	public boolean isFolder(String uriAux, User user) throws IOException {
-		Logger.debug(this, "isFolder");
-		boolean returnValue = false;
-		Logger.debug(this, "Method isFolder: the uri is " + uriAux);
-		if (uriAux.equals("") || uriAux.equals("/")) {
-			returnValue = true;
-		} else {
-			uriAux = stripMapping(uriAux);
-			String hostName = getHostname(uriAux);
-			Logger.debug(this, "Method isFolder: the hostname is " + hostName);
-			Host host;
-			try {
-				host = hostAPI.findByName(hostName, user, false);
-			} catch (DotDataException e) {
-				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new IOException(e.getMessage());
-			} catch (DotSecurityException e) {
-				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new IOException(e.getMessage());
-			}
-			if (host != null && InodeUtils.isSet(host.getInode())) {
-				String path = getPath(uriAux);
-				Logger.debug(this, "Method isFolder: the path is " + path);
-				if (path.equals("") || path.equals("/")) {
-					returnValue = true;
-				} else {
-					if(!path.endsWith("/"))
-						path += "/";
-					if(path.contains("mvdest2")){
-						Logger.debug(this, "is mvdest2 a folder");
-					}
-					Folder folder = new Folder();
-					try {
-						folder = folderAPI.findFolderByPath(path, host,user,false);
-					} catch (Exception e) {
-						Logger.debug(this, "unable to find folder " + path );
-						//throw new IOException(e.getMessage());
-					}
-					if (InodeUtils.isSet(folder.getInode())) {
-						returnValue = true;
-					}
-				}
-			}
-		}
-		return returnValue;
+	public boolean isFolder(String uri, User user) throws IOException {
+      uri = stripMapping(uri);
+      Logger.debug(this.getClass(), "In the Method isResource");
+
+
+      // Host
+      String hostName = getHostname(uri);
+
+      Host host;
+      try {
+          host = hostAPI.findByName(hostName, user, false);
+      } catch (DotDataException  | DotSecurityException e) {
+          Logger.error(DotWebdavHelper.class, e.getMessage(), e);
+          throw new IOException(e.getMessage());
+      }
+
+
+      String path = getPath(uri);
+
+      return CMSUrlUtil.getInstance().isFolder(path, host);
+
 	}
 
 	public boolean isResource(String uri, User user) throws IOException {
@@ -251,51 +176,27 @@ public class DotWebdavHelper {
 		if (uri.endsWith("/")) {
 			return false;
 		}
-		boolean returnValue = false;
+
 		// Host
 		String hostName = getHostname(uri);
 
 		Host host;
 		try {
 			host = hostAPI.findByName(hostName, user, false);
-		} catch (DotDataException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
-		} catch (DotSecurityException e) {
+		} catch (DotDataException  | DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
 		}
 
-		if(host == null){
-			Logger.debug(this, "isResource Method: Host is NULL");
-		}else{
-			Logger.debug(this, "isResource Method: host id is " + host.getIdentifier() + " and the host name is " + host.getHostname());
-		}
-		// Folder
+
+		
+
 		String path = getPath(uri);
-		String folderName = getFolderName(path);
-		Folder folder;
-		try {
-			folder = folderAPI.findFolderByPath(folderName, host, user,false);
-		} catch (Exception e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
-		}
-		if(folder!=null && InodeUtils.isSet(folder.getInode())) {
-    		// FileName
-    		String fileName = getFileName(path);
-    		fileName = deleteSpecialCharacter(fileName);
 
-    		if (InodeUtils.isSet(host.getInode())) {
-    			try {
-					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
+		boolean amI =  CMSUrlUtil.getInstance().amISomething(path, host, getLanguage());
+	    return amI;
+		
 
-    			} catch (Exception ex) {
-    				Logger.debug(this, "Error verifying if file already exists",ex);
-    			}
-    		}
-		}
-		return returnValue;
 	}
 
 	public IFileAsset loadFile(String url, User user) throws IOException, DotDataException, DotSecurityException{
@@ -322,6 +223,7 @@ public class DotWebdavHelper {
     		        Contentlet cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
     	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
+
     	            }
     		    }
     		}
@@ -332,6 +234,22 @@ public class DotWebdavHelper {
 		return f;
 	}
 
+	private boolean isRealFile(File f) throws IOException{
+	  
+      long length = f.length();
+      if(length==9 ){
+        String contents = new String(Files.readAllBytes(f.toPath()));
+        if(emptyFileData.equals(contents)){
+          return false;
+      }
+      }
+      return true;
+	  
+	}
+	
+	
+	
+	
 	public Folder loadFolder(String url,User user) throws IOException{
 		url = stripMapping(url);
 		String hostName = getHostname(url);
@@ -481,10 +399,7 @@ public class DotWebdavHelper {
 	}
 
 	public boolean isTempResource(String path){
-		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-		if(matcher.contains(path, tempResourcePattern))
-			return true;
-		return false;
+		return tempResourcePattern.matcher(path).find();
 	}
 
 	public File createTempFolder(String path){
@@ -539,13 +454,15 @@ public class DotWebdavHelper {
 		return nf;
 	}
 
-	public File createTempFile(String path) throws IOException{
-		File file = new File(tempHolderDir.getPath() + path);
-		String p = file.getPath().substring(0,file.getPath().lastIndexOf(File.separator));
-		File f = new File(p);
-		f.mkdirs();
-		file.createNewFile();
-		return file;
+	public File createTempFile(final String fileName) throws IOException{
+		File tmpDir = new File(tempHolderDir.getPath() );
+		if(!tmpDir.exists()){
+		  tmpDir.mkdirs();
+		}
+		tmpDir = new File(tmpDir, UUIDGenerator.generateUuid());
+		tmpDir.mkdirs();
+		return new File(tmpDir, fileName);
+		
 	}
 
 	public void copyTempDirToStorage(File fromFileFolder, String destPath, User user,boolean autoPublish) throws Exception{
@@ -662,7 +579,41 @@ public class DotWebdavHelper {
 		return fileData;
 	}
 
-	public void setResourceContent(String resourceUri, InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
+	
+    public void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
+      
+      String fileName = getFileName(resourceUri);
+      File tmpFile = createTempFile(fileName);
+      
+      // Saving the new working data
+      try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
+              final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tmpFile.toPath()))){
+
+          FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+
+      }
+      Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + tmpFile.length() + " : " + tmpFile.getAbsolutePath());
+      
+      setResourceContent(resourceUri, tmpFile, contentType, characterEncoding, modifiedDate, user, isAutoPub,HttpManager.request() );
+    }
+	
+	
+	
+	
+	
+	/**
+	 * 
+	 * @param resourceUri
+	 * @param content
+	 * @param contentType
+	 * @param characterEncoding
+	 * @param modifiedDate
+	 * @param user
+	 * @param isAutoPub
+	 * @param request
+	 * @throws Exception
+	 */
+	public void setResourceContent(String resourceUri, File incomingFile,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub, Request request) throws Exception {
 		resourceUri = stripMapping(resourceUri);
 		Logger.debug(this.getClass(), "setResourceContent");
 		String hostName = getHostname(resourceUri);
@@ -729,30 +680,21 @@ public class DotWebdavHelper {
 				fileAsset.setStructureInode(folder.getDefaultFileType());
 				fileAsset.setFolder(folder.getInode());
 
-				// Create user temp folder and create file inside of it
-				File fileData = createFileInTemporalFolder(fieldVar, user.getUserId(), fileName);
 
-				// Saving the new working data
-				try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
 
-				    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
-                }
+	
                 
                 //Avoid uploading an empty file
-				if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
+				if(request.getUserAgentHeader().contains("Cyberduck") || incomingFile.length()==0){
+				  incomingFile = writeDataIfEmptyFile(folder, fileName, incomingFile);
 				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
 				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
-				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, incomingFile);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
-				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-					fileAsset.getMap().put("_validateEmptyFile_", false);
-				}
+
 				fileAsset=conAPI.checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -772,29 +714,19 @@ public class DotWebdavHelper {
 				    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
 				}
 			} else {
-			    File fileData;
 
 				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 				Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 
-				// Create user temp folder and create file inside of it
-				fileData = createFileInTemporalFolder(fieldVar, user.getUserId(), fileName);
 
 
-				// Saving the new working data
-                try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
-
-                    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
-                }
                 
                 //Avoid uploading an empty file
-				fileData = writeDataIfEmptyFile(folder, fileName, fileData);
+				incomingFile = writeDataIfEmptyFile(folder, fileName, incomingFile);
 
 				fileAssetCont.setInode(null);
 				fileAssetCont.setFolder(parent.getInode());
-				fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+				fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, incomingFile);
 				fileAssetCont.setLanguageId(defaultLang);
 				fileAssetCont = conAPI.checkin(fileAssetCont, user, false);
 				if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
@@ -819,34 +751,7 @@ public class DotWebdavHelper {
 		}
 	}
 
-    /**
-     * Create temporal user folder and create a file inside of it
-     *
-     * @param fieldVar
-     * @param userId
-     * @param fileName
-     * @return created file
-     */
-	private File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) {
-        final String folderPath = new StringBuilder()
-                .append(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary())
-                .append(File.separator).append(userId).append(File.separator)
-                .append(fieldVar.getFieldContentlet()).toString();
 
-        File tempUserFolder = new File(folderPath);
-        if (!tempUserFolder.exists())
-            tempUserFolder.mkdirs();
-
-        final String filePath = new StringBuilder()
-        .append(tempUserFolder.getAbsolutePath())
-        .append(File.separator).append(fileName).toString();
-
-        File fileData = new File(filePath);
-        if(fileData.exists())
-            fileData.delete();
-
-        return fileData;
-	}
 
 	public Folder createFolder(String folderUri, User user) throws IOException, DotDataException {
 		Folder folder = null;
@@ -1322,11 +1227,7 @@ public class DotWebdavHelper {
 
 	}
 
-	private boolean checkFolderFilter(Folder folder, String fileName) {
-		boolean returnValue = false;
-		returnValue = folderAPI.matchFilter(folder, fileName);
-		return returnValue;
-	}
+
 
 	private Summary[] getChildrenData(String folderUriAux, User user) throws IOException {
 		PermissionAPI perAPI = APILocator.getPermissionAPI();

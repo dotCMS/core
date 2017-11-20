@@ -84,12 +84,10 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
 			return tempFolderResource;
 		}
-		if(!path.endsWith("/")){
-			path = path + "/";
-		}
+		final String newPath = path + "/" + newName;
 		try {
-			Folder newfolder = dotDavHelper.createFolder(path + newName, user);
-			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, path + newName + "/");
+			Folder newfolder = dotDavHelper.createFolder(newPath, user);
+			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, newPath + "/");
 			return folderResource;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
@@ -235,7 +233,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	public void delete() throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		try {
-			dotDavHelper.removeObject(path, user);
+			APILocator.getFolderAPI().delete(folder, user, false);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -368,9 +366,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		this.folder = folder;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
 		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());

@@ -1,4 +1,10 @@
-package com.dotmarketing.webdav;
+package com.dotmarketing.webdav2;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Map;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -9,45 +15,22 @@ import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Map;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
     
-    protected final String path;
-    protected final Host host;
-    protected final boolean isAutoPub;
-    protected final DotWebdavHelper dotDavHelper=new DotWebdavHelper();
-    protected final long lang;
+
+    protected final DotWebDavObject davObject;
+
     
     private String originalPath;
     
-    public BasicFolderResourceImpl(String path) {
-        this.originalPath = path;
-        this.path=path.toLowerCase();
-        try {
-            this.host=APILocator.getHostAPI().findByName(
-                    dotDavHelper.getHostName(path),APILocator.getUserAPI().getSystemUser(),false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        try {
-			dotDavHelper.stripMapping(path);
-		} catch (IOException e) {
-			Logger.error( this, "Error happened with uri: [" + path + "]", e);
-		}
-        this.lang = dotDavHelper.getLanguage();
-        this.isAutoPub=dotDavHelper.isAutoPub(path);
-        
+    public BasicFolderResourceImpl(DotWebDavObject davObject) {
+      this.davObject = davObject;
     }
     
     public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
@@ -58,18 +41,18 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
 
         User user=(User)HttpManager.request().getAuthorization().getTag();
         
-        final String newPath = path + "/" + newName;
+        final String newPath = davObject.assetPath + "/" + newName;
         System.err.println("createNew:" + newPath);
-        if(!dotDavHelper.isTempResource(newName)){
+        if(!davObject.temp){
             try {
-            	dotDavHelper.setResourceContent(newPath, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
-                final IFileAsset iFileAsset = dotDavHelper.loadFile(newPath,user);
+            	davObject.setResourceContent(newPath, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, davObject.live);
+                final FileAsset iFileAsset = davObject.loadFile();
                 final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
                 return fileResource;
                 
             }catch (Exception e){
             	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
-                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
+                		+ " in this path: " + (davObject.assetPath != null ? davObject.assetPath : "Unknown") + " " 
                 		+ e.getMessage(), e);
             	throw new DotRuntimeException(e.getMessage(), e);
             }
@@ -79,14 +62,14 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
                
   
                 originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
-                final File tempFile = dotDavHelper.createTempFile(newName);
+                final File tempFile = davObject.createTempFile(newName);
                 if(length==0){
                   tempFile.mkdirs();
-                  return new TempFolderResourceImpl(originalPath + newName, tempFile, isAutoPub);
+                  return new TempFolderResourceImpl( tempFile, davObject);
                 }
                 else{
                   FileUtils.copyStreamToFile(tempFile, in, null);
-                  return new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
+                  return new TempFileResourceImpl(tempFile, davObject);
                 }
 
             } catch (Exception e){
@@ -100,13 +83,19 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     public void delete() throws DotRuntimeException{
         User user=(User)HttpManager.request().getAuthorization().getTag();
         try {
-            dotDavHelper.removeObject(path, user);
+            davObject.removeObject(davObject.assetPath.toString(), user);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
+    public String getPath(){
+      return davObject.fullPath.toPath();
+      
+    }
+    
+    
     @Override
     public Long getMaxAgeSeconds(Auth arg0) {
         return new Long(60);
@@ -119,7 +108,5 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         return;
     }
     
-    public String getPath() {
-        return path;
-    }
+
 }

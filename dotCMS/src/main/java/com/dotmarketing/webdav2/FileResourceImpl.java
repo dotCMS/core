@@ -1,4 +1,12 @@
-package com.dotmarketing.webdav;
+package com.dotmarketing.webdav2;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -21,63 +29,60 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.Map;
 
 public class FileResourceImpl implements FileResource, LockableResource {
 
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-	private DotWebdavHelper dotDavHelper;
-	private IFileAsset file = new FileAsset();
-	String path;
+	private DotWebDavObject davObject;
+	private FileAsset file = new FileAsset();
+
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
 
-	public FileResourceImpl(IFileAsset file, String path) {
+	public FileResourceImpl(FileAsset file, DotWebDavObject davObject) {
 		perAPI = APILocator.getPermissionAPI();
-		dotDavHelper = new DotWebdavHelper();
-		this.isAutoPub = dotDavHelper.isAutoPub(path);
-		this.path = path;
+		this.davObject=davObject;
+		this.isAutoPub = davObject.live;
 		this.file = file;
-
 	}
+    public FileResourceImpl(FileAsset file, String path) {
+      this(file, new DotWebDavObject(path));
+    }
+    
+	public void copyTo(BasicFolderResourceImpl collRes, String name) throws DotRuntimeException {
 
-	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
-		if(collRes instanceof TempFolderResourceImpl){
-			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
-			try {
-				dotDavHelper.copyFileToTemp(file, tr.getFolder());
-			} catch (IOException e) {
-				Logger.error(this, e.getMessage(), e);
-				return;
-			}
-		}else if(collRes instanceof BasicFolderResourceImpl){
-			BasicFolderResourceImpl fr = (BasicFolderResourceImpl)collRes;
-			try {
-				String p = fr.getPath();
-				if(!p.endsWith("/"))
-					p = p + "/";
-				dotDavHelper.copyResource(this.getPath(), p+name, user, isAutoPub);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
+		BasicFolderResourceImpl fr = (BasicFolderResourceImpl)collRes;
+		try {
+			String p = fr.getPath();
+			if(!p.endsWith("/"))
+				p = p + "/";
+			davObject.copyResource(this.getPath(), p+name, user, isAutoPub);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
+		
 	}
+    public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
 
+    }
+    public void copyTo(TempFolderResourceImpl collRes, String name) throws DotRuntimeException {
+
+          TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+          try {
+              davObject.copyFileToTemp(file, tr.getFolder());
+          } catch (IOException e) {
+              Logger.error(this, e.getMessage(), e);
+              return;
+          }
+
+  }
 	public Object authenticate(String username, String password) {
 		try {
-			return dotDavHelper.authorizePrincipal(username, password);
+			return davObject.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -179,7 +184,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
-				dotDavHelper.copyFileToTemp(file, tr.getFolder());
+				davObject.copyFileToTemp(file, tr.getFolder());
 				Logger.debug(this, "Webdav clients wants to move a file from dotcms to a tempory storage but we don't allow this in fear that the tranaction may break and delete a file from dotcms");
 			} catch (IOException e) {
 				Logger.error(this, e.getMessage(), e);
@@ -192,7 +197,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				if(!p.endsWith("/"))
 					p = p + "/";
 				try {
-					dotDavHelper.move(this.getPath(), p + name, user, isAutoPub);
+					davObject.move(this.getPath(), p + name, user, isAutoPub);
 				} catch (DotDataException e) {
 					Logger.error(FileResourceImpl.class,e.getMessage(),e);
 					throw new DotRuntimeException(e.getMessage(), e);
@@ -216,7 +221,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return 0;
 	}
 
-	public IFileAsset getFile() {
+	public FileAsset getFile() {
 		return file;
 	}
 
@@ -233,22 +238,22 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-//		return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+		return davObject.lock(timeout, lockInfo, getUniqueId());
+//		return davObject.lock(lockInfo, user, file.getIdentifier() + "");
 	}
 
 	public LockResult refreshLock(String token) {
-		return dotDavHelper.refreshLock(getUniqueId());
-//		return dotDavHelper.refreshLock(token);
+		return davObject.refreshLock(getUniqueId());
+//		return davObject.refreshLock(token);
 	}
 
 	public void unlock(String tokenId) {
-		dotDavHelper.unlock(getUniqueId());
-//		dotDavHelper.unlock(tokenId);
+		davObject.unlock(getUniqueId());
+//		davObject.unlock(tokenId);
 	}
 
 	public LockToken getCurrentLock() {
-		return dotDavHelper.getCurrentLock(getUniqueId());
+		return davObject.getCurrentLock(getUniqueId());
 	}
 
 	public Long getMaxAgeSeconds(Auth arg0) {

@@ -1,4 +1,4 @@
-package com.dotmarketing.webdav;
+package com.dotmarketing.webdav2;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.repackage.com.bradmcevoy.common.Path;
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -41,16 +42,18 @@ import com.liferay.portal.model.User;
 
 public class HostResourceImpl extends BasicFolderResourceImpl implements Resource, CollectionResource, FolderResource, PropFindableResource, MakeCollectionableResource, LockingCollectionResource{
 
-	private PermissionAPI perAPI;
-	
-	public HostResourceImpl(String path) {
-	    super(path);
-		perAPI = APILocator.getPermissionAPI();
+	private PermissionAPI perAPI = APILocator.getPermissionAPI();
+	private final Host host;
+    protected final DotWebDavObject helper;
+	public HostResourceImpl(final Host host, DotWebDavObject helper) {
+		super(helper);
+		this.host = host;
+		this.helper=helper;
 	}
 	
 	public Object authenticate(String username, String password) {
 		try {
-			return dotDavHelper.authorizePrincipal(username, password);
+			return davObject.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -121,13 +124,17 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		        if(ident.getAssetType().equals("folder")) {
 		            Folder folder = APILocator.getFolderAPI().findFolderByPath(uri, host, user, false);
 		            if(folder!=null && InodeUtils.isSet(folder.getInode())) {
-		                return new FolderResourceImpl(folder,path+folder.getPath());
+		              
+		              
+		              
+		              
+		                return new FolderResourceImpl(folder,new DotWebDavObject(helper.fullPath.toPath()+folder.getPath()));
 		            }
 		        }
 		        else if(ident.getAssetType().equals("contentlet")) {
 		            Contentlet cont=APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 1, user, false);
 		            if(cont!=null && InodeUtils.isSet(cont.getInode())) {
-		                return new FileResourceImpl(APILocator.getFileAssetAPI().fromContentlet(cont),path+uri);
+		                return new FileResourceImpl(APILocator.getFileAssetAPI().fromContentlet(cont),new DotWebDavObject(helper.fullPath.toPath()+uri));
 		            }
 		        }
 		    }
@@ -143,7 +150,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
 		try {
-			dotDavHelper.stripMapping(path);
+			davObject.stripMapping(path);
 		} catch (IOException e1) {
 			Logger.error( this, "Error happened with uri: [" + path + "]", e1);
 		}
@@ -165,7 +172,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, false);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
-			    	if(fa.getLanguageId()==dotDavHelper.getLanguage()){
+			    	if(fa.getLanguageId()==davObject.getLanguage()){
 			    		FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
 			    		frs.add(fr);
 			    	}
@@ -193,15 +200,15 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
         	} else {
             	prePath += "working/";
         	}
-        	prePath += dotDavHelper.getLanguage();
+        	prePath += davObject.getLanguage();
         	prePath += "/";
         }
-		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
+		java.io.File tempDir = new java.io.File(davObject.getTempDir().getPath() + java.io.File.separator + host.getHostname());
 		if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
 			for (java.io.File file : files) {
 				String tp = prePath + host.getHostname() + "/" + file.getName();
-				if(!dotDavHelper.isTempResource(tp)){
+				if(!davObject.isTempResource(tp)){
 					continue;
 				}
 				if(file.isDirectory()){
@@ -247,14 +254,14 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
-		if(dotDavHelper.isTempResource(newName)){
-			File f = dotDavHelper.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
+		if(davObject.isTempResource(newName)){
+			File f = davObject.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
 			return tr;
 		}
 		final String newPath = path + "/" + newName;
 		try {
-			Folder f = dotDavHelper.createFolder(newPath, user);
+			Folder f = davObject.createFolder(newPath, user);
 			FolderResourceImpl fr = new FolderResourceImpl(f, newPath + "/");
 			return fr;
 		} catch (Exception e) {
@@ -275,8 +282,8 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
     }
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-//		return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+		return davObject.lock(timeout, lockInfo, getUniqueId());
+//		return davObject.lock(lockInfo, user, file.getIdentifier() + "");
 	}
 
     public LockResult refreshLock(String arg0) throws NotAuthorizedException,
