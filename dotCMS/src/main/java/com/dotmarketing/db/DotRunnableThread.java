@@ -13,9 +13,9 @@ import com.dotmarketing.util.Logger;
 
 public class DotRunnableThread extends Thread {
 
-    final List<DotRunnable> listeners;
-    final List<DotRunnable> flushers;
-    final private Thread networkCacheFlushThread= new Thread("NetworkCacheFlushThread") {
+    private final List<DotRunnable> listeners;
+    private final List<DotRunnable> flushers;
+    private final Thread networkCacheFlushThread= new Thread("NetworkCacheFlushThread") {
       @Override
       public void run() {
 
