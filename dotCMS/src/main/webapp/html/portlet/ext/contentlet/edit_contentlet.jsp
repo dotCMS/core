@@ -525,8 +525,10 @@ var editButtonRow="editContentletButtonRow";
 			</div>
 
 			<div class="content-edit-workflow">
+				<% if(null != wfSteps && wfSteps.size() ==1){
+					WorkflowStep step = wfSteps.get(0);
+				%>
 				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
-				<% for(WorkflowStep step : wfSteps){%>
 				<table>
 					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
