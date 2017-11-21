@@ -73,6 +73,11 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		super.setTitle(ANONYMOUS_PREFIX + System.currentTimeMillis());
 	}
 
+	/**
+	 * It is a Template save with a auto generated title.
+	 *
+	 * @return
+	 */
 	public boolean isAnonymous () {
 		return getTitle().startsWith(ANONYMOUS_PREFIX);
 	}

@@ -30,18 +30,34 @@ public class PageForm {
         this.layout = layout;
     }
 
+    /**
+     *
+     * @return Layout's theme id
+     */
     public String getThemeId() {
         return themeId;
     }
 
+    /**
+     *
+     * @return Layout's title
+     */
     public String getTitle() {
         return title;
     }
 
+    /**
+     *
+     * @return Layout's host
+     */
     public String getHostId() {
         return hostId;
     }
 
+    /**
+     *
+     * @return TemplateLayout linked with the Template
+     */
     public TemplateLayout getLayout() {
         return layout;
     }

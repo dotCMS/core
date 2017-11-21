@@ -173,6 +173,17 @@ public class PageResource {
         return res;
     }
 
+    /**
+     * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
+     * otherwise a new template is created and the old link template remains unchanged
+     *
+     * @see Template#isAnonymous()
+     *
+     * @param request The {@link HttpServletRequest} object.
+     * @param pageId page's Id to link the template
+     * @param form The {@link PageForm}
+     * @return
+     */
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -216,9 +227,12 @@ public class PageResource {
     }
 
     /**
-     * Save a new template
-     * @param request
-     * @param form
+     * Save a template.
+     *
+     * @see Template#isAnonymous()
+     *
+     * @param request The {@link HttpServletRequest} object.
+     * @param form The {@link PageForm}
      * @return
      */
     @NoCache
