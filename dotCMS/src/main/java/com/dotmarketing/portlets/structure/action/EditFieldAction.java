@@ -3,16 +3,6 @@ package com.dotmarketing.portlets.structure.action;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -20,6 +10,7 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.lang.BooleanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
@@ -27,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -38,6 +30,7 @@ import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
@@ -57,6 +50,12 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * This Struts action will handle all the requests related to adding, updating
@@ -293,8 +292,9 @@ public class EditFieldAction extends DotPortletAction {
 	            }
             }
 
-            // Validate values entered for decimal/number type check box field
-            if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
+            // Validate values entered for decimal/number type in check box or select fields
+            if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(
+                    FieldType.SELECT.toString())){
                 String values = fieldForm.getValues();
                 String temp = values.replaceAll("\r\n","|");
                 String[] tempVals = StringUtil.split(temp.trim(), "|");
@@ -350,22 +350,17 @@ public class EditFieldAction extends DotPortletAction {
                 field.setFixed(false);
                 field.setReadOnly(false);
                 field.setFieldContentlet(dataType);
-
-
             }
 
             com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(field).from();
             APILocator.getContentTypeFieldAPI().save(newField, user);
 
-            
-
-
             if(UtilMethods.isSet(field.getInode())) {
-                ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
-                        + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+                ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " in " + structure.getName()
+                        + " Content Type.", HostUtil.hostNameUtil(req, _getUser(req)));
             } else {
-                ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
-                        + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+                ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " in " + structure.getName()
+                        + " Content Type.", HostUtil.hostNameUtil(req, _getUser(req)));
             }
 
             FieldsCache.removeFields(structure);
