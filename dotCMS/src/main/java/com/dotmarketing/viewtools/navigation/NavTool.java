@@ -122,33 +122,36 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 }
                 else if(item instanceof IHTMLPage) {
-                	final String httpProtocol = "http://";
-                	final String httpsProtocol = "https://";
-                    IHTMLPage itemPage=(IHTMLPage)item;
-                    ident=APILocator.getIdentifierAPI().find(itemPage);
+                    IHTMLPage itemPage = (IHTMLPage)item; 
+                    if(itemPage.getLanguageId() == languageId) {
+                        final String httpProtocol = "http://";
+                        final String httpsProtocol = "https://";
 
-                    String redirectUri = itemPage.getRedirect();
-                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
-                    nav.setTitle(itemPage.getTitle());
-                    if(UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")){
-                        if(redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)){
-                      	  nav.setHref(redirectUri);	
+                        ident=APILocator.getIdentifierAPI().find(itemPage);
+
+                        String redirectUri = itemPage.getRedirect();
+                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
+                        nav.setTitle(itemPage.getTitle());
+                        if(UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")){
+                            if(redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)){
+                                nav.setHref(redirectUri);	
+                            }else{
+                                if(itemPage.isHttpsRequired())
+                                    nav.setHref(httpsProtocol+redirectUri);	
+                                else	
+                                    nav.setHref(httpProtocol+redirectUri);
+                            }
+
                         }else{
-                      	  	if(itemPage.isHttpsRequired())
-                      	  		nav.setHref(httpsProtocol+redirectUri);	
-                    		else	
-                    			nav.setHref(httpProtocol+redirectUri);
+                            nav.setHref(ident.getURI());
                         }
-                      	
-                      }else{
-                      	nav.setHref(ident.getURI());
-                      }
-                    nav.setOrder(itemPage.getMenuOrder());
-                    nav.setType("htmlpage");
-                    nav.setPermissionId(itemPage.getPermissionId());
-                    nav.setShowOnMenu(itemPage.isShowOnMenu());
-                    if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) )) {
-                    	children.add(nav);
+                        nav.setOrder(itemPage.getMenuOrder());
+                        nav.setType("htmlpage");
+                        nav.setPermissionId(itemPage.getPermissionId());
+                        nav.setShowOnMenu(itemPage.isShowOnMenu());
+                        if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) )) {
+                            children.add(nav);
+                        }
                     }
                 }
                 else if(item instanceof Link) {
@@ -170,15 +173,17 @@ public class NavTool implements ViewTool {
                 }
                 else if(item instanceof IFileAsset) {
                     IFileAsset itemFile=(IFileAsset)item;
-                    ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
-                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
-                    nav.setTitle(itemFile.getFriendlyName());
-                    nav.setHref(ident.getURI());
-                    nav.setOrder(itemFile.getMenuOrder());
-                    nav.setType("file");
-                    nav.setPermissionId(itemFile.getPermissionId());
-                    nav.setShowOnMenu(itemFile.isShowOnMenu());
-                    children.add(nav);
+                    if(itemFile.getLanguageId() == languageId){
+                        ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
+                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
+                        nav.setTitle(itemFile.getFriendlyName());
+                        nav.setHref(ident.getURI());
+                        nav.setOrder(itemFile.getMenuOrder());
+                        nav.setType("file");
+                        nav.setPermissionId(itemFile.getPermissionId());
+                        nav.setShowOnMenu(itemFile.isShowOnMenu());
+                        children.add(nav);    
+                    }
                 }
             }
 
