@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
@@ -34,6 +35,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -233,9 +235,9 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder ftest = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
-		ftest.setOwner(newUser.getUserId());
-		folderAPI.save(ftest, newUser, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
+		testFolder.setOwner(newUser.getUserId());
+		folderAPI.save(testFolder, newUser, false);
 
 		/**
 		 * Create workflow scheme
@@ -332,7 +334,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		Structure st = new Structure();
 		st.setHost(host.getIdentifier());
-		st.setFolder(ftest.getInode());
+		st.setFolder(testFolder.getInode());
 		st.setName("structure"+id);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
 		st.setOwner(newUser.getUserId());
@@ -401,7 +403,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest.getInode());
+		contentAsset.setFolder(testFolder.getInode());
 		contentAsset=conAPI.checkin(contentAsset, newUser, false);
 		conAPI.publish(contentAsset, newUser, false);
 
@@ -415,7 +417,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setProperty("title", title);
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
-		contentAsset2.setFolder(ftest.getInode());
+		contentAsset2.setFolder(testFolder.getInode());
 		contentAsset2=conAPI.checkin(contentAsset2, newUser, false);
 		conAPI.publish(contentAsset2, newUser, false);
 
@@ -450,11 +452,11 @@ public class UserAPITest extends IntegrationTestBase {
 		Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
-		link.setParent(ftest.getInode());
+		link.setParent(testFolder.getInode());
 		link.setTarget("_blank");
 		link.setOwner(newUser.getUserId());
 		link.setModUser(newUser.getUserId());
-		IHTMLPage page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 
 		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -467,7 +469,7 @@ public class UserAPITest extends IntegrationTestBase {
 		}
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
-		WebAssetFactory.createAsset(link, newUser.getUserId(), ftest);
+		WebAssetFactory.createAsset(link, newUser.getUserId(), testFolder);
 		versionableAPI.setLive(link);
 
 		/**
@@ -504,10 +506,10 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(newUser.getUserId()));
 		assertTrue(template.getModUser().equals(newUser.getUserId()));
 
-		assertTrue(ftest.getOwner().equals(newUser.getUserId()));
+		assertTrue(testFolder.getOwner().equals(newUser.getUserId()));
 
 		//Verify we have the proper user set in the HTMLPage
-		page = htmlPageAssetAPI.getPageByPath(ftest.getPath() + page0Str, host, langId, true);
+		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
 		assertTrue(page.getOwner().equals(newUser.getUserId()));
 		assertTrue(page.getModUser().equals(newUser.getUserId()));
 
@@ -517,13 +519,8 @@ public class UserAPITest extends IntegrationTestBase {
 		 * of the modified contentlets to finish processing.
 		 */
 		userAPI.delete(newUser, replacementUser, systemUser,false);
-		APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			//Do nothing...
-		}
 
+		waitForDeleteCompletedNotification();
 		/*
 		 * Validate that the user was deleted and if its references were updated
 		 */
@@ -540,7 +537,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
 
-		page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
@@ -571,9 +568,30 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
 
-		CacheLocator.getFolderCache().removeFolder(ftest, identifierAPI.find(ftest.getIdentifier()));
-		ftest = folderAPI.findFolderByPath(ftest.getPath(), host, systemUser, false);
-		assertTrue(ftest.getOwner().equals(replacementUser.getUserId()));
+		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
+		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
+		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+	}
+
+	private void waitForDeleteCompletedNotification() throws DotDataException, InterruptedException {
+		List<Notification> notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
+		final int timeout = 10000;
+		final int waitTime = 1000;
+		int addedTime = 0;
+
+		outer: while (addedTime<timeout) {
+			for (Notification notification : notifications) {
+				String notificationKey = notification.getMessage().getKey();
+				if(notificationKey.contains("Reindexing of updated related content after deleting user")
+					&& notification.getMessage().getKey().contains("has finished successfully")) {
+					Logger.info(this, "Waited so far: " + addedTime);
+					break outer;
+				}
+
+				Thread.sleep(waitTime);
+				addedTime+=waitTime;
+			}
+		}
 	}
 
 	/**
