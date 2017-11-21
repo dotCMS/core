@@ -4,19 +4,38 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public class DotRunnableThread extends Thread {
 
     final List<DotRunnable> listeners;
+    final List<DotRunnable> flushers;
+    final private Thread networkCacheFlushThread= new Thread("NetworkCacheFlushThread") {
+      @Override
+      public void run() {
 
-    public DotRunnableThread(final List<DotRunnable> listeners) {
+        
+        try {
+          Thread.sleep(Config.getLongProperty("NETWORK_CACHE_FLUSH_DELAY", 3000));
+        } catch (InterruptedException e) {
+          Logger.warn(this.getClass(), e.getMessage());
+        }
+        //Logger.info("networkCacheFlushThread", "starting flushers2:" + flushers.size());
+        flushers.forEach(runner -> runner.run());
 
-        this.listeners = listeners;
+        
+      }
+    };
+
+    public DotRunnableThread(final List<DotRunnable> allListeners) {
+        this.listeners = getListeners(allListeners);
+        this.flushers = getFlushers(allListeners);
+        networkCacheFlushThread.start();
     }
 
     @Override
@@ -44,8 +63,7 @@ public class DotRunnableThread extends Thread {
                 }
                 final List<Contentlet> cons = rrunner.getReindexIds();
                 for (Contentlet con : cons) {
-                    if (!reindexInodes.contains(con.getInode())) {
-                        reindexInodes.add(con.getInode());
+                    if (reindexInodes.add(con.getInode())){
                         contentToIndex.add(con);
                         if (contentToIndex.size() == batchSize) {
                             listOfLists.add(contentToIndex);
@@ -62,5 +80,13 @@ public class DotRunnableThread extends Thread {
             new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING, null, false) {
             }.run();
         }
+    }
+    
+    private List<DotRunnable> getFlushers(final List<DotRunnable> allListeners){
+      return allListeners.stream().filter(listener ->listener instanceof FlushCacheRunnable).collect(Collectors.toList());
+    }
+    
+    private List<DotRunnable> getListeners(final List<DotRunnable> allListeners){
+      return allListeners.stream().filter(listener ->(listener instanceof FlushCacheRunnable ==false) ).collect(Collectors.toList());
     }
 }
