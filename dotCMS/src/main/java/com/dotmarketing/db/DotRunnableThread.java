@@ -30,11 +30,13 @@ public class DotRunnableThread extends Thread {
   public DotRunnableThread(final List<DotRunnable> allListeners) {
     this.listeners = getListeners(allListeners);
     this.flushers = getFlushers(allListeners);
-    this.networkCacheFlushThread.start();
   }
 
   @Override
   public void run() {
+    
+    this.networkCacheFlushThread.start();
+    
     try {
       LocalTransaction.wrap(this::internalRunner);
     } catch (Exception dde) {
