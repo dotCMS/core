@@ -14,7 +14,7 @@ import { async, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core
 import { DebugElement, ElementRef } from '@angular/core';
 import { ContainerSelectorComponent } from './container-selector.component';
 
-describe('ContainerSelectorComponent', () => {
+fdescribe('ContainerSelectorComponent', () => {
     let comp: ContainerSelectorComponent;
     let fixture: ComponentFixture<ContainerSelectorComponent>;
     let de: DebugElement;
@@ -144,7 +144,7 @@ describe('ContainerSelectorComponent', () => {
         expect(comp.selectedContainersList.length).toEqual(0);
     });
 
-    it('should not add duplicated containers to the list', () => {
+   it('should not add duplicated containers to the list', () => {
         comp.currentContainers = containers;
 
         searchableDropdownComponent.change.emit(containers[0]);
