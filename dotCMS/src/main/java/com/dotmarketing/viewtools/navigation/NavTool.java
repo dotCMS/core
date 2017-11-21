@@ -123,7 +123,8 @@ public class NavTool implements ViewTool {
                 }
                 else if(item instanceof IHTMLPage) {
                     IHTMLPage itemPage = (IHTMLPage)item; 
-                    if(itemPage.getLanguageId() == languageId) {
+
+                    if(itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
                         final String httpProtocol = "http://";
                         final String httpsProtocol = "https://";
 
@@ -149,9 +150,8 @@ public class NavTool implements ViewTool {
                         nav.setType("htmlpage");
                         nav.setPermissionId(itemPage.getPermissionId());
                         nav.setShowOnMenu(itemPage.isShowOnMenu());
-                        if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) )) {
-                            children.add(nav);
-                        }
+
+                        children.add(nav);
                     }
                 }
                 else if(item instanceof Link) {
@@ -173,7 +173,8 @@ public class NavTool implements ViewTool {
                 }
                 else if(item instanceof IFileAsset) {
                     IFileAsset itemFile=(IFileAsset)item;
-                    if(itemFile.getLanguageId() == languageId){
+                    
+                    if(itemFile.getLanguageId() == languageId || LanguageWebAPI.canDefaultFileToDefaultLanguage()){
                         ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
                         NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
                         nav.setTitle(itemFile.getFriendlyName());
@@ -182,7 +183,7 @@ public class NavTool implements ViewTool {
                         nav.setType("file");
                         nav.setPermissionId(itemFile.getPermissionId());
                         nav.setShowOnMenu(itemFile.isShowOnMenu());
-                        children.add(nav);    
+                        children.add(nav);
                     }
                 }
             }
