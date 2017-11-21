@@ -129,75 +129,73 @@ public class PublisherQueueJob implements StatefulJob {
 
 					Date publishDate = (Date) bundle.get("publish_date");
 
-					if ( publishDate.before(new Date()) ) {
-						Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + ". Status: "
-								+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
-								+ ". Publish Date: " + publishDate);
+					Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + ". Status: "
+						+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
+						+ ". Publish Date: " + publishDate);
 
-						tempBundleId = (String) bundle.get("bundle_id");
-						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
+					tempBundleId = (String) bundle.get("bundle_id");
+					MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
+
+					try {
+						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
+						tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+
+						//Setting Audit objects History
+						historyPojo = new PublishAuditHistory();
+						//Retrieving assets
+						Map<String, String> assets = new HashMap<String, String>();
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+
+						for ( PublishQueueElement c : tempBundleContents ) {
+							assets.put(c.getAsset(), c.getType());
+							assetsToPublish.add(c);
+						}
+						historyPojo.setAssets(assets);
+
+						final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
+						DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
+								.cast(jobDataMap.get("deliveryStrategy"));
+
+						PublisherConfig pconf = new PushPublisherConfig();
+						pconf.setAssets(assetsToPublish);
+
+						//Status
+						status = new PublishAuditStatus(tempBundleId);
+						status.setStatusPojo(historyPojo);
+						//Insert in Audit table
+						pubAuditAPI.insertPublishAuditStatus(status);
+
+						//Queries creation
+						pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
+						pconf.setId(tempBundleId);
+						pconf.setUser(APILocator.getUserAPI().getSystemUser());
+						pconf.setStartDate(new Date());
+						pconf.runNow();
+						pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
+						pconf.setDeliveryStrategy(deliveryStrategy);
+						if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
+							pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
+						} else {
+							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+						}
+
+						pconf = setUpConfigForPublisher(pconf);
+						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 						try {
-							PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
-							tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
-
-							//Setting Audit objects History
-							historyPojo = new PublishAuditHistory();
-							//Retrieving assets
-							Map<String, String> assets = new HashMap<String, String>();
-							List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
-
-							for ( PublishQueueElement c : tempBundleContents ) {
-								assets.put(c.getAsset(), c.getType());
-								assetsToPublish.add(c);
-							}
-							historyPojo.setAssets(assets);
-
-							final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
-							DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
-									.cast(jobDataMap.get("deliveryStrategy"));
-							
-							PublisherConfig pconf = new PushPublisherConfig();
-							pconf.setAssets(assetsToPublish);
-
-							//Status
-							status = new PublishAuditStatus(tempBundleId);
-							status.setStatusPojo(historyPojo);
-							//Insert in Audit table
-							pubAuditAPI.insertPublishAuditStatus(status);
-
-							//Queries creation
-							pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
-							pconf.setId(tempBundleId);
-							pconf.setUser(APILocator.getUserAPI().getSystemUser());
-							pconf.setStartDate(new Date());
-							pconf.runNow();
-							pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
-							pconf.setDeliveryStrategy(deliveryStrategy);
-							if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
-								pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-							} else {
-								pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
-							}
-
-							pconf = setUpConfigForPublisher(pconf);
-							PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
-
-							try {
-								APILocator.getPublisherAPI().publish(pconf);
-							} catch (DotPublishingException e) {
-								/*
-								If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
-								there is something wrong with a bundler or creating the bundle.
-								 */
-								Logger.error(PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e);
-								PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
-								pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
-								pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
-							}
-						} finally {
-							MDC.remove(BUNDLE_ID);
+							APILocator.getPublisherAPI().publish(pconf);
+						} catch (DotPublishingException e) {
+							/*
+							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
+							there is something wrong with a bundler or creating the bundle.
+							 */
+							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e);
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
+							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
+							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
+					} finally {
+						MDC.remove(BUNDLE_ID);
 					}
 				}
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
