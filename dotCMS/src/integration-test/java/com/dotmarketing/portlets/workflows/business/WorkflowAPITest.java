@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -31,6 +32,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -364,6 +366,52 @@ public class WorkflowAPITest extends IntegrationTestBase {
         //check valid action for
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
+    }
+
+    /**
+     * This method test the findTaskByContentlet method
+     */
+    @Test
+    public void findTaskByContentlet() throws DotDataException, DotSecurityException {
+
+        Contentlet c1 = new Contentlet();
+        try {
+            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
+            worflowSchemes.add(workflowScheme1);
+            worflowSchemes.add(workflowScheme2);
+            worflowSchemes.add(workflowScheme3);
+
+        /* Associate the schemas to the content type */
+            workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+
+            long time = System.currentTimeMillis();
+
+            //create contentlets
+            c1.setLanguageId(1);
+            c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest3_" + time);
+            c1.setContentTypeId(contentType.id());
+            c1 = contentletAPI.checkin(c1, user, false);
+
+            contentletAPI.isInodeIndexed(c1.getInode());
+
+            Contentlet c = contentletAPI.checkout(c1.getInode(), user, false);
+
+            //set step action for content2
+            c.setStringProperty("wfActionId", workflowScheme3Step1Action1.getId());
+            c.setStringProperty("wfActionComments", "Test" + time);
+
+            c1 = contentletAPI.checkin(c, user, false);
+
+            //check steps available for content without step
+            WorkflowTask task = workflowAPI.findTaskByContentlet(c1);
+            assertNotNull(task);
+            //task should be on the second step of the shecme 3
+            assertTrue(workflowScheme3Step2.getId().equals(task.getStatus()));
+
+        }finally {
+            contentletAPI.archive(c1,user,false);
+            contentletAPI.delete(c1,user,false);
+        }
     }
 
     /**
