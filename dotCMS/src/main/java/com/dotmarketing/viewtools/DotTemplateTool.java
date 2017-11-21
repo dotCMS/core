@@ -129,7 +129,7 @@ public class DotTemplateTool implements ViewTool {
         return layout;
     }
 
-    private static TemplateLayout getTemplateLayoutFromJSON(String json)  throws IOException{
+    public static TemplateLayout getTemplateLayoutFromJSON(String json)  throws IOException{
         return JsonTransformer.mapper.readValue(json, TemplateLayout.class);
 
     }
