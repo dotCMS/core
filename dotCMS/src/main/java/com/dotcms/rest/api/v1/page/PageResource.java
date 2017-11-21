@@ -191,12 +191,24 @@ public class PageResource {
             res = Response.ok(new ResponseEntityView(templateSaved)).build();
 
         } catch (DotSecurityException e) {
+            final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+                    request, pageId, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch(NotFoundException e) {
+            final String errorMsg = String.format("NotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+                    request, pageId, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (BadRequestException | DotDataException e) {
+            final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
+                    e.getClass().getCanonicalName(), request, pageId, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         } catch (IOException e) {
+            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+                    request, pageId, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -225,10 +237,19 @@ public class PageResource {
             res = Response.ok(new ResponseEntityView(templateSaved)).build();
 
         } catch (DotSecurityException e) {
+            final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s: ",
+                    request, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         } catch (BadRequestException | DotDataException e) {
+            final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s: ",
+                    e.getClass().getCanonicalName(), request, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         } catch (IOException e) {
+            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s: ",
+                    request, form);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
