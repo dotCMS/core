@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
@@ -8,11 +11,13 @@ import java.util.List;
 public class Body {
     private List<TemplateLayoutRow> rows;
 
-    public List<TemplateLayoutRow> getRows() {
-        return rows;
+
+    @JsonCreator
+    public Body(@JsonProperty("rows") List<TemplateLayoutRow> rows) {
+        this.rows = rows;
     }
 
-    public void setRows(List<TemplateLayoutRow> rows) {
-        this.rows = rows;
+    public List<TemplateLayoutRow> getRows() {
+        return rows;
     }
 }

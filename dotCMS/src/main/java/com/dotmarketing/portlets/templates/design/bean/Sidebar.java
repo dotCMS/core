@@ -13,9 +13,9 @@ public class Sidebar extends ContainerHolder {
     public static String LOCATION_RIGHT = "right";
     public static String LOCATION_LEFT = "left";
 
-    public String location;
-    public Integer widthPercent;
-    public Integer width;
+    private String location;
+    private Integer widthPercent;
+    private Integer width;
 
     @JsonCreator
     public Sidebar(@JsonProperty("containers") List<String> containers,

@@ -108,8 +108,7 @@ public class TemplateLayout {
 
     public void setBodyRows ( final List<TemplateLayoutRow> bodyRows ) {
 
-        this.body = new Body();
-        this.body.setRows( bodyRows );
+        this.body = new Body(bodyRows);
     }
 
     public Sidebar getSidebar () {
