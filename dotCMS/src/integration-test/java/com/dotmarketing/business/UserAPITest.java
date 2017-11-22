@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.TimeUtil;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
@@ -578,24 +579,32 @@ public class UserAPITest extends IntegrationTestBase {
 	}
 
 	private void waitForDeleteCompletedNotification() throws DotDataException, InterruptedException {
-		List<Notification> notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
-		final int timeout = 10000;
-		final int waitTime = 1000;
-		int addedTime = 0;
 
-		outer: while (addedTime<timeout) {
+		final int MAX_TIME = 10000;
+		final int WAIT_TIME = 1000;
+
+		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
+
+			boolean isReindexFinished = false;
+			List<Notification> notifications = null;
+
+			try {
+				notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
+			} catch (DotDataException e) {
+				Logger.error(this, "Unable to get notifications. ", e);
+			}
+
 			for (Notification notification : notifications) {
 				String notificationKey = notification.getMessage().getKey();
-				if(notificationKey.contains("Reindexing of updated related content after deleting user")
+				if (notificationKey.contains("Reindexing of updated related content after deleting user")
 					&& notification.getMessage().getKey().contains("has finished successfully")) {
-					Logger.info(this, "Waited so far: " + addedTime);
-					break outer;
+					isReindexFinished = true;
 				}
-
-				Thread.sleep(waitTime);
-				addedTime+=waitTime;
 			}
-		}
+
+			return isReindexFinished;
+
+		});
 	}
 
 	/**
