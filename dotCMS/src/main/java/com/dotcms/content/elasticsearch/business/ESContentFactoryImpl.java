@@ -1438,10 +1438,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                     final Contentlet content = find(indexedContentlet.getInode());
 
-                    IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
-                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());
-                    identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
-
                     contentToIndex.add(content);
                     contentToIndex.addAll(indexAPI.loadDeps(content));
                     if (counter % batchSize == 0) {

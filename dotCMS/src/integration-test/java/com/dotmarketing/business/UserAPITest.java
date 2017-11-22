@@ -518,6 +518,10 @@ public class UserAPITest extends IntegrationTestBase {
 		 * does a lot of things, after the delete lets wait a bit in order to allow the reindex
 		 * of the modified contentlets to finish processing.
 		 */
+
+		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
+
 		userAPI.delete(newUser, replacementUser, systemUser,false);
 
 		waitForDeleteCompletedNotification();
