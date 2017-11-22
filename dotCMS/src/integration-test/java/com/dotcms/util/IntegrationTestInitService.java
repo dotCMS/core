@@ -45,6 +45,7 @@ public class IntegrationTestInitService {
     		//For these tests fire the reindex immediately
             Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
 
+            Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
 
