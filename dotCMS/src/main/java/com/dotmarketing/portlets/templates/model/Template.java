@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -15,14 +16,18 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
 public class Template extends WebAsset implements Serializable, Comparable {
 
 	private static final long serialVersionUID = 1L;
+
+	private static String ANONYMOUS_PREFIX = "anonymous_layout_";
 
 	/** nullable persistent field */
 	private String body;
@@ -65,6 +70,16 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public Template() {
 		this.image = "";
 		super.setType("template");
+		super.setTitle(ANONYMOUS_PREFIX + System.currentTimeMillis());
+	}
+
+	/**
+	 * It is a Template save with a auto generated title.
+	 *
+	 * @return
+	 */
+	public boolean isAnonymous () {
+		return getTitle().startsWith(ANONYMOUS_PREFIX);
 	}
 
     public String getURI(Folder folder) {
@@ -197,6 +212,14 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	public void setDrawedBody(String drawedBody) {
 		this.drawedBody = drawedBody;
+	}
+
+	public void setDrawedBody(TemplateLayout templateLayout) {
+		try {
+			this.drawedBody = JsonTransformer.mapper.writeValueAsString(templateLayout);
+		} catch (JsonProcessingException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	public Integer getCountAddContainer() {

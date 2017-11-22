@@ -1,12 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +27,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -40,6 +37,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.DotTemplateTool;
 import com.liferay.portal.model.User;
 
 public class TemplateFactoryImpl implements TemplateFactory {
@@ -307,7 +305,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
 		List<Container> result = new ArrayList<Container>();
-		List<String> ids = getContainerIds(template.getBody());
+		Collection<String> ids = getContainerIds(template);
 		for(String containerId : ids) {
 			Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, respectFrontendRoles);
 			if(container != null) {
@@ -318,8 +316,48 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 		return result;
 	}
-	
-	private List<String> getContainerIds(String templateBody) {
+
+	private Collection<String> getContainerIds(Template template) {
+		try {
+			return this.getContainerIdsFromJSON(template);
+		} catch (Exception e) {
+			return this.getContainerIdsFromHTML(template.getBody());
+		}
+	}
+
+	private Collection<String> getContainerIdsFromJSON(Template template) throws IOException {
+		TemplateLayout templateLayout = DotTemplateTool.getTemplateLayoutFromJSON(template.getDrawedBody());
+
+		Collection<String> result = new TreeSet<>(getContainersFromColumn(templateLayout));
+
+		Sidebar sidebar = templateLayout.getSidebar();
+
+		if (sidebar != null && sidebar.getContainers() != null) {
+			result.addAll(sidebar.getContainers());
+		}
+
+		return result;
+	}
+
+	private Collection<String> getContainersFromColumn(TemplateLayout templateLayout) {
+		Collection<String> result = new TreeSet<>();
+
+		Body body = templateLayout.getBody();
+		List<TemplateLayoutRow> rows = body.getRows();
+
+		for (TemplateLayoutRow row : rows) {
+			List<TemplateLayoutColumn> columns = row.getColumns();
+
+			for (TemplateLayoutColumn column : columns) {
+				List<String> columnContainers = column.getContainers();
+				result.addAll(columnContainers);
+			}
+		}
+
+		return result;
+	}
+
+	private List<String> getContainerIdsFromHTML(String templateBody) {
 	    List<String> ids = new LinkedList<String>();
 	    if(!UtilMethods.isSet(templateBody)){
 	        return ids;
