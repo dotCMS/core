@@ -211,7 +211,10 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-s3', version:'1.11.66_1'
     compile group: 'com.dotcms.lib', name: 'dot.jmespath-java', version:'1.11.66_1'
 
+    compile group: 'org.apache.ignite', name: 'ignite-core', version:'2.2.0'
+    compile group: 'org.apache.ignite', name: 'ignite-log4j', version:'2.2.0'
 
+    
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -354,4 +357,8 @@ dependencies {
     compile 'org.immutables:gson:2.3.3'
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
+    
+
+    
+    
 }
