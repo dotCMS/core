@@ -1,7 +1,9 @@
 package com.dotmarketing.business.cache.provider.ignite;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -9,8 +11,6 @@ import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashSet;
@@ -20,56 +20,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.cache.Cache;
 
-import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMetrics;
+import org.apache.ignite.cache.CachePeekMode;
+import org.apache.ignite.cache.CacheWriteSynchronizationMode;
 import org.apache.ignite.cache.eviction.lru.LruEvictionPolicy;
 import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.NearCacheConfiguration;
-import org.apache.ignite.marshaller.jdk.JdkMarshaller;
-import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 
 import com.google.common.collect.ImmutableSet;
 
 
 public class IgniteCacheProvider extends CacheProvider {
 
-    private final static String IGNITE_CONFIG_FILE_NAME = "ignite-dotcms.xml";
-    private static Ignite ignite;
-
-
-
-    public IgniteCacheProvider() {
-        ignite = getIgnite();
-    }
-
-    private Ignite getIgnite() {
-        try (InputStream in = this.getClass().getResourceAsStream(IGNITE_CONFIG_FILE_NAME)) {
-            if (in != null) {
-                return Ignition.start(in);
-            }
-        } catch (IOException e) {
-            Logger.info(IgniteCacheProvider.class, "No " + IGNITE_CONFIG_FILE_NAME + " found, starting ignite with defualts");
-        }
-
-
-        /***
-         * 
-         * THERE IS A BUG IN IGNITE 2.3 https://issues.apache.org/jira/browse/IGNITE-6944  
-         * to run ignite 2.3.0, you need to use the jdk marshaller
-         * JdkMarshaller marshaller = new JdkMarshaller();
-         *  cfg.setMarshaller(marshaller);
-         */
-
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setClientMode(Config.getBooleanProperty("cache.ignite.clientMode", true));
-
-
-        return Ignition.start(cfg);
-    }
 
 
 
@@ -236,12 +200,13 @@ public class IgniteCacheProvider extends CacheProvider {
             stats.addStat("local", "local");
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
             stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(metrics.getSize()));
+            stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.size(CachePeekMode.ALL)));
             stats.addStat(CacheStats.REGION_LOAD, nf.format(metrics.getCacheMisses() + metrics.getCacheHits()));
             stats.addStat(CacheStats.REGION_HITS, nf.format(metrics.getCacheHits()));
-            stats.addStat(CacheStats.REGION_HIT_RATE, metrics.getCacheHitPercentage() + "");
-            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(metrics.getAverageGetTime() / 1000000) + " ms");
+            stats.addStat(CacheStats.REGION_HIT_RATE, nf.format(Math.round(metrics.getCacheHitPercentage())) + "%");
+            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(metrics.getAverageGetTime() / 1000) + " ms");
             stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(metrics.getCacheEvictions()));
+
             ret.addStatRecord(stats);
 
             stats = new CacheStats();
@@ -250,11 +215,11 @@ public class IgniteCacheProvider extends CacheProvider {
             stats.addStat("local", "remote");
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
             stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(metrics.getSize()));
+            stats.addStat(CacheStats.REGION_SIZE, foundCache.localSizeLong(CachePeekMode.ALL));
             stats.addStat(CacheStats.REGION_LOAD, nf.format(metrics.getCacheMisses() + metrics.getCacheHits()));
             stats.addStat(CacheStats.REGION_HITS, nf.format(metrics.getCacheHits()));
-            stats.addStat(CacheStats.REGION_HIT_RATE, metrics.getCacheHitPercentage() + "");
-            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(metrics.getAverageGetTime() / 1000000) + " ms");
+            stats.addStat(CacheStats.REGION_HIT_RATE, nf.format(Math.round(metrics.getCacheHitPercentage())) + "%");
+            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(metrics.getAverageGetTime() / 1000) + " ms");
             stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(metrics.getCacheEvictions()));
             ret.addStatRecord(stats);
         }
@@ -277,6 +242,13 @@ public class IgniteCacheProvider extends CacheProvider {
         cacheName = cacheName.toLowerCase();
         IgniteCache<String, Object> cache = groups.get(cacheName);
 
+        
+        /*
+         * Set backups automatically
+         */
+        int backups = ClusterFactory.getNodeCount()-1;        
+        backups = (backups<0)  ? 0 : (backups > 3)  ? 3 : backups;
+        
         // init cache if it does not exist
         if (cache == null) {
             synchronized (cacheName.intern()) {
@@ -288,19 +260,22 @@ public class IgniteCacheProvider extends CacheProvider {
                     if (size == -1) {
                         size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
                     }
-                    CacheConfiguration config = new CacheConfiguration()
+                    CacheConfiguration<String, Object> config = new CacheConfiguration<String, Object>()
                             .setStatisticsEnabled(true)
                             .setName(cacheName)
                             .setAtomicityMode(CacheAtomicityMode.ATOMIC)
                             .setRebalanceThrottle(100)
                             .setOnheapCacheEnabled(true)
-                            .setBackups(0);
+                            .setCopyOnRead(false)
+                            .setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_ASYNC)
+                            .setBackups(backups);
                     
-                    LruEvictionPolicy lru = new LruEvictionPolicy().setMaxSize(size);
-                    NearCacheConfiguration near = new NearCacheConfiguration().setNearEvictionPolicy(lru);
+                    LruEvictionPolicy<String, Object> lru = new LruEvictionPolicy<String, Object>().setMaxSize(size);
+                    
+                    NearCacheConfiguration<String, Object> near = new NearCacheConfiguration<String, Object>().setNearEvictionPolicy(lru);
                
 
-                    cache = ignite.getOrCreateCache(config, near);
+                    cache = IgniteClient.getInstance().ignite().getOrCreateCache(config, near);
                     Logger.info(this.getClass(), "***\t Building Cache : " + config);
 
 
