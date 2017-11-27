@@ -1,4 +1,4 @@
-import { Container } from './container-selector.model';
+import { DotContainer } from '../../../shared/models/container/dot-container.model';
 import { MessageService } from './../../../api/services/messages-service';
 import { Site } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from './../../../api/services/paginator/paginator.service';
@@ -8,16 +8,17 @@ import { Component, OnInit, Output, EventEmitter, Input, ViewEncapsulation } fro
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-container-selector',
-    templateUrl: './container-selector.component.html',
-    styleUrls: ['./container-selector.component.scss']
+    templateUrl: './dot-container-selector.component.html',
+    styleUrls: ['./dot-container-selector.component.scss']
 })
-export class ContainerSelectorComponent implements OnInit {
-    @Output() change: EventEmitter<Container[]> = new EventEmitter();
+export class DotContainerSelectorComponent implements OnInit {
+    @Input() selectedContainersList: DotContainer[] = [];
+    @Output() change: EventEmitter<DotContainer[]> = new EventEmitter();
     @Output() remove: EventEmitter<any> = new EventEmitter();
 
     totalRecords: number;
-    currentContainers: Container[] = [];
-    selectedContainersList: Container[] = [];
+    currentContainers: DotContainer[] = [];
+
 
     constructor(public paginationService: PaginatorService, public messageService: MessageService) { }
 
@@ -29,11 +30,12 @@ export class ContainerSelectorComponent implements OnInit {
     }
 
     /**
-     * Call when the selected site changed and the change event is emmited
-     * @param {*} container
-     * @memberof ContainerSelectorComponent
+     * Called when the selected site changed and the change event is emmited
+     *
+     * @param {DotContainer} container
+     * @memberof DotContainerSelectorComponent
      */
-    containerChange(container: Container): void {
+    containerChange(container: DotContainer): void {
         if (!this.isContainerSelected(container)) {
             this.selectedContainersList.push(container);
             this.change.emit(this.selectedContainersList);
@@ -42,8 +44,9 @@ export class ContainerSelectorComponent implements OnInit {
 
     /**
      * Call to handle filter containers from list
-     * @param {any} filter
-     * @memberof ContainerSelectorComponent
+     *
+     * @param {string} filter
+     * @memberof DotContainerSelectorComponent
      */
     handleFilterChange(filter: string): void {
         this.getContainersList(filter);
@@ -52,7 +55,7 @@ export class ContainerSelectorComponent implements OnInit {
     /**
      * Call when the current page changed
      * @param {any} event
-     * @memberof ContainerSelectorComponent
+     * @memberof DotContainerSelectorComponent
      */
     handlePageChange(event: any): void {
         this.getContainersList(event.filter, event.first);
@@ -61,14 +64,21 @@ export class ContainerSelectorComponent implements OnInit {
     /**
      * Remove container item from selected containers and emit selected containers
      * @param {number} i
-     * @memberof ContainerSelectorComponent
+     * @memberof DotContainerSelectorComponent
      */
     removeContainerItem(i: number): void {
         this.selectedContainersList.splice(i, 1);
         this.change.emit(this.selectedContainersList);
     }
 
-    isContainerSelected(container: Container): boolean {
+    /**
+     * Check if a container was already added to the list
+     *
+     * @param {DotContainer} container
+     * @returns {boolean}
+     * @memberof DotContainerSelectorComponent
+     */
+    isContainerSelected(container: DotContainer): boolean {
         return this.selectedContainersList.some(containerItem => containerItem.identifier === container.identifier);
     }
 

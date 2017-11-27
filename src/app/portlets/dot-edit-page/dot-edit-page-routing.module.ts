@@ -1,3 +1,4 @@
+import { PageViewResolver } from './dot-edit-page-resolver.service';
 import { NgModule } from '@angular/core';
 import { DotEditLayoutComponent } from './layout/dot-edit-layout/dot-edit-layout.component';
 import { RouterModule, Routes } from '@angular/router';
@@ -9,7 +10,14 @@ const dotEditPage: Routes = [
     },
     {
         component: DotEditLayoutComponent,
-        path: 'layout'
+        path: 'layout',
+        resolve: {
+            pageView: PageViewResolver
+        }
+    },
+    {
+        component: DotEditLayoutComponent,
+        path: 'layout/:url'
     }
 ];
 

@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PatternLibraryComponent } from './pattern-library.component';
 import { NGFACES_MODULES } from './../../../../modules';
 // CUSTOM MDOULES
-import { ActionButtonModule } from '../action-button/action-button.module';
+import { DotActionButtonModule } from '../dot-action-button/dot-action-button.module';
 import { ListingDataTableModule} from '../../listing-data-table/listing-data-table.module';
 import { FieldValidationMessageModule} from '../field-validation-message/file-validation-message.module';
 import { SiteSelectorModule} from '../site-selector/site-selector.module';
@@ -29,7 +29,7 @@ const routes: Routes = [
         DotDropdownModule,
         DotTextareaContentModule,
         ...NGFACES_MODULES,
-        ActionButtonModule,
+        DotActionButtonModule,
         ListingDataTableModule,
         FieldValidationMessageModule,
         SiteSelectorModule,

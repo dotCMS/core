@@ -1,5 +1,5 @@
 // CUSTOM MDOULES
-import { ActionButtonModule } from './view/components/_common/action-button/action-button.module';
+import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
@@ -30,7 +30,7 @@ import {
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
 export const CUSTOM_MODULES = [
-    ActionButtonModule,
+    DotActionButtonModule,
     DotTextareaContentModule,
     FieldValidationMessageModule,
     IFrameModule,

@@ -1,7 +1,7 @@
 import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
 import { IconButtonTooltipModule } from './../_common/icon-button-tooltip/icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from './../_common/action-menu-button/action-menu-button.component';
-import { ActionButtonComponent } from '../_common/action-button/action-button.component';
+import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { CrudService } from '../../../api/services/crud/crud.service';
@@ -18,7 +18,7 @@ import { PaginatorService } from '../../../api/services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
 
-describe('Listing Component', () => {
+describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
     let fixture: ComponentFixture<ListingDataTableComponent>;
     let de: DebugElement;
@@ -32,7 +32,7 @@ describe('Listing Component', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ActionHeaderComponent,
-                ActionButtonComponent,
+                DotActionButtonComponent,
                 ListingDataTableComponent,
                 ActionMenuButtonComponent
             ],

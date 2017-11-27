@@ -1,1 +1,3 @@
-<dot-edit-layout-grid [gridContainers]="dummyContainers"></dot-edit-layout-grid>
+<button (click)="editLayoutGrid.addBox()">Add Box</button>
+<button (click)="saveLayout()">Save</button>
+<dot-edit-layout-grid #editLayoutGrid [pageView]="pageView"></dot-edit-layout-grid>

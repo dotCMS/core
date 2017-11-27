@@ -5,13 +5,13 @@ import { ToolbarAddContenletBodyComponent } from './toolbar-add-contentlet-body.
 import { ToolbarAddContenletService } from './toolbar-add-contentlet.service';
 import { DotDropdownModule } from '../_common/dropdown-component/dot-dropdown.module';
 import { ButtonModule } from 'primeng/primeng';
-import { ActionButtonModule } from '../_common/action-button/action-button.module';
+import { DotActionButtonModule } from '../_common/dot-action-button/dot-action-button.module';
 import { RouterModule } from '@angular/router';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
 
 @NgModule({
     declarations: [ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent],
-    imports: [CommonModule, DotDropdownModule, ButtonModule, ActionButtonModule, RouterModule],
+    imports: [CommonModule, DotDropdownModule, ButtonModule, DotActionButtonModule, RouterModule],
     exports: [ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent],
     providers: [ToolbarAddContenletService, DotContentletService]
 })

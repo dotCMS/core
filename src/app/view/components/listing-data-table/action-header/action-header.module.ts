@@ -1,9 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActionButtonModule } from '../../_common/action-button/action-button.module';
+import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header';
 import { SplitButtonModule } from 'primeng/primeng';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation/';
 
 @NgModule({
     bootstrap: [],
@@ -15,7 +14,7 @@ import { DotConfirmationService } from '../../../../api/services/dot-confirmatio
     ],
     imports: [
         CommonModule,
-        ActionButtonModule,
+        DotActionButtonModule,
         SplitButtonModule
     ],
     providers: []

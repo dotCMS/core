@@ -9,12 +9,12 @@ import { MenuItem } from 'primeng/primeng';
  */
 @Component({
     encapsulation: ViewEncapsulation.None,
-    selector: 'action-button',
-    styleUrls: ['./action-button.component.scss'],
-    templateUrl: 'action-button.component.html'
+    selector: 'dot-action-button',
+    styleUrls: ['./dot-action-button.component.scss'],
+    templateUrl: 'dot-action-button.component.html'
 })
 
-export class ActionButtonComponent {
+export class DotActionButtonComponent {
     @Input() model?: MenuItem[];
     @Input() command?: ($event) => void;
     @Input() label: string;

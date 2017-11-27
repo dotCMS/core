@@ -1,4 +1,4 @@
-export interface Container {
+export interface DotContainer {
     categoryId?: string;
     deleted?: boolean;
     friendlyName?: string;

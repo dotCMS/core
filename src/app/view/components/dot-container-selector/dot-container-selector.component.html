@@ -16,8 +16,8 @@
     </div>
     <ul class="container-selector__list">
         <li *ngFor="let container of selectedContainersList; let i = index" class="container-selector__list-item">
-            <button pButton iconButton flat icon="fa-trash" (click)="removeContainerItem(i)"></button>     
-            {{ container.name }}
+            <button pButton iconButton flat icon="fa-trash" (click)="removeContainerItem(i)"></button>
+            {{ container?.name }}
         </li>
     </ul>
 </div>

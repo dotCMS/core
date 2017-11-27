@@ -2,8 +2,9 @@
 @import "mixins";
 
 .container-selector {
-    height: 206px; 
-    border: 1px solid $gray-lighter; 
+    height: 206px;
+    border: 1px solid $gray-lighter;
+    background-color: $white;
 
     .ui-button[iconButton] {
 
@@ -14,19 +15,19 @@
 }
 
 .container-selector__header {
-    height: 48px; 
+    height: 48px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: $basic-padding $basic-padding * 2; 
-    background-color: $gray-lighter; 
+    padding: $basic-padding $basic-padding * 2;
+    background-color: $gray-lighter;
 }
 
 .container-selector__list {
     height: 140px;
     margin: $basic-padding 0;
     overflow-y: scroll;
-    padding: 0 $basic-padding; 
+    padding: 0 $basic-padding;
 }
 
 .container-selector__list-item {

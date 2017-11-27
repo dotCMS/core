@@ -3,29 +3,29 @@ import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SplitButtonModule, MenuItem } from 'primeng/primeng';
-import { ActionButtonComponent } from './action-button.component';
+import { DotActionButtonComponent } from './dot-action-button.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ActionButtonComponent', () => {
-    let comp: ActionButtonComponent;
-    let fixture: ComponentFixture<ActionButtonComponent>;
+    let comp: DotActionButtonComponent;
+    let fixture: ComponentFixture<DotActionButtonComponent>;
     let de: DebugElement;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [ActionButtonComponent],
+            declarations: [DotActionButtonComponent],
             imports: [
                 BrowserAnimationsModule,
                 SplitButtonModule,
                 RouterTestingModule.withRoutes([{
-                    component: ActionButtonComponent,
+                    component: DotActionButtonComponent,
                     path: 'test'
                 }])
             ]
         });
 
-        fixture = TestBed.createComponent(ActionButtonComponent);
+        fixture = TestBed.createComponent(DotActionButtonComponent);
         comp = fixture.componentInstance;
     }));
 

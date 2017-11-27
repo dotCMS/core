@@ -2,15 +2,15 @@ import { ButtonModule } from 'primeng/primeng';
 import { SearchableDropDownModule } from './../_common/searchable-dropdown/searchable-dropdown.module';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ContainerSelectorComponent } from './container-selector.component';
+import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { NgModule } from '@angular/core';
 
 @NgModule({
     declarations: [
-        ContainerSelectorComponent,
+        DotContainerSelectorComponent,
     ],
     exports: [
-        ContainerSelectorComponent
+        DotContainerSelectorComponent
     ],
     imports: [
         CommonModule,
@@ -20,4 +20,4 @@ import { NgModule } from '@angular/core';
     ]
 })
 
-export class ContainerSelectorModule {}
+export class DotContainerSelectorModule {}

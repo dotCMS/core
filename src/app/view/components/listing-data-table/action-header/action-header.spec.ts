@@ -1,14 +1,13 @@
 import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
-import { ActionButtonModule } from '../../_common/action-button/action-button.module';
+import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, TestBed, async } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { MessageService } from '../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { SplitButtonModule } from 'primeng/primeng';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ActionHeaderComponent', () => {
@@ -17,7 +16,7 @@ describe('ActionHeaderComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        let messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockMessageService({
             'selected': 'selected'
         });
 
@@ -27,7 +26,7 @@ describe('ActionHeaderComponent', () => {
             ],
             imports: [
                 BrowserAnimationsModule,
-                ActionButtonModule,
+                DotActionButtonModule,
                 RouterTestingModule.withRoutes([{
                     component: ActionHeaderComponent,
                     path: 'test'
@@ -45,8 +44,8 @@ describe('ActionHeaderComponent', () => {
     }));
 
     it('should render default state correctly', () => {
-        let actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));
-        let groupActions: DebugElement = de.query(By.css('.action-header__secondary-button'));
+        const actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));
+        const groupActions: DebugElement = de.query(By.css('.action-header__secondary-button'));
         expect(actionButton).toBeNull();
         expect(groupActions).toBeNull();
     });
@@ -54,13 +53,13 @@ describe('ActionHeaderComponent', () => {
     it('should show the number of items selected', () => {
         comp.selectedItems = [{key: 'value'}, {key: 'value'}];
         fixture.detectChanges();
-        let selectedItemsCounter: DebugElement = de.query(By.css('.action-header__selected-items-counter'));
+        const selectedItemsCounter: DebugElement = de.query(By.css('.action-header__selected-items-counter'));
         expect(de.nativeElement.className).toContain('selected');
         expect(selectedItemsCounter.nativeElement.textContent).toBe('2 selected');
     });
 
     it('should show action-button', () => {
-        let options = {
+        const options = {
             primary: {
                 command: () => {},
                 model: [
@@ -79,9 +78,9 @@ describe('ActionHeaderComponent', () => {
     });
 
     it('should trigger the methods in the action buttons', () => {
-        let primarySpy = jasmine.createSpy('spy');
-        let secondarySpy = jasmine.createSpy('spy2');
-        let options = {
+        const primarySpy = jasmine.createSpy('spy');
+        const secondarySpy = jasmine.createSpy('spy2');
+        const options = {
             secondary: [
                 {
                     label: 'Group Actions 1',
@@ -109,9 +108,9 @@ describe('ActionHeaderComponent', () => {
         comp.selectedItems = [{key: 'value'}, {key: 'value'}];
         fixture.detectChanges();
 
-        let splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.ui-menuitem-link');
-        let primaryButton = splitButtons[0];
-        let secondaryButton = splitButtons[1];
+        const splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.ui-menuitem-link');
+        const primaryButton = splitButtons[0];
+        const secondaryButton = splitButtons[1];
 
         primaryButton.click();
         secondaryButton.click();

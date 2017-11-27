@@ -1,11 +1,9 @@
-<action-button [command]="addContainer()"></action-button>
 <div [ngGrid]="gridConfig"
-     (onDragStop)="OnDragStop()"
-     class="dot-edit-layout-grid__grid">
-
-    <div style="background: #b2b2b2; border: 1px solid red;"
-         *ngFor="let container of gridContainers; let i = index"
-         [(ngGridItem)]="container.config">Index: {{i}}
-        <a (click)="removeContainer(i)">Remove</a>
-    </div>
+     (onDragStop)="onDragStop()"
+     class="dot-edit-layout-grid__guides">
+    <dot-container-selector *ngFor="let gridBox of grid; let i = index"
+        [(ngGridItem)]="gridBox.config"
+        [selectedContainersList]="gridBox.containers"
+        (remove)="onRemoveContainer(i)">
+    </dot-container-selector>
 </div>

@@ -1,26 +1,23 @@
-import { Container } from './container-selector.model';
+import { DotContainer } from '../../../shared/models/container/dot-container.model';
 import { By } from '@angular/platform-browser';
-import { SearchableDropdownComponent } from './../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { PaginatorService } from './../../../api/services/paginator/paginator.service';
 import { IframeOverlayService } from './../_common/iframe/service/iframe-overlay.service';
 import { MockMessageService } from './../../../test/message-service.mock';
 import { MessageService } from './../../../api/services/messages-service';
 import { SearchableDropDownModule } from './../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from './../../../test/dot-test-bed';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs/Observable';
-import { async, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { DebugElement, ElementRef } from '@angular/core';
-import { ContainerSelectorComponent } from './container-selector.component';
+import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { DebugElement } from '@angular/core';
+import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
-fdescribe('ContainerSelectorComponent', () => {
-    let comp: ContainerSelectorComponent;
-    let fixture: ComponentFixture<ContainerSelectorComponent>;
+describe('ContainerSelectorComponent', () => {
+    let comp: DotContainerSelectorComponent;
+    let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let de: DebugElement;
     let el: HTMLElement;
     let searchableDropdownComponent;
-    let containers: Container[];
+    let containers: DotContainer[];
 
     beforeEach(async(() => {
         const messageServiceMock = new MockMessageService({
@@ -28,7 +25,7 @@ fdescribe('ContainerSelectorComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContainerSelectorComponent],
+            declarations: [DotContainerSelectorComponent],
             imports: [ SearchableDropDownModule ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
@@ -37,7 +34,7 @@ fdescribe('ContainerSelectorComponent', () => {
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ContainerSelectorComponent);
+        fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         el = de.nativeElement;
