@@ -347,10 +347,14 @@ public class PublisherQueueJob implements StatefulJob {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else {
-            // Otherwise, just keep trying to publish the bundle
-            bundleStatus = Status.WAITING_FOR_PUBLISHING;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+        } else if (groupPushStats.getCountGroupSaved() > 0){
+			// If the static bundle was saved but has not been sent
+			bundleStatus = Status.BUNDLE_SAVED_SUCCESSFULLY;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		}else{
+			// Otherwise, just keep trying to publish the bundle
+			bundleStatus = Status.WAITING_FOR_PUBLISHING;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         }
 
 		Logger.info(this, "===========================================================");
@@ -370,6 +374,7 @@ public class PublisherQueueJob implements StatefulJob {
             boolean isGroupOk = false;
             boolean isGroupPublishing = false;
             boolean isGroupFailed = false;
+            boolean isGroupSaved = false;
             for (final EndpointDetail detail : group.values() ) {
                 if ( detail.getStatus() == Status.SUCCESS.getCode() ) {
                     isGroupOk = true;
@@ -379,7 +384,10 @@ public class PublisherQueueJob implements StatefulJob {
                 } else if ( detail.getStatus() == Status.FAILED_TO_PUBLISH
                         .getCode() ) {
                     isGroupFailed = true;
-                }
+                } else if ( detail.getStatus() == Status.BUNDLE_SAVED_SUCCESSFULLY
+						.getCode() ) {
+					isGroupSaved = true;
+				}
             }
             if ( isGroupOk ) {
                 groupPushStats.increaseCountGroupOk();
@@ -390,6 +398,9 @@ public class PublisherQueueJob implements StatefulJob {
             if ( isGroupFailed ) {
                 groupPushStats.increaseCountGroupFailed();
             }
+			if ( isGroupSaved ) {
+				groupPushStats.increaseCountGroupSaved();
+			}
         }
 
         return groupPushStats;
@@ -514,6 +525,7 @@ public class PublisherQueueJob implements StatefulJob {
 		private int countGroupOk = 0;
 		private int countGroupPublishing = 0;
 		private int countGroupFailed = 0;
+		private int countGroupSaved = 0;
 
 		public void increaseCountGroupOk() {
 			countGroupOk++;
@@ -527,6 +539,10 @@ public class PublisherQueueJob implements StatefulJob {
 			countGroupFailed++;
 		}
 
+		public void increaseCountGroupSaved() {
+			countGroupSaved++;
+		}
+
 		public int getCountGroupOk() {
 			return countGroupOk;
 		}
@@ -537,6 +553,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 		public int getCountGroupFailed() {
 			return countGroupFailed;
+		}
+
+		public int getCountGroupSaved() {
+			return countGroupSaved;
 		}
 	}
 
