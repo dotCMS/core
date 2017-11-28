@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -46,8 +48,11 @@ public class WfRoleStoreAjax extends WfBaseAction {
         boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
 
         try {
-            Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
-
+            final Role cmsAnonOrig = APILocator.getRoleAPI().loadCMSAnonymousRole();
+            
+            Role cmsAnon  = new Role();
+            BeanUtils.copyProperties(cmsAnon, cmsAnonOrig);
+            
             String cmsAnonName = LanguageUtil.get( getUser(), "current-user" );
             cmsAnon.setName( cmsAnonName );
             boolean addSystemUser = false;
@@ -208,8 +213,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
                 continue;
             }
 
-            //We need to exclude also the anonymous user
-            if ( role.getName().equalsIgnoreCase( "anonymous user" ) ) {
+            //We need to exclude also the system anonymous user
+            if ( role.getName().contains( "anonymous user" ) ) {
                 continue;
             }
 
