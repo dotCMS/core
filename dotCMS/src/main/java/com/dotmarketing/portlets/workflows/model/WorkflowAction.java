@@ -20,6 +20,11 @@ import java.util.List;
  */
 public class WorkflowAction implements Permissionable, Serializable{
 
+	// requires lock options:
+	public static final String LOCKED   			  = "locked";
+	public static final String UNLOCKED 			  = "unlocked";
+	public static final String LOCKED_OR_UNLOCKED     = "both";
+
 	private static final long serialVersionUID = 1L;
 
 	private String id;

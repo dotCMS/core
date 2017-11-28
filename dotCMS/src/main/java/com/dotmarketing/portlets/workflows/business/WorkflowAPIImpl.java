@@ -474,28 +474,39 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
 
-		WorkflowStep step = findStep(action.getStepId());
+		final WorkflowStep step = findStep(action.getStepId());
+		this.reorderAction(action, step, APILocator.systemUser(), order);
+	}
+
+	@WrapInTransaction
+	public void reorderAction(final WorkflowAction action,
+							  final WorkflowStep step,
+							  final User user,
+							  final int order) throws DotDataException, AlreadyExistException {
+
 		List<WorkflowAction> actions = null;
-		List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
+		final List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
+
 		try {
-			actions = findActions(step, APILocator.getUserAPI().getSystemUser());
+			actions = findActions(step, user);
 		} catch (Exception e) {
 			throw new DotDataException(e.getLocalizedMessage());
 		}
-		order = (order < 0) ? 0 : (order >= actions.size()) ? actions.size()-1 : order;
+
+		final int normalizedOrder =
+				(order < 0) ? 0 : (order >= actions.size()) ? actions.size()-1 : order;
 		for (int i = 0; i < actions.size(); i++) {
-			WorkflowAction a = actions.get(i);
-			if (action.equals(a)) {
+
+			final WorkflowAction currentAction = actions.get(i);
+			if (action.equals(currentAction)) {
 				continue;
 			}
-			newActions.add(a);
+			newActions.add(currentAction);
 		}
-		newActions.add(order, action);
-		int newOrder = 0;
-		for(WorkflowAction a : newActions){
-			a.setOrder(newOrder++);
 
-			saveAction(a);
+		newActions.add(normalizedOrder, action);
+		for (int i = 0; i < newActions.size(); i++) {
+			this.workFlowFactory.updateOrder(newActions.get(i), step, i);
 		}
 	}
 

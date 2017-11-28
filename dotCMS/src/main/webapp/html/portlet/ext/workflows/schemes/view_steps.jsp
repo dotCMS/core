@@ -231,7 +231,7 @@
 					<%for(WorkflowAction action : actions){ %>
 						<tr class="dojoDndItem actionOrderClass<%=step.getId()%> actionOrderClass" id="id_<%=action.getId()%>_<%=step.getId()%>">
 							<td class="wfXBox showPointer" onclick="actionAdmin.deleteActionForStep('<%=action.getId()%>','<%=step.getId()%>')"><span class="deleteIcon"></span></td>
-							<td onClick="actionAdmin.viewAction('<%=step.getId()%>', '<%=action.getId() %>');" class="showPointer">
+							<td onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" class="showPointer">
 								<span class="<%=action.getIcon()%>"></span>
 								<%=action.getName() %> 
 								<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>

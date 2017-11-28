@@ -590,7 +590,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 			if(node.id == movedId ){
 				var xhrArgs = {
-					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i,
+					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i + "&stepId=" + stepId,
 					handle : function(dataOrError, ioArgs) {
 						if (dojo.isString(dataOrError)) {
 							if (dataOrError.indexOf("FAILURE") == 0) {

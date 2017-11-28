@@ -97,7 +97,25 @@ public interface WorkFlowFactory {
 	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
 
 	/**
+	 * Save (associated) the workflowAction to the workflow step with a specific order
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 * @param order          updates the order
+	 */
+	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep, int order)  throws DotDataException,AlreadyExistException;
+
+	/**
+	 * Update (associated) the workflowAction to the workflow step with a specific order
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 * @param order			 int
+	 */
+	void updateOrder(WorkflowAction workflowAction, WorkflowStep workflowStep, int order)  throws DotDataException,AlreadyExistException;
+	/**
 	 * Save (associated) the workflowAction to the workflow step
+	 * the order will be by default zero
 	 * pre: both should exists
 	 * @param workflowAction WorkflowAction
 	 * @param workflowStep   WorkflowStep

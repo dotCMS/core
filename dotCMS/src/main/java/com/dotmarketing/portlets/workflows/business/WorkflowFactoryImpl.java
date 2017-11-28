@@ -848,8 +848,38 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void saveAction(final WorkflowAction workflowAction,
 						   final WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException {
 
-		final DotConnect db = new DotConnect();  // todo: there is an issue with the cache
-		db.setSQL(sql.INSERT_ACTION_FOR_STEP)
+		this.saveAction(workflowAction, workflowStep, 0);
+	} // saveAction
+
+	public void saveAction(final WorkflowAction workflowAction,
+						   final WorkflowStep workflowStep,
+						   final int order)  throws DotDataException,AlreadyExistException {
+
+		new DotConnect().setSQL(sql.INSERT_ACTION_FOR_STEP)
+				.addParam(workflowAction.getId())
+				.addParam(workflowStep.getId())
+				.addParam(order)
+				.loadResult();
+
+		final WorkflowStep proxyStep = new WorkflowStep();
+		proxyStep.setId(workflowStep.getId());
+		cache.removeActions(proxyStep);
+
+		final WorkflowScheme proxyScheme = new WorkflowScheme();
+		proxyScheme.setId(workflowAction.getSchemeId());
+		cache.removeActions(proxyScheme);
+
+		// update workflowScheme mod date
+		final WorkflowScheme scheme = findScheme(workflowAction.getSchemeId());
+		saveScheme(scheme);
+	} // saveAction.
+
+	public void updateOrder(final WorkflowAction workflowAction,
+							final WorkflowStep workflowStep,
+							final int order)  throws DotDataException,AlreadyExistException {
+
+		new DotConnect().setSQL(sql.UPDATE_ACTION_FOR_STEP_ORDER)
+				.addParam(order)
 				.addParam(workflowAction.getId())
 				.addParam(workflowStep.getId())
 				.loadResult();
@@ -865,7 +895,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update workflowScheme mod date
 		final WorkflowScheme scheme = findScheme(workflowAction.getSchemeId());
 		saveScheme(scheme);
-	} // saveAction
+	} // updateOrder.
 
 	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 

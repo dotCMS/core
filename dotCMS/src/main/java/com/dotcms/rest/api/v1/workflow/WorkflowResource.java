@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -63,6 +64,7 @@ public class WorkflowResource {
         this.responseUtil   = responseUtil;
         this.workflowAPI    = workflowAPI;
     }
+
 
     /**
      * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
@@ -491,5 +493,47 @@ public class WorkflowResource {
 
         return response;
     } // deleteAction
+
+    /**
+     * Change the order of an action associated to the step
+     * @param request                           HttpServletRequest
+     * @param workflowReorderActionStepForm     WorkflowReorderActionStepForm
+     * @return Response
+     */
+    @PUT
+    @Path("/reorder")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response reorderAction(@Context final HttpServletRequest request,
+                               final WorkflowReorderActionStepForm workflowReorderActionStepForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+
+            Logger.debug(this, "Doing reordering of: " + workflowReorderActionStepForm);
+            this.workflowHelper.reorderAction(workflowReorderActionStepForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // reorderAction
 
 } // E:O:F:WorkflowResource.

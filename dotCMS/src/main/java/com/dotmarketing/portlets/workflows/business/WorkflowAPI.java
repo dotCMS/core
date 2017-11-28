@@ -166,7 +166,31 @@ public interface WorkflowAPI {
 
 	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * This is a legacy method for reorder
+	 * 
+	 * @deprecated On release 4.3, replaced by {@link #reorderAction(WorkflowAction, WorkflowStep, User, int)}
+	 * @param action WorkflowAction action you want to reorder, the getStepid has to be not empty and has to have the associated step to the action
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	@Deprecated
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * This method makes the reorder for the action associated to the step, reordering the rest of the actions too.
+	 * @param action WorkflowAction action you want to reorder
+	 * @param step   WorkflowStep   step which the action are associated
+	 * @param user   User           user that is executing the aciton
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	public void reorderAction(final WorkflowAction action,
+							  final WorkflowStep step,
+							  final User user,
+							  final int order) throws DotDataException, AlreadyExistException;
 
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 

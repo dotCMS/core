@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -60,6 +61,52 @@ public class WorkflowHelper {
         this.workflowAPI = workflowAPI;
         this.roleAPI     = roleAPI;
     }
+
+
+    /**
+     * Reorder the action associated to the scheme.
+     * @param workflowReorderActionStepForm WorkflowReorderActionStepForm
+     */
+    @WrapInTransaction
+    public void reorderAction(final WorkflowReorderActionStepForm workflowReorderActionStepForm,
+                              final User user)  {
+
+        WorkflowAction action = null;
+        WorkflowStep step     = null;
+
+        try {
+
+            Logger.debug(this, "Looking for the actionId: "
+                    + workflowReorderActionStepForm.getActionId());
+            action =
+                    this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
+
+            Logger.debug(this, "Looking for the stepId: "
+                    + workflowReorderActionStepForm.getStepId());
+            step =
+                    this.workflowAPI.findStep(workflowReorderActionStepForm.getStepId());
+
+            if (null == action) {
+                throw new DoesNotExistException("Workflow-does-not-exists-action");
+            }
+
+            if (null == step) {
+                throw new DoesNotExistException("Workflow-does-not-exists-step");
+            }
+
+            Logger.debug(this, "Reordering the action: " + action.getId()
+                    + " for the stepId: " + step.getId() + ", order: " +
+                    workflowReorderActionStepForm.getOrder()
+            );
+
+            this.workflowAPI.reorderAction(action, step, user,
+                    workflowReorderActionStepForm.getOrder());
+        } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+    }  // reorderAction.
 
     /**
      * Deletes the step

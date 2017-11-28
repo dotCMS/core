@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
@@ -27,48 +28,58 @@ import java.util.Map;
  * @version 4.3.0
  * @since Nov 1st, 2017
  */
-// todo: missing a fk between workflow_action_step and actions and steps
 public class Task04300UpdateWorkflowActionTable implements StartupTask {
 
-    private static final String MYSQL_FIND_INTERMEDIATE_TABLE = "SELECT table_name FROM information_schema.tables WHERE table_name = 'workflow_action_step' LIMIT 1";
-    private static final String POSTGRES_FIND_INTERMEDIATE_TABLE = MYSQL_FIND_INTERMEDIATE_TABLE;
-    private static final String MSSQL_FIND_INTERMEDIATE_TABLE = "SELECT TOP 1 table_name FROM information_schema.tables WHERE table_name = 'workflow_action_step'";
-    private static final String ORACLE_FIND_INTERMEDIATE_TABLE = "SELECT table_name FROM user_tables WHERE table_name = 'WORKFLOW_ACTION_STEP'";
+    private static final String MYSQL_FIND_INTERMEDIATE_TABLE    = "SELECT * from workflow_action_step";
+    private static final String POSTGRES_FIND_INTERMEDIATE_TABLE = "SELECT * from workflow_action_step";
+    private static final String MSSQL_FIND_INTERMEDIATE_TABLE    = "SELECT * from workflow_action_step";
+    private static final String ORACLE_FIND_INTERMEDIATE_TABLE   = "SELECT * from workflow_action_step";
 
-    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL )";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE = MYSQL_CREATE_INTERMEDIATE_TABLE;
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) )";
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) )";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) )";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) )";
 
     private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_PK = "ALTER TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_PK = MYSQL_CREATE_INTERMEDIATE_TABLE_PK;
 
-    private static final String MYSQL_FIND_SCHEME_ID_COLUMN = "SELECT column_name FROM information_schema.columns WHERE table_name = 'workflow_action' AND column_name = 'scheme_id'";
-    private static final String POSTGRES_FIND_SCHEME_ID_COLUMN = MYSQL_FIND_SCHEME_ID_COLUMN;
-    private static final String MSSQL_FIND_SCHEME_ID_COLUMN = MYSQL_FIND_SCHEME_ID_COLUMN;
-    private static final String ORACLE_FIND_SCHEME_ID_COLUMN = "SELECT column_name FROM user_tab_columns WHERE table_name = 'WORKFLOW_ACTION' AND column_name = 'SCHEME_ID'";
+    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
+    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT requires_checkout_option FROM workflow_action";
+    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
+    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT requires_checkout_option FROM workflow_action";
 
-    private static final String MYSQL_ADD_SCHEME_ID_COLUMN = "ALTER TABLE workflow_action ADD scheme_id VARCHAR(36) NOT NULL";
+    private static final String MYSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
+    private static final String POSTGRES_FIND_SCHEME_ID_COLUMN = "SELECT scheme_id FROM workflow_action";
+    private static final String MSSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
+    private static final String ORACLE_FIND_SCHEME_ID_COLUMN   = "SELECT scheme_id FROM workflow_action";
+
+    private static final String MYSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id VARCHAR(36) NOT NULL";
     private static final String POSTGRES_ADD_SCHEME_ID_COLUMN = MYSQL_ADD_SCHEME_ID_COLUMN;
-    private static final String MSSQL_ADD_SCHEME_ID_COLUMN = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36) NOT NULL";
-    private static final String ORACLE_ADD_SCHEME_ID_COLUMN = MYSQL_ADD_SCHEME_ID_COLUMN;
+    private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36) NOT NULL";
+    private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36) NOT NULL";
 
-    private static final String MYSQL_SELECT_ACTIONS_AND_STEPS = "SELECT wa.id action_id, ws.id step_id FROM workflow_step ws INNER JOIN workflow_action wa ON ws.id = wa.step_id";
+    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
+    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
+    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option NVARCHAR(16) default 'both'";
+    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD requires_checkout_option varchar2(16) default 'both'";
+
+
+    private static final String MYSQL_SELECT_ACTIONS_AND_STEPS = "SELECT wa.id action_id, ws.id step_id, wa.my_order FROM workflow_step ws INNER JOIN workflow_action wa ON ws.id = wa.step_id";
     private static final String POSTGRES_SELECT_ACTIONS_AND_STEPS = MYSQL_SELECT_ACTIONS_AND_STEPS;
     private static final String MSSQL_SELECT_ACTIONS_AND_STEPS = MYSQL_SELECT_ACTIONS_AND_STEPS;
     private static final String ORACLE_SELECT_ACTIONS_AND_STEPS = MYSQL_SELECT_ACTIONS_AND_STEPS;
 
-    private static final String MYSQL_INSERT_INTO_INTERMEDIATE_TABLE = "INSERT INTO workflow_action_step (action_id, step_id) VALUES (?, ?)";
+    private static final String MYSQL_INSERT_INTO_INTERMEDIATE_TABLE    = "INSERT INTO workflow_action_step (action_id, step_id, action_order) VALUES (?, ?, ?)";
     private static final String POSTGRES_INSERT_INTO_INTERMEDIATE_TABLE = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
-    private static final String MSSQL_INSERT_INTO_INTERMEDIATE_TABLE = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
-    private static final String ORACLE_INSERT_INTO_INTERMEDIATE_TABLE = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
+    private static final String MSSQL_INSERT_INTO_INTERMEDIATE_TABLE    = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
+    private static final String ORACLE_INSERT_INTO_INTERMEDIATE_TABLE   = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
 
-    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
+    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
     private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
 
-    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ? WHERE id = ?";
+    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,requires_checkout_option = ?  WHERE id = ?";
     private static final String POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
@@ -85,6 +96,22 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
 
     private static final String POSTGRES_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure(structure_id)";
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
+
+    // FOREIGH KEYS
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID  = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
 
     @Override
     public boolean forceRun() {
@@ -103,65 +130,18 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
             }
         }
 
-        Logger.info(this, "Creating intermediate 'workflow_action_step' table.");
-        dc.setSQL(findIntermediateTable());
-        final List<Map<String, Object>> intermediateTable = dc.loadObjectResults();
-        if (intermediateTable.isEmpty()) {
-            try {
-                dc.executeStatement(createIntermediateTable());
-                // The SQL Server and Oracle table definition already include de PK creation
-                if (DbConnectionFactory.isMySql() || DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement(createIntermediateTablePk());
-                }
-            } catch (SQLException e) {
-                throw new DotRuntimeException(
-                        "The 'workflow_action_step' table could not be created.", e);
-            }
-        }
+        // SCHEMA CHANGES
+        this.createWorkflowActionStepTable     (dc);
+        this.addSchemeIdColumn                 (dc);
+        this.addRequiresCheckoutOptionColumn   (dc);
 
-        Logger.info(this, "Adding new 'scheme_id' column to 'workflow_action' table.");
-        dc.setSQL(findSchemeIdColumn());
-        final List<Map<String, Object>> newColumn = dc.loadObjectResults();
-        if (newColumn.isEmpty()) {
-            try {
-                dc.executeStatement(addSchemeIdColumn());
-            } catch (SQLException e) {
-                throw new DotRuntimeException("The 'scheme_id' column could not be created.", e);
-            }
-        }
+        // DATA CHANGES
+        this.addWorkflowActionStepData         (dc);
+        this.updateWorkflowActionData          (dc);
+        this.updateWorkflowSchemeXStructureData(dc);
+    } // executeUpgrade.
 
-        Logger.info(this, "Adding data to 'workflow_action_step' table.");
-        dc.setSQL(selectActionsAndSteps());
-        final List<Map<String, Object>> actionsAndSteps = dc.loadObjectResults();
-        actionsAndSteps.stream().forEach(row -> {
-            dc.setSQL(insertActionsAndSteps());
-            dc.addParam(row.get("action_id"));
-            dc.addParam(row.get("step_id"));
-            try {
-                dc.loadResult();
-            } catch (DotDataException e) {
-                throw new DotRuntimeException(
-                        "An error occurred when adding data to the 'workflow_action_step' table.",
-                        e);
-            }
-        });
-
-        Logger.info(this, "Associating Workflow Actions to Workflow Schemes.");
-        dc.setSQL(selectSchemeIdsForActions());
-        final List<Map<String, Object>> schemeIds = dc.loadObjectResults();
-        schemeIds.stream().forEach(row -> {
-            dc.setSQL(updateSchemeIdsForActions());
-            dc.addParam(row.get("scheme_id").toString());
-            dc.addParam(row.get("action_id").toString());
-            try {
-                dc.loadResult();
-            } catch (DotDataException e) {
-                throw new DotRuntimeException(
-                        "An error occurred when associating Workflow Actions to Workflow Schemes.",
-                        e);
-            }
-        });
-
+    private void updateWorkflowSchemeXStructureData(DotConnect dc) throws DotDataException {
         Logger.info(this, "Updating index in 'workflow_scheme_x_structure' table.");
         try {
             dc.setSQL(selectTableIndex());
@@ -179,6 +159,174 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
                     "An error occurred when updating the index in 'workflow_scheme_x_structure' table.",
                     e);
         }
+    }
+
+    private void updateWorkflowActionData(final DotConnect dc) throws DotDataException {
+
+        Logger.info(this, "Associating Workflow Actions to Workflow Schemes.");
+        dc.setSQL(selectSchemeIdsForActions());
+        final List<Map<String, Object>> schemeIds = dc.loadObjectResults();
+        schemeIds.stream().forEach(row -> {
+
+            dc.setSQL(updateSchemeIdsForActions());
+            dc.addParam(row.get("scheme_id").toString());
+            dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
+            dc.addParam(row.get("action_id").toString());
+
+            try {
+                dc.loadResult();
+            } catch (DotDataException e) {
+                throw new DotRuntimeException(
+                        "An error occurred when associating Workflow Actions to Workflow Schemes.",
+                        e);
+            }
+        });
+    } // updateWorkflowActionData.
+
+    private void addWorkflowActionStepData(final DotConnect dc) throws DotDataException {
+
+        Logger.info(this, "Adding data to 'workflow_action_step' table.");
+        dc.setSQL(selectActionsAndSteps())
+                .loadObjectResults().stream().forEach(row -> {
+
+            dc.setSQL(insertActionsAndSteps());
+            dc.addParam(row.get("action_id"));
+            dc.addParam(row.get("step_id"));
+            dc.addParam(row.get("my_order"));
+
+            Logger.debug(this, "Adding to workflow_action_step the row: " + row);
+
+            try {
+                dc.loadResult();
+            } catch (DotDataException e) {
+
+                Logger.error(this, "ERROR on Adding to workflow_action_step the row: "
+                        + row + ", err:" + e.getMessage(), e);
+                throw new DotRuntimeException(
+                        "An error occurred when adding data to the 'workflow_action_step' table.",
+                        e);
+            }
+        });
+    } // addWorkflowActionStepData.
+
+    private void addRequiresCheckoutOptionColumn(final DotConnect dc) throws DotDataException {
+
+        boolean needToCreate = false;
+        Logger.info(this, "Adding new 'requires_checkout_option' column to 'workflow_action' table.");
+
+        try {
+            dc.setSQL(findRequiresCheckoutOptionsColumn()).loadObjectResults();
+        } catch (Throwable e) {
+
+            Logger.info(this, "Column 'workflow_action.requires_checkout_option' does not exists, creating it");
+            needToCreate = true;
+        }
+
+        if (needToCreate) {
+            try {
+                dc.executeStatement(addRequiresCheckoutOptionColumn());
+            } catch (SQLException e) {
+                throw new DotRuntimeException("The 'requires_checkout_option' column could not be created.", e);
+            }
+        }
+    } // addRequiresCheckoutOptionColumn.
+
+    private void addSchemeIdColumn(final DotConnect dc) throws DotDataException {
+
+        boolean needToCreate = false;
+        Logger.info(this, "Adding new 'scheme_id' column to 'workflow_action' table.");
+
+        try {
+            dc.setSQL(findSchemeIdColumn()).loadObjectResults();
+        } catch (Throwable e) {
+
+            Logger.info(this, "Column 'workflow_action.scheme_id' does not exists, creating it");
+            needToCreate = true;
+        }
+        if (needToCreate) {
+            try {
+                dc.executeStatement(addSchemeIdColumn());
+            } catch (SQLException e) {
+                throw new DotRuntimeException("The 'scheme_id' column could not be created.", e);
+            }
+        }
+    } // addSchemeIdColumn.
+
+    private void createWorkflowActionStepTable(final DotConnect dc) throws DotDataException {
+
+        boolean needToCreate = false;
+        Logger.info(this, "Creating intermediate 'workflow_action_step' table.");
+
+        try {
+
+            dc.setSQL(findIntermediateTable()).loadObjectResults();
+        } catch (Throwable e) {
+
+            Logger.info(this, "Table 'workflow_action_step' does not exists, creating it");
+            needToCreate = true;
+        }
+
+        if (needToCreate) {
+            try {
+                dc.executeStatement(createIntermediateTable());
+                // The SQL Server and Oracle table definition already include de PK creation
+                if (DbConnectionFactory.isMySql() || DbConnectionFactory.isPostgres()) {
+                    dc.executeStatement(createIntermediateTablePk());
+                }
+
+                // adding the FK
+                Logger.info(this, "Creating the Workflow action step intermediate FKs.");
+                dc.executeStatement(this.createIntermediateTableForeignKeyActionId());
+                dc.executeStatement(this.createIntermediateTableForeignKeyStepId());
+            } catch (SQLException e) {
+                throw new DotRuntimeException(
+                        "The 'workflow_action_step' table could not be created.", e);
+            }
+        }
+    } // createWorkflowActionStepTable.
+
+    private boolean isLocked(final Object requiresCheckout) {
+
+        boolean isLocked = false;
+
+        if (null != requiresCheckout) {
+
+            isLocked = (requiresCheckout instanceof Boolean)?
+                        Boolean.class.cast(requiresCheckout):
+                        DbConnectionFactory.isDBTrue(requiresCheckout.toString());
+        }
+
+        return isLocked;
+    }
+
+    private String createIntermediateTableForeignKeyActionId() {
+
+        if (DbConnectionFactory.isMySql()) {
+            return MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        } else if (DbConnectionFactory.isPostgres()) {
+            return POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        } else if (DbConnectionFactory.isMsSql()) {
+            return MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        } else if (DbConnectionFactory.isOracle()) {
+            return ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        }
+
+        return H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+    }
+
+    private String createIntermediateTableForeignKeyStepId() {
+
+        if (DbConnectionFactory.isMySql()) {
+            return MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        } else if (DbConnectionFactory.isPostgres()) {
+            return POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        } else if (DbConnectionFactory.isMsSql()) {
+            return MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        } else if (DbConnectionFactory.isOracle()) {
+            return ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        }
+
+        return H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
     }
 
     /**
@@ -244,6 +392,24 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
             return MSSQL_FIND_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
             return ORACLE_FIND_SCHEME_ID_COLUMN;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Verifies if the {@code requires_checkout_option} column already exists in the {@code workflow_action} table.
+     * @return
+     */
+    private String findRequiresCheckoutOptionsColumn() {
+        if (DbConnectionFactory.isMySql()) {
+            return MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isPostgres()) {
+            return POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isMsSql()) {
+            return MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isOracle()) {
+            return ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else {
             return null;
         }
@@ -369,6 +535,25 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
             return MSSQL_ADD_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
             return ORACLE_ADD_SCHEME_ID_COLUMN;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Adds the new {@code requires_checkout_option} column to the {@code workflow_action} table so that it is now
+     * multivalue instead of boolean.
+     * @return
+     */
+    private String addRequiresCheckoutOptionColumn() {
+        if (DbConnectionFactory.isMySql()) {
+            return MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isPostgres()) {
+            return POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isMsSql()) {
+            return MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+        } else if (DbConnectionFactory.isOracle()) {
+            return ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else {
             return null;
         }

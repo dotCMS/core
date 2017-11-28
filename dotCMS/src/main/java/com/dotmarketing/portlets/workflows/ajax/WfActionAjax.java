@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -30,16 +31,16 @@ public class WfActionAjax extends WfBaseAction {
     public void reorder(final HttpServletRequest request,
                          final HttpServletResponse response) throws ServletException, IOException {
 
-		final  String actionId = request.getParameter("actionId");
+		final String actionId   = request.getParameter("actionId");
+		final String stepId     = request.getParameter("stepId");
 		final String orderParam = request.getParameter("order");
 
 		try {
-			final int order = Integer.parseInt(orderParam);
-			//anyone with permission the workflowscheme portlet can reorder actions
-			final WorkflowAction action =
-                    this.workflowAPI.findAction(actionId, APILocator.getUserAPI().getSystemUser());
 
-            this.workflowAPI.reorderAction(action, order);
+			this.workflowHelper.reorderAction(new WorkflowReorderActionStepForm.Builder()
+						.actionId(actionId).stepId(stepId)
+						.order(Integer.parseInt(orderParam)).build(),
+											  this.userWebAPI.getUser(request));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
