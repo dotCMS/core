@@ -59,12 +59,12 @@ public interface FieldFactory {
     String nextAvailableColumn(Field field) throws DotDataException;
 
 
-    public void moveSortOrderForward(int from, int to) throws DotDataException;
+    public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException;
 
-    public void moveSortOrderBackward(int from, int to) throws DotDataException;
+    public void moveSortOrderBackward(String contentTypeId, int from, int to) throws DotDataException;
 
-    public void moveSortOrderForward(int from) throws DotDataException;
+    public void moveSortOrderForward(String contentTypeId, int from) throws DotDataException;
 
-    public void moveSortOrderBackward(int to) throws DotDataException;
+    public void moveSortOrderBackward(String contentTypeId, int to) throws DotDataException;
 
 }

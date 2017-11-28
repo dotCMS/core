@@ -1378,7 +1378,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
          * @exception DotDataException There is a data inconsistency
          * @throws DotSecurityException
          */
-    protected void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	protected void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
         final DotConnect dc = new DotConnect();
         try {
             dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
@@ -1411,6 +1411,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param user          The user performing this operation.
      */
     private void reindexReplacedUserContent(final User userToReplace, final User user) {
+        final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+
         try {
             final StringBuilder luceneQuery = new StringBuilder();
             luceneQuery.append("+modUser:").append(userToReplace.getUserId());
@@ -1419,6 +1421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
                     (luceneQuery.toString(), limit, offset, null, user, false);
             long totalCount;
+
             if (UtilMethods.isSet(contentlets)) {
                 final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
                 List<Contentlet> contentToIndex = new ArrayList<>();
@@ -1429,7 +1432,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 for (final ContentletSearch indexedContentlet : contentlets) {
                     // IMPORTANT: Remove contentlet from cache first
                     cc.remove(indexedContentlet.getInode());
+
                     final Contentlet content = find(indexedContentlet.getInode());
+
                     contentToIndex.add(content);
                     contentToIndex.addAll(indexAPI.loadDeps(content));
                     if (counter % batchSize == 0) {
@@ -1447,12 +1452,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if (!contentToIndex.isEmpty()) {
                     indexAPI.indexContentList(contentToIndex, null, false);
                 }
-                Logger.info(this, String.format("Reindexing of updated related content after " +
-                        "deleting user '%s' has finished successfully.", userToReplace.getUserId()
-                        + "/" + userToReplace.getFullName()));
+
+                final String successMessage = String.format("Reindexing of updated related content after " +
+                    "deleting user '%s' has finished successfully.", userToReplace.getUserId()
+                    + "/" + userToReplace.getFullName());
+
+                Logger.info(this, successMessage);
+                notificationAPI.error(successMessage, user.getUserId());
             }
         } catch (Exception e) {
-            final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
             final String errorMsg = String.format("Unable to reindex updated related content for " +
                     "deleted " + "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId()
                     + "/" + userToReplace.getFullName());
@@ -2276,15 +2284,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
-
+        Connection conn = DbConnectionFactory.getConnection();
         
-        try(Connection conn = DbConnectionFactory.getConnection();PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
+        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate()))
+            try(ResultSet rs = ps.executeQuery();)
             {
-
+            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);

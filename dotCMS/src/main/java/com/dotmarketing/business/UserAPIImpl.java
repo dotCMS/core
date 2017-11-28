@@ -412,11 +412,6 @@ public class UserAPIImpl implements UserAPI {
 
 		logDelete(DeletionStage.END, userToDelete, user, "Menulinks");
 
-		//replace user references in htmlpages
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "HTMLPages");
-
-		logDelete(DeletionStage.END, userToDelete, user, "HTMLPages");
-
 		//replace user references in containers
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");
 

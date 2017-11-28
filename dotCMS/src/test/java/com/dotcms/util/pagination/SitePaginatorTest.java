@@ -53,9 +53,9 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null);
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null);
 
-        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
@@ -69,10 +69,9 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter, showArchived,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
                 map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
-
-        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
@@ -86,10 +85,10 @@ public class SitePaginatorTest {
         when(hostAPI.searchByStopped( filter, !showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
                 map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
 
-        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
@@ -104,10 +103,10 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter, showArchived, !showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
                 map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
 
-        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
@@ -120,10 +119,10 @@ public class SitePaginatorTest {
         when(hostAPI.search( filter,true, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+        final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
                 map(SitePaginator.SYSTEM_PARAMETER_NAME, true));
 
-        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 }
