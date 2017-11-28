@@ -471,7 +471,8 @@ public class EditTemplateAction extends DotPortletAction implements
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
-		boolean isDrawed = req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED)!=null?(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED):false;
+		boolean isDrawed = req.getParameter("drawed") != null ? Boolean.valueOf(req.getParameter("drawed")) :
+				req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) != null ? (Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) : false;
 
 		// If we are into the design mode we are redirected at the new portlet action
 		if(((null!=cmd) && cmd.equals(Constants.DESIGN))){
