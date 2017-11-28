@@ -459,11 +459,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				schemes.add(this.findDefaultScheme());
 			}
 		} catch (final Exception er) {
-			try {
-				schemes.add(this.findDefaultScheme());
-			}catch(NullPointerException ex){
-				throw new DotDataException(ex);
-			}
+			schemes = new ArrayList();
+			schemes.add(this.findDefaultScheme());
 		}
 
 		cache.addForStructure(structId, schemes);
@@ -526,7 +523,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
         // if the existing task belongs to another workflow schema, then blank
         // the workflow task status
-		if (null != steps  && steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
+		if (steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
 		    final DotConnect db = new DotConnect();
 		    db.setSQL(sql.RESET_CONTENTLET_STEPS);
             db.addParam(StringPool.BLANK);
