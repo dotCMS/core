@@ -51,7 +51,6 @@ import static com.dotmarketing.business.APILocator.getPermissionAPI;
 
 public class FolderAPIImpl implements FolderAPI  {
 
-	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
@@ -123,9 +122,12 @@ public class FolderAPIImpl implements FolderAPI  {
 	public Folder findParentFolder(final Treeable asset, final User user, final boolean respectFrontEndPermissions) throws DotIdentifierStateException,
 			DotDataException, DotSecurityException {
 		Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
-		if(id==null) return null;
-		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals("/System folder"))
+		if(id==null){
 			return null;
+		} 
+		if(id.getParentPath()==null || FolderAPI.ROOT_PATH.equals(id.getParentPath()) || FolderAPI.SYSTEM_FOLDER_PATH.equals(id.getParentPath())){
+			return null;
+		}
 		Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
 		Folder f = folderFactory.findFolderByPath(id.getParentPath(), host);
 
@@ -427,7 +429,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				//remove value in the parent folder from the children listing
-				Folder parentFolder = !ident.getParentPath().equals("/") ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
+				Folder parentFolder = !FolderAPI.ROOT_PATH.equals(ident.getParentPath()) ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
 				if(parentFolder != null){
 					CacheLocator.getNavToolCache().removeNav(faker.getHostId(), parentFolder.getInode());
 				}
@@ -552,7 +554,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
 		Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
-		Permissionable parent = "/".equals(id.getParentPath()) || "/System folder".equals(id.getParentPath()) 
+		Permissionable parent = FolderAPI.ROOT_PATH.equals(id.getParentPath()) || FolderAPI.SYSTEM_FOLDER_PATH.equals(id.getParentPath()) 
 				        ? host : parentFolder;
 
 		if(parent ==null){
@@ -561,7 +563,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
 					final String userId = user.getUserId() != null ? user.getUserId() : "";
-					final String parentFolderAsString = "/".equals(id.getParentPath()) || "/System folder".equals(id.getParentPath()) 
+					final String parentFolderAsString = FolderAPI.ROOT_PATH.equals(id.getParentPath()) || FolderAPI.SYSTEM_FOLDER_PATH.equals(id.getParentPath()) 
 						? host.getName(): parentFolder.getPath();
 					throw new AddContentToFolderPermissionException(userId, parentFolderAsString);
 		}
@@ -592,14 +594,14 @@ public class FolderAPIImpl implements FolderAPI  {
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 
-		StringTokenizer st = new StringTokenizer(path, "/");
-		StringBuffer sb = new StringBuffer("/");
+		StringTokenizer st = new StringTokenizer(path, FolderAPI.ROOT_PATH);
+		StringBuffer sb = new StringBuffer(FolderAPI.ROOT_PATH);
 
 		Folder parent = null;
 
 		while (st.hasMoreTokens()) {
 			String name = st.nextToken();
-			sb.append(name + "/");
+			sb.append(name + FolderAPI.ROOT_PATH);
 			Folder f = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
 			if (f == null || !InodeUtils.isSet(f.getInode())) {
 				f= new Folder();
