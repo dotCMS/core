@@ -2,12 +2,6 @@ package com.dotmarketing.portlets.links.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -27,25 +21,28 @@ import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -59,7 +56,7 @@ public class LinkFactory {
 	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -121,17 +118,18 @@ public class LinkFactory {
  
     public static java.util.List getLinkChildrenByCondition(Inode o,String condition) {
         try {
-            HibernateUtil dh = new HibernateUtil(Link.class);
-            dh.setSQLQuery(
-			"SELECT {links.*} from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
+
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(
+			"SELECT links.* from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
 			"links_1_.inode = links.inode and links_1_.type='links' and " +
-			"identifier.host_inode =(select host_inode from identifier where id = ?) and " +
-			 condition + " order by url, sort_order");
+			"identifier.host_inode =(select host_inode from identifier where id = ?)" +
+                    (condition!=null && !condition.isEmpty()? " and " + condition:"") + " order by url, sort_order");
 
-            dh.setParam(APILocator.getIdentifierAPI().find((Folder)o).getPath());
-            dh.setParam(o.getIdentifier());
+            dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
+            dc.addParam(o.getIdentifier());
 
-            return dh.list();
+            return ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadResults());
         } catch (Exception e) {
 			Logger.error(LinkFactory.class, "getLinkChildrenByCondition failed:" + e, e);
         }
@@ -179,34 +177,7 @@ public class LinkFactory {
 
 		return new Link();
 	}
-/*
-	public static java.util.List getLinksAndPermissionsPerRole(Role[] roles) {
 
-		java.util.List entries = new java.util.ArrayList();
-		com.dotmarketing.portlets.folders.model.Folder rootFolder = com.dotmarketing.portlets.folders.factories.FolderFactory.getRootFolder();
-		java.util.List folders = com.dotmarketing.portlets.folders.factories.FolderFactory.getFoldersByParent(rootFolder.getInode());
-		return com.dotmarketing.portlets.folders.factories.FolderFactory.getFoldersAndEntriesAndPermissionsByRoles(folders,entries,roles,Link.class);
-	}
-*/
-
-    public static java.util.List existsLink(String uri,String hostId) {
-        HibernateUtil dh = new HibernateUtil(Link.class);
-        String parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
-		String assetName = uri.substring(uri.lastIndexOf("/")+1);
-        List<Link> list=null ;
-        try {
-			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and asset_name = ? and host_inode = ? ");
-			dh.setParam(parentPath);
-			dh.setParam(assetName);
-			dh.setParam(hostId);
-			list = ((java.util.List) dh.list());
-		} catch (DotHibernateException e) {
-			Logger.error(LinkFactory.class, "existsLink failed:" + e, e);
-		}
-        return list;
-    }
-    
-    
     public static Link getLinkByFriendlyName(String friendlyName) {
         HibernateUtil dh = new HibernateUtil(Link.class);
         Link link =null;

@@ -1,13 +1,5 @@
 package com.dotmarketing.business;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -15,11 +7,8 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -29,17 +18,24 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation class for the {@link IdentifierFactory}.
- * 
+ *
  * @author root
  * @version 1.x
  * @since Mar 22, 2012
@@ -50,15 +46,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	private IdentifierCache ic = CacheLocator.getIdentifierCache();
 
 	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
-		return findByURIPattern(assetType, uri, hasLive, pullDeleted,include, host, null, null);
-	}
-	
-	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+	protected List<Identifier> findByURIPattern(final String assetType, String uri, boolean include, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
-		
+
 		if(DbConnectionFactory.isMySql()){
 			bob.append("where concat(parent_path, asset_name) ");
 		}else if (DbConnectionFactory.isMsSql()) {
@@ -67,49 +58,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			bob.append("where (parent_path || asset_name) ");
 		}
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
-		if(startDate != null){
-			bob.append(" and vi.version_ts >= ? ");
-		}
-		if(endDate != null){
-			bob.append(" and vi.version_ts <= ? ");
-		}
-		if(onlyDeleted){
-			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBTrue() + " ");
-		}
+
 		dc.setSQL(bob.toString());
 		dc.addParam(uri.replace("*", "%"));
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
-		if(startDate != null){
-			dc.addParam(startDate);
-		}
-		if(endDate != null){
-			dc.addParam(endDate);
-		}
-		return convertDotConnectMapToPOJO(dc.loadResults());
-	}
 
-	/**
-	 * 
-	 * @param results
-	 * @return
-	 */
-	private List<Identifier> convertDotConnectMapToPOJO(List<Map<String,String>> results){
-		List<Identifier> ret = new ArrayList<Identifier>();
-		if(results == null || results.size()==0){
-			return ret;
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
 		}
-		
-		for (Map<String, String> map : results) {
-			Identifier i = new Identifier();
-			i.setAssetName(map.get("asset_name"));
-			i.setAssetType(map.get("asset_type"));
-			i.setHostId(map.get("host_inode"));
-			i.setId(map.get("id"));
-			i.setParentPath(map.get("parent_path"));
-			ret.add(i);
-		}
-		return ret;
 	}
 
 	@Override
@@ -132,7 +91,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param value
 	 * @return
 	 */
@@ -141,7 +100,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param hostId
 	 * @param uri
 	 * @return
@@ -157,7 +116,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param x
 	 * @return
 	 */
@@ -177,26 +136,37 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier findByURI(Host host, String uri) throws DotHibernateException {
+	protected Identifier findByURI(final Host host, String uri) throws DotDataException {
 		return findByURI(host.getIdentifier(), uri);
 	}
 
 	@Override
-	protected Identifier findByURI(String siteId, String uri) throws DotHibernateException {
+	protected Identifier findByURI(final String siteId, String uri) throws DotDataException {
 		Identifier identifier = ic.getIdentifier(siteId, uri);
 		if (identifier != null) {
 			return check404(identifier);
 		}
 
-		HibernateUtil dh = new HibernateUtil(Identifier.class);
+		DotConnect dc = new DotConnect();
 		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
 		String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
-		dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path = ? and asset_name = ? and host_inode = ?");
-		dh.setParam(parentPath);
-		dh.setParam(assetName);
-		dh.setParam(siteId);
-		identifier = (Identifier) dh.load();
-		
+		dc.setSQL("select * from identifier where parent_path = ? and asset_name = ? and host_inode = ?");
+		dc.addParam(parentPath);
+		dc.addParam(assetName);
+		dc.addParam(siteId);
+
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
+
+		if (results != null && !results.isEmpty()){
+			identifier = results.get(0);
+		}
+
+
 		if(identifier==null || !InodeUtils.isSet(identifier.getId())) {
 		    identifier = build404(siteId,uri);
 		}
@@ -206,26 +176,42 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected List<Identifier> findByParentPath(String siteId, String parent_path) throws DotHibernateException {
+	protected List<Identifier> findByParentPath(final String siteId, String parent_path) throws DotDataException {
 	    if(!parent_path.endsWith("/")) {
 	        parent_path=parent_path+"/";
 	    }
 	    parent_path = parent_path.toLowerCase();
 
-        HibernateUtil dh = new HibernateUtil(Identifier.class);
-        dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path = ? and host_inode = ?");
-        dh.setParam(parent_path);
-        dh.setParam(siteId);
-        return (List<Identifier>) dh.list();
-    }
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
+		dc.addParam(parent_path);
+		dc.addParam(siteId);
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
+	}
 
 	@Override
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
 		if (identifier == null) {
 			throw new DotStateException("identifier is null");
 		}
-		HibernateUtil hu = new HibernateUtil(Identifier.class);
-		return (Identifier) hu.load(identifier);
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select * from identifier where id = ?");
+		dc.addParam(identifier);
+
+		List<Identifier> results = null;
+		try {
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
+
+		return  (results != null && !results.isEmpty())?results.get(0):null;
+
 	}
 
 	@Override
@@ -250,14 +236,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	protected Identifier loadFromCache(Versionable versionable) {
 		String idStr= ic.getIdentifierFromInode(versionable);
 		if(idStr ==null) return null;
-		return check404(ic.getIdentifier(idStr)); 
+		return check404(ic.getIdentifier(idStr));
 	}
 
 	@Override
 	protected Identifier loadFromCacheFromInode(String inode) {
 		String idStr= ic.getIdentifierFromInode(inode);
 		if(idStr ==null) return null;
-		return check404(ic.getIdentifier(idStr)); 
+		return check404(ic.getIdentifier(idStr));
 	}
 
 	@Override
@@ -274,7 +260,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		else{
 			id= find(versionable.getVersionId());
 		}
-		
+
 		return id;
 	}
 
@@ -286,15 +272,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	@Override
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		String uuid=existingId;
 		Identifier identifier = new Identifier();
+
+		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
+
 		Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
-			identifier.setId(uuid);
 			if(versionable instanceof Contentlet){
 				Contentlet cont = (Contentlet)versionable;
 				if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
@@ -321,7 +308,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
-			identifier.setId(null);
 		}
 		Host site;
 		try {
@@ -332,17 +318,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		if(Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(site.getIdentifier())){
 			throw new DotStateException("A folder cannot be saved on the system host.");
-			
+
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
-		if(uuid!=null) {
-			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
-			ic.removeFromCacheByIdentifier(identifier.getId());
-			ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI());
-		} else {
-			saveIdentifier(identifier);
-		}
+
+		saveIdentifier(identifier);
+
 		versionable.setVersionId(identifier.getId());
 		return identifier;
 	}
@@ -354,15 +336,19 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
     protected Identifier createNewIdentifier ( Versionable versionable, Host site, String existingId) throws DotDataException {
-        String uuid = existingId;
         Identifier identifier = new Identifier();
+        if (existingId !=  null) {
+			identifier.setId(existingId);
+		}else {
+			identifier.setId(UUIDGenerator.generateUuid());
+		}
+
         if ( versionable instanceof Folder ) {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
             identifier.setParentPath( "/" );
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
-            identifier.setId( uuid );
             if ( versionable instanceof Contentlet) {
                 Contentlet cont = (Contentlet) versionable;
                 if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
@@ -388,33 +374,32 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			} else {
                 identifier.setURI( uri );
             }
-            identifier.setId( null );
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
-        if ( uuid != null ) {
-            HibernateUtil.saveWithPrimaryKey( identifier, uuid );
-            ic.removeFromCacheByIdentifier(identifier.getId());
-            ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI() );
-        } else {
-            saveIdentifier( identifier );
-        }
+
+        saveIdentifier( identifier );
+
         versionable.setVersionId( identifier.getId() );
         return identifier;
     }
 
 	@Override
-	protected List<Identifier> loadAllIdentifiers() throws DotHibernateException {
-		HibernateUtil dh = new HibernateUtil(Identifier.class);
-		List<Identifier> identList;
-		dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier");
-		identList = (List<Identifier>) dh.list();
-		return identList;
+	protected List<Identifier> loadAllIdentifiers() throws DotDataException {
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select * from identifier");
+
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 	}
 
 	@Override
 	protected boolean isIdentifier(String identifierInode) {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select count(*) as count from identifier where id = ?");
+		dc.setSQL("select count(1) as count from identifier where id = ?");
 		dc.addParam(identifierInode);
 		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
 		try {
@@ -430,46 +415,59 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier find(String x) throws DotStateException, DotDataException {
-		Identifier id = ic.getIdentifier(x);
+	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
+		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
 			return check404(id);
 		}
-		id = loadFromDb(x);
+		id = loadFromDb(identifier);
 		if(id==null || !InodeUtils.isSet(id.getId())) {
-		    id = build404(x);
+		    id = build404(identifier);
 		}
 		ic.addIdentifierToCache(id);
 		return check404(id);
 	}
 
 	@Override
-	protected Identifier saveIdentifier(Identifier id) throws DotDataException {
-		Identifier loadedObject = id;
-		if ( id != null && UtilMethods.isSet(id.getId()) ) {
-			// Load it from the db in order to avoid NonUniqueObjectException:
-			// a different object with the same identifier value was already
-			// associated with the session
-			loadedObject = loadFromDb(id.getId());
-			//Copy the changed properties back
-			loadedObject.setAssetName(id.getAssetName().toLowerCase());
-			loadedObject.setAssetType(id.getAssetType());
-			loadedObject.setParentPath(id.getParentPath().toLowerCase());
-			loadedObject.setHostId(id.getHostId());
-			loadedObject.setOwner(id.getOwner());
-			loadedObject.setSysExpireDate(id.getSysExpireDate());
-			loadedObject.setSysPublishDate(id.getSysPublishDate());
+	protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
+		String query;
+		if (id != null) {
+			if (UtilMethods.isSet(id.getId())) {
+
+				if (isIdentifier(id.getId())) {
+					query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
+				} else{
+					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+				}
+			} else {
+				id.setId(UUIDGenerator.generateUuid());
+				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+			}
+
+			DotConnect dc = new DotConnect();
+			dc.setSQL(query);
+
+			dc.addParam(id.getParentPath());
+			dc.addParam(id.getAssetName());
+			dc.addParam(id.getHostId());
+			dc.addParam(id.getAssetType());
+			dc.addParam(id.getSysPublishDate());
+			dc.addParam(id.getSysExpireDate());
+			dc.addParam(id.getId());
+
+			try{
+				dc.loadResult();
+			}catch(DotDataException e){
+				Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
+				throw new DotDataException(e);
+			}
+
+
+			ic.removeFromCacheByIdentifier(id.getId());
+			ic.removeFromCacheByURI(id.getHostId(), id.getURI());
+			return id;
 		}
-		try {
-			HibernateUtil.saveOrUpdate(loadedObject);
-		} catch (DotHibernateException e) {
-			Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
-			throw new DotDataException(e.toString());
-		}
-		ic.removeFromCacheByIdentifier(loadedObject.getId());
-		ic.removeFromCacheByURI(loadedObject.getHostId(), loadedObject.getURI());
-		id=null;
-		return loadedObject;
+		return null;
 	}
 
 	@Override
@@ -538,7 +536,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		String assetType = null;
 		try{
 			DotConnect dotConnect = new DotConnect();
-			List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
+			List<Map<String, Object>> results;
 			// First try to search in Table Identifier.
 			dotConnect.setSQL("SELECT asset_type FROM identifier WHERE id = ?");
 			dotConnect.addParam(identifier);
