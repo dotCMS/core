@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -73,8 +74,12 @@ public class FolderAPITest {
 		Assert.assertNull(APILocator.getIdentifierAPI().loadFromCache(ftest3.getIdentifier()));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
-		Identifier ident=APILocator.getIdentifierAPI().find(ftest),ident1=APILocator.getIdentifierAPI().find(ftest1),
-				ident2=APILocator.getIdentifierAPI().find(ftest2),ident3=APILocator.getIdentifierAPI().find(ftest3);
+		Identifier ident=APILocator.getIdentifierAPI().find(ftest);
+		Identifier ident1=APILocator.getIdentifierAPI().find(ftest1);
+		Identifier ident2=APILocator.getIdentifierAPI().find(ftest2);
+		Identifier ident3=APILocator.getIdentifierAPI().find(ftest3);
+
+		Logger.info(this, "Identifier's asset name:" + ident.getAssetName());
 		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
 		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
