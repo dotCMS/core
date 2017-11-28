@@ -1,108 +1,54 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
+import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Created by Jonathan Gamba
  * Date: 10/25/12
  */
-public class TemplateLayoutColumn {
+public class TemplateLayoutColumn extends ContainerHolder {
 
-    public static String TYPE_BODY = "body";//Main body column
-    public static String TYPE_COLUMN = "column";//Normal column inside a row
-    public static String TYPE_SIDEBAR = "sidebar";//Sidebar column
+    private Integer widthPercent;
+    private Integer width;
+    private int leftOffset = -1;
 
-    //ONLY FOR SIDEBARS!!!
-    public static String LOCATION_RIGHT = "right";
-    public static String LOCATION_LEFT = "left";
-    //ONLY FOR SIDEBARS!!!
+    private Map<Integer, Integer> mapWithWidthPercent = map(12, 100, 9, 75, 8, 66, 6,50, 4, 33, 3,25);
+    private Map<Integer, Integer> mapWidthPercentWith = map(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
 
-    public boolean preview;
-    public String type;
-    public String location;//ONLY FOR SIDEBARS!!!
-    public List<String> containers;
-    public Integer widthPercent;
-    public Integer width;
+    @JsonCreator
+    public TemplateLayoutColumn(@JsonProperty("containers") List<String> containers,
+                                @JsonProperty("widthPercent") final int widthPercent,
+                                @JsonProperty("leftOffset") final int leftIndex) {
+        super(containers);
 
-    public List<TemplateLayoutRow> rows;
-
-    public List<String> getContainers () {
-        return containers;
-    }
-
-    public void setContainers ( List<String> containers ) {
-        this.containers = containers;
-    }
-
-    public boolean isPreview () {
-        return preview;
-    }
-
-    public void setPreview ( boolean preview ) {
-        this.preview = preview;
+        this.widthPercent = widthPercent;
+        this.leftOffset = leftIndex;
     }
 
     public Integer getWidthPercent () {
+        if (widthPercent == null || widthPercent == 0){
+            this.widthPercent = this.mapWithWidthPercent.get(this.width);
+        }
+
         return widthPercent;
     }
 
-    public void setWidthPercent ( Integer widthPercent ) {
-        this.widthPercent = widthPercent;
-    }
-
     public Integer getWidth () {
+
+        if (width == null || width == 0) {
+            this.width = this.mapWidthPercentWith.get(this.widthPercent);
+        }
+
         return width;
     }
 
-    public void setWidth ( Integer width ) {
-        this.width = width;
+    public int getLeftOffset() {
+        return leftOffset;
     }
-
-    public String getType () {
-        return type;
-    }
-
-    public void setType ( String type ) {
-        this.type = type;
-    }
-
-    public String getLocation () {
-        return location;
-    }
-
-    public void setLocation ( String location ) {
-        this.location = location;
-    }
-
-    public List<TemplateLayoutRow> getRows () {
-        return rows;
-    }
-
-    public void setRows ( List<TemplateLayoutRow> rows ) {
-        this.rows = rows;
-    }
-
-    public Boolean isSidebar () {
-        return this.type != null && this.type.equals( TYPE_SIDEBAR );
-    }
-
-    public String draw () throws Exception {
-
-        StringBuffer sb = new StringBuffer();
-        if ( this.containers != null ) {
-            for ( String container: this.containers ) {
-
-                if ( this.preview ) {
-                    sb.append( PreviewTemplateUtil.getMockBodyContent() );
-                } else {
-                    sb.append( "#parseContainer('" ).append( container ).append( "')" );
-                }
-            }
-        }
-
-        return sb.toString();
-    }
-
 }
