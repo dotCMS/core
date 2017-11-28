@@ -9,7 +9,7 @@
             [rows]="paginationService.paginationPerPage"
             [totalRecords]="paginationService.totalRecords"
             labelPropertyName="name"
-            placeholder="{{messageService.get('editpage.container.add-container')}}"
+            placeholder="{{messageService.get('editpage.container.add.label')}}"
             persistentPlaceholder="true">
         </searchable-dropdown>
         <button class="container-selector__header-remove" pButton iconButton flat icon="fa-close" (click)="remove.emit($event)"></button>

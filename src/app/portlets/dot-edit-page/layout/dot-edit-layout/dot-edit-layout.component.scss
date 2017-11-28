@@ -1,4 +1,41 @@
+@import "mixins";
+@import "variables";
+
 :host {
     display: block;
     min-width: 750px;
+}
+
+.edit-page__toolbar,
+.edit-page__toolbar-actions {
+    display: flex;
+}
+
+.edit-page__toolbar {
+    align-items: center;
+    justify-content: space-between;
+}
+
+.edit-page__toolbar-actions {
+    align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.edit-page__toolbar-add {
+    margin-right: $basic-padding * 2;
+ }
+
+.edit-page__toolbar-template-name {
+    width: 280px;
+}
+
+.edit-page__page-title {
+    align-self: center;
+    color: $body-font-color;
+    margin: 0;
+}
+
+.edit-page__toolbar-save-template {
+    margin-right: $basic-padding * 3;
 }

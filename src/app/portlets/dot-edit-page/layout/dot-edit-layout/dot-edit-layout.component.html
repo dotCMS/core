@@ -1,3 +1,12 @@
-<button (click)="editLayoutGrid.addBox()">Add Box</button>
-<button (click)="saveLayout()">Save</button>
+<div class="edit-page__toolbar">
+    <dot-action-button [command]="addGridBox()" class="edit-page__toolbar-add"></dot-action-button>
+    <h3 class="edit-page__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
+    <input #templateName pInputText type="text" placeholder="{{messageService.get('editpage.layout.toolbar.template.name')}}" class="edit-page__toolbar-template-name" *ngIf="saveAsTemplate">
+    <div class="edit-page__toolbar-actions">
+        <p-checkbox class="edit-page__toolbar-save-template" label="{{messageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
+        <button pButton flat label="{{messageService.get('editpage.layout.toolbar.action.cancel')}}" class="edit-page__toolbar-action-cancel"></button>
+        <button pButton flat (click)="saveLayout()" label="{{messageService.get('editpage.layout.toolbar.action.save')}}" class="edit-page__toolbar-action-save"></button>
+    </div>
+</div>
+
 <dot-edit-layout-grid #editLayoutGrid [pageView]="pageView"></dot-edit-layout-grid>
