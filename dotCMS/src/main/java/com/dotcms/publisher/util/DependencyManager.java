@@ -868,7 +868,7 @@ public class DependencyManager {
 		folders.addOrClean(st.getFolder(), f.getModDate()); // add the folder dependency
 
 		try {
-			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(st);
+			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(st);
 			for (WorkflowScheme scheme : schemes) {
 				workflows.addOrClean(scheme.getId(), scheme.getModDate());
 			}

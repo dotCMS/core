@@ -21,7 +21,7 @@ String selectedStructure = (request.getParameter("selectedStructure") != null &&
 		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
-List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemeForStruct(s);
+List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(s);
 boolean isWfMandatory = false;
 for(WorkflowScheme scheme : schemes){
     if(scheme.isMandatory()){

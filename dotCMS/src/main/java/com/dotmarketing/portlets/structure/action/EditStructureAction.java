@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.google.common.collect.ImmutableList;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -375,7 +376,7 @@ public class EditStructureAction extends DotPortletAction {
 			//structureForm.setInode(type.inode());
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
-			List<WorkflowScheme> schemes = new ArrayList<>();
+			final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
 			String[] schemeIds = req.getParameterValues("workflowScheme");
 
 			for(String schemeId : schemeIds) {
@@ -384,7 +385,7 @@ public class EditStructureAction extends DotPortletAction {
 					schemes.add(scheme);
 				}
 			}
-			APILocator.getWorkflowAPI().saveSchemeForStruct(structure, schemes);
+			APILocator.getWorkflowAPI().saveSchemeForStruct(structure, schemes.build());
 			
 			/**
 			 * 

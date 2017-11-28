@@ -77,8 +77,8 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findScheme(id);
 	}
 
-	public List<WorkflowScheme> findSchemeForStruct(Structure struct) throws DotDataException {
-		return wapi.findSchemeForStruct(struct);
+	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException {
+		return wapi.findSchemesForStruct(struct);
 	}
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {

@@ -87,11 +87,9 @@ public class WorkflowProcessor {
 
 		try {
 			this.user = firingUser;
-			WorkflowStep step = null;
-			List<WorkflowStep> steps = getWorkflowAPI().findStepsByContentlet(contentlet);
-			if(null != steps && !steps.isEmpty() && steps.size() == 1) {
-				step = steps.get(0);
-				scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+			List<WorkflowStep> contentSteps = getWorkflowAPI().findStepsByContentlet(contentlet);
+			if(null != contentSteps && !contentSteps.isEmpty() && contentSteps.size() == 1) {
+				scheme = getWorkflowAPI().findScheme(contentSteps.get(0).getSchemeId());
 			}
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 

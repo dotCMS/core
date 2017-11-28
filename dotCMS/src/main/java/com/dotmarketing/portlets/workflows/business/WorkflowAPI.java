@@ -165,7 +165,7 @@ public interface WorkflowAPI {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public List<WorkflowScheme> findSchemeForStruct(Structure struct) throws DotDataException;
+	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 

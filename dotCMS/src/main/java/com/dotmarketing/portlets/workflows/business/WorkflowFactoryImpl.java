@@ -437,7 +437,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
-	public List<WorkflowScheme> findSchemeForStruct(String structId) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			schemes.add(this.findDefaultScheme());
@@ -459,7 +459,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				schemes.add(this.findDefaultScheme());
 			}
 		} catch (final Exception er) {
-			schemes.add(this.findDefaultScheme());
+			try {
+				schemes.add(this.findDefaultScheme());
+			}catch(Exception ex){
+				throw new DotDataException(ex);
+			}
 		}
 
 		cache.addForStructure(structId, schemes);
@@ -490,7 +494,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
 		List<WorkflowStep> steps = new ArrayList<>();
         List<WorkflowStep> currentSteps = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes = this.findSchemeForStruct(contentlet.getContentTypeId());
+		final List<WorkflowScheme> schemes = this.findSchemesForStruct(contentlet.getContentTypeId());
 		if (currentSteps == null) {
             WorkflowStep step = null;
 			try {
@@ -522,7 +526,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
         // if the existing task belongs to another workflow schema, then blank
         // the workflow task status
-		if (steps != null  && steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
+		if (null != steps  && steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
 		    final DotConnect db = new DotConnect();
 		    db.setSQL(sql.RESET_CONTENTLET_STEPS);
             db.addParam(StringPool.BLANK);

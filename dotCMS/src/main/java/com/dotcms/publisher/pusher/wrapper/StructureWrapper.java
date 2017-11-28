@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
@@ -36,7 +37,8 @@ public class StructureWrapper {
     }
 
     public void setWorkflowSchemaNames(List<String> workflowSchemaNames) {
-        this.workflowSchemaNames = workflowSchemaNames;
+        this.workflowSchemaNames = workflowSchemaNames instanceof ImmutableList?
+                workflowSchemaNames:ImmutableList.<String>builder().addAll(workflowSchemaNames).build();
     }
 
     public Structure getStructure() {
@@ -68,7 +70,8 @@ public class StructureWrapper {
     }
 
     public void setWorkflowSchemaIds(List<String> workflowSchemaIds) {
-        this.workflowSchemaIds = workflowSchemaIds;
+        this.workflowSchemaIds = workflowSchemaIds instanceof ImmutableList?
+                workflowSchemaIds:ImmutableList.<String>builder().addAll(workflowSchemaIds).build();
     }
     
 }

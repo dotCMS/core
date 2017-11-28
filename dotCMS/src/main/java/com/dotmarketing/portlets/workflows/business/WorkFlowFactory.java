@@ -76,7 +76,7 @@ public interface WorkFlowFactory {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public List<WorkflowScheme> findSchemeForStruct(String id) throws DotDataException;
+	public List<WorkflowScheme> findSchemesForStruct(String id) throws DotDataException;
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 

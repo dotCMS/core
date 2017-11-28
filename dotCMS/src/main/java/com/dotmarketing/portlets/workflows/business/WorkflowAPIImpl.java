@@ -54,6 +54,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -211,7 +212,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public List<WorkflowScheme> findSchemeForStruct(final Structure structure) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
         List<WorkflowScheme> schemes = new ArrayList<>();
 		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
@@ -219,7 +220,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return schemes;
 		}
 		try{
-			schemes = workFlowFactory.findSchemeForStruct(structure.getInode());
+			schemes = workFlowFactory.findSchemesForStruct(structure.getInode());
 			if(schemes.isEmpty()){
 				schemes.add(findDefaultScheme());
 			}
@@ -440,12 +441,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
 			DotSecurityException {
-		List<WorkflowAction> actions = new ArrayList<>();
+		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
         for(WorkflowStep step : steps) {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
-		actions = APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
-		return actions;
+		List<WorkflowAction> actionsList = APILocator.getPermissionAPI().filterCollection(actions.build(), PermissionAPI.PERMISSION_USE, true, user);
+		return actionsList;
 	}
 
 
@@ -966,13 +967,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
 		WorkflowScheme scheme = null;
-		List<WorkflowScheme> schemes = findSchemeForStruct(contentlet.getStructure());
+		List<WorkflowScheme> schemes = findSchemesForStruct(contentlet.getStructure());
 		if(null !=  schemes && schemes.size() ==1){
 			scheme =  schemes.get(0);
 		}else{
 			return null;
 		}
-		/* END - TODO this part need to be done in a different way */
+
 		WorkflowStep entryStep = null;
 		List<WorkflowStep> wfSteps = findSteps(scheme);
 

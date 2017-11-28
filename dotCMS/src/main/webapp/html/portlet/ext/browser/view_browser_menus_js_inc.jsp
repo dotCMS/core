@@ -45,7 +45,7 @@
 
 	<%
 	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
-	List<WorkflowScheme> fileWorkflows = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	List<WorkflowScheme> fileWorkflows = APILocator.getWorkflowAPI().findSchemesForStruct(fileStructure);
 	boolean isWfMandatory = false;
 	for(WorkflowScheme fileWorkflow : fileWorkflows){
 	    if(fileWorkflow.isMandatory()){

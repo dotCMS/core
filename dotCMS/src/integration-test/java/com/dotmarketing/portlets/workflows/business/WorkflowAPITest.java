@@ -260,7 +260,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
 
         List<WorkflowScheme> contentTypeSchemes = workflowAPI
-                .findSchemeForStruct(contentTypeStructure);
+                .findSchemesForStruct(contentTypeStructure);
         assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 3);
 
         /* Validate that the default scheme is not associated to the content tyepe*/
@@ -275,7 +275,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
 
         /* validate that the schemes area associated */
-        contentTypeSchemes = workflowAPI.findSchemeForStruct(contentTypeStructure);
+        contentTypeSchemes = workflowAPI.findSchemesForStruct(contentTypeStructure);
         assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 4);
         assertTrue(containsScheme(defaultScheme, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));

@@ -66,7 +66,7 @@
 	else{
 		wfSchemes.add(APILocator.getWorkflowAPI().findDefaultScheme());
 	}
-	List<WorkflowScheme> stWorkflowSchemes = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+	List<WorkflowScheme> stWorkflowSchemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 
 	List<Role> roles = APILocator.getRoleAPI().findAllAssignableRoles(false);
 	request.setAttribute ("roles", roles);

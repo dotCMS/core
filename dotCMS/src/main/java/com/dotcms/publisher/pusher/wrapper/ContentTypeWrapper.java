@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -36,7 +37,8 @@ public class ContentTypeWrapper {
     }
 
     public void setWorkflowSchemaNames(List<String> workflowSchemaNames) {
-        this.workflowSchemaNames = workflowSchemaNames;
+        this.workflowSchemaNames = workflowSchemaNames instanceof ImmutableList?
+                workflowSchemaNames:ImmutableList.<String>builder().addAll(workflowSchemaNames).build();
     }
 
     public ContentType getContentType() {
@@ -68,7 +70,8 @@ public class ContentTypeWrapper {
     }
 
     public void setWorkflowSchemaIds(List<String> workflowSchemaIds) {
-        this.workflowSchemaIds = workflowSchemaIds;
+        this.workflowSchemaIds = workflowSchemaIds instanceof ImmutableList?
+                workflowSchemaIds:ImmutableList.<String>builder().addAll(workflowSchemaIds).build();
     }
     
 }
