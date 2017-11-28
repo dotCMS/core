@@ -461,7 +461,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} catch (final Exception er) {
 			try {
 				schemes.add(this.findDefaultScheme());
-			}catch(Exception ex){
+			}catch(NullPointerException ex){
 				throw new DotDataException(ex);
 			}
 		}

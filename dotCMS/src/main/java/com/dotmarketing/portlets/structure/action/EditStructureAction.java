@@ -4,7 +4,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.google.common.collect.ImmutableList;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

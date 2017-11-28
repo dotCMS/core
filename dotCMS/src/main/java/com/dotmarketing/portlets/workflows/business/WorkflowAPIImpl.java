@@ -445,8 +445,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         for(WorkflowStep step : steps) {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
-		List<WorkflowAction> actionsList = APILocator.getPermissionAPI().filterCollection(actions.build(), PermissionAPI.PERMISSION_USE, true, user);
-		return actionsList;
+
+		return APILocator.getPermissionAPI().filterCollection(actions.build(), PermissionAPI.PERMISSION_USE, true, user);
 	}
 
 
