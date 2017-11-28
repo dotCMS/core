@@ -3,7 +3,7 @@ package com.dotcms.system.event.local.type.pushpublish;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -14,9 +14,8 @@ import java.util.List;
 public class PushPublishEndEvent extends PublishEvent {
 
     public PushPublishEndEvent(List<PublishQueueElement> publishQueueElements) {
-        this.setName(PushPublishEndEvent.class.getCanonicalName());
-        this.setPublishQueueElements(publishQueueElements);
-        this.setDate(new Date());
+        super(PushPublishEndEvent.class.getCanonicalName(), publishQueueElements,
+                LocalDateTime.now());
     }
     
 }

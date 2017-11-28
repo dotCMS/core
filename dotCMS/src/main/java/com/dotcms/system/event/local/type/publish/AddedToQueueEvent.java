@@ -1,8 +1,7 @@
 package com.dotcms.system.event.local.type.publish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
-
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -13,8 +12,8 @@ import java.util.List;
 public class AddedToQueueEvent extends PublishEvent {
 
     public AddedToQueueEvent(List<PublishQueueElement> publishQueueElements){
-        this.setName(AddedToQueueEvent.class.getCanonicalName());
-        this.setPublishQueueElements(publishQueueElements);
-        this.setDate(new Date());
+
+        super(AddedToQueueEvent.class.getCanonicalName(), publishQueueElements,
+                LocalDateTime.now());
     }
 }

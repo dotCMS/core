@@ -3,7 +3,7 @@ package com.dotcms.system.event.local.type.staticpublish;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  *  Object used to represent an event to be triggered when an endpoint successes during static publishing
@@ -16,9 +16,8 @@ public class SingleStaticPublishEndpointSuccessEvent extends PublishEvent {
     private PublishingEndPoint endpoint;
 
     public SingleStaticPublishEndpointSuccessEvent(PublisherConfig config, PublishingEndPoint endpoint) {
-        setName(AllStaticPublishEndpointsSuccessEvent.class.getCanonicalName());
-        setPublishQueueElements(config.getAssets());
-        setDate(new Date());
+        super(SingleStaticPublishEndpointSuccessEvent.class.getCanonicalName(), config.getAssets(),
+                LocalDateTime.now());
         setConfig(config);
         setEndpoint(endpoint);
     }

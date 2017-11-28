@@ -3,7 +3,7 @@ package com.dotcms.system.event.local.type.staticpublish;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * Object used to represent an event to be triggered when static bundles were sent successfully to all
@@ -16,9 +16,9 @@ public class AllStaticPublishEndpointsSuccessEvent extends PublishEvent {
     private PublisherConfig config = null;
 
     public AllStaticPublishEndpointsSuccessEvent(PublisherConfig config) {
-        setName(AllStaticPublishEndpointsSuccessEvent.class.getCanonicalName());
-        setPublishQueueElements(config.getAssets());
-        setDate(new Date());
+
+        super(AllStaticPublishEndpointsSuccessEvent.class.getCanonicalName(), config.getAssets(),
+                LocalDateTime.now());
         setConfig(config);
     }
 

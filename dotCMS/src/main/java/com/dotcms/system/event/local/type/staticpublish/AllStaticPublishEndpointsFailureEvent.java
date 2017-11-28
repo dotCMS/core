@@ -2,8 +2,7 @@ package com.dotcms.system.event.local.type.staticpublish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
-
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -14,9 +13,8 @@ import java.util.List;
 public class AllStaticPublishEndpointsFailureEvent extends PublishEvent {
 
     public AllStaticPublishEndpointsFailureEvent(List<PublishQueueElement> publishQueueElements) {
-        this.setName(AllStaticPublishEndpointsFailureEvent.class.getCanonicalName());
-        this.setPublishQueueElements(publishQueueElements);
-        this.setDate(new Date());
+        super(AllStaticPublishEndpointsFailureEvent.class.getCanonicalName(), publishQueueElements,
+                LocalDateTime.now());
     }
 
 }
