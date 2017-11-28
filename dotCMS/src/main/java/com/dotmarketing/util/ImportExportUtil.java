@@ -487,7 +487,8 @@ public class ImportExportUtil {
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
                 Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-                HibernateUtil.saveWithPrimaryKey(ident, ident.getId());
+
+                APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -1382,9 +1383,15 @@ public class ImportExportUtil {
                     }
                 }
             }else {
-                _dh = new HibernateUtil(_importClass);
-                String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
-                HibernateUtil.getSession().close();
+                String id;
+                if (_importClass.equals(Identifier.class)){
+                    id = "id";
+                }else{
+                    _dh = new HibernateUtil(_importClass);
+                    id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
+                    HibernateUtil.getSession().close();
+                }
+
                 boolean identityOn = false;
                 String cName = _className.substring(_className.lastIndexOf(".") + 1);
                 String tableName = "";
@@ -1403,7 +1410,6 @@ public class ImportExportUtil {
                     if (UtilMethods.isSet(id)) {
                         String prop = BeanUtils.getProperty(obj, id);
                         try {
-                            HibernateUtil.startTransaction();
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
                                 if(obj instanceof Identifier){
                                 	Identifier identifier = Identifier.class.cast(obj);
@@ -1412,16 +1418,18 @@ public class ImportExportUtil {
 	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
 	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
                                 	}
-                                    HibernateUtil.saveWithPrimaryKey(identifier, prop);
+                                    LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{
+                                    HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +
                                                 obj.getClass() + ", with the id: " + prop);
                                     Long myId = new Long(Long.parseLong(prop));
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
+                                    HibernateUtil.closeAndCommitTransaction();
                                 }
-                                HibernateUtil.closeAndCommitTransaction();
-                            } else {
 
+                            } else {
+                                HibernateUtil.startTransaction();
                                 Logger.debug(this, "Saving the object: " +
                                         obj.getClass() + ", with the id: " + prop);
 
@@ -1432,13 +1440,16 @@ public class ImportExportUtil {
                         } catch (Exception e) {
                             try {
 
-                                Logger.debug(this, "Error on trying to save: " +
-                                        e.getMessage()
-                                        + ", trying to Save the object again: " +
-                                        obj.getClass() + ", with the id: " + prop);
+                                if (obj != null && !(obj instanceof Identifier)){
+                                    HibernateUtil.startTransaction();
+                                    Logger.debug(this, "Error on trying to save: " +
+                                            e.getMessage()
+                                            + ", trying to Save the object again: " +
+                                            obj.getClass() + ", with the id: " + prop);
 
-                                HibernateUtil.saveWithPrimaryKey(obj, prop);
-                                HibernateUtil.closeAndCommitTransaction();
+                                    HibernateUtil.saveWithPrimaryKey(obj, prop);
+                                    HibernateUtil.closeAndCommitTransaction();
+                                }
                             }catch (Exception ex) {
                                 Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                 Logger.warn(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage());

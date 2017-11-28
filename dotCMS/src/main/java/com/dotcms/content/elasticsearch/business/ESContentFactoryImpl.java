@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -59,7 +57,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
