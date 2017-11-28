@@ -116,7 +116,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		menuLinkFactory.save((Link) webAsset);
 	}
 
-	public boolean delete(Link menuLink, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception {
+	public boolean delete(Link menuLink, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(menuLink, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			return deleteAsset(menuLink);
 		} else {

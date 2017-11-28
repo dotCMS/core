@@ -65,7 +65,7 @@ public interface MenuLinkAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	public boolean delete(Link menuLink, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception;
+	public boolean delete(Link menuLink, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 	
 	/**
 	 * 
