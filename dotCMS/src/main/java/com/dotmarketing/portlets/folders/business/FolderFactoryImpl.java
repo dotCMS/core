@@ -827,6 +827,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
+		CacheLocator.getIdentifierCache().removeFromCacheByInode(folder.getInode());
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
 
