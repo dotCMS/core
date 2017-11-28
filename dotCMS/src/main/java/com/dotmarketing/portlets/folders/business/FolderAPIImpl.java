@@ -561,7 +561,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
 					final String userId = user.getUserId() != null ? user.getUserId() : "";
-					final String parentFolderAsString = id.getParentPath().equals("/") || id.getParentPath().equals("/System folder") 
+					final String parentFolderAsString = "/".equals(id.getParentPath()) || "/System folder".equals(id.getParentPath()) 
 						? host.getName(): parentFolder.getPath();
 					throw new AddContentToFolderPermissionException(userId, parentFolderAsString);
 		}
