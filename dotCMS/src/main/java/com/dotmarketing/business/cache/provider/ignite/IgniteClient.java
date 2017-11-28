@@ -16,6 +16,7 @@ import org.apache.ignite.configuration.FileSystemConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.TransactionConfiguration;
 import org.apache.ignite.igfs.IgfsMode;
+import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.transactions.TransactionConcurrency;
 
 public class IgniteClient {
@@ -23,13 +24,19 @@ public class IgniteClient {
     private final static String IGNITE_CONFIG_FILE_NAME = "/ignite-dotcms.xml";
     private final static String INSTANCE_PREFIX = "dotCMS_";
     private final static String FILE_PREFIX = "dotCMS_FS_";
-    private static IgniteClient instance;
     private final String myCluster;
-
+    private final long started = System.currentTimeMillis();
+    public final String instanceName;
 
     private IgniteClient() {
-        myCluster = ClusterFactory.getClusterId().substring(0, 8) + "_" + System.currentTimeMillis();
+        this(ClusterFactory.getClusterId().substring(0, 8));
+    }
+
+    protected IgniteClient(String clusterId) {
+        myCluster = clusterId;
+        instanceName = INSTANCE_PREFIX + myCluster + "_" + started;
         ignite = initIgnite();
+
     }
 
     private Ignite initIgnite() {
@@ -43,7 +50,7 @@ public class IgniteClient {
             Logger.info(IgniteCacheProvider.class, "No " + IGNITE_CONFIG_FILE_NAME + " found, starting ignite with defaults");
         }
 
-        String igniteInstanceName = INSTANCE_PREFIX + myCluster;
+
         /***
          * 
          * THERE IS A BUG IN IGNITE 2.3 https://issues.apache.org/jira/browse/IGNITE-6944 to run
@@ -51,17 +58,21 @@ public class IgniteClient {
          * JdkMarshaller(); cfg.setMarshaller(marshaller);
          */
 
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        
-        TransactionConfiguration txCfg= new TransactionConfiguration();
-        txCfg.setDefaultTxConcurrency(TransactionConcurrency.OPTIMISTIC);
+        IgniteConfiguration cfg = new IgniteConfiguration().setIgniteInstanceName(instanceName)
+                .setClientMode(Config.getBooleanProperty("cache.ignite.clientMode", true));
+
+        TransactionConfiguration txCfg =
+                new TransactionConfiguration().setDefaultTxConcurrency(TransactionConcurrency.OPTIMISTIC);
 
         cfg.setTransactionConfiguration(txCfg);
-        cfg.setIgniteInstanceName(igniteInstanceName);
+
+        TcpCommunicationSpi commSpi = new TcpCommunicationSpi();
+        commSpi.setSlowClientQueueLimit(1000);
         
-        cfg.setClientMode(Config.getBooleanProperty("cache.ignite.clientMode", true));
-
-
+        cfg.setCommunicationSpi(commSpi);
+        
+        
+        
         FileSystemConfiguration fileSystemCfg = new FileSystemConfiguration();
         fileSystemCfg.setName(FILE_PREFIX + myCluster);
         fileSystemCfg.setDefaultMode(IgfsMode.DUAL_ASYNC);
@@ -71,31 +82,20 @@ public class IgniteClient {
         fileSystemCfg.setPathModes(pathModes);
 
         cfg.setFileSystemConfiguration(fileSystemCfg);
-        fireUp = Ignition.getOrStart(cfg);
+        
+        Logger.info(this.getClass(), "Starting Ignite:" + cfg);
+        
+        
+        fireUp = Ignition.start(cfg);
         return fireUp;
     }
 
 
 
-    public static IgniteClient getInstance() {
-        if (null == instance) {
-            synchronized (IgniteClient.class) {
-                if (null == instance) {
-                    instance = new IgniteClient();
-                }
-            }
-        }
-        return instance;
+    public synchronized void stop() {
+        Ignition.stop(instanceName, true);
     }
 
-    /**
-     * restarts ignite
-     */
-    public void reIgnite() {
-        String name = instance.myCluster;
-        instance = null;
-        Ignition.stop(name, false);
-    }
 
     public Ignite ignite() {
         return ignite;

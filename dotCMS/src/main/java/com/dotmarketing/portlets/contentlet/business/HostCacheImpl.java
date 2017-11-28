@@ -27,7 +27,15 @@ public class HostCacheImpl extends HostCache {
 
 	@Override
 	protected Host add(Host host) {
-		if(host == null){
+		if(host == null || !UtilMethods.isSet(host.getIdentifier()) || !UtilMethods.isSet(host.getHostname())){
+		    Logger.warn(this.getClass(), "----------------------------------------");
+		    Logger.warn(this.getClass(), "Storing invalid host in cache : " + host);
+
+	        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+	        for(int i=0;i<15 && st!=null && i< st.length;i++) {
+	            Logger.warn(this.getClass(), st[i].toString());
+	        }
+            Logger.warn(this.getClass(), "----------------------------------------");
 			return null;
 		}
 		String key = host.getIdentifier();
