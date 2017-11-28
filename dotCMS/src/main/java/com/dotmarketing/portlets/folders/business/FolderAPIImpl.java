@@ -552,15 +552,18 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
 		Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
-		Permissionable parent = id.getParentPath().equals("/")?host:parentFolder;
+		Permissionable parent = "/".equals(id.getParentPath()) || "/System folder".equals(id.getParentPath()) 
+				        ? host : parentFolder;
 
 		if(parent ==null){
 			throw new DotStateException("No Folder Found for id: " + id.getParentPath());
 		}
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
-			String userId = user.getUserId() != null ? user.getUserId() : "";
-			throw new AddContentToFolderPermissionException(userId, parentFolder.getPath());
+					final String userId = user.getUserId() != null ? user.getUserId() : "";
+					final String parentFolderAsString = id.getParentPath().equals("/") || id.getParentPath().equals("/System folder") 
+						? host.getName(): parentFolder.getPath();
+					throw new AddContentToFolderPermissionException(userId, parentFolderAsString);
 		}
 
 		boolean isNew = folder.getInode() == null;
