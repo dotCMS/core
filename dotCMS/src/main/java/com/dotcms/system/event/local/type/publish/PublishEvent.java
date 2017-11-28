@@ -3,6 +3,7 @@ package com.dotcms.system.event.local.type.publish;
 import com.dotcms.publisher.business.PublishQueueElement;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,7 +21,7 @@ public class PublishEvent {
     public PublishEvent(String name,
             List<PublishQueueElement> publishQueueElements, LocalDateTime date) {
         this.name = name;
-        this.publishQueueElements = publishQueueElements;
+        this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
         this.date = date;
     }
 
@@ -33,11 +34,11 @@ public class PublishEvent {
     }
 
     public List<PublishQueueElement> getPublishQueueElements() {
-        return publishQueueElements;
+        return Collections.unmodifiableList(publishQueueElements);
     }
 
     public void setPublishQueueElements(List<PublishQueueElement> publishQueueElements) {
-        this.publishQueueElements = publishQueueElements;
+        this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
     }
 
     public LocalDateTime getDate() {
