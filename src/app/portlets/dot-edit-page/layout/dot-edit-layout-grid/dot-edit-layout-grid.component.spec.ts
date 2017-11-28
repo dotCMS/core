@@ -11,10 +11,30 @@ import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Component, DebugElement } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+@Component({
+    selector: 'dot-test-host-component',
+    template: `<form [formGroup]="form">
+                    <dot-edit-layout-grid formControlName="pageView" ></dot-edit-layout-grid>
+                </form>`
+})
+class TestHostComponent {
+    form: FormGroup;
+    constructor() {
+        this.form = new FormGroup({
+            pageView: new FormControl('pageViewObj')
+        });
+    }
+}
 
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
     let fixture: ComponentFixture<DotEditLayoutGridComponent>;
+    let hostComponentfixture: ComponentFixture<TestHostComponent>;
+    let de: DebugElement;
 
     beforeEach(() => {
         const messageServiceMock = new MockMessageService({
@@ -22,7 +42,7 @@ describe('DotEditLayoutGridComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditLayoutGridComponent],
+            declarations: [DotEditLayoutGridComponent, TestHostComponent],
             imports: [NgGridModule, DotContainerSelectorModule, BrowserAnimationsModule],
             providers: [
                 DotConfirmationService,
@@ -101,4 +121,36 @@ describe('DotEditLayoutGridComponent', () => {
             expect(component.grid[2].config.sizex).toEqual(5);
         })
     );
+
+    it('should Propagate Change after a grid box is deleted', () => {
+        component.addBox();
+        const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+            conf.accept();
+        });
+        spyOn(component, 'propagateChange');
+        component.onRemoveContainer(1);
+        expect(component.propagateChange).toHaveBeenCalled();
+    });
+
+    it('should Propagate Change after a grid box is moved', () => {
+        spyOn(component, 'propagateChange');
+        component.onDragStop();
+        expect(component.propagateChange).toHaveBeenCalled();
+    });
+
+    it('should Propagate Change after a grid box is added', () => {
+        spyOn(component, 'propagateChange');
+        component.addBox();
+        expect(component.propagateChange).toHaveBeenCalled();
+    });
+
+    it('should call writeValue to define the initial value of grid', () => {
+        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-grid'));
+        const comp: DotEditLayoutGridComponent = de.componentInstance;
+        spyOn(comp, 'writeValue');
+        hostComponentfixture.detectChanges();
+        expect(comp.writeValue).toHaveBeenCalledWith('pageViewObj');
+    });
 });

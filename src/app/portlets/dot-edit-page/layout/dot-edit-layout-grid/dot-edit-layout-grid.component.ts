@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, forwardRef } from '@angular/core';
 import { NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation/dot-confirmation.service';
@@ -10,9 +10,9 @@ import {
     DOT_LAYOUT_DEFAULT_GRID
 } from '../../shared/models/dot-layout.const';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
-import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -22,9 +22,16 @@ import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.serv
 @Component({
     selector: 'dot-edit-layout-grid',
     templateUrl: './dot-edit-layout-grid.component.html',
-    styleUrls: ['./dot-edit-layout-grid.component.scss']
+    styleUrls: ['./dot-edit-layout-grid.component.scss'],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditLayoutGridComponent)
+        }
+    ]
 })
-export class DotEditLayoutGridComponent implements OnInit {
+export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor {
     @Input() pageView: DotPageView;
     grid: DotLayoutGridBox[];
 
@@ -68,9 +75,7 @@ export class DotEditLayoutGridComponent implements OnInit {
 
     ngOnInit() {
         this.messageService.getMessages(this.i18nKeys).subscribe();
-        this.grid = this.isHaveRows(this.pageView)
-            ? this.dotEditLayoutService.getDotLayoutGridBox(this.pageView)
-            : [... DOT_LAYOUT_DEFAULT_GRID];
+        this.setGridValue();
     }
 
     /**
@@ -79,6 +84,7 @@ export class DotEditLayoutGridComponent implements OnInit {
     addBox(): void {
         const conf: NgGridItemConfig = this.setConfigOfNewContainer();
         this.grid.push({ config: conf, containers: [] });
+        this.propagateChange(this.getModel());
     }
 
     /**
@@ -107,6 +113,7 @@ export class DotEditLayoutGridComponent implements OnInit {
      */
     onDragStop(): void {
         this.deleteEmptyRows();
+        this.propagateChange(this.getModel());
     }
 
     /**
@@ -117,10 +124,40 @@ export class DotEditLayoutGridComponent implements OnInit {
         return this.dotEditLayoutService.getDotLayoutBody(this.grid);
     }
 
+    /**
+     * Write a new value to the element
+     * @param {DotPageView} value
+     */
+    writeValue(value: DotPageView): void {
+        if (value) {
+            this.pageView = value || null;
+            this.setGridValue();
+        }
+    }
+
+    propagateChange = (_: any) => {};
+
+    /**
+     * Set the function to be called when the control receives a change event.
+     * @param fn
+     */
+    registerOnChange(fn: any): void {
+        this.propagateChange = fn;
+    }
+
+    registerOnTouched(): void {}
+
+    private setGridValue(): void {
+        this.grid = this.isHaveRows(this.pageView)
+            ? this.dotEditLayoutService.getDotLayoutGridBox(this.pageView)
+            : [...DOT_LAYOUT_DEFAULT_GRID];
+    }
+
     private removeContainer(index: number): void {
         if (this.grid[index]) {
             this.grid.splice(index, 1);
             this.deleteEmptyRows();
+            this.propagateChange(this.getModel());
         }
     }
 
