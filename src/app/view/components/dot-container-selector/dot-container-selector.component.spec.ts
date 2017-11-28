@@ -10,6 +10,7 @@ import { Observable } from 'rxjs/Observable';
 import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
@@ -26,7 +27,7 @@ describe('ContainerSelectorComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotContainerSelectorComponent],
-            imports: [ SearchableDropDownModule ],
+            imports: [ SearchableDropDownModule, BrowserAnimationsModule],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
                 IframeOverlayService,

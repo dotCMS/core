@@ -7,6 +7,7 @@ import { MockMessageService } from '../../../../../test/message-service.mock';
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('SearchableDropdownComponent', () => {
 
@@ -16,19 +17,19 @@ describe('SearchableDropdownComponent', () => {
   let fixture: ComponentFixture<SearchableDropdownComponent>;
   let de: DebugElement;
   let el: HTMLElement;
-  let data = [];
+  const data = [];
   let rows: number;
   let pageLinkSize: number;
 
   beforeEach(async(() => {
 
-    let messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockMessageService({
         'search': 'Search'
     });
 
     DOTTestBed.configureTestingModule({
         declarations: [ SearchableDropdownComponent ],
-        imports: [ ...SEARCHABLE_NGFACES_MODULES],
+        imports: [ ...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule],
         providers: [
             { provide: MessageService, useValue: messageServiceMock },
         ]
@@ -57,12 +58,12 @@ describe('SearchableDropdownComponent', () => {
   it('should renderer the pagination links', () => {
     fixture.detectChanges();
 
-    let paginator = fixture.debugElement.query(By.css('p-paginator'));
+    const paginator = fixture.debugElement.query(By.css('p-paginator'));
 
-    let componentInstance = paginator.componentInstance;
-    let rowParameter = componentInstance.rows;
-    let totalRecordsParam = componentInstance.totalRecords;
-    let pageLinkSizeParam = componentInstance.pageLinkSize;
+    const componentInstance = paginator.componentInstance;
+    const rowParameter = componentInstance.rows;
+    const totalRecordsParam = componentInstance.totalRecords;
+    const pageLinkSizeParam = componentInstance.pageLinkSize;
 
     expect(rows).toEqual(rowParameter);
     expect(NROWS).toEqual(totalRecordsParam);
@@ -75,19 +76,19 @@ describe('SearchableDropdownComponent', () => {
 
     fixture.detectChanges();
 
-    let pDataList = fixture.debugElement.query(By.css('p-dataList')).componentInstance;
+    const pDataList = fixture.debugElement.query(By.css('p-dataList')).componentInstance;
     expect(comp.data).toEqual(pDataList.value);
   });
 
   it('should the pageChange call the paginate method', fakeAsync(() => {
-    let first = 2;
-    let page = 3;
-    let pageCount = 4;
-    let rows = 5;
-    let filter = 'filter';
+    const first = 2;
+    const page = 3;
+    const pageCount = 4;
+    rows = 5;
+    const filter = 'filter';
     let event;
 
-    let input = fixture.debugElement.query(By.css('input[type="text"]'));
+    const input = fixture.debugElement.query(By.css('input[type="text"]'));
     input.nativeElement.value = filter;
 
     comp.pageChange.subscribe(e => {
@@ -95,8 +96,8 @@ describe('SearchableDropdownComponent', () => {
     });
 
     fixture.detectChanges();
-    let dataList = fixture.debugElement.query(By.css('p-dataList'));
-    let dataListComponentInstance = dataList.componentInstance;
+    const dataList = fixture.debugElement.query(By.css('p-dataList'));
+    const dataListComponentInstance = dataList.componentInstance;
 
     dataListComponentInstance.onLazyLoad.emit({
       first: first,
@@ -124,12 +125,12 @@ describe('SearchableDropdownComponent', () => {
 
     fixture.detectChanges();
 
-    let items = fixture.debugElement.queryAll(By.css('span'));
+    const items = fixture.debugElement.queryAll(By.css('span'));
     items[0].triggerEventHandler('click', null);
   });
 
   it('should be valueString equals to placeholder', () => {
-    let placeholderValue = 'testing placeholder';
+    const placeholderValue = 'testing placeholder';
 
     comp.ngOnChanges({
         placeholder: new SimpleChange(null, placeholderValue, true)

@@ -101,7 +101,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         expect(addRowContainer.nativeElement.classList.contains('dot-add-rows__select')).toEqual(true);
     });
 
-   it('should focus the first column selection after click on Add Rows button', async(() => {
+    it('should focus the first column selection after click on Add Rows button', (done) => {
         fixture.detectChanges();
 
         comp.setColumnSelect();
@@ -111,10 +111,11 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
         setTimeout(() => {
             expect(document.activeElement).toBe(firstElement.nativeElement);
+            done();
         }, 201);
 
         expect(firstElement.nativeElement.classList).toContain('active');
-    }));
+    });
 
     it('should bind keyboard events after click on Add Rows button', () => {
         fixture.detectChanges();

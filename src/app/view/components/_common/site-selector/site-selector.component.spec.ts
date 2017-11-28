@@ -21,6 +21,7 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component/se
 import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('SiteSelectorComponent', () => {
     let comp: SiteSelectorComponent;
@@ -38,7 +39,7 @@ describe('SiteSelectorComponent', () => {
 
             DOTTestBed.configureTestingModule({
                 declarations: [SiteSelectorComponent],
-                imports: [SearchableDropDownModule],
+                imports: [SearchableDropDownModule, BrowserAnimationsModule],
                 providers: [
                     { provide: MessageService, useValue: messageServiceMock },
                     { provide: SiteService, useValue: siteServiceMock },

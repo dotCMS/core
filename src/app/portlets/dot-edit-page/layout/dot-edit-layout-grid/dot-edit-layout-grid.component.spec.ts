@@ -10,6 +10,7 @@ import { NgGridModule } from 'angular2-grid';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
@@ -22,7 +23,7 @@ describe('DotEditLayoutGridComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotEditLayoutGridComponent],
-            imports: [NgGridModule, DotContainerSelectorModule],
+            imports: [NgGridModule, DotContainerSelectorModule, BrowserAnimationsModule],
             providers: [
                 DotConfirmationService,
                 DotEditLayoutService,
