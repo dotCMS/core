@@ -290,7 +290,7 @@ public class LoginAction extends Action {
 		UserManagerUtil.sendPassword(
 			PortalUtil.getCompanyId(req), emailAddress, locale);
 
-		SecurityLogger.logInfo(this.getClass(),"Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
+		SecurityLogger.logInfo(this.getClass(),"Email address " + emailAddress + " has requested to reset his password from IP: " + req.getRemoteAddr());
 
 		SessionMessages.add(req, "new_password_sent", emailAddress);
 	}
