@@ -328,16 +328,16 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        } else if (groupPushStats.getCountGroupFailed() > 0
-				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
-            // If bundle was installed in some groups only
-            bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupFailed() > 0
+				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
+			// If bundle was installed in some groups only
+			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
             // If bundle was installed in all groups
             PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus = Status.SUCCESS;

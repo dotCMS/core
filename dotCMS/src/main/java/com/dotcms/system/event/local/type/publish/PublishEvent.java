@@ -21,7 +21,9 @@ public class PublishEvent {
     public PublishEvent(String name,
             List<PublishQueueElement> publishQueueElements, LocalDateTime date) {
         this.name = name;
-        this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
+        if (publishQueueElements != null) {
+            this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
+        }
         this.date = date;
     }
 
@@ -34,11 +36,15 @@ public class PublishEvent {
     }
 
     public List<PublishQueueElement> getPublishQueueElements() {
-        return Collections.unmodifiableList(publishQueueElements);
+        return publishQueueElements!=null?Collections.unmodifiableList(publishQueueElements):null;
     }
 
     public void setPublishQueueElements(List<PublishQueueElement> publishQueueElements) {
-        this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
+        if (publishQueueElements != null) {
+            this.publishQueueElements = Collections.unmodifiableList(publishQueueElements);
+        }else{
+            this.publishQueueElements = null;
+        }
     }
 
     public LocalDateTime getDate() {
