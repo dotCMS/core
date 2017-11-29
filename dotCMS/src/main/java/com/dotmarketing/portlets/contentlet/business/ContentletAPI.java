@@ -25,12 +25,14 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.text.AbstractDocument.Content;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -141,6 +143,17 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException 
 	 */
 	public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Gets a list of Contentlets using a specific Template
+	 * @param template
+	 * @param user to check for permissions
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws  DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content

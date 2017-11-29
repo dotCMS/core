@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotmarketing.portlets.templates.model.Template;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -111,6 +112,15 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 */
 	public default void findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException{}
+
+	/**
+	 * Gets a list of Pages for a specific Template
+	 * @param template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @throws DotDataException
+	 */
+	public default void findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException {}
 
 	/**
 	 * Gets a list of Contentlets from a given parent host  

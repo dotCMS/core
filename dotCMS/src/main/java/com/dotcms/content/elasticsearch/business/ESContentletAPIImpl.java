@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -336,6 +338,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotRuntimeException(e.getMessage(), e);
         }
 
+    }
+
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        try {
+            return permissionAPI.filterCollection(search("+_all:" + template.getIdentifier() + " +baseType:" + BaseContentType.HTMLPAGE.getType(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 
     @CloseDBIfOpened
