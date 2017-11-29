@@ -6,6 +6,9 @@
 <%@ page import="java.net.URLDecoder"%>
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
 
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <style type="text/css">
 	.show {
@@ -269,7 +272,7 @@
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
 <!-- START Properties Tab -->
-	<div id="templatePropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>"  onShow="showEditButtonsRow()">
+	<div id="templatePropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>"  onShow="showEditButtonsRow()" <%= "properties".equals(request.getParameter("selectedTab")) ? "data-dojo-props=\"selected:true\"" : ""%>>
 		<div class="form-horizontal">
 
 			<% if(host != null) { %>
@@ -398,7 +401,7 @@
 	boolean canEditAsset = perAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	if (canEditAsset) {
 %>
-	<div id="filePermissionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>"  onShow="hideEditButtonsRow()">
+	<div id="filePermissionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>"  onShow="hideEditButtonsRow()"  <%= "permissions".equals(request.getParameter("selectedTab")) ? "data-dojo-props=\"selected:true\"" : ""%>>
 		<%
 			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template);
 		%>
@@ -412,7 +415,7 @@
 <!-- Versions Tab -->
 	<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
 		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
-		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>"  onShow="showEditButtonsRow()">
+		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>"  onShow="showEditButtonsRow()"  <%= "history".equals(request.getParameter("selectedTab")) ? "data-dojo-props=\"selected:true\"" : ""%>>
 			<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 		</div>
 	<%} %>
