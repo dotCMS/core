@@ -8,8 +8,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -25,6 +24,9 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public static final String UNLOCKED 			  = "unlocked";
 	public static final String LOCKED_OR_UNLOCKED     = "both";
 
+	private final static Set<String> REQUIRES_LOCK_OPTION_SET =
+			Collections.unmodifiableSet(new HashSet<>(Arrays.asList(LOCKED, UNLOCKED, LOCKED_OR_UNLOCKED)));
+
 	private static final long serialVersionUID = 1L;
 
 	private String id;
@@ -37,6 +39,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private String icon;
 	private boolean roleHierarchyForAssign;
 	private boolean requiresCheckout;
+	private String  requiresCheckoutOption;
 	private boolean assignable;
 	private boolean commentable;
 	private int order;
@@ -95,12 +98,51 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return requiresCheckout;
 	}
 
+	/**
+	 * @deprecated see {@link #getRequiresCheckoutOption()}
+	 * @return boolean
+	 */
+	@Deprecated
 	public boolean isRequiresCheckout() {
 		return requiresCheckout;
     }
 
+	/**
+	 * @deprecated see {@link #setRequiresCheckoutOption(String)}
+	 * p-pp0()}
+	 * @param requiresCheckout
+	 */
+	@Deprecated
 	public void setRequiresCheckout(boolean requiresCheckout) {
 		this.requiresCheckout = requiresCheckout;
+	}
+
+	/**
+	 * Option for requires checkout:
+	 * WorkflowAction.LOCKED
+	 * WorkflowAction.UNLOCKED
+	 * WorkflowAction.LOCKED_OR_UNLOCKED
+	 * @return String
+	 */
+	public String getRequiresCheckoutOption() {
+		return requiresCheckoutOption;
+	}
+
+	/**
+	 * Set the option for the requires checkout, valid options:
+	 * WorkflowAction.LOCKED
+	 * WorkflowAction.UNLOCKED
+	 * WorkflowAction.LOCKED_OR_UNLOCKED
+	 * @param requiresCheckoutOption
+	 */
+	public void setRequiresCheckoutOption(String requiresCheckoutOption) {
+
+		if (REQUIRES_LOCK_OPTION_SET.contains(requiresCheckoutOption)) {
+			this.requiresCheckoutOption = requiresCheckoutOption;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid option for RequiresCheckoutOption, valid options: " + REQUIRES_LOCK_OPTION_SET);
+		}
 	}
 
 	public boolean isRoleHierarchyForAssign() {

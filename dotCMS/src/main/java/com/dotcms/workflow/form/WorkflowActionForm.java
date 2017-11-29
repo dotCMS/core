@@ -4,8 +4,10 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import org.omg.CORBA.StringHolder;
 
-import java.util.List;
+import java.util.*;
 
 @JsonDeserialize(builder = WorkflowActionForm.Builder.class)
 public class WorkflowActionForm extends Validated {
@@ -26,8 +28,9 @@ public class WorkflowActionForm extends Validated {
     private final boolean       actionAssignable;
     @NotNull
     private final boolean       actionCommentable;
+
     @NotNull
-    private final boolean       requiresCheckout;
+    private final RequiresCheckoutOption requiresCheckoutOption;
     @NotNull
     private final boolean       actionRoleHierarchyForAssign;
     private final boolean       roleHierarchyForAssign;
@@ -68,8 +71,8 @@ public class WorkflowActionForm extends Validated {
         return actionCommentable;
     }
 
-    public boolean isRequiresCheckout() {
-        return requiresCheckout;
+    public RequiresCheckoutOption getRequiresCheckoutOption() {
+        return requiresCheckoutOption;
     }
 
     public boolean isActionRoleHierarchyForAssign() {
@@ -102,7 +105,7 @@ public class WorkflowActionForm extends Validated {
                 ", actionIcon='" + actionIcon + '\'' +
                 ", actionAssignable=" + actionAssignable +
                 ", actionCommentable=" + actionCommentable +
-                ", requiresCheckout=" + requiresCheckout +
+                ", requiresCheckoutOption=" + requiresCheckoutOption +
                 ", actionRoleHierarchyForAssign=" + actionRoleHierarchyForAssign +
                 ", roleHierarchyForAssign=" + roleHierarchyForAssign +
                 ", actionNextStep='" + actionNextStep + '\'' +
@@ -113,21 +116,46 @@ public class WorkflowActionForm extends Validated {
 
     public WorkflowActionForm(final Builder builder) {
 
-        this.actionId           = builder.actionId;
-        this.schemeId           = builder.schemeId;
-        this.stepId             = builder.stepId;
-        this.actionName         = builder.actionName;
-        this.whoCanUse          = builder.whoCanUse;
-        this.actionIcon         = builder.actionIcon;
-        this.actionCommentable  = builder.actionCommentable;
-        this.requiresCheckout   = builder.requiresCheckout;
-        this.actionNextStep     = builder.actionNextStep;
-        this.actionNextAssign   = builder.actionNextAssign;
-        this.actionCondition    = builder.actionCondition;
-        this.actionAssignable   = builder.actionAssignable;
+        this.actionId                   = builder.actionId;
+        this.schemeId                   = builder.schemeId;
+        this.stepId                     = builder.stepId;
+        this.actionName                 = builder.actionName;
+        this.whoCanUse                  = builder.whoCanUse;
+        this.actionIcon                 = builder.actionIcon;
+        this.actionCommentable          = builder.actionCommentable;
+        this.requiresCheckoutOption     = valueOf(builder.requiresCheckoutOption);
+        this.actionNextStep             = builder.actionNextStep;
+        this.actionNextAssign           = builder.actionNextAssign;
+        this.actionCondition            = builder.actionCondition;
+        this.actionAssignable           = builder.actionAssignable;
         this.actionRoleHierarchyForAssign = builder.actionRoleHierarchyForAssign;
-        this.roleHierarchyForAssign = (actionAssignable && actionRoleHierarchyForAssign);
+        this.roleHierarchyForAssign     = (actionAssignable && actionRoleHierarchyForAssign);
         this.checkValid();
+    }
+
+    private RequiresCheckoutOption valueOf (final String option) {
+
+        try {
+            return RequiresCheckoutOption.valueOf(option.toUpperCase());
+        } catch (Throwable e) {
+            return RequiresCheckoutOption.BOTH;
+        }
+    }
+
+    public enum RequiresCheckoutOption {
+
+        LOCKED(WorkflowAction.LOCKED),
+        UNLOCKED(WorkflowAction.UNLOCKED),
+        BOTH(WorkflowAction.LOCKED_OR_UNLOCKED);
+
+        private final String name;
+        RequiresCheckoutOption (final String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        };
     }
 
     public static final class Builder {
@@ -152,7 +180,7 @@ public class WorkflowActionForm extends Validated {
         @JsonProperty(required = true)
         private boolean       actionCommentable;
         @JsonProperty(required = true)
-        private boolean       requiresCheckout;
+        private String       requiresCheckoutOption;
         @JsonProperty(required = true)
         private boolean       actionRoleHierarchyForAssign;
         @JsonProperty(required = true)
@@ -202,8 +230,8 @@ public class WorkflowActionForm extends Validated {
             return this;
         }
 
-        public Builder requiresCheckout(boolean requiresCheckout) {
-            this.requiresCheckout = requiresCheckout;
+        public Builder requiresCheckoutOption(String requiresCheckoutOption) {
+            this.requiresCheckoutOption = requiresCheckoutOption;
             return this;
         }
 

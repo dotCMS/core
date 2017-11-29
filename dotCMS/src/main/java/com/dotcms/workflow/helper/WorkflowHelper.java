@@ -407,7 +407,8 @@ public class WorkflowHelper {
         newAction.setNextStep   (workflowActionForm.getActionNextStep());
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
-        newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
+        newAction.setRequiresCheckoutOption((null != workflowActionForm.getRequiresCheckoutOption())?
+                workflowActionForm.getRequiresCheckoutOption().getName():WorkflowAction.LOCKED_OR_UNLOCKED);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
 
         try {

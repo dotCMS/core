@@ -192,10 +192,16 @@
 						<dt></dt>
 						<dd>
 							<div class="checkbox">
-								<input type="checkbox" name="actionRequiresCheckout"
-										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
-										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
+
+								<select id="actionRequiresCheckoutOption" name="actionRequiresCheckoutOption" onchange="actionAdmin.doChange()">
+
+									<option <%=(WorkflowAction.LOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.LOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked")%></option>
+									<option <%=(WorkflowAction.UNLOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.UNLOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked")%></option>
+									<option <%=(WorkflowAction.LOCKED_OR_UNLOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.LOCKED_OR_UNLOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Both")%></option>
+
+								</select>
+
+								<label for="actionRequiresCheckoutOption"><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
 							</div>
 							<div class="checkbox">
 								<input type="checkbox" name="actionCommentable"
