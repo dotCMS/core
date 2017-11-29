@@ -1,8 +1,14 @@
 package com.dotmarketing.portlets.templates.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,6 +132,43 @@ public class TemplateAPITest extends IntegrationTestBase {
         APILocator.getContainerAPI().delete(container, user, false);
 
         AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
+    }
+
+    @Test
+    public void findPagesByTemplate() throws Exception {
+        User user=APILocator.getUserAPI().getSystemUser();
+        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+
+        //Create a Template
+        Template template=new Template();
+        template.setTitle("Title");
+        template.setBody("Body");
+        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+
+        //Create a Folder
+        Folder folder=APILocator.getFolderAPI().createFolders(
+                "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, user, false);
+
+        //Create a Page inside the Folder assigned to the newly created Template
+        HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
+
+        //Find pages by template
+        List<Contentlet> pages = APILocator.getContentletAPI().findPagesByTemplate(template, user, false);
+        assertFalse(pages.isEmpty()); //Should contain dependencies
+        assertTrue(pages.size() == 1); //Only one dependency, the page we just created
+        assertEquals(page.getInode(), pages.get(0).getInode()); //Page inode should be the same
+
+
+        //Delete the page
+        HTMLPageDataGen.remove(page);
+        //Now find again pages by template
+        pages = APILocator.getContentletAPI().findPagesByTemplate(template, user, false);
+        assertTrue(pages.isEmpty()); //Should NOT contain dependencies
+
+        //Clean up
+        APILocator.getTemplateAPI().delete(template, user, false);
+        APILocator.getFolderAPI().delete(folder, user, false);
     }
 
     @Test
