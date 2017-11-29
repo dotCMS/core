@@ -1,9 +1,9 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.api.system.user.UserService;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -11,31 +11,25 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SendPasswordException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
-import com.liferay.portal.ejb.UserManager;
-import com.liferay.portal.ejb.UserManagerFactory;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.LocaleUtil;
-
+import java.io.Serializable;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Locale;
 
 /**
  * This resource sends email with a link to recovery your password, if it is successfully returns the User email where the message is gonna be sent,
@@ -81,7 +75,7 @@ public class ForgotPasswordResource implements Serializable {
                                          @Context final HttpServletResponse response,
                                          final ForgotPasswordForm forgotPasswordForm) {
 
-        Response res = null;
+        Response res;
         String emailAddress = null;
         final Locale locale = LocaleUtil.getLocale(request);
 
@@ -94,13 +88,16 @@ public class ForgotPasswordResource implements Serializable {
                                 (forgotPasswordForm.getUserId()).getEmailAddress():
                         forgotPasswordForm.getUserId();
 
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format(
+                            "Email address [%s] has request to reset his password from IP [%s].",
+                            emailAddress, request.getRemoteAddr()));
+
             this.userService.sendResetPassword(
                     this.companyAPI.getCompanyId(request), emailAddress, locale);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
-            SecurityLogger.logInfo(this.getClass(),
-                    "Email address " + emailAddress + " has request to reset his password from IP: "
-                            + request.getRemoteAddr());
+
         } catch (NoSuchUserException e) {
 
             boolean displayNotSuchUserError =
@@ -108,23 +105,21 @@ public class ForgotPasswordResource implements Serializable {
 
             if (displayNotSuchUserError) {
 
+                SecurityLogger.logInfo(this.getClass(),
+                        String.format(
+                                "User [%s] does NOT exist in the Database. IP [%s]. DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property is TRUE",
+                                emailAddress, request.getRemoteAddr()));
+
                 res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "the-email-address-you-requested-is-not-registered-in-our-database");
             } else {
 
                 SecurityLogger.logInfo(this.getClass(),
-                        "User does NOT exist in the Database, returning OK message for security reasons");
+                        String.format(
+                                "User [%s] does NOT exist in the Database, returning OK message for security reasons. IP [%s]",
+                                emailAddress, request.getRemoteAddr()));
 
-                try {
-
-                    res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
-                            (Arrays.asList(new ErrorEntity("a-new-password-has-been-sent-to-x",
-                                    LanguageUtil.format(locale,
-                                            "a-new-password-has-been-sent-to-x", emailAddress, false)
-                            )))).build();
-                } catch (LanguageException e1) {
-                    // Quiet
-                }
+                res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
             }
         } catch (SendPasswordException e) {
 
@@ -136,6 +131,7 @@ public class ForgotPasswordResource implements Serializable {
                     "please-enter-a-valid-email-address");
         } catch (Exception e) {
 
+            Logger.error(this.getClass(), "Error processing forgot password request", e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
