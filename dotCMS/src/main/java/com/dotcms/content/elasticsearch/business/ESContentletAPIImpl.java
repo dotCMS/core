@@ -340,9 +340,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
         try {
-            return permissionAPI.filterCollection(search("+_all:" + template.getIdentifier() + " +baseType:" + BaseContentType.HTMLPAGE.getType(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(
+                    search("+_all:" + template.getIdentifier() + " +baseType:"
+                                    + BaseContentType.HTMLPAGE.getType(), -1, 0, null, user,
+                            respectFrontendRoles),
+                    PermissionAPI.PERMISSION_READ,
+                    respectFrontendRoles,
+                    user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);

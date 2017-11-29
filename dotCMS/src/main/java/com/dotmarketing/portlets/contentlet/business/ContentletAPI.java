@@ -153,7 +153,8 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws  DotDataException, DotSecurityException;
+	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws  DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content

@@ -765,7 +765,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) throws  DotDataException, DotSecurityException {
+	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws  DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findPagesByTemplate(template, user, respectFrontendRoles);
 			if(!preResult){
