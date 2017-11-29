@@ -97,7 +97,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                 this.removeContainer(index);
             },
             header: this.messageService.get('editpage.confirm.header'),
-            message: `${this.messageService.get('editpage.confirm.message.delete')}<span>${this.messageService.get(
+            message: `${this.messageService.get('editpage.confirm.message.delete')} <span>${this.messageService.get(
                 'editpage.confirm.message.delete.warning'
             )}</span>`,
             footerLabel: {

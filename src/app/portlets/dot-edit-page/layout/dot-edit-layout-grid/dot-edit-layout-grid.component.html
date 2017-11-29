@@ -1,6 +1,4 @@
-<div [ngGrid]="gridConfig"
-     (onDragStop)="onDragStop()"
-     class="dot-edit-layout-grid__guides">
+<div [ngGrid]="gridConfig" (onDragStop)="onDragStop()">
     <dot-container-selector *ngFor="let gridBox of grid; let i = index"
         [(ngGridItem)]="gridBox.config"
         [selectedContainersList]="gridBox.containers"

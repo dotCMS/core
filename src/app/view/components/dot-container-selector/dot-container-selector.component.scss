@@ -3,7 +3,7 @@
 
 .container-selector {
     height: 206px;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $gray-light;
     background-color: $white;
 
     .ui-button[iconButton] {
@@ -20,7 +20,7 @@
     justify-content: space-between;
     align-items: center;
     padding: $basic-padding $basic-padding * 2;
-    background-color: $gray-lighter;
+    background-color: $gray-lightest-x;
 }
 
 .container-selector__list {

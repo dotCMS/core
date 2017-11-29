@@ -11,4 +11,4 @@ import { CommonModule } from '@angular/common';
     exports: [DotLegacyTemplateAdditionalActionsComponent],
     providers: [DotMenuService]
 })
-export class DotTemplateAdditionalActionsIFrameModule {}
+export class DotTemplateAdditionalActionsIframeModule {}

@@ -2,6 +2,7 @@
     height: $button-height;
     margin-right: 0;
     outline: none;
+    text-transform: uppercase;
     transition: background-color $field-animation-speed ease-in,
         box-shadow $field-animation-speed ease-in, color $field-animation-speed ease-in;
 }
@@ -116,5 +117,9 @@
 
     .ui-button-text-icon-right & {
         padding: 0 $basic-padding * 3.5 0 $button-padding;
+    }
+
+    [flat].ui-button-text-only & {
+        padding: 0 $basic-padding;
     }
 }

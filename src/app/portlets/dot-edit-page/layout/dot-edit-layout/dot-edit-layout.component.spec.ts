@@ -17,6 +17,14 @@ import { PaginatorService } from '../../../../api/services/paginator';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { Component } from '@angular/core';
+
+
+@Component({
+    selector: 'dot-template-addtional-actions-menu',
+    template: ''
+})
+class MockAdditionalOptionsComponent {}
 
 describe('DotEditLayoutComponent', () => {
     let component: DotEditLayoutComponent;
@@ -48,7 +56,7 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditLayoutComponent],
+            declarations: [DotEditLayoutComponent, MockAdditionalOptionsComponent],
             imports: [DotEditLayoutGridModule, RouterTestingModule, BrowserAnimationsModule, DotActionButtonModule],
             providers: [
                 DotConfirmationService,
@@ -79,30 +87,35 @@ describe('DotEditLayoutComponent', () => {
         expect(gridLayout).toBeDefined();
     });
 
+    it('should have dot-template-addtional-actions-menu', () => {
+        const aditionalOptions: DebugElement = fixture.debugElement.query(By.css('dot-template-addtional-actions-menu'));
+        expect(aditionalOptions).toBeDefined();
+    });
+
     it('should have add box button', () => {
-        const addBoxButton: DebugElement = fixture.debugElement.query(By.css('.edit-page__toolbar-add'));
+        const addBoxButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-add'));
         expect(addBoxButton).toBeDefined();
     });
 
     it ('should have page title', () => {
-        const pageTitle: DebugElement = fixture.debugElement.query(By.css('.edit-page__page-title'));
+        const pageTitle: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__page-title'));
         expect(pageTitle.nativeElement.textContent).toEqual('Hello World');
     });
 
     it('should have cancel button', () => {
-        const cancelButton: DebugElement = fixture.debugElement.query(By.css('.edit-page__toolbar-action-cancel'));
+        const cancelButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-cancel'));
         expect(cancelButton).toBeDefined();
         expect(cancelButton.nativeElement.textContent).toEqual('Cancel');
     });
 
     it('should have save button', () => {
-        const saveButton: DebugElement = fixture.debugElement.query(By.css('.edit-page__toolbar-action-save'));
+        const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
         expect(saveButton).toBeDefined();
         expect(saveButton.nativeElement.textContent).toEqual('Save');
     });
 
     it('should have checkbox to save as template', () => {
-        const checkboxSave: DebugElement = fixture.debugElement.query(By.css('.edit-page__toolbar-save-template'));
+        const checkboxSave: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save-template'));
         expect(checkboxSave).toBeDefined();
         expect(checkboxSave.nativeElement.textContent).toContain('Save as template');
     });
@@ -111,10 +124,34 @@ describe('DotEditLayoutComponent', () => {
         component.saveAsTemplate = true;
         fixture.detectChanges();
 
-        const pageTitle: DebugElement = fixture.debugElement.query(By.css('.edit-page__page-title'));
+        const pageTitle: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__page-title'));
         expect(pageTitle === null).toBe(true);
 
-        const templateNameInput: DebugElement = fixture.debugElement.query(By.css('.edit-page__toolbar-template-name'));
+        const templateNameInput: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-template-name'));
         expect(templateNameInput).toBeDefined();
+    });
+
+    xit('should have header in the template', () => {
+
+    });
+
+    xit('should NOT have header in the template', () => {
+
+    });
+
+    xit('should have footer in the template', () => {
+
+    });
+
+    xit('should NOT have footer in the template', () => {
+
+    });
+
+    xit('should have sidebar in the template', () => {
+
+    });
+
+    xit('should NOT have sidebar in the template', () => {
+
     });
 });

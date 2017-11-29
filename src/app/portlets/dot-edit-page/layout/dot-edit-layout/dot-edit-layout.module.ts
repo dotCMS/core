@@ -5,6 +5,7 @@ import { DotEditLayoutGridModule } from '../dot-edit-layout-grid/dot-edit-layout
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { CheckboxModule, ButtonModule, InputTextModule } from 'primeng/primeng';
 import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotTemplateAdditionalActionsModule } from '../dot-template-additional-actions/dot-template-additional-actions.module';
 
 @NgModule({
     declarations: [DotEditLayoutComponent],
@@ -14,6 +15,7 @@ import { DotActionButtonModule } from '../../../../view/components/_common/dot-a
         CommonModule,
         DotActionButtonModule,
         DotEditLayoutGridModule,
+        DotTemplateAdditionalActionsModule,
         InputTextModule
     ],
     exports: [DotEditLayoutComponent],

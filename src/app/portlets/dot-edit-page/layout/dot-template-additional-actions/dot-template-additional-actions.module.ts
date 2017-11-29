@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { IFrameModule } from '../../../../view/components/_common/iframe/index';
 import { DotTemplateAdditionalActionsMenuModule } from './dot-template-additional-actions-menu/dot-template-additional-actions-menu.module';
 import {
-    DotTemplateAdditionalActionsIFrameModule
+    DotTemplateAdditionalActionsIframeModule
 } from './dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.module';
 import {
     DotLegacyTemplateAdditionalActionsComponent
@@ -17,7 +17,7 @@ import {
     declarations: [],
     imports: [
         DotTemplateAdditionalActionsMenuModule,
-        DotTemplateAdditionalActionsIFrameModule
+        DotTemplateAdditionalActionsIframeModule
     ],
     exports: [
         DotLegacyTemplateAdditionalActionsComponent,

@@ -10,42 +10,35 @@
 
  .ui-dialog {
     overflow: inherit;
-    padding: $dialog-padding * 2;
 
     &.ui-shadow {
         box-shadow: $md-shadow-3;
     }
 
-    .ui-dialog-titlebar,
-    .ui-dialog-content,
     .ui-dialog-buttonpane,
     .ui-dialog-footer {
         margin: 0;
         padding: 0;
+        text-align: right;
     }
 
-    .ui-dialog-buttonpane, .ui-dialog-footer {
-        text-align: center;
+    .ui-dialog-footer {
+        padding: $dialog-padding-footer;
+    }
 
-        button {
-            margin: 0;
-            float: none;
-
-            &.button-delete{
-                box-shadow: $dialog-delete-box-shadow;
-                span{
-                    color: $dialog-delete-button-normal-color;
-                }
-                &:hover{
-                    background: $dialog-delete-button-hover-color;
-                }
-            }
-        }
+    .ui-dialog-content,
+    .ui-dialog-titlebar,
+    &.ui-confirmdialog .ui-dialog-content {
+        margin: 0;
+        padding: $dialog-padding;
     }
 
     .ui-dialog-content {
         overflow: inherit;
-        margin-bottom: $dialog-padding;
+
+        & > .fa {
+            display: none;
+        }
 
         .ui-confirmdialog-message {
             line-height: $dialog-message-line-height;
@@ -62,6 +55,10 @@
         margin: 0;
     }
 
+    .ui-dialog-titlebar {
+        padding-bottom: 0;
+    }
+
     .ui-dialog-titlebar-close,
     .ui-dialog-titlebar-minimize,
     .ui-dialog-titlebar-maximize {
@@ -75,12 +72,7 @@
         }
     }
 
-    .ui-dialog-titlebar {
-        margin-bottom: $basic-padding * 3;
-    }
-
     &.ui-confirmdialog .ui-dialog-content {
-        padding: 0;
         .fa {
             margin-right: 0;
         }
