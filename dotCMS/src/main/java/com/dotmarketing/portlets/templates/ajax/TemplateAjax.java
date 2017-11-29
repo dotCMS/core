@@ -228,6 +228,13 @@ public class TemplateAjax {
 		return toReturn;
 	}
 
+	public String checkDependencies(String templateInode) throws DotDataException, DotSecurityException, PortalException, SystemException{
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = userWebAPI.getLoggedInUser(req);
+		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
+		return templateAPI.checkDependencies(templateInode, user, respectFrontendRoles);
+	}
+
     /**
      * Method that will verify if a given template title is already used by another template
      *

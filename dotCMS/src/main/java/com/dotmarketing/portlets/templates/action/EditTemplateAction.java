@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.action;
 
+import com.liferay.portal.language.LanguageUtil;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.List;
@@ -42,7 +43,6 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -292,10 +292,25 @@ public class EditTemplateAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-				if(WebAssetFactory.deleteAsset(webAsset,user)) {
-					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
+
+				List<Contentlet> pages = APILocator.getContentletAPI().findPagesByTemplate((Template)webAsset, user, false);
+				if (pages != null && !pages.isEmpty()) {
+
+					StringBuilder error = new StringBuilder();
+					error.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
+					error.append(webAsset.getName()).append("<br>");
+
+					for (Contentlet page : pages) {
+						error.append("- ").append(page.getTitle()).append("<br>");
+					}
+					SessionMessages.add(httpReq,"error", error.toString());
+
 				} else {
-					SessionMessages.add(httpReq, "error", "message." + webAsset.getType() + ".full_delete.error");
+					if(WebAssetFactory.deleteAsset(webAsset,user)) {
+						SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
+					} else {
+						SessionMessages.add(httpReq, "error", "message." + webAsset.getType() + ".full_delete.error");
+					}
 				}
 			}
 			catch(Exception ae)
@@ -311,32 +326,29 @@ public class EditTemplateAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				String [] inodes = req.getParameterValues("publishInode");
-				StringBuilder dependencies = new StringBuilder();
-				boolean returnValue = false;
 
+				int errorCount =0;
 				for(String inode  : inodes)	{
-					String result = null;
-
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
+					List<Contentlet> pages = APILocator.getContentletAPI().findPagesByTemplate((Template)webAsset, user, false);
 
-					if(UtilMethods.isSet(result)) {
-						dependencies.append(LanguageUtil.get(user, "template-name")).append(": ").append(webAsset.getFriendlyName()).append("\n");
-						dependencies.append(LanguageUtil.get(user, "Pages-URLs")).append(": ").append(result);
+					if(pages!= null && !pages.isEmpty()) {
+						StringBuilder error = new StringBuilder();
+						error.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
+						error.append(webAsset.getName()).append("<br>");
+
+						for (Contentlet page : pages) {
+							error.append("- ").append(page.getTitle()).append("<br>");
+						}
+						SessionMessages.add(httpReq,"error" + errorCount++, error.toString());
 					} else {
-						returnValue = WebAssetFactory.deleteAsset(webAsset,user);
+						WebAssetFactory.deleteAsset(webAsset,user);
 					}
-
-					dependencies.append("\n");
 				}
 
-				if(returnValue)
+				if(errorCount == 0)
 				{
 					SessionMessages.add(httpReq,"message","message.template.full_delete");
-				}
-				else
-				{
-					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-					Logger.debug(this," Template cannot be deleted if it has existing relationships");
 				}
 			}
 			catch(Exception ae)

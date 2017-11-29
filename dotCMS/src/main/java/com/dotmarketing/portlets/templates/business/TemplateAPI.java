@@ -173,7 +173,18 @@ public interface TemplateAPI {
 
 	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
+	/**
+	 * Check if there are Contentlet Pages using this Template
+	 * @param templateInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List of Contentlet Pages (page's titles) using the specified Template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 

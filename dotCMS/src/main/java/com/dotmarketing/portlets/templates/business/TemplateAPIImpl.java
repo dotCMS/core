@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
@@ -470,6 +471,27 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return find(info.getLiveInode(), user, respectFrontendRoles);
+	}
+
+	@Override
+	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		String result = null;
+		Template template = find(templateInode, user, respectFrontendRoles);
+		// checking if there are pages using this template
+		List<Contentlet> pages=APILocator.getContentletAPI().findPagesByTemplate(template, user, respectFrontendRoles);
+
+		if(pages != null && !pages.isEmpty()) {
+			StringBuilder builder = new StringBuilder();
+			int i = 0;
+			for (Contentlet page : pages) {
+				builder.append(page.getTitle());
+				if(i++ != pages.size() - 1){
+					builder.append(",");
+				}
+			}
+			result = builder.toString();
+		}
+		return result;
 	}
 
     @Override

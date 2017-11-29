@@ -340,7 +340,7 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 
 		if ((deleted == "1") && (write == "1"))
 		{
-            strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="fullDeleteTemplate(\'' + objId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
+            strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>\')){ delTemplate(\'' +objId+ '\', \'' +referer+ '\'); }">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Template"))%>';
             strHTML += '</div>';
 		}

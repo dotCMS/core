@@ -138,6 +138,8 @@ function delTemplate(inode, referer) {
 			  callback:handleDepResponse,
 			  arg: inode + '|' + referer, // specify an argument to pass to the callback and exceptionHandler
 			};
+
+    TemplateAjax.checkDependencies(inode, callMetaData);
 }
 
 function handleDepResponse(data, arg1) {
@@ -146,31 +148,15 @@ function handleDepResponse(data, arg1) {
 	var referer = params[1];
 	
 	if(data!=null) {
-		if(data.split("HTMLPAGE_NON_WORKING_VERSIONS").length < 2){
-			var res = data.split(",");
-		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
-			for (i = 0; i < res.length; i++) { 
-					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
-			}
-				resultTableStr = resultTableStr + '</tbody></table>';
-			
-			dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
-			dijit.byId("dependenciesDialog").show();
-		
-		}else{
-			data = data.substring(0,data.lastIndexOf(","));
-			var res = data.split(",");
-		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
-			for (i = 0; i < res.length; i++) { 
-					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
-				}
-			resultTableStr = resultTableStr + '</tbody></table><br />';
-			resultTableStr += '<div class="buttonRow"> <button dojoType="dijit.form.Button" iconClass="deleteIcon" name="filterButton" style="font-weight: bold" onClick="deleteDependentNonWorkingVersions(\'' + inode + '\',\'' + referer + '\')"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "dependencies_delete_button") %></button>';
-			resultTableStr += '<button dojoType="dijit.form.Button" iconClass="cancelIcon" name="filterButton" style="font-weight: bold" onClick="hideDependenciesDialog();"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "Cancel") %></button></div>';
-			dojo.byId("depDiv").innerHTML = resultTableStr;
-			dijit.byId("dependenciesDialog").show();
-			dojo.parser.parse("dependenciesDialog");
+		var res = data.split(",");
+		var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "title")%></th></tr></thead><tbody>';
+		for (i = 0; i < res.length; i++) {
+			resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
 		}
+		resultTableStr = resultTableStr + '</tbody></table>';
+
+		dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
+		dijit.byId("dependenciesDialog").show();
 	}else{
 		processDelete(inode, referer);
 	}
