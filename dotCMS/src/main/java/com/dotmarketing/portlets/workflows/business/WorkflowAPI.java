@@ -48,6 +48,15 @@ public interface WorkflowAPI {
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
 
 	/**
+	 * Return the contentlet current step if there is one or null
+	 * if the contentlet is not associated to one workflow step.
+	 * @param contentlet The contentlet to check
+	 * @return The WorkflowStep where the contentlet is or null if not
+	 * @throws DotDataException
+	 */
+	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
 	 * Check if the schemeId pass exist n the list of workflow scheme.
 	 * @param schemeId WorkflowScheme ID to validate
 	 * @param schemes List of WorkflowScheme to compare
@@ -219,7 +228,7 @@ public interface WorkflowAPI {
 	 * @param schemes List of Workflow Schemes to be associated to the Structure
 	 * @throws DotDataException
 	 */
-	public void saveSchemeForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
+	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
 

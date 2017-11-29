@@ -310,12 +310,9 @@ public class PublishFactory {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     Contentlet contentlet = (Contentlet) asset;
-                    WorkflowStep step = null;
-					List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
-					if( null != steps && !steps.isEmpty() && steps.size() == 1) {
-						step = steps.get(0);
-					}
-					if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
+                    WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+
+                    if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
                     	contentletAPI.publish( (Contentlet) asset, user, false );
                         ContentletServices.invalidateLive(contentlet);
                     }

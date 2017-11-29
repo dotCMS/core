@@ -80,7 +80,7 @@ public interface WorkFlowFactory {
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
-	public void saveSchemeForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException;
+	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 

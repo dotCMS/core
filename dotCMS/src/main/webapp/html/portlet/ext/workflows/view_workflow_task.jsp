@@ -32,12 +32,10 @@
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
 	Role assignedTo 	= APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
 
-	List<WorkflowStep> steps 	= APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
-	WorkflowStep step = null;
-    WorkflowScheme scheme = null;
-	if(null != steps && !steps.isEmpty() && steps.size() ==1){
-		step = steps.get(0);
-        scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
+	WorkflowStep step 	= APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+	WorkflowScheme scheme = null;
+	if(null != step){
+		scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
 	}
 
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);

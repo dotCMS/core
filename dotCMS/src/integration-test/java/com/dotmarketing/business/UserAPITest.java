@@ -356,7 +356,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		schemes.add(ws);
-		workflowAPI.saveSchemeForStruct(st, schemes);
+		workflowAPI.saveSchemesForStruct(st, schemes);
 
 		/**
 		 * Add container
@@ -438,9 +438,8 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
-		List<WorkflowStep> contentSteps = workflowAPI.findStepsByContentlet(contentAsset2);
-		assertTrue(contentSteps.size() == 1);
-		WorkflowStep  currentStep = contentSteps.get(0);
+		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(currentStep);
 
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
@@ -496,10 +495,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
 		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
 
-		contentSteps = workflowAPI.findStepsByContentlet(contentAsset2);
-		assertTrue(contentSteps.size() == 1);
-		WorkflowStep  step = contentSteps.get(0);
-
+		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(step);
 		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
 		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
 
@@ -562,9 +559,8 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
 			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
 
-			contentSteps = workflowAPI.findStepsByContentlet(content);
-			assertTrue(contentSteps.size() == 1);
-			step = contentSteps.get(0);
+			step = workflowAPI.findStepByContentlet(content);
+			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
 			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
 

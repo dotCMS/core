@@ -155,7 +155,7 @@ public class WorkflowAPITest {
 		}
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		schemes.add(ws);
-		APILocator.getWorkflowAPI().saveSchemeForStruct(st, schemes);
+		APILocator.getWorkflowAPI().saveSchemesForStruct(st, schemes);
 		/*
 		 * Create test content and set it up in scheme step
 		 */
@@ -184,9 +184,8 @@ public class WorkflowAPITest {
 		contentlet1.setStringProperty("wfActionAssign", role.getId());
 		wapi.fireWorkflowNoCheckin(contentlet1, systemUser);
 
-		List<WorkflowStep> contentSteps = wapi.findStepsByContentlet(contentlet1);
-		Assert.assertTrue(contentSteps.size() == 1);
-		WorkflowStep  currentStep = contentSteps.get(0);
+		WorkflowStep currentStep = wapi.findStepByContentlet(contentlet1);
+		Assert.assertNotNull(currentStep);
 		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 
 		/*
@@ -224,9 +223,8 @@ public class WorkflowAPITest {
 			 * </br> <b> Step : 'Publish' is being referenced by: X Contentlet(s) </br></br>
 			 */
 		}
-		contentSteps = wapi.findStepsByContentlet(contentlet1);
-		Assert.assertTrue(contentSteps.size() == 1);
-		currentStep = contentSteps.get(0);
+		currentStep = wapi.findStepByContentlet(contentlet1);
+		Assert.assertNotNull(currentStep);
 		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 		
 		/*

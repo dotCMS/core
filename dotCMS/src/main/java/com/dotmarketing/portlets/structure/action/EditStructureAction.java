@@ -384,7 +384,7 @@ public class EditStructureAction extends DotPortletAction {
 					schemes.add(scheme);
 				}
 			}
-			APILocator.getWorkflowAPI().saveSchemeForStruct(structure, schemes.build());
+			APILocator.getWorkflowAPI().saveSchemesForStruct(structure, schemes.build());
 			
 			/**
 			 * 

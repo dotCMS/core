@@ -84,10 +84,9 @@ public class BrowserAPI {
             
             try {
                 if (contentlet != null) {
-                	List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(
-							contentlet);
-                	if(null != steps && !steps.isEmpty() && steps.size() == 1) {
-						wfStep = steps.get(0);
+                	WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+                	if(null != step) {
+						wfStep = step;
 						wfScheme = APILocator.getWorkflowAPI().findScheme(
 								wfStep.getSchemeId());
 						wfActions = APILocator.getWorkflowAPI()

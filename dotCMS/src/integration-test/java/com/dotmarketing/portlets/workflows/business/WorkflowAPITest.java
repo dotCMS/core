@@ -231,10 +231,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
-     * This method test the saveSchemeForStruct method
+     * This method test the saveSchemesForStruct method
      */
     @Test
-    public void saveSchemeForStruct() throws DotDataException, DotSecurityException {
+    public void saveSchemesForStruct() throws DotDataException, DotSecurityException {
 
         List<WorkflowScheme> worflowSchemes = new ArrayList<>();
 
@@ -251,13 +251,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         worflowSchemes.add(workflowScheme2);
 
         /* Validate that the workflow scheme was created */
-        workflowScheme3 = workflowAPI.findSchemeByName(workflowSchemeName2);
+        workflowScheme3 = workflowAPI.findSchemeByName(workflowSchemeName3);
         assertTrue(null != workflowScheme3 && UtilMethods.isSet(workflowScheme3.getId()));
 
         worflowSchemes.add(workflowScheme3);
 
         /* Associate the schemas to the content type */
-        workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+        workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
         List<WorkflowScheme> contentTypeSchemes = workflowAPI
                 .findSchemesForStruct(contentTypeStructure);
@@ -272,7 +272,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         /* Associate the default schema to the content type */
         worflowSchemes.add(defaultScheme);
-        workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+        workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
         /* validate that the schemes area associated */
         contentTypeSchemes = workflowAPI.findSchemesForStruct(contentTypeStructure);
@@ -297,7 +297,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             worflowSchemes.add(workflowScheme3);
 
         /* Associate the schemas to the content type */
-            workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
             long time = System.currentTimeMillis();
 
@@ -382,7 +382,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             worflowSchemes.add(workflowScheme3);
 
         /* Associate the schemas to the content type */
-            workflowAPI.saveSchemeForStruct(contentTypeStructure, worflowSchemes);
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
             long time = System.currentTimeMillis();
 

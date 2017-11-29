@@ -121,9 +121,9 @@ function cancel() {
                 </td>
                 <td width="30%">
                     <%  WorkflowScheme scheme = null;
-                        List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(con);
-                        if(null != steps && !steps.isEmpty() && steps.size() == 1){
-                            scheme = APILocator.getWorkflowAPI().findScheme(steps.get(0).getSchemeId());
+                        WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(con);
+                        if(null != step){
+                            scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
                         }
 
                         if(con != null && null != scheme && scheme.isMandatory()){

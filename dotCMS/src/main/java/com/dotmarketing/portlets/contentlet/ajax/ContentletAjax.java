@@ -999,11 +999,7 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				WorkflowStep step = null;
-				List<WorkflowStep> steps = APILocator.getWorkflowAPI().findStepsByContentlet(con);
-				if( null != steps && !steps.isEmpty() && steps.size() == 1) {
-					step = steps.get(0);
-				}
+				WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
 				searchResult.put("workflowMandatory", String.valueOf(null!=step?APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory():false));
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 

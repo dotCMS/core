@@ -27,10 +27,9 @@
 #set($wfSchemes = $workflowtool.findSchemesForStruct($dotPageContent.structure))
 #set($wfScheme = '')
 
-#set($wfSteps = $workflowtool.findStepsByContentlet($dotPageContent.contentObject))
+#set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
 
-#if($wfSteps && $wfSteps.size() == 1)
-    #set($wfStep = $wfSteps.get(0))
+#if($wfStep)
     #set($wfScheme = $workflowtool.findScheme($wfStep.getSchemeId()))
 #end
 

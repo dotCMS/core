@@ -669,7 +669,7 @@ public class ContentResourceTest {
         FieldFactory.saveField(field);
         List<WorkflowScheme> schemes = new ArrayList<>();
         schemes.add(scheme);
-        APILocator.getWorkflowAPI().saveSchemeForStruct(st, schemes);
+        APILocator.getWorkflowAPI().saveSchemesForStruct(st, schemes);
 
         // send the Rest api call
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
@@ -689,9 +689,9 @@ public class ContentResourceTest {
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
         // must be in the first step
-        List<WorkflowStep> contentSteps = APILocator.getWorkflowAPI().findStepsByContentlet(cont);
-        assertTrue(contentSteps.size() == 1);
-        Assert.assertEquals(step1.getId(), contentSteps.get(0).getId());
+        WorkflowStep contentStep = APILocator.getWorkflowAPI().findStepByContentlet(cont);
+        assertNotNull(contentStep);
+        Assert.assertEquals(step1.getId(), contentStep.getId());
 
         boolean assigned=false;
 

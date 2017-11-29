@@ -167,6 +167,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findStepsByContentlet(contentlet);
 	}
 
+	@CloseDBIfOpened
+	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
+		WorkflowStep step = null;
+		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		if( null != steps && !steps.isEmpty() && steps.size() == 1) {
+			step = steps.get(0);
+		}
+
+		return step;
+	}
+
 	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
 		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
@@ -202,10 +213,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveSchemeForStruct(final Structure struc, final List<WorkflowScheme> schemes) throws DotDataException {
+	public void saveSchemesForStruct(final Structure struc, final List<WorkflowScheme> schemes) throws DotDataException {
 
 		try {
-			workFlowFactory.saveSchemeForStruct(struc.getInode(), schemes);
+			workFlowFactory.saveSchemesForStruct(struc.getInode(), schemes);
 		} catch(DotDataException e){
 			throw e;
 		}

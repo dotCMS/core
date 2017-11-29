@@ -962,7 +962,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemeForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
+	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
 
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
