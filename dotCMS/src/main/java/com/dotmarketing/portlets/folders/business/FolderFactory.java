@@ -61,6 +61,16 @@ public abstract class FolderFactory {
 		return null;
 	}
 
+	/**
+	 *
+	 * @param folder
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 *
+	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
+	 */
+	@Deprecated
 	protected List<Folder> getSubFolders(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
 		return null;
 	}
@@ -104,10 +114,10 @@ public abstract class FolderFactory {
 	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException{
 		return null;
 	}
-	protected List<Folder> findSubFolders(Host host, boolean showOnMenu)throws DotHibernateException  {
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)throws DotHibernateException  {
 		return null;
 	}
-	protected List<Folder> findSubFolders(Folder folder, boolean showOnMenu) throws DotStateException, DotDataException{
+	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu) throws DotStateException, DotDataException{
 	    return null;
 	}
 

@@ -6,15 +6,23 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
@@ -32,25 +40,40 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class TemplateAPITest extends IntegrationTestBase {
-	
+
+    private static ContainerAPI containerAPI;
+    private static HostAPI hostAPI;
+    private static TemplateAPI templateAPI;
+    private static User user;
+    private static UserAPI userAPI;
+    private static VersionableAPI versionableAPI;
+    private static Host host;
+
     @BeforeClass
     public static void prepare () throws Exception {
     	
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        containerAPI   = APILocator.getContainerAPI();
+        hostAPI        = APILocator.getHostAPI();
+        templateAPI    = APILocator.getTemplateAPI();
+        userAPI        = APILocator.getUserAPI();
+        user           = userAPI.getSystemUser();
+        versionableAPI = APILocator.getVersionableAPI();
+        host           = hostAPI.findDefaultHost(user, false);
     }
 	
     @Test
     public void saveTemplate() throws Exception {
-        User user=APILocator.getUserAPI().getSystemUser();
-        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+        final Host host= hostAPI.findDefaultHost(user, false);
         String body="<html><body> I'm mostly empty </body></html>";
         String title="empty test template "+UUIDGenerator.generateUuid();
 
         Template template=new Template();
         template.setTitle(title);
         template.setBody(body);
-        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        template= templateAPI.saveTemplate(template, host, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
         assertEquals(template.getBody(), body);
@@ -64,7 +87,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         template.setBody(body);
         template.setInode(inode);
         template.setIdentifier(identifier);
-        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        template= templateAPI.saveTemplate(template, host, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
         assertEquals(template.getBody(), body);
@@ -72,7 +95,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(template.getInode(),inode);
         assertEquals(template.getIdentifier(),identifier);
 
-        template=APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
+        template= templateAPI.findWorkingTemplate(identifier, user, false);
         assertTrue(template!=null);
         assertEquals(template.getInode(),inode);
         assertEquals(template.getIdentifier(),identifier);
@@ -81,10 +104,10 @@ public class TemplateAPITest extends IntegrationTestBase {
         template.setBody("updated body!");
         String newInode=UUIDGenerator.generateUuid();
         template.setInode(newInode);
-        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        template= templateAPI.saveTemplate(template, host, user, false);
 
         // same identifier now new inode
-        template=APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
+        template= templateAPI.findWorkingTemplate(identifier, user, false);
         assertTrue(template!=null);
         assertEquals(template.getInode(),newInode);
         assertEquals(template.getIdentifier(),identifier);
@@ -93,9 +116,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     @Test
     public void delete() throws Exception {
-
-        User user=APILocator.getUserAPI().getSystemUser();
-        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+        Host host= hostAPI.findDefaultHost(user, false);
 
         // a container to use inside the template
         Container container = new Container();
@@ -111,7 +132,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         cs.setStructureId(st.getInode());
         cs.setCode("this is the code");
         csList.add(cs);
-        container = APILocator.getContainerAPI().save(container, csList, host, user, false);
+        container = containerAPI.save(container, csList, host, user, false);
 
 
         String body="<html><body> #parseContainer('"+container.getIdentifier()+"') </body></html>";
@@ -121,15 +142,15 @@ public class TemplateAPITest extends IntegrationTestBase {
         template.setTitle(title);
         template.setBody(body);
 
-        Template saved=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        final Template saved= templateAPI.saveTemplate(template, host, user, false);
 
         final String tInode=template.getInode(),tIdent=template.getIdentifier();
 
-        APILocator.getTemplateAPI().delete(saved, user, false);
+        templateAPI.delete(saved, user, false);
 
         AssetUtil.assertDeleted(tInode, tIdent, "template");
 
-        APILocator.getContainerAPI().delete(container, user, false);
+        containerAPI.delete(container, user, false);
 
         AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
     }
@@ -173,23 +194,61 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     @Test
     public void findLiveTemplate() throws Exception {
-        User user=APILocator.getUserAPI().getSystemUser();
-        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
 
         Template template=new Template();
         template.setTitle("empty test template "+UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
-        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        template= templateAPI.saveTemplate(template, host, user, false);
 
-        Template live = APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
+        Template live = templateAPI
+                .findLiveTemplate(template.getIdentifier(), user, false);
         assertTrue(live==null || !InodeUtils.isSet(live.getInode()));
 
-        APILocator.getVersionableAPI().setLive(template);
+        versionableAPI.setLive(template);
 
-        live = APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
+        live = templateAPI.findLiveTemplate(template.getIdentifier(), user, false);
         assertTrue(live!=null && InodeUtils.isSet(live.getInode()));
         assertEquals(template.getInode(),live.getInode());
 
-        APILocator.getTemplateAPI().delete(template, user, false);
+        templateAPI.delete(template, user, false);
+    }
+
+    @Test
+    public void testFindTemplates() throws DotDataException, DotSecurityException {
+        final List<Template> result = templateAPI
+                .findTemplates(user, false, null, host.getIdentifier(), null, null, null, 0, -1,
+                        null);
+
+        assertNotNull(result);
+        assertTrue(!result.isEmpty());
+    }
+
+    @Test
+    public void testFindWorkingTemplateByName() throws Exception {
+        Template template = new Template();
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+        template.setTitle("empty test template " + UUIDGenerator.generateUuid());
+        template.setBody("<html><body> I'm mostly empty </body></html>");
+
+        try {
+            template = templateAPI.saveTemplate(template, host, user, false);
+
+            final Template result = templateFactory.findWorkingTemplateByName(template.getTitle(), host);
+
+            assertNotNull(result);
+            assertEquals(template.getInode(), result.getInode());
+        } finally {
+            if (template.getInode() != null) {
+                templateAPI.delete(template, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
+        final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
+
+        assertNotNull(result);
+        assertTrue(!result.isEmpty());
     }
 }

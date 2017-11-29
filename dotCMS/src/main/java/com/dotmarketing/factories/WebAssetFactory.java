@@ -1,5 +1,7 @@
 package com.dotmarketing.factories;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -45,6 +47,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.services.TemplateServices;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -52,16 +55,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -72,7 +71,7 @@ public class WebAssetFactory {
 	public enum Direction {
 		PREVIOUS,
 		NEXT
-	};
+	}
 
 	public enum AssetType {
 		HTMLPAGE("HTMLPAGE"),
@@ -107,11 +106,8 @@ public class WebAssetFactory {
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
 	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
-	private static final int ITERATION_LIMIT = 500;
-	private final static int MAX_LIMIT_COUNT = 100;
-
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -133,7 +129,6 @@ public class WebAssetFactory {
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
-		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
 		webasset.setIdentifier(id.getId());
 		HibernateUtil.saveOrUpdate(webasset);
@@ -791,101 +786,13 @@ public class WebAssetFactory {
 		return newWebAsset;
 	}
 
-	@Deprecated
-	public static List getAssetsPerConditionWithPermission(Host host, String condition, Class c,
-			int limit, int offset, String orderby, String parent, User user) {
-		return getAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, limit, offset, orderby, parent, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static List<WebAsset> getAssetsPerConditionWithPermission(String hostId, String condition, Class c,
-			int limit, int offset, String orderby, String parent, User user) {
-		HibernateUtil dh = new HibernateUtil(c);
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select {" + tableName + ".*} from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree2");
-			}
-			sb.append(" where " + condition);
-
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and " + tableName + "_condition.inode = tree2.child");
-				sb.append(" and tree2.parent = '" + parent + "'");
-			}
-
-			if(c.equals(Container.class) || c.equals(Template.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode.inode from inode,identifier where host_inode = '"
-						+ hostId + "' and "+tableName + ".identifier = identifier.id)");
-			}
-			else
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-			if(orderby != null)
-				sb.append(" order by " + orderby);
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			List<WebAsset> toReturn = new ArrayList<WebAsset>();
-			int internalLimit = ITERATION_LIMIT;
-			int internalOffset = 0;
-			boolean done = false;
-
-			while(!done) {
-				Logger.debug(WebAssetFactory.class, sb.toString());
-				dh.setSQLQuery(sb.toString());
-
-				dh.setFirstResult(internalOffset);
-				dh.setMaxResults(internalLimit);
-
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				List<WebAsset> list = dh.list();
-				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
-				if(limit > 0 && toReturn.size() >= limit + offset)
-					done = true;
-				else if(list.size() < internalLimit)
-					done = true;
-
-				internalOffset += internalLimit;
-			}
-
-			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<WebAsset>();
-			} else if(limit > 0) {
-				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
-				toReturn = toReturn.subList(offset, toIndex);
-			} else if (offset > 0) {
-				toReturn = toReturn.subList(offset, toReturn.size());
-			}
-
-			return toReturn;
-
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
-		}
-
-		return new ArrayList<WebAsset>();
-	}
-
 	@SuppressWarnings("unchecked")
 	public static List<WebAsset> getAssetsWorkingWithPermission(Class c, int limit,
 			int offset, String orderby, String parent, User user) {
 		orderby = SQLUtil.sanitizeSortBy(orderby);
 		parent = SQLUtil.sanitizeParameter(parent);
 
-		HibernateUtil dh = new HibernateUtil(c);
+		DotConnect dc = new DotConnect();
 
 		StringBuilder sb = new StringBuilder();
 		try {
@@ -896,7 +803,7 @@ public class WebAssetFactory {
 			String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
 			String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
-			sb.append("select {").append(tableName).append(".*} from ").append(tableName).append(", inode ")
+			sb.append("select ").append(tableName).append(".* from ").append(tableName).append(", inode ")
 			  .append(tableName).append("_1_,identifier identifier, ").append(versionTable).append(" vi ")
 			  .append(" where ")
 			  .append(tableName).append(".inode = ").append(tableName).append("_1_.inode and ")
@@ -917,13 +824,14 @@ public class WebAssetFactory {
 
 			while(!done) {
 				Logger.debug(WebAssetFactory.class, sb.toString());
-				dh.setSQLQuery(sb.toString());
+				dc.setSQL(sb.toString());
 
-				dh.setFirstResult(internalOffset);
-				dh.setMaxResults(internalLimit);
+				dc.setStartRow(internalOffset);
+				dc.setMaxRows(internalLimit);
 
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				List<WebAsset> list = dh.list();
+				List<WebAsset> list = ConvertToPOJOUtil
+						.convertDotConnectMapToPOJO(dc.loadResults(), c);
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
@@ -934,7 +842,7 @@ public class WebAssetFactory {
 			}
 
 			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<WebAsset>();
+				toReturn = new ArrayList<>();
 			} else if(limit > 0) {
 				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
 				toReturn = toReturn.subList(offset, toIndex);
@@ -948,584 +856,8 @@ public class WebAssetFactory {
 			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
 		}
 
-		return new ArrayList<WebAsset>();
+		return new ArrayList<>();
 
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static List<WebAsset> getAssetsPerConditionWithPermissionWithParent(String hostId, String condition, Class c,
-			int limit, String fromAssetId, Direction direction, String orderby, String parent, boolean showDeleted, User user) {
-		HibernateUtil dh = new HibernateUtil(c);
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select {" + tableName + ".*} from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree2");
-			}
-			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue() +" and deleted = " + sqlDel);
-
-			if(UtilMethods.isSet(condition))
-				sb.append(" and (" + condition + ") ");
-
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and (" + tableName + "_condition.inode = tree2.child");
-				sb.append(" and tree2.parent = '" + parent + "') ");
-			}
-
-			if(c.equals(Container.class) || c.equals(Template.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-			else
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-			sb.append(" order by " + orderby);
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			dh.setSQLQuery(sb.toString());
-			int firstResult = 0;
-			dh.setFirstResult(firstResult);
-			dh.setMaxResults(MAX_LIMIT_COUNT);
-
-			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			List<WebAsset> list = dh.list();
-
-			int pos = 0;
-			boolean offsetFound = false;
-			while (UtilMethods.isSet(fromAssetId) && !offsetFound && (list != null) && (0 < list.size())) {
-				pos = 0;
-				for (WebAsset webAsset: list) {
-					if (webAsset.getIdentifier().equals(fromAssetId)) {
-						offsetFound = true;
-						break;
-					} else {
-						++pos;
-					}
-				}
-
-				if (!offsetFound) {
-					firstResult += MAX_LIMIT_COUNT;
-					dh.setFirstResult(firstResult);
-					list = dh.list();
-				}
-			}
-
-			if ((pos == 0) && !offsetFound) {
-				--pos;
-				offsetFound = true;
-			}
-
-			List<WebAsset> result = new ArrayList<WebAsset>(limit);
-
-			WebAsset webAsset;
-			while (offsetFound && (result.size() < limit) && (list != null) && (0 < list.size())) {
-				if (direction.equals(Direction.NEXT)) {
-					++pos;
-					while ((result.size() < limit) && (pos < list.size())) {
-						webAsset = (WebAsset) list.get(pos);
-						if (permAPI.doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user, false)) {
-							result.add(webAsset);
-						}
-						++pos;
-					}
-
-					if (result.size() < limit) {
-						firstResult += MAX_LIMIT_COUNT;
-						dh.setFirstResult(firstResult);
-						list = dh.list();
-						pos = -1;
-					}
-				} else {
-					--pos;
-					while ((result.size() < limit) && (-1 < pos)) {
-						webAsset = (WebAsset) list.get(pos);
-						if (permAPI.doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user, false)) {
-							result.add(webAsset);
-						}
-						--pos;
-					}
-
-					if (result.size() < limit) {
-						firstResult -= MAX_LIMIT_COUNT;
-						if (-1 < firstResult) {
-							dh = new HibernateUtil(c);
-							dh.setSQLQuery(sb.toString());
-							dh.setFirstResult(firstResult);
-							dh.setMaxResults(MAX_LIMIT_COUNT);
-							list = dh.list();
-							pos = MAX_LIMIT_COUNT;
-						} else {
-							list = null;
-						}
-					}
-				}
-			}
-
-			if (direction.equals(Direction.PREVIOUS))
-				Collections.reverse(result);
-
-			return result;
-
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
-		}
-
-		return new ArrayList<WebAsset>();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static List<WebAsset> getAssetsPerConditionWithPermissionWithParent(String condition, Class c, int limit,
-			String fromAssetId, Direction direction, String orderby, String parent, boolean showDeleted, User user) {
-		HibernateUtil dh = new HibernateUtil(c);
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select {" + tableName + ".*} from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition ");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree ");
-			}
-
-			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue()  +"  and deleted = " + sqlDel);
-
-			if(UtilMethods.isSet(condition)) {
-				sb.append(" and (" + condition + " )");
-			}
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and (" + tableName + "_condition.inode = tree.child");
-				sb.append(" and tree.parent = '" + parent + "')");
-			}
-			sb.append(")");
-
-
-			sb.append(" order by " + orderby);
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			dh.setSQLQuery(sb.toString());
-			int firstResult = 0;
-			dh.setFirstResult(firstResult);
-			dh.setMaxResults(MAX_LIMIT_COUNT);
-
-			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			List<WebAsset> list = dh.list();
-
-			int pos = 0;
-			boolean offsetFound = false;
-			while (UtilMethods.isSet(fromAssetId) && !offsetFound && (list != null) && (0 < list.size())) {
-				pos = 0;
-				for (WebAsset webAsset: list) {
-					if (webAsset.getIdentifier().equals(fromAssetId)) {
-						offsetFound = true;
-						break;
-					} else {
-						++pos;
-					}
-				}
-
-				if (!offsetFound) {
-					firstResult += MAX_LIMIT_COUNT;
-					dh.setFirstResult(firstResult);
-					list = dh.list();
-				}
-			}
-
-			if ((pos == 0) && !offsetFound) {
-				--pos;
-				offsetFound = true;
-			}
-
-			List<WebAsset> result = new ArrayList<WebAsset>(limit);
-
-			WebAsset webAsset;
-			while (offsetFound && (result.size() < limit) && (list != null) && (0 < list.size())) {
-				if (direction.equals(Direction.NEXT)) {
-					++pos;
-					while ((result.size() < limit) && (pos < list.size())) {
-						webAsset = (WebAsset) list.get(pos);
-						if (permAPI.doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user, false)) {
-							result.add(webAsset);
-						}
-						++pos;
-					}
-
-					if (result.size() < limit) {
-						firstResult += MAX_LIMIT_COUNT;
-						dh.setFirstResult(firstResult);
-						list = dh.list();
-						pos = -1;
-					}
-				} else {
-					--pos;
-					while ((result.size() < limit) && (-1 < pos)) {
-						webAsset = (WebAsset) list.get(pos);
-						if (permAPI.doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user, false)) {
-							result.add(webAsset);
-						}
-						--pos;
-					}
-
-					if (result.size() < limit) {
-						firstResult -= MAX_LIMIT_COUNT;
-						if (-1 < firstResult) {
-							dh = new HibernateUtil(c);
-							dh.setSQLQuery(sb.toString());
-							dh.setFirstResult(firstResult);
-							dh.setMaxResults(MAX_LIMIT_COUNT);
-							list = dh.list();
-							pos = MAX_LIMIT_COUNT;
-						} else {
-							list = null;
-						}
-					}
-				}
-			}
-
-			if (direction.equals(Direction.PREVIOUS))
-				Collections.reverse(result);
-
-			return result;
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
-		}
-
-		return new ArrayList<WebAsset>();
-
-	}
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, Role[] roles,
-			String condition, int limit, String fromAssetId, Direction direction, String orderby, Class assetsClass, String tableName, String parentId, boolean showDeleted, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsPerConditionWithPermissionWithParent(hostId, condition, assetsClass, limit, fromAssetId, direction, orderby, parentId, showDeleted, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class, "Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndConditionWithParent(Role[] roles,
-			String condition, int limit, String fromAssetId, Direction direction, String orderby, Class assetsClass, String tableName, String parentId, boolean showDeleted, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsPerConditionWithPermissionWithParent(condition, assetsClass, limit, fromAssetId, direction, orderby, parentId, showDeleted, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(String hostId, Role[] roles,
-			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsPerConditionWithPermission(hostId, condition, assetsClass, limit, offset, orderby, null, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
-	}
-
-	/**
-	 *
-	 * @param hostId
-	 * @param roles
-	 * @param condition
-	 * @param limit
-	 * @param offset
-	 * @param orderby
-	 * @param assetsClass
-	 * @param tableName
-	 * @param parent
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotIdentifierStateException
-	 * @throws DotSecurityException
-	 * @deprecated
-	 */
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(String hostId, Role[] roles,
-			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, String parent, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsPerConditionWithPermission(hostId, condition, assetsClass,
-				limit, offset, orderby, parent, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
-	}
-
-	// Generic method for all Assets.
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(Role[] roles,
-			int limit, int offset, String orderby, Class assetsClass, String tableName, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsWorkingWithPermission(assetsClass, limit, offset, orderby, null, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(Role[] roles,
-			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, String parent, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
-
-		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
-		orderby = tableName + "." + orderby;
-		java.util.List<WebAsset> elements = WebAssetFactory.getAssetsWorkingWithPermission(assetsClass, limit, offset, orderby, parent, user);
-		java.util.Iterator<WebAsset> elementsIter = elements.iterator();
-
-		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
-			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
-					}
-				}
-
-			java.util.List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
-			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
-			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
-			entries.add(permAsset);
-		}
-		return entries;
 	}
 
 	public static boolean isAbstractAsset(WebAsset asset) {
@@ -1665,342 +997,6 @@ public class WebAssetFactory {
 			throw new Exception(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 		return returnValue;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static int getAssetsCountPerConditionWithPermissionWithParent(String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
-		DotConnect dc = new DotConnect();
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select " + tableName + ".identifier as identifier, " + tableName + "_1_.inode as inode from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition ");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree ");
-			}
-
-			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue()  +"  and deleted = " + sqlDel);
-
-			if(UtilMethods.isSet(condition)) {
-				sb.append(" and (" + condition + " )");
-			}
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and (" + tableName + "_condition.inode = tree.child");
-				sb.append(" and tree.parent = '" + parent + "')");
-			}
-			sb.append(")");
-
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			dc.setSQL(sb.toString());
-
-			int startRow = offset;
-
-			if (limit != 0) {
-				dc.setStartRow(startRow);
-				dc.setMaxRows(limit);
-			}
-
-			List<Map<String, String>> list = dc.loadResults();
-			List<Permissionable> assetsList = new ArrayList<Permissionable>();
-			WebAsset permissionable;
-
-			PermissionAPI permAPI = APILocator.getPermissionAPI();
-
-			while ((assetsList.size() < limit) && (list != null) && (0 < list.size())) {
-				for (Map<String, String> map: list) {
-					permissionable = (WebAsset) c.newInstance();
-					permissionable.setIdentifier(map.get("identifier"));
-					permissionable.setInode(map.get("inode"));
-
-					if (permAPI.doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ, user, false)) {
-						assetsList.add(permissionable);
-						if (limit < assetsList.size())
-							break;
-					}
-				}
-
-				if (assetsList.size() < limit) {
-					dc = new DotConnect();
-					dc.setSQL(sb.toString());
-					startRow += limit;
-					dc.setStartRow(startRow);
-					dc.setMaxRows(limit);
-					list = dc.loadResults();
-				}
-			}
-
-			return assetsList.size();
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermissionWithParent failed:" + e, e);
-		}
-
-		return 0;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static int getAssetsCountPerConditionWithPermission(String condition, Class c, int limit, int offset, String parent, User user) {
-		DotConnect dc = new DotConnect();
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-			if(offset < 0) offset = 0;
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select " + tableName + ".identifier as identifier, " + tableName + "_1_.inode as inode from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition, tree tree, identifier identifier ");
-			if (parent != null) {
-				sb.append(", tree tree2");
-			}
-
-			sb.append(" where " + condition);
-
-			if (parent != null) {
-				sb.append(" and " + tableName + "_condition.inode = tree2.child");
-				sb.append(" and tree2.parent = '" + parent + "'");
-			}
-			sb.append(" and " + tableName + "_condition.inode = tree.child ");
-			sb.append(" and tree.parent = identifier.id) ");
-
-			List<Permissionable> toReturn = new ArrayList<Permissionable>();
-			int internalLimit = 500;
-			int internalOffset = 0;
-			boolean done = false;
-
-			while(!done) {
-				Logger.debug(WebAssetFactory.class, sb.toString());
-				dc.setSQL(sb.toString());
-
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
-
-				List<Map<String, String>> list = dc.loadResults();
-				List<Permissionable> assetsList = new ArrayList<Permissionable>();
-				WebAsset permissionable;
-
-				for (Map<String, String> map: list) {
-					permissionable = (WebAsset) c.newInstance();
-					permissionable.setIdentifier(map.get("identifier"));
-					permissionable.setInode(map.get("inode"));
-					assetsList.add(permissionable);
-				}
-
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(assetsList, PermissionAPI.PERMISSION_READ, false, user));
-				if(limit > 0 && toReturn.size() >= limit + offset)
-					done = true;
-				else if(assetsList.size() < internalLimit)
-					done = true;
-
-				internalOffset += internalLimit;
-			}
-
-			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<Permissionable>();
-			} else if(limit > 0) {
-				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
-				toReturn = toReturn.subList(offset, toIndex);
-			} else if (offset > 0) {
-				toReturn = toReturn.subList(offset, toReturn.size());
-			}
-
-			return toReturn.size();
-
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermission failed:" + e, e);
-		}
-
-		return 0;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static int getAssetsCountPerConditionWithPermissionWithParent(String hostId, String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
-		DotConnect dc = new DotConnect();
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select " + tableName + ".identifier as identifier, " + tableName + "_1_.inode as inode from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree2");
-			}
-			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue() +" and deleted = " + sqlDel);
-
-			if(UtilMethods.isSet(condition))
-				sb.append(" and (" + condition + ") ");
-
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and (" + tableName + "_condition.inode = tree2.child");
-				sb.append(" and tree2.parent = '" + parent + "') ");
-			}
-
-			if(c.equals(Container.class) || c.equals(Template.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-			else
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			dc.setSQL(sb.toString());
-
-			int startRow = offset;
-
-			if (limit != 0) {
-				dc.setStartRow(startRow);
-				dc.setMaxRows(limit);
-			}
-
-			List<Map<String, String>> list = dc.loadResults();
-			List<Permissionable> assetsList = new ArrayList<Permissionable>();
-			WebAsset permissionable;
-
-			PermissionAPI permAPI = APILocator.getPermissionAPI();
-
-			while ((assetsList.size() < limit) && (list != null) && (0 < list.size())) {
-				for (Map<String, String> map: list) {
-					permissionable = (WebAsset) c.newInstance();
-					permissionable.setIdentifier(map.get("identifier"));
-					permissionable.setInode(map.get("inode"));
-
-					if (permAPI.doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ, user, false)) {
-						assetsList.add(permissionable);
-						if (limit < assetsList.size())
-							break;
-					}
-				}
-
-				if (assetsList.size() < limit) {
-					dc = new DotConnect();
-					dc.setSQL(sb.toString());
-					startRow += limit;
-					dc.setStartRow(startRow);
-					dc.setMaxRows(limit);
-					list = dc.loadResults();
-				}
-			}
-
-			return assetsList.size();
-
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermissionWithParent failed:" + e, e);
-		}
-
-		return 0;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public static int getAssetsCountPerConditionWithPermission(String hostId, String condition, Class c, int limit, int offset, String parent, User user) {
-		DotConnect dc = new DotConnect();
-
-		StringBuffer sb = new StringBuffer();
-		try {
-
-
-			String tableName = ((Inode) c.newInstance()).getType();
-
-			sb.append("select " + tableName + "_1_.identifier as identifier, " + tableName + "_1_.inode as inode from " + tableName + ", inode " + tableName + "_1_ where "
-					+ tableName + ".inode = " + tableName + "_1_.inode and " + tableName + ".inode in (");
-			sb.append("select distinct " + tableName + "_condition.inode ");
-			sb.append(" from " + tableName + " " + tableName + "_condition");
-			if (InodeUtils.isSet(parent)) {
-				sb.append(", tree tree2");
-			}
-			sb.append(" where " + condition);
-
-			if (InodeUtils.isSet(parent)) {
-				sb.append(" and " + tableName + "_condition.inode = tree2.child");
-				sb.append(" and tree2.parent = '" + parent + "'");
-			}
-
-			if(c.equals(Container.class) || c.equals(Template.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
-			else
-			{
-				sb.append(") and " + tableName + ".inode in (select tree.child from identifier, tree where host_inode = '"
-						+ hostId + "' and tree.parent = identifier.id)");
-			}
-
-			Logger.debug(WebAssetFactory.class, sb.toString());
-
-			List<Permissionable> toReturn = new ArrayList<Permissionable>();
-			int internalLimit = ITERATION_LIMIT;
-			int internalOffset = 0;
-			boolean done = false;
-
-			while(!done) {
-				Logger.debug(WebAssetFactory.class, sb.toString());
-				dc.setSQL(sb.toString());
-
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
-
-				List<Map<String, String>> list = dc.loadResults();
-				List<Permissionable> assetsList = new ArrayList<Permissionable>();
-				WebAsset permissionable;
-
-				for (Map<String, String> map: list) {
-					permissionable = (WebAsset) c.newInstance();
-					permissionable.setIdentifier(map.get("identifier"));
-					permissionable.setInode(map.get("inode"));
-					assetsList.add(permissionable);
-				}
-
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(assetsList, PermissionAPI.PERMISSION_READ, false, user));
-				if(limit > 0 && toReturn.size() >= limit + offset)
-					done = true;
-				else if(assetsList.size() < internalLimit)
-					done = true;
-
-				internalOffset += internalLimit;
-			}
-
-			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<Permissionable>();
-			} else if(limit > 0) {
-				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
-				toReturn = toReturn.subList(offset, toIndex);
-			} else if (offset > 0) {
-				toReturn = toReturn.subList(offset, toReturn.size());
-			}
-
-			return toReturn.size();
-
-		} catch (Exception e) {
-			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermission failed:" + e, e);
-		}
-
-		return 0;
 	}
 
 	public PaginatedArrayList<PermissionAsset> getAssetsAndPermissions(String hostId, Role[] roles,

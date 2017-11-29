@@ -1,34 +1,38 @@
 package com.dotmarketing.portlets.containers.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Test;
 
 public class ContainerAPITest extends ContentletBaseTest {
+
+
     @Test
     public void save() throws Exception {
     	HibernateUtil.startTransaction();
         Container c = new Container();
         c.setFriendlyName("test container");
-        c.setTitle("his is the title");
+        c.setTitle("this is the title");
         c.setMaxContentlets(5);
         c.setPreLoop("preloop code");
         c.setPostLoop("postloop code");
@@ -36,28 +40,23 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
-        User user = APILocator.getUserAPI().getSystemUser();
-        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
 
-        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
+        cc = containerAPI.save(cc, csList, defaultHost, user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
 
-        cc = APILocator.getContainerAPI().getWorkingContainerById(cc.getIdentifier(), user, false);
+        cc = containerAPI.getWorkingContainerById(cc.getIdentifier(), user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
 
-        List<ContainerStructure> csListCopy = APILocator.getContainerAPI().getContainerStructures(cc);
+        List<ContainerStructure> csListCopy = containerAPI.getContainerStructures(cc);
         ContainerStructure csCopy = csListCopy.get(0);
         assertTrue(csCopy.getCode().equals(cs.getCode()));
         assertTrue(cc.getFriendlyName().equals(c.getFriendlyName()));
@@ -72,7 +71,7 @@ public class ContainerAPITest extends ContentletBaseTest {
     public void saveWithExistingIds() throws Exception {
         Container c = new Container();
         c.setFriendlyName("test container for existing inode/identifier");
-        c.setTitle("his is the title for existing inode/identifier");
+        c.setTitle("this is the title for existing inode/identifier");
         c.setMaxContentlets(5);
         c.setPreLoop("preloop code");
         c.setPostLoop("postloop code");
@@ -86,23 +85,18 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
-        User user = APILocator.getUserAPI().getSystemUser();
-        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
 
-        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
+        cc = containerAPI.save(cc, csList, defaultHost, user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
 
-        cc = APILocator.getContainerAPI().getWorkingContainerById(cc.getIdentifier(), user, false);
+        cc = containerAPI.getWorkingContainerById(cc.getIdentifier(), user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
@@ -122,10 +116,10 @@ public class ContainerAPITest extends ContentletBaseTest {
         String newInode=UUIDGenerator.generateUuid();
         cc.setPreLoop("new preloop");
         cc.setInode(newInode);
-        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
+        cc = containerAPI.save(cc, csList, defaultHost, user, false);
         assertEquals(newInode, cc.getInode());
         assertEquals(existingIdentifier, cc.getIdentifier());
-        cc = APILocator.getContainerAPI().getWorkingContainerById(cc.getIdentifier(), user, false);
+        cc = containerAPI.getWorkingContainerById(cc.getIdentifier(), user, false);
         assertEquals(newInode, cc.getInode());
         assertEquals(existingIdentifier, cc.getIdentifier());
         assertEquals(cc.getPreLoop(),"new preloop");
@@ -133,32 +127,79 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void delete() throws Exception {
-    	HibernateUtil.startTransaction();
+        Container container = LocalTransaction.wrapReturnWithListeners(() -> {
+            final Container saved = createContainer();
+
+            if (containerAPI.delete(saved, user, false))
+                return saved;
+            else
+                throw new DotDataException("An error occurred deleting container");
+        });
+
+        AssetUtil.assertDeleted(container.getInode(), container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
+    }
+
+    @Test
+    public void testCopy() throws Exception {
+        LocalTransaction.wrap(() -> {
+            try {
+                copyContainer();
+            } catch (DotSecurityException e) {
+                throw new DotDataException(e);
+            }
+        });
+    }
+
+    private void copyContainer() throws DotSecurityException, DotDataException {
+        final Container source = createContainer();
+
+        final Container target = containerAPI.copy(source, defaultHost, user, false);
+
+        assertNotNull(target);
+        assertNotNull(target.getTitle());
+        assertNotNull(target.getInode());
+        assertTrue(target.getTitle().contains(source.getTitle()));
+        assertNotEquals(source.getInode(), target.getInode());
+        containerAPI.delete(source, user, false);
+        containerAPI.delete(target, user, false);
+    }
+
+    @Test
+    public void testFindContainersUnder() throws DotDataException {
+        final List<Container> results = containerAPI.findContainersUnder(defaultHost);
+        assertNotNull(results);
+        assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testFindAllContainers() throws DotDataException, DotSecurityException {
+        final List<Container> results = containerAPI.findAllContainers(user, false);
+        assertNotNull(results);
+        assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testFindContainers() throws DotDataException, DotSecurityException {
+        final List<Container> results = containerAPI
+                .findContainers(user, false, null, defaultHost.getIdentifier(), null, null, null, 0,
+                        -1, null);
+        assertNotNull(results);
+        assertFalse(results.isEmpty());
+    }
+
+    private Container createContainer() throws DotSecurityException, DotDataException {
         Container container = new Container();
         container.setFriendlyName("test container");
-        container.setTitle("his is the title");
+        container.setTitle("this is the title");
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
-
-        User user = APILocator.getUserAPI().getSystemUser();
-        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-
-        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+        cs.setStructureId(contentTypeAPI.find("host").inode());
         cs.setCode("this is the code");
         csList.add(cs);
-        Container saved = APILocator.getContainerAPI().save(container, csList, host, user, false);
-
-        String inode=saved.getInode();
-        String identifier=saved.getIdentifier();
-
-        assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
-
-        AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getValue());
-        HibernateUtil.closeAndCommitTransaction();
+        return containerAPI.save(container, csList, defaultHost, user, false);
     }
 }
