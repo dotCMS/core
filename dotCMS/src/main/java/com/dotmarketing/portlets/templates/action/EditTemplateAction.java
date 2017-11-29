@@ -303,13 +303,13 @@ public class EditTemplateAction extends DotPortletAction implements
 					for (Contentlet page : pages) {
 						error.append("- ").append(page.getTitle()).append("<br>");
 					}
-					SessionMessages.add(httpReq,"error", error.toString());
+					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
 
 				} else {
 					if(WebAssetFactory.deleteAsset(webAsset,user)) {
 						SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 					} else {
-						SessionMessages.add(httpReq, "error", "message." + webAsset.getType() + ".full_delete.error");
+						SessionMessages.add(httpReq, SessionMessages.ERROR, "message." + webAsset.getType() + ".full_delete.error");
 					}
 				}
 			}
@@ -340,7 +340,7 @@ public class EditTemplateAction extends DotPortletAction implements
 						for (Contentlet page : pages) {
 							error.append("- ").append(page.getTitle()).append("<br>");
 						}
-						SessionMessages.add(httpReq,"error" + errorCount++, error.toString());
+						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, error.toString());
 					} else {
 						WebAssetFactory.deleteAsset(webAsset,user);
 					}
@@ -353,7 +353,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq,"error","message.template.full_delete.error");
+				SessionMessages.add(httpReq, SessionMessages.ERROR,"message.template.full_delete.error");
 				_handleException(ae, req);
 				return;
 			}
@@ -503,7 +503,8 @@ public class EditTemplateAction extends DotPortletAction implements
 
 	private boolean isDrawed(ActionRequest req) {
 		Boolean drawedParameter = req.getParameter("drawed") != null ? Boolean.valueOf(req.getParameter("drawed")) : null;
-		return drawedParameter == null && req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) != null ? (Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) : false;
+		return drawedParameter == null && req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) != null ?
+				(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) : false;
 	}
 
 	///// ************** ALL METHODS HERE *************************** ////////
