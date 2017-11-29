@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD;
+
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
@@ -101,14 +103,16 @@ public class ForgotPasswordResource implements Serializable {
         } catch (NoSuchUserException e) {
 
             boolean displayNotSuchUserError =
-                    Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
+                    Config.getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD,
+                            false);
 
             if (displayNotSuchUserError) {
 
                 SecurityLogger.logInfo(this.getClass(),
                         String.format(
-                                "User [%s] does NOT exist in the Database. IP [%s]. DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property is TRUE",
-                                emailAddress, request.getRemoteAddr()));
+                                "User [%s] does NOT exist in the Database. IP [%s]. %s property is TRUE",
+                                emailAddress, request.getRemoteAddr(),
+                                CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD));
 
                 res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "the-email-address-you-requested-is-not-registered-in-our-database");
