@@ -13,7 +13,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -42,7 +41,7 @@ public class LoginEditModeServlet extends HttpServlet {
 
 				if (clickstream != null) {
 					String pageId = clickstream.getLastPageId();
-					_edit_mode_id = (Identifier) HibernateUtil.load(Identifier.class, pageId);
+					_edit_mode_id = APILocator.getIdentifierAPI().find(pageId);
 
 					if ("contentlet".equals(_edit_mode_id.getAssetType())) {
 						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);

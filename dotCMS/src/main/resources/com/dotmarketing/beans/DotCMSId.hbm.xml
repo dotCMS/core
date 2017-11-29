@@ -909,30 +909,6 @@
 		<property name="datetime" column="datetime" type="java.util.Date"  />
 	</class>
 
-    <class name="com.dotmarketing.beans.Identifier" table="identifier">
-	    <id name="id" column="id" type="string" length="36" unsaved-value="">
-		  <generator class="com.dotmarketing.util.UUIDGenerator" />
-		</id>
-		<property name="parentPath" type="string">
-			<column name="parent_path" length="255" unique-key="idx_identifier_1" />
-		</property>
-		<property name="assetName" type="string">
-			<column name="asset_name" length="255" unique-key="idx_identifier_1" />
-		</property>
-		<property name="hostId" type="string">
-			<column name="host_inode" length="36" unique-key="idx_identifier_1" />
-		</property>
-		<property name="assetType" type="string" not-null="true">
-			<column name="asset_type" length="64" />
-		</property>
-		<property name="sysPublishDate" type="java.util.Date" not-null="false">
-            <column name="syspublish_date" index="idx_identifier_pub" />
-        </property>
-        <property name="sysExpireDate" type="java.util.Date" not-null="false">
-            <column name="sysexpire_date" index="idx_identifier_exp"/>
-        </property>
-	</class>
-
 	<class name="com.dotmarketing.beans.TemplateContainers" table="template_containers">
 	    <id name="id" column="id" type="string" length="36" unsaved-value="">
 		  <generator class="com.dotmarketing.util.UUIDGenerator" />
