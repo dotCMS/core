@@ -92,7 +92,7 @@ public class ForgotPasswordResource implements Serializable {
 
             SecurityLogger.logInfo(this.getClass(),
                     String.format(
-                            "Email address [%s] has request to reset his password from IP [%s].",
+                            "Email address [%s] has requested to reset his password from IP [%s].",
                             emailAddress, request.getRemoteAddr()));
 
             this.userService.sendResetPassword(
