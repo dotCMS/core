@@ -1,0 +1,13 @@
+@import "variables";
+
+:host {
+    ::ng-deep {
+        .ui-overlaypanel {
+            width: 220px;
+        }
+        
+        .ui-overlaypanel-content {
+            padding: $basic-padding * 2 0;
+        }
+    }
+}

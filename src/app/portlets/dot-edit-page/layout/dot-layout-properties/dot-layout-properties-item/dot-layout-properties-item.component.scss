@@ -1,0 +1,52 @@
+@import "variables";
+
+:host { 
+    display: flex;
+    cursor: pointer;
+    align-content: center;
+    padding: $basic-padding $basic-padding * 2;
+
+    &:hover {
+        background-color: $gray-lighter; 
+    }
+
+    &.property-item__footer {
+        svg {
+            transform: rotate(180deg);
+        }
+    }
+
+    &.property-item__sidebar-left {
+        svg {
+            transform: rotate(270deg);
+        }
+    }
+
+    &.property-item__sidebar-right {
+        svg {
+            transform: rotate(90deg);
+        }
+    }
+}
+
+.property-item__icon {
+    width: 24px;
+    height: 24px;
+
+    & > g {
+        stroke: $gray-light;
+        fill: none;
+    }
+}
+
+.property-item__icon--selected {
+    & > g {
+        stroke: $white;
+        fill: $brand-primary;
+    }
+}
+
+.property-item__label {
+    padding-left: $basic-padding;
+    align-self: center;
+}

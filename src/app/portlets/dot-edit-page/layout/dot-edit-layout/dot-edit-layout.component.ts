@@ -1,3 +1,4 @@
+import { FormGroup, FormControl, FormBuilder } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
@@ -24,7 +25,8 @@ export class DotEditLayoutComponent implements OnInit {
         private pageViewService: PageViewService,
         private route: ActivatedRoute,
         public messageService: MessageService,
-        public router: Router
+        public router: Router,
+        private _fb: FormBuilder
     ) {}
 
     ngOnInit(): void {

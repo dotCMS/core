@@ -1,0 +1,9 @@
+<p-overlayPanel #op>
+    <div>
+        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.header')" class="property-item__header"></dot-layout-properties-item>
+        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.footer')" class="property-item__footer"></dot-layout-properties-item> 
+        <dot-layout-property-sidebar></dot-layout-property-sidebar>
+    </div>
+</p-overlayPanel>
+
+<button pButton iconButton flat icon="fa-th-large" (click)="op.toggle($event)"></button>
