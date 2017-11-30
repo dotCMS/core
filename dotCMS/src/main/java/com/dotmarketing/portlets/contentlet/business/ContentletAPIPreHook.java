@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotmarketing.portlets.templates.model.Template;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -129,17 +128,6 @@ public interface ContentletAPIPreHook {
 	public default boolean findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles){
       return true;
     }
-
-	/**
-	 * Gets a list of Pages for a specific Template
-	 * @param template
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public default boolean findPagesByTemplate(Template template, User user, boolean respectFrontendRoles) {
-		return true;
-	}
 
 	/**
 	 * Gets a list of Contentlets from a given parent host  
