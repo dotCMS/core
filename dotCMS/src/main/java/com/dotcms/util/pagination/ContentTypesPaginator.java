@@ -41,12 +41,11 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
 
     /**
      * Return the total
-     * @param filter
+     * @param condition
      * @return
      */
-    private long getTotalRecords(String filter) {
-        String queryCondition = this.getQueryCondition(filter);
-        return this.structureAPI.countStructures(queryCondition);
+    private long getTotalRecords(String condition) {
+        return this.structureAPI.countStructures(condition);
     }
 
     @Override
