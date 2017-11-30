@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -1434,6 +1435,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     cc.remove(indexedContentlet.getInode());
 
                     final Contentlet content = find(indexedContentlet.getInode());
+
+                    IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
+                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());
+                    identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
 
                     contentToIndex.add(content);
                     contentToIndex.addAll(indexAPI.loadDeps(content));
