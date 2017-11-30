@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotmarketing.portlets.templates.model.Template;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
