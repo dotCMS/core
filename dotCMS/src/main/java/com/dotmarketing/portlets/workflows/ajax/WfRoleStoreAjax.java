@@ -44,6 +44,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         }
 
         boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
+        boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
 
         try {
             Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
@@ -64,7 +65,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
                             roleList.add( cmsAnon );
                         else
                             roleList.add( r );
-                        response.getWriter().write( rolesToJson( roleList, includeFake ) );
+                        response.getWriter().write( rolesToJson( roleList, includeFake, includeWorkflowRoles ) );
                         return;
                     }
                 } catch ( Exception e ) {
@@ -107,9 +108,22 @@ public class WfRoleStoreAjax extends WfBaseAction {
                 roleList.add( 0, cmsAnon );
             }
 
+            if(includeWorkflowRoles){
+                Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+                roleList.add( anyWhoCanView );
+
+                Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+                roleList.add( anyWhoCanEdit );
+
+                Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+                roleList.add( anyWhoCanPublish );
+
+                Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+                roleList.add( anyWhoCanEditPermissions );
+            }
             //x = x.replaceAll("identifier", "x");
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, includeWorkflowRoles ) );
 
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
@@ -163,7 +177,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, false ) );
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
         }
@@ -171,7 +185,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
     }
 
-    private String rolesToJson ( List<Role> roles, boolean includeFake ) throws IOException, DotDataException, LanguageException {
+    private String rolesToJson ( List<Role> roles, boolean includeFake, boolean includeWorkflowRoles ) throws IOException, DotDataException, LanguageException {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
@@ -194,6 +208,12 @@ public class WfRoleStoreAjax extends WfBaseAction {
             defaultUserRole = APILocator.getRoleAPI().getUserRole( defaultUser );
         }
 
+        //Workflows Special Roles
+        Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+        Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+        Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+        Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+
         for ( Role role : roles ) {
 
             map = new HashMap<String, Object>();
@@ -204,7 +224,10 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             //We just want to add roles that can have permissions assigned to them
-            if ( !role.isEditPermissions() ) {
+            if ( !role.isEditPermissions() &&  !role.getId().equals( anyWhoCanView.getId()) &&
+                    !role.getId().equals( anyWhoCanEdit.getId()) &&
+                    !role.getId().equals( anyWhoCanPublish.getId()) &&
+                    !role.getId().equals( anyWhoCanEditPermissions.getId())) {
                 continue;
             }
 
