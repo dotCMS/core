@@ -583,8 +583,8 @@ public class Task03600UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE workflow_task ALTER COLUMN belongs_to NVARCHAR(255) NULL;"
 				+ "ALTER TABLE workflow_task ALTER COLUMN title NVARCHAR(255) NULL;"
 				+ "ALTER TABLE workflow_task ALTER COLUMN description NVARCHAR(MAX) NULL;"
-				+ "ALTER TABLE workflow_task ALTER COLUMN status NVARCHAR(255) NULL;"
-				+ "ALTER TABLE workflow_task ALTER COLUMN webasset NVARCHAR(255) NULL;"
+				+ "ALTER TABLE workflow_task ALTER COLUMN status NVARCHAR(36) NULL;"
+				+ "ALTER TABLE workflow_task ALTER COLUMN webasset NVARCHAR(36) NULL;"
 				
 				+ "ALTER TABLE tag_inode ALTER COLUMN tag_id NVARCHAR(100) NOT NULL;"
 				+ "ALTER TABLE tag_inode ALTER COLUMN inode NVARCHAR(100) NOT NULL;"
