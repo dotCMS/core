@@ -1,5 +1,8 @@
 package com.dotmarketing.business.ajax;
 
+import static com.liferay.portlet.PortletUtil.getLoggedInUser;
+import static com.liferay.portlet.PortletUtil.validateRolesPortletPermissions;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -219,6 +222,10 @@ public class RoleAjax {
 	 *             action.
 	 */
 	public void removeUsersFromRole(String[] userIds, String roleId) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -243,6 +250,10 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> addUserToRole(String userId, String roleId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -499,6 +510,9 @@ public class RoleAjax {
 
 	public void saveRoleLayouts(String roleId, String[] layoutIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
@@ -596,6 +610,10 @@ public class RoleAjax {
 
 
 	public void updateLayout(String layoutId, String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
@@ -613,6 +631,10 @@ public class RoleAjax {
 	}
 	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
