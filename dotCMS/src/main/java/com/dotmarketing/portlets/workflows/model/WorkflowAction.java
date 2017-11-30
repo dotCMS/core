@@ -94,6 +94,10 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return false;
 	}
 
+	/**
+	 * @deprecated see {@link #getRequiresCheckoutOption()}
+	 * @return boolean
+	 */
 	public boolean requiresCheckout() {
 		return requiresCheckout;
 	}

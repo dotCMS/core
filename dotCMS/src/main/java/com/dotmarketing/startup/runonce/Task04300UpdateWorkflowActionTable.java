@@ -98,20 +98,20 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
 
     // FOREIGH KEYS
-    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
-    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
-    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID  = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID  = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);";
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);";
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
     @Override
     public boolean forceRun() {

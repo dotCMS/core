@@ -192,16 +192,35 @@
 						<dt></dt>
 						<dd>
 							<div class="checkbox">
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
+									<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+								<label for="">Create New Version</label>
+							</div>
+							<div class="checkbox">
 
-								<select id="actionRequiresCheckoutOption" name="actionRequiresCheckoutOption" onchange="actionAdmin.doChange()">
+								States to show the action:<br/>
 
-									<option <%=(WorkflowAction.LOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.LOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked")%></option>
-									<option <%=(WorkflowAction.UNLOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.UNLOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked")%></option>
-									<option <%=(WorkflowAction.LOCKED_OR_UNLOCKED.equals(action.getRequiresCheckoutOption()))?"selected='selected'":""%> value="<%=WorkflowAction.LOCKED_OR_UNLOCKED%>"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Both")%></option>
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
+								<label for="">LOCKED</label>
 
-								</select>
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
+								<label for="">UNLOCKED</label>
 
-								<label for="actionRequiresCheckoutOption"><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
+								<label for="">PUBLISHED</label>
+
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
+								<label for="">UNPUBLISHED</label>
+
+								<input type="checkbox" name="actionRequiresCheckout"
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
+								<label for="">ARCHIVED</label>
+
 							</div>
 							<div class="checkbox">
 								<input type="checkbox" name="actionCommentable"
