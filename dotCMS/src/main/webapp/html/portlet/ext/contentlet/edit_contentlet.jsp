@@ -525,11 +525,18 @@ var editButtonRow="editContentletButtonRow";
 			</div>
 
 			<div class="content-edit-workflow">
+				<% if(null != wfSteps && wfSteps.size() ==1){
+					WorkflowStep step = wfSteps.get(0);
+				%>
 				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
 				<table>
 					<tr>
+						<th><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
+						<td><%=APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).getName() %></td>
+					</tr>
+					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-						<td><%=wfStep.getName() %></td>
+						<td><%=step.getName() %></td>
 					</tr>
 					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
@@ -546,6 +553,7 @@ var editButtonRow="editContentletButtonRow";
 						<%} %>
 					</tr>
 				</table>
+				<% } %>
 			</div>
 
 			<% } %>

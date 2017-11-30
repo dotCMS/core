@@ -121,7 +121,7 @@ public class LinkFactory {
 
             final DotConnect dc = new DotConnect();
             dc.setSQL(
-			"SELECT links.* from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
+			"SELECT links.*, links_1_.* from links links, identifier identifier, inode links_1_ where identifier.parent_path = ? and identifier.id = links.identifier and " +
 			"links_1_.inode = links.inode and links_1_.type='links' and " +
 			"identifier.host_inode =(select host_inode from identifier where id = ?)" +
                     (condition!=null && !condition.isEmpty()? " and " + condition:"") + " order by url, sort_order");

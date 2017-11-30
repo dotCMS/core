@@ -54,6 +54,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -162,8 +163,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException{
-		return workFlowFactory.findStepByContentlet(contentlet);
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
+		return workFlowFactory.findStepsByContentlet(contentlet);
+	}
+
+	@CloseDBIfOpened
+	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
+		WorkflowStep step = null;
+		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		if( null != steps && !steps.isEmpty() && steps.size() == 1) {
+			step = steps.get(0);
+		}
+
+		return step;
+	}
+
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
+		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
 
 	public WorkflowTask findTaskById(String id) throws DotDataException {
@@ -197,27 +213,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveSchemeForStruct(final Structure struc, final WorkflowScheme scheme) throws DotDataException {
+	public void saveSchemesForStruct(final Structure struc, final List<WorkflowScheme> schemes) throws DotDataException {
 
 		try {
-			workFlowFactory.saveSchemeForStruct(struc.getInode(), scheme);
+			workFlowFactory.saveSchemesForStruct(struc.getInode(), schemes);
 		} catch(DotDataException e){
 			throw e;
 		}
 	}
 
 	@CloseDBIfOpened
-	public WorkflowScheme findSchemeForStruct(final Structure structure) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
-
+        List<WorkflowScheme> schemes = new ArrayList<>();
 		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			return findDefaultScheme();
+			schemes.add(findDefaultScheme());
+			return schemes;
 		}
 		try{
-			return workFlowFactory.findSchemeForStruct(structure.getInode());
+			schemes = workFlowFactory.findSchemesForStruct(structure.getInode());
+			if(schemes.isEmpty()){
+				schemes.add(findDefaultScheme());
+			}
+			return schemes;
 		}
 		catch(Exception e){
-			return findDefaultScheme();
+			schemes.add(findDefaultScheme());
+			return schemes;
 		}
 	}
 
@@ -427,6 +449,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return actions;
 	}
 
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+			DotSecurityException {
+		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
+        for(WorkflowStep step : steps) {
+			actions.addAll(workFlowFactory.findActions(step));
+		}
+
+		return APILocator.getPermissionAPI().filterCollection(actions.build(), PermissionAPI.PERMISSION_USE, true, user);
+	}
+
 
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
@@ -458,8 +491,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		boolean hasLock = user.getUserId().equals(lockedUserId);
-		WorkflowStep step= findStepByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions = findActions(step, user);
+		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		List<WorkflowAction> unfilteredActions = findActions(steps, user);
 
 		if(hasLock || isNew){
 			return unfilteredActions;
@@ -944,8 +977,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
+		WorkflowScheme scheme = null;
+		List<WorkflowScheme> schemes = findSchemesForStruct(contentlet.getStructure());
+		if(null !=  schemes && schemes.size() ==1){
+			scheme =  schemes.get(0);
+		}else{
+			return null;
+		}
 
-		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure());
 		WorkflowStep entryStep = null;
 		List<WorkflowStep> wfSteps = findSteps(scheme);
 

@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -17,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
@@ -194,6 +192,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
+        container.setOwner("container's owner");
 
         final List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();

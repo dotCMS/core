@@ -803,13 +803,14 @@ public class WebAssetFactory {
 			String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
 			String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
-			sb.append("select ").append(tableName).append(".* from ").append(tableName).append(", inode ")
-			  .append(tableName).append("_1_,identifier identifier, ").append(versionTable).append(" vi ")
-			  .append(" where ")
-			  .append(tableName).append(".inode = ").append(tableName).append("_1_.inode and ")
-			  .append(tableName).append(".identifier = identifier.id ")
-			  .append(" and vi.identifier=").append(tableName).append(".identifier ")
-			  .append(" and vi.working_inode=").append(tableName).append(".inode ");
+			sb.append("select ").append(tableName).append(".*, ").append(tableName)
+					.append("_1_.* from ").append(tableName).append(", inode ")
+			  		.append(tableName).append("_1_,identifier identifier, ").append(versionTable)
+					.append(" vi ").append(" where ").append(tableName).append(".inode = ")
+					.append(tableName).append("_1_.inode and ").append(tableName)
+					.append(".identifier = identifier.id ").append(" and vi.identifier=")
+					.append(tableName).append(".identifier ").append(" and vi.working_inode=")
+					.append(tableName).append(".inode ");
 
 			if (!Strings.isNullOrEmpty(parent)) {
 				sb.append(" and identifier.host_inode = '" + parent + "'");

@@ -158,6 +158,18 @@ public interface HTMLPageAssetAPI {
     
     boolean move(HTMLPageAsset page, Host host, User user)throws DotDataException, DotSecurityException;
 
+	/**
+	 * Gets a list of Page Contentlets using a specific Template
+	 * @param template
+	 * @param user to check for permissions
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws  DotDataException, DotSecurityException;
+
     List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
     
     public String getHTML(IHTMLPage htmlPage, String userAgent)

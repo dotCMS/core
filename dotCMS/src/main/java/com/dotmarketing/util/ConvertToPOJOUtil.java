@@ -44,6 +44,8 @@ public class ConvertToPOJOUtil {
     private static final String ADD_CONTAINER_LINKS = "add_container_links";
     private static final String CONTAINERS_ADDED = "containers_added";
     private static final String INODE = "inode";
+    private static final String OWNER = "owner";
+    private static final String IDATE = "idate";
 
     private ConvertToPOJOUtil(){
 
@@ -176,6 +178,11 @@ public class ConvertToPOJOUtil {
     private static Link getLinkFields(Map<String, String> map) throws ParseException {
         final Link link = new Link();
         link.setInode(map.get(INODE));
+        link.setOwner(map.get(OWNER));
+
+        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
+            link.setIDate(map.get(IDATE));
+        }
 
         if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()){
             link.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
@@ -262,6 +269,13 @@ public class ConvertToPOJOUtil {
         Folder folder;
         folder = new Folder();
         folder.setInode(map.get(INODE));
+        folder.setOwner(map.get(OWNER));
+
+        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
+            folder.setIDate(map.get(IDATE));
+        }
+
+
         folder.setName(map.get("name"));
         folder.setTitle(map.get(TITLE));
 
@@ -303,6 +317,13 @@ public class ConvertToPOJOUtil {
         Container container;
         container = new Container();
         container.setInode(map.get(INODE));
+        container.setOwner(map.get(OWNER));
+
+        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
+            container.setIDate(map.get(IDATE));
+        }
+
+
         container.setCode(map.get("code"));
         container.setPreLoop(map.get("pre_loop"));
         container.setPostLoop(map.get("post_loop"));
@@ -364,6 +385,11 @@ public class ConvertToPOJOUtil {
         Template template;
         template = new Template();
         template.setInode(map.get(INODE));
+        template.setOwner(map.get(OWNER));
+
+        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
+            template.setIDate(map.get(IDATE));
+        }
 
         if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
             template.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));

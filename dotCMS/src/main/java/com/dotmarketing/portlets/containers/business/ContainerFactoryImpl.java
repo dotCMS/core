@@ -54,7 +54,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		sql.append("SELECT ");
 		sql.append(tableName);
-		sql.append(".* from ");
+		sql.append(".*, dot_containers_1_.* from ");
 		sql.append(tableName);
 		sql.append(
 				", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=");
@@ -81,7 +81,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		sql.append("SELECT ");
 		sql.append(tableName);
-		sql.append(".* from ");
+		sql.append(".*, dot_containers_1_.* from ");
 		sql.append(tableName);
 		sql.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ");
 		sql.append(tableName);
@@ -194,7 +194,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		final StringBuilder query = new StringBuilder();
-		query.append("select asset.* from ");
+		query.append("select asset.*, inode.* from ");
 		query.append(Type.CONTAINERS.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.CONTAINERS.getVersionTableName());
