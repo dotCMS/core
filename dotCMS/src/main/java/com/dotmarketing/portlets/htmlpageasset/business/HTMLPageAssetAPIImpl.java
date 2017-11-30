@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -471,6 +472,22 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             return true;
         }
         return false;
+    }
+
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean)
+     */
+    @Override
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        return permissionAPI.filterCollection(
+                    contentletAPI.search("+_all:" + template.getIdentifier() + " +baseType:"
+                                    + BaseContentType.HTMLPAGE.getType(), -1, 0, null, user,
+                            respectFrontendRoles),
+                    PermissionAPI.PERMISSION_READ,
+                    respectFrontendRoles,
+                    user);
     }
     
     /**
