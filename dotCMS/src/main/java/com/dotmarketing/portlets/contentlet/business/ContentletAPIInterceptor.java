@@ -765,22 +765,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
-			throws  DotDataException, DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.findPagesByTemplate(template, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		List<Contentlet> c = conAPI.findPagesByTemplate(template, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.findPagesByTemplate(template, user, respectFrontendRoles);
-		}
-		return c;
-	}
-
 	@Override
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){

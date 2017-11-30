@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.templates.action;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -293,24 +296,12 @@ public class EditTemplateAction extends DotPortletAction implements
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.TEMPLATE_EDIT);
 
-				List<Contentlet> pages = APILocator.getContentletAPI().findPagesByTemplate((Template)webAsset, user, false);
-				if (pages != null && !pages.isEmpty()) {
-
-					StringBuilder error = new StringBuilder();
-					error.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
-					error.append(webAsset.getName()).append("<br>");
-
-					for (Contentlet page : pages) {
-						error.append("- ").append(page.getTitle()).append("<br>");
-					}
-					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
-
+				StringBuilder error = new StringBuilder();
+				if (canTemplateBeDeleted(webAsset, user, error)) {
+					WebAssetFactory.deleteAsset(webAsset,user);
+					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
-					if(WebAssetFactory.deleteAsset(webAsset,user)) {
-						SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
-					} else {
-						SessionMessages.add(httpReq, SessionMessages.ERROR, "message." + webAsset.getType() + ".full_delete.error");
-					}
+					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
 				}
 			}
 			catch(Exception ae)
@@ -330,19 +321,12 @@ public class EditTemplateAction extends DotPortletAction implements
 				int errorCount =0;
 				for(String inode  : inodes)	{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
-					List<Contentlet> pages = APILocator.getContentletAPI().findPagesByTemplate((Template)webAsset, user, false);
 
-					if(pages!= null && !pages.isEmpty()) {
-						StringBuilder error = new StringBuilder();
-						error.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
-						error.append(webAsset.getName()).append("<br>");
-
-						for (Contentlet page : pages) {
-							error.append("- ").append(page.getTitle()).append("<br>");
-						}
-						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, error.toString());
-					} else {
+					StringBuilder errors = new StringBuilder();
+					if (canTemplateBeDeleted(webAsset, user, errors)) {
 						WebAssetFactory.deleteAsset(webAsset,user);
+					} else {
+						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, errors.toString());
 					}
 				}
 
@@ -499,6 +483,30 @@ public class EditTemplateAction extends DotPortletAction implements
 		}else
 			setForward(req, "portlet.ext.templates.edit_template");
 		// *********************** END GRAZIANO issue-12-dnd-template		
+	}
+
+	/**
+	 * Returns true if a template is not being used by any html pages and can be deleted, false otherwise
+	 * @param template
+	 * @param user
+	 * @return true if template can be deleted
+	 * @throws LanguageException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder) throws LanguageException, DotDataException, DotSecurityException {
+		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false);
+
+		if(pages!= null && !pages.isEmpty()) {
+			errorBuilder.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
+			errorBuilder.append(template.getName()).append("<br>");
+
+			for (Contentlet page : pages) {
+				errorBuilder.append("- ").append(page.getTitle()).append("<br>");
+			}
+			return false;
+		}
+		return true;
 	}
 
 	private boolean isDrawed(ActionRequest req) {
