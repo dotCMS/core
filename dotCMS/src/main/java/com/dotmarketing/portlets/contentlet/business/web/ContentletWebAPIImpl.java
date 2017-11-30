@@ -685,8 +685,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					String fullPageUrl = parentFolderPath + pageUrl;
 					if (!pageUrl.endsWith(".html")) {
 						List<Identifier> folders = identAPI
-								.findByURIPattern("folder", fullPageUrl, false,
-										false, true, host);
+								.findByURIPattern("folder", fullPageUrl,true, host);
 						if (folders.size() > 0) {
 							// Found a folder with same path
 							status = "message.htmlpage.error.htmlpage.exists.folder";

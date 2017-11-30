@@ -22,7 +22,8 @@ public class Role implements Serializable,Comparable<Role> {
 	public static final String LOGIN_AS = "Login As";
 	public static final String USER = "User";
 	public static final String CMS_POWER_USER = "CMS Power User";
-	
+	public static final String DEFAULT_CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
+
 	private String id = "";
 	private String name;
 	private String description;

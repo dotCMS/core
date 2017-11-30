@@ -72,9 +72,14 @@ public class ContentTypeResourceTest {
 					)
 			);
 
-			// Test Content Type Retrieval
+			// Test Content Type Retrieval by ID
 			RestUtilTest.verifySuccessResponse(
 					response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
+			);
+
+			// Test Content Type Retrieval by Var
+			RestUtilTest.verifySuccessResponse(
+				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest())
 			);
 
 			assertContentTypeCreate(

@@ -130,73 +130,72 @@ public class PublisherQueueJob implements StatefulJob {
 					Date publishDate = (Date) bundle.get("publish_date");
 
 					Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + ". Status: "
-							+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
-							+ ". Publish Date: " + publishDate);
-					if ( publishDate.before(new Date()) ) {
-						tempBundleId = (String) bundle.get("bundle_id");
-						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
+						+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
+						+ ". Publish Date: " + publishDate);
+
+					tempBundleId = (String) bundle.get("bundle_id");
+					MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
+
+					try {
+						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
+						tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+
+						//Setting Audit objects History
+						historyPojo = new PublishAuditHistory();
+						//Retrieving assets
+						Map<String, String> assets = new HashMap<String, String>();
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+
+						for ( PublishQueueElement c : tempBundleContents ) {
+							assets.put(c.getAsset(), c.getType());
+							assetsToPublish.add(c);
+						}
+						historyPojo.setAssets(assets);
+
+						final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
+						DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
+								.cast(jobDataMap.get("deliveryStrategy"));
+
+						PublisherConfig pconf = new PushPublisherConfig();
+						pconf.setAssets(assetsToPublish);
+
+						//Status
+						status = new PublishAuditStatus(tempBundleId);
+						status.setStatusPojo(historyPojo);
+						//Insert in Audit table
+						pubAuditAPI.insertPublishAuditStatus(status);
+
+						//Queries creation
+						pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
+						pconf.setId(tempBundleId);
+						pconf.setUser(APILocator.getUserAPI().getSystemUser());
+						pconf.setStartDate(new Date());
+						pconf.runNow();
+						pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
+						pconf.setDeliveryStrategy(deliveryStrategy);
+						if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
+							pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
+						} else {
+							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+						}
+
+						pconf = setUpConfigForPublisher(pconf);
+						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 						try {
-							PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
-							tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
-
-							//Setting Audit objects History
-							historyPojo = new PublishAuditHistory();
-							//Retrieving assets
-							Map<String, String> assets = new HashMap<String, String>();
-							List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
-
-							for ( PublishQueueElement c : tempBundleContents ) {
-								assets.put(c.getAsset(), c.getType());
-								assetsToPublish.add(c);
-							}
-							historyPojo.setAssets(assets);
-
-							final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
-							DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
-									.cast(jobDataMap.get("deliveryStrategy"));
-							
-							PublisherConfig pconf = new PushPublisherConfig();
-							pconf.setAssets(assetsToPublish);
-
-							//Status
-							status = new PublishAuditStatus(tempBundleId);
-							status.setStatusPojo(historyPojo);
-							//Insert in Audit table
-							pubAuditAPI.insertPublishAuditStatus(status);
-
-							//Queries creation
-							pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
-							pconf.setId(tempBundleId);
-							pconf.setUser(APILocator.getUserAPI().getSystemUser());
-							pconf.setStartDate(new Date());
-							pconf.runNow();
-							pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
-							pconf.setDeliveryStrategy(deliveryStrategy);
-							if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
-								pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-							} else {
-								pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
-							}
-
-							pconf = setUpConfigForPublisher(pconf);
-							PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
-
-							try {
-								APILocator.getPublisherAPI().publish(pconf);
-							} catch (DotPublishingException e) {
-								/*
-								If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
-								there is something wrong with a bundler or creating the bundle.
-								 */
-								Logger.error(PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e);
-								PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
-								pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
-								pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
-							}
-						} finally {
-							MDC.remove(BUNDLE_ID);
+							APILocator.getPublisherAPI().publish(pconf);
+						} catch (DotPublishingException e) {
+							/*
+							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
+							there is something wrong with a bundler or creating the bundle.
+							 */
+							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e);
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
+							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
+							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
+					} finally {
+						MDC.remove(BUNDLE_ID);
 					}
 				}
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
@@ -328,16 +327,16 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        } else if (groupPushStats.getCountGroupFailed() > 0
-				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
-            // If bundle was installed in some groups only
-            bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupFailed() > 0
+				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
+			// If bundle was installed in some groups only
+			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
             // If bundle was installed in all groups
             PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus = Status.SUCCESS;
@@ -347,10 +346,14 @@ public class PublisherQueueJob implements StatefulJob {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else {
-            // Otherwise, just keep trying to publish the bundle
-            bundleStatus = Status.WAITING_FOR_PUBLISHING;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+        } else if (groupPushStats.getCountGroupSaved() > 0){
+			// If the static bundle was saved but has not been sent
+			bundleStatus = Status.BUNDLE_SAVED_SUCCESSFULLY;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		}else{
+			// Otherwise, just keep trying to publish the bundle
+			bundleStatus = Status.WAITING_FOR_PUBLISHING;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         }
 
 		Logger.info(this, "===========================================================");
@@ -370,6 +373,7 @@ public class PublisherQueueJob implements StatefulJob {
             boolean isGroupOk = false;
             boolean isGroupPublishing = false;
             boolean isGroupFailed = false;
+            boolean isGroupSaved = false;
             for (final EndpointDetail detail : group.values() ) {
                 if ( detail.getStatus() == Status.SUCCESS.getCode() ) {
                     isGroupOk = true;
@@ -379,7 +383,10 @@ public class PublisherQueueJob implements StatefulJob {
                 } else if ( detail.getStatus() == Status.FAILED_TO_PUBLISH
                         .getCode() ) {
                     isGroupFailed = true;
-                }
+                } else if ( detail.getStatus() == Status.BUNDLE_SAVED_SUCCESSFULLY
+						.getCode() ) {
+					isGroupSaved = true;
+				}
             }
             if ( isGroupOk ) {
                 groupPushStats.increaseCountGroupOk();
@@ -390,6 +397,9 @@ public class PublisherQueueJob implements StatefulJob {
             if ( isGroupFailed ) {
                 groupPushStats.increaseCountGroupFailed();
             }
+			if ( isGroupSaved ) {
+				groupPushStats.increaseCountGroupSaved();
+			}
         }
 
         return groupPushStats;
@@ -514,6 +524,7 @@ public class PublisherQueueJob implements StatefulJob {
 		private int countGroupOk = 0;
 		private int countGroupPublishing = 0;
 		private int countGroupFailed = 0;
+		private int countGroupSaved = 0;
 
 		public void increaseCountGroupOk() {
 			countGroupOk++;
@@ -527,6 +538,10 @@ public class PublisherQueueJob implements StatefulJob {
 			countGroupFailed++;
 		}
 
+		public void increaseCountGroupSaved() {
+			countGroupSaved++;
+		}
+
 		public int getCountGroupOk() {
 			return countGroupOk;
 		}
@@ -537,6 +552,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 		public int getCountGroupFailed() {
 			return countGroupFailed;
+		}
+
+		public int getCountGroupSaved() {
+			return countGroupSaved;
 		}
 	}
 

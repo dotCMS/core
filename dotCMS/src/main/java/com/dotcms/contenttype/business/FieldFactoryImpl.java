@@ -565,27 +565,29 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
-  public void moveSortOrderForward(int from, int to) throws DotDataException {
+  public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.moveSorOrderForward);
+    dc.addParam(contentTypeId);
     dc.addParam(from);
     dc.addParam(to);
     dc.loadResult();
   }
 
-  public void moveSortOrderBackward(int from, int to) throws DotDataException {
+  public void moveSortOrderBackward(String contentTypeId, int from, int to) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.moveSorOrderBackward);
+    dc.addParam(contentTypeId);
     dc.addParam(from);
     dc.addParam(to);
     dc.loadResult();
   }
 
-  public void moveSortOrderForward(int from) throws DotDataException {
-     moveSortOrderForward(from, Integer.MAX_VALUE);
+  public void moveSortOrderForward(String contentTypeId, int from) throws DotDataException {
+     moveSortOrderForward(contentTypeId, from, Integer.MAX_VALUE);
   }
 
-  public void moveSortOrderBackward(int from) throws DotDataException {
-    moveSortOrderBackward(from, Integer.MAX_VALUE);
+  public void moveSortOrderBackward(String contentTypeId, int from) throws DotDataException {
+    moveSortOrderBackward(contentTypeId, from, Integer.MAX_VALUE);
   }
 }

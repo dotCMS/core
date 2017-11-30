@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -58,7 +57,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -1413,6 +1411,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param user          The user performing this operation.
      */
     private void reindexReplacedUserContent(final User userToReplace, final User user) {
+        final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+
         try {
             final StringBuilder luceneQuery = new StringBuilder();
             luceneQuery.append("+modUser:").append(userToReplace.getUserId());
@@ -1421,6 +1421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
                     (luceneQuery.toString(), limit, offset, null, user, false);
             long totalCount;
+
             if (UtilMethods.isSet(contentlets)) {
                 final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
                 List<Contentlet> contentToIndex = new ArrayList<>();
@@ -1431,7 +1432,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 for (final ContentletSearch indexedContentlet : contentlets) {
                     // IMPORTANT: Remove contentlet from cache first
                     cc.remove(indexedContentlet.getInode());
+
                     final Contentlet content = find(indexedContentlet.getInode());
+
                     contentToIndex.add(content);
                     contentToIndex.addAll(indexAPI.loadDeps(content));
                     if (counter % batchSize == 0) {
@@ -1449,12 +1452,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if (!contentToIndex.isEmpty()) {
                     indexAPI.indexContentList(contentToIndex, null, false);
                 }
-                Logger.info(this, String.format("Reindexing of updated related content after " +
-                        "deleting user '%s' has finished successfully.", userToReplace.getUserId()
-                        + "/" + userToReplace.getFullName()));
+
+                final String successMessage = String.format("Reindexing of updated related content after " +
+                    "deleting user '%s' has finished successfully.", userToReplace.getUserId()
+                    + "/" + userToReplace.getFullName());
+
+                Logger.info(this, successMessage);
+                notificationAPI.error(successMessage, user.getUserId());
             }
         } catch (Exception e) {
-            final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
             final String errorMsg = String.format("Unable to reindex updated related content for " +
                     "deleted " + "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId()
                     + "/" + userToReplace.getFullName());

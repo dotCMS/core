@@ -234,7 +234,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
 		if (!permissionAPI.doesUserHavePermissions(PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {

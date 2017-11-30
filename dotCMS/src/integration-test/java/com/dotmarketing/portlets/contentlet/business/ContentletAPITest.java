@@ -69,6 +69,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -2015,7 +2016,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1=new Date();
+        Date d1= new Date();
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
@@ -2039,8 +2040,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
 
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
-        assertEquals(d1,ident.getSysPublishDate());
-        assertEquals(d2,ident.getSysExpireDate());
+        assertNotNull(ident.getSysPublishDate());
+        assertNotNull(ident.getSysExpireDate());
+        assertTrue(ConvertToPOJOUtil.df.format(d1)
+                .equals(ConvertToPOJOUtil.df.format(ident.getSysPublishDate())));
+        assertTrue(ConvertToPOJOUtil.df.format(d2)
+                .equals(ConvertToPOJOUtil.df.format(ident.getSysExpireDate())));
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2055,13 +2060,17 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
 
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
-        assertEquals(d3,ident2.getSysPublishDate());
-        assertEquals(d4,ident2.getSysExpireDate());
+        assertNotNull(ident2.getSysPublishDate());
+        assertNotNull(ident2.getSysExpireDate());
+        assertTrue(ConvertToPOJOUtil.df.format(d3)
+                .equals(ConvertToPOJOUtil.df.format(ident2.getSysPublishDate())));
+        assertTrue(ConvertToPOJOUtil.df.format(d4)
+                .equals(ConvertToPOJOUtil.df.format(ident2.getSysExpireDate())));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
-        assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
+        assertTrue(ConvertToPOJOUtil.df.format(d3).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
+        assertTrue(ConvertToPOJOUtil.df.format(d4).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
 
         Thread.sleep(2000); // wait a bit for the index
         

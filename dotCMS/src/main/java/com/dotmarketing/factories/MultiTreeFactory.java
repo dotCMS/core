@@ -1,7 +1,12 @@
 package com.dotmarketing.factories;
 
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -22,6 +27,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.Lists;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree
@@ -53,8 +59,8 @@ public class MultiTreeFactory {
 			db.addParam(inode2.getInode());
 			db.addParam(inode3.getInode());
 			db.getResult();
-			
-			updateVersionTs(inode1.getInode());
+
+			updateHTMLPageVersionTS(inode1.getInode());
 			refreshPageInCache(inode1.getInode());
 			
 		}
@@ -127,8 +133,8 @@ public class MultiTreeFactory {
      * @throws DotDataException
      * @throws DotSecurityException 
      * 
-     * @see MultiTreeFactory#updateVersionTs(String, Long)
-     * @see MultiTreeFactory#refreshPageInCache(String, Long)
+     * @see MultiTreeFactory#updateHTMLPageVersionTS(String)
+     * @see MultiTreeFactory#refreshPageInCache(String)
      */
     public static void deleteMultiTreeByParent1(Identifier parent, Long languageId)
             throws DotDataException, DotSecurityException {
@@ -138,7 +144,7 @@ public class MultiTreeFactory {
             if (languageId == null) {
                 db.executeStatement("DELETE FROM multi_tree WHERE parent1 = '" + parent.getId()
                         + "';");
-                updateVersionTs(parent.getId());
+				updateHTMLPageVersionTS(parent.getId());
                 refreshPageInCache(parent.getId());
                 return;
             }
@@ -160,9 +166,9 @@ public class MultiTreeFactory {
                     .append("AND c.lang = ").append(languageId).append(");");
 
             db.executeStatement(query.toString());
-            
-            updateVersionTs(parent.getId(), languageId);
-            refreshPageInCache(parent.getId(), languageId);
+
+			updateHTMLPageVersionTS(parent.getId());
+            refreshPageInCache(parent.getId());
             
         } catch (SQLException e) {
             throw new DotDataException(DELETE_MULTITREE_ERROR_MSG, e);
@@ -174,35 +180,20 @@ public class MultiTreeFactory {
     }
     
     /**
-     * Deletes multi-tree relationships given a MultiTree object.
-     * 
+     * Deletes multi-tree relationship given a MultiTree object.
+     * It also updates the version_ts of all versions of the htmlpage passed in (multiTree.parent1)
+     *
      * @param multiTree
-     * @throws DotDataException 
+     * @throws DotDataException
      * @throws DotSecurityException 
      *            
      */
-    public static void deleteMultiTree (MultiTree o) throws DotDataException, DotSecurityException {
-        deleteMultiTree(o, APILocator.getLanguageAPI().getDefaultLanguage()
-                .getId());
-    }
-
-    /**
-     * Deletes multi-tree relationships given a MultiTree object and a Language Id.
-     * A language id is passed in so cleanup of cached resources of parent Page content
-     * Needs to be cleaned, along with update its version_ts value
-     * 
-     * @param multiTree
-     * @param languageId 
-     * @throws DotDataException 
-     * @throws DotSecurityException 
-     *            
-     */
-	public static void deleteMultiTree(MultiTree o, Long languageId) throws DotDataException, DotSecurityException {
+	public static void deleteMultiTree(MultiTree multiTree) throws DotDataException, DotSecurityException {
 	    try {
-	        String id = o.getParent1();
-	        HibernateUtil.delete(o);
-	        updateVersionTs(id, languageId);
-	        refreshPageInCache(id,languageId);
+	        String id = multiTree.getParent1();
+	        HibernateUtil.delete(multiTree);
+	        updateHTMLPageVersionTS(id);
+	        refreshPageInCache(id);
 	        return;	        
 	    } catch (DotHibernateException e) {
 	        Logger.error(MultiTreeFactory.class, DELETE_MULTITREE_ERROR_MSG + e, e);
@@ -398,8 +389,8 @@ public class MultiTreeFactory {
 		try {
 		    String id = o.getParent1();
 			HibernateUtil.saveOrUpdate(o);
-			updateVersionTs(id, languageId);
-			refreshPageInCache(id,languageId);
+			updateHTMLPageVersionTS(id);
+			refreshPageInCache(id);
 		} catch (DotHibernateException e) {
 			Logger.error(MultiTreeFactory.class, SAVE_MULTITREE_ERROR_MSG + e, e);
 			throw new DotRuntimeException(e.getMessage());
@@ -442,34 +433,51 @@ public class MultiTreeFactory {
 
 		try {
 			String tableName = "";
-			String sql = "";
-			if(c.getName().contains("Identifier")){
-			  tableName = "identifier"; 
-			}else{
-			  tableName = ((Inode) c.newInstance()).getType();
-			}
-			HibernateUtil dh = new HibernateUtil(c);
-			if(tableName.equalsIgnoreCase("identifier")){
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree "
-				+ " where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".id and " 
-				+ " order by multi_tree.tree_order";
-			}else {
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "
-				+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " 
-				+ tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
-			}
-            
-			Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
-			
-			dh.setSQLQuery(sql);
-            
-			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+			StringBuilder sql = new StringBuilder();
 
-			return dh.list();
+			if(c.getName().contains("Identifier")){
+				tableName = "identifier";
+			}else{
+				tableName = ((Inode) c.newInstance()).getType();
+			}
+			DotConnect dc = new DotConnect();
+
+			if(tableName.equalsIgnoreCase("identifier")){
+				sql.append("SELECT ");
+				sql.append(tableName);
+				sql.append(".* from ");
+				sql.append(tableName);
+				sql.append(", multi_tree multi_tree ")
+						.append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ");
+				sql.append(tableName);
+				sql.append(".id order by multi_tree.tree_order");
+			}else {
+				sql.append("SELECT ");
+				sql.append(tableName);
+				sql.append(".* from ");
+				sql.append(tableName);
+				sql.append(", multi_tree multi_tree, inode ");
+				sql.append(tableName);
+				sql.append("_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ");
+				sql.append(tableName);
+				sql.append(".inode and ");
+				sql.append(tableName);
+				sql.append("_1_.inode = ");
+				sql.append(tableName);
+				sql.append(".inode order by multi_tree.tree_order");
+			}
+
+			Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
+
+			dc.setSQL(sql.toString());
+            
+			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getId() + "\n");
+            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getId() + "\n");
+
+			dc.addParam(p1.getId());
+			dc.addParam(p2.getId());
+
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), c);
 		}
 		catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
@@ -657,7 +665,7 @@ public class MultiTreeFactory {
 	}	
 	
     /**
-     * Update a HTML Page Version Info Timestamp given a HTMLPage Identifier.
+     * Update the version_ts of all versions of the HTML Page with the given id.
      * If a MultiTree Object has been added or deleted from this page,
      * its version_ts value needs to be updated so it can be included
      * in future Push Publishing tasks
@@ -668,61 +676,40 @@ public class MultiTreeFactory {
      * @throws DotSecurityException 
      *            
      */
-    private static void updateVersionTs(String id) throws DotDataException {
-        updateVersionTs(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());    
-    }
-	
-    /**
-     * Update a HTML Page Version Info Timestamp given a HTMLPage Identifier and a Language Id.
-     * If a MultiTree Object has been added or deleted from this page,
-     * its version_ts value needs to be updated so it can be included
-     * in future Push Publishing tasks
-     * 
-     * @param id The HTMLPage Identifier to pass in 
-     * @throws DotContentletStateException
-     * @throws DotDataException 
-     * @throws DotSecurityException 
-     *            
-     */
-	private static void updateVersionTs(String id, Long languageId) throws DotDataException {
-	    Identifier ident = APILocator.getIdentifierAPI().find(id);
-        ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(ident.getId(), languageId);
-        versionInfo.setVersionTs(new Date());
-        APILocator.getVersionableAPI().saveContentletVersionInfo(
-                versionInfo);
+	private static void updateHTMLPageVersionTS(String id) throws DotDataException, DotSecurityException {
+	  List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
+		for (ContentletVersionInfo versionInfo : infos) {
+			if(versionInfo!=null) {
+				versionInfo.setVersionTs(new Date());
+				APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);
+			}
+		}
 	}
 	
     /**
-     * Refresh Cached objects of page given a HTMLPage Identifier.
+     * Refresh cached objects for all versions of the HTMLPage with the given pageIdentifier.
      * 
-     * @param id The HTMLPage Identifier to pass in 
+     * @param pageIdentifier The HTMLPage Identifier to pass in
      * @throws DotContentletStateException
      * @throws DotDataException 
      * @throws DotSecurityException 
      *            
      */
-    private static void refreshPageInCache(String id) throws DotDataException, DotSecurityException {
-        refreshPageInCache(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());
-    }
-    
+    private static void refreshPageInCache(String pageIdentifier) throws DotDataException, DotSecurityException {
+        Set<String> inodes = new HashSet<String>();
+        List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
+        for (ContentletVersionInfo versionInfo : infos) {
+            inodes.add(versionInfo.getWorkingInode());
+            if(versionInfo.getLiveInode() != null){
+              inodes.add(versionInfo.getLiveInode());
+            }
+        }
 
-    /**
-     * Refresh Cached objects of page given a HTMLPage Identifier and a Language Id.
-     * 
-     * @param id The HTMLPage Identifier to pass in 
-     * @param languageId A language Id that points to a specific version we'll clean up
-     * @throws DotContentletStateException
-     * @throws DotDataException 
-     * @throws DotSecurityException 
-     *            
-     */
-    private static void refreshPageInCache(String id, Long languageId) throws DotDataException, DotSecurityException {
-        Identifier ident = APILocator.getIdentifierAPI().find(id);
-        Contentlet content = APILocator.getContentletAPI()
-                .findContentletByIdentifier(ident.getId(), false, languageId, APILocator.systemUser(), false);
-        IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(content);
-        PageServices.invalidateAll(htmlPage);
+        List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
+		for (Contentlet pageContent : contentlets) {
+			IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
+			PageServices.invalidateAll(htmlPage);
+		}
     }
 	
 }

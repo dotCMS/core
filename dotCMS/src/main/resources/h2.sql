@@ -2024,7 +2024,7 @@ create table workflow_scheme_x_structure(
 	structure_id varchar(36) references structure(inode)
 );
 
-create unique index workflow_idx_scheme_structure_2 on
+create index workflow_idx_scheme_structure_1 on
 	workflow_scheme_x_structure(structure_id);
 
 

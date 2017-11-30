@@ -2258,7 +2258,6 @@ create table workflow_scheme_x_structure(
 	structure_id varchar2(36) not null references structure(inode)
 );
 
-create index wk_idx_scheme_str_2 on workflow_scheme_x_structure(structure_id);
 
 
 

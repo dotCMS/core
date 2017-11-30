@@ -596,7 +596,7 @@ public class DirectorAction extends DotPortletAction {
 					Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
 					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
-					MultiTreeFactory.deleteMultiTree(multiTree, htmlPage.getLanguageId());
+					MultiTreeFactory.deleteMultiTree(multiTree);
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {

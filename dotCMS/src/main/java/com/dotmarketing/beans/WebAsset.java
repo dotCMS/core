@@ -188,7 +188,9 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @param title The title to set
 	 */
 	public void setTitle(String title) {
-		this.title = title;
+		if (title != null) {
+			this.title = title;
+		}
 	}
 
 	/**

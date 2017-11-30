@@ -173,17 +173,10 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 	 * @return Sorted List of Field
 	 */
 	protected List<Field> sortListByVariable(List<Field> list) {
-		List<Field> sortedList = new ArrayList<>();
-		if (!list.isEmpty()) {
-			List unmodifiableList = Collections.unmodifiableList(list);
-			List<Field> newList = new ArrayList<Field>(unmodifiableList);
-
-			Collections.sort(newList,
-					Comparator.comparing(fieldOne -> fieldOne.variable()));
-
-			sortedList = newList;
-		}
-		return sortedList;
+	    List<Field> sortedList = new ArrayList<>();
+	    sortedList.addAll(list);
+	    sortedList.sort(Comparator.comparing(Field::variable));
+		return Collections.unmodifiableList(sortedList);
 	}
 
 }

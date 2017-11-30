@@ -1,11 +1,14 @@
 package com.dotmarketing.viewtools;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.contenttype.transform.JsonTransformer;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -86,36 +89,49 @@ public class DotTemplateTool implements ViewTool {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
+    public static TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
         String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
-        if(layout==null){
-        String title = null;
-        String drawedBody;
-        if ( UtilMethods.isSet( themeInode ) ) {
-            Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
-            
-            Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
 
-            if ( !template.getInode().equals( themeInode ) ) {
-                template = (Template) InodeFactory.getInode( themeInode, Template.class );
+        if(layout==null) {
+            String title = null;
+            String drawedBody;
+            if (UtilMethods.isSet(themeInode)) {
+                Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
+
+                Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
+
+                if (!template.getInode().equals(themeInode)) {
+                    template = (Template) InodeFactory.getInode(themeInode, Template.class);
+                }
+
+                drawedBody = template.getDrawedBody();
+                title = template.getTitle();
+            } else {
+                drawedBody = (String) request.getAttribute("designedBody");
+                if (request.getAttribute("title") != null) {
+                    title = (String) request.getAttribute("title");
+                }
             }
 
-            drawedBody = ((Template) template).getDrawedBody();
-            title = template.getTitle();
-        } else {
-            drawedBody = (String) request.getAttribute( "designedBody" );
-            if ( request.getAttribute( "title" ) != null ) {
-                title = (String) request.getAttribute( "title" );
+            //Parse and return the layout for this template
+
+            try {
+                layout = getTemplateLayoutFromJSON(drawedBody);
+            } catch (IOException e) {
+                layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
             }
+
+            layout.setTitle(title);
+            layoutCache.put(key, layout);
         }
 
-        //Parse and return the layout for this template
-        layout = DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
-        layout.setTitle( title );
-        layoutCache.put(key, layout);
-        }
         return layout;
+    }
+
+    public static TemplateLayout getTemplateLayoutFromJSON(String json)  throws IOException{
+        return JsonTransformer.mapper.readValue(json, TemplateLayout.class);
+
     }
 
     /**

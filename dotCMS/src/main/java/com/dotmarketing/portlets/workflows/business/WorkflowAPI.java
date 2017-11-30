@@ -36,7 +36,33 @@ public interface WorkflowAPI {
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
+	/**
+	 * This method will get a list with the current contentlet workflow step.
+	 * If the contentlet doesn't have a workflow step associated, then it will
+	 * display all the first workflow steps associated to the contentlet Content Type.
+	 *
+	 * @param contentlet The current contentlet
+	 * @return A list of step available for the contentlet
+	 * @throws DotDataException
+	 */
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Return the contentlet current step if there is one or null
+	 * if the contentlet is not associated to one workflow step.
+	 * @param contentlet The contentlet to check
+	 * @return The WorkflowStep where the contentlet is or null if not
+	 * @throws DotDataException
+	 */
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Check if the schemeId pass exist n the list of workflow scheme.
+	 * @param schemeId WorkflowScheme ID to validate
+	 * @param schemes List of WorkflowScheme to compare
+	 * @return true if the scheme Id exist false if not
+	 */
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes);
 
 	/**
 	 * Finds a workflow by id
@@ -148,7 +174,7 @@ public interface WorkflowAPI {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public WorkflowScheme findSchemeForStruct(Structure struct) throws DotDataException;
+	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
@@ -209,6 +235,14 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
+	/**
+	 * Find the list of Workflow Actions available for the current user on the specified workflow step
+	 * @param step The current step
+	 * @param user The current User
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 			DotSecurityException;
 
@@ -223,7 +257,25 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(WorkflowScheme scheme, User user) throws DotDataException,
 			DotSecurityException;
 
-	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
+	/**
+	 * Find the list of Workflow Actions available for the current user ont the list of steps
+	 * @param steps List of workflow steps
+	 * @param user The current User
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * This method associate a list of Workflow Schemes to a Structure
+	 *
+	 * @param struc The Structure
+	 * @param schemes List of Workflow Schemes to be associated to the Structure
+	 * @throws DotDataException
+	 */
+	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	/**
 	 * Saves an single action the action is associated to the schema by default

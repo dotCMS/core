@@ -22,9 +22,9 @@ public abstract class WorkflowCache implements Cachable{
 
 	public abstract WorkflowScheme getScheme(String key);
 	abstract protected WorkflowStep getStep(String key);
-	abstract protected WorkflowStep getStep(Contentlet con);
+	abstract protected List<WorkflowStep> getSteps(Contentlet con);
 	abstract protected WorkflowTask getTask(Contentlet key);
-	abstract protected WorkflowStep addStep(Contentlet contentlet, WorkflowStep step);
+	abstract protected List<WorkflowStep> addSteps(Contentlet contentlet, List<WorkflowStep> steps);
 	abstract protected WorkflowStep addStep(WorkflowStep step) ;
 	abstract protected WorkflowTask addTask(WorkflowTask step) ;
 	abstract protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task);
@@ -41,8 +41,8 @@ public abstract class WorkflowCache implements Cachable{
 	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void removeActions(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowTask task) ;
-	abstract protected WorkflowScheme getSchemeByStruct(String key) ;
-	abstract protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) ;
+	abstract protected List<WorkflowScheme> getSchemesByStruct(String key) ;
+	abstract protected List<WorkflowScheme> addForStructure(String struct, List<WorkflowScheme> scheme) ;
 	abstract protected void removeStructure(String struct);
 	protected void flushSteps(){
 		CacheLocator.getCacheAdministrator().flushGroup(STEP_GROUP);

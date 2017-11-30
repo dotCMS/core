@@ -2202,8 +2202,6 @@ create table workflow_scheme_x_structure(
 	structure_id varchar(36) references structure(inode)
 );
 
-create index workflow_idx_scheme_structure_2 on workflow_scheme_x_structure(structure_id);
-
 
 delete from workflow_history;
 delete from workflow_comment;

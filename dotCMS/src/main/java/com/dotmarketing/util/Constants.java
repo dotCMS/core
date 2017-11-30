@@ -134,4 +134,7 @@ public final class Constants {
 
 	// REGEX to validate emails
 	public static final String REG_EX_EMAIL = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+
+	public static final String CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD = "DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD";
+
 }

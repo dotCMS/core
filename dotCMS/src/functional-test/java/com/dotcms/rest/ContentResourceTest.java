@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
@@ -58,6 +59,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import java.util.ArrayList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -82,6 +84,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -116,6 +120,63 @@ public class ContentResourceTest {
         hostAPI = APILocator.getHostAPI();
         contentletAPI = APILocator.getContentletAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
+    }
+
+    @Test
+    public void getContent() throws Exception {
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+        assertNotNull(structure);
+
+        //Get Contentlets by ContentType
+        String response = webTarget.path("/query/+contentType:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 1: " + response);
+        JSONObject json = new JSONObject(response);
+        assertNotNull(json);
+
+        JSONArray contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        int length = contentlets.length();
+        assertTrue(length > 0);
+
+
+        //Get Contentlets by Structure Name
+        response = webTarget.path("/query/+stName:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 2: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
+        //Get Contentlets by Structure inode
+        response = webTarget.path("/query/+stInode:"+ structure.getInode() +"/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 3: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
     }
 
     @Test
@@ -606,7 +667,9 @@ public class ContentResourceTest {
         StructureFactory.saveStructure(st);
         Field field=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
         FieldFactory.saveField(field);
-        APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
+        List<WorkflowScheme> schemes = new ArrayList<>();
+        schemes.add(scheme);
+        APILocator.getWorkflowAPI().saveSchemesForStruct(st, schemes);
 
         // send the Rest api call
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
@@ -626,7 +689,9 @@ public class ContentResourceTest {
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
         // must be in the first step
-        Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
+        WorkflowStep contentStep = APILocator.getWorkflowAPI().findStepByContentlet(cont);
+        assertNotNull(contentStep);
+        Assert.assertEquals(step1.getId(), contentStep.getId());
 
         boolean assigned=false;
 

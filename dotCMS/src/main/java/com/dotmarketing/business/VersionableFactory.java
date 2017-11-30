@@ -169,4 +169,7 @@ public abstract class VersionableFactory {
      */
     protected abstract VersionInfo findVersionInfoFromDb(Identifier identifier) throws DotDataException, DotStateException;
 
+    protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
+        throws DotDataException, DotStateException ;
+
 }

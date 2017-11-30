@@ -207,11 +207,11 @@ public class ContentTypeResource implements Serializable {
 
 
 	@GET
-	@Path("/id/{id}")
+	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getType(@PathParam("id") final String id, @Context final HttpServletRequest req)
+	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -219,7 +219,7 @@ public class ContentTypeResource implements Serializable {
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
 		try {
-			ContentType type = tapi.find(id);
+			ContentType type = tapi.find(idOrVar);
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
 		} catch (NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404
