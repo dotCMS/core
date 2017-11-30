@@ -494,7 +494,8 @@ public class EditTemplateAction extends DotPortletAction implements
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder) throws LanguageException, DotDataException, DotSecurityException {
+	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder)
+			throws LanguageException, DotDataException, DotSecurityException {
 		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false);
 
 		if(pages!= null && !pages.isEmpty()) {

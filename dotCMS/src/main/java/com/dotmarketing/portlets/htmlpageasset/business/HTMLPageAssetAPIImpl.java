@@ -480,18 +480,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        try {
-            return permissionAPI.filterCollection(
+
+        return permissionAPI.filterCollection(
                     contentletAPI.search("+_all:" + template.getIdentifier() + " +baseType:"
                                     + BaseContentType.HTMLPAGE.getType(), -1, 0, null, user,
                             respectFrontendRoles),
                     PermissionAPI.PERMISSION_READ,
                     respectFrontendRoles,
                     user);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(), e);
-        }
     }
     
     /**
