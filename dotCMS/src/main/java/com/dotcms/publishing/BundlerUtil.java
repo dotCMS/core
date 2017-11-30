@@ -10,6 +10,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,6 +51,19 @@ public class BundlerUtil {
 		return dir;
 	}
 
+    public static File getStaticBundleRoot(String name) {
+        return getStaticBundleRoot(name, true);
+    }
+
+    public static File getStaticBundleRoot(String name, boolean createDir) {
+        String bundlePath = ConfigUtils.getStaticPublishPath() + File.separator + name;
+        File dir = new File(bundlePath);
+        if (createDir) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -58,6 +72,16 @@ public class BundlerUtil {
 	public static File getBundleRoot(PublisherConfig config){
 		return getBundleRoot(config.getName());
 	}
+
+    /**
+     * This method takes a config and will create the static bundle directory and
+     * write the bundle.xml file to it
+     *
+     * @param config Config with the id of bundle
+     */
+    public static File getStaticBundleRoot(PublisherConfig config) {
+        return getStaticBundleRoot(config.getName());
+    }
 
 	/**
 	 * write bundle down
