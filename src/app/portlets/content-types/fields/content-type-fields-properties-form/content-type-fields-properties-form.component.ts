@@ -135,7 +135,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         }
         this.form = this.fb.group(formFields);
 
-        this.handleAutoCheckValues();
+        this.setAutoCheckValues();
     }
 
     private sortProperties(properties: string[]): void {
@@ -145,32 +145,47 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
 
     }
 
-    private handleAutoCheckValues(): void {
+    private setAutoCheckValues(): void {
         if (this.form.get('searchable')) {
-            this.form.get('searchable').valueChanges.subscribe(res => this.setIndexedValueChecked(res));
+            this.handleCheckValues(this.form.get('searchable'));
         }
         if (this.form.get('listed')) {
-            this.form.get('listed').valueChanges.subscribe(res => this.setIndexedValueChecked(res));
+            this.handleCheckValues(this.form.get('listed'));
         }
         if (this.form.get('unique')) {
-            this.form.get('unique').valueChanges.subscribe(res => this.handleUniqueValuesChecked(res));
+            this.handleCheckValues(this.form.get('unique'));
         }
     }
 
-    private setIndexedValueChecked(propertyValue: boolean): void {
-        if (this.form.get('indexed')) {
-            this.form.get('indexed').setValue(propertyValue);
-            this.handleDisabledIndexed(propertyValue);
+    private handleCheckValues(checkbox: AbstractControl): void {
+        if (checkbox.value) {
+            if (checkbox === this.form.get('unique')) {
+                this.handleDisabledRequired(true);
+            }
+            this.handleDisabledIndexed(true);
         }
+
+        checkbox.valueChanges.subscribe(res => {
+            checkbox === this.form.get('unique') ? this.handleUniqueValuesChecked(res) : this.setIndexedValueChecked(res);
+        });
+    }
+
+    private setIndexedValueChecked(propertyValue: boolean): void {
+        if (this.form.get('indexed') && propertyValue) {
+            this.form.get('indexed').setValue(propertyValue);
+        }
+
+        this.handleDisabledIndexed(propertyValue);
     }
 
     private handleUniqueValuesChecked(propertyValue: boolean): void {
         this.setIndexedValueChecked(propertyValue);
 
-        if (this.form.get('required')) {
+        if (this.form.get('required') && propertyValue) {
             this.form.get('required').setValue(propertyValue);
-            this.handleDisabledRequired(propertyValue);
         }
+
+        this.handleDisabledRequired(propertyValue);
     }
 
     private handleDisabledIndexed(disable: boolean): void {
