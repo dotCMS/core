@@ -9,6 +9,8 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.util.ArrayList"%>
 <%@ page import="com.dotmarketing.util.*" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.WorkflowStep" %>
 <%
     String referer = request.getParameter("referer");
     String[] publishInodes = request.getParameterValues("publishInode");
@@ -118,7 +120,14 @@ function cancel() {
                     <%=title%>
                 </td>
                 <td width="30%">
-                    <%if(con != null && APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()){ %>
+                    <%  WorkflowScheme scheme = null;
+                        WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(con);
+                        if(null != step){
+                            scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
+                        }
+
+                        if(con != null && null != scheme && scheme.isMandatory()){
+                    %>
                         <span style="color:red"><%= LanguageUtil.get(pageContext, "Cannot-Publish-In-A-Workflow") %></span>
                     
                     <%} else if(con != null && !APILocator.getPermissionAPI().doesUserHavePermission(con, APILocator.getPermissionAPI().PERMISSION_PUBLISH, user)){%>

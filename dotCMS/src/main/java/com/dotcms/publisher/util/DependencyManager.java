@@ -868,8 +868,10 @@ public class DependencyManager {
 		folders.addOrClean(st.getFolder(), f.getModDate()); // add the folder dependency
 
 		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-			workflows.addOrClean(scheme.getId(), scheme.getModDate());
+			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(st);
+			for (WorkflowScheme scheme : schemes) {
+				workflows.addOrClean(scheme.getId(), scheme.getModDate());
+			}
 		} catch (DotDataException e) {
 			Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
 		}

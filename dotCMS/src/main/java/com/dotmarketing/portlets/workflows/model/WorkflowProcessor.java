@@ -87,19 +87,19 @@ public class WorkflowProcessor {
 
 		try {
 			this.user = firingUser;
-			scheme = getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
+			WorkflowStep contentStep = getWorkflowAPI().findStepByContentlet(contentlet);
+			if(null != contentStep) {
+				scheme = getWorkflowAPI().findScheme(contentStep.getSchemeId());
+			}
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
-			if (!UtilMethods.isSet(workflowActionId) && task.isNew()){
+			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null !=  scheme){
 				workflowActionId=scheme.getEntryActionId();
 			}
 
-
-
-
 			if (!UtilMethods.isSet(workflowActionId)) {
-				if (scheme.isMandatory() ) {
+				if (null !=  scheme && scheme.isMandatory() ) {
 					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.mandatory.action.type") + contentlet.getStructure().getName());
 				}
 
@@ -145,6 +145,9 @@ public class WorkflowProcessor {
 			nextStep = getWorkflowAPI().findStep(action.getNextStep());
 			step = getWorkflowAPI().findStep(action.getStepId());
 			actionClasses = getWorkflowAPI().findActionClasses(action);
+			if(null == scheme) {
+                scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+            }
 
 			if(task != null && UtilMethods.isSet(task.getId())){
 				history = getWorkflowAPI().findWorkflowHistory(task);

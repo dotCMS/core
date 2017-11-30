@@ -47,7 +47,24 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException;
 
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
+	/**
+	 * This method will get the current workflow step of the contentlet.
+	 * If the contentlet doesn't have a workflow step associated, then it will
+	 * display all the first workflow steps associated to the contentlet Content Type.
+	 *
+	 * @param contentlet The current contentlet
+	 * @return A list of step available for the contentlet
+	 * @throws DotDataException
+	 */
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Check if the schemeId pass exist n the list of workflow scheme.
+	 * @param schemeId WorkflowScheme ID to validate
+	 * @param schemes List of WorkflowScheme to compare
+	 * @return true if the scheme Id exist false if not
+	 */
+	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes);
 
 	public void saveComment(WorkflowComment comment) throws DotDataException;
 
@@ -59,11 +76,11 @@ public interface WorkFlowFactory {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public WorkflowScheme findSchemeForStruct(String id) throws DotDataException;
+	public List<WorkflowScheme> findSchemesForStruct(String id) throws DotDataException;
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
-	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException;
+	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 

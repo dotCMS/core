@@ -47,8 +47,8 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findTaskByContentlet(contentlet);
 	}
 
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
-		return wapi.findStepByContentlet(contentlet);
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+		return wapi.findStepsByContentlet(contentlet);
 	}
 
 	public WorkflowTask findTaskById(String id) throws DotDataException {
@@ -77,8 +77,8 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findScheme(id);
 	}
 
-	public WorkflowScheme findSchemeForStruct(Structure struct) throws DotDataException {
-		return wapi.findSchemeForStruct(struct);
+	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException {
+		return wapi.findSchemesForStruct(struct);
 	}
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {

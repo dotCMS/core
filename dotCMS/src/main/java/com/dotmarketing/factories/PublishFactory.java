@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.services.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -309,8 +310,10 @@ public class PublishFactory {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     Contentlet contentlet = (Contentlet) asset;
-                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( contentlet.getStructure() ).isMandatory() ) {
-                        contentletAPI.publish( (Contentlet) asset, user, false );
+                    WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+
+                    if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
+                    	contentletAPI.publish( (Contentlet) asset, user, false );
                         ContentletServices.invalidateLive(contentlet);
                     }
                 } catch ( DotSecurityException e ) {

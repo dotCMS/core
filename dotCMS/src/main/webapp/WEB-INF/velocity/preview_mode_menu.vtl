@@ -24,15 +24,24 @@
 #if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
     #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
 #end
-
-#set($wfScheme = $workflowtool.findSchemeForStruct($dotPageContent.structure))
+#set($wfSchemes = $workflowtool.findSchemesForStruct($dotPageContent.structure))
+#set($wfScheme = '')
 
 #set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
-#set($wfActions = $workflowtool.findActions($wfStep, $backendUser))
+
+#if($wfStep)
+    #set($wfScheme = $workflowtool.findScheme($wfStep.getSchemeId()))
+#end
+
+#set($wfActions = $workflowtool.findActions($wfSteps, $backendUser))
 #set($isLocked = $contents.isLocked($dotPageContent.inode))
 #set($iCanLock = $contents.canLock($dotPageContent.inode))
-#set($mandatory = $wfScheme.mandatory)
-			
+#if($UtilMethods.isSet($wfScheme))
+   #set($mandatory = $wfScheme.mandatory)
+#else
+   #set($mandatory = false)
+#end
+
 #set($previewDevices = $dotcontent.pull("+contentType:previewDevice", 500, "previewDevice.name"))
 
 

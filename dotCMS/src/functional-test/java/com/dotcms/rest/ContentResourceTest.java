@@ -58,6 +58,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import java.util.ArrayList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -606,7 +607,9 @@ public class ContentResourceTest {
         StructureFactory.saveStructure(st);
         Field field=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
         FieldFactory.saveField(field);
-        APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
+        List<WorkflowScheme> schemes = new ArrayList<>();
+        schemes.add(scheme);
+        APILocator.getWorkflowAPI().saveSchemesForStruct(st, schemes);
 
         // send the Rest api call
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
@@ -626,7 +629,9 @@ public class ContentResourceTest {
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
         // must be in the first step
-        Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
+        WorkflowStep contentStep = APILocator.getWorkflowAPI().findStepByContentlet(cont);
+        assertNotNull(contentStep);
+        Assert.assertEquals(step1.getId(), contentStep.getId());
 
         boolean assigned=false;
 
