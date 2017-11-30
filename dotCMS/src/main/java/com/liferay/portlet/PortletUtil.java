@@ -27,8 +27,8 @@ public class PortletUtil {
      *
      * @param loggedInUser User to validate
      */
-    public static void validateUsersPortletPermissions(User loggedInUser)
-            throws DotSecurityException, DotDataException, SystemException, PortalException {
+    public static void validateUsersPortletPermissions(final User loggedInUser)
+            throws DotSecurityException, DotDataException {
 
         validatePortletPermissions("users", loggedInUser);
     }
@@ -38,8 +38,8 @@ public class PortletUtil {
      *
      * @param loggedInUser User to validate
      */
-    public static void validateRolesPortletPermissions(User loggedInUser)
-            throws DotSecurityException, DotDataException, SystemException, PortalException {
+    public static void validateRolesPortletPermissions(final User loggedInUser)
+            throws DotSecurityException, DotDataException {
 
         validatePortletPermissions("roles", loggedInUser);
     }
@@ -50,8 +50,8 @@ public class PortletUtil {
      * @param portletId Portlet to validate
      * @param loggedInUser User to validate
      */
-    public static void validatePortletPermissions(String portletId, User loggedInUser)
-            throws DotSecurityException, DotDataException, SystemException, PortalException {
+    public static void validatePortletPermissions(final String portletId, final User loggedInUser)
+            throws DotSecurityException, DotDataException {
 
         if (null == loggedInUser) {
             throw new DotSecurityException(
@@ -60,7 +60,7 @@ public class PortletUtil {
         }
         if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portletId, loggedInUser)) {
 
-            String errorMessage = String.format(
+            final String errorMessage = String.format(
                     "User [%s] does not have access to the [%s] Portlet",
                     loggedInUser.getEmailAddress(), portletId);
 
