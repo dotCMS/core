@@ -18,6 +18,10 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class PortletUtil {
 
+    private PortletUtil() {
+        throw new IllegalStateException("Utility class");
+    }
+
     /**
      * Validates if the logged in user has the required permissions to access the users portlet
      *
@@ -72,12 +76,12 @@ public class PortletUtil {
     public static User getLoggedInUser()
             throws PortalException, SystemException, DotSecurityException {
 
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
+        final WebContext ctx = WebContextFactory.get();
+        final HttpServletRequest request = ctx.getHttpServletRequest();
 
-        User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+        final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+        final String remoteIp = request.getRemoteHost();
 
-        String remoteIp = request.getRemoteHost();
         String userId = "[not logged in]";
         if (loggedInUser != null && loggedInUser.getUserId() != null) {
             userId = loggedInUser.getUserId();
