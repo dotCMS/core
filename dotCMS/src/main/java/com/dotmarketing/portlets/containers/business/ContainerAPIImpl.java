@@ -181,7 +181,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		String temp = new String(containerTitle);
 		String result = "";
 		final DotConnect dc = new DotConnect();
-		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".* from "
+		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".*, dot_containers_1_.* from "
 				+ Inode.Type.CONTAINERS.getTableName()
 				+ ", inode dot_containers_1_, identifier ident, container_version_info vv " +
 				"where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS

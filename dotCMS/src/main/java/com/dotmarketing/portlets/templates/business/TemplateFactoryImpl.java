@@ -50,14 +50,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	static TemplateCache templateCache = CacheLocator.getTemplateCache();
 
 	private final String templatesUnderHostSQL =
-		"select template.* from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
+		"select template.*, template_1_.*  from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
 		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
 		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
 		"template.inode = template_1_.inode and vi.identifier=template.identifier and " +
 		"template.inode=vi.working_inode ";
 
 	private final String templateWithNameSQL =
-		"select template.* from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
+		"select template.*, template_1_.* from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
 		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
 		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
 		"vi.identifier=template_identifier.id and template.title = ? and " +
@@ -228,7 +228,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset.* from ");
+		query.append("select asset.*, inode.* from ");
 		query.append(Type.TEMPLATE.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.TEMPLATE.getVersionTableName());

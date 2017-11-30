@@ -186,6 +186,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateFactory templateFactory = new TemplateFactoryImpl();
         template.setTitle("empty test template " + UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
+        template.setOwner("template's owner");
 
         try {
             template = templateAPI.saveTemplate(template, host, user, false);
@@ -194,6 +195,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             assertNotNull(result);
             assertEquals(template.getInode(), result.getInode());
+            assertTrue(template.getOwner()!=null && template.getOwner().equals(result.getOwner()));
         } finally {
             if (template.getInode() != null) {
                 templateAPI.delete(template, user, false);

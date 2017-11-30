@@ -158,7 +158,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			orderBy.append(order);
 		}
 
-		query.append("SELECT folder.* from folder folder, inode folder_1_, identifier identifier ").
+		query.append("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_, identifier identifier ").
 				append("where folder.identifier = identifier.id and ").
 				append("folder_1_.type = 'folder' and folder_1_.inode = folder.inode and ").
 				append("identifier.parent_path = ? and identifier.host_inode = ? ");
@@ -219,7 +219,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("select folder.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
+				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
 				dc.addParam(assetName.toLowerCase());
 				dc.addParam(parentPath.toLowerCase());
@@ -263,7 +263,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 
 					dc = new DotConnect();
-					dc.setSQL("select folder.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
+					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
 							+ " where asset_name = ?"
 							+ " and parent_path = ?"
 							+ " and folder_1_.type = 'folder'"

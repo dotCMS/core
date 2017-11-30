@@ -156,7 +156,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset.* from links asset, inode, identifier,link_version_info versioninfo");
+		query.append("select asset.*, inode.* from links asset, inode, identifier,link_version_info versioninfo");
 		if(UtilMethods.isSet(parent)){
 			query.append(" ,tree where asset.inode=inode.inode ")
 					.append("and asset.identifier = identifier.id and tree.parent = '")
