@@ -174,22 +174,10 @@ public class RelationshipAPIImpl extends RelationshipFactoryImpl implements Rela
         return super.dbRelatedContent(relationship, contentlet, hasParent, live);
     }
 
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, String orderBy, String sqlCondition, boolean liveContent) throws DotDataException {
-        return super.dbRelatedContent(relationship, contentlet, orderBy, sqlCondition, liveContent);
-    }
-
     @WrapInTransaction
     @Override
     public void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException {
         super.deleteByContent(contentlet, relationship, relatedContentlets);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, String orderBy, String sqlCondition, boolean liveContent, int limit) throws DotDataException {
-        return super.dbRelatedContent(relationship, contentlet, orderBy, sqlCondition, liveContent, limit);
     }
 
     @WrapInTransaction

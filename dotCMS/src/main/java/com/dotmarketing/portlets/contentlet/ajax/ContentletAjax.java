@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -998,7 +999,8 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
+				WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+				searchResult.put("workflowMandatory", String.valueOf(null!=step?APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory():false));
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions

@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -132,5 +135,14 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         HibernateUtil.closeAndCommitTransaction();
         assertEquals(existingIdent,link.getIdentifier());
         assertEquals(existingInode,link.getInode());
+    }
+
+    @Test
+    public void testFindLinks() throws DotDataException, DotSecurityException {
+        final List<Link> result = mAPI
+                .findLinks(user, false, null, hAPI.findDefaultHost(user, false).getIdentifier(), null, null, null, 0, -1, null);
+
+        assertNotNull(result);
+        assertTrue(!result.isEmpty());
     }
 }

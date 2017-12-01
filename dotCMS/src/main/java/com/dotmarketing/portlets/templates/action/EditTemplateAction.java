@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.templates.action;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.List;
@@ -42,7 +46,6 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -292,10 +295,13 @@ public class EditTemplateAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-				if(WebAssetFactory.deleteAsset(webAsset,user)) {
+
+				StringBuilder error = new StringBuilder();
+				if (canTemplateBeDeleted(webAsset, user, error)) {
+					WebAssetFactory.deleteAsset(webAsset,user);
 					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
-					SessionMessages.add(httpReq, "error", "message." + webAsset.getType() + ".full_delete.error");
+					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
 				}
 			}
 			catch(Exception ae)
@@ -311,37 +317,27 @@ public class EditTemplateAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				String [] inodes = req.getParameterValues("publishInode");
-				StringBuilder dependencies = new StringBuilder();
-				boolean returnValue = false;
 
+				int errorCount =0;
 				for(String inode  : inodes)	{
-					String result = null;
-
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
 
-					if(UtilMethods.isSet(result)) {
-						dependencies.append(LanguageUtil.get(user, "template-name")).append(": ").append(webAsset.getFriendlyName()).append("\n");
-						dependencies.append(LanguageUtil.get(user, "Pages-URLs")).append(": ").append(result);
+					StringBuilder errors = new StringBuilder();
+					if (canTemplateBeDeleted(webAsset, user, errors)) {
+						WebAssetFactory.deleteAsset(webAsset,user);
 					} else {
-						returnValue = WebAssetFactory.deleteAsset(webAsset,user);
+						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, errors.toString());
 					}
-
-					dependencies.append("\n");
 				}
 
-				if(returnValue)
+				if(errorCount == 0)
 				{
 					SessionMessages.add(httpReq,"message","message.template.full_delete");
-				}
-				else
-				{
-					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-					Logger.debug(this," Template cannot be deleted if it has existing relationships");
 				}
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq,"error","message.template.full_delete.error");
+				SessionMessages.add(httpReq, SessionMessages.ERROR,"message.template.full_delete.error");
 				_handleException(ae, req);
 				return;
 			}
@@ -471,7 +467,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
-		boolean isDrawed = req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED)!=null?(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED):false;
+		boolean isDrawed = isDrawed(req);
 
 		// If we are into the design mode we are redirected at the new portlet action
 		if(((null!=cmd) && cmd.equals(Constants.DESIGN))){
@@ -487,6 +483,37 @@ public class EditTemplateAction extends DotPortletAction implements
 		}else
 			setForward(req, "portlet.ext.templates.edit_template");
 		// *********************** END GRAZIANO issue-12-dnd-template		
+	}
+
+	/**
+	 * Returns true if a template is not being used by any html pages and can be deleted, false otherwise
+	 * @param template
+	 * @param user
+	 * @return true if template can be deleted
+	 * @throws LanguageException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder)
+			throws LanguageException, DotDataException, DotSecurityException {
+		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false);
+
+		if(pages!= null && !pages.isEmpty()) {
+			errorBuilder.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
+			errorBuilder.append(template.getName()).append("<br>");
+
+			for (Contentlet page : pages) {
+				errorBuilder.append("- ").append(page.getTitle()).append("<br>");
+			}
+			return false;
+		}
+		return true;
+	}
+
+	private boolean isDrawed(ActionRequest req) {
+		Boolean drawedParameter = req.getParameter("drawed") != null ? Boolean.valueOf(req.getParameter("drawed")) : null;
+		return drawedParameter == null && req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) != null ?
+				(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED) : false;
 	}
 
 	///// ************** ALL METHODS HERE *************************** ////////

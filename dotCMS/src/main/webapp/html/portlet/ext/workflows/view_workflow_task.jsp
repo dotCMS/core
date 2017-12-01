@@ -31,8 +31,13 @@
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
 	Role assignedTo 	= APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
+
 	WorkflowStep step 	= APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
-	WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
+	WorkflowScheme scheme = null;
+	if(null != step){
+		scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
+	}
+
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
 
@@ -238,7 +243,7 @@
 	                <%--Start workflow tasks --%>
 					<%boolean hasAction = false; %>
 					<%if(canEdit) {%>
-						<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+						<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 							<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: doEdit">
 								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Content")) %>
 							</div>

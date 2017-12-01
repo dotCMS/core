@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
@@ -59,7 +58,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -1437,6 +1435,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     cc.remove(indexedContentlet.getInode());
 
                     final Contentlet content = find(indexedContentlet.getInode());
+
+                    IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
+                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());
+                    identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
 
                     contentToIndex.add(content);
                     contentToIndex.addAll(indexAPI.loadDeps(content));

@@ -1,17 +1,12 @@
 package com.dotmarketing.portlets.links.business;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -21,12 +16,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
@@ -101,36 +99,54 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		boolean done = false;
 
 		StringBuffer conditionBuffer = new StringBuffer();
-		String condition = !includeArchived?" asset.inode=versioninfo.workingInode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():"  asset.inode=versioninfo.workingInode ";
+		final String condition = !includeArchived?" asset.inode=versioninfo.working_inode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():"  asset.inode=versioninfo.working_inode ";
 		conditionBuffer.append(condition);
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
 			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<Object>();
+			paramValues = new ArrayList<>();
 			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(counter==0){
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else{
-							conditionBuffer.append(" lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}else{
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append("'");
 						}else{
-							conditionBuffer.append(" OR lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" OR lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" OR asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" OR asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}
 
@@ -140,50 +156,56 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset from asset in class " + Link.class.getName() + ", " +
-				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName());
-		query.append(", versioninfo in class ").append(LinkVersionInfo.class.getName());
+		query.append("select asset.*, inode.* from links asset, inode, identifier,link_version_info versioninfo");
 		if(UtilMethods.isSet(parent)){
-			query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode=inode.inode " +
-					"and asset.identifier = identifier.id and tree.parent = '"+parent+"' and tree.child=asset.inode");
+			query.append(" ,tree where asset.inode=inode.inode ")
+					.append("and asset.identifier = identifier.id and tree.parent = '")
+					.append(parent).append("' and tree.child=asset.inode");
 
 		}else{
 			query.append(" where asset.inode=inode.inode and asset.identifier = identifier.id");
 		}
 		query.append(" and versioninfo.identifier=identifier.id ");
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.hostId = '"+ hostId +"'");
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId);
+			query.append('\'');
 		}
 		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '"+ inode +"'");
+			query.append(" and asset.inode = '");
+			query.append(inode);
+			query.append("'");
 		}
 		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '"+ identifier +"'");
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append("'");
 		}
 		if(!UtilMethods.isSet(orderBy)){
-			orderBy = "modDate desc";
+			orderBy = "mod_date desc";
 		}
 
-		List<Link> resultList = new ArrayList<Link>();
-		HibernateUtil dh = new HibernateUtil(Link.class);
-		String type;
+		List<Link> resultList;
+		final DotConnect dc = new DotConnect();
 		int countLimit = 100;
 		int size = 0;
 		try {
-			type = ((Inode) Link.class.newInstance()).getType();
-			query.append(" and asset.type='"+type+ "' and " + conditionBuffer.toString() + " order by asset." + orderBy);
-			dh.setQuery(query.toString());
+			query.append(" and ");
+			query.append(conditionBuffer.toString());
+			query.append(" order by asset.");
+			query.append(orderBy);
+			dc.setSQL(query.toString());
 
 			if(paramValues!=null && paramValues.size()>0){
 				for (Object value : paramValues) {
-					dh.setParam((String)value);
+					dc.addParam((String)value);
 				}
 			}
 
 			while(!done) {
-				dh.setFirstResult(internalOffset);
-				dh.setMaxResults(internalLimit);
-				resultList = dh.list();
+				dc.setStartRow(internalOffset);
+				dc.setMaxRows(internalLimit);
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -232,5 +254,4 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		return assets;
 
 	}
-
 }

@@ -15,17 +15,22 @@ boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocat
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
-
-WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet); 
 
+List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
+WorkflowScheme scheme = null;
 List<WorkflowAction> wfActions = null;
 List<WorkflowAction> wfActionsAll = null;
 try{
-	wfStep = APILocator.getWorkflowAPI().findStepByContentlet(contentlet); 
+	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user); 
-	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfStep, user); 
+	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
+	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
+		wfStep = wfSteps.get(0);
+		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
+	}
 }
 catch(Exception e){
 	wfActions = new ArrayList();
@@ -69,7 +74,7 @@ catch(Exception e){
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 			</a>
 		<%} else { %>
-			<%if(!scheme.isMandatory()){ %>
+			<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 				<span class="saveIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
@@ -83,7 +88,7 @@ catch(Exception e){
 		</a>
 	<%} %>
 <%}else if(!InodeUtils.isSet(contentlet.getInode())) {%>
-	<%if(!scheme.isMandatory()){ %>
+	<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 			<span class="saveIcon"></span>
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
@@ -92,7 +97,7 @@ catch(Exception e){
 <%}else if(!isContLocked) {%>
 
 
-	<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+	<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 
 
 
@@ -105,7 +110,7 @@ catch(Exception e){
 <%}%>
 
 
-<%if(!scheme.isMandatory()){ %>
+<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 	<%
 	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
 	if (canPublish) {
@@ -134,17 +139,23 @@ catch(Exception e){
 	<%if(a.requiresCheckout() && ! contentEditable) {%>
 		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
 		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+                    +" )</small>"%>
 		</a>
 	<%} else if(!a.requiresCheckout() && ! contentEditable && InodeUtils.isSet(contentlet.getInode())) {%>
 		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
 		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+                    +" )</small>"%>
 		</a>
 	<%} else if(a.requiresCheckout() &&  contentEditable ) {%>
 		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
 		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+                    +" )</small>"%>
 		</a>
 	<%} %>
 <%} %>

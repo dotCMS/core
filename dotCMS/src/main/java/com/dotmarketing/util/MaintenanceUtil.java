@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.beans.Identifier;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -123,7 +124,10 @@ public class MaintenanceUtil {
 	public static void cleanInodeTableData()throws DotDataException{
 		Map map = new HashMap();
 		try {
-			map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
+			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 		} catch (HibernateException e) {
 			throw new DotDataException(e.getMessage(),e);
 		}

@@ -354,7 +354,9 @@ public class UserAPITest extends IntegrationTestBase {
 		FieldFactory.saveField(field2);
 		FieldsCache.addField(field2);
 
-		workflowAPI.saveSchemeForStruct(st, ws);
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		workflowAPI.saveSchemesForStruct(st, schemes);
 
 		/**
 		 * Add container
@@ -437,6 +439,7 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(currentStep);
 
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
@@ -492,7 +495,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
 		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
 
-		WorkflowStep step = workflowAPI.findStepByContentlet(contentAsset2);
+		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(step);
 		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
 		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
 
@@ -556,6 +560,7 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
 
 			step = workflowAPI.findStepByContentlet(content);
+			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
 			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
 
