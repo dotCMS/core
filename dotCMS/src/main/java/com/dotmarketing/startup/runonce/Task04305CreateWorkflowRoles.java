@@ -120,8 +120,8 @@ public class Task04305CreateWorkflowRoles extends AbstractJDBCStartupTask {
         dc.addParam(roleKey);                                   //key
         dc.addParam(systemRootRoleId + " --> " + roleId);       //db_fqn
         dc.addParam(systemRootRoleId);                          //parent
-        dc.addParam(false);                                     //edit_permission
-        dc.addParam(false);                                     //edit users
+        dc.addParam(true);                                     //edit_permission
+        dc.addParam(true);                                     //edit users
         dc.addParam(false);                                     //edit layouts
         dc.addParam(false);                                     //locked
         dc.addParam(true);                                      //system
