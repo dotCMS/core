@@ -73,7 +73,7 @@ public class PublishFactoryTest extends IntegrationTestBase {
             final String languageId = String.valueOf(languageAPI.getDefaultLanguage().getId());
             final String userId = systemUser.getUserId();
 
-            BlockPageCache.PageCacheParameters
+            final BlockPageCache.PageCacheParameters
                 cacheParameters = new BlockPageCache.PageCacheParameters(userId, languageId, "", "", "");
 
             final String dummyText = "This is dummy text";
