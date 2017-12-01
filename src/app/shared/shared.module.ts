@@ -24,7 +24,7 @@ import { MdInputTextModule } from '../view/directives/md-inputtext/md-input-text
 import { DotDropdownModule } from '../view/components/_common/dropdown-component/dot-dropdown.module';
 import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
 import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
-
+import { DotEventsService } from '../api/services/dot-events.service';
 
 @NgModule({
     declarations: [],
@@ -47,7 +47,7 @@ import { MainNavigationModule } from '../view/components/dot-navigation/dot-navi
         DotDropdownModule,
         GravatarModule,
         MainNavigationModule
-    ],
+    ]
 })
 export class SharedModule {
     static forRoot(): ModuleWithProviders {
@@ -65,7 +65,8 @@ export class SharedModule {
                 SiteService,
                 SocketFactory,
                 StringUtils,
-                UserModel
+                UserModel,
+                DotEventsService
             ]
         };
     }

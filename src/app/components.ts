@@ -13,7 +13,7 @@ import {
 } from './view/components/_common/notifications/notifications';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
-import { ToolbarComponent } from './view/components/toolbar/toolbar.component';
+import { ToolbarComponent } from './view/components/dot-toolbar/dot-toolbar.component';
 
 export const COMPONENTS = [
     CustomTimeComponent,

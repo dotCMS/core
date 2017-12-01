@@ -14,6 +14,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Component, DebugElement } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import {DotEventsService} from '../../../../api/services/dot-events.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -144,6 +145,14 @@ describe('DotEditLayoutGridComponent', () => {
         component.addBox();
         expect(component.propagateChange).toHaveBeenCalled();
     });
+
+    it( 'should resize the grid when the left menu is toggle', fakeAsync(() => {
+        const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
+        spyOn( component.ngGrid, 'triggerResize');
+        dotEventsService.notify( {name: 'dot-side-nav-toggle'});
+        tick(160);
+        expect(component.ngGrid.triggerResize).toHaveBeenCalled();
+    }));
 
     it('should call writeValue to define the initial value of grid', () => {
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);

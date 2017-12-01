@@ -18,6 +18,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { Component } from '@angular/core';
+import {DotEventsService} from '../../../../api/services/dot-events.service';
 
 
 @Component({

@@ -1,5 +1,5 @@
-import { Component, OnInit, Input, forwardRef } from '@angular/core';
-import { NgGridConfig, NgGridItemConfig } from 'angular2-grid';
+import { Component, OnInit, Input, forwardRef, ViewChild } from '@angular/core';
+import { NgGrid, NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation/dot-confirmation.service';
 import { MessageService } from '../../../../api/services/messages-service';
@@ -13,6 +13,7 @@ import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DotEventsService } from '../../../../api/services/dot-events.service';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -33,6 +34,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 })
 export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor {
     @Input() pageView: DotPageView;
+    @ViewChild(NgGrid) ngGrid: NgGrid;
     grid: DotLayoutGridBox[];
 
     gridConfig: NgGridConfig = <NgGridConfig>{
@@ -70,12 +72,19 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     constructor(
         private dotConfirmationService: DotConfirmationService,
         private dotEditLayoutService: DotEditLayoutService,
-        public messageService: MessageService
+        public messageService: MessageService,
+        private dotEventsService: DotEventsService
     ) {}
 
     ngOnInit() {
         this.messageService.getMessages(this.i18nKeys).subscribe();
         this.setGridValue();
+        this.dotEventsService.listen('dot-side-nav-toggle').subscribe(() => {
+            // timeOut here is needed because the menu animation time.
+            setTimeout(() => {
+                this.ngGrid.triggerResize();
+            }, 150);
+        });
     }
 
     /**

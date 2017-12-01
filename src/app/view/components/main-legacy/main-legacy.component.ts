@@ -1,4 +1,5 @@
 import {Component, OnDestroy, OnInit, ViewEncapsulation} from '@angular/core';
+import {DotEventsService} from '../../../api/services/dot-events.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -12,7 +13,7 @@ export class MainComponentLegacy implements OnInit, OnDestroy {
     private messages: any = {};
     private label = '';
 
-    constructor() {
+    constructor(private dotEventsService : DotEventsService) {
     }
 
     ngOnInit(): void {
@@ -27,5 +28,6 @@ export class MainComponentLegacy implements OnInit, OnDestroy {
 
     toggleSidenav(): void {
         this.isMenuCollapsed = !this.isMenuCollapsed;
+        this.dotEventsService.notify({name: 'dot-side-nav-toggle'});
     }
 }

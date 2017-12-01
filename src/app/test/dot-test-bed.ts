@@ -19,6 +19,7 @@ import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
+import { DotEventsService } from '../api/services/dot-events.service';
 
 @Component({
     selector: 'p-confirmDialog',
@@ -28,12 +29,7 @@ class FakeConfirmDialogComponent {}
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
-        imports: [
-            ...NGFACES_MODULES,
-            CommonModule,
-            FormsModule,
-            ReactiveFormsModule
-        ],
+        imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule],
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
@@ -49,7 +45,8 @@ export class DOTTestBed {
             Logger,
             LoggerService,
             StringUtils,
-            UserModel
+            UserModel,
+            DotEventsService
         ]
     };
 

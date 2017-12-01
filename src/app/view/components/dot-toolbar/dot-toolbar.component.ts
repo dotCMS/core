@@ -4,9 +4,9 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    selector: 'toolbar-component',
-    styleUrls: ['./toolbar.component.scss'],
-    templateUrl: './toolbar.component.html'
+    selector: 'dot-toolbar',
+    styleUrls: ['./dot-toolbar.component.scss'],
+    templateUrl: './dot-toolbar.component.html'
 })
 export class ToolbarComponent {
     @Input() collapsed;
