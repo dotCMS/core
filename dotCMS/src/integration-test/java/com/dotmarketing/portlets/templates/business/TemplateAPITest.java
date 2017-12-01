@@ -180,7 +180,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             page = new HTMLPageDataGen(folder, template).nextPersisted();
 
             //wait a second before attempting to search the pages with elastic search
-            Thread.sleep(1000);
+            APILocator.getContentletAPI().isInodeIndexed(page.getInode());
 
             //Find pages by template
             List<Contentlet> pages = APILocator.getHTMLPageAssetAPI()
