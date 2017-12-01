@@ -74,7 +74,7 @@ catch(Exception e){
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 			</a>
 		<%} else { %>
-			<%if(null != scheme && !scheme.isMandatory()){ %>
+			<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 				<span class="saveIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
@@ -88,7 +88,7 @@ catch(Exception e){
 		</a>
 	<%} %>
 <%}else if(!InodeUtils.isSet(contentlet.getInode())) {%>
-	<%if(null != scheme && !scheme.isMandatory()){ %>
+	<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 			<span class="saveIcon"></span>
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
@@ -110,7 +110,7 @@ catch(Exception e){
 <%}%>
 
 
-<%if(null != scheme && !scheme.isMandatory()){ %>
+<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 	<%
 	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
 	if (canPublish) {
