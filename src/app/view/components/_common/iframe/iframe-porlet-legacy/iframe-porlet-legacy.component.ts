@@ -21,7 +21,7 @@ export class IframePortletLegacyComponent implements OnInit {
         private contentletService: DotContentletService,
         private dotcmsEventsService: DotcmsEventsService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotNavigationService: DotMenuService,
+        private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute,
         public loggerService: LoggerService,
@@ -100,14 +100,27 @@ export class IframePortletLegacyComponent implements OnInit {
     }
 
     private setIframeSrc(): void {
-        this.route.params
-            .pluck('id')
-            .map((id: string) => id)
+        // We use the query param to load a page in edit mode in the iframe
+        const queryUrl$ = this.route.queryParams.pluck('url').map((url: string) => url);
+
+        queryUrl$.subscribe((queryUrl: string) => {
+            if (queryUrl) {
+                this.setUrl(queryUrl);
+            } else {
+                this.setPortletUrl();
+            }
+        });
+    }
+
+    private setPortletUrl(): void {
+        const portletId$ = this.route.params.pluck('id').map((id: string) => id);
+
+        portletId$
             .withLatestFrom(this.route.parent.url.map((urlSegment: UrlSegment[]) => urlSegment[0].path))
-            .flatMap(([id, url]) => {
-                this.dotLoadingIndicatorService.show();
-                return url === 'add' ? this.contentletService.getUrlById(id) : this.dotNavigationService.getUrlById(id);
-            })
+            .flatMap(
+                ([id, url]) =>
+                    url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id)
+            )
             .subscribe((url: string) => {
                 this.setUrl(url);
             });
@@ -118,6 +131,7 @@ export class IframePortletLegacyComponent implements OnInit {
      * @param {string} nextUrl
      */
     private setUrl(nextUrl: string): void {
+        this.dotLoadingIndicatorService.show();
         this.isLoading = true;
         this.url.next(nextUrl);
         // Need's this time to update the iFrame src.
