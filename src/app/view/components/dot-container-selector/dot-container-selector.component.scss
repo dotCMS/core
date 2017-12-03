@@ -12,6 +12,11 @@
             color: $body-font-color;
         }
     }
+
+    searchable-dropdown .ui-button,
+    searchable-dropdown .ui-button:hover {
+        box-shadow: none;
+    }
 }
 
 .container-selector__header {
@@ -25,9 +30,9 @@
 
 .container-selector__list {
     height: 140px;
-    margin: $basic-padding 0;
+    margin: $basic-padding $basic-padding * 3 $basic-padding $basic-padding;
     overflow-y: scroll;
-    padding: 0 $basic-padding;
+    padding: 0;
 }
 
 .container-selector__list-item {

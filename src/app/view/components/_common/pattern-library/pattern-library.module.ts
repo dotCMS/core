@@ -13,6 +13,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
 import { DotTextareaContentModule } from '../dot-textarea-content/dot-textarea-content.module';
 
 import { DotDropdownModule} from '../dropdown-component/dot-dropdown.module';
+import { SiteSelectorFieldModule } from '../site-selector-field/site-selector-field.module';
 
 const routes: Routes = [
     {
@@ -33,6 +34,7 @@ const routes: Routes = [
         ListingDataTableModule,
         FieldValidationMessageModule,
         SiteSelectorModule,
+        SiteSelectorFieldModule,
         SearchableDropDownModule,
         RouterModule.forChild(routes),
     ],

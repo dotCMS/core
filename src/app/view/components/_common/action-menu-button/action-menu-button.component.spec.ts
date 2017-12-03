@@ -48,12 +48,13 @@ describe('ActionMenuButtonComponent', () => {
         comp.actions = fakeActions;
         fixture.detectChanges();
 
-        const actionButtonTooltip = de.query(By.css('icon-button-tooltip'));
-        const actionButtonMenu = de.query(By.css('p-menu'));
-        const uiMenuList = actionButtonMenu.nativeElement.children[0].children[0].children.length;
+        const button = de.query(By.css('button'));
+        const buttonTooltip = de.query(By.css('icon-button-tooltip'));
+        const menu = de.query(By.css('p-menu'));
 
-        expect(actionButtonTooltip).toBeNull();
-        expect(uiMenuList).toEqual(fakeActions.length);
+        expect(buttonTooltip).toBeNull();
+        expect(button).toBeDefined();
+        expect(menu).toBeDefined();
     });
 
     it('should display an icon button tooltip if actions are equal to 1', () => {

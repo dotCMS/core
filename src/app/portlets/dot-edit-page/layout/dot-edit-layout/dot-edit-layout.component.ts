@@ -64,10 +64,8 @@ export class DotEditLayoutComponent implements OnInit {
      * @returns {() => void}
      * @memberof DotEditLayoutComponent
      */
-    addGridBox(): () => void {
-        return () => {
-            this.editLayoutGrid.addBox();
-        };
+    addGridBox(): void {
+        this.editLayoutGrid.addBox();
     }
 
     /**

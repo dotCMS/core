@@ -3,10 +3,10 @@
         <div class="ui-toolbar-group-left">
             <div class="toolbar__button-wrapper">
                 <div class="toolbar__button" [class.toolbar__button--hide]="collapsed">
-                    <button pButton iconButton icon="fa-arrow-left" class="inverse" (click)="handleMainButtonClick($event)"></button>
+                    <button pButton icon="fa-arrow-left" class="inverted" (click)="handleMainButtonClick($event)"></button>
                 </div>
                 <div class="toolbar__button" [class.toolbar__button--hide]="!collapsed">
-                    <button pButton iconButton icon="fa-bars" class="inverse" (click)="handleMainButtonClick($event)"></button>
+                    <button pButton icon="fa-bars" class="inverted" (click)="handleMainButtonClick($event)"></button>
                 </div>
             </div>
             <div class="toolbar__host">

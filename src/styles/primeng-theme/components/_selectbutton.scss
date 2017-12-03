@@ -3,7 +3,7 @@
 @import "primeng-theme/components/button";
 
 .ui-selectbutton {
-    @extend #buttons;
+    @extend #button-raised;
 
     @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
 

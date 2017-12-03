@@ -1,8 +1,7 @@
 import { DotActionButtonComponent } from './dot-action-button.component';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { SplitButtonModule } from 'primeng/primeng';
-import { IconButtonTooltipModule } from '../icon-button-tooltip/icon-button-tooltip.module';
+import { SplitButtonModule, ButtonModule, MenuModule } from 'primeng/primeng';
 
 @NgModule({
     declarations: [
@@ -13,8 +12,8 @@ import { IconButtonTooltipModule } from '../icon-button-tooltip/icon-button-tool
     ],
     imports: [
         CommonModule,
-        SplitButtonModule,
-        IconButtonTooltipModule
+        ButtonModule,
+        MenuModule
     ]
 })
 

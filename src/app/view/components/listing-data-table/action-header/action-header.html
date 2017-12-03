@@ -1,6 +1,6 @@
 <div class="action-header" [class.selected]="selectedItems.length">
     <ng-container *ngIf="options && options.primary">
-        <dot-action-button actionButton class="action-header__primary-button" [model]="options.primary.model" [command]="options.primary.command"></dot-action-button>
+        <dot-action-button class="action-header__primary-button" [model]="options.primary.model" (onClick)="options.primary.command()"></dot-action-button>
     </ng-container>
     <div class="action-header__container" [style.overflow]="dynamicOverflow">
         <div class="action-header__global-search">

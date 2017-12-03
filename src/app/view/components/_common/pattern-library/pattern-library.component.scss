@@ -49,6 +49,12 @@
         text-transform: uppercase;
     }
 
+    .section__desc {
+        border-bottom: solid 1px $gray-lighter;
+        padding-bottom: $basic-padding * 2;
+        margin-bottom: $basic-padding * 3;
+    }
+
     .section__title {
         color: $body-font-color;
     }

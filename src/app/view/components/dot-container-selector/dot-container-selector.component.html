@@ -12,11 +12,11 @@
             placeholder="{{messageService.get('editpage.container.add.label')}}"
             persistentPlaceholder="true">
         </searchable-dropdown>
-        <button class="container-selector__header-remove" pButton iconButton flat icon="fa-close" (click)="remove.emit($event)"></button>
+        <button class="container-selector__header-remove" pButton icon="fa-close" (click)="remove.emit($event)"></button>
     </div>
     <ul class="container-selector__list">
         <li *ngFor="let container of selectedContainersList; let i = index" class="container-selector__list-item">
-            <button pButton iconButton flat icon="fa-trash" (click)="removeContainerItem(i)"></button>
+            <button pButton icon="fa-trash" (click)="removeContainerItem(i)"></button>
             {{ container?.name }}
         </li>
     </ul>

@@ -1,76 +1,59 @@
-@import "variables";
-@import "primeng-theme/utils/_theme-variables";
+@import "primeng-theme/utils/theme-variables";
 
-.action-button {
-    background: none;
-    border: none;
-    box-shadow: none;
-    height: 100%;
+$action-button-height: 56px;
 
-    &:hover {
-        border: none;
-        box-shadow: none;
-    }
+:host(.action-button--no-label) ::ng-deep {
+    display: inline-block;
 
-    .ui-splitbutton {
-        .ui-button {
+    .ui-button.ui-button-icon-only {
+        border-radius: 50%;
+        font-size: $font-size-large;
+        height: $action-button-height;
+        width: $action-button-height;
+
+        &:not([disabled]) {
             background-color: $blue;
-            border-radius: 50%;
-            font-size: $action-button-icon-size;
-            height: $action-button-height;
-            width: $action-button-height;
-            box-shadow: $action-button-normal-shadow;
-            transition: background-color $basic-speed ease-in,
-                        box-shadow $basic-speed ease-in;
-
-            span {
-                color: $action-button-color;
+            box-shadow: $md-shadow-1;
+            opacity: 1;
+        
+            &:hover {
+                background: darken($brand-primary, 10%);
+                box-shadow: $md-shadow-3;
             }
 
-            .ui-button-icon-left:before {
-                content: "\F067";
-                color: $action-button-color;
+            &:active {
+                background: darken($brand-primary, 20%);
             }
 
-            &:not([disabled]) {
-                &:hover,
-                &:active,
-                &:focus {
-                    box-shadow: $action-button-hover-shadow;
-                }
-
-                &:hover {
-                    background: $action-button-hover-bgcolor;
-                }
-
-                &:active {
-                    background: $action-button-active-bgcolor;
-                }
-
-                &:focus {
-                    background: $action-button-focus-bgcolor;
-                }
+            &:focus {
+                background: darken($brand-primary, 10%);
             }
 
-            &[disabled] {
-                background: $gray;
-            }
-        }
-
-        .ui-button.ui-corner-right {
-            display: none;
-        }
-    }
-
-    &.multiple-options {
-        .ui-corner-left {
-            display: none;
-        }
-
-        .ui-splitbutton {
-            .ui-button.ui-corner-right {
-                display: block;
+            [class^="ui-button-icon"],
+            .ui-button-text,
+            .ui-c {
+                color: $white;
             }
         }
     }
+}
+
+:host ::ng-deep {
+    align-items: center;
+    display: inline-flex;
+    flex-direction: column;
+    width: $action-button-height;
+
+    .ui-button.ui-button-icon-only.action-button--selected {
+        background: rgba($black, $button-hover-background-opacity);
+    }
+}
+
+.action-button__label {
+    margin: 0;
+    text-align: center;
+}
+
+.action-button__label--disabled {
+    color: $field-disabled-color;
 }

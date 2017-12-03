@@ -1,34 +1,33 @@
 .ui-autocomplete {
+    @extend #inputtext-normal-border;
+    
+    .ui-button.ui-button-icon-only:not([disabled]),
     .ui-button {
-        @extend #inputtext-normal-border;
         background: none;
         border-radius: 0;
         height: $autocomplete-height;
 
-        &:active, &:focus {
+        &:hover,
+        &:active,
+        &:focus {
             background: none;
         }
     }
 
     .ui-inputtext {
-        border: none;
+        box-shadow: none;
+
+        &:focus {
+            box-shadow: none;
+        }
 
         &::-ms-clear {
             display: none;
         }
-
-        &.ui-state-filled {
-            & + .ui-button {
-                @extend #inputtext-active-border;
-            }
-        }
     }
 }
 
-.ui-inputwrapper-focus .ui-button,
-.ui-inputwrapper-focus .ui-button:hover,
-.ui-inputwrapper-focus .ui-button:active,
-.ui-inputwrapper-focus .ui-button:focus {
+.ui-inputwrapper-focus .ui-autocomplete {
     @extend #inputtext-active-border;
 }
 

@@ -1,16 +1,13 @@
 <dot-dropdown-component
     icon="fa-plus"
     position="right"
-    inverse="true"
+    inverted="true"
     [disabled]="!(mainTypes | async)?.length"
     (open)="iframeOverlayService.show()"
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-add-contentlet__head">
-        <span class="toolbar-add-contentlet__head-button" *ngFor="let structureTypeView of mainTypes | async">
-            <button pButton iconButton flat (click)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [class.toolbar-add-contentlet__head-selected]="selectedName === structureTypeView.name"></button>
-            <label>{{structureTypeView.label}}</label>
-        </span>
-        <dot-action-button command="() => {}" class="toolbar-add-contentlet__head-button" label="{{i18nMessages['more']}}" [model]="moreTypes | async" [flat]="true"></dot-action-button>
+        <dot-action-button *ngFor="let structureTypeView of mainTypes | async" (onClick)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [label]="structureTypeView.label" [selected]="selectedName === structureTypeView.name"></dot-action-button>
+        <dot-action-button icon="fa-chevron-down" label="{{i18nMessages['more']}}" [model]="moreTypes | async" ></dot-action-button>
     </div>
 
     <dot-toolbar-add-contentlet-body

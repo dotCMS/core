@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, ViewEncapsulation, ViewChild, OnInit } from '@angular/core';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { Router } from '@angular/router';
 import { SelectItem, AutoComplete } from 'primeng/primeng';
@@ -6,30 +6,31 @@ import { FormGroup, FormBuilder } from '@angular/forms';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    selector: 'pattern-library',
+    selector: 'dot-pattern-library',
     styleUrls: ['./pattern-library.component.scss'],
     templateUrl: 'pattern-library.component.html'
 })
 
-export class PatternLibraryComponent {
-    public selectedDummyData = [];
-    public submitAttempt = false;
-    public actionButtonLog;
-    public actionHeaderLog;
+export class PatternLibraryComponent implements OnInit {
+    selectedDummyData = [];
+    submitAttempt = false;
+    actionHeaderLog;
+    splitButtonItems = [];
 
-    private autocompleteResults: Array<string> = [];
-    private cities: SelectItem[];
-    private dataTableDummyData: [any];
-    private displayDialog = false;
-    private model: any = {};
-    private buttonActions: [any];
-    private actionButtonItems: [any];
-    private contentTypeColumns: any;
+    autocompleteResults: Array<string> = [];
+    cities: SelectItem[];
+    dataTableDummyData: [any];
+    displayDialog = false;
+    model: any = {};
+    buttonActions: [any];
+    actionButtonItems: [any];
+    contentTypeColumns: any;
 
-    private searchableForm: FormGroup;
-    private totalRecords: number;
-    private sitesCurrentPage: any[] = [];
-    private sites: any[] = [];
+    searchableForm: FormGroup;
+    totalRecords: number;
+    sitesCurrentPage: any[] = [];
+    sites: any[] = [];
+
     private readonly ROWS = 10;
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
@@ -91,13 +92,20 @@ export class PatternLibraryComponent {
             {fieldName: 'modDate', header: 'Last Edit Date', width: '20%', format: 'date', sortable: true}
         ];
 
-        this.actionButtonLog = () => {
-            this.loggerService.info('Primary action triggered');
-        };
-
         this.actionHeaderLog = () => {
             this.loggerService.info('Primary command was triggered');
         };
+
+        this.splitButtonItems = [
+            {label: 'Update', icon: 'fa-refresh', command: () => {
+                console.log('Hello World');
+            }},
+            {label: 'Delete', icon: 'fa-close', command: () => {
+                console.log('Hello World');
+            }},
+            {label: 'Angular.io', icon: 'fa-link', url: 'http://angular.io'},
+            {label: 'Theming', icon: 'fa-paint-brush', routerLink: ['/theming']}
+        ];
     }
 
     ngOnInit(): any {
@@ -133,6 +141,10 @@ export class PatternLibraryComponent {
         ];
 
         this.initSites();
+    }
+
+    actionButtonLog(): void {
+        this.loggerService.info('Primary action triggered');
     }
 
     autocompleteComplete($event): void {

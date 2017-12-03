@@ -4,6 +4,7 @@ import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angul
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router-service';
 import { DotNavigationService } from '../../../view/components/dot-navigation/dot-navigation.service';
+import { environment } from '../../../../environments/environment';
 
 /**
  * Route Guard that checks if a User have access to the specified Menu portlet.
@@ -17,11 +18,15 @@ export class MenuGuardService implements CanActivate {
     ) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return !environment.production && state.url === '/pl'
+            ? Observable.of(true)
+            : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
     canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return !environment.production && state.url === '/pl'
+            ? Observable.of(true)
+            : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
     /**

@@ -21,15 +21,22 @@
             <div class="section-paragraph">
                 <h3 class="section__title">Paragraphs</h3>
                 <article>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!</p>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et.</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor
+                        eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit
+                        unde vel vitae!</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor
+                        eius eos error et.</p>
                     <p class="section_desc">16px / 24px - Regular</p>
                 </article>
 
                 <h3 class="section__title">Links</h3>
                 <article>
-                    <p><a href="#">Link Normal</a></p>
-                    <p><a href="#" class="link-secondary">Link Secondary</a></p>
+                    <p>
+                        <a href="#">Link Normal</a>
+                    </p>
+                    <p>
+                        <a href="#" class="link-secondary">Link Secondary</a>
+                    </p>
                     <p class="section_desc">16px / 24px - Regular</p>
                 </article>
             </div>
@@ -43,34 +50,19 @@
                     <p-column field="color" header="Color" [sortable]="true"></p-column>
                 </p-dataTable>
             </article>
-            <h3 class="section__title">Action button</h3>
-            <article>
-                <dot-action-button [command]="actionButtonLog"></dot-action-button>
-                <dot-action-button [model]="actionButtonItems"></dot-action-button>
-            </article>
             <h3 class="section__title">Listing table</h3>
-            <listing-data-table url="v1/contenttype"
-                                [columns]="contentTypeColumns"
-                                [buttonActions]="buttonActions"
-                                sortOrder="ASC"
-                                sortField="modDate">
+            <listing-data-table url="v1/contenttype" [columns]="contentTypeColumns" [buttonActions]="buttonActions" sortOrder="ASC" sortField="modDate">
             </listing-data-table>-
 
             <form [formGroup]="searchableForm" novalidate>
                 <h3 class="section__title">Searchable Dropdown</h3>
 
-                <searchable-dropdown    [data]="sitesCurrentPage"
-                                        [totalRecords]="totalRecords"
-                                        [rows]="10"
-                                        [pageLinkSize] = "3"
-                                        labelPropertyName = "name"
-                                        (filterChange)="handleFilterChange($event)"
-                                        (pageChange)="handlePageChange($event)"
-                                        formControlName="fakeCurrentSite">
+                <searchable-dropdown [data]="sitesCurrentPage" [totalRecords]="totalRecords" [rows]="10" [pageLinkSize]="3" labelPropertyName="name"
+                    (filterChange)="handleFilterChange($event)" (pageChange)="handlePageChange($event)" formControlName="fakeCurrentSite">
                 </searchable-dropdown>
 
                 <h3 class="section__title">Site Selector</h3>
-                <dot-site-selector formControlName="currentSite"></dot-site-selector>
+                <dot-site-selector-field formControlName="currentSite"></dot-site-selector-field>
             </form>
             <h3 class="section__title">Plain, code and WYSIWYG</h3>
             <dot-textarea-content value="Hello world from param" [(ngModel)]="dotTextAreaContentValue"></dot-textarea-content>
@@ -79,101 +71,90 @@
 
         <div class="ui-g-5 section-fields">
             <div class="section-buttons">
-                <h3 class="section__title">Buttons & SplitButtons</h3>
+                <h3 class="section__title">Buttons</h3>
                 <article>
-                    <h4 class="section__subtitle">Normal buttons</h4>
+                    <h4 class="section__subtitle">Raised</h4>
+                    <p class="section__desc">
+                        Raised buttons are rectangular-shaped buttons.
+                        <br /> They may be used inline.
+                        <br /> They lift and display ink reactions on press.
+                    </p>
                     <p>
-                        <button pButton label="Normal"></button>
+                        <button pButton label="Button"></button>
                         <button pButton disabled label="Disabled"></button>
                     </p>
                     <p>
-                        <p-splitButton label="Normal" [model]="splitButtonItems"></p-splitButton>
-                        <p-splitButton disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
-                    </p>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Icon and label buttons</h4>
-                    <p>
                         <button pButton label="Left" icon="fa-check" iconPos="left"></button>
-                        <button pButton label="Right" icon="fa-check" iconPos="right"></button>
+                        <button pButton disabled label="Left" icon="fa-check" iconPos="left"></button>
                     </p>
                     <p>
-                        <p-splitButton label="Normal" icon="fa-check" [model]="splitButtonItems"></p-splitButton>
+                        <button pButton label="Right" icon="fa-check" iconPos="right"></button>
+                        <button pButton disabled label="Right" icon="fa-check" iconPos="right"></button>
+                    </p>
+                    <p>
+                        <p-splitButton label="Normal" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton [disabled]="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
                     </p>
                 </article>
                 <article>
-                    <h4 class="section__subtitle">Flat buttons</h4>
+                    <h4 class="section__subtitle">Flat</h4>
+                    <p class="section__desc">
+                        Flat buttons are text-only buttons.
+                        <br /> They may be used in dialogs, toolbars, or inline.
+                    </p>
                     <p>
-                        <button pButton flat label="Flat"></button>
+                        <button pButton flat label="Button"></button>
                         <button pButton flat disabled label="Disabled"></button>
                     </p>
                     <p>
-                        <p-splitButton flat label="Flat" [model]="splitButtonItems"></p-splitButton>
-                        <p-splitButton flat disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                        <button pButton flat label="Left" icon="fa-check" iconPos="left"></button>
+                        <button pButton flat disabled label="Left" icon="fa-check" iconPos="left"></button>
                     </p>
+                    <p>
+                        <button pButton flat label="Right" icon="fa-check" iconPos="right"></button>
+                        <button pButton flat disabled label="Right" icon="fa-check" iconPos="right"></button>
+                    </p>
+                    <p>
+                        <p-splitButton flat label="Normal" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton flat [disabled]="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                    </p>
+                </article>
 
-                    <p style="background-color: #0E80CB; padding: 8px">
-                        <p-splitButton flat label="Flat" class="inverted" [model]="splitButtonItems"></p-splitButton>
+                <article>
+                    <h4 class="section__subtitle">Icon Buttons</h4>
+                    <button pButton icon="fa-plus"></button>
+                    <button pButton icon="fa-plus" disabled></button>
+                    <button pButton icon="fa-bell"></button>
+                    <button pButton icon="fa-user"></button>
+                </article>
+
+                <article>
+                    <h4 class="section__subtitle">Inverted Buttons</h4>
+                    <p style="background-color: #0E80CB; padding: 8px 16px">
+                        <button pButton flat label="Button" class="inverted"></button>
+                        <button pButton flat disabled label="Disabled" class="inverted"></button>
+                        <button pButton class="inverted" icon="fa-bell"></button>
+                        <button pButton class="inverted" disabled icon="fa-bell"></button>
                     </p>
                 </article>
+
                 <article>
-                    <h4 class="section__subtitle">Primary Button</h4>
-                    <p>
-                        <button pButton primary label="Primary"></button>
-                        <button pButton primary disabled label="Disabled"></button>
-                    </p>
-                    <p>
-                        <p-splitButton primary label="Primary" [model]="splitButtonItems"></p-splitButton>
-                        <p-splitButton primary disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
-                    </p>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Negative Button</h4>
-                    <p>
-                        <button pButton secondary label="Secondary"></button>
-                        <button pButton secondary disabled label="Disabled"></button>
-                    </p>
-                    <p>
-                        <p-splitButton secondary label="Secondary" [model]="splitButtonItems"></p-splitButton>
-                        <p-splitButton secondary disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
-                    </p>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Normal icon buttons</h4>
-                    <button pButton iconButton icon="fa-plus"></button>
-                    <button pButton primary iconButton icon="fa-bell"></button>
-                    <button pButton secondary iconButton icon="fa-user"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Disabled icon buttons</h4>
-                    <button pButton iconButton disabled="disabled" icon="fa-bell"></button>
-                    <button pButton iconButton disabled="disabled" icon="fa-user"></button>
-                    <button pButton iconButton disabled="disabled" icon="fa-plus"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Flat icon buttons</h4>
-                    <button pButton iconButton flat icon="fa-bell"></button>
-                    <button pButton iconButton flat icon="fa-user"></button>
-                    <button pButton iconButton flat icon="fa-plus"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Flat icon buttons disabled</h4>
-                    <button pButton iconButton flat disabled="disabled" icon="fa-bell"></button>
-                    <button pButton iconButton flat disabled="disabled" icon="fa-user"></button>
-                    <button pButton iconButton flat disabled="disabled" icon="fa-plus"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Action buttons</h4>
-                    <button pButton actionButton icon="fa-plus"></button>
-                    <button pButton actionButton disabled="disabled" icon="fa-plus"></button>
+                    <h4 class="section__subtitle">Action Button</h4>
+                    <dot-action-button (onClick)="actionButtonLog()"></dot-action-button>
+                    <dot-action-button [model]="actionButtonItems"></dot-action-button>
+                    <dot-action-button [model]="actionButtonItems" [disabled]="true"></dot-action-button>
+                    <dot-action-button [model]="actionButtonItems" icon="fa-chevron-down" label="Label"></dot-action-button>
+                    <dot-action-button [model]="actionButtonItems" icon="fa-chevron-down" label="Label" [disabled]="true"></dot-action-button>
                 </article>
             </div>
+
             <div class="section-fields">
                 <form #formExample="ngForm" novalidate>
                     <h3 class="section__title">Form</h3>
                     <div class="form__group">
                         <span md-inputtext label="Placeholder">
-                            <input pInputText type="text" id="inputTextFloatingLabel" name="inputTextFloatingLabel" #inputTextFloatingLabel="ngModel" [(ngModel)]="model.inputTextFloatingLabel" required />
+                            <input pInputText type="text" id="inputTextFloatingLabel" name="inputTextFloatingLabel" #inputTextFloatingLabel="ngModel"
+                                [(ngModel)]="model.inputTextFloatingLabel" required />
                         </span>
                         <field-validation-message message="InputText is required" [field]="inputTextFloatingLabel"></field-validation-message>
                     </div>
@@ -181,7 +162,8 @@
 
                     <div class="form__group">
                         <label for="inputTextRegularField" class="form__label">Label</label>
-                        <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel" [(ngModel)]="model.inputTextRegularField" required />
+                        <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel"
+                            [(ngModel)]="model.inputTextRegularField" required />
                         <field-validation-message message="InputText is required" [field]="inputTextRegularField"></field-validation-message>
                     </div>
                     <span class="form__group-hint">This is a hint text</span>
@@ -192,15 +174,17 @@
 
                     <div class="form__group">
                         <span md-inputtext label="Textarea">
-                            <textarea rows="5" pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel" required></textarea>
+                            <textarea rows="5" pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel"
+                                required></textarea>
                         </span>
                         <field-validation-message message="TextArea is required" [field]="textareaFloatingLabel"></field-validation-message>
                     </div>
 
                     <div class="form__group">
                         <label for="textareaRegularField" class="form__label">Textarea with Label</label>
-                        <textarea rows="5" pInputTextarea id="textareaRegularField" name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField" required></textarea>
-                        <field-validation-message message="TextArea is required"  [field]="textareaRegularField"></field-validation-message>
+                        <textarea rows="5" pInputTextarea id="textareaRegularField" name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField"
+                            required></textarea>
+                        <field-validation-message message="TextArea is required" [field]="textareaRegularField"></field-validation-message>
                     </div>
 
                     <div class="form__group">
@@ -210,32 +194,31 @@
                     <div class="form__group">
                         <div class="inline">
                             <p-dropdown [options]="cities" name="dropdownNormal" #dropdownNormal="ngModel" [(ngModel)]="model.dropdownNormal" required></p-dropdown>
-                            <p-dropdown disabled="true" [options]="cities" ></p-dropdown>
+                            <p-dropdown disabled="true" [options]="cities"></p-dropdown>
                         </div>
                         <field-validation-message message="Dropdown is required" [field]="dropdownNormal"></field-validation-message>
                     </div>
 
                     <div class="form__group">
-                        <p-dropdown filter="filter" [options]="cities" name="dropdownWithFilter" #dropdownWithFilter="ngModel" [(ngModel)]="model.dropdownWithFilter" required></p-dropdown>
+                        <p-dropdown filter="filter" [options]="cities" name="dropdownWithFilter" #dropdownWithFilter="ngModel" [(ngModel)]="model.dropdownWithFilter"
+                            required></p-dropdown>
                     </div>
 
                     <div class="form__group">
-                        <p-checkbox label="Checkbox" name="checkboxNormal" value="Checkbox Normal" #checkboxNormal="ngModel" [(ngModel)]="model.checkboxValues" required></p-checkbox>
+                        <p-checkbox label="Checkbox" name="checkboxNormal" value="Checkbox Normal" #checkboxNormal="ngModel" [(ngModel)]="model.checkboxValues"
+                            required></p-checkbox>
                         <p-checkbox name="checkboxDisabled" label="Disabled" disabled="true"></p-checkbox>
                         <p-checkbox name="checkboxDisabledChecked" label="Disabled/Checked" value="Disabled" disabled="true" [(ngModel)]="model.checkboxValues"></p-checkbox>
                     </div>
 
                     <div class="form__group">
-                        <p-radioButton label="RadioButton" name="radiobuttonNormal" value="Radio Button Normal" #radioButtonNormal="ngModel" [(ngModel)]="model.radioBoxValues" required></p-radioButton>
+                        <p-radioButton label="RadioButton" name="radiobuttonNormal" value="Radio Button Normal" #radioButtonNormal="ngModel" [(ngModel)]="model.radioBoxValues"
+                            required></p-radioButton>
                         <p-radioButton name="radioDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="radioBoxValues"></p-radioButton>
                         <p-radioButton name="radioDisabled" value="Disabled" label="Disabled/Selected" disabled="true" [(ngModel)]="model.radioBoxValues"></p-radioButton>
                     </div>
                     <div class="form__group">
-                        <p-autoComplete
-                            let autoComplete
-                            [dropdown]="true"
-                            [suggestions]="autocompleteResults"
-                            (completeMethod)="autocompleteComplete($event)"
+                        <p-autoComplete let autoComplete [dropdown]="true" [suggestions]="autocompleteResults" (completeMethod)="autocompleteComplete($event)"
                             (onDropdownClick)="autocompleteCompleteDropdownClick($event)">
                         </p-autoComplete>
                     </div>
@@ -248,11 +231,12 @@
                 <h3 class="section__title">Dialog</h3>
                 <article>
                     <p-dialog header="Godfather I" [(visible)]="displayDialog" modal="modal" width="300" responsive="true">
-                        <p>The story begins as Don Vito Corleone, the head of a New York Mafia family, oversees his daughter's wedding.
-                            His beloved son Michael has just come home from the war, but does not intend to become part of his father's business.
-                            Through Michael's life the nature of the family business becomes clear. The business of the family is just like the head of the family,
-                            kind and benevolent to those who give respect,
-                            but given to ruthless violence whenever anything stands against the good of the family.</p>
+                        <p>The story begins as Don Vito Corleone, the head of a New York Mafia family, oversees his daughter's
+                            wedding. His beloved son Michael has just come home from the war, but does not intend to become
+                            part of his father's business. Through Michael's life the nature of the family business becomes
+                            clear. The business of the family is just like the head of the family, kind and benevolent to
+                            those who give respect, but given to ruthless violence whenever anything stands against the good
+                            of the family.</p>
                         <footer>
                             <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
                                 <button type="button" pButton icon="fa-check" (click)="display=false" label="Accept"></button>
@@ -273,8 +257,9 @@
                                 <div style="width:500px; padding: 8px;">
                                     <p>Here you can add any HTML</p>
                                     <p>
-                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et
+                                        ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit
+                                        unde vel vitae!
                                     </p>
                                 </div>
                             </dot-dropdown-component>
@@ -284,8 +269,9 @@
                                 <div style="width:200px; padding: 8px;">
                                     <p>Here you can add any HTML</p>
                                     <p>
-                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et
+                                        ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit
+                                        unde vel vitae!
                                     </p>
                                 </div>
                             </dot-dropdown-component>
@@ -303,8 +289,9 @@
                                         <p>Here you can add any HTML</p>
                                         <br/>
                                         <p>
-                                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                                            dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et
+                                            ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit
+                                            unde vel vitae!
                                         </p>
                                     </div>
                                 </div>
@@ -316,8 +303,9 @@
                                     <p>Here you can add any HTML</p>
                                     <br/>
                                     <p>
-                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et
+                                        ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit
+                                        unde vel vitae!
                                     </p>
                                 </div>
                             </dot-dropdown-component>
@@ -328,4 +316,3 @@
         </div>
     </section>
 </div>
-

@@ -1,5 +1,5 @@
 <span *ngIf="actions.length > 1 && filteredActions.length">
-    <p-menu #menu popup="popup" [model]="filteredActions" class="action-menu__list"></p-menu>
+    <p-menu #menu appendTo="body" popup="popup" [model]="filteredActions" class="action-menu__list"></p-menu>
     <button type="button" pButton [icon]="icon" (click)="menu.toggle($event)"></button>
 </span>
 

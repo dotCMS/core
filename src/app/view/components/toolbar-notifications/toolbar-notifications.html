@@ -1,6 +1,6 @@
 <dot-dropdown-component
         id="dot-toolbar-notifications"
-        inverse="true"
+        inverted="true"
         icon="fa-bell"
         (toggle)="toggleNotifications()"
         [disabled]="!notifications.length"
@@ -12,7 +12,7 @@
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
             <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">{{i18nMessages['notifications_title']}}</h3>
-            <button pButton flat iconButton icon="fa-trash-o" id="dot-toolbar-notifications-button-dismiss-all" (click)="dismissAllNotifications()" title="{{i18nMessages['notifications_dismissall']}}"></button>
+            <button pButton icon="fa-trash-o" id="dot-toolbar-notifications-button-dismiss-all" (click)="dismissAllNotifications()" title="{{i18nMessages['notifications_dismissall']}}"></button>
         </div>
         <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
             <dot-notifications-list id="dot-notifications-list" [notifications]="notifications" (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>

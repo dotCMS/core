@@ -1,77 +1,39 @@
-.ui-splitbutton {
-    .ui-button {
-        background: none;
-        box-shadow: none;
-        border: none;
-        vertical-align: middle;
-    }
-
-    .ui-button-text-only,
-    .ui-button-text-icon-left {
-        .ui-button-text {
-            padding-right: 0;
-        }
-    }
-}
-
 p-splitbutton {
-    display: inline-block;
-    border-radius: $button-radius;
-    @extend #buttons;
+    .ui-splitbutton {
+        @extend #button-raised;
+        display: inline-block;
+        border-radius: $button-radius;
 
-    &[flat].inverted,
-    &[flat].inverted:hover {
-        .ui-button-text,
-        .ui-c {
-            color: $button-inverted-color;
+        &.ui-state-disabled {
+            @extend #button-raised-disabled;
+        }
+
+        // SplitButton component have 2 regular buttons inside, we don't want to style those.
+        .ui-button {
+            background: none;
+            box-shadow: none;
+            border: none;
+            vertical-align: middle;
+
+            // Reset the styles coming from the icon button
+            &.ui-button-icon-only:hover {
+                background: none;
+            }
+        }
+
+        .ui-button-text-only,
+        .ui-button-text-icon-left {
+            .ui-button-text {
+                padding-right: 0;
+            }
         }
     }
 
-    .ui-state-disabled {
-        background: none;
-    }
+    &[flat] .ui-splitbutton {
+        @extend #button-flat;
 
-    &[iconButton] {
-        border: none;
-        box-shadow: none;
-        background: none;
-
-        .ui-splitbutton {
-            .ui-corner-left {
-                display: none;
-            }
-
-            .ui-splitbutton-menubutton {
-                width: $field-height;
-                border-radius: 50%;
-                background: $white;
-                box-shadow: $md-shadow-1;
-                transition: background-color $basic-speed ease-in, box-shadow $basic-speed ease-in;
-
-                .fa-caret-down:before {
-                    content: "\F142";
-                }
-
-                &:not([disabled]) {
-                    &:hover,
-                    &:active,
-                    &:focus {
-                        box-shadow: $md-shadow-2;
-                    }
-
-                    &:hover {
-                        box-shadow: $md-shadow-2;
-                    }
-
-                    &:active {
-                        box-shadow: $md-shadow-2;
-                    }
-
-                    &:focus {
-                        box-shadow: $md-shadow-2;
-                    }
-                }
-            }
+        &.ui-state-disabled {
+            @extend #button-flat-disabled;
         }
     }
 }

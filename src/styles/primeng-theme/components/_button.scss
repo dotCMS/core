@@ -1,107 +1,93 @@
-#buttons {
+#button-basic {
     height: $button-height;
     margin-right: 0;
     outline: none;
-    text-transform: uppercase;
-    transition: background-color $field-animation-speed ease-in,
-        box-shadow $field-animation-speed ease-in, color $field-animation-speed ease-in;
+    transition: background-color $field-animation-speed ease-in, 
+                box-shadow $field-animation-speed ease-in,
+                color $field-animation-speed ease-in;
+}
+
+#button-raised {
+    @each $label, $props in $button-raised {
+        @include button-properties($label, $props);
+    }
+
+    .ui-button-text {
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+}
+
+#button-raised-disabled {
+    @include button-state(map-get($button-raised, disabled));
+    @extend #button-disabled;
+}
+
+#button-flat {
+    @each $label, $props in $button-flat {
+        @include button-properties($label, $props);
+    }
+}
+
+#button-flat-disabled {
+    @include button-state(map-get($button-flat, disabled));
+    @extend #button-disabled;
+}
+
+#button-disabled {
+    cursor: inherit;
 }
 
 .ui-button {
-    @extend #buttons;
-
-    @each $button, $states in $buttons-map {
-        @if ($button == "basic") {
-            @each $label, $props in $states {
-                @include button-properties($label, $props);
-            }
-        } @else {
-            &[#{$button}] {
-                @each $label, $props in $states {
-                    @include button-properties($label, $props);
-                }
-            }
-        }
-    }
+    @extend #button-basic;
+    @extend #button-raised;
 
     &[disabled] {
-        cursor: inherit;
+        @extend #button-raised-disabled;
     }
 
-    &[iconButton],
-    &[actionButton] {
-        border-radius: 50%;
-        border: none;
-        transition: background-color $field-animation-speed;
-    }
-
-    &[iconButton] {
-        width: $button-height;
-
-        &[flat]:not([disabled]) {
-            .ui-c {
-                color: $body-font-color;
-            }
-
-            &.ui-state-default:not(:hover) {
-                background: none;
-                box-shadow: none;
-            }
-        }
-
-        &.inverse {
-            &:disabled {
-                color: rgba($black, 0.2);
-            }
-
-            &:not([disabled]) {
-                &.ui-state-default {
-                    background: none;
-                    box-shadow: none;
-                    color: $white;
-                }
-
-                &:hover {
-                    background: rgba($black, 0.1);
-                }
-
-                [class^="ui-button-icon"],
-                .ui-button-text,
-                .ui-c {
-                    color: $white;
-                }
-            }
-        }
-    }
-
-    &[actionButton] {
-        font-size: $action-button-icon-size;
-        height: $action-button-height;
-        width: $action-button-height;
-
-        .ui-button-text,
-        .ui-c {
-            color: $action-button-color;
-        }
-
-        &.ui-state-default {
-            background: $blue;
-        }
-
-        &:not([disabled]):hover {
-            background: $action-button-hover-bgcolor;
-        }
-
-        &:not([disabled]):active {
-            background: $action-button-active-bgcolor;
-        }
-
-        &:not([disabled]):focus {
-            background: $action-button-focus-bgcolor;
-        }
+    &[flat] {
+        @extend #button-flat;
 
         &[disabled] {
-            background: $gray;
+            @extend #button-flat-disabled;
+        }
+    }
+
+    &.ui-button-icon-only {
+        box-shadow: none;
+        border-radius: 50%;
+        width: $field-height;
+        height: $field-height;
+
+        &:not([disabled]) {
+            background: none;
+            opacity: 0.8;
+    
+            &:hover {
+                opacity: 1;
+                background: rgba($black, $button-hover-background-opacity);
+            }
+        }
+    }
+
+    &.inverted {
+        &:not([disabled]) {
+            &:active,
+            &:focus,
+            &:hover {
+                background: rgba($white, $button-hover-background-opacity);
+    
+                .ui-button-text { 
+                    color: $white;
+                }
+            }
+
+            [class^="ui-button-icon"],
+            .ui-button-text,
+            .ui-c { 
+                color: $white;
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ $field-active-border-size: 2px;
 $field-active-border-color: $brand-primary;
 
 $field-disabled-bgcolor: rgba($gray-dark, 0.1);
-$field-disabled-color: rgba($gray-dark, 0.4);
+$field-disabled-color: rgba($black, 0.26);
 $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-lighter;
 
@@ -37,135 +37,71 @@ $button-height: $field-height;
 $button-disabled-color: $body-font-color;
 $button-radius: $field-border-radius;
 $button-inverted-color: $white;
+$button-hover-background-opacity: 0.12;
 
-$buttons-map: (
-    basic: (
-        default: (
-            background: $white,
-            color: $field-normal-color,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        hover: (
-            background: $white,
-            color: $field-hover-color,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        focus: (
-            background: $white,
-            color: $field-hover-color,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        active: (
-            background: $white,
-            color: $field-normal-color,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        disabled: (
-            background: $field-disabled-bgcolor,
-            color: $field-disabled-color,
-            border: $button-border,
-            shadow: none
-        )
+$button-raised: (
+    normal: (
+        background: $white,
+        color: $field-normal-color,
+        border: $button-border,
+        shadow: $md-shadow-1
     ),
-    flat: (
-        default: (
-            background: transparent,
-            color: $brand-primary,
-            border: $button-border,
-            shadow: none
-        ),
-        hover: (
-            background: rgba($black, 0.1),
-            color: $body-font-color,
-            border: $button-border,
-            shadow: none
-        ),
-        focus: (
-            background: $gray-lighter,
-            color: $body-font-color,
-            border: $button-border,
-            shadow: none
-        ),
-        active: (
-            background: transparent,
-            color: $field-active-color,
-            border: $button-border,
-            shadow: none
-        ),
-        disabled: (
-            background: transparent,
-            color: $field-disabled-color,
-            border: $button-border,
-            shadow: none
-        ),
+    hover: (
+        background: $white,
+        color: $field-hover-color,
+        border: $button-border,
+        shadow: $md-shadow-2
     ),
-    primary: (
-        default: (
-            background: $brand-primary,
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        hover: (
-            background: darken($brand-primary, 10%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        focus: (
-            background: darken($brand-primary, 10%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        active: (
-            background: darken($brand-primary, 20%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        disabled: (
-            background: lighten($brand-primary, 50%),
-            color: lighten($brand-primary, 30%),
-            border: $button-border,
-            shadow: none
-        ),
+    focus: (
+        background: $white,
+        color: $field-hover-color,
+        border: $button-border,
+        shadow: $md-shadow-2
     ),
-    secondary: (
-        default: (
-            background: $brand-secondary,
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        hover: (
-            background: darken($brand-secondary, 10%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        focus: (
-            background: darken($brand-secondary, 10%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-2
-        ),
-        active: (
-            background: darken($brand-secondary, 20%),
-            color: $white,
-            border: $button-border,
-            shadow: $md-shadow-1
-        ),
-        disabled: (
-            background: lighten($brand-secondary, 50%),
-            color: lighten($brand-secondary, 30%),
-            border: $button-border,
-            shadow: none
-        ),
+    active: (
+        background: $white,
+        color: $field-normal-color,
+        border: $button-border,
+        shadow: $md-shadow-1
+    ),
+    disabled: (
+        background: $field-disabled-bgcolor,
+        color: $field-disabled-color,
+        border: $button-border,
+        shadow: none
+    )
+);
+
+$button-flat: (
+    normal: (
+        background: transparent,
+        color: $brand-primary,
+        border: $button-border,
+        shadow: none
+    ),
+    hover: (
+        background: rgba($brand-primary, $button-hover-background-opacity),
+        color: $brand-primary,
+        border: $button-border,
+        shadow: none
+    ),
+    focus: (
+        background: rgba($brand-primary, $button-hover-background-opacity),
+        color: $brand-primary,
+        border: $button-border,
+        shadow: none
+    ),
+    active: (
+        background: rgba($brand-primary, 0.26),
+        color: $brand-primary,
+        border: $button-border,
+        shadow: none
+    ),
+    disabled: (
+        background: transparent,
+        color: $field-disabled-color,
+        border: $button-border,
+        shadow: none
     )
 );
 
@@ -182,17 +118,6 @@ $selectbutton-hover-shadow: $md-shadow-2;
 $selectbutton-button-hover-bgcolor: $gray-lighter;
 $selectbutton-button-active-bgcolor: $brand-primary;
 $selectbutton-button-active-color: $white;
-
-// ACTION BUTTON
-// TODO: need to move this out here, it's not primeng
-$action-button-active-bgcolor: darken($blue, 20%);
-$action-button-focus-bgcolor: darken($blue, 10%);
-$action-button-hover-bgcolor: darken($blue, 10%);
-$action-button-color: $white;
-$action-button-height: 56px;
-$action-button-icon-size: $font-size-large;
-$action-button-normal-shadow: $md-shadow-1;
-$action-button-hover-shadow: $md-shadow-3;
 
 // DROPDOWN
 $dropdown-active-color: $field-active-color;

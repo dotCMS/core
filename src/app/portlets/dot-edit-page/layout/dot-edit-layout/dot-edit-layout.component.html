@@ -1,6 +1,6 @@
 <form [formGroup]="form" (ngSubmit)="saveLayout($event)" novalidate class="dot-edit-layout__form">
     <div class="dot-edit-layout__toolbar">
-        <dot-action-button [command]="addGridBox()" class="dot-edit-layout__toolbar-add"></dot-action-button>
+        <dot-action-button (onClick)="addGridBox()" class="dot-edit-layout__toolbar-add"></dot-action-button>
         <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
         <input #templateName pInputText type="text" placeholder="{{messageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate" formControlName="title">
         <div class="dot-edit-layout__toolbar-actions">

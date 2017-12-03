@@ -38,8 +38,8 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
 
     constructor(
         messageService: MessageService,
-        private contentTypesInfoService: ContentTypesInfoService,
         private toolbarAddContenletService: ToolbarAddContenletService,
+        public contentTypesInfoService: ContentTypesInfoService,
         public iframeOverlayService: IframeOverlayService
     ) {
         super(['more'], messageService);
@@ -102,7 +102,8 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
             return {
                 label: type.label,
                 icon: this.contentTypesInfoService.getIcon(type.name),
-                command: () => {
+                command: ($event) => {
+                    $event.originalEvent.stopPropagation();
                     this.select(type);
                 }
             };

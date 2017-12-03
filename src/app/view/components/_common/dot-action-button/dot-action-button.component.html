@@ -1,9 +1,3 @@
-<p-splitButton 
-    icon="fa-plus"
-    class="action-button" 
-    (onClick)="command()"
-    [model]="model" 
-    [class.multiple-options]="model && model.length"
-    [class.toolbar-add-contentlet__flat-button]="flat">
-</p-splitButton>
-<span *ngIf="label" class="toolbar-add-contentlet__show-more-label">{{ label }}</span>
+<p-menu *ngIf="isHaveOptions()" appendTo="body" #menu popup="popup" [model]="model"></p-menu>
+<button type="button" pButton [icon]="icon" (click)="buttonOnClick($event)" [disabled]="disabled" [class.action-button--selected]="selected"></button>
+<p *ngIf="label" class="action-button__label" [class.action-button__label--disabled]="disabled">{{ label }}</p>

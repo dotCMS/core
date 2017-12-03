@@ -32,28 +32,15 @@
     .ui-c {
         color: map-get($props, color);
     }
-
-    .ui-button {
-        .ui-button-text,
-        .ui-c {
-            color: map-get($props, color);
-        }
-    }
 }
 
 @mixin button-properties($label, $props) {
-    @if ($label == "default") {
+    @if ($label == "normal") {
         @include button-state($props)
     } @else {
-        @if ($label == "disabled") {
-            &[#{$label}] {
-                @include button-state($props)
-            }
-        } @else {
-            &:#{$label} {
-                @include button-state($props)
-            }
-        } 
+        &:#{$label} {
+            @include button-state($props)
+        }
     }
 }
 

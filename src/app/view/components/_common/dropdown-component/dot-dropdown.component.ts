@@ -31,7 +31,7 @@ export class DotDropdownComponent {
     @Input() gravatar = null;
     @Input() title = null;
     @Input() position: string;
-    @Input() inverse = false;
+    @Input() inverted = false;
     @Output() open = new EventEmitter<any>();
     @Output() toggle = new EventEmitter<boolean>();
     @Output() close = new EventEmitter<any>();
