@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
 import { DotPageView } from '../../../portlets/dot-edit-page/shared/models/dot-page-view.model';
 import { DotLayoutBody } from '../../../portlets/dot-edit-page/shared/models/dot-layout-body.model';
+import { DotLayout } from '../../../portlets/dot-edit-page/shared/models/dot-layout.model';
 
 /**
  * Provide util methods to get and save a PageView object
@@ -33,13 +34,11 @@ export class PageViewService {
      * @returns {Observable<any>}
      * @memberof PageViewService
      */
-    save(pageView: DotPageView): Observable<DotPageView> {
+    save(pageViewIdentifier: string, dotLayout: DotLayout): Observable<DotPageView> {
         return this.coreWebService.requestView({
-            body: {
-                layout: pageView.layout
-            },
+            body: dotLayout,
             method: RequestMethod.Post,
-            url: `v1/page/${pageView.page.identifier}/layout`
+            url: `v1/page/${pageViewIdentifier}/layout`
         }).pluck('entity');
     }
 }

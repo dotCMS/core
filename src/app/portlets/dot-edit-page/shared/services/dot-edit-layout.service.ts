@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { NgGridItemConfig } from 'angular2-grid';
 import { DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE } from '../../shared/models/dot-layout.const';
+import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 
 /**
  * Provide methods to transform NgGrid model into PageView model and viceversa.
@@ -15,22 +16,21 @@ import { DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE } from '../../shared/models/dot-layout
  */
 @Injectable()
 export class DotEditLayoutService {
-    constructor() {}
+    constructor(private templateContainersCacheService: TemplateContainersCacheService) {}
 
     /**
      * Take an DotPageView and return an array of DotLayoutGridBox
      *
-     * @param {DotPageView} dotPageView
-     * @param {NgGridItemConfig} newRow
+     * @param {DotLayoutBody} dotLayoutBody
      * @returns {DotLayoutGridBox[]}
      */
-    getDotLayoutGridBox(dotPageView: DotPageView): DotLayoutGridBox[] {
+    getDotLayoutGridBox(dotLayoutBody: DotLayoutBody): DotLayoutGridBox[] {
         const grid: DotLayoutGridBox[] = [];
 
-        dotPageView.layout.body.rows.forEach((row, rowIndex) => {
+        dotLayoutBody.rows.forEach((row, rowIndex) => {
             row.columns.forEach(column => {
                 grid.push({
-                    containers: column.containers.map(containerId => dotPageView.containers[containerId].container),
+                    containers: column.containers.map(containerId => this.templateContainersCacheService.get(containerId)),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
                         sizex: column.width,
                         col: column.leftOffset,

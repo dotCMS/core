@@ -19,7 +19,7 @@ import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
-import { DotEventsService } from '../api/services/dot-events.service';
+import { DotEventsService } from '../api/services/dot-events/dot-events.service';
 
 @Component({
     selector: 'p-confirmDialog',

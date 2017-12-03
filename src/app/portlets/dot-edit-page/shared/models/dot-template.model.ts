@@ -22,4 +22,6 @@ export interface DotTemplate {
     title?: string;
     type: string;
     versionType: string;
+    anonymous: boolean;
+    inode: string;
 }

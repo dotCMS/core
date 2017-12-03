@@ -1,24 +1,31 @@
-<div class="dot-edit-layout__toolbar">
-    <dot-action-button [command]="addGridBox()" class="dot-edit-layout__toolbar-add"></dot-action-button>
-    <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
-    <input #templateName pInputText type="text" placeholder="{{messageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate">
-    <div class="dot-edit-layout__toolbar-actions">
-        <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{messageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
-        <button pButton flat label="{{messageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
-        <button pButton flat (click)="saveLayout()" label="{{messageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
-        <dot-template-addtional-actions-menu></dot-template-addtional-actions-menu>
+<form [formGroup]="form" (ngSubmit)="saveLayout($event)" novalidate class="dot-edit-layout__form">
+    <div class="dot-edit-layout__toolbar">
+        <dot-action-button [command]="addGridBox()" class="dot-edit-layout__toolbar-add"></dot-action-button>
+        <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
+        <input #templateName pInputText type="text" placeholder="{{messageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate" formControlName="title">
+        <div class="dot-edit-layout__toolbar-actions">
+            <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{messageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
+            <button pButton flat type="button" label="{{messageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
+            <button pButton flat type="submit"  label="{{messageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
+            <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
+            <dot-template-addtional-actions-menu [templateId]="pageView.template.inode"></dot-template-addtional-actions-menu>
+        </div>
     </div>
-</div>
 
-<div class="dot-edit-layout__template">
-    <div class="dot-edit-layout__template-header">HEADER</div>
-    <div class="dot-edit-layout__template-main">
-        <div class="dot-edit-layout__grid-guides">
-            <dot-edit-layout-grid #editLayoutGrid [pageView]="pageView"></dot-edit-layout-grid>
+    <div class="dot-edit-layout__template">
+        <div class="dot-edit-layout__template-header" *ngIf="form.value.layout.header">HEADER</div>
+        <div class="dot-edit-layout__template-main">
+            <div class="dot-edit-layout__template-sidebar--left" *ngIf="form.value.layout.sidebar.location === 'left'">
+                SIDEBAR
+            </div>
+            <div class="dot-edit-layout__grid-guides" formGroupName="layout">
+                <dot-edit-layout-grid #editLayoutGrid formControlName="body"></dot-edit-layout-grid>
+            </div>
+            <div class="dot-edit-layout__template-sidebar--right" *ngIf="form.value.layout.sidebar.location === 'right'">
+                SIDEBAR
+            </div>
         </div>
-        <div class="dot-edit-layout__template-sidebar">
-            SIDEBAR
-        </div>
+        <div class="dot-edit-layout__template-footer" *ngIf="form.value.layout.footer">FOOTER</div>
     </div>
-    <div class="dot-edit-layout__template-footer">FOOTER</div>
-</div>
+
+</form>    

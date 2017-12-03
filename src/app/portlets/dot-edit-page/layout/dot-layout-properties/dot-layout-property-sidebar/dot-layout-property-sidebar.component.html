@@ -1,12 +1,14 @@
 <dot-layout-properties-item 
+    #propertyItemLeft
+    [ngModel]="value === 'left'"
     [label]="messageService.get('editpage.layout.properties.sidebar.left')" 
     class="property-item__sidebar-left"
-    #propertyItemLeft 
     (change)="setValue($event, 'left')">
 </dot-layout-properties-item>
-<dot-layout-properties-item 
+<dot-layout-properties-item
+    #propertyItemRight
+    [ngModel]="value === 'right'"
     [label]="messageService.get('editpage.layout.properties.sidebar.right')" 
     class="property-item__sidebar-right" 
-    #propertyItemRight 
     (change)="setValue($event, 'right')">
 </dot-layout-properties-item>

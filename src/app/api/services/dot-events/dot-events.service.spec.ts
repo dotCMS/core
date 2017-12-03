@@ -1,13 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { DotEventsService } from './dot-events.service';
-import { DotEvent } from '../../shared/models/dot-event/dot-event';
 
 describe('DotEventsService', () => {
     let dotEventsService: DotEventsService;
-    const testEvent: DotEvent = {
-        name: 'test',
-        data: [1, 2, 3]
-    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -26,8 +21,8 @@ describe('DotEventsService', () => {
             randomEvent++;
         });
 
-        dotEventsService.notify(testEvent);
-        dotEventsService.notify({ name: 'randomEvent' });
+        dotEventsService.notify('test', [1, 2, 3]);
+        dotEventsService.notify('randomEvent');
 
         expect(timesCalled).toEqual(1);
         expect(randomEvent).toEqual(1);
@@ -39,7 +34,7 @@ describe('DotEventsService', () => {
             numbersArray = value.data;
         });
 
-        dotEventsService.notify(testEvent);
+        dotEventsService.notify('test', [1, 2, 3]);
 
         expect(numbersArray).toEqual([1, 2, 3]);
     });

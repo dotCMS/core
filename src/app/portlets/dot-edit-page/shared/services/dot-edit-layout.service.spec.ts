@@ -3,106 +3,102 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
+import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 
 describe('DotEditLayoutService', () => {
+
+    const containers =  {
+        '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
+            container: {
+                type: 'containers',
+                identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                name: 'Medium Column (md-1)',
+                categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
+            }
+        },
+        '56bd55ea-b04b-480d-9e37-5d6f9217dcc3': {
+            container: {
+                type: 'containers',
+                identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                name: 'Large Column (lg-1)',
+                categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+            }
+        },
+        '6a12bbda-0ae2-4121-a98b-ad8069eaff3a': {
+            container: {
+                type: 'containers',
+                identifier: '6a12bbda-0ae2-4121-a98b-ad8069eaff3a',
+                name: 'Banner Carousel ',
+                categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e'
+            }
+        },
+        'a6e9652b-8183-4c09-b775-26196b09a300': {
+            container: {
+                type: 'containers',
+                identifier: 'a6e9652b-8183-4c09-b775-26196b09a300',
+                name: 'Default 4 (Page Content)',
+                categoryId: '8cbcb97e-8e04-4691-8555-da82c3dc4a91'
+            }
+        },
+        'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea': {
+            container: {
+                type: 'containers',
+                identifier: 'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
+                name: 'Blank Container',
+                categoryId: '3ba890c5-670c-467d-890d-bd8e9b9bb5ef'
+            }
+        }
+    };
+
+    let dotEditLayoutService: DotEditLayoutService;
+    let templateContainersCacheService: TemplateContainersCacheService;
+
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotEditLayoutService]);
-        this.DotEditLayoutService = this.injector.get(DotEditLayoutService);
+        this.injector = DOTTestBed.resolveAndCreate([DotEditLayoutService, TemplateContainersCacheService]);
+        dotEditLayoutService = this.injector.get(DotEditLayoutService);
+        templateContainersCacheService = this.injector.get(TemplateContainersCacheService);
+
+        templateContainersCacheService.set(containers);
     });
 
     it('should transform the data from the service to the grid format ', () => {
-        const pageView: DotPageView = {
-            containers: {
-                '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
-                    container: {
-                        type: 'containers',
-                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
-                        name: 'Medium Column (md-1)',
-                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
-                    }
-                },
-                '56bd55ea-b04b-480d-9e37-5d6f9217dcc3': {
-                    container: {
-                        type: 'containers',
-                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
-                        name: 'Large Column (lg-1)',
-                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
-                    }
-                },
-                '6a12bbda-0ae2-4121-a98b-ad8069eaff3a': {
-                    container: {
-                        type: 'containers',
-                        identifier: '6a12bbda-0ae2-4121-a98b-ad8069eaff3a',
-                        name: 'Banner Carousel ',
-                        categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e'
-                    }
-                },
-                'a6e9652b-8183-4c09-b775-26196b09a300': {
-                    container: {
-                        type: 'containers',
-                        identifier: 'a6e9652b-8183-4c09-b775-26196b09a300',
-                        name: 'Default 4 (Page Content)',
-                        categoryId: '8cbcb97e-8e04-4691-8555-da82c3dc4a91'
-                    }
-                },
-                'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea': {
-                    container: {
-                        type: 'containers',
-                        identifier: 'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
-                        name: 'Blank Container',
-                        categoryId: '3ba890c5-670c-467d-890d-bd8e9b9bb5ef'
-                    }
-                }
-            },
-            page: null,
-            layout: {
-                title: 'anonymouslayout1511296039453',
-                header: false,
-                footer: false,
-                body: {
-                    rows: [
+        const dotLayoutBody: DotLayoutBody = {
+            rows: [
+                {
+                    columns: [
                         {
-                            columns: [
-                                {
-                                    containers: ['56bd55ea-b04b-480d-9e37-5d6f9217dcc3'],
-                                    leftOffset: 1,
-                                    width: 8
-                                },
-                                {
-                                    containers: ['5363c6c6-5ba0-4946-b7af-cf875188ac2e'],
-                                    leftOffset: 9,
-                                    width: 4
-                                }
-                            ]
+                            containers: ['56bd55ea-b04b-480d-9e37-5d6f9217dcc3'],
+                            leftOffset: 1,
+                            width: 8
                         },
                         {
-                            columns: [
-                                {
-                                    containers: [
-                                        'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
-                                        'a6e9652b-8183-4c09-b775-26196b09a300'
-                                    ],
-                                    leftOffset: 1,
-                                    width: 3
-                                },
-                                {
-                                    containers: ['6a12bbda-0ae2-4121-a98b-ad8069eaff3a'],
-                                    leftOffset: 4,
-                                    width: 3
-                                }
-                            ]
+                            containers: ['5363c6c6-5ba0-4946-b7af-cf875188ac2e'],
+                            leftOffset: 9,
+                            width: 4
                         }
                     ]
                 },
-                sidebar: null
-            }
+                {
+                    columns: [
+                        {
+                            containers: [
+                                'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
+                                'a6e9652b-8183-4c09-b775-26196b09a300'
+                            ],
+                            leftOffset: 1,
+                            width: 3
+                        },
+                        {
+                            containers: ['6a12bbda-0ae2-4121-a98b-ad8069eaff3a'],
+                            leftOffset: 4,
+                            width: 3
+                        }
+                    ]
+                }
+            ]
         };
-        const grid: DotLayoutGridBox[] = this.DotEditLayoutService.getDotLayoutGridBox(pageView, {
-            fixed: true,
-            sizex: 3,
-            maxCols: 12,
-            maxRows: 1
-        });
+
+        const grid: DotLayoutGridBox[] = dotEditLayoutService.getDotLayoutGridBox(dotLayoutBody);
 
         expect(grid.length).toEqual(4);
         expect(grid[2].containers.length).toEqual(2);
@@ -173,7 +169,7 @@ describe('DotEditLayoutService', () => {
                 }
             }
         ];
-        const layoutBody: DotLayoutBody = this.DotEditLayoutService.getDotLayoutBody(grid);
+        const layoutBody: DotLayoutBody = dotEditLayoutService.getDotLayoutBody(grid);
 
         expect(layoutBody.rows.length).toEqual(1);
         expect(layoutBody.rows[0].columns.length).toEqual(2, 'create two columns');

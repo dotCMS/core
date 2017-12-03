@@ -13,7 +13,8 @@ import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DotEventsService } from '../../../../api/services/dot-events.service';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotEvent } from '../../../../shared/models/dot-event/dot-event';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -33,8 +34,9 @@ import { DotEventsService } from '../../../../api/services/dot-events.service';
     ]
 })
 export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor {
-    @Input() pageView: DotPageView;
     @ViewChild(NgGrid) ngGrid: NgGrid;
+
+    value: DotLayoutBody;
     grid: DotLayoutGridBox[];
 
     gridConfig: NgGridConfig = <NgGridConfig>{
@@ -78,17 +80,24 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
 
     ngOnInit() {
         this.messageService.getMessages(this.i18nKeys).subscribe();
-        this.setGridValue();
-        this.dotEventsService.listen('dot-side-nav-toggle').subscribe(() => {
-            // timeOut here is needed because the menu animation time.
+        this.dotEventsService.listen('dot-side-nav-toggle').subscribe((event: DotEvent) => {
+            // setTimeout is need it because the side nav animation time.
             setTimeout(() => {
                 this.ngGrid.triggerResize();
-            }, 150);
+            }, 200);
+        });
+        this.dotEventsService.listen('layout-sidebar-change').subscribe((event: DotEvent) => {
+            // We need to "wait" until the template remove the sidebar div.
+            setTimeout(() => {
+                this.ngGrid.triggerResize();
+            }, 0);
         });
     }
 
     /**
      * Add new Box to the gridBoxes Arrray.
+     *
+     * @memberof DotEditLayoutGridComponent
      */
     addBox(): void {
         const conf: NgGridItemConfig = this.setConfigOfNewContainer();
@@ -97,8 +106,30 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     }
 
     /**
+     * Return ng-grid model.
+     *
+     * @returns {DotLayoutBody}
+     * @memberof DotEditLayoutGridComponent
+     */
+    getModel(): DotLayoutBody {
+        return this.dotEditLayoutService.getDotLayoutBody(this.grid);
+    }
+
+    /**
+     * Event fired when the drag of a container ends, remove empty rows if any.
+     *
+     * @memberof DotEditLayoutGridComponent
+     */
+    onDragStop(): void {
+        this.deleteEmptyRows();
+        this.propagateChange(this.getModel());
+    }
+
+    /**
      * Removes the given index to the gridBoxes Array after the user confirms.
+     *
      * @param {number} index
+     * @memberof DotEditLayoutGridComponent
      */
     onRemoveContainer(index: number): void {
         this.dotConfirmationService.confirm({
@@ -116,39 +147,13 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         });
     }
 
-    /**
-     * Event fired when the drag of a container ends, remove empty rows if any.
-     *
-     */
-    onDragStop(): void {
-        this.deleteEmptyRows();
-        this.propagateChange(this.getModel());
-    }
-
-    /**
-     * Return ng-grid model.
-     * @returns {DotLayoutBody}
-     */
-    getModel(): DotLayoutBody {
-        return this.dotEditLayoutService.getDotLayoutBody(this.grid);
-    }
-
-    /**
-     * Write a new value to the element
-     * @param {DotPageView} value
-     */
-    writeValue(value: DotPageView): void {
-        if (value) {
-            this.pageView = value || null;
-            this.setGridValue();
-        }
-    }
-
     propagateChange = (_: any) => {};
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param fn
+     *
+     * @param {*} fn
+     * @memberof DotEditLayoutGridComponent
      */
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
@@ -156,9 +161,31 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
 
     registerOnTouched(): void {}
 
+    /**
+     * Update the model when a container is added to a box
+     *
+     * @memberof DotEditLayoutGridComponent
+     */
+    updateContainers(): void {
+        this.propagateChange(this.getModel());
+    }
+
+    /**
+     * Write a new value to the element
+     *
+     * @param {DotLayoutBody} value
+     * @memberof DotEditLayoutGridComponent
+     */
+    writeValue(value: DotLayoutBody): void {
+        if (value) {
+            this.value = value || null;
+            this.setGridValue();
+        }
+    }
+
     private setGridValue(): void {
-        this.grid = this.isHaveRows(this.pageView)
-            ? this.dotEditLayoutService.getDotLayoutGridBox(this.pageView)
+        this.grid = this.isHaveRows()
+            ? this.dotEditLayoutService.getDotLayoutGridBox(this.value)
             : [...DOT_LAYOUT_DEFAULT_GRID];
     }
 
@@ -220,13 +247,11 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         return rowArray;
     }
 
-    private isHaveRows(pageView: DotPageView): boolean {
+    private isHaveRows(): boolean {
         return !!(
-            pageView &&
-            pageView.layout &&
-            pageView.layout.body &&
-            pageView.layout.body.rows &&
-            pageView.layout.body.rows.length
+            this.value &&
+            this.value.rows &&
+            this.value.rows.length
         );
     }
 }

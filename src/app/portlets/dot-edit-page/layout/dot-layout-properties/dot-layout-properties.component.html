@@ -1,9 +1,18 @@
 <p-overlayPanel #op>
-    <div>
-        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.header')" class="property-item__header"></dot-layout-properties-item>
-        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.footer')" class="property-item__footer"></dot-layout-properties-item> 
-        <dot-layout-property-sidebar></dot-layout-property-sidebar>
+    <div [formGroup]="group">
+        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.header')" 
+                                    class="property-item__header"
+                                    formControlName="header">
+        </dot-layout-properties-item>
+        
+        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.footer')" 
+                                    class="property-item__footer"
+                                    formControlName="footer">
+        </dot-layout-properties-item>
+        <div [formGroup]="group.get('sidebar')">
+            <dot-layout-property-sidebar formControlName="location"></dot-layout-property-sidebar>
+        </div>
     </div>
 </p-overlayPanel>
 
-<button pButton iconButton flat icon="fa-th-large" (click)="op.toggle($event)"></button>
+<button pButton iconButton flat type="button" icon="fa-th-large" (click)="op.toggle($event)"></button>

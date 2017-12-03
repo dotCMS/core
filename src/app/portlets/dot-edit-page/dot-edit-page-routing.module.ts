@@ -25,7 +25,7 @@ const dotEditPage: Routes = [
     },
     {
         component: DotLegacyTemplateAdditionalActionsComponent,
-        path: 'template/:id/:tabName'
+        path: 'layout/template/:id/:tabName'
     }
 ];
 

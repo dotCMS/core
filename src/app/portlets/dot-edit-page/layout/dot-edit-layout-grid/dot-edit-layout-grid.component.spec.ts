@@ -1,43 +1,59 @@
-import { MessageService } from './../../../../api/services/messages-service';
-import { MockMessageService } from './../../../../test/message-service.mock';
-import { PaginatorService } from './../../../../api/services/paginator/paginator.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { By } from '@angular/platform-browser';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
 import { DotContainerSelectorModule } from './../../../../view/components/dot-container-selector/dot-container-selector.module';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
-
-import { NgGridModule } from 'angular2-grid';
-
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Component, DebugElement } from '@angular/core';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { FormControl, FormGroup } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import {DotEventsService} from '../../../../api/services/dot-events.service';
+import { MessageService } from './../../../../api/services/messages-service';
+import { MockMessageService } from './../../../../test/message-service.mock';
+import { NgGridModule } from 'angular2-grid';
+import { PaginatorService } from './../../../../api/services/paginator/paginator.service';
+import { TemplateContainersCacheService } from '../../template-containers-cache.service';
+
+let fakeValue: DotLayoutBody;
 
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="form">
-                    <dot-edit-layout-grid formControlName="pageView" ></dot-edit-layout-grid>
+                    <dot-edit-layout-grid formControlName="body" ></dot-edit-layout-grid>
                 </form>`
 })
 class TestHostComponent {
     form: FormGroup;
     constructor() {
         this.form = new FormGroup({
-            pageView: new FormControl('pageViewObj')
+            body: new FormControl(fakeValue)
         });
     }
 }
 
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
-    let fixture: ComponentFixture<DotEditLayoutGridComponent>;
-    let hostComponentfixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
+    let hostComponentfixture: ComponentFixture<TestHostComponent>;
 
     beforeEach(() => {
+        fakeValue = {
+            rows: [
+                {
+                    columns: [
+                        {
+                            // containers: ['1'],
+                            containers: [],
+                            leftOffset: 1,
+                            width: 2
+                        }
+                    ]
+                }
+            ]
+        };
+
         const messageServiceMock = new MockMessageService({
             cancel: 'Cancel'
         });
@@ -48,18 +64,26 @@ describe('DotEditLayoutGridComponent', () => {
             providers: [
                 DotConfirmationService,
                 DotEditLayoutService,
+                TemplateContainersCacheService,
                 PaginatorService,
                 { provide: MessageService, useValue: messageServiceMock }
             ]
         });
 
-        fixture = DOTTestBed.createComponent(DotEditLayoutGridComponent);
-        component = fixture.componentInstance;
+        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-grid'));
+        component = de.componentInstance;
 
-        fixture.detectChanges();
+        hostComponentfixture.detectChanges();
     });
 
     it('should show set one element in the grid of 12 columns', () => {
+        hostComponentfixture.componentInstance.form = new FormGroup({
+            body: new FormControl({})
+        });
+
+        hostComponentfixture.detectChanges();
+
         expect(component.grid.length).toEqual(1);
         expect(component.grid[0].config.sizex).toEqual(12);
     });
@@ -73,11 +97,20 @@ describe('DotEditLayoutGridComponent', () => {
     it('should add a new Container in the same row', () => {
         component.addBox();
         component.addBox();
+
         expect(component.grid.length).toEqual(3);
-        expect(component.grid[2].config.row).toEqual(2);
+        expect(component.grid[1].config.row).toEqual(1);
+        expect(component.grid[2].config.row).toEqual(1);
     });
 
     it('should add a new Container in a new row, when there is no space in the last row', () => {
+        fakeValue.rows[0].columns[0].width = 12;
+        hostComponentfixture.componentInstance.form = new FormGroup({
+            body: new FormControl(fakeValue)
+        });
+
+        hostComponentfixture.detectChanges();
+
         component.addBox();
         expect(component.grid.length).toEqual(2);
         expect(component.grid[1].config.row).toEqual(2);
@@ -85,7 +118,7 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should remove one Container from the Grid', () => {
         component.addBox();
-        const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+        const dotConfirmationService = hostComponentfixture.debugElement.injector.get(DotConfirmationService);
         spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
@@ -94,6 +127,13 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should create a new row with a basic configuration object', () => {
+        fakeValue.rows[0].columns[0].width = 12;
+        hostComponentfixture.componentInstance.form = new FormGroup({
+            body: new FormControl(fakeValue)
+        });
+
+        hostComponentfixture.detectChanges();
+
         component.addBox();
         expect(component.grid[1].config).toEqual({
             row: 2,
@@ -125,41 +165,56 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should Propagate Change after a grid box is deleted', () => {
         component.addBox();
-        const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+        const dotConfirmationService = hostComponentfixture.debugElement.injector.get(DotConfirmationService);
         spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
         spyOn(component, 'propagateChange');
         component.onRemoveContainer(1);
-        expect(component.propagateChange).toHaveBeenCalled();
+        expect(component.propagateChange).toHaveBeenCalledWith(fakeValue);
     });
 
     it('should Propagate Change after a grid box is moved', () => {
         spyOn(component, 'propagateChange');
         component.onDragStop();
-        expect(component.propagateChange).toHaveBeenCalled();
+        expect(component.propagateChange).toHaveBeenCalledWith(fakeValue);
     });
 
     it('should Propagate Change after a grid box is added', () => {
+        fakeValue.rows[0].columns.push({
+            containers: [],
+            leftOffset: 3,
+            width: 3
+        });
         spyOn(component, 'propagateChange');
         component.addBox();
         expect(component.propagateChange).toHaveBeenCalled();
     });
 
-    it( 'should resize the grid when the left menu is toggle', fakeAsync(() => {
-        const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
-        spyOn( component.ngGrid, 'triggerResize');
-        dotEventsService.notify( {name: 'dot-side-nav-toggle'});
-        tick(160);
-        expect(component.ngGrid.triggerResize).toHaveBeenCalled();
-    }));
+    it(
+        'should resize the grid when the left menu is toggle',
+        fakeAsync(() => {
+            const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
+            spyOn(component.ngGrid, 'triggerResize');
+            dotEventsService.notify('dot-side-nav-toggle');
+            tick(210);
+            expect(component.ngGrid.triggerResize).toHaveBeenCalled();
+        })
+    );
+
+    it(
+        'should resize the grid when the layout sidebar change',
+        fakeAsync(() => {
+            const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
+            spyOn(component.ngGrid, 'triggerResize');
+            dotEventsService.notify('layout-sidebar-change');
+            tick(0);
+            expect(component.ngGrid.triggerResize).toHaveBeenCalled();
+        })
+    );
 
     it('should call writeValue to define the initial value of grid', () => {
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
-        de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-grid'));
-        const comp: DotEditLayoutGridComponent = de.componentInstance;
-        spyOn(comp, 'writeValue');
         hostComponentfixture.detectChanges();
-        expect(comp.writeValue).toHaveBeenCalledWith('pageViewObj');
+        expect(component.value).toEqual(fakeValue);
     });
 });

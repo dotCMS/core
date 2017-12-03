@@ -115,4 +115,6 @@ describe('DotLayoutSidebarComponent', () => {
         expect(comp.value).toEqual('left');
         expect(component.writeValue).toHaveBeenCalledWith(({ sidebar: 'left' }));
     });
+
+    xit('should show selected left or right based on the sidebar location value', () => {});
 });

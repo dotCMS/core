@@ -8,6 +8,9 @@ import { PageViewService } from '../../../../api/services/page-view/page-view.se
 import { Observable } from 'rxjs/Observable';
 import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model';
 import { MessageService } from '../../../../api/services/messages-service';
+import { TemplateContainersCacheService } from '../../template-containers-cache.service';
+import { DotLayout } from '../../shared/models/dot-layout.model';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-edit-layout',
@@ -18,15 +21,19 @@ export class DotEditLayoutComponent implements OnInit {
     @ViewChild('editLayoutGrid') editLayoutGrid: DotEditLayoutGridComponent;
     @ViewChild('templateName') templateName: ElementRef;
 
+    form: FormGroup;
+
     pageView: DotPageView;
     saveAsTemplate: boolean;
 
     constructor(
+        private dotEventsService: DotEventsService,
+        private fb: FormBuilder,
         private pageViewService: PageViewService,
         private route: ActivatedRoute,
+        private templateContainersCacheService: TemplateContainersCacheService,
         public messageService: MessageService,
-        public router: Router,
-        private _fb: FormBuilder
+        public router: Router
     ) {}
 
     ngOnInit(): void {
@@ -41,6 +48,13 @@ export class DotEditLayoutComponent implements OnInit {
 
         this.route.data.pluck('pageView').subscribe((pageView: DotPageView) => {
             this.pageView = pageView;
+            this.initForm(pageView);
+            this.templateContainersCacheService.set(this.pageView.containers);
+
+            // Emit event to redraw the grid when the sidebar change
+            this.form.get('layout.sidebar').valueChanges.subscribe(() => {
+                this.dotEventsService.notify('layout-sidebar-change');
+            });
         });
     }
 
@@ -64,7 +78,7 @@ export class DotEditLayoutComponent implements OnInit {
      * @memberof DotEditLayoutComponent
      */
     isLayout(): boolean {
-        return /anonymous_layout_\d+/.test(this.pageView.template.name);
+       return this.pageView.template.anonymous;
     }
 
     /**
@@ -90,9 +104,26 @@ export class DotEditLayoutComponent implements OnInit {
      *
      * @memberof DotEditLayoutComponent
      */
-    saveLayout(): void {
-        const layoutBody: DotLayoutBody = this.editLayoutGrid.getModel();
-        const pageView: DotPageView = Object.assign({}, this.pageView, { layout: { body: layoutBody } });
-        this.pageViewService.save(pageView).subscribe();
+    saveLayout(event): void {
+        const dotLayout: DotLayout = this.form.value;
+        this.pageViewService.save(this.pageView.page.identifier, dotLayout).subscribe();
+    }
+
+    private initForm(pageView: DotPageView): void {
+        this.form = this.fb.group({
+            title: this.isLayout() ? null : pageView.template.title,
+            layout: this.fb.group({
+                body: pageView.layout.body || {},
+                header: pageView.layout.header,
+                footer: pageView.layout.footer,
+                sidebar: this.fb.group(pageView.layout.sidebar || {
+                    location: '',
+                    containers: [],
+                    width: '',
+                    widthPercent: '',
+                    preview: false
+                })
+            })
+        });
     }
 }
