@@ -197,12 +197,7 @@
 			<%} %>
 			</tbody>
 		</table>
-		<div class="wfAddActionButtonRow">
-			<button dojoType="dijit.form.Button"
-					onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '');" iconClass="addIcon">
-				<%=LanguageUtil.get(pageContext, "Add-Workflow-Action")%>
-			</button>
-		</div>
+
 	</div>
 
 </div>

@@ -5,9 +5,8 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import org.omg.CORBA.StringHolder;
 
-import java.util.*;
+import java.util.List;
 
 @JsonDeserialize(builder = WorkflowActionForm.Builder.class)
 public class WorkflowActionForm extends Validated {
@@ -28,7 +27,8 @@ public class WorkflowActionForm extends Validated {
     private final boolean       actionAssignable;
     @NotNull
     private final boolean       actionCommentable;
-
+    @NotNull
+    private final boolean       requiresCheckout;
     @NotNull
     private final RequiresCheckoutOption requiresCheckoutOption;
     @NotNull
@@ -69,6 +69,10 @@ public class WorkflowActionForm extends Validated {
 
     public boolean isActionCommentable() {
         return actionCommentable;
+    }
+
+    public boolean isRequiresCheckout() {
+        return requiresCheckout;
     }
 
     public RequiresCheckoutOption getRequiresCheckoutOption() {
@@ -123,6 +127,7 @@ public class WorkflowActionForm extends Validated {
         this.whoCanUse                  = builder.whoCanUse;
         this.actionIcon                 = builder.actionIcon;
         this.actionCommentable          = builder.actionCommentable;
+        this.requiresCheckout           = builder.requiresCheckout;
         this.requiresCheckoutOption     = valueOf(builder.requiresCheckoutOption);
         this.actionNextStep             = builder.actionNextStep;
         this.actionNextAssign           = builder.actionNextAssign;
@@ -180,6 +185,8 @@ public class WorkflowActionForm extends Validated {
         @JsonProperty(required = true)
         private boolean       actionCommentable;
         @JsonProperty(required = true)
+        private boolean       requiresCheckout;
+        @JsonProperty(required = true)
         private String       requiresCheckoutOption;
         @JsonProperty(required = true)
         private boolean       actionRoleHierarchyForAssign;
@@ -227,6 +234,11 @@ public class WorkflowActionForm extends Validated {
 
         public Builder actionCommentable(boolean actionCommentable) {
             this.actionCommentable = actionCommentable;
+            return this;
+        }
+
+        public Builder requiresCheckout(boolean requiresCheckout) {
+            this.requiresCheckout = requiresCheckout;
             return this;
         }
 

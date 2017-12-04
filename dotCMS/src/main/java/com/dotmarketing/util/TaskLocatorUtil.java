@@ -216,7 +216,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04220RemoveDeleteInactiveClusterServersJob.class);
 		ret.add(Task04230FixVanityURLInconsistencies.class);
 		ret.add(Task04300UpdateSystemFolderIdentifier.class);
-		ret.add(Task04300UpdateWorkflowActionTable.class);
+		ret.add(Task04305UpdateWorkflowActionTable.class);
 		return ret;
 	}
 

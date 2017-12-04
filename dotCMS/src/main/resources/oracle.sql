@@ -2214,7 +2214,7 @@ create index wk_idx_step_scheme on workflow_step(scheme_id);
 -- Permissionable ---
 create table workflow_action(
 	id varchar2(36) primary key,
-	step_id varchar2(36) not null  references workflow_step(id),
+	step_id varchar2(36),
 	name varchar2(255) not null,
 	condition_to_progress nclob,
 	next_step_id varchar2(36) not null references workflow_step(id),
@@ -2506,9 +2506,3 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
-
-CREATE TABLE workflow_action_step (
-    action_id VARCHAR(36) NOT NULL,
-    step_id VARCHAR(36) NOT NULL,
-    CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)
-);

@@ -115,10 +115,6 @@ public class WorkflowImportExportUtil {
 				dc.addParam(map.get("structure_id"));
 				dc.loadResult();
 			}
-			
-			
-			
-			
 
 			wapi.saveWorkflowActionClassParameters(importer.getActionClassParams());
 

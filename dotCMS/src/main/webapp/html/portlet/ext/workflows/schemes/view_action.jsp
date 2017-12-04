@@ -195,33 +195,9 @@
 								<input type="checkbox" name="actionRequiresCheckout"
 									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
 									<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for="">Create New Version</label>
+								<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
 							</div>
-							<div class="checkbox">
 
-								States to show the action:<br/>
-
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
-								<label for="">LOCKED</label>
-
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
-								<label for="">UNLOCKED</label>
-
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
-								<label for="">PUBLISHED</label>
-
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
-								<label for="">UNPUBLISHED</label>
-
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true">
-								<label for="">ARCHIVED</label>
-
-							</div>
 							<div class="checkbox">
 								<input type="checkbox" name="actionCommentable"
 									id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"

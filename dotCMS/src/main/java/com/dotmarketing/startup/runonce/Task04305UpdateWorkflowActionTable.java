@@ -28,7 +28,7 @@ import java.util.Map;
  * @version 4.3.0
  * @since Nov 1st, 2017
  */
-public class Task04300UpdateWorkflowActionTable implements StartupTask {
+public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private static final String MYSQL_FIND_INTERMEDIATE_TABLE    = "SELECT * from workflow_action_step";
     private static final String POSTGRES_FIND_INTERMEDIATE_TABLE = "SELECT * from workflow_action_step";
@@ -74,7 +74,12 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_INSERT_INTO_INTERMEDIATE_TABLE    = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
     private static final String ORACLE_INSERT_INTO_INTERMEDIATE_TABLE   = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
 
-    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
+    /*private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
+    private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
+    private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
+    private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;*/
+
+    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
     private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
@@ -93,6 +98,13 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
     private static final String POSTGRES_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "DROP INDEX IF EXISTS workflow_idx_scheme_structure_2 CASCADE";
     private static final String MSSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
     private static final String ORACLE_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "DROP INDEX WK_IDX_SCHEME_STR_2";
+
+    private static final String MYSQL_DROP_WORKFLOW_ACTION__STEP_FK = "alter table workflow_action drop foreign key fooconstraint     DROP INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure";
+    private static final String POSTGRES_DROP_WORKFLOW_ACTION__STEP_FK = "DROP INDEX IF EXISTS workflow_idx_scheme_structure_2 CASCADE";
+    private static final String MSSQL_DROP_WORKFLOW_ACTION__STEP_FK = MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+    private static final String ORACLE_DROP_WORKFLOW_ACTION__STEP_FK = "DROP INDEX WK_IDX_SCHEME_STR_2";
+
+
 
     private static final String POSTGRES_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure(structure_id)";
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
@@ -133,7 +145,7 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
         // SCHEMA CHANGES
         this.createWorkflowActionStepTable     (dc);
         this.addSchemeIdColumn                 (dc);
-        this.addRequiresCheckoutOptionColumn   (dc);
+        //this.addRequiresCheckoutOptionColumn   (dc);
 
         // DATA CHANGES
         this.addWorkflowActionStepData         (dc);
@@ -170,7 +182,7 @@ public class Task04300UpdateWorkflowActionTable implements StartupTask {
 
             dc.setSQL(updateSchemeIdsForActions());
             dc.addParam(row.get("scheme_id").toString());
-            dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
+            //dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
             dc.addParam(row.get("action_id").toString());
 
             try {

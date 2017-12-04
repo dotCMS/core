@@ -1977,7 +1977,7 @@ create index workflow_idx_step_scheme on workflow_step(scheme_id);
 -- Permissionable ---
 create table workflow_action(
 	id varchar(36) primary key,
-	step_id varchar(36) not null  references workflow_step(id),
+	step_id varchar(36),
 	name varchar(255) not null,
 	condition_to_progress text,
 	next_step_id varchar(36) not null references workflow_step(id),
@@ -1988,6 +1988,7 @@ create table workflow_action(
 	requires_checkout boolean default false,
 	icon varchar(255) default 'defaultWfIcon',
 	use_role_hierarchy_assign bool default false,
+  requires_checkout_option VARCHAR(16)  default 'both',
   scheme_id VARCHAR(36) NOT NULL
 );
 create index workflow_idx_action_step on workflow_action(step_id);

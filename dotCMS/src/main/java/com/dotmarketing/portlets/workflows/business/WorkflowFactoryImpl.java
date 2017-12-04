@@ -74,7 +74,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("nextAssign", row.get("next_assign"));
 		row.put("order", row.get("my_order"));
 		row.put("requiresCheckout", row.get("requires_checkout"));
-		row.put("requiresCheckoutOption", row.get("requires_checkout_option"));
+		//row.put("requiresCheckoutOption", row.get("requires_checkout_option"));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
 
 		BeanUtils.copyProperties(action, row);
@@ -274,14 +274,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteActionClassByAction(WorkflowAction action) throws DotDataException, DotSecurityException, AlreadyExistException {
-		String actionId = action.getId();
-		final DotConnect db = new DotConnect();
-		db.setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION);
-		db.addParam(action.getId());
+
+		new DotConnect().setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION).addParam(action.getId()).loadResult();
 
 		// update scheme mod date
-		WorkflowStep step = findStep(actionId);
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 
@@ -425,7 +422,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASS);
 		db.addParam(id);
-		return (WorkflowActionClass) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClass.class).get(0);
+
+		try {
+			return (WorkflowActionClass) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClass.class).get(0);
+		} catch (IndexOutOfBoundsException ioob) {
+			return null;
+		}
 	}
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
@@ -939,7 +941,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
 			db.addParam(action.getSchemeId());
-			db.addParam(StringPool.BLANK); // we are not longer using the stepId, the relationship now is with schemeId
+			// we are not longer using the stepId, the relationship now is with schemeId, however it needs a step id to work
+			db.addParam(UtilMethods.isSet(action.getStepId())?action.getStepId():action.getNextStep());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
 			db.addParam(action.getNextStep());
@@ -950,7 +953,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			db.addParam(action.getRequiresCheckoutOption());
+			//db.addParam(action.getRequiresCheckoutOption());
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
@@ -964,7 +967,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.isCommentable());
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
-			db.addParam(action.getRequiresCheckoutOption());
+			db.addParam(action.isRequiresCheckout());
+			//db.addParam(action.getRequiresCheckoutOption());
 			db.addParam(action.getId());
 			db.loadResult();
 		}
@@ -1253,10 +1257,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 
 		// update workflowScheme mod date
-		WorkflowActionClass actionClass = findActionClass(param.getActionClassId());
-		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		final WorkflowActionClass actionClass = findActionClass(param.getActionClassId());
+		final WorkflowAction action = findAction(actionClass.getActionId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 

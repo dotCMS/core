@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.dotmarketing.db.HibernateUtil.addAsyncCommitListener;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 /**
  * Helper for Workflow Actions
@@ -407,6 +408,7 @@ public class WorkflowHelper {
         newAction.setNextStep   (workflowActionForm.getActionNextStep());
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
+        newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
         newAction.setRequiresCheckoutOption((null != workflowActionForm.getRequiresCheckoutOption())?
                 workflowActionForm.getRequiresCheckoutOption().getName():WorkflowAction.LOCKED_OR_UNLOCKED);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
@@ -445,7 +447,7 @@ public class WorkflowHelper {
                 Logger.debug(this, "Saving new WorkflowActionClass, for the Workflow action: "
                         + newAction.getId());
 
-                addAsyncCommitListener(() -> {
+                addSyncCommitListener(() -> {
                     WorkflowActionClass workflowActionClass = new WorkflowActionClass();
                     workflowActionClass.setActionId(newAction.getId());
                     workflowActionClass.setClazz(NotifyAssigneeActionlet.class.getName());
