@@ -75,15 +75,30 @@ if(SessionMessages.contains(session, "custommessage")){
 	messages.add((String) SessionMessages.get(session, "custommessage"));
 }
 
-if(SessionMessages.contains(request, "message")){
-	messages.add((String) SessionMessages.get(request, "message"));
-}
-if(SessionMessages.contains(request, "error")){
-	errors.add((String) SessionMessages.get(request, "error"));
-}
-if(SessionMessages.contains(request, "custommessage")){
-	messages.add((String) SessionMessages.get(request, "custommessage"));
-}
+//Support multiple messages
+int i = 0;
+do {
+	if (SessionMessages.contains(request, "message" + i)) {
+		messages.add((String) SessionMessages.get(request, "message" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "message" + i));
+
+i = 0;
+do {
+	if(SessionMessages.contains(request, "error" + i)){
+		errors.add((String) SessionMessages.get(request, "error" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "error" + i));
+
+i = 0;
+do {
+	if(SessionMessages.contains(request, "custommessage" + i)){
+		messages.add((String) SessionMessages.get(request, "custommessage" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "custommessage" + i));
 
 
 

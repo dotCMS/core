@@ -197,126 +197,142 @@ public class PageServices {
 						
         List<Container> containerList = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate, APILocator.getUserAPI().getSystemUser(), false);
 
-		Iterator i = containerList.iterator();
-		while(i.hasNext()){
-			Container ident = (Container) i.next();
-			
-			Container c = null;
-			if (EDIT_MODE) {
-				c = (Container) APILocator.getVersionableAPI().findWorkingVersion(ident.getIdentifier(),APILocator.getUserAPI().getSystemUser(),false);
-			}
-			else {
-				c = (Container) APILocator.getVersionableAPI().findLiveVersion(ident.getIdentifier(),APILocator.getUserAPI().getSystemUser(),false);
-			}
+        if(UtilMethods.isSet(containerList)) {
+			Iterator i = containerList.iterator();
+			while (i.hasNext()) {
+				Container ident = (Container) i.next();
 
-            if(c == null) continue;
-			//sets container to load the container file
-			sb.append("#set ($container").append(ident.getIdentifier() ).append( " = \"" ).append( folderPath ).append( ident.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION") ).append( "\" )");
-
-			String sort = (c.getSortContentletsBy() == null) ? "tree_order" : c.getSortContentletsBy();
-
-			boolean dynamicContainer = UtilMethods.isSet(c.getLuceneQuery());
-
-			int langCounter = 0;
-
-
-			List<Contentlet> contentlets = new ArrayList<Contentlet>();
-			List<Contentlet> contentletsFull = new ArrayList<Contentlet>();
-			if (!dynamicContainer) {
-				Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(htmlPage);
-				Identifier idenContainer = APILocator.getIdentifierAPI().find(c);
-				//The container doesn't have categories
-				try{
-					contentlets = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, EDIT_MODE, -1,APILocator.getUserAPI().getSystemUser() ,false);
-					if(EDIT_MODE)
-					    contentletsFull=contentlets;
-					else
-					    contentletsFull = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, true, -1,APILocator.getUserAPI().getSystemUser() ,false);
-				}catch(Exception e){
-					Logger.error(PageServices.class,"Unable to retrive contentlets on page", e);
+				Container c = null;
+				if (EDIT_MODE) {
+					c =
+						(Container) APILocator.getVersionableAPI()
+							.findWorkingVersion(ident.getIdentifier(), APILocator.getUserAPI().getSystemUser(), false);
+				} else {
+					c =
+						(Container) APILocator.getVersionableAPI()
+							.findLiveVersion(ident.getIdentifier(), APILocator.getUserAPI().getSystemUser(), false);
 				}
-				Logger.debug(PageServices.class, "HTMLPage= " + htmlPage.getInode() + " Container=" + c.getInode() + " Language=-1 Contentlets=" + contentlets.size());
-			}
-			//this is to filter the contentlets list removing the repited identifiers
-			if(contentlets.size() > 0){
-				Set<String> contentletIdentList = new HashSet<String>();
-				List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
-				for(Contentlet cont : contentlets){
-					if(!contentletIdentList.contains(cont.getIdentifier())){
-						contentletIdentList.add(cont.getIdentifier());
-						contentletsFilter.add(cont);
+
+				if (c == null)
+					continue;
+				//sets container to load the container file
+				sb.append("#set ($container").append(ident.getIdentifier()).append(" = \"").append(folderPath)
+					.append(ident.getIdentifier()).append(".")
+					.append(Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION")).append("\" )");
+
+				String sort = (c.getSortContentletsBy() == null) ? "tree_order" : c.getSortContentletsBy();
+
+				boolean dynamicContainer = UtilMethods.isSet(c.getLuceneQuery());
+
+				int langCounter = 0;
+
+				List<Contentlet> contentlets = new ArrayList<Contentlet>();
+				List<Contentlet> contentletsFull = new ArrayList<Contentlet>();
+				if (!dynamicContainer) {
+					Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(htmlPage);
+					Identifier idenContainer = APILocator.getIdentifierAPI().find(c);
+					//The container doesn't have categories
+					try {
+						contentlets =
+							conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, EDIT_MODE, -1,
+								APILocator.getUserAPI().getSystemUser(), false);
+						if (EDIT_MODE)
+							contentletsFull = contentlets;
+						else
+							contentletsFull =
+								conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, true, -1,
+									APILocator.getUserAPI().getSystemUser(), false);
+					} catch (Exception e) {
+						Logger.error(PageServices.class, "Unable to retrive contentlets on page", e);
+					}
+					Logger.debug(PageServices.class,
+						"HTMLPage= " + htmlPage.getInode() + " Container=" + c.getInode() + " Language=-1 Contentlets="
+							+ contentlets.size());
+				}
+				//this is to filter the contentlets list removing the repited identifiers
+				if (contentlets.size() > 0) {
+					Set<String> contentletIdentList = new HashSet<String>();
+					List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
+					for (Contentlet cont : contentlets) {
+						if (!contentletIdentList.contains(cont.getIdentifier())) {
+							contentletIdentList.add(cont.getIdentifier());
+							contentletsFilter.add(cont);
+						}
+					}
+					contentlets = contentletsFilter;
+				}
+				if (contentletsFull.size() > 0) {
+					Set<String> contentletIdentList = new HashSet<String>();
+					List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
+					for (Contentlet cont : contentletsFull) {
+						if (!contentletIdentList.contains(cont.getIdentifier())) {
+							contentletIdentList.add(cont.getIdentifier());
+							contentletsFilter.add(cont);
+						}
+					}
+					contentletsFull = contentletsFilter;
+				}
+
+				StringBuilder widgetpree = new StringBuilder();
+				StringBuilder widgetpreeFull = new StringBuilder();
+
+				StringBuilder contentletList = new StringBuilder();
+				int count = 0;
+				for (Contentlet contentlet : contentlets) {
+					contentletList.append(count == 0 ? "" : ",")
+						.append('"').append(contentlet.getIdentifier()).append('"');
+					if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
+						Field field = contentlet.getStructure().getFieldVar("widgetPreexecute");
+						if (field != null && UtilMethods.isSet(field.getValues()))
+							widgetpree.append(field.getValues().trim());
+					}
+					if (++count >= c.getMaxContentlets())
+						break;
+				}
+
+				StringBuilder contentletListFull = new StringBuilder();
+				int countFull = 0;
+				for (Contentlet contentlet : contentletsFull) {
+					contentletListFull.append(countFull == 0 ? "" : ",")
+						.append('"').append(contentlet.getIdentifier()).append('"');
+					if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
+						Field field = contentlet.getStructure().getFieldVar("widgetPreexecute");
+						if (field != null && UtilMethods.isSet(field.getValues()))
+							widgetpreeFull.append(field.getValues().trim());
+					}
+					if (++countFull >= c.getMaxContentlets())
+						break;
+				}
+
+				//Check if we want to accrue the tags associated to each contentlet on this page
+				if (Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false)) {
+
+					for (Contentlet contentlet : contentletsFull) {
+						//Search for the tags associated to this contentlet inode
+						List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+						if (contentletFoundTags != null) {
+							pageFoundTags.addAll(contentletFoundTags);
+						}
 					}
 				}
-				contentlets = contentletsFilter;
+
+				sb.append(
+					"#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+				sb.append(widgetpreeFull);
+				sb.append("#set ($contentletList").append(ident.getIdentifier())
+					.append(" = [").append(contentletListFull.toString()).append("] )");
+				sb.append("#set ($totalSize").append(ident.getIdentifier())
+					.append("=").append(countFull).append(")");
+				sb.append("#else ");
+				sb.append(widgetpree);
+				sb.append("#set ($contentletList").append(ident.getIdentifier())
+					.append(" = [").append(contentletList.toString()).append("] )");
+				sb.append("#set ($totalSize").append(ident.getIdentifier())
+					.append("=").append(count).append(")");
+				sb.append("#end ");
+				langCounter++;
+
 			}
-			if(contentletsFull.size() > 0){
-                Set<String> contentletIdentList = new HashSet<String>();
-                List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
-                for(Contentlet cont : contentletsFull){
-                    if(!contentletIdentList.contains(cont.getIdentifier())){
-                        contentletIdentList.add(cont.getIdentifier());
-                        contentletsFilter.add(cont);
-                    }
-                }
-                contentletsFull = contentletsFilter;
-            }
-			
-			StringBuilder widgetpree=new StringBuilder();
-			StringBuilder widgetpreeFull=new StringBuilder();
-			
-			StringBuilder contentletList = new StringBuilder();
-			int count=0;
-			for(Contentlet contentlet : contentlets) {
-			    contentletList.append(count==0 ? "" : ",")
-			        .append('"').append(contentlet.getIdentifier()).append('"');
-			    if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
-                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
-                    if (field!= null && UtilMethods.isSet(field.getValues()))
-                        widgetpree.append(field.getValues().trim());
-                }
-			    if(++count>=c.getMaxContentlets()) break;
-			}
-			
-			StringBuilder contentletListFull = new StringBuilder();
-            int countFull=0;
-            for(Contentlet contentlet : contentletsFull) {
-                contentletListFull.append(countFull==0 ? "" : ",")
-                    .append('"').append(contentlet.getIdentifier()).append('"');
-                if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
-                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
-                    if (field!= null && UtilMethods.isSet(field.getValues()))
-                        widgetpreeFull.append(field.getValues().trim());
-                }
-                if(++countFull>=c.getMaxContentlets()) break;
-            }
-
-			//Check if we want to accrue the tags associated to each contentlet on this page
-			if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false) ) {
-
-				for ( Contentlet contentlet : contentletsFull ) {
-					//Search for the tags associated to this contentlet inode
-					List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
-					if ( contentletFoundTags != null ) {
-						pageFoundTags.addAll(contentletFoundTags);
-					}
-				}
-			}
-
-			sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
-			   sb.append(widgetpreeFull);
-			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
-                 .append( " = [" ).append( contentletListFull.toString() ).append( "] )");
-               sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
-                 .append( "=" ).append( countFull ).append( ")");
-			sb.append("#else ");
-			   sb.append(widgetpree);
-			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
-			     .append( " = [" ).append( contentletList.toString() ).append( "] )");
-			   sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
-			     .append( "=" ).append( count ).append( ")");
-			sb.append("#end ");
-			langCounter++;
-
 		}
 
 		//Now we need to use the found tags in order to accrue them each time this page is visited

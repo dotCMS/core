@@ -1,15 +1,21 @@
 package com.dotmarketing.portlets.templates.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -150,6 +156,62 @@ public class TemplateAPITest extends IntegrationTestBase {
     }
 
     @Test
+    public void findPagesByTemplate() throws Exception {
+        User user=APILocator.getUserAPI().getSystemUser();
+        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+
+        Template template = null;
+        Folder folder = null;
+        HTMLPageAsset page = null;
+
+        try {
+            //Create a Template
+            template = new Template();
+            template.setTitle("Title");
+            template.setBody("Body");
+            template = APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+
+            //Create a Folder
+            folder = APILocator.getFolderAPI().createFolders(
+                    "/test_junit/test_" + UUIDGenerator.generateUuid().replaceAll("-", "_"), host,
+                    user, false);
+
+            //Create a Page inside the Folder assigned to the newly created Template
+            page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+            //wait a second before attempting to search the pages with elastic search
+            APILocator.getContentletAPI().isInodeIndexed(page.getInode());
+
+            //Find pages by template
+            List<Contentlet> pages = APILocator.getHTMLPageAssetAPI()
+                    .findPagesByTemplate(template, user, false);
+            assertFalse(pages.isEmpty()); //Should contain dependencies
+            assertTrue(pages.size() == 1); //Only one dependency, the page we just created
+            assertEquals(page.getInode(), pages.get(0).getInode()); //Page inode should be the same
+
+            //Delete the page
+            HTMLPageDataGen.remove(page);
+            page = null;
+            //Now find again pages by template
+            pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, false);
+            assertTrue(pages.isEmpty()); //Should NOT contain dependencies
+
+        } finally {
+            //Clean up
+            if (page != null) {
+                HTMLPageDataGen.remove(page);
+            }
+            if (template != null) {
+                APILocator.getTemplateAPI().delete(template, user, false);
+            }
+            if (folder != null) {
+                APILocator.getFolderAPI().delete(folder, user, false);
+            }
+        }
+
+    }
+
+    @Test
     public void findLiveTemplate() throws Exception {
 
         Template template=new Template();
@@ -186,6 +248,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         final TemplateFactory templateFactory = new TemplateFactoryImpl();
         template.setTitle("empty test template " + UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
+        template.setOwner("template's owner");
 
         try {
             template = templateAPI.saveTemplate(template, host, user, false);
@@ -194,6 +257,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             assertNotNull(result);
             assertEquals(template.getInode(), result.getInode());
+            assertTrue(template.getOwner()!=null && template.getOwner().equals(result.getOwner()));
         } finally {
             if (template.getInode() != null) {
                 templateAPI.delete(template, user, false);

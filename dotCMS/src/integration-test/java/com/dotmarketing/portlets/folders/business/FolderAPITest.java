@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -39,18 +38,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
-
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.util.List;
 
 public class FolderAPITest {
 
@@ -703,11 +698,18 @@ public class FolderAPITest {
 			folder1 = folderAPI.createFolders(folderPath1, host, user, false);
 			folder2 = folderAPI.createFolders(folderPath2, host, user, false);
 
+			folder2.setOwner("folder2's owner");
+
+			folderAPI.save(folder2, user, false);
 			final List<Folder> folders = folderAPI.findSubFolders(folder1, false);
 
 			Assert.assertNotNull(folders);
 			Assert.assertTrue(folders.size() == 1);
-			Assert.assertEquals(folder2.getInode(), folders.get(0).getInode());
+
+			Folder result = folders.get(0);
+			Assert.assertEquals(folder2.getInode(), result.getInode());
+			Assert.assertTrue(
+					result.getOwner() != null && result.getOwner().equals(folder2.getOwner()));
 		}finally{
 			if (folder2 != null){
 				folderAPI.delete(folder2, user, false);
@@ -753,12 +755,18 @@ public class FolderAPITest {
 
 		try{
 			folder = folderAPI.createFolders(folderPath, host, user, false);
+			folder.setOwner("folder's owner");
+
+			folderAPI.save(folder, user, false);
 
 			fc.removeFolder(folder, identifierAPI.find(folder));
 			Folder result = folderAPI.findFolderByPath(folderPath, host, user,false);
 
 			Assert.assertNotNull(result);
 			Assert.assertEquals(folder.getInode(), result.getInode());
+
+			Assert.assertTrue(
+					result.getOwner() != null && result.getOwner().equals(folder.getOwner()));
 		}finally{
 
 			if (folder != null){

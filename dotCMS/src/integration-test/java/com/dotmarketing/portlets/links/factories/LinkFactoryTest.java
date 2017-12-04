@@ -164,8 +164,11 @@ public class LinkFactoryTest extends IntegrationTestBase {
 
             Assert.assertNotNull(links);
             Assert.assertFalse(links.isEmpty());
-            Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
-            Assert.assertEquals(link.getInode(), links.get(0).getInode());
+
+            Link result = links.get(0);
+            Assert.assertEquals(link.getIdentifier(), result.getIdentifier());
+            Assert.assertEquals(link.getInode(), result.getInode());
+            Assert.assertTrue(link.getOwner() != null && link.getOwner().equals(result.getOwner()));
         } finally {
             if (ftest != null) {
                 folderAPI.delete(ftest, systemUser, false);
