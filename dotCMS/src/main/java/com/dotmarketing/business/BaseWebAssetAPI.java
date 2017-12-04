@@ -289,7 +289,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			else if(currWebAsset instanceof Template)
 			{
 				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
-				APILocator.getTemplateAPI().associateContainers(new ArrayList<Container>(), (Template)currWebAsset);
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
 			}
 

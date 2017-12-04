@@ -171,7 +171,6 @@ public interface TemplateAPI {
      */
 	public List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
-	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
 	/**
 	 * Check if there are Contentlet Pages using this Template

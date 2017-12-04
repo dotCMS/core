@@ -27,6 +27,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
@@ -253,37 +254,35 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
       return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
-	@CloseDBIfOpened
-	@Override
-	@SuppressWarnings("unchecked")
-	public List<Container> getContainersInTemplate(final Template parentTemplate)
-			throws DotStateException, DotDataException, DotSecurityException {
+	
+    @CloseDBIfOpened
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Container> getContainersOnPage(final HTMLPageAsset page)
+            throws DotStateException, DotDataException, DotSecurityException {
 
-		List<Identifier> identifiers = new ArrayList<>();
-		DotConnect dc = new DotConnect();
-		dc.setSQL(
-				"select template_containers_2_.* from template_containers, identifier template_containers_1_,identifier template_containers_2_ "
-						+
-						"where template_containers.template_id = template_containers_1_.id and " +
-						"template_containers.container_id = template_containers_2_.id " +
-						"and template_containers.template_id = ? ");
-		dc.addParam(parentTemplate.getIdentifier());
+        final List<Container> containers = new ArrayList<>();
+        List<Identifier> identifiers = new ArrayList<>();
+        DotConnect dc = new DotConnect();
+        dc.setSQL("select * from identifier where id in (select distinct(parent2) as containers from multi_tree where parent1=?)");
+        dc.addParam(page.getIdentifier());
 
-		try{
-			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
-		}catch(ParseException e){
-			throw new DotDataException(e);
-		}
+        try{
+            identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+        }catch(ParseException e){
+            throw new DotDataException(e);
+        }
 
-		final List<Container> containers = new ArrayList<>();
-		for (Identifier id : identifiers) {
-			final Container cont = (Container) APILocator.getVersionableAPI()
-					.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-			containers.add(cont);
-		}
-		return containers;
-	}
-
+        
+        final List<Container> pageContainers = new ArrayList<>();
+        for (Identifier id : identifiers) {
+            final Container cont = (Container) APILocator.getVersionableAPI()
+                    .findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+            pageContainers.add(cont);
+        }
+        return containers;
+    }
+    
 	@WrapInTransaction
 	@Override
 	public void saveContainerStructures(final List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
@@ -500,11 +499,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containerFactory.findContainers(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
-	@CloseDBIfOpened
-	@Override
-	public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
-	    return containerFactory.findContainersForStructure(structureInode);
-	}
+
 
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
@@ -516,18 +511,20 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public void deleteContainerStructureByContentType(final ContentType type)
             throws DotDataException {
             
-      List<Container> containers = findContainersForStructure(type.id());
 
       new DotConnect()
         .setSQL("DELETE FROM container_structures WHERE structure_id = ?")
         .addParam(type.id())
         .loadResult();
       
-        for(Container container : containers){
-          CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
-        }
+
     }
 
+    @CloseDBIfOpened
+    @Override
+    public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
+        return containerFactory.findContainersForStructure(structureInode);
+    }
     
     @WrapInTransaction
 	@Override

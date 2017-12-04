@@ -883,18 +883,6 @@
 		<property name="datetime" column="datetime" type="java.util.Date"  />
 	</class>
 
-	<class name="com.dotmarketing.beans.TemplateContainers" table="template_containers">
-	    <id name="id" column="id" type="string" length="36" unsaved-value="">
-		  <generator class="com.dotmarketing.util.UUIDGenerator" />
-		</id>
-		<property name="templateId" type="string">
-			<column name="template_id" length="36" not-null="true" />
-		</property>
-		<property name="containerId" type="string">
-			<column name="container_id" length="36" not-null="true"/>
-		</property>
-	</class>
-
 	<class name="com.dotmarketing.beans.ContainerStructure" table="container_structures">
 	    <id name="id" column="id" type="string" length="36" unsaved-value="">
 		  <generator class="com.dotmarketing.util.UUIDGenerator" />

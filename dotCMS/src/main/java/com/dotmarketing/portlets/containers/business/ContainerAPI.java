@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -67,20 +68,6 @@ public interface ContainerAPI {
 	 */
 	public Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 *
-	 * Retrieves the children working containers attached to the given template
-	 *
-	 * @param parentTemplate
-	 * @return
-	 * @author David H Torres
-	 * @throws DotHibernateException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 *
-	 */
-	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotHibernateException, DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *
@@ -253,5 +240,7 @@ public interface ContainerAPI {
     void deleteContainerStructureByContentType(ContentType type) throws DotDataException;
     
 	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	public List<Container> getContainersOnPage(HTMLPageAsset page) throws DotStateException, DotDataException, DotSecurityException;
 
 }
