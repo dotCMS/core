@@ -178,7 +178,9 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             //Create a Page inside the Folder assigned to the newly created Template
             page = new HTMLPageDataGen(folder, template).nextPersisted();
-            APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
+
+            //wait a second before attempting to search the pages with elastic search
+            APILocator.getContentletAPI().isInodeIndexed(page.getInode());
 
             //Find pages by template
             List<Contentlet> pages = APILocator.getHTMLPageAssetAPI()

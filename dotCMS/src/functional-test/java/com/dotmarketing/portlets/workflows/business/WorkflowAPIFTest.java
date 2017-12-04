@@ -38,7 +38,7 @@ import com.liferay.portal.model.User;
  * @author oswaldogallango
  *
  */
-public class WorkflowAPITest {
+public class WorkflowAPIFTest {
 
 	/**
 	 * This Test validate that a workflow step could not be deleted if depends of another step or
