@@ -302,7 +302,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String SELECTSQLPENDING=
 			"SELECT * "+
 			"FROM publishing_queue_audit " +
-			"WHERE status = ? or status = ? or status = ? or status = ? or status = ? or status = ? or status = ?";
+			"WHERE status = ? or status = ? or status = ? or status = ? or status = ? or status = ?";
 
 	@Override
 	public List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException {
@@ -315,7 +315,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.addParam(Status.RECEIVED_BUNDLE.getCode());
 			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
 			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
-			dc.addParam(Status.BUNDLE_SAVED_SUCCESSFULLY.getCode());
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
