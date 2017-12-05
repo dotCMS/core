@@ -1,20 +1,20 @@
 package com.dotmarketing.portlets.containers.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.type.ContentType;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.liferay.portal.model.User;
 
 /**
@@ -241,6 +241,6 @@ public interface ContainerAPI {
     
 	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public List<Container> getContainersOnPage(HTMLPageAsset page) throws DotStateException, DotDataException, DotSecurityException;
+	public List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
 
 }

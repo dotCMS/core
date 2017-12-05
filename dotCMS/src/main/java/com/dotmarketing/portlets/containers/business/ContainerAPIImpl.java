@@ -28,6 +28,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
@@ -258,7 +259,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
-    public List<Container> getContainersOnPage(final HTMLPageAsset page)
+    public List<Container> getContainersOnPage(final IHTMLPage page)
             throws DotStateException, DotDataException, DotSecurityException {
 
         final List<Container> containers = new ArrayList<>();
