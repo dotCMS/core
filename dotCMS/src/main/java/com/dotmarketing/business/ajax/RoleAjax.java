@@ -992,20 +992,17 @@ public class RoleAjax {
 	 *
 	 * @return String of comma separated ID's of the workflow roles
 	 */
-	private String getWorkflowRolesId() throws DotDataException{
+	private String getWorkflowRolesId() throws DotDataException {
 		String workflowRolesIds="";
-		Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-		workflowRolesIds=anyWhoCanView.getId();
+		try {
+			for (Role role : APILocator.getRoleAPI().findWorkflowSpecialRoles()) {
+				workflowRolesIds += "," + role.getId();
+			}
+			workflowRolesIds = workflowRolesIds.substring(1);
+		}catch(DotSecurityException e){
+			Logger.error(this, "Error getting workflow roles.", e);
 
-		Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-		workflowRolesIds+=","+anyWhoCanEdit.getId();
-
-		Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-		workflowRolesIds+=","+anyWhoCanPublish.getId();
-
-		Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-		workflowRolesIds+=","+anyWhoCanEditPermissions.getId();
-
+		}
 		return workflowRolesIds;
 	}
 }

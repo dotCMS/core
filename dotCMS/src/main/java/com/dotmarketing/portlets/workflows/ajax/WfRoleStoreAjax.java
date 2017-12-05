@@ -109,17 +109,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             if(includeWorkflowRoles){
-                Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-                roleList.add( anyWhoCanView );
-
-                Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-                roleList.add( anyWhoCanEdit );
-
-                Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-                roleList.add( anyWhoCanPublish );
-
-                Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-                roleList.add( anyWhoCanEditPermissions );
+                roleList.addAll( APILocator.getRoleAPI().findWorkflowSpecialRoles());
             }
             //x = x.replaceAll("identifier", "x");
             response.setContentType("application/json");

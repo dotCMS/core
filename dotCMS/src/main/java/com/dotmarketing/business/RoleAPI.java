@@ -367,4 +367,13 @@ public interface RoleAPI {
      */
     boolean isParentRole(Role parent, Role child) throws DotSecurityException, DotDataException;
 
+	/**
+	 * Get the list of roles exclusive for workflows
+	 * (Any who can view, Any who can Edit, Any who can Publish and Any who canEdit Permissions)
+	 * @return List of workflows
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException;
+
 }
