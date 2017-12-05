@@ -23,6 +23,7 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -1353,6 +1354,19 @@ public class ImportExportUtil {
                         dc.getResults();
                     });
                 }
+            }else if (_importClass.equals(Tree.class)) {
+                for (int j = 0; j < l.size(); j++) {
+                	Tree tree = (Tree)l.get(j);
+                	try{
+	                	LocalTransaction.wrap(()->{
+	                		TreeFactory.insertTree(tree);
+	                	});
+                	}catch(Throwable r){
+                		Logger.warn(this.getClass(), "Unable to import tree :" + r.getMessage());
+                	}
+                }
+                
+                
             }else if (_importClass.equals(User.class)) {
                 for (int j = 0; j < l.size(); j++) {
                     User u = (User)l.get(j);
@@ -1464,60 +1478,14 @@ public class ImportExportUtil {
                             }
                         }
                     } else {
-                        if(obj instanceof Tree){
-                            final Tree t = (Tree) obj;
-                            LocalTransaction.wrap(() -> {
 
-                                DotConnect dc = new DotConnect();
-                                List<String> inodeList = new ArrayList<String>();
-                                dc.setSQL("select inode from inode where inode = ? or inode = ?");
-                                dc.addParam(t.getParent());
-                                dc.addParam(t.getChild());
-                                inodeList = dc.getResults();
-                                dc.setSQL("select id from identifier where id = ? or id = ?");
-                                dc.addParam(t.getParent());
-                                dc.addParam(t.getChild());
-                                inodeList.addAll(dc.getResults());
-                                if(inodeList.size() > 1){
-                                    HibernateUtil.save(obj);
-                                }
-                                else {
-                                    Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
-                                }
-                            });
-                        } else{
-                            try {
+                        try {
+                            HibernateUtil.save(obj);
+                        } catch (DotHibernateException e) {
+                            Logger.error(this,e.getMessage(),e);
 
-                                Logger.debug(this, "Saving the object: " +
-                                        obj.getClass() + ", with the values: " + obj);
-
-                                HibernateUtil.startTransaction();
-                                HibernateUtil.save(obj);
-                                HibernateUtil.closeAndCommitTransaction();
-                            } catch (DotHibernateException e) {
-                                Logger.error(this,e.getMessage(),e);
-                                try {
-
-                                    Logger.debug(this, "Error on trying to save: " +
-                                            e.getMessage()
-                                            + ", trying to Save the object again: " +
-                                            obj.getClass() + ", with the values: " + obj);
-
-                                    HibernateUtil.save(obj);
-                                    HibernateUtil.closeAndCommitTransaction();
-                                }catch (Exception ex) {
-                                    Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
-                                    Logger.info(this, "Problematic object: "+obj);
-                                    Logger.info(this, _xstream.toXML(obj));
-
-                                    try{
-                                        HibernateUtil.rollbackTransaction();
-                                        HibernateUtil.closeSession();
-                                    }catch (Exception e1) {}
-                                    continue;
-                                }
-                            }
                         }
+                        
                     }
 
                     HibernateUtil.getSession().flush();
