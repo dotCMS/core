@@ -2,6 +2,7 @@ package com.dotmarketing.business.portal;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -44,6 +45,7 @@ public class PortletAPIImpl implements PortletAPI {
 	    return hasPortletRights(user,"templates");
 	}
 
+	@CloseDBIfOpened
 	public Portlet findPortlet(String portletId) {
 		String companyId = CompanyUtils.getDefaultCompany().getCompanyId();
 		try {
@@ -54,6 +56,7 @@ public class PortletAPIImpl implements PortletAPI {
 	}
 
 	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
 	public List<Portlet> findAllPortlets() throws SystemException {
 		String companyId = CompanyUtils.getDefaultCompany().getCompanyId();
 		return PortletManagerUtil.getPortlets(companyId);

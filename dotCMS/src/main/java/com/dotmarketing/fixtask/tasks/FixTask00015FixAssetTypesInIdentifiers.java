@@ -82,7 +82,7 @@ public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 				Audit.setRecordsAltered(total);
 				Audit.setAction("task 15: Fixed FixAssetTypesInIdentifiers");
 				HibernateUtil.save(Audit);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				MaintenanceUtil.flushCache();
 
 				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

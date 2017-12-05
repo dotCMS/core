@@ -224,7 +224,7 @@ public class ESClient {
 			String serverId = ConfigUtils.getServerId();
 			//This line is added because when someone add a license the node is already up and working and reset the existing port
 			shutDownNode();
-			currentServer = serverAPI.getServer(serverId);
+			currentServer = serverAPI.getCurrentServer();
 
             String bindAddressFromProperty = Config.getStringProperty("es.network.host", null, false);
 
@@ -256,8 +256,8 @@ public class ESClient {
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
 				httpPort = UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
 						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
+				currentServer = Server.builder(currentServer).withEsHttpPort(Integer.parseInt(httpPort)).build();
 
-				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
 			}
 
 			List<String> myself = new ArrayList<String>();
@@ -265,8 +265,7 @@ public class ESClient {
 
 			List<Server> aliveServers = serverAPI.getAliveServers(myself);
 
-			currentServer.setEsTransportTcpPort(Integer.parseInt(transportTCPPort));
-
+			currentServer = Server.builder(currentServer).withEsTransportTcpPort(Integer.parseInt(transportTCPPort)).build();
 			aliveServers.add(currentServer);
 
 			StringBuilder initialHosts = new StringBuilder();
@@ -338,8 +337,9 @@ public class ESClient {
 	public void removeClusterNode() {
 	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
     	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
-    	    shutDownNode();
+
 	    }
+	    shutDownNode();
 	}
 
 	/**

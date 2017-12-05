@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.form.business;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -35,6 +37,7 @@ public class FormAPIImpl implements FormAPI {
 	public PermissionAPI perAPI = APILocator.getPermissionAPI();
 	public ContentletAPI conAPI = APILocator.getContentletAPI();
 
+	@WrapInTransaction
 	public void createBaseFormFields(Structure structure) throws DotDataException,DotStateException {
 		if(!InodeUtils.isSet(structure.getInode())){
 			throw new DotStateException("Cannot create base forms fields on a structure that doesn't exist");
@@ -58,6 +61,7 @@ public class FormAPIImpl implements FormAPI {
 		FieldsCache.clearCache();
 	}
 
+	@CloseDBIfOpened
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
         List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_FORM);
         List<Structure> forms = new ArrayList<Structure>();
@@ -69,6 +73,7 @@ public class FormAPIImpl implements FormAPI {
         return forms;
 	}
 
+	@WrapInTransaction
 	public void createFormWidgetInstanceStructure() throws DotDataException,DotStateException{
 
 		//try {

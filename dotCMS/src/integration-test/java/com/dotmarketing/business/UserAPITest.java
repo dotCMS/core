@@ -1,19 +1,11 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
+import com.dotcms.util.TimeUtil;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,25 +34,26 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -109,7 +102,14 @@ public class UserAPITest extends IntegrationTestBase {
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
+		//setDebugMode(true);
 	}
+
+	/*@AfterClass
+	public static void cleanup() throws DotDataException, DotSecurityException {
+
+		cleanupDebug(UserAPITest.class);
+	}*/
 
 	/**
 	 * Testing {@link UserAPI#delete(User, User, User, boolean)}
@@ -236,9 +236,9 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder ftest = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
-		ftest.setOwner(newUser.getUserId());
-		folderAPI.save(ftest, newUser, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
+		testFolder.setOwner(newUser.getUserId());
+		folderAPI.save(testFolder, newUser, false);
 
 		/**
 		 * Create workflow scheme
@@ -335,7 +335,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		Structure st = new Structure();
 		st.setHost(host.getIdentifier());
-		st.setFolder(ftest.getInode());
+		st.setFolder(testFolder.getInode());
 		st.setName("structure"+id);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
 		st.setOwner(newUser.getUserId());
@@ -354,7 +354,9 @@ public class UserAPITest extends IntegrationTestBase {
 		FieldFactory.saveField(field2);
 		FieldsCache.addField(field2);
 
-		workflowAPI.saveSchemeForStruct(st, ws);
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		workflowAPI.saveSchemesForStruct(st, schemes);
 
 		/**
 		 * Add container
@@ -404,7 +406,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest.getInode());
+		contentAsset.setFolder(testFolder.getInode());
 		contentAsset=conAPI.checkin(contentAsset, newUser, false);
 		conAPI.publish(contentAsset, newUser, false);
 
@@ -418,7 +420,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setProperty("title", title);
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
-		contentAsset2.setFolder(ftest.getInode());
+		contentAsset2.setFolder(testFolder.getInode());
 		contentAsset2=conAPI.checkin(contentAsset2, newUser, false);
 		conAPI.publish(contentAsset2, newUser, false);
 
@@ -437,6 +439,8 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(currentStep);
+
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
 		/**
@@ -452,11 +456,11 @@ public class UserAPITest extends IntegrationTestBase {
 		Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
-		link.setParent(ftest.getInode());
+		link.setParent(testFolder.getInode());
 		link.setTarget("_blank");
 		link.setOwner(newUser.getUserId());
 		link.setModUser(newUser.getUserId());
-		IHTMLPage page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 
 		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -469,7 +473,7 @@ public class UserAPITest extends IntegrationTestBase {
 		}
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
-		WebAssetFactory.createAsset(link, newUser.getUserId(), ftest);
+		WebAssetFactory.createAsset(link, newUser.getUserId(), testFolder);
 		versionableAPI.setLive(link);
 
 		/**
@@ -491,7 +495,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
 		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
 
-		WorkflowStep step = workflowAPI.findStepByContentlet(contentAsset2);
+		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(step);
 		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
 		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
 
@@ -506,10 +511,10 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(newUser.getUserId()));
 		assertTrue(template.getModUser().equals(newUser.getUserId()));
 
-		assertTrue(ftest.getOwner().equals(newUser.getUserId()));
+		assertTrue(testFolder.getOwner().equals(newUser.getUserId()));
 
 		//Verify we have the proper user set in the HTMLPage
-		page = htmlPageAssetAPI.getPageByPath(ftest.getPath() + page0Str, host, langId, true);
+		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
 		assertTrue(page.getOwner().equals(newUser.getUserId()));
 		assertTrue(page.getModUser().equals(newUser.getUserId()));
 
@@ -518,14 +523,13 @@ public class UserAPITest extends IntegrationTestBase {
 		 * does a lot of things, after the delete lets wait a bit in order to allow the reindex
 		 * of the modified contentlets to finish processing.
 		 */
-		userAPI.delete(newUser, replacementUser, systemUser,false);
-		APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			//Do nothing...
-		}
 
+		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
+
+		userAPI.delete(newUser, replacementUser, systemUser,false);
+
+		waitForDeleteCompletedNotification();
 		/*
 		 * Validate that the user was deleted and if its references were updated
 		 */
@@ -542,7 +546,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
 
-		page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
@@ -556,6 +560,7 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
 
 			step = workflowAPI.findStepByContentlet(content);
+			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
 			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
 
@@ -573,9 +578,38 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
 
-		CacheLocator.getFolderCache().removeFolder(ftest, identifierAPI.find(ftest.getIdentifier()));
-		ftest = folderAPI.findFolderByPath(ftest.getPath(), host, systemUser, false);
-		assertTrue(ftest.getOwner().equals(replacementUser.getUserId()));
+		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
+		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
+		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+	}
+
+	private void waitForDeleteCompletedNotification() throws DotDataException, InterruptedException {
+
+		final int MAX_TIME = 10000;
+		final int WAIT_TIME = 1000;
+
+		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
+
+			boolean isReindexFinished = false;
+			List<Notification> notifications = null;
+
+			try {
+				notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
+			} catch (DotDataException e) {
+				Logger.error(this, "Unable to get notifications. ", e);
+			}
+
+			for (Notification notification : notifications) {
+				String notificationKey = notification.getMessage().getKey();
+				if (notificationKey.contains("Reindexing of updated related content after deleting user")
+					&& notification.getMessage().getKey().contains("has finished successfully")) {
+					isReindexFinished = true;
+				}
+			}
+
+			return isReindexFinished;
+
+		});
 	}
 
 	/**

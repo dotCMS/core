@@ -24,7 +24,6 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
-import com.dotcms.repackage.org.python.modules.newmodule;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -42,7 +41,6 @@ import com.liferay.portal.model.User;
 
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -112,7 +110,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -141,8 +140,8 @@ public class LicenseResource {
         
     }
 
-    
-    
+
+    @NoCache
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -171,7 +170,8 @@ public class LicenseResource {
             return Response.serverError().build();
         }
     }
-    
+
+    @NoCache
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -187,10 +187,8 @@ public class LicenseResource {
                 HibernateUtil.startTransaction();
                 
                 LicenseUtil.pickLicense(serial);
-                
 
-                
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
                 
                 AdminLogger.log(LicenseResource.class, "pickLicense", "Picked license from repo. Serial: "+serial, initData.getUser());
             }
@@ -202,6 +200,8 @@ public class LicenseResource {
                     Logger.warn(this, "can't rollback", e);
                 }
                 return Response.serverError().build();
+            } finally {
+                HibernateUtil.closeSessionSilently();
             }
         }
         
@@ -212,7 +212,8 @@ public class LicenseResource {
             return Response.ok().build();
         }
     }
-    
+
+    @NoCache
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -283,7 +284,7 @@ public class LicenseResource {
             } else {
             	HibernateUtil.startTransaction();
             	LicenseUtil.freeLicenseOnRepo();
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }
             
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
@@ -363,7 +364,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/applyLicense")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
@@ -406,7 +408,8 @@ public class LicenseResource {
         }
         
     }
-    
+
+    @NoCache
     @POST
     @Path("/resetLicense/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)

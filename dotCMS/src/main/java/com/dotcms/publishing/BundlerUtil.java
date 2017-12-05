@@ -1,25 +1,24 @@
 package com.dotcms.publishing;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.Calendar;
-import java.util.Date;
-
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.util.Calendar;
+import java.util.Date;
 
 public class BundlerUtil {
 
@@ -52,6 +51,19 @@ public class BundlerUtil {
 		return dir;
 	}
 
+    public static File getStaticBundleRoot(String name) {
+        return getStaticBundleRoot(name, true);
+    }
+
+    public static File getStaticBundleRoot(String name, boolean createDir) {
+        String bundlePath = ConfigUtils.getStaticPublishPath() + File.separator + name;
+        File dir = new File(bundlePath);
+        if (createDir) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -60,6 +72,16 @@ public class BundlerUtil {
 	public static File getBundleRoot(PublisherConfig config){
 		return getBundleRoot(config.getName());
 	}
+
+    /**
+     * This method takes a config and will create the static bundle directory and
+     * write the bundle.xml file to it
+     *
+     * @param config Config with the id of bundle
+     */
+    public static File getStaticBundleRoot(PublisherConfig config) {
+        return getStaticBundleRoot(config.getName());
+    }
 
 	/**
 	 * write bundle down
@@ -127,10 +149,10 @@ public class BundlerUtil {
             	f.createNewFile();
             }	
             
-            OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream( f ), "UTF-8");
-            HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
-            xstream.marshal(obj, xmlWriter);
-            writer.close();
+            try(OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8")){
+                HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
+                xstream.marshal(obj, xmlWriter);
+            }
 
         } catch ( FileNotFoundException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
@@ -193,10 +215,10 @@ public class BundlerUtil {
 
     	BufferedInputStream input = null;
 		try {
-			input = new BufferedInputStream(new FileInputStream(f));
+			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
 			Object ret = xstream.fromXML(input);
 			return ret;
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			Logger.error(BundlerUtil.class,e.getMessage(),e);
 			return null;
 		}finally{
@@ -223,7 +245,7 @@ public class BundlerUtil {
 
     	BufferedInputStream input = null;
 		try {
-			input = new BufferedInputStream(new FileInputStream(f));
+			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
 			T ret = mapper.readValue(input, clazz);
 			return ret;
 		} catch (IOException e) {

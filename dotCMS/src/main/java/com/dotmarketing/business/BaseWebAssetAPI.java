@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -19,7 +20,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -374,49 +374,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return auxVersionInfo;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(condition, assetsClass, 100000, 0, parentId, showDeleted, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsPerConditionWithPermission(String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(condition, c, null, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsPerConditionWithPermission(String condition, Class c, String parent, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermission(condition, c, -1, 0, parent, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(hostId, condition, assetsClass, 100000, 0, parentId, showDeleted, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(hostId, condition, c, null, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, String parent, User user) {
-		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, parent, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, String parent, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
-	}
-
+	@WrapInTransaction
 	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 

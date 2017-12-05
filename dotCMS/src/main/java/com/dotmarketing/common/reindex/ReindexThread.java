@@ -1,6 +1,24 @@
 package com.dotmarketing.common.reindex;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.Client;
+
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -8,8 +26,13 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.business.journal.IndexJournal;
@@ -25,17 +48,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in
@@ -81,6 +93,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ReindexThread extends Thread {
 
+    public static final int REINDEX_THREAD_SLEEP_DEFAULT_VALUE = 500;
+    public static final int REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE = 5000;
+    
 	private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
     private final LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
     private final LinkedList<IndexJournal<String>> remoteDelQ = new LinkedList<IndexJournal<String>>();
@@ -347,6 +362,7 @@ public class ReindexThread extends Thread {
 						}
 
 						HibernateUtil.closeSession();
+
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
 
@@ -658,7 +674,7 @@ public class ReindexThread extends Thread {
 	    try {
 	        HibernateUtil.startTransaction();
 	        remoteQ.addAll(jAPI.findContentReindexEntriesToReindex(includeFailedRecords));
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 	    }
 	    catch(Exception ex) {
 	        HibernateUtil.rollbackTransaction();
@@ -669,37 +685,62 @@ public class ReindexThread extends Thread {
 	    }
 	}
 
-	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
+	private List<Map<String,String>> getContentletVersionInfoByIdentifier (final String id) throws DotDataException {
+
+		final String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(sql);
+		dc.addParam(id);
+		return dc.loadResults();
+	}
+
+	@CloseDBIfOpened
+	private com.dotmarketing.portlets.contentlet.business.Contentlet getContentletByINode (final String inode) throws DotHibernateException {
+
+		return (com.dotmarketing.portlets.contentlet.business.Contentlet)
+				HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
+	}
+
+	@CloseDBIfOpened
+	private Contentlet convertFatContentletToContentlet (final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet) throws DotDataException, DotSecurityException {
+
+		return FactoryLocator.getContentletFactory()
+				.convertFatContentletToContentlet(fattyContentlet);
+	}
+
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
+
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-	    
-	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
-	    
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql);
-        dc.addParam(idx.getIdentToIndex());
-        List<Map<String,String>> ret = dc.loadResults();
-        List<String> inodes = new ArrayList<String>(); 
-        for(Map<String,String> m : ret) {
-        	String workingInode = m.get("working_inode");
-        	String liveInode = m.get("live_inode");
+
+	    final List<Map<String,String>> ret =
+				this.getContentletVersionInfoByIdentifier(idx.getIdentToIndex());
+        final List<String> inodes = new ArrayList<>();
+
+        for(Map<String,String> mapResult : ret) {
+        	String workingInode = mapResult.get("working_inode");
+        	String liveInode = mapResult.get("live_inode");
         	inodes.add(workingInode);
         	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
         		inodes.add(liveInode);
         	}
         }
+
         for(String inode : inodes) {
-            Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
-                    (com.dotmarketing.portlets.contentlet.business.Contentlet)
-                        HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
+
+        	final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet =
+					this.getContentletByINode(inode);
+            final Contentlet contentlet =
+					this.convertFatContentletToContentlet(fattyContentlet);
             
-            if(idx.isDelete() && idx.getIdentToIndex().equals(con.getIdentifier()))
-                // we delete contentlets from the identifier pointed on index journal record
-                // its dependencies are reindexed in order to update its relationships fields
-                indexAPI.removeContentFromIndex(con);
-            else
-                indexAPI.addContentToIndex(con,false,true,indexAPI.isInFullReindex(),bulk);
+            if(idx.isDelete() && idx.getIdentToIndex().equals(contentlet.getIdentifier())) {
+				// we delete contentlets from the identifier pointed on index journal record
+				// its dependencies are reindexed in order to update its relationships fields
+				indexAPI.removeContentFromIndex(contentlet);
+			} else {
+				indexAPI.addContentToIndex(contentlet, false, true, indexAPI.isInFullReindex(), bulk);
+			}
         }
 	}
 	
@@ -722,15 +763,23 @@ public class ReindexThread extends Thread {
 		return work;
 	}
 
+	/**
+     * Stops the full re-indexation process. This means clearing up the content queue and the
+     * reindex journal.
+     * 
+     * @throws DotDataException
+     */
+	@WrapInTransaction
 	public void stopFullReindexation() throws DotDataException {
-	    HibernateUtil.startTransaction();
-	    pause();
-	    this.remoteQ.clear();
-	    this.notifiedFailingRecords.clear();
-	    APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
-	    indexAPI.fullReindexAbort();
-	    unpause();
-	    HibernateUtil.commitTransaction();
+        try {
+            pause();
+            this.remoteQ.clear();
+            this.notifiedFailingRecords.clear();
+            this.jAPI.cleanDistReindexJournal();
+            indexAPI.fullReindexAbort();
+        } finally {
+            unpause();
+        }
 	}
 
 	/**
@@ -878,7 +927,7 @@ public class ReindexThread extends Thread {
 					Logger.warn(this, ex.getMessage(), ex);
 					conn.rollback();
 				} finally {
-					conn.close();
+					CloseUtils.closeQuietly(conn);
 				}
 			}
 			this.notifiedFailingRecords.clear();

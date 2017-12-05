@@ -108,7 +108,7 @@ public abstract class FieldSql {
 	public String deleteFieldVar= 	"delete from field_variable where id = ? or (field_id=? and variable_key=?)";
 	public String deleteFieldVarsForField= "delete from field_variable where field_id = ?";
 	public String insertFieldVar= 	"insert into field_variable( id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date) values (?,?,?,?,?,?,?)";
-	
-	
-	
+
+	public static final String moveSorOrderForward = "update field set sort_order = sort_order + 1 where structure_inode = ? and sort_order >= ? and sort_order < ?";
+	public static final String moveSorOrderBackward = "update field set sort_order = sort_order - 1 where structure_inode = ? and sort_order > ? and sort_order <= ?";
 }

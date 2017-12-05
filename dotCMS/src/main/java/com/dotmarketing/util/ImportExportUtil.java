@@ -1,36 +1,13 @@
 package com.dotmarketing.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
-
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -60,6 +37,31 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -226,8 +228,9 @@ public class ImportExportUtil {
 	 * @throws IOException
 	 */
     public void doImport(PrintWriter out) throws IOException {
-        File f = new File(getBackupTempFilePath());
-        String[] _tempFiles = f.list();
+        final File backTemporalFile = new File(getBackupTempFilePath());
+        final String[] _tempFiles = backTemporalFile.list();
+
         out.println("<pre>Found " + _tempFiles.length + " files to import");
         Logger.info(this, "Found " + _tempFiles.length + " files to import");
         deleteDotCMS();
@@ -236,7 +239,7 @@ public class ImportExportUtil {
         boolean hasAssetDir = false;
         for (int i = 0; i < _tempFiles.length; i++) {
             try {
-				HibernateUtil.closeSession();
+				HibernateUtil.closeSession(); // todo: why this?
 			} catch (DotHibernateException e) {
 				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
 			}
@@ -358,7 +361,7 @@ public class ImportExportUtil {
             _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
+                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -366,12 +369,15 @@ public class ImportExportUtil {
                 roles.addAll((List<Role>) _xstream.fromXML(charStream));
             }catch(Exception e){
                 Logger.error(this, "Unable to import " + _className, e);
+            } finally {
+                CloseUtils.closeQuietly(charStream);
             }
         }
 
         Collections.sort(roles);
-        try{
-            HibernateUtil.closeSession();
+
+        try {
+            HibernateUtil.closeSession();   // todo: why this?
             for (Role role : roles) {
                 HibernateUtil _dh = new HibernateUtil(Role.class);
                 String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(Role.class).getIdentifierPropertyName();
@@ -396,7 +402,9 @@ public class ImportExportUtil {
                 } else {
                     HibernateUtil.save(role);
                 }
+
                 HibernateUtil.getSession().flush();
+
                 try {
                     Thread.sleep(3);
                 } catch (InterruptedException e) {
@@ -414,7 +422,7 @@ public class ImportExportUtil {
 
         for (File file : usersRolesXML) {
             try{
-				HibernateUtil.closeSession();
+				HibernateUtil.closeSession(); // todo: why this?
 			} catch (DotHibernateException e) {
 				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
 			}
@@ -455,7 +463,10 @@ public class ImportExportUtil {
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
-                List<Identifier> idents=(List<Identifier>)xstream.fromXML(new FileInputStream(ff));
+                List<Identifier> idents;
+                try(final InputStream input = Files.newInputStream(ff.toPath())){
+                    idents = (List<Identifier>)xstream.fromXML(input);
+                }
                 for(Identifier ident : idents) {
                     if(ident.getAssetType().equals("folder"))
                         folderIdents.add(ident);
@@ -477,7 +488,8 @@ public class ImportExportUtil {
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
                 Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-                HibernateUtil.saveWithPrimaryKey(ident, ident.getId());
+
+                APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -825,7 +837,7 @@ public class ImportExportUtil {
         deleteTempFiles();
 
         try {
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (DotHibernateException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -931,7 +943,7 @@ public class ImportExportUtil {
     private void deleteDotCMS() {
         try {
             /* get a list of all our tables */
-            ArrayList<String> _tablesToDelete = new ArrayList<String>();
+            final ArrayList<String> _tablesToDelete = new ArrayList<String>();
             Map map =null;
 
             try {
@@ -992,35 +1004,39 @@ public class ImportExportUtil {
             _tablesToDelete.add("pollsquestion");
             _tablesToDelete.add("pollsvote");
 
-            DotConnect _dc = null;
             for (String table : _tablesToDelete) {
                 Logger.info(this, "About to delete all records from " + table);
-                _dc = new DotConnect();
-                _dc.setSQL("delete from " + table);
-                _dc.getResult();
+                this.deleteTable(table);
                 Logger.info(this, "Deleted all records from " + table);
             }
         } catch (HibernateException e) {
             Logger.error(this,e.getMessage(),e);
         }
-        File ad;
-        if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(FileUtil.getRealPath(assetPath));
-        }else{
-            ad = new File(assetRealPath);
-        }
-        ad.mkdirs();
-        String[] fl = ad.list();
-        for (String fileName : fl) {
+
+        final File assetDirectory = (!UtilMethods.isSet(assetRealPath))?
+            new File(FileUtil.getRealPath(assetPath)):
+            new File(assetRealPath);
+
+        assetDirectory.mkdirs();
+        final String[] assetsFileList = assetDirectory.list();
+        for (String fileName : assetsFileList) {
         	if(fileName.equalsIgnoreCase("license")) continue;
         	
-            File f = new File(ad.getPath() + File.separator + fileName);
-            if(f.isDirectory()){
+            File f = new File(assetDirectory.getPath() + File.separator + fileName);
+            if(f.isDirectory()) {
                 FileUtil.deltree(f);
-            }else{
+            } else {
                 f.delete();
             }
         }
+    }
+
+    @WrapInTransaction
+    private void deleteTable (final String table) {
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("delete from " + table);
+        dotConnect.getResult();
     }
 
     interface ObjectFilter {
@@ -1037,7 +1053,7 @@ public class ImportExportUtil {
 	 *            - Printwriter to write responses to Reponse Printwriter so
 	 *            this method can write to screen.
 	 */
-    private void doXMLFileImport(File f, PrintWriter out)throws DotDataException, HibernateException {
+    private void doXMLFileImport(File f, PrintWriter out) throws Exception {
         doXMLFileImport(f, out, null);
     }
 
@@ -1054,7 +1070,7 @@ public class ImportExportUtil {
      * @throws DotDataException
      * @throws HibernateException
      */
-    private void doXMLFileImport(File f, PrintWriter out, ObjectFilter filter)throws DotDataException, HibernateException {
+    private void doXMLFileImport(File f, PrintWriter out, ObjectFilter filter)throws Exception {
         if( f ==null){
             return;
         }
@@ -1076,6 +1092,8 @@ public class ImportExportUtil {
             boolean pollsdisplay = false;
             boolean pollsquestion = false;
             boolean pollsvote = false;
+
+            Logger.debug(this, "**** Importing the file: " + f + " *****");
 
             /* if we have a multipart import file */
             Pattern p = Pattern.compile("_[0-9]{8}");
@@ -1120,8 +1138,8 @@ public class ImportExportUtil {
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
-            }catch (UnsupportedEncodingException uet) {
+                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
+            }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
             List l = new ArrayList();
@@ -1142,113 +1160,127 @@ public class ImportExportUtil {
             Logger.info(this, "Found :\t" + l.size() + " " + _className + "(s)");
             if(address){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into address values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                    dc.addParam(dcResults.get("addressid"));
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("username"));
-                    dc.addParam(dcResults.get("createDate"));
-                    dc.addParam(dcResults.get("ModifiedDate"));
-                    dc.addParam(dcResults.get("classname"));
-                    dc.addParam(dcResults.get("classpk"));
-                    dc.addParam(dcResults.get("description"));
-                    dc.addParam(dcResults.get("street1"));
-                    dc.addParam(dcResults.get("street2"));
-                    dc.addParam(dcResults.get("city"));
-                    dc.addParam(dcResults.get("state"));
-                    dc.addParam(dcResults.get("zip"));
-                    dc.addParam(dcResults.get("country"));
-                    dc.addParam(dcResults.get("phone"));
-                    dc.addParam(dcResults.get("fax"));
-                    dc.addParam(dcResults.get("cell"));
-                    dc.addParam(UtilMethods.isSet(dcResults.get("priority")) ? Integer.parseInt(dcResults.get("priority")) : null);
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+
+                        final DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into address values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                        dc.addParam(dcResults.get("addressid"));
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("username"));
+                        dc.addParam(dcResults.get("createDate"));
+                        dc.addParam(dcResults.get("ModifiedDate"));
+                        dc.addParam(dcResults.get("classname"));
+                        dc.addParam(dcResults.get("classpk"));
+                        dc.addParam(dcResults.get("description"));
+                        dc.addParam(dcResults.get("street1"));
+                        dc.addParam(dcResults.get("street2"));
+                        dc.addParam(dcResults.get("city"));
+                        dc.addParam(dcResults.get("state"));
+                        dc.addParam(dcResults.get("zip"));
+                        dc.addParam(dcResults.get("country"));
+                        dc.addParam(dcResults.get("phone"));
+                        dc.addParam(dcResults.get("fax"));
+                        dc.addParam(dcResults.get("cell"));
+                        dc.addParam(UtilMethods.isSet(dcResults.get("priority")) ? Integer.parseInt(dcResults.get("priority")) : null);
+                        dc.getResults();
+                    });
+
                 }
             }else if(counter){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into counter values (?,?)");
-                    dc.addParam(dcResults.get("name"));
-                    dc.addParam(Integer.valueOf(dcResults.get("currentid")));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into counter values (?,?)");
+                        dc.addParam(dcResults.get("name"));
+                        dc.addParam(Integer.valueOf(dcResults.get("currentid")));
+                        dc.getResults();
+                    });
                 }
             }else if(pollschoice){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollschoice values (?,?,?)");
-                    dc.addParam(dcResults.get("choiceid"));
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("description"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollschoice values (?,?,?)");
+                        dc.addParam(dcResults.get("choiceid"));
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("description"));
+                        dc.getResults();
+                    });
                 }
             }else if(pollsdisplay){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
-                    dc.addParam(dcResults.get("layoutid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("portletid"));
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
+                        dc.addParam(dcResults.get("layoutid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("portletid"));
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.getResults();
+                    });
                 }
             }else if(pollsquestion){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("portletid"));
-                    if(UtilMethods.isSet(dcResults.get("groupid"))){
-                        dc.addParam(dcResults.get("groupid"));
-                    }else{
-                        dc.addParam(-1);
-                    }
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("username"));
-                    if(UtilMethods.isSet(dcResults.get("createdate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    if(UtilMethods.isSet(dcResults.get("modifieddate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.addParam(dcResults.get("title"));
-                    dc.addParam(dcResults.get("description"));
-                    if(UtilMethods.isSet(dcResults.get("expirationdate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    if(UtilMethods.isSet(dcResults.get("lastvotedate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("portletid"));
+                        if (UtilMethods.isSet(dcResults.get("groupid"))) {
+                            dc.addParam(dcResults.get("groupid"));
+                        } else {
+                            dc.addParam(-1);
+                        }
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("username"));
+                        if (UtilMethods.isSet(dcResults.get("createdate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        if (UtilMethods.isSet(dcResults.get("modifieddate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.addParam(dcResults.get("title"));
+                        dc.addParam(dcResults.get("description"));
+                        if (UtilMethods.isSet(dcResults.get("expirationdate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.getResults();
+                    });
                 }
             }else if(pollsvote){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into pollsvote values (?,?,?,?)");
-                    dc.addParam(dcResults.get("questionid"));
-                    dc.addParam(dcResults.get("userid"));
-                    dc.addParam(dcResults.get("choiceid"));
-                    if(UtilMethods.isSet(dcResults.get("lastvotedate"))){
-                        dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                    }else{
-                        dc.addParam(new java.sql.Timestamp(0));
-                    }
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into pollsvote values (?,?,?,?)");
+                        dc.addParam(dcResults.get("questionid"));
+                        dc.addParam(dcResults.get("userid"));
+                        dc.addParam(dcResults.get("choiceid"));
+                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
+                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
+                        } else {
+                            dc.addParam(new java.sql.Timestamp(0));
+                        }
+                        dc.getResults();
+                    });
                 }
             }else if(image){
                 /*
@@ -1257,46 +1289,52 @@ public class ImportExportUtil {
                  * the object is loaded from liferay and DotConnect is not used
                  */
                 for (int j = 0; j < l.size(); j++) {
-                    Image im = (Image)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into image values (?,?)");
-                    if(!UtilMethods.isSet(im.getImageId()) && DbConnectionFactory.isOracle()){
-                        continue;
-                    }
-                    dc.addParam(im.getImageId());
-                    dc.addParam(im.getText());
-                    dc.getResults();
+                    final Image im = (Image)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into image values (?,?)");
+                        if (!UtilMethods.isSet(im.getImageId()) && DbConnectionFactory.isOracle()) {
+                            return;
+                        }
+                        dc.addParam(im.getImageId());
+                        dc.addParam(im.getText());
+                        dc.getResults();
+                    });
                 }
             }else if(portlet){
                 for (int j = 0; j < l.size(); j++) {
-                    HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    StringBuffer sb = new StringBuffer("insert into portlet values (?,?,?,?,");
-                    if(dcResults.get("narrow").equalsIgnoreCase("f") || dcResults.get("narrow").equalsIgnoreCase("false") || dcResults.get("narrow").equalsIgnoreCase("0") || dcResults.get("narrow").equals(DbConnectionFactory.getDBFalse()))
-                        sb.append(DbConnectionFactory.getDBFalse() + ",?,");
-                    else
-                        sb.append(DbConnectionFactory.getDBTrue() + ",?,");
-                    if(dcResults.get("active_").equalsIgnoreCase("f") || dcResults.get("active_").equalsIgnoreCase("false") || dcResults.get("active_").equalsIgnoreCase("0") || dcResults.get("active_").equals(DbConnectionFactory.getDBFalse()))
-                        sb.append(DbConnectionFactory.getDBFalse() + ")");
-                    else
-                        sb.append(DbConnectionFactory.getDBTrue() + ")");
-                    dc.setSQL(sb.toString());
-                    dc.addParam(dcResults.get("portletid"));
-                    dc.addParam(dcResults.get("groupid"));
-                    dc.addParam(dcResults.get("companyid"));
-                    dc.addParam(dcResults.get("defaultpreferences"));
-                    dc.addParam(dcResults.get("roles"));
-                    dc.getResults();
+                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        StringBuffer sb = new StringBuffer("insert into portlet values (?,?,?,?,");
+                        if(dcResults.get("narrow").equalsIgnoreCase("f") || dcResults.get("narrow").equalsIgnoreCase("false") || dcResults.get("narrow").equalsIgnoreCase("0") || dcResults.get("narrow").equals(DbConnectionFactory.getDBFalse()))
+                            sb.append(DbConnectionFactory.getDBFalse() + ",?,");
+                        else
+                            sb.append(DbConnectionFactory.getDBTrue() + ",?,");
+                        if(dcResults.get("active_").equalsIgnoreCase("f") || dcResults.get("active_").equalsIgnoreCase("false") || dcResults.get("active_").equalsIgnoreCase("0") || dcResults.get("active_").equals(DbConnectionFactory.getDBFalse()))
+                            sb.append(DbConnectionFactory.getDBFalse() + ")");
+                        else
+                            sb.append(DbConnectionFactory.getDBTrue() + ")");
+                        dc.setSQL(sb.toString());
+                        dc.addParam(dcResults.get("portletid"));
+                        dc.addParam(dcResults.get("groupid"));
+                        dc.addParam(dcResults.get("companyid"));
+                        dc.addParam(dcResults.get("defaultpreferences"));
+                        dc.addParam(dcResults.get("roles"));
+                        dc.getResults();
+                    });
                 }
             }else if(logsMappers){
                 for ( int j = 0; j < l.size(); j++ ) {
-                    LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL( "insert into log_mapper values (?,?,?)" );
-                    dc.addParam( logMapperRow.getEnabled() ? 1 : 0 );
-                    dc.addParam( logMapperRow.getLog_name() );
-                    dc.addParam( logMapperRow.getDescription() );
-                    dc.getResults();
+                    final LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into log_mapper values (?,?,?)");
+                        dc.addParam(logMapperRow.getEnabled() ? 1 : 0);
+                        dc.addParam(logMapperRow.getLog_name());
+                        dc.addParam(logMapperRow.getDescription());
+                        dc.getResults();
+                    });
                 }
             }else if(portletpreferences){
                 /*
@@ -1305,14 +1343,16 @@ public class ImportExportUtil {
                  * the object is loaded from liferay and DotConnect is not used
                  */
                 for (int j = 0; j < l.size(); j++) {
-                    PortletPreferences portletPreferences = (PortletPreferences)l.get(j);
-                    DotConnect dc = new DotConnect();
-                    dc.setSQL("insert into portletpreferences values (?,?,?,?)");
-                    dc.addParam(portletPreferences.getPortletId());
-                    dc.addParam(portletPreferences.getUserId());
-                    dc.addParam(portletPreferences.getLayoutId());
-                    dc.addParam(portletPreferences.getPreferences());
-                    dc.getResults();
+                    final PortletPreferences portletPreferences = (PortletPreferences)l.get(j);
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into portletpreferences values (?,?,?,?)");
+                        dc.addParam(portletPreferences.getPortletId());
+                        dc.addParam(portletPreferences.getUserId());
+                        dc.addParam(portletPreferences.getLayoutId());
+                        dc.addParam(portletPreferences.getPreferences());
+                        dc.getResults();
+                    });
                 }
             }else if (_importClass.equals(Tree.class)) {
                 for (int j = 0; j < l.size(); j++) {
@@ -1332,19 +1372,15 @@ public class ImportExportUtil {
                     User u = (User)l.get(j);
                     u.setModified(true);
                     if(!u.isDefaultUser() && !u.getUserId().equals("system")){
-                        try{
+                        try {
                             User u1 = APILocator.getUserAPI().createUser(u.getUserId(), u.getEmailAddress());
                             u.setUserId(u1.getUserId());
                             u.setEmailAddress(u.getEmailAddress());
-                        }catch (DuplicateUserException e) {
+                        } catch (DuplicateUserException e) {
                             Logger.info(this, "user already exists going to update");
-                            try{
-                                u = APILocator.getUserAPI().loadUserById(u.getUserId(), APILocator.getUserAPI().getSystemUser(),false);
-                            }catch (Exception e1) {
-                                Logger.info(this, "couldn't find user by ID going to lookup by email address");
-                                u = APILocator.getUserAPI().loadByUserByEmail(u.getEmailAddress(), APILocator.getUserAPI().getSystemUser(),false);
-                            }
+                            u = loadUserFromIdOrEmail(u);
                         }
+
                         APILocator.getUserAPI().save(u,APILocator.getUserAPI().getSystemUser(),false);
                     }else{
                         Logger.info(this, "");
@@ -1361,9 +1397,15 @@ public class ImportExportUtil {
                     }
                 }
             }else {
-                _dh = new HibernateUtil(_importClass);
-                String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
-                HibernateUtil.getSession().close();
+                String id;
+                if (_importClass.equals(Identifier.class)){
+                    id = "id";
+                }else{
+                    _dh = new HibernateUtil(_importClass);
+                    id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
+                    HibernateUtil.getSession().close();
+                }
+
                 boolean identityOn = false;
                 String cName = _className.substring(_className.lastIndexOf(".") + 1);
                 String tableName = "";
@@ -1382,7 +1424,6 @@ public class ImportExportUtil {
                     if (UtilMethods.isSet(id)) {
                         String prop = BeanUtils.getProperty(obj, id);
                         try {
-                            HibernateUtil.startTransaction();
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
                                 if(obj instanceof Identifier){
                                 	Identifier identifier = Identifier.class.cast(obj);
@@ -1391,22 +1432,38 @@ public class ImportExportUtil {
 	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
 	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
                                 	}
-                                    HibernateUtil.saveWithPrimaryKey(identifier, prop);
+                                    LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{
+                                    HibernateUtil.startTransaction();
+                                    Logger.debug(this, "Saving the object: " +
+                                                obj.getClass() + ", with the id: " + prop);
                                     Long myId = new Long(Long.parseLong(prop));
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
+                                    HibernateUtil.closeAndCommitTransaction();
                                 }
-                                HibernateUtil.commitTransaction();
-                            }else{
-								
+
+                            } else {
+                                HibernateUtil.startTransaction();
+                                Logger.debug(this, "Saving the object: " +
+                                        obj.getClass() + ", with the id: " + prop);
+
 								HibernateUtil.saveWithPrimaryKey(obj, prop);
 								
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             }
                         } catch (Exception e) {
-                            try{
-                                HibernateUtil.saveWithPrimaryKey(obj, prop);
-                                HibernateUtil.commitTransaction();
+                            try {
+
+                                if (obj != null && !(obj instanceof Identifier)){
+                                    HibernateUtil.startTransaction();
+                                    Logger.debug(this, "Error on trying to save: " +
+                                            e.getMessage()
+                                            + ", trying to Save the object again: " +
+                                            obj.getClass() + ", with the id: " + prop);
+
+                                    HibernateUtil.saveWithPrimaryKey(obj, prop);
+                                    HibernateUtil.closeAndCommitTransaction();
+                                }
                             }catch (Exception ex) {
                                 Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                 Logger.warn(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage());
@@ -1426,9 +1483,11 @@ public class ImportExportUtil {
                             HibernateUtil.save(obj);
                         } catch (DotHibernateException e) {
                             Logger.error(this,e.getMessage(),e);
+
                         }
                         
                     }
+
                     HibernateUtil.getSession().flush();
                     HibernateUtil.closeSession();
                     try {
@@ -1441,8 +1500,6 @@ public class ImportExportUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
-        } catch (FileNotFoundException e) {
-            Logger.error(this,e.getMessage(),e);
         } catch (IllegalAccessException e) {
             Logger.error(this,e.getMessage(),e);
         } catch (InvocationTargetException e) {
@@ -1462,6 +1519,21 @@ public class ImportExportUtil {
                 Logger.error(this,e.getMessage(),e);
             }
         }
+    }
+
+    private User loadUserFromIdOrEmail(final User u) throws DotDataException, DotSecurityException {
+        User user = null;
+
+        try {
+            user = APILocator.getUserAPI().loadUserById
+                    (u.getUserId(), APILocator.getUserAPI().getSystemUser(),false);
+        } catch (Exception e1) {
+            Logger.info(this, "couldn't find user by ID going to lookup by email address");
+            user = APILocator.getUserAPI().loadByUserByEmail
+                    (u.getEmailAddress(), APILocator.getUserAPI().getSystemUser(),false);
+        }
+
+        return user;
     }
 
     /**
@@ -1547,14 +1619,12 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = new FileInputStream(zipFile).getChannel();
-            FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
-            // to handle huge zipfiles
-            ic.transferTo(0, ic.size(), oc);
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()))){
 
-            ic.close();
-            oc.close();
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
 
             /*
              * Unzip zipped backups

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.google.common.collect.ImmutableList;
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -27,7 +28,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -149,7 +149,7 @@ public class EditStructureAction extends DotPortletAction {
 			return;
 		}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		_loadForm(form, req, res);
 		if (returnToList) {
 			if (!UtilMethods.isSet(referer)) {
@@ -375,16 +375,16 @@ public class EditStructureAction extends DotPortletAction {
 			//structureForm.setInode(type.inode());
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+			final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
+			String[] schemeIds = req.getParameterValues("workflowScheme");
 
-			String schemeId = req.getParameter("workflowScheme");
-
-			if (scheme != null && UtilMethods.isSet(schemeId) && !schemeId.equals(scheme.getId())) {
-				scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
-				APILocator.getWorkflowAPI().saveSchemeForStruct(structure, scheme);
+			for(String schemeId : schemeIds) {
+				if (UtilMethods.isSet(schemeId)) {
+					WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
+					schemes.add(scheme);
+				}
 			}
-
-			
+			APILocator.getWorkflowAPI().saveSchemesForStruct(structure, schemes.build());
 			
 			/**
 			 * 

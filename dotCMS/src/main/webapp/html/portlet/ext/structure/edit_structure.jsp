@@ -66,7 +66,8 @@
 	else{
 		wfSchemes.add(APILocator.getWorkflowAPI().findDefaultScheme());
 	}
-	WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+	List<WorkflowScheme> stWorkflowSchemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
+
 	List<Role> roles = APILocator.getRoleAPI().findAllAssignableRoles(false);
 	request.setAttribute ("roles", roles);
 	StructureForm form = (StructureForm)request.getAttribute("StructureForm");
@@ -609,13 +610,17 @@
 										<html:hidden property="system" styleId="system" />
 									</dd>
 								</dl>
+                                <%
+                                    String structureName = UtilMethods.isSet(form.getName()) ? UtilMethods.makeHtmlSafe(form.getName()) : "";
+                                    String structureDescription = UtilMethods.isSet(form.getDescription()) ? UtilMethods.makeHtmlSafe(form.getDescription()) : "";
+                                    %>
 								<dl>
 									<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-									<dd><input type="text" dojoType="dijit.form.TextBox" name="name" maxlength="255" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
+									<dd><input type="text" dojoType="dijit.form.TextBox" name="name" maxlength="255" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= structureName %>" /></dd>
 								</dl>
 								<dl>
 									<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-									<dd><input type="text" dojoType="dijit.form.TextBox" name="description" maxlength="255" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
+									<dd><input type="text" dojoType="dijit.form.TextBox" name="description" maxlength="255" style="width:250px" value="<%= structureDescription %>" /></dd>
 								</dl>
 								<% if(UtilMethods.isSet(structure.getInode())) { %>
 								<dl>
@@ -666,9 +671,18 @@
 									<dt><%= LanguageUtil.get(pageContext, "Workflow-Scheme") %>:</dt>
 									<dd>
 										<%	if(LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level){ %>
-										<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.FilteringSelect" value="<%=wfScheme.getId()%>">
-											<%for(WorkflowScheme scheme : wfSchemes){ %>
-											<option value="<%=scheme.getId()%>"><%=scheme.getName() %></option>
+										<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable">
+											<%for(WorkflowScheme scheme : wfSchemes){
+											    String selected="";
+											    for(WorkflowScheme selectedScheme : stWorkflowSchemes){
+											        if(selectedScheme.getId().equals(scheme.getId())){
+														selected="selected=\"selected\"";
+														break;
+													}
+												}
+
+											%>
+											<option value="<%=scheme.getId()%>" <%=selected%> ><%=scheme.getName() %></option>
 											<%} %>
 										</select>
 										<%}else{ %>

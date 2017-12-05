@@ -14,6 +14,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -173,7 +174,12 @@ public class SiteHelper implements Serializable {
 			final HttpSession session = req.getSession();
 			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-			return (null != hostId) ? hostAPI.find(hostId, user, false) : null;
+			if(null==hostId){
+				return WebAPILocator.getHostWebAPI().getHost(req);
+			}else{
+				return hostAPI.find(hostId, user, false);
+			}
+
 		} catch (DotDataException|DotSecurityException e) {
 			throw new DotRuntimeException(e);
 		}

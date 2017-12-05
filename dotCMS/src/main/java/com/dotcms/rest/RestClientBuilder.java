@@ -19,18 +19,18 @@ import com.dotmarketing.util.Config;
  */
 public class RestClientBuilder {
 
-	/**
-	 * Creates a new instance of the REST client used to access the RESTful
-	 * services available in the dotCMS back-end.
-	 * 
-	 * @return The REST {@link Client} object.
-	 */
+    /**
+     * Creates a new instance of the REST client used to access the RESTful
+     * services available in the dotCMS back-end.
+     *
+     * @return The REST {@link Client} object.
+     */
     public static Client newClient() {
         TrustFactory tFactory = new TrustFactory();
 
         Client client;
         String truststorePath = Config.getStringProperty("TRUSTSTORE_PATH", "");
-		if (truststorePath != null && !truststorePath.trim().equals("")) {
+        if (truststorePath != null && !truststorePath.trim().equals("")) {
             client = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext())
                     .hostnameVerifier(tFactory.getHostnameVerifier())
                     .build();

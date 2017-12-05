@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -8,7 +9,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -23,14 +23,23 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.services.ContainerServices;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.services.PageServices;
+import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
@@ -167,7 +176,7 @@ public class PublishFactory {
 		if (webAsset instanceof WebAsset)
 		{
 			try {
-				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion);
+				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion); // todo: reviewing here
 			} catch (Exception e) {
 				Logger.error(PublishFactory.class, "publishAsset: Failed to publish the asset.", e);
 			}
@@ -283,7 +292,8 @@ public class PublishFactory {
 	}
 
     /**
-     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
+     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).
+     * It will also remove the page from the Page/Block cache<br/>
      * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
      * call this method after publish the legacy HTMLPage.
      *
@@ -308,8 +318,10 @@ public class PublishFactory {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     Contentlet contentlet = (Contentlet) asset;
-                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( contentlet.getStructure() ).isMandatory() ) {
-                        contentletAPI.publish( (Contentlet) asset, user, false );
+                    WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+
+                    if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
+                    	contentletAPI.publish( (Contentlet) asset, user, false );
                         ContentletServices.invalidateLive(contentlet);
                     }
                 } catch ( DotSecurityException e ) {
@@ -330,7 +342,8 @@ public class PublishFactory {
             APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
         }
 
-
+        //Remove from block cache.
+        CacheLocator.getBlockPageCache().remove(htmlPage);
 
         return true;
     }
@@ -450,6 +463,7 @@ public class PublishFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public static List getUnpublishedRelatedAssetsForPage ( IHTMLPage htmlPage, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
 
         Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- PrePublishing" );

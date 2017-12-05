@@ -1,18 +1,16 @@
 
 package com.dotmarketing.business;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -22,486 +20,647 @@ import java.util.List;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
-	private VersionableFactory vfac;
-	private PermissionAPI papi;
+	private final VersionableFactory versionableFactory;
+	private final PermissionAPI permissionAPI;
 
 	public VersionableAPIImpl() {
-		vfac = FactoryLocator.getVersionableFactory();
-		papi = APILocator.getPermissionAPI();
+		versionableFactory = FactoryLocator.getVersionableFactory();
+		permissionAPI = APILocator.getPermissionAPI();
 	}
 
-	public Versionable findWorkingVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+	@Override
+	public Versionable findWorkingVersion(final Versionable inode, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException,
+			                                DotStateException, DotSecurityException {
+
 		return findWorkingVersion(inode.getVersionId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findWorkingVersion(Identifier id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+    @Override
+	public Versionable findWorkingVersion(final Identifier id, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException,
+			                                DotStateException, DotSecurityException {
+
 		return findWorkingVersion(id.getId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findWorkingVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,
-			DotSecurityException {
+    @Override
+	@CloseDBIfOpened
+	public Versionable findWorkingVersion(final String id, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException, DotStateException,
+			                                    DotSecurityException {
 
-		Versionable asset = vfac.findWorkingVersion(id);
-		if (!papi.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
+		final Versionable asset = versionableFactory.findWorkingVersion(id);
+		if (!permissionAPI.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + id);
 		}
 
 		return asset;
 	}
 
-	public Versionable findLiveVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+    @Override
+	public Versionable findLiveVersion(final Versionable inode, final User user,
+                                       final boolean respectAnonPermissions) throws DotDataException,
+			                                DotStateException, DotSecurityException {
+
 		return findLiveVersion(inode.getVersionId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findLiveVersion(Identifier id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+    @Override
+	public Versionable findLiveVersion(final Identifier id, final User user,
+                                       final boolean respectAnonPermissions) throws DotDataException,
+			                                DotStateException, DotSecurityException {
+
 		return findLiveVersion(id.getId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findLiveVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,
-			DotSecurityException {
-		Versionable asset = vfac.findLiveVersion(id);
-		if (asset!=null && !papi.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
+    @Override
+	@CloseDBIfOpened
+	public Versionable findLiveVersion(final String id, final User user,
+                                       final boolean respectAnonPermissions) throws DotDataException, DotStateException,
+			                            DotSecurityException {
+
+		final Versionable asset = versionableFactory.findLiveVersion(id);
+
+		if (asset!=null && !permissionAPI.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + id);
 		}
 
 		return asset;
 	}
 
-	public Versionable findDeletedVersion(Versionable inode, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+    @Override
+	public Versionable findDeletedVersion(final Versionable inode, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException,
+			                                DotStateException, DotSecurityException {
 		return findDeletedVersion(inode.getVersionId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findDeletedVersion(Identifier id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+    @Override
+	public Versionable findDeletedVersion(final Identifier id, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException,
+			                                    DotStateException, DotSecurityException {
+
 		return findDeletedVersion(id.getId(), user, respectAnonPermissions);
 	}
 
-	public Versionable findDeletedVersion(String id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException,
-			DotSecurityException {
+	@CloseDBIfOpened
+    @Override
+	public Versionable findDeletedVersion(final String id, final User user,
+                                          final boolean respectAnonPermissions) throws DotDataException, DotStateException,
+			                                    DotSecurityException {
 
-		Versionable asset = vfac.findDeletedVersion(id);
-		if (!papi.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
+		final Versionable asset = versionableFactory.findDeletedVersion(id);
+
+		if (!permissionAPI.doesUserHavePermission((Permissionable) asset, PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + id);
 		}
 
 		return asset;
 	}
 
-	public List<Versionable> findAllVersions(Versionable inode) throws DotDataException, DotStateException, DotSecurityException {
+    @Override
+	public List<Versionable> findAllVersions(final Versionable inode) throws DotDataException, DotStateException, DotSecurityException {
 		if (inode == null) {
 			throw new DotStateException("Inode is null");
 		}
 		return findAllVersions(inode.getVersionId(), APILocator.getUserAPI().getSystemUser(), false);
 	}
 
-	public List<Versionable> findAllVersions(Identifier id) throws DotDataException, DotStateException, DotSecurityException {
+	@Override
+	public List<Versionable> findAllVersions(final Identifier id) throws DotDataException, DotStateException, DotSecurityException {
 		if (id == null) {
 			throw new DotStateException("Inode is null");
 		}
 		return findAllVersions(id.getId(), APILocator.getUserAPI().getSystemUser(), false);
 	}
 
-	public List<Versionable> findAllVersions(String id) throws DotDataException, DotStateException, DotSecurityException {
+	@Override
+	@CloseDBIfOpened
+	public List<Versionable> findAllVersions(final String id) throws DotDataException, DotStateException, DotSecurityException {
 		return findAllVersions(id, APILocator.getUserAPI().getSystemUser(), false);
 	}
 
-	public List<Versionable> findAllVersions(Versionable id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+	@Override
+	public List<Versionable> findAllVersions(final Versionable id, final User user,
+                                             final boolean respectAnonPermissions) throws DotDataException,
+			                                    DotStateException, DotSecurityException {
+
 		if (id == null) {
 			throw new DotStateException("Versionable is null");
 		}
 		return findAllVersions(id.getVersionId(), user, respectAnonPermissions);
 	}
 
-	public List<Versionable> findAllVersions(Identifier id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
+	@Override
+	public List<Versionable> findAllVersions(final Identifier id, final User user,
+                                             final boolean respectAnonPermissions) throws DotDataException,
+			                                    DotStateException, DotSecurityException {
+
 		if (id == null) {
 			throw new DotStateException("Inode is null");
 		}
 		return findAllVersions(id.getId(), user, respectAnonPermissions);
 	}
 
-	public List<Versionable> findAllVersions(String id, User user, boolean respectAnonPermissions) throws DotDataException,
-			DotStateException, DotSecurityException {
-		List<Versionable> vass = vfac.findAllVersions(id);
+	@CloseDBIfOpened
+	@Override
+	public List<Versionable> findAllVersions(final String id, final User user,
+                                             final boolean respectAnonPermissions) throws DotDataException,
+			                                    DotStateException, DotSecurityException {
 
-		List<Permissionable> pass = new ArrayList<Permissionable>();
-		for (Versionable v : vass) {
+		List<Versionable> versions = versionableFactory.findAllVersions(id);
+		List<Permissionable> pass  = new ArrayList<Permissionable>();
+
+		for (Versionable v : versions) {
 			if (v instanceof Permissionable) {
 				pass.add((Permissionable) v);
 			}
 		}
 
-		pass = papi.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
-		vass = new ArrayList<Versionable>();
+		pass = permissionAPI.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
+		versions = new ArrayList<Versionable>();
+
 		for (Permissionable p : pass) {
 			if (p instanceof Versionable) {
-				vass.add((Versionable) p);
+				versions.add((Versionable) p);
 			}
 		}
-		return vass;
 
+		return versions;
 	}
 
-    public boolean isDeleted(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId()))
-        	return false;
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
+	@CloseDBIfOpened
+    @Override
+    public boolean isDeleted(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
 
-        if(!UtilMethods.isSet(ident.getId()))
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
 
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo cinfo=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+
+        if(!UtilMethods.isSet(identifier.getId()))
+        	return false;
+
+        if(identifier.getAssetType().equals("contentlet")) {
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo cinfo = versionableFactory.
+                    getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
             return (cinfo !=null && cinfo.isDeleted());
-        }
-        else {
-            VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
+        } else {
+
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+
             return info.isDeleted();
         }
     }
 
-    public boolean isLive(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+    @CloseDBIfOpened
+    @Override
+    public boolean isLive(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
-        Identifier ident = APILocator.getIdentifierAPI().find(versionable);
-        if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType()))
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType()))
             return false;
+
         String liveInode;
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont = (Contentlet)versionable;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
+        if(identifier.getAssetType().equals("contentlet")) {
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo info = versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
             if(info ==null || !UtilMethods.isSet(info.getIdentifier()))
-                throw new DotStateException("No version info. Call setWorking first "+ident.getId());
+                throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
+
             liveInode=info.getLiveInode();
-        }
-        else {
-            VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
+        } else {
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            liveInode=info.getLiveInode();
+
+            liveInode = info.getLiveInode();
         }
         return liveInode!=null && liveInode.equals(versionable.getInode());
     }
 
-    public boolean isLocked(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId())){
+    @CloseDBIfOpened
+    @Override
+    public boolean isLocked(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId())){
             return false;
         }
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
-        if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType())) {
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType())) {
             return false;
         }
-        if("contentlet".equals(ident.getAssetType())) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
+        if("contentlet".equals(identifier.getAssetType())) {
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo info = versionableFactory.getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+
             return info.isLocked();
-        }
-        else {
-            VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
+        } else {
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+
             return info.isLocked();
         }
     }
 
-    public boolean isWorking(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+    @CloseDBIfOpened
+    @Override
+    public boolean isWorking(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
-        Identifier ident = APILocator.getIdentifierAPI().find(versionable);
-        if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType()))
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType()))
             return false;
+
         String workingInode;
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont = (Contentlet)versionable;
-            ContentletVersionInfo info=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
+        if(identifier.getAssetType().equals("contentlet")) {
+
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo info= versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
             if(info ==null || !UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            workingInode=info.getWorkingInode();
-        }
-        else {
-            VersionInfo info=vfac.getVersionInfo(versionable.getVersionId());
+
+            workingInode = info.getWorkingInode();
+        } else {
+
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            workingInode=info.getWorkingInode();
+
+            workingInode = info.getWorkingInode();
         }
+
         return workingInode.equals(versionable.getInode());
     }
 
-    public void removeLive(String identifier) throws DotDataException, DotStateException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public void removeLive(final String identifier) throws DotDataException, DotStateException, DotSecurityException {
         if(!UtilMethods.isSet(identifier))
             throw new DotStateException("invalid identifier");
-        VersionInfo ver = vfac.getVersionInfo(identifier);
-        if(!UtilMethods.isSet(ver.getIdentifier()))
+
+        final VersionInfo versionInfo = versionableFactory.getVersionInfo(identifier);
+        if(!UtilMethods.isSet(versionInfo.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
-        ver.setLiveInode(null);
-        vfac.saveVersionInfo(ver, true);
+
+        versionInfo.setLiveInode(null);
+        versionableFactory.saveVersionInfo(versionInfo, true);
     }
 
-    public void removeLive ( Contentlet contentlet ) throws DotDataException, DotStateException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public void removeLive (final Contentlet contentlet ) throws DotDataException, DotStateException, DotSecurityException {
 
-    	String identifier = contentlet.getIdentifier();
-    	long lang = contentlet.getLanguageId();
+    	final String identifierId = contentlet.getIdentifier();
+    	final long lang         = contentlet.getLanguageId();
     	
-    	if ( !UtilMethods.isSet( identifier ) ) {
+    	if ( !UtilMethods.isSet( identifierId ) ) {
             throw new DotStateException( "invalid identifier" );
         }
-        Identifier ident = APILocator.getIdentifierAPI().find( identifier );
 
-        ContentletVersionInfo ver = vfac.getContentletVersionInfo( identifier, lang );
-        if ( ver == null || !UtilMethods.isSet( ver.getIdentifier() ) ) {
+        final Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
+        final ContentletVersionInfo contentletVersionInfo =
+                this.versionableFactory.getContentletVersionInfo( identifierId, lang );
+
+        if ( contentletVersionInfo == null || !UtilMethods.isSet( contentletVersionInfo.getIdentifier() ) ) {
             throw new DotStateException( "No version info. Call setLive first" );
         }
 
-        if ( !UtilMethods.isSet( ver.getLiveInode() ) ) {
+        if ( !UtilMethods.isSet( contentletVersionInfo.getLiveInode() ) ) {
             throw new DotStateException( "No live version Contentlet. Call setLive first" );
         }
 
-        Contentlet liveContentlet = APILocator.getContentletAPI().find( ver.getLiveInode(), APILocator.getUserAPI().getSystemUser(), false );
+        final Contentlet liveContentlet = APILocator.getContentletAPI()
+                .find( contentletVersionInfo.getLiveInode(), APILocator.getUserAPI().getSystemUser(), false );
+
         if ( liveContentlet == null || !UtilMethods.isSet( liveContentlet.getIdentifier() ) ) {
             throw new DotStateException( "No live version Contentlet. Call setLive first" );
         }
 
         //Get the structure for this contentlet
-        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( liveContentlet.getStructureInode() );
+        final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( liveContentlet.getStructureInode() );
 
-        if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
+        if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
         	if ( UtilMethods.isSet( structure.getExpireDateVar() ) &&
-                UtilMethods.isSet( ident.getSysExpireDate() ) &&
-                ident.getSysExpireDate().after( new Date() ) ) {//Verify if the structure have a Expire Date Field set
+                UtilMethods.isSet( identifier.getSysExpireDate() ) &&
+                identifier.getSysExpireDate().after( new Date() ) ) {//Verify if the structure have a Expire Date Field set
 
                 throw new PublishStateException(
-                    "Can't unpublish content that is scheduled to expire on a future date. Identifier: " + ident.getId() );
+                    "Can't unpublish content that is scheduled to expire on a future date. Identifier: " + identifier.getId() );
             }
         }
 
-        ver.setLiveInode( null );
-        vfac.saveContentletVersionInfo( ver, true );
+        contentletVersionInfo.setLiveInode( null );
+        versionableFactory.saveContentletVersionInfo( contentletVersionInfo, true );
     }
 
-    public void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+    @WrapInTransaction
+    @Override
+    public void setDeleted(final Versionable versionable, final boolean deleted) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+
+        if(identifier.getAssetType().equals("contentlet")) {
+            final Contentlet contentlet      = (Contentlet)versionable;
+            final ContentletVersionInfo info = versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
             info.setDeleted(deleted);
-            vfac.saveContentletVersionInfo(info, true);
+            versionableFactory.saveContentletVersionInfo(info, true);
         }
         else {
-            VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+
             info.setDeleted(deleted);
-            vfac.saveVersionInfo(info, true);
+            versionableFactory.saveVersionInfo(info, true);
         }
     }
 
-    public void setLive ( Versionable versionable ) throws DotDataException, DotStateException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public void setLive ( final Versionable versionable ) throws DotDataException, DotStateException, DotSecurityException {
 
         if ( !UtilMethods.isSet( versionable ) || !UtilMethods.isSet( versionable.getVersionId() ) ) {
             throw new DotStateException( "invalid identifier" );
         }
 
-        Identifier ident = APILocator.getIdentifierAPI().find( versionable );
-        if ( ident.getAssetType().equals( "contentlet" ) ) {
+        final Identifier identifier = APILocator.getIdentifierAPI().find( versionable );
+        if ( identifier.getAssetType().equals( "contentlet" ) ) {
 
-            Contentlet cont = (Contentlet) versionable;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo( cont.getIdentifier(), cont.getLanguageId() );
+            final Contentlet contentlet = (Contentlet) versionable;
+            final ContentletVersionInfo info = versionableFactory
+                    .getContentletVersionInfo( contentlet.getIdentifier(), contentlet.getLanguageId() );
+
             if ( info == null || !UtilMethods.isSet( info.getIdentifier() ) ) {
                 throw new DotStateException( "No version info. Call setWorking first" );
             }
 
             //Get the structure for this contentlet
-            Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( cont.getStructureInode() );
+            final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( contentlet.getStructureInode() );
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
-                if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {
+                if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
                     throw new PublishStateException( "The content cannot be published because it is scheduled to be published on future date." );
                 }
             }
             if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
-                if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().before( new Date() ) ) {
+                if ( UtilMethods.isSet( identifier.getSysExpireDate() ) && identifier.getSysExpireDate().before( new Date() ) ) {
                     throw new PublishStateException( "The content cannot be published because the expire date has already passed." );
                 }
             }
 
             info.setLiveInode( versionable.getInode() );
-            vfac.saveContentletVersionInfo( info, true );
+            versionableFactory.saveContentletVersionInfo( info, true );
         } else {
-            VersionInfo info = vfac.getVersionInfo( versionable.getVersionId() );
+
+            final VersionInfo info = versionableFactory.getVersionInfo( versionable.getVersionId() );
             if ( !UtilMethods.isSet( info.getIdentifier() ) ) {
                 throw new DotStateException( "No version info. Call setWorking first" );
             }
+
             info.setLiveInode( versionable.getInode() );
-            this.vfac.saveVersionInfo( info, true );
+            this.versionableFactory.saveVersionInfo( info, true );
         }
     }
 
-    public void setLocked(Versionable ver, boolean locked, User user) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+    @WrapInTransaction
+    @Override
+    public void setLocked(final Versionable versionable, final boolean locked,
+                          final User user) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        if(identifier.getAssetType().equals("contentlet")) {
+
+            final Contentlet contentlet =(Contentlet)versionable;
+            final ContentletVersionInfo info = versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            if(locked)
+
+            if(locked) {
                 info.setLocked(user.getUserId());
-            else
+            } else {
                 info.unLock();
-            vfac.saveContentletVersionInfo(info, false);
-        }
-        else {
-            VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
+            }
+
+            versionableFactory.saveContentletVersionInfo(info, false);
+        } else {
+
+            final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            if(locked)
+
+            if(locked) {
                 info.setLocked(user.getUserId());
-            else
+            } else {
                 info.unLock();
-            vfac.saveVersionInfo(info, false);
+            }
+
+            versionableFactory.saveVersionInfo(info, false);
         }
     }
 
-    public void setWorking(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public void setWorking(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
         if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(versionable);
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont = (Contentlet)versionable;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
-            if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
-                // Not yet created
-                info = vfac.createContentletVersionInfo(ident, cont.getLanguageId(), versionable.getInode());
-            }
-            else {
-                info.setWorkingInode(versionable.getInode());
-                vfac.saveContentletVersionInfo(info, true);
-            }
-            
-            CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(info.getIdentifier(),cont.getLanguageId());
-        }
-        else {
-            VersionInfo info = vfac.findVersionInfoFromDb(ident);
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        if(identifier.getAssetType().equals("contentlet")) {
+
+            final Contentlet contentlet = (Contentlet)versionable;
+            ContentletVersionInfo info = versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
-                vfac.createVersionInfo(ident, versionable.getInode());
+                info = versionableFactory.createContentletVersionInfo(identifier, contentlet.getLanguageId(), versionable.getInode());
             }
             else {
                 info.setWorkingInode(versionable.getInode());
-                vfac.saveVersionInfo(info, true);
+                versionableFactory.saveContentletVersionInfo(info, true);
+            }
+            
+            CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(info.getIdentifier(),contentlet.getLanguageId());
+        } else {
+
+            final VersionInfo info = versionableFactory.findVersionInfoFromDb(identifier);
+
+            if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
+                // Not yet created
+                versionableFactory.createVersionInfo(identifier, versionable.getInode());
+            }
+            else {
+                info.setWorkingInode(versionable.getInode());
+                versionableFactory.saveVersionInfo(info, true);
             }
         }
     }
 
-    public String getLockedBy(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+    @CloseDBIfOpened
+    @Override
+    public String getLockedBy(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
         String userId;
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo vinfo=vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
-            userId=vinfo.getLockedBy();
+
+        if(identifier.getAssetType().equals("contentlet")) {
+
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo vinfo = versionableFactory
+                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            userId = vinfo.getLockedBy();
         }
         else {
-            VersionInfo vinfo=vfac.getVersionInfo(ver.getVersionId());
-            userId=vinfo.getLockedBy();
+
+            final VersionInfo vinfo= versionableFactory.getVersionInfo(versionable.getVersionId());
+            userId = vinfo.getLockedBy();
         }
+
         if(userId==null)
             throw new DotStateException("asset is not locked");
         return userId;
     }
 
-    public Date getLockedOn(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+    @CloseDBIfOpened
+    @Override
+    public Date getLockedOn(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
         Date date;
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont=(Contentlet)ver;
-            ContentletVersionInfo vinfo=vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
+        if(identifier.getAssetType().equals("contentlet")) {
+            final Contentlet contentlet = (Contentlet)versionable;
+            final ContentletVersionInfo vinfo= versionableFactory.getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            date=vinfo.getLockedOn();
+        } else {
+            final VersionInfo vinfo= versionableFactory.getVersionInfo(identifier.getId());
             date=vinfo.getLockedOn();
         }
-        else {
-            VersionInfo vinfo=vfac.getVersionInfo(ident.getId());
-            date=vinfo.getLockedOn();
-        }
+
         if(date==null)
             throw new DotStateException("asset is not locked");
         return date;
     }
 
-	public  VersionInfo getVersionInfo(String identifier) throws DotDataException, DotStateException{
-		return vfac.getVersionInfo(identifier);
+    @CloseDBIfOpened
+	public  VersionInfo getVersionInfo(final String identifier) throws DotDataException, DotStateException{
+		return versionableFactory.getVersionInfo(identifier);
 	}
 
-	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
-	    return vfac.getContentletVersionInfo(identifier, lang);
+	@CloseDBIfOpened
+	public ContentletVersionInfo getContentletVersionInfo(final String identifier,
+                                                          final long lang) throws DotDataException, DotStateException {
+	    return versionableFactory.getContentletVersionInfo(identifier, lang);
 	}
-
+	
 	@Override
-	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException {
-		vfac.saveVersionInfo(vInfo, true);
+	@CloseDBIfOpened
+	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {
+	  return versionableFactory.findAllContentletVersionInfos(identifier);
 	}
 
+
+	
+	
+	@WrapInTransaction
 	@Override
-	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
-		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
-		if(info == null){
-			vfac.saveContentletVersionInfo(cvInfo, true);
-		}else{
-			info.setDeleted(cvInfo.isDeleted());
-			info.setLiveInode(cvInfo.getLiveInode());
-			info.setLockedBy(cvInfo.getLockedBy());
-			info.setLockedOn(cvInfo.getLockedOn());
-			info.setWorkingInode(cvInfo.getWorkingInode());
-			vfac.saveContentletVersionInfo(info, true);
+	public void saveVersionInfo(final VersionInfo vInfo) throws DotDataException, DotStateException {
+		versionableFactory.saveVersionInfo(vInfo, true);
+	}
+
+	@WrapInTransaction
+	@Override
+	public void saveContentletVersionInfo(final ContentletVersionInfo contentletVersionInfo) throws DotDataException, DotStateException {
+
+		final ContentletVersionInfo contentletVersionInfoInDB = versionableFactory
+                .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(), contentletVersionInfo.getLang());
+
+		if(contentletVersionInfoInDB == null) {
+
+			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
+		} else {
+
+			contentletVersionInfoInDB.setDeleted(contentletVersionInfo.isDeleted());
+			contentletVersionInfoInDB.setLiveInode(contentletVersionInfo.getLiveInode());
+			contentletVersionInfoInDB.setLockedBy(contentletVersionInfo.getLockedBy());
+			contentletVersionInfoInDB.setLockedOn(contentletVersionInfo.getLockedOn());
+			contentletVersionInfoInDB.setWorkingInode(contentletVersionInfo.getWorkingInode());
+			versionableFactory.saveContentletVersionInfo(contentletVersionInfoInDB, true);
 		}
 	}
 
-	public void deleteVersionInfo(String identifier)throws DotDataException {
-		vfac.deleteVersionInfo(identifier);
+	@WrapInTransaction
+    @Override
+	public void deleteVersionInfo(final String identifier)throws DotDataException {
+		versionableFactory.deleteVersionInfo(identifier);
 	}
 
-	public void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException {
-	    vfac.deleteContentletVersionInfo(identifier, lang);
+	@WrapInTransaction
+    @Override
+	public void deleteContentletVersionInfo(final String identifier, final long lang) throws DotDataException {
+	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
 	}
 
-	public boolean hasLiveVersion(Versionable ver)  throws DotDataException, DotStateException{
-		if(ver instanceof Contentlet) {
-			ContentletVersionInfo vi = this.getContentletVersionInfo(ver.getVersionId(), ((Contentlet) ver).getLanguageId());
-			return (vi != null && UtilMethods.isSet(vi.getLiveInode()));
-		}
-		else{
-			VersionInfo vi = this.getVersionInfo(ver.getVersionId());
-			return (vi != null && UtilMethods.isSet(vi.getLiveInode()));
+	@CloseDBIfOpened
+    @Override
+	public boolean hasLiveVersion(final Versionable versionable) throws DotDataException, DotStateException {
+
+		if(versionable instanceof Contentlet) {
+
+			final ContentletVersionInfo contentletVersionInfo = this.getContentletVersionInfo
+                    (versionable.getVersionId(), ((Contentlet) versionable).getLanguageId());
+
+			return (contentletVersionInfo != null && UtilMethods.isSet(contentletVersionInfo.getLiveInode()));
+		} else {
+
+			final VersionInfo versionInfo = this.getVersionInfo(versionable.getVersionId());
+			return (versionInfo != null && UtilMethods.isSet(versionInfo.getLiveInode()));
 		}
 	}
 
 	@Override
-	public void removeContentletVersionInfoFromCache(String identifier, long lang) {
+	public void removeContentletVersionInfoFromCache(final String identifier, final long lang) {
 		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(identifier, lang);
 	}
 
 	@Override
-	public void removeVersionInfoFromCache(String identifier) {
+	public void removeVersionInfoFromCache(final String identifier) {
 		CacheLocator.getIdentifierCache().removeVersionInfoFromCache(identifier);
 	}
 

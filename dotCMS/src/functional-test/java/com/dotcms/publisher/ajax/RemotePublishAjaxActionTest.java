@@ -5,21 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -28,6 +13,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -35,14 +21,10 @@ import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import junit.framework.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -72,6 +54,23 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+import junit.framework.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * @author Jonathan Gamba
@@ -82,6 +81,8 @@ public class RemotePublishAjaxActionTest {
 
 	private static User user;
 	private static User adminUser;
+    private final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+    private final String protocol = "http";
 
 	@BeforeClass
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
@@ -129,11 +130,11 @@ public class RemotePublishAjaxActionTest {
 		environmentAPI.saveEnvironment( environment, permissions );
 
 		//Now we need to create the end point
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+		endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -243,11 +244,11 @@ public class RemotePublishAjaxActionTest {
 		 */
 
 		//Create a receiving end point
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );
@@ -278,7 +279,7 @@ public class RemotePublishAjaxActionTest {
 		//Sending bundle to endpoint
 		String contentDisposition = "attachment; filename=\"" + newBundleFile.getName() + "\"";
 
-		InputStream newBundleFileStream = new BufferedInputStream(new FileInputStream(newBundleFile));
+		final InputStream newBundleFileStream = new BufferedInputStream(Files.newInputStream(newBundleFile.toPath()));
 
 		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
@@ -342,7 +343,7 @@ public class RemotePublishAjaxActionTest {
         try{
         	HibernateUtil.startTransaction();
         	newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -446,11 +447,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+		PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -536,7 +537,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
     		//APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -560,11 +561,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
@@ -775,11 +776,13 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+
+
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "9999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
@@ -866,7 +869,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -886,11 +889,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
@@ -929,7 +932,7 @@ public class RemotePublishAjaxActionTest {
     		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
     		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());

@@ -1,9 +1,13 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
@@ -29,7 +33,8 @@ public class PublisherAPIImpl implements PublisherAPI {
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
         //Triggering event listener when the publishing process starts
-        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent());
+        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent(config.getAssets()));
+        localSystemEventsAPI.asyncNotify(new StaticPublishStartEvent(config.getAssets()));
 
         try {
 
@@ -84,6 +89,15 @@ public class PublisherAPIImpl implements PublisherAPI {
                 // If the bundle exists and we are retrying to push the bundle
                 // there is no need to run all the bundlers again.
                 if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
+                    PublishAuditStatus currentStatus = publishAuditAPI
+                            .getPublishAuditStatus(config.getId());
+                    PublishAuditHistory currentStatusHistory = null;
+                    if(currentStatus != null) {
+                        currentStatusHistory = currentStatus.getStatusPojo();
+                        if(currentStatusHistory != null) {
+                            currentStatusHistory.setBundleStart(new Date());
+                        }
+                    }
 
                     for ( Class<IBundler> clazz : p.getBundlers() ) {
                         IBundler bundler = clazz.newInstance();
@@ -97,6 +111,14 @@ public class PublisherAPIImpl implements PublisherAPI {
                         bundler.generate( bundleRoot, bs );
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
+
+                    if(currentStatusHistory != null) {
+                        currentStatusHistory.setBundleEnd(new Date());
+                        publishAuditAPI
+                                .updatePublishAuditStatus(config.getId(),
+                                        PublishAuditStatus.Status.BUNDLING,
+                                        currentStatusHistory);
+                    }
                 } else {
                     Logger.info(this, "Retrying bundle: " + config.getId()
                             + ", we don't need to run bundlers again");
@@ -108,7 +130,9 @@ public class PublisherAPIImpl implements PublisherAPI {
             config.setBundlers( confBundlers );
 
             //Triggering event listener when the publishing process ends
-            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent());
+            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent(config.getAssets()));
+            localSystemEventsAPI.asyncNotify(new StaticPublishEndEvent(config.getAssets()));
+
             PushPublishLogger.log( this.getClass(), "Completed Publishing Task", config.getId() );
         } catch ( Exception e ) {
             Logger.error( PublisherAPIImpl.class, e.getMessage(), e );

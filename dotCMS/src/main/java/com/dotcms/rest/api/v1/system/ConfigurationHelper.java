@@ -6,6 +6,7 @@ import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
 import static com.dotmarketing.util.WebKeys.*;
 
+import com.dotmarketing.util.Constants;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
@@ -46,6 +47,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
+	public static final String EMAIL_REGEX = "emailRegex";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -100,7 +102,8 @@ public class ConfigurationHelper implements Serializable {
 				map(
 						VERSION,           ReleaseInfo.getVersion(),
 						BUILD_DATE,        ReleaseInfo.getBuildDateString()
-				)
+				),
+				EMAIL_REGEX, Constants.REG_EX_EMAIL
 		);
 	}
 

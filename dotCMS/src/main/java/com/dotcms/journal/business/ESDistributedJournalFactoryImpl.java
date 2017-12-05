@@ -78,51 +78,8 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void addCacheEntry(String key, String group)
             throws DotDataException {
         Connection con = null;
-        String[] serversIds = APILocator.getServerAPI().getAliveServersIds();
-        String serverId = ConfigUtils.getServerId();
-        try {
-            if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
-                con = DbConnectionFactory.getConnection();
-                con.setAutoCommit(false);
-                java.sql.Timestamp timestamp = new java.sql.Timestamp(new java.util.Date().getTime());
-                for (String serversId : serversIds) {
-                    if (!serverId.equals(serversId)) {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("INSERT INTO dist_process(object_to_index, time_entered, serverid, journal_type)VALUES (?, ?, ?, ?)");
-                        dc.addParam(key + ":" + group);
-                        dc.addParam(timestamp);
-                        dc.addParam(serversId);
-                        dc.addParam(JOURNAL_TYPE_CACHE);
-                        try {
-                            dc.getResult(con);
-                        } catch (Exception e) {
-                            Logger
-                                    .warn(this,
-                                            "Usually not a problem but a cache entry failed to insert in the table.");
-                            Logger.debug(this, e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e1) {
-            throw new DotDataException(e1.getMessage(), e1);
-        } finally {
-            try {
-                if(con!=null){
-                    con.commit();
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            } finally {
-                try {
-                    if(con!=null){
-                        con.close();
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-            }
-        }
+
+
     }
 
     @Override
@@ -145,6 +102,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected boolean areRecordsLeftToIndex() throws DotDataException {
+
         DotConnect dc = new DotConnect();
         String serverId = ConfigUtils.getServerId();
         long count = 0;
@@ -157,13 +115,8 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         } catch (Exception ex) {
             Logger
             .fatal(this,"Error  unlocking the reindex journal table" +  ex);
-        } finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
         }
+
         return count > 0;
     }
 
@@ -218,72 +171,43 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
-        DotConnect dc = new DotConnect();
-        int totalAttempts = REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + RETRY_FAILED_INDEX_TIMES;
-		StringBuilder sql = new StringBuilder()
+
+        final DotConnect dotConnect = new DotConnect();
+        final int totalAttempts = REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + RETRY_FAILED_INDEX_TIMES;
+		final StringBuilder sql = new StringBuilder()
 				.append("UPDATE dist_reindex_journal SET serverid=NULL, priority = CASE WHEN priority < ")
 				.append(REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT).append(" THEN ")
 				.append(REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT).append(" WHEN priority = ").append(totalAttempts)
 				.append(" THEN priority ").append(" ELSE priority + 1 END where id in (");
         boolean first = true;
+
         for ( IndexJournal<T> idx : recordsToModify ) {
             if ( !first ) sql.append(',');
             else first = false;
             sql.append(idx.getId());
         }
+
         sql.append(") AND priority <= " + totalAttempts);
-        dc.setSQL(sql.toString());
-        Connection con = null;
-        try {
-            con = DbConnectionFactory.getDataSource().getConnection();
-            con.setAutoCommit(true);
-            dc.loadResult(con);
-        } catch ( SQLException e ) {
-            try {
-                if ( con != null ) {
-                    con.rollback();
-                }
-            } catch ( SQLException e1 ) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-            }
-            Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
-        } finally {
-            try {
-                if ( con != null ) {
-                    con.close();
-                }
-            } catch ( SQLException e ) {
-                Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
-            }
-        }
+        dotConnect.setSQL(sql.toString());
+        dotConnect.loadResult();
+
     }
 
     @Override
-    protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
-        DotConnect dc = new DotConnect();
-        StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
-        boolean first=true;
+    protected void deleteReindexEntryForServer(final List<IndexJournal<T>> recordsToDelete) throws DotDataException {
+
+        final DotConnect dotConnect = new DotConnect();
+        final StringBuilder sql = new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
+        boolean first = true;
+
         for(IndexJournal<T> idx : recordsToDelete) {
             if(!first) sql.append(','); else first=false;
             sql.append("'" + idx.getIdentToIndex() + "'");
         }
         sql.append(')');
 
-        dc.setSQL(sql.toString());
-        Connection con = null;
-		try {
-			con = DbConnectionFactory.getDataSource().getConnection();
-			con.setAutoCommit(true);
-			dc.loadResult(con);
-		} catch (SQLException e) {
-			Logger.error(ESDistributedJournalFactoryImpl.class,e.getMessage(),e);
-		}finally{
-			try {
-				con.close();
-			} catch (SQLException e) {
-				Logger.error(ESDistributedJournalFactoryImpl.class,e.getMessage(),e);
-			}
-		}
+        dotConnect.setSQL(sql.toString());
+        dotConnect.loadResult();
     }
 
     @Override
@@ -322,58 +246,40 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         dc.loadResult();
     }
 
-    private void deleteCacheEntries(String serverId, long id, Connection con)
+    private void deleteCacheEntries(String serverId, long id)
             throws DotDataException {
         DotConnect dc = new DotConnect();
-        try {
-            dc.setSQL("DELETE FROM dist_journal where serverid = ? and journal_type = ? and id < ?");
-            dc.addParam(serverId);
-            dc.addParam(JOURNAL_TYPE_CACHE);
-            dc.addParam(id + 1);
-            dc.loadResult(con);
-        } catch (Exception e1) {
-            throw new DotDataException(e1.getMessage(), e1);
-        }
+        dc.setSQL("DELETE FROM dist_journal where serverid = ? and journal_type = ? and id < ?");
+        dc.addParam(serverId);
+        dc.addParam(JOURNAL_TYPE_CACHE);
+        dc.addParam(id + 1);
+        dc.loadResult();
+
     }
 
     @Override
     protected List<String> findCacheEntriesToRemove() throws DotDataException {
-        DotConnect dc = new DotConnect();
-        List<String> x = new ArrayList<String>();
-        Connection con = null;
-        String serverId = ConfigUtils.getServerId();
 
-        try {
-            con = DbConnectionFactory.getConnection();
-            con.setAutoCommit(false);
-            dc.setSQL("SELECT object_to_index , max(id) as id from dist_journal " +
-            		" where journal_type = ? and serverid = ? GROUP BY id, object_to_index,time_entered ORDER BY time_entered ASC");
-            dc.addParam(JOURNAL_TYPE_CACHE);
-            dc.addParam(serverId);
+        final DotConnect dotConnect = new DotConnect();
+        final List<String> cacheEntries = new ArrayList<>();
+        final String serverId = ConfigUtils.getServerId();
 
-            List<Map<String, String>> results = dc.loadResults(con);
-            long id = 0;
-            for (Map<String, String> r : results) {
-                x.add(r.get("object_to_index"));
-                id = new Long(r.get("id"));
-            }
-            deleteCacheEntries(serverId, id, con);
-        } catch (SQLException e1) {
-            throw new DotDataException(e1.getMessage(), e1);
-        } finally {
-            try {
-                con.commit();
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            } finally {
-                try {
-                    con.close();
-                } catch (Exception e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-            }
+        dotConnect.setSQL("SELECT object_to_index , max(id) as id from dist_journal " +
+                " where journal_type = ? and serverid = ? GROUP BY id, object_to_index,time_entered ORDER BY time_entered ASC");
+        dotConnect.addParam(JOURNAL_TYPE_CACHE);
+        dotConnect.addParam(serverId);
+
+        final List<Map<String, String>> results = dotConnect.loadResults();
+        long id = 0;
+
+        for (Map<String, String> result : results) {
+            cacheEntries.add(result.get("object_to_index"));
+            id = new Long(result.get("id"));
         }
-        return x;
+
+        deleteCacheEntries(serverId, id);
+
+        return cacheEntries;
     }
 
     @Override
@@ -477,10 +383,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         return ConfigUtils.getServerId();
     }
 
-    @Override
-    protected boolean isIndexationEnabled() {
-        return Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false);
-    }
 
     @Override
     protected void processJournalEntries() throws DotDataException {
@@ -605,11 +507,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
-    protected void setIndexationEnabled(boolean indexationEnabled) {
-    	Config.setProperty("DIST_INDEXATION_ENABLED", Boolean.FALSE);
-    }
-
-    @Override
     protected List<IndexJournal> viewReindexJournalData() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as mycount,serverid,priority from dist_reindex_journal group by serverid,priority order by serverid, priority");
@@ -688,4 +585,5 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             //No need to unlock for oracle, pg, or sql server.  Using passed in connection, the calling method should commit (which is all that's needed to unlock the tables)
         }
     }
+
 }

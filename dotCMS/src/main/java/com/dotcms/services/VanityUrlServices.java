@@ -2,6 +2,7 @@ package com.dotcms.services;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.vanityurl.model.CacheVanityKey;
@@ -199,12 +200,9 @@ public class VanityUrlServices {
     @Subscriber
     @WrapInTransaction
     public void onCommitListener(final CommitListenerEvent commitListenerEvent) {
-
         final Contentlet contentlet =
                 commitListenerEvent.getContentlet();
-
         try {
-
             Logger.debug(this, "Invalidating the vanity: "
                     + contentlet);
 
@@ -216,11 +214,13 @@ public class VanityUrlServices {
                                 "Unable to invalidate VanityURL in cache:" +
                                         contentlet));
             }
+        } catch (NotFoundInDbException e) {
+            Logger.warn(this, String.format("Unable to invalidate VanityURL in cache [%s]", e.getMessage()));
         } catch (Exception e) {
             Logger.error(this,
                     String.format("Unable to invalidate VanityURL in cache [%s]",
                             contentlet.getIdentifier()), e);
         }
-    } // onCommitListener.
+    }
 
-} // E:O:F:VanityUrlServices.
+}

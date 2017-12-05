@@ -142,7 +142,7 @@ public class ContentReviewThread implements Runnable, Job {
             Logger.error(this, "Error ocurred trying to review contents.", e);
         } finally {
             try {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			} catch (DotHibernateException e) {
 				Logger.error(this.getClass(), e.getMessage(), e);
 			}

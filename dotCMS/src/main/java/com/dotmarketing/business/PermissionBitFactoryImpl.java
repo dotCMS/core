@@ -1,8 +1,12 @@
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -42,9 +46,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -86,8 +88,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The permisionable id
 	 * 2. The permisionable id
 	 */
-
-	private final String loadPermissionSQL =
+	private static final String LOAD_PERMISSION_SQL =
 		" select {permission.*} from permission where inode_id = ? "+
         " union all "+
         " select {permission.*} from permission join permission_reference "+
@@ -99,7 +100,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The reference id the references are pointing to
 	 */
-	private final String loadPermissionReferencesByReferenceIdHSQL = "from " + PermissionReference.class.getCanonicalName() +
+	private static final String LOAD_PERMISSION_REFERENCES_BY_REFERENCEID_HSQL = "from " + PermissionReference.class.getCanonicalName() +
 		" permission_reference where reference_id = ?";
 
 	/*
@@ -109,18 +110,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Reference id
 	 * 3. Type
 	 */
-//	private final String insertPermissionReferenceSQL =
-//		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
-//		"insert into permission_reference (asset_id, reference_id, permission_type) " +
-//		"	SELECT ?,?,? FROM permission_reference ":
-//		DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
-//		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-//		"	SELECT (SELECT permission_reference_seq.NEXTVAL), ?, ?, ? FROM permission_reference ":
-//		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-//		"	SELECT (SELECT nextval('permission_reference_seq')), ?, ?, ? FROM permission_reference ") +
-//		" WHERE not exists (SELECT asset_id from permission_reference where asset_id = ?)";
 
-	private final String insertPermissionReferenceSQL =
+	private static final String INSERT_PERMISSION_REFERENCE_SQL =
 		DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 		"insert into permission_reference (asset_id, reference_id, permission_type) " +
 		"	values (?, ?, ?)":
@@ -137,7 +128,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Permission type
 	 * 3. Reference id to be updated
 	 */
-	private final String updatePermissionReferenceByReferenceIdSQL = "update permission_reference set reference_id = ? where permission_type = ? and reference_id = ?";
+	private static final String UPDATE_PERMISSION_REFERENCE_BY_REFERENCEID_SQL = "update permission_reference set reference_id = ? where permission_type = ? and reference_id = ?";
 
 	/*
 	 * To update a permission reference by the owner asset
@@ -146,7 +137,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Permission type
 	 * 3. asset id
 	 */
-	private final String updatePermissionReferenceByAssetIdSQL = "update permission_reference set reference_id = ? where permission_type = ? and asset_id = ?";
+	private static final String UPDATE_PERMISSION_REFERENCE_BY_ASSETID_SQL = "update permission_reference set reference_id = ? where permission_type = ? and asset_id = ?";
 
 	/*
 	 * Select permission references based on how are referencing the type of reference
@@ -154,33 +145,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. Reference id
 	 * 2. Permission type
 	 */
-	private final String selectPermissionReferenceSQL = "select asset_id from permission_reference where reference_id = ? and permission_type = ?";
+	private static final String SELECT_PERMISSION_REFERENCE_SQL = "select asset_id from permission_reference where reference_id = ? and permission_type = ?";
 
 	/*
 	 * To remove a permission reference of an specific asset or referencing an asset
 	 *
 	 */
-	private final String deletePermissionReferenceSQL = "delete from permission_reference where asset_id = ? or reference_id = ?";
+	private static final String DELETE_PERMISSION_REFERENCE_SQL = "delete from permission_reference where asset_id = ? or reference_id = ?";
 
 	/*
 	 * To remove all permission references
 	 *
 	 */
-	private final String deleteAllPermissionReferencesSQL = "delete from permission_reference";
-
+	private static final String DELETE_ALL_PERMISSION_REFERENCES_SQL = "delete from permission_reference";
 
 	/*
 	 * To remove a permission reference of an specific asset
 	 *
 	 */
-	private final String deletePermissionableReferenceSQL = "delete from permission_reference where asset_id = ?";
+	private static final String DELETE_PERMISSIONABLE_REFERENCE_SQL = "delete from permission_reference where asset_id = ?";
 
 	/*
 	 * To load template identifiers that are children of a host
 	 * Parameters
 	 * 1. The id of the host
 	 */
-	private final String selectChildrenTemplateSQL =
+	private static final String SELECT_CHILD_TEMPLATE_SQL =
 		"select id from identifier where identifier.host_inode = ? and asset_type='template' ";
 
 	/*
@@ -188,7 +178,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The id of the host
 	 */
-	private static final String selectChildrenTemplateWithIndividualPermissionsSQL =
+	private static final String SELECT_CHILD_TEMPLATE_WITH_INDIVIDUAL_PERMISSIONS_SQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='template' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -200,7 +190,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteTemplatePermissionsSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenTemplateSQL + ")";
+		"	(" + SELECT_CHILD_TEMPLATE_SQL + ")";
 
 	/*
 	 * To remove all permission references of templates attached to an specific host
@@ -209,7 +199,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteTemplateReferencesSQL =
 		"delete from permission_reference where asset_id in " +
-		"	(" + selectChildrenTemplateSQL + ")";
+		"	(" + SELECT_CHILD_TEMPLATE_SQL + ")";
 
     /*
      * To insert permission references to all templates attached to a host, it only inserts the references if the template does not have
@@ -226,7 +216,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The host id
 	 */
-	private final String selectChildrenContainerSQL =
+    private static final String SELECT_CHILD_CONTAINER_SQL =
 		"select distinct identifier.id from identifier where " +
 		"identifier.host_inode = ? and asset_type='containers' ";
 
@@ -235,7 +225,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The host id
 	 */
-	private final static String selectChildrenContainerWithIndividualPermissionsSQL =
+	private final static String SELECT_CHILD_CONTAINER_WITH_INDIVIDUAL_PERMISSIONS_SQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -247,7 +237,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteContainerPermissionsSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenContainerSQL + ")";
+		"	(" + SELECT_CHILD_CONTAINER_SQL + ")";
 
 	/*
 	 * To remove all permission references of containers attached to an specific host
@@ -256,7 +246,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteContainerReferencesSQL =
 		"delete from permission_reference where asset_id in " +
-		"	(" + selectChildrenContainerSQL + ")";
+		"	(" + SELECT_CHILD_CONTAINER_SQL + ")";
     /*
      * To insert permission references to all containers attached to a host, it only inserts the reference if the container does not have
      * a reference already and does not have individual permissions
@@ -270,7 +260,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
 	 */
-	private static final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
+	private static final String DOT_FOLDER_PATH=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
 
 	/*
 	 * To load folder inodes that are in the same tree/hierarchy of a parent host/folder
@@ -279,9 +269,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
-	private final String selectChildrenFolderSQL =
+	private static final String SELECT_CHILD_FOLDER_SQL =
 		"select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) where " +
-		"identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ? ";
+		"identifier.host_inode = ? and "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and "+DOT_FOLDER_PATH+"(parent_path,asset_name) <> ? ";
 
 	/*
 	 * To load folder identifiers that are children of a host and have either individual and/or inheritable permissions
@@ -290,9 +280,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
-	private static final String selectChildrenFolderWithDirectPermissionsSQL =
+	private static final String SELECT_CHILD_FOLDER_WITH_DIRECT_PERMISSIONS_SQL =
 	     "select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) join permission on (inode_id=folder.inode) where " +
-	     "identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
+	     "identifier.host_inode = ? and "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and "+DOT_FOLDER_PATH+"(parent_path,asset_name) <> ?";
 
 	/*
 	 * To remove all permissions of sub-folders of a given parent folder
@@ -303,7 +293,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteSubfolderPermissionsSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenFolderSQL + ")";
+		"	(" + SELECT_CHILD_FOLDER_SQL + ")";
 
 	/*
 	 * To delete all permission references on sub-folders of a given parent folder
@@ -317,19 +307,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteSubfolderReferencesSQL =
 			"delete from permission_reference where exists (" +
-			" " + selectChildrenFolderSQL + " and " +
+			" " + SELECT_CHILD_FOLDER_SQL + " and " +
 			"	permission_type = '" + Folder.class.getCanonicalName() + "' and asset_id = folder.inode)";
 
 	private final String deleteSubfolderReferencesSQLOnAdd =
 		"delete from permission_reference where exists(" +
-		" " + selectChildrenFolderSQL + " and " +
+		" " + SELECT_CHILD_FOLDER_SQL + " and " +
 		"	permission_type = '" + Folder.class.getCanonicalName() + "' and asset_id = folder.inode) " +
 		"and (reference_id in ( " +
 			"select distinct folder.inode " +
 			"from folder join identifier on (folder.identifier = identifier.id) " +
 			"where " +
 			"	identifier.host_inode = ? " +
-			"	and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+			"	and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 			"	and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"	and reference_id = folder.inode" +
 			")" +
@@ -360,10 +350,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select nextval('permission_reference_seq'), ") +
 		" folder.inode, ?, '" + Folder.class.getCanonicalName() + "'" +
 		"	from folder where folder.inode in (" +
-		"		" + selectChildrenFolderSQL + " and " +
+		"		" + SELECT_CHILD_FOLDER_SQL + " and " +
 		"		folder.inode not in (" +
 		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) where " +
-		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
+		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		folder.inode not in (" +
 		"			select inode_id from permission where " +
@@ -378,22 +368,23 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private final String selectChildrenHTMLPageSQL =
+	private static final String SELECT_CHILD_HTMLPAGE_SQL =
             "select distinct li.id from identifier li where" +
                 " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
             " UNION ALL" +
                 " SELECT distinct li.id FROM identifier li" +
                     " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
                     " AND li.host_inode = ? and li.parent_path like ?";
-    private final String selectChildrenHTMLPageOnPermissionsSQL =
+
+	private static final String SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL =
             "select distinct li.id from identifier li" +
                     " JOIN permission_reference ON permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = li.id" +
                     " AND li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
             " UNION ALL" +
                     " SELECT distinct li.id FROM identifier li" +
                     " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
                     " JOIN permission_reference ON permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = li.id" +
                     " AND li.host_inode = ? and li.parent_path like ?";
 
@@ -403,14 +394,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private static final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
+    private static final String SELECT_CHILD_HTMLPAGE_WITH_INDIVIDUAL_PERMISSIONS_SQL =
             "select distinct li.id from identifier li join permission on (inode_id = li.id) where " +
                     " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ? " +
                     " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
             " UNION ALL" +
                     " SELECT distinct li.id from identifier li" +
                         " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                        " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                        " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
                         " JOIN permission lp ON (lp.inode_id = li.id) " +
                         " AND li.host_inode = ? and li.parent_path like ?" +
                         " AND lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
@@ -423,7 +414,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteHTMLPagePermissionsSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenHTMLPageSQL + ")";
+		"	(" + SELECT_CHILD_HTMLPAGE_SQL + ")";
 
 
 	/*
@@ -437,18 +428,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
     private final String deleteHTMLPageReferencesSQL =
 			(DbConnectionFactory.isMySql() ?
-					"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C )" :
-					"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")");
+					"delete from permission_reference where exists ( select id FROM (" + SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL + ") AS C )" :
+					"delete from permission_reference where exists (" + SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL + ")");
 
 	private final String deleteHTMLPageReferencesOnAddSQL =
 		(DbConnectionFactory.isMySql() ?
-				"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C ) " :
-				"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") ") +
+				"delete from permission_reference where exists ( select id FROM (" + SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL + ") AS C ) " :
+				"delete from permission_reference where exists (" + SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL + ") ") +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
 			" from folder join identifier on (folder.identifier = identifier.id) " +
 			" where identifier.host_inode = ? " +
-			" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+			" and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 			" and reference_id = folder.inode" +
 			") " +
 			" OR EXISTS(SELECT c.inode " +
@@ -475,7 +466,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenLinkSQL =
+    private static final String SELECT_CHILD_LINK_SQL =
 		"select distinct identifier.id from identifier where " +
 		"asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ?";
 
@@ -485,7 +476,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private static final String selectChildrenLinkWithIndividualPermissionsSQL =
+	private static final String SELECT_CHILD_LINK_WITH_INDIVIDUAL_PERMISSIONS_SQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
         "asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ? " +
         "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
@@ -498,7 +489,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteLinkPermissionsSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenLinkSQL + ")";
+		"	(" + SELECT_CHILD_LINK_SQL + ")";
 
 	/*
 	 * To delete all permission references on menu links under a given folder hierarchy
@@ -511,19 +502,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteLinkReferencesSQL =
 			"delete from permission_reference where exists (" +
-			"	" + selectChildrenLinkSQL + " and" +
+			"	" + SELECT_CHILD_LINK_SQL + " and" +
 			"	permission_type = '" + Link.class.getCanonicalName() + "' and asset_id = identifier.id)";
 
 	private final String deleteLinkReferencesOnAddSQL =
 		"delete from permission_reference where exists (" +
-		"	" + selectChildrenLinkSQL + " and" +
+		"	" + SELECT_CHILD_LINK_SQL + " and" +
 		"	permission_type = '" + Link.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
 		"from folder join identifier on (folder.identifier = identifier.id) " +
 		"where " +
 		" identifier.host_inode = ? " +
-		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		" and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 		" and reference_id = folder.inode" +
 		") " +
@@ -551,7 +542,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenContentByPathSQL =
+    private static final String SELECT_CHILD_CONTENT_BY_PATH_SQL =
         "select distinct identifier.id from identifier where asset_type='contentlet' " +
         " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
         " and identifier.parent_path like ?";
@@ -562,13 +553,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private static final String selectChildrenContentWithIndividualPermissionsByPathSQL =
+    private static final String SELECT_CHILD_CONTENT_WITH_INDIVIDUAL_PERMISSIONS_BY_PATH_SQL =
             "select distinct li.id from identifier li" +
                 " join permission lp on (lp.inode_id = li.id) " +
                 " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
                 " INNER JOIN structure ls ON (lc.structure_inode = ls.inode)" +
                 " where li.asset_type='contentlet' and lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
-                " AND ls.structuretype <> " + Structure.STRUCTURE_TYPE_HTMLPAGE +
+                " AND ls.structuretype <> " + BaseContentType.HTMLPAGE.getType() +
                 " and li.id <> li.host_inode and li.host_inode = ? " +
                 " and li.parent_path like ?";
 
@@ -576,9 +567,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * To load content identifiers that are of the type of a structure
 	 *
 	 * Parameters
-	 * 1. The structure inode
+	 * 1. The content type inode
 	 */
-	private final String selectChildrenContentByStructureSQL =
+	private static final String SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL =
 			" select distinct contentlet.identifier as id from contentlet " +
 			" where contentlet.structure_inode = ?";
 
@@ -590,7 +581,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteContentPermissionsByPathSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenContentByPathSQL + ")";
+		"	(" + SELECT_CHILD_CONTENT_BY_PATH_SQL + ")";
 
 	/*
 	 * To delete all permission references on content under a given host/folder hierarchy
@@ -603,18 +594,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteContentReferencesByPathSQL =
 			"delete from permission_reference where exists (" +
-			"	" + selectChildrenContentByPathSQL + " and " +
+			"	" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and " +
 			"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = identifier.id)";
 
 	private final String deleteContentReferencesByPathOnAddSQL =
 		"delete from permission_reference where exists (" +
-		"	" + selectChildrenContentByPathSQL + " and " +
+		"	" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and " +
 		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
 		"from folder join identifier on (folder.identifier = identifier.id) " +
 		"where identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		"and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 		"and permission_type = '"+Contentlet.class.getCanonicalName()+"' " +
 		"and reference_id = folder.inode" +
 		") " +
@@ -625,19 +616,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/*
 	 * To remove all permissions of content under a given parent folder
 	 * Parameters
-	 * 1. structure inode
+	 * 1. content type inode
 	 */
 	private final String deleteContentPermissionsByStructureSQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenContentByStructureSQL + ")";
+		"	(" + SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL + ")";
 
 	/*
-	 * To delete all permission references on content under a given structure
+	 * To delete all permission references on content under a given content type
 	 *
 	 * Parameters
-	 * 1. structure inode
+	 * 1. content type inode
 	 */
-	private final String deleteContentReferencesByStructureSQL =
+	private static final String DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL =
 		"delete from permission_reference where exists (" +
 		" select contentlet.identifier from contentlet " +
 		" where contentlet.structure_inode = ? " +
@@ -664,7 +655,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * does not already have a reference or individual permissions assigned
 	 *
 	 * Parameters
-	 * 1. structure id
+	 * 1. content type id
 	 */
 	private final String insertContentReferencesByStructureSQL =
 		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
@@ -677,7 +668,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select nextval('permission_reference_seq'), ") +
 		"	identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
 		"	from identifier where identifier.id in (" +
-		"		" + selectChildrenContentByStructureSQL + " and " +
+		"		" + SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL + " and " +
 		"		identifier.id not in (" +
 		"			select asset_id from permission_reference " +
 		"		) and " +
@@ -691,85 +682,85 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 	/*
-	 * To load structure identifiers that are in the same tree/hierarchy of a parent host/folder
+	 * To load content type identifiers that are in the same tree/hierarchy of a parent host/folder
 	 *
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private static final String selectChildrenStructureByPathSQL =
+	private static final String SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL =
 		"select distinct structure.inode from structure where ( " +
 		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
 		"         select folder.inode from folder join identifier on (identifier.id=folder.identifier) " +
-		"         where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"         where structure.folder = folder.inode and "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host <> 'SYSTEM_HOST' AND structure.host = ?) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
 
 	/*
-	 * To load structure identifiers that are in the same tree/hierarchy of a parent host/folder
+	 * To load content type identifiers that are in the same tree/hierarchy of a parent host/folder
 	 *
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private final String selectChildrenStructureByPathSQLFolder =
+	private static final String SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER =
 		"select distinct structure.inode from structure where ( " +
 		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
 		"            select folder.inode from folder join identifier on(identifier.id=folder.identifier) " +
-		"            where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"            where structure.folder = folder.inode and "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
 	/*
-	 * To delete all permission references on a structure under a given host/folder hierarchy
+	 * To delete all permission references on a content type under a given host/folder hierarchy
 	 *
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
-	 * 2. host the structure belongs to
-	 * 3. host the structure belongs to
-	 * 4. host the structure belongs to
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
+	 * 2. host the content type belongs to
+	 * 3. host the content type belongs to
+	 * 4. host the content type belongs to
 	 * 5. same as 1
 	 */
-	private final String deleteStructureReferencesByPathSQL =
+	private static final String DELETE_CONTENTTYPE_REFERENCES_BY_PATH_SQL =
 			"delete from permission_reference where exists (" +
-			"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
+			"	" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
 			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
-			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"ref_ident.host_inode = ? and "+DOT_FOLDER_PATH+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
 	/*
-	 * To delete all permission references on a structure under a given host/folder hierarchy
+	 * To delete all permission references on a content type under a given host/folder hierarchy
 	 *
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
-	 * 2. host the structure belongs to
-	 * 3. host the structure belongs to
-	 * 4. host the structure belongs to
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
+	 * 2. host the content type belongs to
+	 * 3. host the content type belongs to
+	 * 4. host the content type belongs to
 	 * 5. same as 1
 	 */
 	private final String deleteStructureReferencesByPathSQLFolder =
 			"delete from permission_reference where exists (" +
-			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
+			"	" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
 			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
-			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"ref_ident.host_inode = ? and "+DOT_FOLDER_PATH+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
-	private final String deleteStructureReferencesByPathOnAddSQL =
+	private static final String DELETE_CONTENTTYPE_REFERENCES_BY_PATH_ON_ADD_SQL =
 		"delete from permission_reference where exists(" +
-		"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
+		"	" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + " and asset_id = structure.inode and " +
 		"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
 		"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
-		"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+		"ref_ident.host_inode = ? and "+DOT_FOLDER_PATH+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
 		"from folder join identifier on(folder.identifier = identifier.id) " +
 		"where " +
 		"identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		"and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 		"and reference_id = folder.inode" +
 		") " +
@@ -781,16 +772,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private final String deleteStructureReferencesByPathOnAddSQLFolder =
 			"delete from permission_reference where exists(" +
-			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
+			"	" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
 			"select ref_folder.inode from folder ref_folder join identifier ref_ident on(ref_folder.identifier = ref_ident.id) where  " +
-			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+			"ref_ident.host_inode = ? and "+DOT_FOLDER_PATH+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 			"and (reference_id in (" +
 			"select distinct folder.inode " +
 			"from folder join identifier on (folder.identifier = identifier.id) " +
 			"where " +
 			"identifier.host_inode = ? " +
-			"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+			"and ("+DOT_FOLDER_PATH+"(parent_path,asset_name) not like ? OR "+DOT_FOLDER_PATH+"(parent_path,asset_name) = ?) " +
 			"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"and reference_id = folder.inode" +
 			") " +
@@ -801,17 +792,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 	/*
-	 * To insert permission references for structure under a parent folder hierarchy, it only inserts the references if the structure
+	 * To insert permission references for content type under a parent folder hierarchy, it only inserts the references if the structure
 	 * does not already have a reference or individual permissions assigned
 	 *
 	 * Parameters
 	 * 1. folder/host id the new references are going to point to
-	 * 2. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
-	 * 3. host the structure belongs to
-	 * 4. host the structure belongs to
+	 * 2. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
+	 * 3. host the content type belongs to
+	 * 4. host the content type belongs to
 	 * 5. same as 2
 	 */
-	private final String insertStructureReferencesByPathSQL =
+	private static final String INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL =
 		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
@@ -822,11 +813,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select nextval('permission_reference_seq'), ") +
 		"	structure.inode, ?, '" + Structure.class.getCanonicalName() + "' " +
 		"	from structure where structure.inode in (" +
-		"		" + selectChildrenStructureByPathSQL + " and" +
+		"		" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + " and" +
 		"		structure.inode not in (" +
 		"			select asset_id from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
 		"                                join identifier on (ref_folder.identifier=identifier.id) where " +
-		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
+		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
 		"			select inode_id from permission where " +
@@ -837,14 +828,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 	/*
-	 * To insert permission references for structure under a parent folder hierarchy, it only inserts the references if the structure
+	 * To insert permission references for content type under a parent folder hierarchy, it only inserts the references if the structure
 	 * does not already have a reference or individual permissions assigned
 	 *
 	 * Parameters
 	 * 1. folder/host id the new references are going to point to
-	 * 2. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
-	 * 3. host the structure belongs to
-	 * 4. host the structure belongs to
+	 * 2. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
+	 * 3. host the content type belongs to
+	 * 4. host the content type belongs to
 	 * 5. same as 2
 	 */
 	private final String insertStructureReferencesByPathSQLFolder =
@@ -858,11 +849,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select nextval('permission_reference_seq'), ") +
 		"	structure.inode, ?, '" + Structure.class.getCanonicalName() + "' " +
 		"	from structure where structure.inode in (" +
-		"		" + selectChildrenStructureByPathSQLFolder + " and" +
+		"		" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER + " and" +
 		"		structure.inode not in (" +
 		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
 		"                               join identifier on (ref_folder.identifier=identifier.id) where " +
-		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
+		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
 		"			select inode_id from permission where " +
@@ -874,50 +865,38 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/*
 	 * To remove all permissions of structures under a given parent folder
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private final String deleteStructurePermissionsByPathSQL =
+	private static final String DELETE_CONTENTTYPE_PERMISSIONS_BY_PATH_SQL =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenStructureByPathSQL + ")";
+		"	(" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + ")";
 
 
 	/*
 	 * To remove all permissions of structures under a given parent folder
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
 	 * 2. The host id
 	 * 3. The host id
 	 */
 	private final String deleteStructurePermissionsByPathSQLFolder =
 		"delete from permission where inode_id in " +
-		"	(" + selectChildrenStructureByPathSQLFolder + ")";
+		"	(" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER + ")";
 
 	/*
-	 * To load structure identifiers that are children of a host and have inheritable permissions
+	 * To load content type identifiers that are children of a host and have inheritable permissions
 	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
+	 * 1. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private static final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
-		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = structure.inode and " +
+	private static final String SELECT_CHILD_CONTENTTYPE_WITH_INDIVIDUAL_PERMISSIONS_BY_PATH_SQL =
+		SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + " and exists (select * from permission where inode_id = structure.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
 
-
-	/*
-	 * To load structure identifiers that are children of a host and have inheritable permissions
-	 * Parameters
-	 * 1. path like to the folder hierarchy the structure lives under E.G /about/% (files under /about/)
-	 * 2. The host id
-	 * 3. The host id
-	 */
-	private final String selectChildrenStructureWithIndividualPermissionsByPathSQLFolder =
-		selectChildrenStructureByPathSQLFolder + " and exists (select * from permission where inode_id = inode.inode and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
-
-	private static final Map<PermissionType, String> selectChildrenWithIndividualPermissionsSQLs = new HashMap<>();
+	private static final Map<PermissionType, String> SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS = new HashMap<>();
 
 	static {
 		String[] listOfMasks = PermissionAPI.PERMISSION_TYPES;
@@ -935,13 +914,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		}
 
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.TEMPLATE, selectChildrenTemplateWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTAINER, selectChildrenContainerWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.FOLDER, selectChildrenFolderWithDirectPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.IHTMLPAGE, selectChildrenHTMLPageWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.LINK, selectChildrenLinkWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTENTLET, selectChildrenContentWithIndividualPermissionsByPathSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.STRUCTURE, selectChildrenStructureWithIndividualPermissionsByPathSQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.TEMPLATE, SELECT_CHILD_TEMPLATE_WITH_INDIVIDUAL_PERMISSIONS_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.CONTAINER, SELECT_CHILD_CONTAINER_WITH_INDIVIDUAL_PERMISSIONS_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.FOLDER, SELECT_CHILD_FOLDER_WITH_DIRECT_PERMISSIONS_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.IHTMLPAGE, SELECT_CHILD_HTMLPAGE_WITH_INDIVIDUAL_PERMISSIONS_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.LINK, SELECT_CHILD_LINK_WITH_INDIVIDUAL_PERMISSIONS_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.CONTENTLET, SELECT_CHILD_CONTENT_WITH_INDIVIDUAL_PERMISSIONS_BY_PATH_SQL);
+		SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.put(PermissionType.STRUCTURE, SELECT_CHILD_CONTENTTYPE_WITH_INDIVIDUAL_PERMISSIONS_BY_PATH_SQL);
 	}
 
 	/**
@@ -952,9 +931,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		this.permissionCache = permissionCache;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermission(java.lang.String)
-	 */
 	@Override
 	protected Permission getPermission(String x) {
 		try {
@@ -1001,9 +977,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(com.dotmarketing.beans.Inode)
-	 */
 	@Override
 	protected List<Permission> getPermissions(Permissionable permissionable) throws DotDataException {
 		return getPermissions(permissionable, true);
@@ -1026,9 +999,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         }
     }
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(com.dotmarketing.beans.Inode)
-	 */
 	@Override
 	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions) throws DotDataException {
 
@@ -1058,9 +1028,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(com.dotmarketing.beans.Inode)
-	 */
 	@Override
 	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
@@ -1132,24 +1099,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 *
 	 */
 	@SuppressWarnings("unchecked")
-	private void updatePermissionReferencesOnAdd(Permissionable permissionable) throws DotDataException {
+	private void updatePermissionReferencesOnAdd(final Permissionable permissionable) throws DotDataException {
 
 		String parentPermissionableId = permissionable.getPermissionId();
 
-		boolean isHost = permissionable instanceof Host ||
+		final boolean isHost = permissionable instanceof Host ||
 		(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
-		boolean isFolder = permissionable instanceof Folder;
-		boolean isCategory = permissionable instanceof Category;
-		boolean isStructure = permissionable instanceof Structure;
+		final boolean isFolder = permissionable instanceof Folder;
+		final boolean isCategory = permissionable instanceof Category;
+		final boolean isContentType = permissionable instanceof Structure || permissionable instanceof ContentType;
 
-		if(!isHost && !isFolder && !isCategory && !isStructure)
+		if(!isHost && !isFolder && !isCategory && !isContentType) {
 			return;
-
+		}
 		HostAPI hostAPI = APILocator.getHostAPI();
 		Host systemHost = hostAPI.findSystemHost();
 		DotConnect dc = new DotConnect();
 
-		boolean ran01=false,ran02=false,ran03=false,ran04=false,ran05=false,
+		boolean ran01=false,ran02=false,ran03=false,ran04=false,
 		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
 		List<Map<String, Object>> idsToClear = new ArrayList<Map<String, Object>>();
@@ -1193,7 +1160,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of templates changed to clear
 						// their caches
-						dc.setSQL(selectChildrenTemplateSQL);
+						dc.setSQL(SELECT_CHILD_TEMPLATE_SQL);
 						dc.addParam(permissionable.getPermissionId());
 						idsToClear.addAll(dc.loadResults());
 
@@ -1217,7 +1184,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenContainerSQL);
+						dc.setSQL(SELECT_CHILD_CONTAINER_SQL);
 						dc.addParam(permissionable.getPermissionId());
 						idsToClear.addAll(dc.loadResults());
 
@@ -1248,7 +1215,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenFolderSQL);
+						dc.setSQL(SELECT_CHILD_FOLDER_SQL);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						dc.addParam(isHost ? " " : path);
@@ -1289,7 +1256,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of pages changed to clear their
 						// caches
-						dc.setSQL(selectChildrenHTMLPageSQL);
+						dc.setSQL(SELECT_CHILD_HTMLPAGE_SQL);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						dc.addParam(parentHost.getPermissionId());
@@ -1326,7 +1293,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenLinkSQL);
+						dc.setSQL(SELECT_CHILD_LINK_SQL);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
@@ -1362,7 +1329,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenContentByPathSQL);
+						dc.setSQL(SELECT_CHILD_CONTENT_BY_PATH_SQL);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
@@ -1372,7 +1339,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					} else if (p.getType().equals(Structure.class.getCanonicalName()) && !ran08) {
 
 						if(isHost){
-							dc.setSQL(this.deleteStructureReferencesByPathOnAddSQL);
+							dc.setSQL(DELETE_CONTENTTYPE_REFERENCES_BY_PATH_ON_ADD_SQL);
 							dc.addParam(path + "%");
 							dc.addParam(parentHost.getPermissionId());
 							dc.addParam(parentHost.getPermissionId());
@@ -1386,7 +1353,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							if (shouldInsertPermissionReferencesEagerly()) {
 								// Adding new references to the new host
 								// Insert new references pointing to the host
-								dc.setSQL(this.insertStructureReferencesByPathSQL);
+								dc.setSQL(INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL);
 								dc.addParam(permissionable.getPermissionId());
 								dc.addParam(path + "%");
 								dc.addParam(parentHost.getPermissionId());
@@ -1398,7 +1365,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							// Retrieving the list of structures changed to clear
 							// their caches
 
-							dc.setSQL(this.selectChildrenStructureByPathSQL);
+							dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL);
 							dc.addParam(path + "%");
 							dc.addParam(parentHost.getPermissionId());
 							dc.addParam(parentHost.getPermissionId());
@@ -1428,7 +1395,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							// Retrieving the list of structures changed to clear
 							// their caches
-							dc.setSQL(this.selectChildrenStructureByPathSQLFolder);
+							dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER);
 							dc.addParam(path + "%");
 							dc.addParam(parentHost.getPermissionId());
 							List<Map<String,Object>> sts=dc.loadResults();
@@ -1436,7 +1403,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							Iterator<Map<String,Object>> it = sts.iterator();
 							while(it.hasNext()) {
-							    dc.setSQL(this.selectChildrenContentByStructureSQL);
+							    dc.setSQL(SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL);
 							    dc.addParam(it.next().get("inode"));
 							    idsToClear.addAll(dc.loadResults());
 							}
@@ -1446,7 +1413,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				} else {
 					// If the system host we need to force all references of the
 					// type of the permissionable
-				    dc.setSQL(selectPermissionReferenceSQL);
+				    dc.setSQL(SELECT_PERMISSION_REFERENCE_SQL);
 				    dc.addParam(permissionable.getPermissionId());
 				    dc.addParam(p.getType());
 				    idsToClear.addAll(dc.loadResults());
@@ -1459,7 +1426,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     				try {
     					List<Category> children = catAPI.getCategoryTreeDown(cat, cat, systemUser, false);
     					for(Category child : children) {
-    						dc.setSQL(updatePermissionReferenceByAssetIdSQL);
+    						dc.setSQL(UPDATE_PERMISSION_REFERENCE_BY_ASSETID_SQL);
     						dc.addParam(cat.getInode());
     						dc.addParam(Category.class.getCanonicalName());
     						dc.addParam(child.getInode());
@@ -1472,15 +1439,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     				}
     				ran09=true;
 			    }
-			} else if (isStructure) {
+			} else if (isContentType) {
 			    if(!ran10) {
     				// Removing all references to the system host
-    				dc.setSQL(this.deleteContentReferencesByStructureSQL);
+    				dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
     				// All the content that belongs to the host
     				dc.addParam(permissionable.getPermissionId());
     				dc.loadResult();
 
-    				dc.setSQL(selectChildrenContentByStructureSQL);
+    				dc.setSQL(SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL);
     				dc.addParam(permissionable.getPermissionId());
     				idsToClear.addAll(dc.loadResults());
         				
@@ -1512,7 +1479,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private void updatePermissionReferencesOnRemove(Permissionable permissionable) throws DotDataException {
 
 		DotConnect dc = new DotConnect();
-		String query = loadPermissionReferencesByReferenceIdHSQL;
+		String query = LOAD_PERMISSION_REFERENCES_BY_REFERENCEID_HSQL;
 		HibernateUtil hu = new HibernateUtil(PermissionReference.class);
 		hu.setQuery(query);
 		hu.setParam(permissionable.getPermissionId());
@@ -1552,7 +1519,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		for(String type: referenceReplacement.keySet()) {
 
 
-		    dc.setSQL(selectPermissionReferenceSQL);
+		    dc.setSQL(SELECT_PERMISSION_REFERENCE_SQL);
 		    dc.addParam(permissionable.getPermissionId());
 		    dc.addParam(type);
 		    toClear.addAll(dc.loadResults());
@@ -1560,7 +1527,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			String replacement = referenceReplacement.get(type);
 			if(!replacement.equals(permissionable.getPermissionId())) {
 
-				dc.setSQL(updatePermissionReferenceByReferenceIdSQL);
+				dc.setSQL(UPDATE_PERMISSION_REFERENCE_BY_REFERENCEID_SQL);
 				dc.addParam(replacement);
 				dc.addParam(type);
 				dc.addParam(permissionable.getPermissionId());
@@ -1583,7 +1550,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@SuppressWarnings("unchecked")
 	private void clearReferencesCache(Permissionable permissionable) throws DotDataException {
 
-		String query = loadPermissionReferencesByReferenceIdHSQL;
+		String query = LOAD_PERMISSION_REFERENCES_BY_REFERENCEID_HSQL;
 		HibernateUtil hu = new HibernateUtil(PermissionReference.class);
 		hu.setQuery(query);
 		hu.setParam(permissionable.getPermissionId());
@@ -1643,7 +1610,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private void removePermissionsReference(Permissionable permissionable) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.deletePermissionReferenceSQL);
+		dc.setSQL(DELETE_PERMISSION_REFERENCE_SQL);
 		dc.addParam(permissionable.getPermissionId());
 		dc.addParam(permissionable.getPermissionId());
 		dc.loadResult();
@@ -1651,7 +1618,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private void removePermissionableReference(Permissionable permissionable) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.deletePermissionableReferenceSQL);
+		dc.setSQL(DELETE_PERMISSIONABLE_REFERENCE_SQL);
 		dc.addParam(permissionable.getPermissionId());
 		dc.loadResult();
 	}
@@ -1665,8 +1632,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
+	/* 
 	 * @deprecated Use savePermission(permission) instead.
 	 */
 	@Override
@@ -1720,29 +1686,25 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(permissionable instanceof Structure) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
 			contAPI.refresh((Structure)permissionable);
+		} else if (permissionable instanceof ContentType) {
+            final Structure contentType = new StructureTransformer(ContentType.class.cast(permissionable)).asStructure();
+            APILocator.getContentletAPI().refresh(contentType);
 		} else if(permissionable instanceof Contentlet) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
 			((Contentlet)permissionable).setLowIndexPriority(true);
 			contAPI.refresh((Contentlet)permissionable);
 		} else if(permissionable instanceof Host) {
-			//DOTCMS-4959
 			if(((Host)permissionable).isSystemHost()){
 		        ContentletAPI contAPI = APILocator.getContentletAPI();
 	            contAPI.refresh(((Host)permissionable).getStructure());
-	            //http://jira.dotmarketing.net/browse/DOTCMS-5768
 	            permissionCache.clearCache();
 		    }
 		    else {
-		        // https://github.com/dotCMS/dotCMS/issues/2229
 		        APILocator.getContentletAPI().refreshContentUnderHost((Host)permissionable);
 		    }
 		}
 	}
 
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#savePermission(com.dotmarketing.beans.Permission)
-	 */
 	@Override
 	protected Permission savePermission(Permission permission, Permissionable permissionable) throws DotDataException {
 
@@ -1774,7 +1736,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(permissionable instanceof Structure) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
 			contAPI.refresh((Structure)permissionable);
-		} else if(permissionable instanceof Contentlet) {
+		} else if (permissionable instanceof ContentType) {
+            final Structure contentType = new StructureTransformer(ContentType.class.cast(permissionable)).asStructure();
+            APILocator.getContentletAPI().refresh(contentType);
+        } else if(permissionable instanceof Contentlet) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
 			((Contentlet)permissionable).setLowIndexPriority(true);
 			contAPI.refresh((Contentlet)permissionable);
@@ -1783,9 +1748,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType());
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getUsers(com.dotmarketing.beans.Inode, int, java.lang.String, int, int)
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<User> getUsers(Permissionable permissionable, int permissionType, String filter, int start, int limit) {
@@ -1868,9 +1830,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     	}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getUserCount(com.dotmarketing.beans.Inode, int, java.lang.String)
-	 */
 	@Override
 	protected int getUserCount(Permissionable permissionable, int permissionType, String filter) {
     	try
@@ -1932,9 +1891,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     	}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissionsFromCache(com.dotmarketing.beans.Permissionable)
-	 */
 	@Override
 	protected List<Permission> getPermissionsFromCache(String permissionableId) {
 		List<Permission> l = null;
@@ -1942,18 +1898,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return l;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(java.util.List<P>)
-	 */
 	@Override
 	protected Map<Permissionable, List<Permission>> getPermissions(List<Permissionable> permissionables) throws DotDataException, DotSecurityException {
 
 		return getPermissions(permissionables, true);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(java.util.List<P>, boolean)
-	 */
 	@Override
 	protected Map<Permissionable, List<Permission>> getPermissions(List<Permissionable> permissionables, boolean bitPermission)
 		throws DotDataException, DotSecurityException {
@@ -1969,9 +1919,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#removePermissionsByRole(java.lang.String)
-	 */
+	@Override
 	public void removePermissionsByRole(String roleId) {
 
 		try {
@@ -1986,9 +1934,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionFactory#getPermissionTypes()
-	 */
 	@Override
 	protected Map<String, Integer> getPermissionTypes() {
 		return PERMISION_TYPES;
@@ -2016,10 +1961,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.loadResult();
 
 		asset.setOwner(ownerId);
-
-		/*dc.setSQL("select inode from inode where identifier = ?");
-		dc.addParam(permissionId);*/
-
 
 		List<HashMap<String, String>> inodes = new ArrayList<HashMap<String, String>>();
 		String assetType ="";
@@ -2240,7 +2181,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		Thread.currentThread().setName(threadName + " loadPermission:" + permissionable.getPermissionId());
 
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-		persistenceService.setSQLQuery(loadPermissionSQL);
+		persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
 		persistenceService.setParam(permissionable.getPermissionId());
 		persistenceService.setParam(permissionable.getPermissionId());
 		List<Permission> bitPermissionsList = (List<Permission>) persistenceService.list();
@@ -2260,10 +2201,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 								((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"))){
 					type = Host.class.getCanonicalName();
 				} else if ( permissionable instanceof Contentlet &&
-						((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
+		                BaseContentType.FILEASSET.getType() == ((Contentlet) permissionable).getStructure().getStructureType()) {
 					type = Contentlet.class.getCanonicalName();
 				} else if ( permissionable instanceof IHTMLPage ||
-                        (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                        (permissionable instanceof Contentlet && BaseContentType.HTMLPAGE.getType() == ((Contentlet) permissionable).getStructure().getStructureType())) {
                     type = IHTMLPage.class.getCanonicalName();
                 }else if(permissionable instanceof Event){
 					type = Contentlet.class.getCanonicalName();
@@ -2272,7 +2213,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					Logger.error(this, "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
 					if(perm!=null){
                         if ( perm instanceof IHTMLPage ||
-                                (perm instanceof Contentlet && ((Contentlet) perm).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                                (perm instanceof Contentlet && BaseContentType.HTMLPAGE.getType() == ((Contentlet) perm).getStructure().getStructureType())) {
                             type = IHTMLPage.class.getCanonicalName();
 						}else if(perm instanceof Container){
 							type = Container.class.getCanonicalName();
@@ -2282,7 +2223,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							type = Link.class.getCanonicalName();
 						}else if(perm instanceof Template){
 							type = Template.class.getCanonicalName();
-						}else if(perm instanceof Structure){
+                        } else if (perm instanceof Structure || perm instanceof ContentType) {
 							type = Structure.class.getCanonicalName();
 						}else if(perm instanceof Contentlet || perm instanceof Event){
 							type = Contentlet.class.getCanonicalName();
@@ -2312,68 +2253,62 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				HostAPI hostAPI = APILocator.getHostAPI();
 				if(newReference == null)
 					newReference = hostAPI.findSystemHost();
-				boolean localTransaction = false;
-				try{
-					try{
-						localTransaction =	 HibernateUtil.startLocalTransactionIfNeeded();
-					}
-					catch(Exception e){
-						throw new DotDataException(e.getMessage());
-					}
-					
-					Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - started");
 
-					DotConnect dc1 = new DotConnect();
-					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
-					dc1.addParam(permissionable.getPermissionId());
-					List<Map<String, Object>> l = dc1.loadObjectResults();
-
-					DotConnect dc2 = new DotConnect();
-                    dc2.setSQL("SELECT id FROM identifier WHERE id = ?");
-                    dc2.addParam(permissionable.getPermissionId());
-                    List<Map<String, Object>> l2 = dc2.loadObjectResults();
-
-					if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
-						dc1.setSQL(deletePermissionableReferenceSQL);
-						dc1.addParam(permissionable.getPermissionId());
-						dc1.loadResult();
-						dc1.setSQL(insertPermissionReferenceSQL);
-						dc1.addParam(permissionable.getPermissionId());
-						dc1.addParam(newReference.getPermissionId());
-						dc1.addParam(type);
-	//					dc1.addParam(permissionable.getPermissionId());
-						dc1.loadResult();
-					}
-
-					if(localTransaction){
-	                    HibernateUtil.commitTransaction();
-	                }
-				} catch(Exception exception){
-					if(permissionable != null && newReference != null){
-						Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionable.getPermissionId() + " Parent : " + newReference.getPermissionId() + " Type: " + type);
-					}
-					else{
-						Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
-					}
-					Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
-					if(localTransaction){
-						HibernateUtil.rollbackTransaction();
-					}
-					throw new DotDataException(exception.getMessage(), exception);
-				}finally {
-		            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
-				}
+				deleteInsertPermission(permissionable, type, newReference);
 
 				bitPermissionsList = inheritedPermissions;
 			}
 		}
+
 		Thread.currentThread().setName(threadName);
 
 		return bitPermissionsList;
 
 	}
 
-	private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
+    @WrapInTransaction
+	private void deleteInsertPermission(Permissionable permissionable, String type,
+            Permissionable newReference) throws DotDataException {
+
+        final String permissionId = permissionable.getPermissionId();
+
+        try{
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
+                    + " - started");
+
+            DotConnect dc1 = new DotConnect();
+            dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
+            dc1.addParam(permissionId);
+            List<Map<String, Object>> inodeList = dc1.loadObjectResults();
+
+            dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
+            dc1.addParam(permissionId);
+            List<Map<String, Object>> identifierList = dc1.loadObjectResults();
+
+            if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
+                dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
+
+                dc1.executeUpdate(INSERT_PERMISSION_REFERENCE_SQL, permissionId, newReference.getPermissionId(), type);
+            }
+
+        } catch(Exception exception){
+            if(permissionable != null && newReference != null){
+                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionId
+                        + " Parent : " + newReference.getPermissionId() + " Type: " + type);
+            }
+            else{
+                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
+            }
+            Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
+
+            throw new DotDataException(exception.getMessage(), exception);
+        } finally {
+            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
+                    + " - ended");
+        }
+    }
+
+    private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
 		List<Permission> filteredList = new ArrayList<Permission>();
 		for(Permission p: permissions) {
 			if((p.isIndividualPermission() && p.getInode().equals(permissionableId)) || !p.getInode().equals(permissionableId))
@@ -2386,15 +2321,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Permission> filteredList = new ArrayList<Permission>();
 		for(Permission p: permissions) {
 			if(!p.isIndividualPermission() && p.getInode().equals(permissionableId))
-				filteredList.add(p);
-		}
-		return filteredList;
-	}
-
-	private List<Permission> filterOnlyInheritablePermissions(List<Permission> permissions, String permissionableId, String type) {
-		List<Permission> filteredList = new ArrayList<Permission>();
-		for(Permission p: permissions) {
-			if(!p.isIndividualPermission() && p.getInode().equals(permissionableId) && p.getType().equals(type))
 				filteredList.add(p);
 		}
 		return filteredList;
@@ -2464,16 +2390,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void resetPermissionsUnder(Permissionable permissionable) throws DotDataException {
+	void resetPermissionsUnder(final Permissionable permissionable) throws DotDataException {
 
 		if(!permissionable.isParentPermissionable())
 			return;
 
-		boolean isHost = permissionable instanceof Host ||
+		final boolean isHost = permissionable instanceof Host ||
 			(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
-		boolean isFolder = permissionable instanceof Folder;
-		boolean isStructure = permissionable instanceof Structure;
-		boolean isCategory = permissionable instanceof Category;
+		final boolean isFolder = permissionable instanceof Folder;
+		final boolean isContentType = permissionable instanceof Structure || permissionable instanceof ContentType;
+		final boolean isCategory = permissionable instanceof Category;
 
 		DotConnect dc = new DotConnect();
 		HostAPI hostAPI = APILocator.getHostAPI();
@@ -2509,7 +2435,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc.loadResult();
 				}
 				//Retrieving the list of templates to clear their caches later
-				dc.setSQL(selectChildrenTemplateSQL);
+				dc.setSQL(SELECT_CHILD_TEMPLATE_SQL);
 				dc.addParam(host.getPermissionId());
 				idsToClear.addAll(dc.loadResults());
 
@@ -2528,7 +2454,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc.loadResult();
 				}
 				//Retrieving the list of containers to clear their caches later
-				dc.setSQL(selectChildrenContainerSQL);
+				dc.setSQL(SELECT_CHILD_CONTAINER_SQL);
 				dc.addParam(host.getPermissionId());
 				idsToClear.addAll(dc.loadResults());
 
@@ -2559,7 +2485,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.loadResult();
 			}
 			//Retrieving the list of sub folders changed to clear their caches
-			dc.setSQL(selectChildrenFolderSQL);
+			dc.setSQL(SELECT_CHILD_FOLDER_SQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?" ":folderPath+"");
@@ -2590,7 +2516,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.loadResult();
 			}
 			//Retrieving the list of htmlpages changed to clear their caches
-			dc.setSQL(selectChildrenHTMLPageSQL);
+			dc.setSQL(SELECT_CHILD_HTMLPAGE_SQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(host.getPermissionId());
@@ -2616,7 +2542,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.loadResult();
 			}
 			//Retrieving the list of links changed to clear their caches
-			dc.setSQL(selectChildrenLinkSQL);
+			dc.setSQL(SELECT_CHILD_LINK_SQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			idsToClear.addAll(dc.loadResults());
@@ -2640,7 +2566,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.loadResult();
 			}
 			//Retrieving the list of content changed to clear their caches
-			dc.setSQL(selectChildrenContentByPathSQL);
+			dc.setSQL(SELECT_CHILD_CONTENT_BY_PATH_SQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			idsToClear.addAll(dc.loadResults());
@@ -2648,21 +2574,21 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 			if(isHost){
 				//Removing permissions and permission references for all children structures
-				dc.setSQL(this.deleteStructureReferencesByPathSQL);
+				dc.setSQL(DELETE_CONTENTTYPE_REFERENCES_BY_PATH_SQL);
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.loadResult();
-				dc.setSQL(this.deleteStructurePermissionsByPathSQL);
+				dc.setSQL(DELETE_CONTENTTYPE_PERMISSIONS_BY_PATH_SQL);
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
 				if (shouldInsertPermissionReferencesEagerly()) {
 					//Pointing the children structures to reference the current host
-					dc.setSQL(this.insertStructureReferencesByPathSQL);
+					dc.setSQL(INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL);
 					dc.addParam(permissionable.getPermissionId());
 					dc.addParam(isHost?"%":folderPath+"%");
 					dc.addParam(host.getPermissionId());
@@ -2672,7 +2598,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				}
 				// Retrieving the list of structures changed to clear their caches
 
-				dc.setSQL(this.selectChildrenStructureByPathSQL);
+				dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL);
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
@@ -2700,7 +2626,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc.loadResult();
 				}
 				// Retrieving the list of structures changed to clear their caches
-				dc.setSQL(this.selectChildrenStructureByPathSQLFolder);
+				dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER);
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				idsToClear.addAll(dc.loadResults());
@@ -2708,10 +2634,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			}
 
 
-		} else if(isStructure) {
+		} else if(isContentType) {
 
 			//Removing permissions and permission references for all children containers
-			dc.setSQL(deleteContentReferencesByStructureSQL);
+			dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
 			dc.addParam(permissionable.getPermissionId());
 			dc.loadResult();
 			dc.setSQL(deleteContentPermissionsByStructureSQL);
@@ -2725,7 +2651,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.loadResult();
 			}
 			//Retrieving the list of content changed to clear their caches
-			dc.setSQL(selectChildrenContentByStructureSQL);
+			dc.setSQL(SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL);
 			dc.addParam(permissionable.getPermissionId());
 			idsToClear.addAll(dc.loadResults());
 
@@ -2747,7 +2673,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			}
 		}
 
-		if(isFolder || isHost || isStructure) {
+		if(isFolder || isHost || isContentType) {
 			//Ensure every reference that was moved to point to this permissionable has its permissions fulfilled if not
 			//look up in the hierarchy
 			updatePermissionReferencesOnRemove(permissionable);
@@ -2765,13 +2691,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				contentAPI.refreshContentUnderHost((Host)permissionable);
 			}
 
-			if(isStructure) {
+			if(isContentType) {
 				ContentletAPI contentAPI = APILocator.getContentletAPI();
 				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(permissionable.getPermissionId());
 				if(st != null)
 					contentAPI.refresh(st);
 			}
-			// http://jira.dotmarketing.net/browse/DOTCMS-6114
 			if(isFolder) {
 				ContentletAPI contAPI = APILocator.getContentletAPI();
 				contAPI.refreshContentUnderFolder((Folder)permissionable);
@@ -2974,7 +2899,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 		Folder folder = isFolder ? (Folder) permissionable : null;
 		String folderPath = folder != null ? APILocator.getIdentifierAPI().find(folder).getPath() : "";
-		String query = selectChildrenWithIndividualPermissionsSQLs.get(permissionType);
+		String query = SELECT_CHILDREN_WITH_INDIVIDUAL_PERMISSIONS_SQLS.get(permissionType);
 
 		List<String> result = new ArrayList<String>();
 
@@ -3037,14 +2962,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
 	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
 
 	    DotConnect dc = new DotConnect();
-		dc.setSQL(deleteContentReferencesByStructureSQL);
+		dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
 		dc.addParam(structure.getPermissionId());
 		dc.loadResult();
 
@@ -3074,7 +2998,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	void resetPermissionReferences(Permissionable permissionable) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.deletePermissionReferenceSQL);
+		dc.setSQL(this.DELETE_PERMISSION_REFERENCE_SQL);
 		dc.addParam(permissionable.getPermissionId());
 		dc.addParam(permissionable.getPermissionId());
 		dc.loadResult();
@@ -3085,7 +3009,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	void resetAllPermissionReferences() throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.deleteAllPermissionReferencesSQL);
+		dc.setSQL(this.DELETE_ALL_PERMISSION_REFERENCES_SQL);
 		dc.loadResult();
 		permissionCache.clearCache();
 
@@ -3231,7 +3155,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	@Override
 	boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException {
-		// http://jira.dotmarketing.net/browse/DOTCMS-6393
 		// if it haven't a parent to inherit then don't bother looking for individual permissions
 		if(permissionable.getParentPermissionable()==null) return false;
 
@@ -3262,7 +3185,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 		            "	from identifier ident, " +
-		            "		(" + selectChildrenContainerSQL +
+		            "		(" + SELECT_CHILD_CONTAINER_SQL +
 		            "			and identifier.id not in (" + 
 		            "				select inode_id from permission " +
 		            "					where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
@@ -3280,11 +3203,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
 		            "	from identifier where identifier.id in (" +
-		            "		" + selectChildrenContentByPathSQL + " and" +
+		            "		" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "                                join identifier on (identifier.id=ref_folder.identifier) " +
-		            "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+		            "			where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
 		            "			select inode_id from permission where " +
@@ -3303,13 +3226,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "		(" + selectChildrenHTMLPageSQL + " and" +
+		            "		(" + SELECT_CHILD_HTMLPAGE_SQL + " and" +
 		            "		li.id not in (" +
 		            "			select asset_id from " + 
 		            "				permission_reference " +
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "               join identifier on (ref_folder.identifier=identifier.id) " +
-		            "				where "+dotFolderPath+"(parent_path,asset_name) like ? " + 
+		            "				where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " + 
 		            "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		li.id not in (" +
@@ -3331,11 +3254,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
 		            "	from identifier where identifier.id in (" +
-		            "		" + selectChildrenLinkSQL + " and" +
+		            "		" + SELECT_CHILD_LINK_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "            join identifier ii on (ii.id=ref_folder.identifier) where " +
-		            "			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+		            "			"+DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
 		            "			select inode_id from permission where " +
@@ -3352,7 +3275,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "insert into permission_reference (asset_id, reference_id, permission_type) " +
 				    "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 				    "	from identifier ident, " + 
-				    "		(" + selectChildrenTemplateSQL + 
+				    "		(" + SELECT_CHILD_TEMPLATE_SQL + 
 				    "		and identifier.id not in (" + 
 				    "			select inode_id " + 
 				    "				from permission " +
@@ -3374,7 +3297,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 		            "	from identifier ident, " +
-		            "		(" + selectChildrenContainerSQL +
+		            "		(" + SELECT_CHILD_CONTAINER_SQL +
 		            "			and identifier.id not in (" + 
 		            "				select inode_id from permission " +
 		            "					where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
@@ -3392,11 +3315,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
 		            "	from identifier, (" +
-		            "		" + selectChildrenContentByPathSQL + " and" +
+		            "		" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "                                join identifier on (identifier.id=ref_folder.identifier) " +
-		            "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+		            "			where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
 		            "			select inode_id from permission where " +
@@ -3414,13 +3337,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "		(" + selectChildrenHTMLPageSQL + " and" +
+		            "		(" + SELECT_CHILD_HTMLPAGE_SQL + " and" +
 		            "		not exists (" +
 		            "			select asset_id from " + 
 		            "				permission_reference " +
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "               join identifier on (ref_folder.identifier=identifier.id) " +
-		            "				where asset_id = li.id and "+dotFolderPath+"(parent_path,asset_name) like ? " + 
+		            "				where asset_id = li.id and "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " + 
 		            "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		not exists (" +
@@ -3442,11 +3365,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
 		            "	from identifier, (" +
-		            "		" + selectChildrenLinkSQL + " and" +
+		            "		" + SELECT_CHILD_LINK_SQL + " and" +
 		            "		not exists (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "            join identifier ii on (ii.id=ref_folder.identifier) where asset_id = identifier.id and " +
-		            "			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+		            "			"+DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		not exists (" +
 		            "			select inode_id from permission where inode_id = identifier.id and " +
@@ -3464,7 +3387,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "insert into permission_reference (asset_id, reference_id, permission_type) " +
 				    "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 				    "	from identifier ident, " + 
-				    "		(" + selectChildrenTemplateSQL + 
+				    "		(" + SELECT_CHILD_TEMPLATE_SQL + 
 				    "		and identifier.id not in (" + 
 				    "			select inode_id " + 
 				    "				from permission " +
@@ -3486,7 +3409,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 		            "	from identifier ident, " +
-		            "		(" + selectChildrenContainerSQL + " and " +
+		            "		(" + SELECT_CHILD_CONTAINER_SQL + " and " +
 		            "		 identifier.id not in (select inode_id from permission " +
 		            "			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
 		            "		 identifier.id not in (select asset_id from permission_reference where " +
@@ -3500,11 +3423,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
 		            "	from identifier, (" +
-		            "		" + selectChildrenContentByPathSQL + " and" +
+		            "		" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "                                join identifier on (identifier.id=ref_folder.identifier) " +
-		            "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+		            "			where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
 		            "			select inode_id from permission where " +
@@ -3527,13 +3450,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            " UNION ALL" +
 		            " SELECT distinct li.id as li_id FROM identifier li" +
 		                " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-		                " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+		                " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
 		                " AND li.host_inode = ? and li.parent_path like ?" + 
 		                " and" +
 		            "		li.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "                                join identifier on (ref_folder.identifier=identifier.id) " +
-		            "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+		            "			where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		li.id not in (" +
 		            "			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -3549,11 +3472,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
 		            "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
 		            "	from identifier, (" +
-		            "		" + selectChildrenLinkSQL + " and" +
+		            "		" + SELECT_CHILD_LINK_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "            join identifier ii on (ii.id=ref_folder.identifier) where " +
-		            "			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+		            "			"+DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
 		            "			select inode_id from permission where " +
@@ -3570,7 +3493,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "insert into permission_reference (asset_id, reference_id, permission_type) " +
 				    "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 				    "	from identifier ident, " +
-				    "		(" + selectChildrenTemplateSQL + " and " +
+				    "		(" + SELECT_CHILD_TEMPLATE_SQL + " and " +
 				    "		 identifier.id not in (select inode_id from permission " +
 				    "			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
 				    "		 identifier.id not in (select asset_id from permission_reference where " +
@@ -3587,7 +3510,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 		            "	from identifier ident, " + 
-		            "		(" + selectChildrenContainerSQL +
+		            "		(" + SELECT_CHILD_CONTAINER_SQL +
 		            " 			and not exists (" +
 		            "				select inode_id " + 
 		            "					from permission " +
@@ -3617,7 +3540,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "				from permission_reference " + 
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "           	join identifier on (identifier.id=ref_folder.identifier) " +
-		            "				where "+dotFolderPath+"(parent_path,asset_name) like ? " +
+		            "				where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " +
 		            "				and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
@@ -3635,14 +3558,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "	(" + selectChildrenHTMLPageSQL + " and " +
+		            "	(" + SELECT_CHILD_HTMLPAGE_SQL + " and " +
 		            "		not exists (" +
 		            "			select asset_id " +
 		            "				from permission_reference " +
 		            "				join folder ref_folder on (reference_id = ref_folder.inode) " +
 		            "           	join identifier on (ref_folder.identifier=identifier.id) " +
 		            "				where asset_id = li.id " +
-		            "				and " + dotFolderPath + "(parent_path,asset_name) like ? " + 
+		            "				and " + DOT_FOLDER_PATH + "(parent_path,asset_name) like ? " + 
 		            "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		not exists (" +
@@ -3665,14 +3588,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
 		            "	from identifier, " + 
-		            "		(" + selectChildrenLinkSQL + " and" +
+		            "		(" + SELECT_CHILD_LINK_SQL + " and" +
 		            "		not exists (" +
 		            "			select asset_id " + 
 		            "				from permission_reference " + 
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "            	join identifier ii on (ii.id=ref_folder.identifier) " + 
 		            "				where asset_id = identifier.id " +
-		            "				and "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? " + 
+		            "				and "+DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? " + 
 		            "				and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		not exists (" +
@@ -3696,7 +3619,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				    "select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 				    "	from identifier ident, " + 
-				    "		(" + selectChildrenTemplateSQL + " and " +
+				    "		(" + SELECT_CHILD_TEMPLATE_SQL + " and " +
 				    "		 	not exists (" + 
 				    "				select inode_id " +
 				    "				from permission " +
@@ -3721,7 +3644,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select nextval('permission_reference_seq'), ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 		            "	from identifier ident, " +
-		            "		(" + selectChildrenContainerSQL + " and " +
+		            "		(" + SELECT_CHILD_CONTAINER_SQL + " and " +
 		            "			identifier.id not in (" + 
 		            "				select inode_id from permission " +
 		            "				where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
@@ -3739,13 +3662,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select nextval('permission_reference_seq'), identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "		(" + selectChildrenContentByPathSQL + " and" +
+		            "		(" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and" +
 		            "			identifier.id not in (" +
 		            "				select asset_id " + 
 		            "					from permission_reference " + 
 		            "					join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "               	join identifier on (identifier.id=ref_folder.identifier) " +
-		            "					where "+dotFolderPath+"(parent_path,asset_name) like ? " +
+		            "					where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " +
 		            "					and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
@@ -3763,13 +3686,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select nextval('permission_reference_seq'), identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "   (" + selectChildrenHTMLPageSQL + " and" +
+		            "   (" + SELECT_CHILD_HTMLPAGE_SQL + " and" +
 		            "		li.id not in (" +
 		            "			select asset_id " +
 		            "				from permission_reference "+
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "           	join identifier on (ref_folder.identifier=identifier.id) " +
-		            "				where "+dotFolderPath+"(parent_path,asset_name) like ? " +
+		            "				where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " +
 		            "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		li.id not in (" +
@@ -3792,13 +3715,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		            "select nextval('permission_reference_seq'), identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
 		            "	from identifier, " +
-		            "		(" + selectChildrenLinkSQL + " and" +
+		            "		(" + SELECT_CHILD_LINK_SQL + " and" +
 		            "		identifier.id not in (" +
 		            "			select asset_id " +
 		            "				from permission_reference " +
 		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
 		            "            	join identifier ii on (ii.id=ref_folder.identifier) "  +
-		            "				where " + dotFolderPath+"(ii.parent_path,ii.asset_name) like ? " + 
+		            "				where " + DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? " + 
 		            "				and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		            "		) and " +
 		            "		identifier.id not in (" +
@@ -3821,7 +3744,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				    "select nextval('permission_reference_seq'), ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 				    "	from identifier ident, " +
-				    "		(" + selectChildrenTemplateSQL + " and " +
+				    "		(" + SELECT_CHILD_TEMPLATE_SQL + " and " +
 				    "		identifier.id not in (" +
 				    "			select inode_id from permission " +
 				    "			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
@@ -3835,4 +3758,5 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			;
 		}
 	}
+
 }

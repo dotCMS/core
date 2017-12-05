@@ -1,22 +1,18 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public interface TemplateAPI {
 
@@ -177,7 +173,18 @@ public interface TemplateAPI {
 
 	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
+	/**
+	 * Check if there are Contentlet Pages using this Template
+	 * @param templateInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List of Contentlet Pages (page's titles) using the specified Template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 

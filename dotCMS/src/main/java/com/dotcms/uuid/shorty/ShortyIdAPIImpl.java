@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -18,33 +19,36 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   long dbHits = 0;
-  public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
+  public static final int MINIMUM_SHORTY_ID_LENGTH =
+      Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
-    
-    
-    @Override
-    public Optional<ShortyId> getShorty(final String shortStr) {
-        try {
-            validShorty(shortStr);
-            ShortyId shortyId = null;
-            Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
-            if (opt.isPresent()) {
-                shortyId = opt.get();
-            } else {
-                shortyId = viaDb(shortStr);
-                new ShortyIdCache().add(shortyId);
-            }
-            return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
-        } catch (ShortyException se) {
-            
-            Logger.warn(this.getClass(), se.getMessage());
-            return Optional.empty();
-        }
+  @Override
+  public Optional<ShortyId> getShorty(final String shortStr) {
+    try {
+      validShorty(shortStr);
+      ShortyId shortyId = null;
+      Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
+      if (opt.isPresent()) {
+        shortyId = opt.get();
+      } else if (shortStr.length() == 36) {
+        shortyId = viaDbEquals(shortStr);
+        new ShortyIdCache().add(shortyId);
+      } else {
+        shortyId = viaDbLike(shortStr);
+        new ShortyIdCache().add(shortyId);
+      }
+      return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
+    } catch (ShortyException se) {
+
+      Logger.warn(this.getClass(), se.getMessage());
+      return Optional.empty();
     }
+  }
 
   @Override
   public ShortyId noShorty(String shorty) {
-    return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS, ShortType.CACHE_MISS);
+    return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS,
+        ShortType.CACHE_MISS);
   }
 
   @Override
@@ -56,8 +60,6 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return null;
     }
   }
-
-
 
   /*
    * ShortyId viaIndex(final String shorty) {
@@ -89,70 +91,81 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return UUIDUtil.unUidIfy(shorty);
   }
 
-
   public String uuidIfy(String shorty) {
     return UUIDUtil.uuidIfy(shorty);
   }
 
-
-
-  ShortyId viaDb(final String shorty) {
-
+  @CloseDBIfOpened
+  private ShortyId viaDbEquals(final String shorty) {
     this.dbHits++;
-    ShortyId shortyId = noShorty(shorty);
-
-
     DotConnect db = new DotConnect();
-    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL);
+    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS);
+    db.addParam(shorty);
+    db.addParam(shorty);
+    try {
+      return transformMap(shorty, db.loadObjectResults());
+    } catch (DotDataException e) {
+      Logger.warn(this.getClass(), "db exception:" + e.getMessage());
+      return noShorty(shorty);
+    }
+  }
+
+
+  @CloseDBIfOpened
+  private ShortyId viaDbLike(final String shorty) {
+    this.dbHits++;
+    DotConnect db = new DotConnect();
+    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE);
     String uuid = uuidIfy(shorty);
     db.addParam(uuid + "%");
     db.addParam(uuid + "%");
 
-
-    List<Map<String, Object>> results;
     try {
-      results = db.loadObjectResults();
-
-      if (results.size() > 1) {
-        throw new ShortyException("Shorty ID collision:" + uuid);
-      } else if (results.size() == 1) {
-        String id = (String) results.get(0).get("id");
-        String type = (String) results.get(0).get("type");
-        String subType = (String) results.get(0).get("subtype");
-
-        shortyId = new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
-      }
+      return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
+      return noShorty(shorty);
     }
 
+  }
 
-    return shortyId;
+  private ShortyId transformMap(final String shorty, final List<Map<String, Object>> results) {
+    if (results == null || results.size() < 1) {
+      return noShorty(shorty);
+    } else if (results.size() > 1) {
+      throw new ShortyException("Shorty ID collision:" + shorty);
+    } else {
+      String id = (String) results.get(0).get("id");
+      String type = (String) results.get(0).get("type");
+      String subType = (String) results.get(0).get("subtype");
+      return new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
+    }
+
   }
 
   public String shortUri(Contentlet c) {
-
 
     return null;
   }
 
   public String shortInodeUri(Contentlet c) {
 
-
     return null;
   }
 
-    public void validShorty(final String test) {
-        if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {
-            throw new ShortyException(
-                    "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
-        }
-        
-        for (char c : test.toCharArray()) {
-            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
-                throw new ShortyException(
-                        "shorty " + test + " is not an alpha numeric id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
-            }
-        }
+  public void validShorty(final String test) {
+    if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length() > 36) {
+      throw new ShortyException("shorty " + test + " is not a short id.  Short Ids should be "
+          + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
     }
+
+    for (char c : test.toCharArray()) {
+      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+          || c == '-')) {
+        throw new ShortyException(
+            "shorty " + test + " is not an alpha numeric id.  Short Ids should be "
+                + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
+      }
+    }
+  }
 }

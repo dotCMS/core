@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.beans.Identifier;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Inode;
@@ -122,7 +124,10 @@ public class MaintenanceUtil {
 	public static void cleanInodeTableData()throws DotDataException{
 		Map map = new HashMap();
 		try {
-			map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
+			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 		} catch (HibernateException e) {
 			throw new DotDataException(e.getMessage(),e);
 		}
@@ -654,6 +659,7 @@ public class MaintenanceUtil {
         return fileAssetsList;
 	}
 
+	@WrapInTransaction
 	public static void fixImagesTable() throws SQLException{
 		DotConnect dc = new DotConnect();
 		List<String> imageIds = new ArrayList<String>();
@@ -687,9 +693,12 @@ public class MaintenanceUtil {
 	 *             An error occurred when executing the fix queries.
 	 */
 	public static void deleteOrphanContentTypeFields() throws SQLException {
+	    String query = "DELETE FROM field WHERE NOT EXISTS (SELECT * FROM structure WHERE structure.inode = field.structure_inode)";
 		DotConnect dc = new DotConnect();
-		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM structure)");
-		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM inode)");
+		dc.executeStatement(query);
+		query = String.format("DELETE FROM inode WHERE NOT EXISTS (SELECT * FROM field " + 
+		        "WHERE field.inode = inode.inode) and inode.type = '%s' ",Inode.Type.FIELD.getTableName());
+        dc.executeStatement(query);
 	}
 
 }

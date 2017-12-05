@@ -47,7 +47,8 @@ public class TaskLocatorUtil {
 			FixTask00070FixVersionInfo.class,
 			FixTask00080DeleteOrphanedContentTypeFields.class,
 			FixTask00085FixEmptyParentPathOnIdentifier.class,
-			FixTask00090RecreateMissingFoldersInParentPath.class
+			FixTask00090RecreateMissingFoldersInParentPath.class,
+			FixTask00095DeleteOrphanRelationships.class
 	);
 
 	/**
@@ -76,7 +77,7 @@ public class TaskLocatorUtil {
 	 * @return The list of fix tasks.
 	 */
 	public static List<Class<?>> getFixTaskClasses() {
-		List<Class<?>> l = new ArrayList<>();
+		final List<Class<?>> l = new ArrayList<>();
 		l.addAll(systemfixTasks);
 		l.addAll(userfixTasks);
 		return l;
@@ -96,7 +97,7 @@ public class TaskLocatorUtil {
 	 * @return The list of Run-Once Tasks.
 	 */
 	public static List<Class<?>> getStartupRunOnceTaskClasses() {
-		List<Class<?>> ret = new ArrayList<Class<?>>();
+		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00760AddContentletStructureInodeIndex.class);
 		ret.add(Task00765AddUserForeignKeys.class);
 		ret.add(Task00766AddFieldVariableTable.class);
@@ -212,6 +213,9 @@ public class TaskLocatorUtil {
 		ret.add(Task04205MigrateVanityURLToContent.class);
         ret.add(Task04210CreateDefaultLanguageVariable.class);
 		ret.add(Task04215MySQLMissingConstraints.class);
+		ret.add(Task04220RemoveDeleteInactiveClusterServersJob.class);
+		ret.add(Task04230FixVanityURLInconsistencies.class);
+		ret.add(Task04300UpdateSystemFolderIdentifier.class);
 
 		return ret;
 	}
@@ -225,7 +229,7 @@ public class TaskLocatorUtil {
 	 * @return The list of Run-Always Tasks.
 	 */
 	public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
-		List<Class<?>> ret = new ArrayList<Class<?>>();
+		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00001LoadSchema.class);
 		ret.add(Task00003CreateSystemRoles.class);
 		ret.add(Task00004LoadStarter.class);
@@ -235,8 +239,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00020LoadClusterLicenses.class);
 		ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
-		
-
 		return ret;
 	}
 

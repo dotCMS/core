@@ -1,29 +1,24 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
-
+import java.io.IOException;
+import java.util.List;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This job will execute the below tasks after a server in the cluster reach the HEARTBEAT_TIMEOUT.
  *
  * - Frees the license: It will use LicenseUtil.freeLicenseOnRepo().
+ * - Clean up the DB tables(cluster_server_uptime, cluster_server).
  * - Updates the replica Count: Only if the license was free successfully.
  * - Rewires the other nodes: Only if the license was free successfully.
  *
@@ -38,53 +33,70 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
-            boolean shouldExecute = inactiveServers.isEmpty() ? false : true;
 
-            if (shouldExecute) {
+            if (!inactiveServers.isEmpty()) {
                 boolean shouldRewire = false;
 
                 for (Server inactiveServer : inactiveServers) {
-                    String serverID = inactiveServer.getServerId();
+                	removeServerFromClusterTables(inactiveServer);
+                    shouldRewire = true;
+                }
 
-                    //Frees the license.
-                    for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
-
-                        if (serverID.equals(lic.serverId)) {
-                            LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
-                            shouldRewire = true;
-                            break;
-                        }
-                    }
-
-                    if (shouldRewire) {
-                        //Rewires the other nodes.
-                        if(ClusterUtils.isTransportAutoWire()) {
-                            ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
-                        }
-
-                        if(ClusterUtils.isESAutoWire()) {
-                            ClusterFactory.addNodeToESCluster();
-                        }
-                    }
-
+                if (shouldRewire) {
+                    ClusterFactory.rewireCluster();
                 }
             }
-
         } catch (DotDataException dotDataException) {
-            Logger.error(FreeServerFromClusterJob.class, "Error trying to Free License", dotDataException);
+            Logger.error(FreeServerFromClusterJob.class,
+                    "Error trying to Free License or Clean Cluster Tables", dotDataException);
         } catch (IOException iOException) {
-            Logger.error(FreeServerFromClusterJob.class, "Error trying to get the License Repo List", iOException);
+            Logger.error(FreeServerFromClusterJob.class,
+                    "Error trying to get the License Repo List", iOException);
         } catch (Exception exception) {
-            Logger.error(FreeServerFromClusterJob.class, "Error trying to Free Server from Cluster", exception);
+            Logger.error(FreeServerFromClusterJob.class,
+                    "Error trying to Free Server from Cluster", exception);
         } finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * Removes the specified license serial number from a specific server.
+     * @throws Exception 
+     *
+     */
+    private boolean freeLicense(final String inactiveServerID)
+            throws Exception {
+
+        boolean needsRewire = false;
+
+        for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
+            if (inactiveServerID.equals(lic.serverId)) {
+            	if(APILocator.getServerAPI().readServerId().equals(inactiveServerID)){
+            		LicenseUtil.pickLicense(lic.dotLicense.serial);
+            	}
+            	else{
+	                LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, inactiveServerID);
+	                needsRewire = true;
+	                break;
+            	}
             }
         }
+        return needsRewire;
+    }
+
+    /**
+     * Clean up the DB tables(cluster_server_uptime, cluster_server).
+     *
+     */
+    private void removeServerFromClusterTables( Server server)
+            throws DotDataException {
+
+        Logger.info(this, String.format("Server %s with license %s was Removed", server.getServerId(), server.getLicenseSerial()));
+        APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
+        
+        LicenseUtil.freeLicenseOnRepo(server.getLicenseSerial(), server.getServerId());
+        
+        
     }
 }

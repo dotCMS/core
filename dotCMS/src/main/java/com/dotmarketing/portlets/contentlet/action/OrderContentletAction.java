@@ -16,8 +16,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -50,7 +48,7 @@ public class OrderContentletAction  extends DotPortletAction {
 				HibernateUtil.startTransaction();
 				//regenerates menu files
 				_orderMenuItemsDragAndDrop(req,res,config,form);
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				_sendToReferral(req,res,req.getParameter("referer"));
 				return;
 			}

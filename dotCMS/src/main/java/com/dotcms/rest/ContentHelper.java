@@ -83,7 +83,7 @@ class ContentHelper {
 
                 final Identifier identifier = this.identifierAPI.find(  (String) identifierObj );
                 url = ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) )?
-                        identifier.getAssetName():null;
+                        identifier.getURI():null;
             } catch ( DotDataException e ) {
                 Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierObj + "]. Could not get the url", e );
             }

@@ -20,10 +20,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.ClientVelocityServlet;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -71,12 +73,9 @@ public class FiltersTest {
         });
 
         Mockito.when(Config.CONTEXT.getResourceAsStream(startsWith("/")))
-                .thenAnswer(new Answer<FileInputStream>() {
-                    @Override
-                    public FileInputStream answer(InvocationOnMock invocation) throws Throwable {
-                        return new FileInputStream((String) invocation.getArguments()[0]);
-                    }
-                });
+                .thenAnswer(
+                        (Answer<InputStream>) invocation ->
+                                Files.newInputStream(Paths.get((String) invocation.getArguments()[0])));
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
 
         /* Default user */

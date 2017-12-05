@@ -1699,6 +1699,13 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         return vmFactory.dumpVMNamespace( namespace );
     }
 
+    public void dumpGlobalVMNamespace( )
+    {
+         vmFactory.dumpGlobalVMNamespace(  );
+    }
+    
+    
+    
     /* --------------------------------------------------------------------
      * R U N T I M E  A C C E S S O R  M E T H O D S
      * --------------------------------------------------------------------

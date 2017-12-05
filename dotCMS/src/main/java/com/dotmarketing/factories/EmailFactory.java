@@ -1,30 +1,6 @@
 package com.dotmarketing.factories;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
-import org.apache.velocity.Template;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -42,7 +18,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-
 import com.dotmarketing.portlets.webforms.model.WebForm;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FormSpamFilter;
@@ -60,6 +35,28 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.Template;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * DOCUMENT ME!
@@ -437,36 +434,37 @@ public class EmailFactory {
 				}
 
 				// Saving email backup in a file
-				try {
-					String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
-					new File(filePath).mkdir();
+                String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
+                new File(filePath).mkdir();
 
-					File file = null;
-					synchronized (emailTime) {
-						emailTime = new Long(emailTime.longValue() + 1);
-						if (UtilMethods.isSet(emailFolder)) {
-							new File(filePath + File.separator + emailFolder).mkdir();
-							filePath = filePath + File.separator + emailFolder;
-						}
-						file = new File(filePath + File.separator + emailTime.toString()
-								+ ".html");
-					}
-					if (file != null) {
-						java.io.OutputStream os = new java.io.FileOutputStream(file);
-						BufferedOutputStream bos = new BufferedOutputStream(os);
-						if(emailBodies.get("emailHTMLBody") != null)
-							bos.write(emailBodies.get("emailHTMLBody").getBytes());
-						else if(emailBodies.get("emailHTMLTableBody") != null) 
-							bos.write(emailBodies.get("emailHTMLTableBody").getBytes());
-						else
-							bos.write(emailBodies.get("emailPlainTextBody").getBytes());
-						bos.flush();
-						bos.close();
-						os.close();
-					}
-				} catch (Exception e) {
-					Logger.warn(EmailFactory.class, "sendForm: Couldn't save the email backup in " + Config.getStringProperty("EMAIL_BACKUPS"));
-				}
+                File file;
+                synchronized (emailTime) {
+                    emailTime = new Long(emailTime.longValue() + 1);
+                    if (UtilMethods.isSet(emailFolder)) {
+                        new File(filePath + File.separator + emailFolder).mkdir();
+                        filePath = filePath + File.separator + emailFolder;
+                    }
+                    file = new File(filePath + File.separator + emailTime.toString()
+                            + ".html");
+                }
+                if (file != null) {
+                    try (OutputStream os = Files.newOutputStream(file.toPath());
+                            BufferedOutputStream bos = new BufferedOutputStream(os)) {
+
+                        if (emailBodies.get("emailHTMLBody") != null) {
+                            bos.write(emailBodies.get("emailHTMLBody").getBytes());
+                        } else if (emailBodies.get("emailHTMLTableBody") != null) {
+                            bos.write(emailBodies.get("emailHTMLTableBody").getBytes());
+                        } else {
+                            bos.write(emailBodies.get("emailPlainTextBody").getBytes());
+                        }
+                        bos.flush();
+                    } catch (IOException e) {
+                        Logger.warn(EmailFactory.class,
+                                "sendForm: Couldn't save the email backup in " + Config
+                                        .getStringProperty("EMAIL_BACKUPS"));
+                    }
+                }
 
 				// send the mail out;
 				Mailer m = new Mailer();

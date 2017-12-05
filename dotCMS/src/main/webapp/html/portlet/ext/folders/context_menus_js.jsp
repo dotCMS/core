@@ -340,9 +340,9 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 
 		if ((deleted == "1") && (write == "1"))
 		{
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>\')){ delTemplate(\'' +objId+ '\', \'' +referer+ '\'); }">';
-		  		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Template"))%>';
-			strHTML += '</div>';
+            strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>\')){ delTemplate(\'' +objId+ '\', \'' +referer+ '\'); }">';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Template"))%>';
+            strHTML += '</div>';
 		}
 		if (((live=="1") || (working=="1")) && (write=="1") && (deleted!="1"))  {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="copyIcon" class="pop_divider" onClick="<%=locationMode%>=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&referer=' + referer + '\';">';

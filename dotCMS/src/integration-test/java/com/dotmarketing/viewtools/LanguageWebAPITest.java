@@ -18,6 +18,7 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -72,6 +73,9 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 		//DEFAULT LANGUAGE
 		//Search for the default language
+
+		String englishIdentifier;
+
 		final Long englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		KeyValue keyValue = APILocator.getKeyValueAPI()
 				.get(LANGUAGE_KEY_TEST_EXAMPLE, englishLanguageId,
@@ -79,9 +83,13 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String defaultLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == defaultLanguageVariable || defaultLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+			Contentlet keyValueContentlet = ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE, englishLanguageId,
 					languageVariableContentType, systemUser);
+
+			englishIdentifier = keyValueContentlet.getIdentifier();
+		} else {
+			englishIdentifier = keyValue.getIdentifier();
 		}
 
 		//NO COUNTRY
@@ -91,7 +99,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String noCountryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == noCountryLanguageVariable || noCountryLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+			ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY, spanishNoCountryLanguage.getId(),
 					languageVariableContentType, systemUser);
 		}
@@ -103,7 +111,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String countryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == countryLanguageVariable || countryLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+			ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY, spanishCostaRicaLanguage.getId(),
 					languageVariableContentType, systemUser);
 		}
@@ -255,8 +263,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 			when(viewContext.getRequest()).thenReturn(request);
 			when(request.getSession()).thenReturn(session);
 			when(request.getLocale()).thenReturn(new Locale(languageCode, countryCode));
-			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
-					.thenReturn(String.valueOf(requestLanguageId));
+			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(requestLanguageId));
 
 			Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, fallback);
 

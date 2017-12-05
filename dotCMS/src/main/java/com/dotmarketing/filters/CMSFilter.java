@@ -99,15 +99,9 @@ public class CMSFilter implements Filter {
         }
 
         // Get the user language
-        long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        if (urlUtil.isFileAsset(uri, site, languageId)) {
-            iAm = IAm.FILE;
-        } else if (urlUtil.isPageAsset(uri, site, languageId)) {
-            iAm = IAm.PAGE;
-        } else if (urlUtil.isFolder(uri, site)) {
-            iAm = IAm.FOLDER;
-        }
+        iAm = this.resolveResourceType(iAm, uri, site, languageId);
 
         if (iAm == IAm.FOLDER) {
 
@@ -141,7 +135,10 @@ public class CMSFilter implements Filter {
         if (iAm == IAm.PAGE) {
             countPageVisit(request);
             countSiteVisit(request, response);
-            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, uri);
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
+                    this.urlUtil.getUriWithoutQueryString(uri));
+            queryString = (null == queryString)?
+                    this.urlUtil.getQueryStringFromUri (uri):queryString;
         }
 
         // run rules engine for all requests
@@ -202,6 +199,23 @@ public class CMSFilter implements Filter {
         // otherwise, pass
         chain.doFilter(req, res);
     }
+
+    private IAm resolveResourceType(final IAm iAm,
+                                    final String uri,
+                                    final Host site,
+                                    final long languageId) {
+
+        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
+        if (this.urlUtil.isFileAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.FILE;
+        } else if (this.urlUtil.isPageAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.PAGE;
+        } else if (this.urlUtil.isFolder(uriWithoutQueryString, site)) {
+            return IAm.FOLDER;
+        }
+
+        return iAm;
+    } // resolveResourceType.
 
     @Override
     public void destroy() {

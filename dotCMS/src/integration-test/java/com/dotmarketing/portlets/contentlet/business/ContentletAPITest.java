@@ -1,12 +1,23 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.contenttype.model.field.*;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -58,23 +69,24 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,19 +94,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba.
@@ -684,34 +691,33 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void cleanBinaryField() throws DotDataException, DotSecurityException {
-
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        List<Contentlet> contentletList = contentletAPI.findByStructure(structure, user, false, 0, 0);
         Contentlet contentlet = contentletList.iterator().next();
 
         //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestBinary" + identifier );
+        Field foundBinaryField = FieldFactory.getFieldByVariableName(structure.getInode(), "junitTestBinary" + identifier);
 
 
         //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
+        Object value = contentletAPI.getFieldValue(contentlet, foundBinaryField);
 
         //Validations
-        assertNotNull( value );
-        assertTrue( ((java.io.File) value).exists() );
+        assertNotNull(value);
+        assertTrue(((java.io.File) value).exists());
 
         //Cleaning the binary field
-        contentletAPI.cleanField( structure, foundBinaryField, user, false );
+        contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
         //Validations
-        assertFalse( ((java.io.File) value).exists() );
+        assertFalse(((java.io.File) value).exists());
     }
 
     /**
@@ -879,7 +885,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             StructureDataGen.remove(structure);
             FolderDataGen.remove(folder);
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
             HibernateUtil.rollbackTransaction();
             throw e;
@@ -962,7 +968,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
             menuLinkAPI.delete( menuLink, user, false );
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2010,7 +2016,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1=new Date();
+        Date d1= new Date();
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
@@ -2034,8 +2040,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
 
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
-        assertEquals(d1,ident.getSysPublishDate());
-        assertEquals(d2,ident.getSysExpireDate());
+        assertNotNull(ident.getSysPublishDate());
+        assertNotNull(ident.getSysExpireDate());
+        assertTrue(ConvertToPOJOUtil.df.format(d1)
+                .equals(ConvertToPOJOUtil.df.format(ident.getSysPublishDate())));
+        assertTrue(ConvertToPOJOUtil.df.format(d2)
+                .equals(ConvertToPOJOUtil.df.format(ident.getSysExpireDate())));
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2050,13 +2060,17 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
 
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
-        assertEquals(d3,ident2.getSysPublishDate());
-        assertEquals(d4,ident2.getSysExpireDate());
+        assertNotNull(ident2.getSysPublishDate());
+        assertNotNull(ident2.getSysExpireDate());
+        assertTrue(ConvertToPOJOUtil.df.format(d3)
+                .equals(ConvertToPOJOUtil.df.format(ident2.getSysPublishDate())));
+        assertTrue(ConvertToPOJOUtil.df.format(d4)
+                .equals(ConvertToPOJOUtil.df.format(ident2.getSysExpireDate())));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
-        assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
+        assertTrue(ConvertToPOJOUtil.df.format(d3).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
+        assertTrue(ConvertToPOJOUtil.df.format(d4).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
 
         Thread.sleep(2000); // wait a bit for the index
         
@@ -2265,7 +2279,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
         	APILocator.getStructureAPI().delete(testStructure, user);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2942,6 +2956,85 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
         }
 
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldWithDataTypeWholeNumber()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Whole Number Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.INTEGER)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setLongProperty(field.variable(),1);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet2.setLongProperty(field.variable(),1);
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsWithDiffLanguages()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),"test");
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            //Contentlet in Spanish (should not be an issue since the unique is per lang)
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(2);
+            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {

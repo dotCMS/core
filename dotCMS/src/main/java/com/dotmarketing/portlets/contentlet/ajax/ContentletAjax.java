@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -89,8 +90,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-
-import static com.dotcms.util.FunctionUtils.*;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -1000,7 +999,8 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
+				WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+				searchResult.put("workflowMandatory", String.valueOf(null!=step?APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory():false));
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions
@@ -1495,7 +1495,7 @@ public class ContentletAjax {
 			}
 
 			// everything Ok? then commit
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 			// clean up tmp_binary
 			// https://github.com/dotCMS/dotCMS/issues/2921
@@ -1633,20 +1633,23 @@ public class ContentletAjax {
 		catch(DotLockException dse){
 			String errorString = LanguageUtil.get(user,"message.content.locked");
 			saveContentErrors.add(errorString);
-
+			clearBinary = false;
 		}
 		catch(DotSecurityException dse){
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
+			clearBinary = false;
 		}
         catch ( PublishStateException pe ) {
             String errorString = LanguageUtil.get( user, pe.getMessage() );
             saveContentErrors.add( errorString );
+			clearBinary = false;
         }
 		catch ( DotLanguageException e ) {
             saveContentErrors.add( e.getMessage() );
             callbackData.put( "saveContentErrors", saveContentErrors );
             callbackData.put( "referer", referer );
+			clearBinary = false;
             return callbackData;
         }
         catch ( Exception e ) {
@@ -1654,6 +1657,7 @@ public class ContentletAjax {
             saveContentErrors.add( e.getMessage() );
             callbackData.put( "saveContentErrors", saveContentErrors );
             callbackData.put( "referer", referer );
+			clearBinary = false;
             return callbackData;
         }
         catch (Throwable t) {
@@ -1661,6 +1665,7 @@ public class ContentletAjax {
 			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
+			clearBinary = false;
 			return callbackData;
 		}
 
@@ -1972,7 +1977,7 @@ public class ContentletAjax {
 					SessionMessages.clear(req.getSession());
 					HibernateUtil.rollbackTransaction();
 				}else{
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));
 				}
 			}
@@ -2061,10 +2066,6 @@ public class ContentletAjax {
 			ret.put("Error", LanguageUtil.get(currentUser, "message.cannot.lock.content") );
 
 		}
-
-
-
-
 
 		return ret;
 	}

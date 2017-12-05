@@ -1,29 +1,7 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.elasticsearch.common.base.Strings;
-
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -78,6 +56,26 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.elasticsearch.common.base.Strings;
 
 /**
  * This class handles the different action mechanisms related to the handling of 
@@ -339,9 +337,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             //We need to check both Static and Push Publish for each bundle.
             //Checking static publish.
+
             File bundleStaticFile = new File(bundleRoot.getAbsolutePath() + PublisherConfig.STATIC_SUFFIX);
             if ( bundleStaticFile.exists() ) {
-                AWSS3Publisher awss3Publisher = new AWSS3Publisher();
 
                 File readBundle = new File(bundleStaticFile.getAbsolutePath() + File.separator + "bundle.xml");
                 PublisherConfig readConfig = (PublisherConfig) BundlerUtil.xmlToObject( readBundle );
@@ -354,18 +352,39 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 auditHistory.setNumTries( 0 );
                 publishAuditAPI.updatePublishAuditStatus( configStatic.getId(), status.getStatus(), auditHistory, true );
 
+                Publisher staticPublisher;
+
                 try{
-                    awss3Publisher.init(configStatic);
-                    awss3Publisher.process(null);
+
+                    List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
+
+                    for (Environment environment : environments) {
+
+                        List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
+                        PublishingEndPoint targetEndpoint = endPoints.get(0);
+
+                        //Processing AWS push retry
+                        if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())){
+                            staticPublisher = new AWSS3Publisher();
+                        }else{
+                            //Processing static push retry
+                            staticPublisher = new StaticPublisher();
+                        }
+
+                        staticPublisher.init(configStatic);
+                        staticPublisher.process(null);
+                    }
+
                     //Success...
                     appendMessage( responseMessage, "publisher_retry.success",
                         bundleId + PublisherConfig.STATIC_SUFFIX, false );
-                } catch (DotPublishingException e){
+                } catch (DotPublishingException | DotDataException e){
                     Logger.error( this.getClass(), "Error trying to add bundle id: "
-                        + bundleId + PublisherConfig.STATIC_SUFFIX + " to the AWSS3Publisher.", e );
+                        + bundleId + PublisherConfig.STATIC_SUFFIX + " to the Publisher.", e );
                     appendMessage( responseMessage, "publisher_retry.error.adding.to.queue",
                         bundleId + PublisherConfig.STATIC_SUFFIX, true );
                 }
+                continue;
             }
 
             //Checking push publish.
@@ -488,7 +507,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.setHeader( "Content-Disposition", "attachment; filename=" + config.getId() + ".tar.gz" );
         BufferedInputStream in = null;
         try {
-            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
             byte[] buf = new byte[4096];
             int len;
 
@@ -558,7 +577,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.getName() );
         BufferedInputStream in = null;
         try {
-            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
             byte[] buf = new byte[4096];
             int len;
 

@@ -1,14 +1,15 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import org.junit.Test;
-
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba.
@@ -105,5 +106,4 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         assertNotNull( foundContentlet );
         assertEquals( foundContentlet.getInode(), contentlet.getInode() );
     }
-
 }

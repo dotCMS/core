@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 
+
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -38,7 +40,6 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
@@ -72,7 +73,6 @@ import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -82,6 +82,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.HibernateCollectionConverter;
 import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.ImportExportUtil;
@@ -93,7 +94,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.google.common.collect.ImmutableList;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
 import com.liferay.portal.model.Company;
@@ -104,6 +104,29 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -198,13 +221,15 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.info(this, "Running Contentlet Reindex");
 						HibernateUtil.startTransaction();
 						conAPI.reindex();
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 					}catch(DotReindexStateException dre){
 						Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
 						errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
 						HibernateUtil.rollbackTransaction();
+					} finally {
+						DbConnectionFactory.closeSilently();
 					}
 				}
 				else
@@ -290,7 +315,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + "/backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
 
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";
@@ -571,7 +596,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		try {
 
 			/* get a list of all our tables */
-			Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+			Map map = new HashMap();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
+
+			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
+
 			Iterator it = map.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry pairs = (Map.Entry) it.next();
@@ -580,8 +610,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					_tablesToDump.add(x);
 
 			}
+
 			XStream _xstream = null;
 			HibernateUtil _dh = null;
+			DotConnect dc = null;
 			List _list = null;
 			File _writing = null;
 			BufferedOutputStream _bout = null;
@@ -636,9 +668,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				
 				for(i=0;i < 10000000;i=i+step){
 
-                    _dh = new HibernateUtil(clazz);
-                    _dh.setFirstResult(i);
-                    _dh.setMaxResults(step);
+					_dh = new HibernateUtil(clazz);
+					_dh.setFirstResult(i);
+					_dh.setMaxResults(step);
 
                     //This line was previously like;
                     //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
@@ -646,34 +678,39 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
                     //ordering is done only on the first field for the tables, which is INODE
                     if(com.dotmarketing.beans.Tree.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
+						_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
                     }
                     else if(MultiTree.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
+						_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
                     }
                     else if(TagInode.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
+						_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
                     }
                     else if(Tag.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
+						_dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
                     }
                     else if(CalendarReminder.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
+						_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
                     } 
                     else if(Identifier.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by parent_path, id");
-                    } else {
-                    	_dh.setQuery("from " + clazz.getName() + " order by 1");
+						dc = new DotConnect();
+						dc.setSQL("select * from identifier order by parent_path, id")
+								.setStartRow(i).setMaxRows(step);
+					} else {
+						_dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
 
-                    _list = _dh.list();
+					if(Identifier.class.equals(clazz)){
+						_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+					}else{
+						_list = _dh.list();
+					}
+
                     if(_list.size() ==0){
                         try {
                         _bout.close();
                         }
                         catch( java.lang.NullPointerException npe){}
-                        _list = null;
-                        _dh = null;
                         _bout = null;
 
                         break;
@@ -684,7 +721,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     }
 
     				_writing = new File(backupTempFilePath + "/" + clazz.getName() + "_" + formatter.format(i) + ".xml");
-    				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+    				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
 
     				total = total + _list.size();
 
@@ -695,11 +732,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                         Logger.error(this,e.getMessage(),e);
                     }
 
-    				_xstream.toXML(_list, _bout);
+    				try {
+                        _xstream.toXML(_list, _bout);
+                    } finally {
+                        _bout.close();
+                    }
 
-    				_bout.close();
-    				_list = null;
-    				_dh = null;
     				_bout = null;
 
 				}
@@ -713,92 +751,99 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			List<Company> companies = new ArrayList<Company>(_list);
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + Company.class.getName() + ".xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* Users */
 			_list = APILocator.getUserAPI().findAllUsers();
 			_list.add(APILocator.getUserAPI().getDefaultUser());
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/" + User.class.getName() + ".xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
-
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+				_bout.close();
+			}
 
 			/* users_roles */
-			DotConnect dc = new DotConnect();
+			dc = new DotConnect();
 
 			/* counter */
 			dc.setSQL("select * from counter");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Counter.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* counter */
 			dc.setSQL("select * from address");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Address.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* pollschoice */
 			dc.setSQL("select * from pollschoice");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollschoice.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* pollsdisplay */
 			dc.setSQL("select * from pollsdisplay");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsdisplay.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* pollsquestion */
 			dc.setSQL("select * from pollsquestion");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsquestion.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* pollsvote */
 			dc.setSQL("select * from pollsvote");
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Pollsvote.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* image */
 			_list = ImageLocalManagerUtil.getImages();
@@ -812,11 +857,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Image.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* portlet */
 
@@ -830,11 +876,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = dc.getResults();
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portlet.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			/* portlet_preferences */
 
@@ -845,11 +892,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			}
 			_xstream = new XStream(new DomDriver());
 			_writing = new File(backupTempFilePath + "/Portletpreferences.xml");
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			_xstream.toXML(_list, _bout);
-			_bout.close();
-			_list = null;
-			_bout = null;
+			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+            try {
+                _xstream.toXML(_list, _bout);
+            } finally {
+                _bout.close();
+            }
 
 			//backup content types
             File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
@@ -869,19 +917,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			
 			file = new File(backupTempFilePath + "/index_live.json");
 			new ESIndexAPI().backupIndex(info.live, file);
-
-
 			
-			
-			
-			
-			
-		} catch (HibernateException e) {
-			Logger.error(this,e.getMessage(),e);
-		} catch (SystemException e) {
+		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
-
 	}
 
 
@@ -898,28 +937,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		byte b[] = new byte[512];
 		ZipOutputStream zout = new ZipOutputStream(out);
 		ZipUtil.zipDirectory(backupTempFilePath, zout);
-//		File f = new File(backupTempFilePath);
-//		String[] s = f.list();
-//		for (int i = 0; i < s.length; i++) {
-//			if(s[i].equals(".svn")){
-//				continue;
-//			}
-//			f = new File(backupTempFilePath + File.separator + "" + s[i]);
-//			InputStream in;
-//			if(f.isDirectory()){
-//				in = new BufferedInputStream(new ByteArrayInputStream(f.));
-//			}else{
-//				in = new BufferedInputStream(new FileInputStream(f));
-//			}
-//			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-//			zout.putNextEntry(e);
-//			int len = 0;
-//			while ((len = in.read(b)) != -1) {
-//				zout.write(b, 0, len);
-//			}
-//			zout.closeEntry();
-//			in.close();
-//		}
 		zout.close();
 		out.close();
 	}
@@ -1023,5 +1040,4 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr.close();
 		}
 	}
-
 }

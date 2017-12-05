@@ -13,10 +13,12 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
@@ -39,11 +41,14 @@ public class LoginEditModeServlet extends HttpServlet {
 
 				if (clickstream != null) {
 					String pageId = clickstream.getLastPageId();
-					_edit_mode_id = (Identifier) HibernateUtil.load(Identifier.class, pageId);
+					_edit_mode_id = APILocator.getIdentifierAPI().find(pageId);
 
 					if ("contentlet".equals(_edit_mode_id.getAssetType())) {
 						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-						_edit_mode_id.setURI(cont.getMap().get("URL_MAP_FOR_CONTENT").toString());
+						
+						String pageURI = findAssetURI(cont);
+						    
+						_edit_mode_id.setURI(pageURI);
 					}
 				}else{
 					Logger.info(LoginEditModeServlet.class,
@@ -51,7 +56,7 @@ public class LoginEditModeServlet extends HttpServlet {
 				}
 			}
 			catch(Exception e){
-				Logger.error(this.getClass(), "unable to get last page"  + e);
+				Logger.error(this.getClass(), "unable to get last page: "  + e);
 			}
 			
 			// this is used by the PortalRequestProcessort.java to set you up in edit mode
@@ -77,5 +82,14 @@ public class LoginEditModeServlet extends HttpServlet {
 		}
 		request.getRequestDispatcher("/c").forward(request,response);
 	}
+
+    private String findAssetURI(Contentlet cont) throws DotDataException {
+        if(UtilMethods.isSet(cont.getMap().get("URL_MAP_FOR_CONTENT"))) {
+            return cont.getMap().get("URL_MAP_FOR_CONTENT").toString();
+        } else {
+            HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
+            return page.getURI();
+        }
+    }
 	
 }

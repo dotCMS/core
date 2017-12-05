@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
@@ -363,6 +364,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the user's data.
 	 */
+	@CloseDBIfOpened
     protected Result performDefaultAuthentication(final Company company,
                                                 final String userId,
                                                 final Date lastModified,

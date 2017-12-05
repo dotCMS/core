@@ -237,11 +237,14 @@
                                               ? "<span class='pageIcon'></span> "
                                                   : (s.getStructureType()==6)
                                                   ? "<span class='personaIcon'></span>"
-                                                      :"<span class='blankIcon'></span>";
+                                                    : (s.getStructureType()==7)
+                                                    ? "<span class='vanityIcon'></span>"
+                                                        : (s.getStructureType()==8)
+                                                        ? "<span class='languageVarIcon'></span>"
+                                                            :"<span class='blankIcon'></span>";
 
-
-
-                labelAndIcon+="&nbsp; &nbsp;" + UtilMethods.javaScriptify(s.getName());
+                String contentTypeName= UtilMethods.javaScriptify(s.getName());
+                labelAndIcon+="&nbsp; &nbsp;" + contentTypeName;
                 if(s.getStructureType() != baseType){
                   labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
                   baseType = s.getStructureType();
@@ -251,7 +254,7 @@
             {
                 name: "<%=s.getInode()%>",
                 label: "<%=labelAndIcon %>",
-                textLabel: "<%=s.getName()%>"
+                textLabel: "<%=contentTypeName %>"
             }
             <%started = true;%>
             <%}%>

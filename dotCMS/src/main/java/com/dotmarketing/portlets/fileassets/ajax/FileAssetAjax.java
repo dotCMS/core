@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.fileassets.ajax;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +15,13 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 public class FileAssetAjax {
 
@@ -45,15 +44,15 @@ public class FileAssetAjax {
 		Map<String, Object> map = fa.getMap();
 
 		java.io.File fileIO = fa.getFileAsset();
-		FileInputStream fios = new FileInputStream(fileIO);
-		byte[] data = new byte[fios.available()];
-		fios.read(data);
-		String text = new String(data);
+		try (InputStream fios = Files.newInputStream(fileIO.toPath())){
+            byte[] data = new byte[fios.available()];
+            fios.read(data);
+            String text = new String(data);
 
-		map.put("text", text);
+            map.put("text", text);
 
-		return map;
-
+            return map;
+		}
 	}
 
 
@@ -76,15 +75,17 @@ public class FileAssetAjax {
 		java.io.File fileData = new java.io.File(tempDir.getAbsoluteFile() + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
 
 		fileData.deleteOnExit();
-		FileOutputStream fos = null;
+		OutputStream os = null;
 		try {
-			fos = new FileOutputStream(fileData);
-			fos.write(newText.getBytes());
+			os = Files.newOutputStream(fileData.toPath());
+			os.write(newText.getBytes());
 		} catch(Exception e) {
 			Logger.error(getClass(), "Error writing to file", e);
 		}finally {
-			if (fos != null)
-				fos.close();
+			if (os != null){
+				os.close();
+			}
+
 		}
 	}
 

@@ -1,32 +1,11 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -45,6 +24,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -62,6 +48,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
+    public static final String STRUCTURE_NAME_KEY = "stName";
+    public static final String CONTENT_TYPE_KEY = "contentType";
     public static final String LAST_REVIEW_KEY = "lastReview";
     public static final String NEXT_REVIEW_KEY = "nextReview";
     public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
@@ -94,6 +82,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    protected Map<String, Object> map = new ContentletHashMap();
    private boolean lowIndexPriority = false;
 
+   private transient ContentletAPI contentletAPI;
+   private transient UserAPI userAPI;
+
     @Override
     public String getCategoryId() {
     	return getInode();
@@ -111,12 +102,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * Default class constructor.
      */
     public Contentlet() {
-    	setInode("");
-    	setIdentifier("");
-    	setLanguageId(0);
-    	setContentTypeId("");
-    	setSortOrder(0);
-    	setDisabledWysiwyg(new ArrayList<String>());
+		setInode("");
+		setIdentifier("");
+		setLanguageId(0);
+		setContentTypeId("");
+		setSortOrder(0);
+		setDisabledWysiwyg(new ArrayList<String>());
     }
 
     @Override
@@ -126,15 +117,21 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     @Override
     public String getTitle(){
-    	if(map.get("title") !=null){
-    		return map.get("title").toString();
-    	}
-
     	try {
-    	    ContentletAPI conAPI = APILocator.getContentletAPI();
-    	    String x = conAPI.getName(this, APILocator.getUserAPI().getSystemUser(), false);
-    	    map.put("title", x);
-    	    return x;
+
+    		//Verifies if the content type has defined a title field
+			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
+					filter(field -> field.variable().equals("title")).findAny();
+
+
+			if (fieldFound.isPresent()) {
+				return map.get("title")!=null?map.get("title").toString():null;
+			}
+
+			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
+			map.put("title", title);
+
+    	    return title;
 		} catch (Exception e) {
 			Logger.error(this,"Unable to get title.");
 			return  "";
@@ -157,12 +154,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getInode() {
-    	if(InodeUtils.isSet((String) map.get(INODE_KEY))) {
-    		return (String) map.get(INODE_KEY);
-    	}
-    	return "";
-    }
+	public String getInode() {
+		final String inode = (String) map.get(INODE_KEY);
+
+		if(inode==null) {
+			return "";
+		}
+
+		return inode;
+	}
 
     /**
      * 
@@ -324,18 +324,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
     }
 
-    @Override
-    public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
-    	if( !(o instanceof Contentlet) )
-    		return false;
-    	return o != null && ((Contentlet)o).getInode().equalsIgnoreCase(this.getInode());
-    }
+		Contentlet that = (Contentlet) o;
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(getInode()).toHashCode();
-    }
+		return getInode().equals(that.getInode());
+	}
+
+	@Override
+	public int hashCode() {
+		return getInode().hashCode();
+	}
 
     /**
      * 
@@ -801,7 +807,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
-		FileInputStream fis = new FileInputStream(getBinary(velocityVarName));
+		InputStream fis = Files.newInputStream(getBinary(velocityVarName).toPath());
 		return fis;
 	}
 
@@ -1064,4 +1070,28 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
 
+	private ContentletAPI getContentletAPI() {
+		if(contentletAPI==null) {
+			contentletAPI = APILocator.getContentletAPI();
+		}
+
+		return contentletAPI;
+	}
+
+	@VisibleForTesting
+	protected void setContentletAPI(ContentletAPI contentletAPI) {
+		this.contentletAPI = contentletAPI;
+	}
+
+	private UserAPI getUserAPI() {
+		if(userAPI==null) {
+			userAPI = APILocator.getUserAPI();
+		}
+		return userAPI;
+	}
+
+	@VisibleForTesting
+	protected void setUserAPI(UserAPI userAPI) {
+		this.userAPI = userAPI;
+	}
 }

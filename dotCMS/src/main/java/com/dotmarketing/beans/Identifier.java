@@ -15,9 +15,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
-
-
 /**
+ * An Identifier uniquely represents a content in dotCMS. In its simplest form, it's a UUID, which
+ * is either guaranteed to be different or is, at least, extremely likely to be different from any
+ * other UUID.
  * 
  * @author maria
  */
@@ -32,8 +33,6 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	public Identifier() {
 	}
 
-	//private String URI;
-	
     private String id;
     
     private String assetName;
@@ -46,8 +45,6 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     
     private Date sysPublishDate;
     private Date sysExpireDate;
-    
-    //private String inode;
     
     /**
      * @deprecated As of 2016-05-16, replaced by {@link #getId()}
@@ -136,7 +133,9 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 		
 	/**
-	 * Returns the uRI.
+	 * Returns the URI, which is a concatenation
+	 * of parent path (folder) and asset name.
+	 * useful for retrieving file/page URLs
 	 * 
 	 * @return String
 	 */
@@ -194,19 +193,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 			TreeFactory.saveTree(tree);
 		}
 	}
-	
-	/*public void addChild(Inode i, String relationType) {
-		Tree tree = TreeFactory.getTree(this.id, i.inode, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())){
-			tree.setParent(this.id);
-			tree.setChild(i.getInode());
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		}
-	}*/
+
 	public void addChild(Identifier i, String relationType, int sortOrder) {
 		Tree tree = TreeFactory.getTree(this.id, i.id, relationType);
 		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
@@ -267,10 +254,19 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	   return getInode();
 	}
 	
+	   /**
+     * Returns the Identifier URI, 
+     * based on its parent path (folder) and asset name.
+     * Appends a forward slash for folder ids.
+     * Useful for retrieving file/page URLs
+     * 
+     * @return String
+     * @see getURI
+     */
 	public String getPath(){
-	    if(getAssetName().equals("system folder") && getParentPath().equals("/System folder"))
+	    if(("system folder").equals(getAssetName()) && ("/System folder").equals(getParentPath())){
 	        return "/";
-	    else {
+	    } else {
     		String x = getParentPath() + getAssetName();
     		if("folder".equals(assetType)){
     			if(! x.endsWith("/")){
@@ -320,6 +316,12 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 
     public void setSysExpireDate(Date sysExpireDate) {
         this.sysExpireDate = sysExpireDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Identifier [id=" + id + ", assetName=" + assetName + ", assetType=" + assetType + ", parentPath=" + parentPath
+                        + ", hostId=" + hostId + ", sysPublishDate=" + sysPublishDate + ", sysExpireDate=" + sysExpireDate + "]";
     }
 
 }

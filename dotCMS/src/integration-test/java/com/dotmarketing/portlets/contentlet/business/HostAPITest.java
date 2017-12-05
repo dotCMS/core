@@ -3,13 +3,6 @@ package com.dotmarketing.portlets.contentlet.business;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
@@ -21,6 +14,12 @@ import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
 
 /**
  * This class will test operations related with interacting with hosts: Deleting
@@ -53,7 +52,7 @@ public class HostAPITest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
@@ -87,20 +86,13 @@ public class HostAPITest {
         	HibernateUtil.startTransaction();
         	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
 
-        Thread.sleep(600); // wait a bit for the index
-        
-        host = APILocator.getHostAPI().find(hostIdent, user, false);
-        
-        if(host!=null){
-        	APILocator.getHostAPI().delete(host, user, false);
-        	Thread.sleep(10000);
-        }
+        Thread.sleep(6000); // wait a bit for the index
         
         host = APILocator.getHostAPI().find(hostIdent, user, false);
         
@@ -113,35 +105,35 @@ public class HostAPITest {
     
     @Test
     public void makeDefault() throws Exception {
-    	User user=APILocator.getUserAPI().getSystemUser();
+        User user = APILocator.getUserAPI().getSystemUser();
     	/*
     	 * Get the current Default host
     	 */
-    	Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
+        Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
     	
     	/*
     	 * Create a new Host and make it default
     	 */
-    	Host host=new Host();
-        host.setHostname("test"+System.currentTimeMillis()+".demo.dotcms.com");
+        Host host = new Host();
+        host.setHostname("test" + System.currentTimeMillis() + ".demo.dotcms.com");
         host.setDefault(false);
-        try{
-        	HibernateUtil.startTransaction();
-        	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
-        }catch(Exception e){
-        	HibernateUtil.rollbackTransaction();
-        	Logger.error(HostAPITest.class, e.getMessage());
+        try {
+            HibernateUtil.startTransaction();
+            host = APILocator.getHostAPI().save(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            Logger.error(HostAPITest.class, e.getMessage());
         }
         APILocator.getHostAPI().publish(host, user, false);
         APILocator.getHostAPI().makeDefault(host, user, false);
-        
+
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
         hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(),true);
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
         
         /*
          * Validate if the previous default host. Is live and not default
@@ -153,20 +145,20 @@ public class HostAPITest {
          * get Back to default the previous host
          */
         APILocator.getHostAPI().makeDefault(hdef, user, false);
-        
+
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
         hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(),true);
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
         
         /*
          * Validate if the new host is not default anymore and if its live
          */
         Assert.assertFalse(host.isDefault());
         Assert.assertTrue(host.isLive());
-        
+
         Assert.assertTrue(hdef.isLive());
         Assert.assertTrue(hdef.isDefault());
         
@@ -174,14 +166,14 @@ public class HostAPITest {
          * Delete the new test host
          */
         Thread.sleep(600); // wait a bit for the index
-        try{
-        	HibernateUtil.startTransaction();
-        	APILocator.getHostAPI().archive(host, user, false);
-        	APILocator.getHostAPI().delete(host, user, false);
-        	HibernateUtil.commitTransaction();
-        }catch(Exception e){
-        	HibernateUtil.rollbackTransaction();
-        	Logger.error(HostAPITest.class, e.getMessage());
+        try {
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, user, false);
+            APILocator.getHostAPI().delete(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            Logger.error(HostAPITest.class, e.getMessage());
         }
         Thread.sleep(600); // wait a bit for the index
         /*
@@ -209,7 +201,7 @@ public class HostAPITest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
@@ -238,7 +230,7 @@ public class HostAPITest {
         	APILocator.getHostAPI().unpublish(host, user, false);
         	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());

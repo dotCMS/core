@@ -76,7 +76,7 @@ import com.liferay.portal.model.User;
 /**
  * Provides several widely used routines that handle, verify or format many data structures, such as
  * date/time handling and conversion, array handling, collection handling and verification, HTTP
- * Request operations, file operations, business logic operations, etc.
+ * Request operations, file operations, business logic operations, HTML and String formatting etc.
  * 
  * @author Will Ezell
  * @since April 23, 2002
@@ -239,11 +239,6 @@ public class UtilMethods {
             return false;
 
         return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
-        /*
-        return (x.toLowerCase().endsWith(".gif") || x.toLowerCase().endsWith(".jpg") || x.toLowerCase().endsWith(".jpe")
-                || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".jpeg"))
-                || x.toLowerCase().endsWith(".svg");
-                */
     }
 
     public static final String getMonthFromNow() {
@@ -352,10 +347,21 @@ public class UtilMethods {
      * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
      *         returns {@code false}.
      */
-    public static final boolean isSet(Collection<?> collection) {
+    public static final boolean isSet(final Collection<?> collection) {
         return null != collection && !collection.isEmpty();
     }
-    
+
+    /**
+     * Determines if an array of objects is different from {@code null} and is not empty.
+     *
+     * @param array - The {@link Object} array to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Object[] array) {
+        return null != array && array.length > 0;
+    }
+
     public static final boolean isValidEmail(String email) {
         if (email == null) {
             return false;
@@ -373,9 +379,6 @@ public class UtilMethods {
                 .matches(
                         "((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-z0-9\\._\\-,]+)*[a-z0-9\\-_\\.\\s\\%]+(\\?[a-z0-9=%&\\.\\-,#]+)?",
                         url);
-        // UrlValidator val = new UrlValidator();
-        // return val.isValid(url);
-
     }
 
     public static final boolean isValidEmail(Object email) {
@@ -577,11 +580,6 @@ public class UtilMethods {
         return cf.format(f);
     }
 
-    /*
-     * public final static String capitalize(String var) { if (var != null &&
-     * var.length() > 1) { return var.substring(0, 1).toUpperCase() +
-     * var.substring(1); } else { return var; } }
-     */
     public static final String formatter(String original, String from, String to) {
         return replace(original, from, to);
     }
@@ -651,8 +649,6 @@ public class UtilMethods {
         }
 
         return original.replaceAll("\r", "").replaceAll("\n\n", "<br/>&nbsp;<br/>").replaceAll("\n", "<br/>");
-
-        // return original;
     }
 
     public static final java.util.Date htmlToDate(String d) {
@@ -661,8 +657,6 @@ public class UtilMethods {
         DATE_TO_HTML_DATE.setLenient(true);
         rDate = (java.util.Date) DATE_TO_HTML_DATE.parse(d, pos);
 
-        // need to find non deprecaited method to do this, but it works
-        // rDate.setHours(12);
         return rDate;
     }
 
@@ -1062,7 +1056,6 @@ public class UtilMethods {
 
         char[] chars = s.toLowerCase().toCharArray();
 
-        // java.util.ArrayList al = new java.util.ArrayList();
         boolean capitalNext = true;
 
         for (int i = 0; i < chars.length; i++) {
@@ -1129,7 +1122,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         } else {
-            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n");
+            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n").replaceAll("\"", "\\\\\"");
             return x;
         }
     }
@@ -1323,7 +1316,6 @@ public class UtilMethods {
             StringWriter sw = new StringWriter();
             //Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //            I actually think it should be fine passed the ctx which is a chained context here
-//            VelocityContext vc = pushVelocityContext(ctx);
             VelocityEngine ve = VelocityUtil.getEngine();
             boolean success = ve.evaluate(ctx, sw, "RenderTool.eval()", vtl);
             if (success)
@@ -1339,7 +1331,6 @@ public class UtilMethods {
     public static Context pushVelocityContext(Context ctx) {
 //    	/Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
-//    	return new VelocityContext(ctx);
     	return ctx;
     }
     public static Context popVelocityContext(VelocityContext vctx) {
@@ -2388,7 +2379,6 @@ public class UtilMethods {
      * @param obj
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static Map<String, Object> toMap(Object obj) {
 
         HashMap<String, Object> map = new HashMap<String, Object>();
@@ -2467,10 +2457,8 @@ public class UtilMethods {
         } catch (Exception e) {
             /* Get the htmlpage a publish */
             String idStr = liveUrl.substring(liveUrl.indexOf("/") + 1, liveUrl.indexOf("."));
-            //long idInode = Long.parseLong(idStr);
             IHTMLPage htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(APILocator.getIdentifierAPI().find(idStr), APILocator.getUserAPI().getSystemUser(),false);
             if(htmlPage != null && InodeUtils.isSet(htmlPage.getInode())){
-            	//PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
             	PublishFactory.publishHTMLPage(htmlPage, null, APILocator.getUserAPI().getSystemUser(), false);
             	return getVelocityTemplate(liveUrl);
             }
@@ -2661,18 +2649,7 @@ public class UtilMethods {
         char[] text = unsafeString.toCharArray();
         safeText = new StringBuffer(unsafeString.length() + 50);
 
-        // StringBuffer attributedInput = new StringBuffer();
-
         for (int i = 0; i < text.length; i++) {
-            // attributedInput.append(text[i]);
-            // if ((text[i] < 'A' || text[i] > 'Z') &&
-            // (text[i] < 'a' || text[i] > 'z') &&
-            // text[i] != ' ') {
-            // attributedInput.append('[');
-            // attributedInput.append(Integer.toHexString(text[i]));
-            // attributedInput.append(']');
-            // }
-
             switch (text[i]) {
             case '<':
                 safeText.append("&lt;");
@@ -2705,9 +2682,6 @@ public class UtilMethods {
                 }
             }
         }
-
-        // print("made html safe \"" + attributedInput + "\" -> \"" + safeText +
-        // "\"");
 
         return safeText.toString();
     }
@@ -2995,7 +2969,6 @@ public class UtilMethods {
         } else {
             sampledText = text;
         }
-        // stem.out.println("shortstring: " + sampledText);
         return sampledText;
     }
 
@@ -3293,16 +3266,6 @@ public class UtilMethods {
         return product;
     }
 
-    // public static String formatPercent(int selection, int total) {
-    // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
-    // "%";
-    // }
-    //
-    // public static String formatPercent(long selection, long total) {
-    // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
-    // "%";
-    // }
-
     /**
      * pluralize(1, hour) => hour pluralize(2, hour) => 2 hours
      */
@@ -3385,12 +3348,6 @@ public class UtilMethods {
 
     public static String getDotCMSStackTrace() {
     	StringBuilder strB = new StringBuilder ();
-//    	StackTraceElement[] elems = Thread.currentThread().getStackTrace();
-//    	for(StackTraceElement el : elems) {
-//    		if(el.getClassName().startsWith("com.dotmarketing")) {
-//    			strB.append(el.toString() + "\n");
-//    		}
-//    	}
     	return strB.toString();
 
     }

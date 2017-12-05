@@ -64,7 +64,7 @@ public class EditUserCategoriesAction extends DotPortletAction
 						catAPI.addChild(userProxy, category, user, false);
 					}					
 				}
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 			catch(Exception ex)
 			{

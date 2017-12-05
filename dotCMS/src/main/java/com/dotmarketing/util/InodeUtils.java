@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.uuid.shorty.ShortType;
@@ -189,6 +190,7 @@ public class InodeUtils {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@CloseDBIfOpened
 	public static Inode getInode(final String inode) throws DotDataException, DotSecurityException{
 	    Inode inodeObj = null;
         //Using the ShortyAPI to identify the nature of this inode

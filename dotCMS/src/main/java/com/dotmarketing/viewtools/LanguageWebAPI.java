@@ -96,6 +96,15 @@ public class LanguageWebAPI implements ViewTool {
     public static boolean canDefaultPageToDefaultLanguage () {
         return Config.getBooleanProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true );
     }
+    
+    /**
+     * Return if the DEFAULT_FILE_TO_DEFAULT_LANGUAGE property is activated or not
+     * defaults to false
+     * @return boolean
+     */
+    public static boolean canDefaultFileToDefaultLanguage() {
+        return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true);
+    }
 
     /**
 	 * Return if the content can be use as a default to all languages.

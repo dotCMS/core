@@ -10,11 +10,14 @@
 <%@page import="java.util.Set"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotmarketing.util.DateUtil" %>
 <%
 String inode=request.getParameter("inode");// DOTCMS-7085
 GregorianCalendar cal = new GregorianCalendar();
 Date dateValue = new Date();
 cal.setTime(dateValue);
+
+String currentDateStr = DateUtil.format(dateValue, "yyyy-MM-dd");
 
 String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
 String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
@@ -73,7 +76,7 @@ String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCal
 					validate="return false;"
 					invalidMessage=""
 					id="wfPublishDateAux"
-					name="wfPublishDateAux" value='now' style="width: 137px;">
+					name="wfPublishDateAux" value='<%=currentDateStr%>' style="width: 137px;">
 				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value='T<%=hour+":"+min%>:00'
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 120px;"/>
@@ -90,7 +93,7 @@ String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCal
 				type="text"
 				dojoType="dijit.form.DateTextBox"
 				validate="return false;"
-				id="wfExpireDateAux" name="wfExpireDateAux" value='now' style="width: 137px;">
+				id="wfExpireDateAux" name="wfExpireDateAux" value='<%=currentDateStr%>' style="width: 137px;">
 			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value='T<%=hour+":"+min%>:00'
 			    data-dojo-type="dijit.form.TimeTextBox"
 				style="width: 120px;" />

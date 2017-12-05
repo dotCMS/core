@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.webdav;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.bradmcevoy.http.ApplicationConfig;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.Initable;
@@ -10,8 +11,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -42,13 +41,13 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	/* (non-Javadoc)
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
 	 */
+    @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
-		Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
+		url = url.toLowerCase();
+    	Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
-			HibernateUtil.startTransaction();
 			boolean isFolder = false;
 			boolean isResource = false;
-			dotDavHelper.stripMapping(url);
 			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 
 					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
 			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);
@@ -170,20 +169,6 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					return lfr;
 				}
 			}
-			/**
-			// Handle Fake Template Folder
-			if(actualPath.contains("/" + TemplateFolderResourceImpl.TEMPLATE_FOLDER)){
-
-
-				if(TemplateFolderResourceImpl.TEMPLATE_FOLDER.equals(splitPath[splitPath.length-1])){
-					return new TemplateFolderResourceImpl(url,host);
-				}
-				else{
-					//Template t = 
-					//return new TemplateFileResourceImpl(, host)
-				}
-			}
-			**/
 			
 			if(dotDavHelper.isResource(url,user)){
 				isResource = true;
@@ -213,27 +198,10 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 				FolderResourceImpl fr = new FolderResourceImpl(folder, url);
 				return fr;
 			}
-		}catch (Exception e) {
+		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(ResourceFactorytImpl.class,e1.getMessage(),e1);
-			}
 			return null;
-		}finally{
-			try {
-				HibernateUtil.commitTransaction();
-			} catch (DotHibernateException e) {
-				Logger.error(ResourceFactorytImpl.class,e.getMessage(),e);
-				try {
-					HibernateUtil.rollbackTransaction();
-				} catch (DotHibernateException e1) {
-					Logger.error(ResourceFactorytImpl.class,e1.getMessage(),e1);
-				}
-			}
 		}
-		
 	}
 
 	/* (non-Javadoc)

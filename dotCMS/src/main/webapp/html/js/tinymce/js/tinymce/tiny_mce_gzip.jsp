@@ -1,4 +1,11 @@
-<%@page import="java.io.*,java.util.zip.*" %>
+<%@page import="java.io.ByteArrayOutputStream,java.io.File" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.io.InputStream" %>
+<%@ page import="java.io.OutputStream" %>
+<%@ page import="java.io.OutputStreamWriter" %>
+<%@ page import="java.nio.file.Files" %>
+<%@ page import="java.nio.file.Paths" %>
+<%@ page import="java.util.zip.GZIPOutputStream" %>
 <%
 /**
  * tiny_mce_gzip.jsp
@@ -23,8 +30,8 @@
 	OutputStreamWriter bow;
 	ByteArrayOutputStream bos;
 	GZIPOutputStream gzipStream;
-	FileOutputStream fout;
-	FileInputStream fin;
+	OutputStream fout;
+	InputStream fin;
 	byte buff[];
 
 	// Get input
@@ -86,7 +93,7 @@
 		if (compress)
 			response.addHeader("Content-Encoding", enc);
 
-		fin = new FileInputStream(cacheFile);
+		fin = Files.newInputStream(Paths.get(cacheFile));
 		buff = new byte[1024];
 
 		while ((bytes = fin.read(buff, 0, buff.length)) != -1)
@@ -154,7 +161,7 @@
 
 			// Write to file
 			try {
-				fout = new FileOutputStream(cacheFile);
+				fout = Files.newOutputStream(Paths.get(cacheFile));
 				fout.write(bos.toByteArray());
 				fout.close();
 			} catch (IOException e) {
@@ -184,7 +191,7 @@
 			if (!new File(path).exists())
 				return "";
 
-			FileInputStream fis = new FileInputStream(path);
+			InputStream fis = Files.newInputStream(Paths.get(path));
 			int x = fis.available();
 			byte b[] = new byte[x];
 

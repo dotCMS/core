@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
@@ -58,6 +59,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import java.util.ArrayList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -82,6 +84,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -116,6 +120,63 @@ public class ContentResourceTest {
         hostAPI = APILocator.getHostAPI();
         contentletAPI = APILocator.getContentletAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
+    }
+
+    @Test
+    public void getContent() throws Exception {
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+        assertNotNull(structure);
+
+        //Get Contentlets by ContentType
+        String response = webTarget.path("/query/+contentType:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 1: " + response);
+        JSONObject json = new JSONObject(response);
+        assertNotNull(json);
+
+        JSONArray contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        int length = contentlets.length();
+        assertTrue(length > 0);
+
+
+        //Get Contentlets by Structure Name
+        response = webTarget.path("/query/+stName:webPageContent/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 2: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
+        //Get Contentlets by Structure inode
+        response = webTarget.path("/query/+stInode:"+ structure.getInode() +"/orderby/modDate%20desc/limit/5")
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(response);
+        System.out.println("Response 3: " + response);
+        json = new JSONObject(response);
+        assertNotNull(json);
+
+        contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+
+        assertEquals(length, contentlets.length());
+
     }
 
     @Test
@@ -280,7 +341,7 @@ public class ContentResourceTest {
         FileAsset file=APILocator.getFileAssetAPI().fromContentlet(cont);
         Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
         Assert.assertEquals("demo.dotcms.com", hostAPI.find(file.getHost(), user, false).getHostname());
-        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getInputStream()));
     }
 
     /**
@@ -606,7 +667,9 @@ public class ContentResourceTest {
         StructureFactory.saveStructure(st);
         Field field=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
         FieldFactory.saveField(field);
-        APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
+        List<WorkflowScheme> schemes = new ArrayList<>();
+        schemes.add(scheme);
+        APILocator.getWorkflowAPI().saveSchemesForStruct(st, schemes);
 
         // send the Rest api call
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
@@ -626,7 +689,9 @@ public class ContentResourceTest {
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
         // must be in the first step
-        Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
+        WorkflowStep contentStep = APILocator.getWorkflowAPI().findStepByContentlet(cont);
+        assertNotNull(contentStep);
+        Assert.assertEquals(step1.getId(), contentStep.getId());
 
         boolean assigned=false;
 
@@ -740,6 +805,7 @@ public class ContentResourceTest {
 
         contentletAPI.isInodeIndexed(c1.getInode());
         contentletAPI.isInodeIndexed(c2.getInode());
+        Thread.sleep(2000);
 
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
         FactoryLocator.getRelationshipFactory().save(rel);
@@ -815,6 +881,84 @@ public class ContentResourceTest {
         Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
 
         Assert.assertEquals(working.getInode(), c2.getInode());
+    }
+
+    //Issue https://github.com/dotCMS/core/issues/12287
+    @Test
+    public void updateFileAssetContentTest() throws Exception{
+        final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
+        long currentTime = System.currentTimeMillis();
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+        Folder folder=APILocator.getFolderAPI().createFolders("/rest/" + currentTime, demo, user, false);
+        Contentlet contentlet = null;
+
+        try{
+            //Creating a temporary File to use in the binary fields.
+            File imageFile = temporaryFolder.newFile("DummyFile.txt");
+            writeTextIntoFile(imageFile, "This is the same file");
+
+            Response response = client.target(webTarget.getUri() + "/publish/1").request()
+                    .header(authheader, authvalue).put(Entity.entity(
+                            new MultiPart()
+                                    .bodyPart(new BodyPart(
+                                            new JSONObject()
+                                                    .put("hostFolder", "demo.dotcms.com:/rest/" + currentTime)
+                                                    .put("title", "Test Content")
+                                                    .put("fileName", imageFile.getName())
+                                                    .put("languageId", "1")
+                                                    .put("stName", "fileAsset")
+                                                    .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+
+            Assert.assertEquals(200, response.getStatus());
+            contentlet = contentletAPI.find((String) response.getHeaders().getFirst("inode"), user, false);
+            Assert.assertNotNull(contentlet);
+
+            response = client.target(webTarget.getUri() + "/publish/1").request()
+                    .header(authheader, authvalue).put(Entity.entity(
+                            new MultiPart()
+                                    .bodyPart(new BodyPart(
+                                            new JSONObject()
+                                                    .put("hostFolder", "demo.dotcms.com:/rest/" + currentTime)
+                                                    .put("title", "Test Content Updated")
+                                                    .put("fileName", imageFile.getName())
+                                                    .put("languageId", "1")
+                                                    .put("stName", "fileAsset")
+                                                    .put("identifier",contentlet.getIdentifier())
+                                                    .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                                    .bodyPart(new StreamDataBodyPart(
+                                            imageFile.getName(),
+                                            FileUtils.openInputStream(imageFile),
+                                            imageFile.getName(),
+                                            MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+
+            Assert.assertEquals(200, response.getStatus());
+            Contentlet contentletUpdated = contentletAPI.find((String) response.getHeaders().getFirst("inode"), user, false);
+            Assert.assertNotNull(contentletUpdated);
+
+            Assert.assertNotEquals(contentlet.getTitle(), contentletUpdated.getTitle());
+
+
+        } finally {
+            APILocator.getFolderAPI().delete(folder,user,false);
+            contentletAPI.delete(contentlet,user,false);
+
+        }
+
     }
 
     /**

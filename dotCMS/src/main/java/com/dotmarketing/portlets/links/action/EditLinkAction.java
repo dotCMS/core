@@ -393,7 +393,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		} else {
 			Logger.debug(this, "Unspecified Action");
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		if ((cmd != null) && cmd.equals(Constants.ADD) ) 
 		{      	

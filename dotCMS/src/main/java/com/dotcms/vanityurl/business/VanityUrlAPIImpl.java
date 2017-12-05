@@ -229,25 +229,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     } // getVanityUrlFromContentlet.
 
     /**
-     * Add the Vanity URL to the vanityURLCache
-     *
-     * @param vanityUrl The vanityurl URL object
-     */
-    private void addToVanityURLCache(final VanityUrl vanityUrl) {
-        try {
-            if (vanityUrl.isLive()) {
-                vanityUrlServices.updateCache(vanityUrl);
-            } else {
-                vanityUrlServices.invalidateVanityUrl(vanityUrl);
-            }
-        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-            Logger.error(this,
-                    "Error trying to add Vanity URL identifier:" + vanityUrl.getIdentifier()
-                            + " to VanityURLCache", e);
-        }
-    } // addToVanityURLCache
-
-    /**
      * Add the Vanity URL to the vanityURLCache, without affecting any secondary cache.
      *
      * @param vanityUrl The vanityurl URL object
@@ -321,7 +302,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         }
 
         return (null == result)?
-                this.getFallback(uri, siteId, languageId, user):result;
+                this.getFallback(uri, siteId, languageId, this.systemUser):result;
     } // getLiveCachedVanityUrl.
 
     private CachedVanityUrl getFallback (final String uri, final String siteId,
@@ -337,6 +318,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
             //Verify if this Content Type has a Multilinguable fallback
             if (!vanityUrlContentTypes.isEmpty()
+                    && (this.defaultLanguageId != languageId)
                     && ((VanityUrlContentType) vanityUrlContentTypes.get(0)).fallback()) {
 
                 //if the fallback is set then is going to try to get it by the default language
@@ -515,7 +497,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 			 * initialization of dotCMS if for some reason at this point we
 			 * don't have indexes.
 			 */
-            Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+            Logger.error(this, "Error when initializing Vanity URLs, no index found ");
+            Logger.debug(this, e.getMessage(), e);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
         } catch (Exception e) {
@@ -525,7 +508,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 				 * initialization of dotCMS if for some reason at this point we
 				 * don't have indexes.
 				 */
-                Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+                Logger.error(this, "Error when initializing Vanity URLs, no index found ");
+                Logger.debug(this, e.getMessage(), e);
             } else {
                 throw new DotRuntimeException("Error searching and populating the Vanity URL Cache",
                         e);
@@ -570,7 +554,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         final Map<SiteLanguageKey, ImmutableList.Builder<CachedVanityUrl>> vanityPerSiteLanguageMap
                 = map();
-        SiteLanguageKey key = null;
+        SiteLanguageKey key;
 
         for (final VanityUrl vanityUrl : vanityUrls) {
 

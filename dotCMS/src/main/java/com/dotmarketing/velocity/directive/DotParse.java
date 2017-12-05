@@ -26,7 +26,7 @@ public class DotParse extends DotDirective {
 
   private final String hostIndicator = "//";
   private final String EDIT_ICON =
-      "<div class='dot_parseIcon'><a href='javascript:window.top.document.getElementById(\"detailFrame\").contentWindow.editFile(\"${_dotParseInode}\");' title='$_dotParsePath'><span class='editIcon'></span></a></div>";
+      "<div class='dot_parseIcon'><a href='javascript:window.top.document.getElementById(\"detailFrame\").contentWindow.editFile(\"${_dotParseInode}\");' title='${_dotParsePath}'><span class='editIcon'></span></a></div>";
 
 
   @Override
@@ -104,13 +104,13 @@ public class DotParse extends DotDirective {
               Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
         if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
           String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",
-              id.getParentPath());
+              id.getURI());
           writer.append(editIcon);
         }
       }
 
 
-      return asset.getFileAsset().getAbsolutePath();
+      return (null != asset.getFileAsset())?asset.getFileAsset().getAbsolutePath():null;
     } 
     catch (ResourceNotFoundException e) {
         Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );

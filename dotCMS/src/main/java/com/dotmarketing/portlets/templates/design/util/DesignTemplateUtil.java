@@ -142,7 +142,7 @@ public class DesignTemplateUtil {
      * @param isPreview
      * @return
      */
-    public static TemplateLayout getDesignParameters ( String drawedBody, Boolean isPreview ) {
+    public static TemplateLayout  getDesignParameters ( String drawedBody, Boolean isPreview ) {
 
         Document templateDrawedBody = Jsoup.parse( drawedBody );
         TemplateLayout parameters = new TemplateLayout();
@@ -303,7 +303,7 @@ public class DesignTemplateUtil {
             //Getting the containers for this html fragment
             List<String> containers = getColumnContainers( sidebar );
             //Adding the sidebar to the layout
-            layout.setSidebar( containers, isPreview );
+            layout.setContainers( containers, isPreview );
         }
 
         //***************************************************************
@@ -349,7 +349,7 @@ public class DesignTemplateUtil {
 
         }
         //Set the body column with its rows
-        layout.setBody( splitBodiesList );
+        layout.setBodyRows( splitBodiesList );
     }
 
     /**

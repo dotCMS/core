@@ -22,20 +22,19 @@
 
 package com.liferay.util;
 
+import com.dotmarketing.util.Logger;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.Map;
-import com.dotmarketing.util.Logger;
 
 /**
  * <a href="StringUtil.java.html"><b><i>View Source</i></b></a>
@@ -217,7 +216,7 @@ public class StringUtil {
 		InputStream is=classLoader.getResourceAsStream(name);
 		if (is==null) {
 			File f=new File(FileUtil.getRealPath("/WEB-INF/"+name));
-			is=new FileInputStream(f);
+			is = Files.newInputStream(f.toPath());
 		}
 
 		return read(is);

@@ -1,30 +1,11 @@
 package com.dotcms.contenttype.business;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
-import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
@@ -33,12 +14,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.base.Preconditions;
+
+import java.util.*;
 
 public class FieldFactoryImpl implements FieldFactory {
 
@@ -88,9 +69,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public void delete(Field field) throws DotDataException {
-    LocalTransaction.wrapReturn(() -> {
-      return deleteFieldInDb(field);
-    });
+      deleteFieldInDb(field);
   }
 
   @Override
@@ -110,8 +89,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
-    return LocalTransaction.wrapReturn(() -> {
-      
+
       if(!UtilMethods.isSet(fieldVar.key())){
         throw new DotDataException("FieldVariable.key cannot be empty");
       }
@@ -124,29 +102,20 @@ public class FieldFactoryImpl implements FieldFactory {
       Field f = byId(fieldVar.fieldId());
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
       return fv;
-    });
-
   }
 
   @Override
   public void delete(FieldVariable fieldVar) throws DotDataException {
-    LocalTransaction.wrapReturn(() -> {
       deleteFieldVarInDb(fieldVar);
       Field f = byId(fieldVar.fieldId());
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
-      return null;
-    });
-    
-
   }
 
   @Override
   public Field save(final Field throwAwayField) throws DotDataException {
-    return LocalTransaction.wrapReturn(() -> {
-      Field field =  dbSaveUpdate(throwAwayField);
+      final Field field =  dbSaveUpdate(throwAwayField);
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
       return field;
-    });
 
   }
 
@@ -594,5 +563,31 @@ public class FieldFactoryImpl implements FieldFactory {
     throw new DotDataValidationException("Unable to suggest a variable name.  Got to:" + var,
         "field.validation.variable.already.taken");
 
+  }
+
+  public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(sql.moveSorOrderForward);
+    dc.addParam(contentTypeId);
+    dc.addParam(from);
+    dc.addParam(to);
+    dc.loadResult();
+  }
+
+  public void moveSortOrderBackward(String contentTypeId, int from, int to) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(sql.moveSorOrderBackward);
+    dc.addParam(contentTypeId);
+    dc.addParam(from);
+    dc.addParam(to);
+    dc.loadResult();
+  }
+
+  public void moveSortOrderForward(String contentTypeId, int from) throws DotDataException {
+     moveSortOrderForward(contentTypeId, from, Integer.MAX_VALUE);
+  }
+
+  public void moveSortOrderBackward(String contentTypeId, int from) throws DotDataException {
+    moveSortOrderBackward(contentTypeId, from, Integer.MAX_VALUE);
   }
 }

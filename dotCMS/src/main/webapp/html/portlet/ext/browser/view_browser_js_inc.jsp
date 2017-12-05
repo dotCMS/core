@@ -965,7 +965,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     function getStatusHTML (asset) {
         var html =  '<table class="browserTableStatus"><tr>';
 
-        if(!asset.live && asset.working) {
+        if(!asset.live && asset.working && !asset.deleted) {
             html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
         } else {
             html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';

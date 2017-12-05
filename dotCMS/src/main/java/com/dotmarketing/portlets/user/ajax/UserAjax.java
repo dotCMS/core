@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.user.ajax;
 
+import static com.liferay.portlet.PortletUtil.getLoggedInUser;
+import static com.liferay.portlet.PortletUtil.validateUsersPortletPermissions;
+
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -42,9 +45,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
-import org.apache.velocity.tools.generic.SortTool;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,8 +52,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.tools.generic.SortTool;
 
 /**
  * Provides utility methods that are accessed via DWR to build up the UI of the
@@ -141,6 +141,9 @@ public class UserAjax {
 	 */
 	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
+
         //auth
 		User modUser = getAdminUser();
 		String date = DateUtil.getCurrentDate();
@@ -169,7 +172,7 @@ public class UserAjax {
 			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			
 			if (localTransaction) {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			}
 			resultMap = new HashMap<String, Object>();
 			resultMap.put("userID", user.getUserId());
@@ -244,6 +247,9 @@ public class UserAjax {
 		//auth
 		User modUser = getLoggedInUser();
 		String date = DateUtil.getCurrentDate();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(modUser);
 	
 		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -324,11 +330,15 @@ public class UserAjax {
 	 * @throws SystemException
 	 * @throws DotSecurityException
 	 */
-	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException, DotSecurityException {
+	public boolean deleteUser(String userId)
+			throws DotDataException, PortalException, SystemException, DotSecurityException {
 		
 		//auth
 		User modUser = getAdminUser();
 		String date = DateUtil.getCurrentDate();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
 
 		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -373,9 +383,13 @@ public class UserAjax {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException The user requesting the delete doesn't have permission edit permission
 	 */
-	public boolean deleteUser (String userId, String replacingUserId) throws DotHibernateException, DotDataException, DotStateException, DotSecurityException {
+	public boolean deleteUser(String userId, String replacingUserId)
+			throws DotHibernateException, DotDataException, DotStateException, DotSecurityException, PortalException, SystemException {
 		
 		String date = DateUtil.getCurrentDate();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
 
 		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
 		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
@@ -495,6 +509,9 @@ public class UserAjax {
 	 * @throws DotSecurityException
 	 */
 	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
 
 		String date = DateUtil.getCurrentDate();
 		//auth
@@ -626,6 +643,10 @@ public class UserAjax {
 	 */
 	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
 			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(getLoggedInUser());
+
 		//auth
 		User modUser = getAdminUser();
 		UserAPI uAPI = APILocator.getUserAPI();
@@ -709,8 +730,13 @@ public class UserAjax {
 	 */
 	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
 			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
 		//auth
 		User modUser = getLoggedInUser();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(modUser);
+
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -774,8 +800,13 @@ public class UserAjax {
 	 * @throws DotSecurityException
 	 */
 	public String deleteAddress(String userId, String addressId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
 		//auth
 		User modUser = getLoggedInUser();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(modUser);
+
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -819,8 +850,13 @@ public class UserAjax {
 	 */
 	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
 	 	throws DotDataException, PortalException, SystemException, DotSecurityException {
+
 		//auth
 		User modUser = getLoggedInUser();
+
+		//Validate if this logged in user has the required permissions to access the users portlet
+		validateUsersPortletPermissions(modUser);
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserAPI uAPI = APILocator.getUserAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -1488,7 +1524,7 @@ public class UserAjax {
 				catAPI.addChild(userProxy, category, user, respectFrontend);
 			}
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	/**
@@ -1543,7 +1579,7 @@ public class UserAjax {
 		UserProxy toUpdate = userProxyAPI.getUserProxy(userId, user, respectFrontEndRoles);
 		toUpdate.setNoclicktracking(disabled);
 		userProxyAPI.saveUserProxy(toUpdate, user, respectFrontEndRoles);
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 	}
 
@@ -1969,30 +2005,6 @@ public class UserAjax {
 
 		}
 
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	private User getLoggedInUser() throws PortalException, SystemException, DotSecurityException {
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-	    // lock down to users with access to Users portlet
-		String remoteIp = request.getRemoteHost();
-		String userId = "[not logged in]";
-		if(loggedInUser!=null && loggedInUser.getUserId()!=null){
-			userId = loggedInUser.getUserId();
-		}
-        if(loggedInUser==null) {
-        	SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+ userId+ " from " + remoteIp);
-        	throw new DotSecurityException("not authorized");
-        }
-        return loggedInUser;
 	}
 
 	/**

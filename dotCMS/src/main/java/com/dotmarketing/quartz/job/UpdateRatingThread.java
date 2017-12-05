@@ -226,7 +226,7 @@ public class UpdateRatingThread implements StatefulJob {
 						}
 
 						conAPI.checkinWithoutVersioning(c, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(c), user, true);
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 					}
 
 
@@ -237,7 +237,7 @@ public class UpdateRatingThread implements StatefulJob {
 						dc.addParam((String) map.get("identifier"));
 						dc.getResult();
 						try {
-							HibernateUtil.commitTransaction();
+							HibernateUtil.closeAndCommitTransaction();
 						} catch (DotHibernateException e1) {
 							Logger.error(this, e.getMessage(), e);
 						}

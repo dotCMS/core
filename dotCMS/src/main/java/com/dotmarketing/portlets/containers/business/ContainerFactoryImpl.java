@@ -1,30 +1,36 @@
 package com.dotmarketing.portlets.containers.business;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Inode.Type;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
@@ -42,22 +48,55 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv " +
-				"where vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-				"vv.identifier = ident.id and host_inode = '" + parentPermissionable.getIdentifier() + "'";
-		hu.setSQLQuery(sql);
-		return hu.list();
+		DotConnect dc = new DotConnect();
+		StringBuilder sql = new StringBuilder();
+		String tableName = Type.CONTAINERS.getTableName();
+
+		sql.append("SELECT ");
+		sql.append(tableName);
+		sql.append(".*, dot_containers_1_.* from ");
+		sql.append(tableName);
+		sql.append(
+				", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=");
+		sql.append(tableName);
+		sql.append(".inode and ");
+		sql.append(tableName);
+		sql.append(".inode = dot_containers_1_.inode and vv.identifier = ident.id and host_inode = '");
+		sql.append(parentPermissionable.getIdentifier() );
+		sql.append('\'');
+		dc.setSQL(sql.toString());
+
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers() throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
-				"where vv.working_inode= " + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-				"dot_containers_1_.type='containers' order by " + Inode.Type.CONTAINERS.getTableName() + ".title";
-		hu.setSQLQuery(sql);
-		return hu.list();
+		DotConnect dc = new DotConnect();
+		StringBuilder sql = new StringBuilder();
+		String tableName = Type.CONTAINERS.getTableName();
+
+		sql.append("SELECT ");
+		sql.append(tableName);
+		sql.append(".*, dot_containers_1_.* from ");
+		sql.append(tableName);
+		sql.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ");
+		sql.append(tableName);
+		sql.append(".inode and ");
+		sql.append(tableName);
+		sql.append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers' order by ");
+		sql.append(tableName);
+		sql.append(".title");
+		dc.setSQL(sql.toString());
+
+		try {
+			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+		} catch (ParseException e) {
+			throw new DotDataException(e);
+		}
 	}
     @Override
     @SuppressWarnings("unchecked")
@@ -98,41 +137,54 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		boolean done = false;
 
 		StringBuffer conditionBuffer = new StringBuffer();
-		/*String condition = !includeArchived?" asset.working = " + DbConnectionFactory.getDBTrue() + " and asset.deleted = " +DbConnectionFactory.getDBFalse():
-			" asset.working = " + DbConnectionFactory.getDBTrue();*/
-		//conditionBuffer.append(condition);
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
 			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<Object>();
+			paramValues = new ArrayList<>();
 			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(counter==0){
 					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
+								.equalsIgnoreCase("identifier")) {
+							conditionBuffer.append(" asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else{
-							conditionBuffer.append(" lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}else{
 					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
+								.equalsIgnoreCase("identifier")) {
+							conditionBuffer.append(" OR asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(" = '");
+							conditionBuffer.append(entry.getValue());
+							conditionBuffer.append('\'');
 						}else{
-							conditionBuffer.append(" OR lower(asset." + entry.getKey()+ ") like ? ");
+							conditionBuffer.append(" OR lower(asset.");
+							conditionBuffer.append(entry.getKey());
+							conditionBuffer.append(") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
 						}
 					}else{
-						conditionBuffer.append(" OR asset." + entry.getKey()+ " = " + entry.getValue());
+						conditionBuffer.append(" OR asset.");
+						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(" = ");
+						conditionBuffer.append(entry.getValue());
 					}
 				}
 
@@ -141,59 +193,78 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			conditionBuffer.append(" ) ");
 		}
 
-		StringBuffer query = new StringBuffer();
-		query.append("select asset from asset in class " + Container.class.getName() + ", " +
-				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +", vinfo in class "+ContainerVersionInfo.class.getName());
+		final StringBuilder query = new StringBuilder();
+		query.append("select asset.*, inode.* from ");
+		query.append(Type.CONTAINERS.getTableName());
+		query.append(" asset, inode, identifier, ");
+		query.append(Type.CONTAINERS.getVersionTableName());
+		query.append(" vinfo");
+
 		if(UtilMethods.isSet(parent)){
 
 			//Search for the given ContentType inode
 			ContentType foundContentType = contentTypeAPI.find(parent);
 
-			if ( null != foundContentType && InodeUtils.isSet(foundContentType.inode()) )
-				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id"
-						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '" + parent + "' ) ");
-			else
-				query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
-						"and asset.identifier = identifier.id and tree.parent = '" + parent + "' and tree.child=asset.inode");
+			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
+				query.append(
+						" where asset.inode = inode.inode and asset.identifier = identifier.id")
+						.append(
+								" and exists ( from container_structures cs where cs.container_id = asset.identifier")
+						.append(" and cs.structure_id = '");
+				query.append(parent);
+				query.append("' ) ");
+			}else {
+				query.append(
+						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
+						.append(" and tree.parent = '");
+				query.append(parent);
+				query.append("' and tree.child=asset.inode");
+			}
 		}else{
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
-		query.append(" and vinfo.identifier=identifier.id and vinfo.workingInode=asset.inode ");
-		if(!includeArchived)
-		    query.append(" and vinfo.deleted="+DbConnectionFactory.getDBFalse());
+		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
+		if(!includeArchived) {
+			query.append(" and vinfo.deleted=");
+			query.append(DbConnectionFactory.getDBFalse());
+		}
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.hostId = '"+ hostId +"'");
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId).append('\'');
 		}
 		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '"+ inode +"'");
+			query.append(" and asset.inode = '");
+			query.append(inode).append('\'');
 		}
 		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '"+ identifier +"'");
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append('\'');
 		}
 		if(!UtilMethods.isSet(orderBy)){
-			orderBy = "modDate desc";
+			orderBy = "mod_date desc";
 		}
 
-		List<Container> resultList = new ArrayList<Container>();
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		String type;
+		List<Container> resultList;
+		DotConnect dc = new DotConnect();
 		int countLimit = 100;
 		int size = 0;
 		try {
-			type = ((Inode) Container.class.newInstance()).getType();
-			query.append(" and asset.type='"+type+ "' " + conditionBuffer.toString() + " order by asset." + orderBy);
-			dh.setQuery(query.toString());
+			query.append(conditionBuffer.toString());
+			query.append(" order by asset.");
+			query.append(orderBy);
+			dc.setSQL(query.toString());
 
 			if(paramValues!=null && paramValues.size()>0){
 				for (Object value : paramValues) {
-					dh.setParam((String)value);
+					dc.addParam((String)value);
 				}
 			}
 
 			while(!done) {
-				dh.setFirstResult(internalOffset);
-				dh.setMaxResults(internalLimit);
-				resultList = dh.list();
+				dc.setStartRow(internalOffset);
+				dc.setMaxRows(internalLimit);
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -212,7 +283,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			} else if (offset > 0) {
 				size = toReturn.subList(offset, toReturn.size()).size();
 			}
-			assets.setTotalResults(size);
+			assets.setTotalResults(toReturn.size());
 
 			if(limit!=-1) {
 				int from = offset<toReturn.size()?offset:0;
@@ -240,8 +311,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
     public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
         HibernateUtil dh = new HibernateUtil(Container.class);
-        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE "
-        		+ " exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = c.identifier and cs.structureId = ? ) ");
+
+        StringBuilder query = new StringBuilder();
+
+        query.append("FROM c IN CLASS ");
+		query.append(Container.class);
+		query.append(" WHERE  exists ( from cs in class ");
+		query.append(ContainerStructure.class.getName());
+		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ) ");
+        dh.setQuery(query.toString());
         dh.setParam(structureInode);
         return dh.list();
     }
@@ -257,17 +335,25 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
-        
+        StringBuilder query = new StringBuilder();
+
+        query.append("select distinct(identifier) from ");
+		query.append(Inode.Type.CONTAINERS.getTableName());
+		query.append(" where mod_user = ?");
         try {
-           dc.setSQL("select distinct(identifier) from " + Inode.Type.CONTAINERS.getTableName() + " where mod_user = ?");
+           dc.setSQL(query.toString());
            dc.addParam(userId);
            List<HashMap<String, String>> containers = dc.loadResults();
-           
-           dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = ? where mod_user = ? ");
+
+           query = new StringBuilder();
+           query.append("UPDATE ");
+           query.append(Inode.Type.CONTAINERS.getTableName());
+           query.append(" set mod_user = ? where mod_user = ? ");
+           dc.setSQL(query.toString());
            dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
-           
+
            dc.setSQL("update container_version_info set locked_by=? where locked_by  = ?");
            dc.addParam(replacementUserId);
            dc.addParam(userId);
@@ -292,5 +378,4 @@ public class ContainerFactoryImpl implements ContainerFactory {
             throw new DotDataException(e.getMessage(), e);
         }
 	}
-
 }

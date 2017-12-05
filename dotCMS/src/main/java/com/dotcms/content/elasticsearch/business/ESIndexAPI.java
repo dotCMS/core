@@ -3,11 +3,26 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
+import com.dotcms.cluster.ClusterUtils;
+import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,7 +44,6 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -82,24 +96,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
-
-import com.dotcms.cluster.ClusterUtils;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.ZipUtil;
 
 public class ESIndexAPI {
 
@@ -187,8 +183,7 @@ public class ESIndexAPI {
 		Client client = esclient.getClient();
 
 		BufferedWriter bw = null;
-		try {
-		    ZipOutputStream zipOut=new ZipOutputStream(new FileOutputStream(toFile));
+		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
 		    zipOut.setLevel(9);
 		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
 
@@ -224,9 +219,6 @@ public class ESIndexAPI {
 		    Logger.error(this.getClass(), "Can't export index",e);
 			throw new IOException(e.getMessage(),e);
 		} finally {
-			if (bw != null) {
-				bw.close();
-			}
 			AdminLogger.log(this.getClass(), "backupIndex", "Back up for index: " + index + " done.");
 		}
 	}
@@ -291,7 +283,7 @@ public class ESIndexAPI {
 				createIndex(index);
 			}
 
-			ZipInputStream zipIn=new ZipInputStream(new FileInputStream(backupFile));
+			final ZipInputStream zipIn=new ZipInputStream(Files.newInputStream(backupFile.toPath()));
 			zipIn.getNextEntry();
 			br = new BufferedReader(new InputStreamReader(zipIn));
 
@@ -899,7 +891,7 @@ public class ESIndexAPI {
 		// this will be the zip file using the same name of the directory path
 
 		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
-		try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(toZipFile))) {
+		try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toZipFile.toPath()))) {
 			ZipUtil.zipDirectory(toFile.getAbsolutePath(), zipOut);
 			return toZipFile;
 		}

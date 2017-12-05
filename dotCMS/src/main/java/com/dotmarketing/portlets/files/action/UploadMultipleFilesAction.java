@@ -10,8 +10,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -86,7 +84,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				_handleException(ae, req);
 				return;
 			}
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 		}
 		else if (cmd != null && cmd.equals(Constants.ADD)) {
             try {
@@ -174,8 +172,6 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
 	public void _saveFileAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user, String subcmd)
 	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException, IOException {
-
-	    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 
 	    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
         HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
@@ -283,10 +279,10 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
                         contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
                         if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
-                            APILocator.getVersionableAPI().setLive( contentlet );
+                            APILocator.getContentletAPI().publish(contentlet, user, false);
                         }
 
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
 						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }

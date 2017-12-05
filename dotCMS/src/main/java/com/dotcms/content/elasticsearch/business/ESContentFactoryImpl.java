@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -56,7 +58,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -198,7 +199,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
 	    String name = "";
         try {
-            name = APILocator.getContentletAPI().getName(cont, APILocator.getUserAPI().getSystemUser(), true);
+            // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+            if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())){
+                name = APILocator.getContentletAPI().getName(
+                        cont, APILocator.getUserAPI().getSystemUser(), true);
+            }
         }catch (DotSecurityException e) {
 
         }
@@ -252,31 +257,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
 			throws DotDataException, DotStateException, DotSecurityException {
-	    Contentlet con = new Contentlet();
+	    Contentlet contentlet = new Contentlet();
 
 
-        con.setStructureInode(fatty.getStructureInode());
+        contentlet.setStructureInode(fatty.getStructureInode());
         Map<String, Object> contentletMap = fatty.getMap();
 
         try {
-            APILocator.getContentletAPI().copyProperties(con, contentletMap);
+            APILocator.getContentletAPI().copyProperties(contentlet, contentletMap);
         } catch (Exception e) {
             Logger.error(this,"Unable to copy contentlet properties",e);
             throw new DotDataException("Unable to copy contentlet properties",e);
         }
-        con.setInode(fatty.getInode());
-        con.setStructureInode(fatty.getStructureInode());
-        con.setIdentifier(fatty.getIdentifier());
-        con.setSortOrder(fatty.getSortOrder());
-        con.setLanguageId(fatty.getLanguageId());
-        con.setNextReview(fatty.getNextReview());
-        con.setLastReview(fatty.getLastReview());
-        con.setOwner(fatty.getOwner());
-        con.setModUser(fatty.getModUser());
-        con.setModDate(fatty.getModDate());
-        con.setReviewInterval(fatty.getReviewInterval());
-
-
+        contentlet.setInode(fatty.getInode());
+        contentlet.setStructureInode(fatty.getStructureInode());
+        contentlet.setIdentifier(fatty.getIdentifier());
+        contentlet.setSortOrder(fatty.getSortOrder());
+        contentlet.setLanguageId(fatty.getLanguageId());
+        contentlet.setNextReview(fatty.getNextReview());
+        contentlet.setLastReview(fatty.getLastReview());
+        contentlet.setOwner(fatty.getOwner());
+        contentlet.setModUser(fatty.getModUser());
+        contentlet.setModDate(fatty.getModDate());
+        contentlet.setReviewInterval(fatty.getReviewInterval());
 
 	     if(UtilMethods.isSet(fatty.getIdentifier())){
 	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -287,39 +290,39 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }else{
 	            folder = APILocator.getFolderAPI().findSystemFolder();
 	        }
-	        con.setHost(identifier.getHostId());
-	        con.setFolder(folder.getInode());
+	        contentlet.setHost(identifier.getHostId());
+	        contentlet.setFolder(folder.getInode());
 
 	        // lets check if we have publish/expire fields to set
-	        Structure st=con.getStructure();
+	        Structure st=contentlet.getStructure();
 	        if(UtilMethods.isSet(st.getPublishDateVar()))
-	            con.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
+	            contentlet.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
 	        if(UtilMethods.isSet(st.getExpireDateVar()))
-	            con.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
+	            contentlet.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
 		} else {
-	        if(!UtilMethods.isSet(con.getStructureInode())) {
+	        if(!UtilMethods.isSet(contentlet.getStructureInode())) {
 	            throw new DotDataException("Contentlet must have a structure type.");
 	        }
 
-            if (con.isSystemHost()) {
+            if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
                 // APILocator.getHostAPI().findSystemHost() method, because this
                 // method will create a system host if not exist which cause 
                 // a infinite loop.
-                con.setHost(Host.SYSTEM_HOST);
+                contentlet.setHost(Host.SYSTEM_HOST);
             } else {
-                con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+                contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
             }
-            con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+            contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
         }
         String wysiwyg = fatty.getDisabledWysiwyg();
         if( UtilMethods.isSet(wysiwyg) ) {
             List<String> wysiwygFields = new ArrayList<String>();
             StringTokenizer st = new StringTokenizer(wysiwyg,",");
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
-            con.setDisabledWysiwyg(wysiwygFields);
+            contentlet.setDisabledWysiwyg(wysiwygFields);
         }
-        return con;
+        return contentlet;
 	}
 
 	@Override
@@ -1376,117 +1379,98 @@ public class ESContentFactoryImpl extends ContentletFactory {
          * @exception DotDataException There is a data inconsistency
          * @throws DotSecurityException
          */
-	protected void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
-        DotConnect dc = new DotConnect();
+	protected void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+        final DotConnect dc = new DotConnect();
         try {
-
-            String tempKeyword = DbConnectionFactory.getTempKeyword();
-            // CTU content-to-update table
-            final String tableName = (DbConnectionFactory.isMsSql()?"#":"") + "CTU_"
-                + UtilMethods.getRandomNumber(10000000);
-
-            StringBuilder createTempTable = new StringBuilder();
-
-            if (DbConnectionFactory.isMsSql()) {
-                createTempTable.append("SELECT inode INTO ");
-                createTempTable.append(tableName);
-                createTempTable.append(" FROM contentlet WHERE mod_user = '");
-                createTempTable.append(userToReplace.getUserId());
-                createTempTable.append("'");
-            } else {
-                createTempTable.append("CREATE ");
-                createTempTable.append(tempKeyword);
-                createTempTable.append(" TABLE ");
-                createTempTable.append(tableName);
-                createTempTable.append(DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : " ");
-                createTempTable.append("as select inode from contentlet ");
-                createTempTable.append("where mod_user = '");
-                createTempTable.append(userToReplace.getUserId());
-                createTempTable.append("'");
-            }
-
-            dc.executeStatement(createTempTable.toString());
-
-            dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
+            dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
             dc.addParam(replacementUserId);
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
+            dc.setSQL("UPDATE contentlet_version_info SET locked_by = ? WHERE locked_by = ?");
             dc.addParam(replacementUserId);
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            FlushCacheRunnable reindexContent = new FlushCacheRunnable() {
-                @Override
-                public void run() {
+            HibernateUtil.addAsyncCommitListener(() -> {
 
-                    NotificationAPI notAPI = APILocator.getNotificationAPI();
+                reindexReplacedUserContent(userToReplace, user);
 
-                    try {
-                        ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
-
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("select count(*) as count from " + tableName);
-                        List<Map<String,String>> results = dc.loadResults();
-                        long totalCount = Long.parseLong(results.get(0).get("count"));
-
-                        Connection conn = DbConnectionFactory.getConnection();
-                        try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
-
-                            List<Contentlet> contentToIndex = new ArrayList<>();
-                            int batchSize = 100;
-                            int completed = 0;
-
-                            try (ResultSet rs = ps.executeQuery()) {
-                                for (int i = 1; rs.next(); i++) {
-                                    String inode = rs.getString("inode");
-                                    cc.remove(inode);
-                                    Contentlet content = find(inode);
-                                    contentToIndex.add(content);
-                                    contentToIndex.addAll(indexAPI.loadDeps(content));
-
-                                    if (i % batchSize == 0) {
-                                        indexAPI.indexContentList(contentToIndex, null, false);
-                                        completed += batchSize;
-                                        contentToIndex = new ArrayList<>();
-                                        HibernateUtil.getSession().clear();
-                                        Logger.info(this,
-                                            String.format("Reindexing related content after deletion of user %s. "
-                                                + "Completed: " + completed + " out of " + totalCount,
-                                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-                                    }
-                                }
-
-                                // index remaining records if any
-                                if(!contentToIndex.isEmpty()) {
-                                    indexAPI.indexContentList(contentToIndex, null, false);
-                                }
-                            }
-                        }
-
-                        dc.setSQL("DROP TABLE " + tableName);
-                        dc.loadResult();
-
-                        Logger.info(this, String.format("Reindex of updated related content after deleting user %s "
-                                + " has finished successfully.",
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-
-                    } catch (Exception e) {
-                        Logger.error(this.getClass(),e.getMessage(),e);
-                        notAPI.error(String.format("Unable to Reindex updated related content for deleted user '%s'. "
-                            + "Please run a full Reindex.",
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName()), user.getUserId());
-                    }
-                }
-            };
-
-            HibernateUtil.addCommitListener(reindexContent);
-
-
-        } catch (DotDataException | SQLException e) {
+            });
+        } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Performs a re-indexation of contents whose user references have been updated with a new
+     * user ID. This change requires contents to be re-indexed for them to have the correct
+     * information. The Inodes of such contentlets are stored in a temporary table.
+     *
+     * @param userToReplace The user whose references will be removed.
+     * @param user          The user performing this operation.
+     */
+    private void reindexReplacedUserContent(final User userToReplace, final User user) {
+        final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+
+        try {
+            final StringBuilder luceneQuery = new StringBuilder();
+            luceneQuery.append("+modUser:").append(userToReplace.getUserId());
+            final int limit = 0;
+            final int offset = -1;
+            final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
+                    (luceneQuery.toString(), limit, offset, null, user, false);
+            long totalCount;
+
+            if (UtilMethods.isSet(contentlets)) {
+                final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+                List<Contentlet> contentToIndex = new ArrayList<>();
+                totalCount = contentlets.size();
+                final int batchSize = 100;
+                int completed = 0;
+                int counter = 1;
+                for (final ContentletSearch indexedContentlet : contentlets) {
+                    // IMPORTANT: Remove contentlet from cache first
+                    cc.remove(indexedContentlet.getInode());
+
+                    final Contentlet content = find(indexedContentlet.getInode());
+
+                    IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
+                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());
+                    identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
+
+                    contentToIndex.add(content);
+                    contentToIndex.addAll(indexAPI.loadDeps(content));
+                    if (counter % batchSize == 0) {
+                        indexAPI.indexContentList(contentToIndex, null, false);
+                        completed += batchSize;
+                        contentToIndex = new ArrayList<>();
+                        Logger.info(this, String.format("Reindexing related content after " +
+                                        "deletion of user '%s'. " + "Completed: " + completed + " out of " +
+                                        totalCount,
+                                userToReplace.getUserId() + "/" + userToReplace.getFullName()));
+                        counter++;
+                    }
+                }
+                // index remaining records if any
+                if (!contentToIndex.isEmpty()) {
+                    indexAPI.indexContentList(contentToIndex, null, false);
+                }
+
+                final String successMessage = String.format("Reindexing of updated related content after " +
+                    "deleting user '%s' has finished successfully.", userToReplace.getUserId()
+                    + "/" + userToReplace.getFullName());
+
+                Logger.info(this, successMessage);
+                notificationAPI.error(successMessage, user.getUserId());
+            }
+        } catch (Exception e) {
+            final String errorMsg = String.format("Unable to reindex updated related content for " +
+                    "deleted " + "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId()
+                    + "/" + userToReplace.getFullName());
+            Logger.error(this.getClass(), errorMsg + ": " + e.getMessage(), e);
+            notificationAPI.error(errorMsg, user.getUserId());
         }
     }
 

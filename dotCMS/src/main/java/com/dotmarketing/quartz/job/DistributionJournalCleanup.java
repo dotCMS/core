@@ -23,7 +23,7 @@ public class DistributionJournalCleanup implements Runnable, Job {
     	{
     		HibernateUtil.startTransaction();
     		APILocator.getDistributedJournalAPI().processJournalEntries();
-    		HibernateUtil.commitTransaction();
+    		HibernateUtil.closeAndCommitTransaction();
     	}
     	catch (Exception e) 
     	{

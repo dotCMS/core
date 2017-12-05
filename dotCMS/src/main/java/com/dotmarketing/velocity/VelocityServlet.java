@@ -168,12 +168,12 @@ public abstract class VelocityServlet extends HttpServlet {
         }
 
 		
-		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() <= LicenseLevel.PROFESSIONAL.level) {
+		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
-		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() <= LicenseLevel.PRIME.level) {
+		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
@@ -298,7 +298,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			// added finally because of
 			// http://jira.dotmarketing.net/browse/DOTCMS-1334
 			try {
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}

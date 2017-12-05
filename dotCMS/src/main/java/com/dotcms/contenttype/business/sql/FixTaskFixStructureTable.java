@@ -1,21 +1,11 @@
 package com.dotcms.contenttype.business.sql;
 
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-
 import com.dotmarketing.beans.FixAudit;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -24,12 +14,20 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 public class FixTaskFixStructureTable  implements FixTask {
@@ -110,11 +108,14 @@ public class FixTaskFixStructureTable  implements FixTask {
 				// return before - after;
 			}
 			Map map = new HashMap();
+			//Including Identifier.class because it is not mapped with Hibernate anymore
+			map.put(Identifier.class, null);
 			try {
-				map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 			} catch (HibernateException e) {
 				throw new DotDataException(e.getMessage(),e);
 			}
+
 			Iterator it = map.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry pairs = (Map.Entry) it.next();
@@ -199,13 +200,11 @@ public class FixTaskFixStructureTable  implements FixTask {
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator  + lastmoddate + "_"
 					+ "FixTask00001CheckAssetsMissingIdentifiers" + ".xml");
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-			} catch (FileNotFoundException e) {
-
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+				_xstream.toXML(modifiedData, _bout);
+			} catch (IOException e) {
+				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
-			_xstream.toXML(modifiedData, _bout);
 		}
 		return modifiedData;
 

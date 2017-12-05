@@ -1,23 +1,16 @@
 package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.io.Files;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.util.Config;
-
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
+import javax.servlet.ServletContext;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.net.URL;
-
-import javax.servlet.ServletContext;
 
 /**
  * Sets configuration and environment details used for Integration Tests
@@ -57,11 +50,12 @@ public class ConfigTestHelper extends Config {
         setToolboxPath();
     }
 
-    private static void setToolboxPath() throws FileNotFoundException {
+    private static void setToolboxPath() throws IOException {
         String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
         File toolboxManager= new File(toolboxManagerPath);
         if(toolboxManager.exists()){
-          Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
+          Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(
+                  java.nio.file.Files.newInputStream(Paths.get(toolboxManagerPath)));
         }
     }
 

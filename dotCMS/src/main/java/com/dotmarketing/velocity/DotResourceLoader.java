@@ -1,29 +1,14 @@
 package com.dotmarketing.velocity;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.runtime.resource.Resource;
-import org.apache.velocity.runtime.resource.loader.ResourceLoader;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -48,6 +33,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import org.apache.commons.io.FileUtils;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 
 public class DotResourceLoader extends ResourceLoader {
 
@@ -213,7 +209,7 @@ public class DotResourceLoader extends ResourceLoader {
 	                    Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);
 	                    throw new ResourceNotFoundException("cannot find resource");
 	                }
-	                result = new BufferedInputStream(new FileInputStream(f));
+	                result = new BufferedInputStream(Files.newInputStream(f.toPath()));
 	            }
 	        }catch (Exception e) {
 	            Logger.warn(this,"Error ocurred finding resource '" + arg0 + "' exception: " + e.toString());

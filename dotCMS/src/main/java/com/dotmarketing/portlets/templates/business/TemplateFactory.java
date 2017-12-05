@@ -17,9 +17,9 @@ import com.liferay.portal.model.User;
 
 public interface TemplateFactory {
 
-	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotDataException;
+	List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived) throws DotDataException;
 		
-	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
+	List<Template> findTemplatesUserCanUse(User user, String hostName, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
 
 	void delete(Template template) throws DotDataException;
 	
@@ -29,7 +29,7 @@ public interface TemplateFactory {
 	 * @param template
 	 * @throws DotDataException
 	 */
-	public void save(Template template) throws DotDataException;
+	void save(Template template) throws DotDataException;
 	void save(Template template, String existingId)throws DotDataException;
 	
 	/**
@@ -38,18 +38,18 @@ public interface TemplateFactory {
 	 * @param template
 	 * @throws DotDataException
 	 */
-	public void deleteFromCache(Template template) throws DotDataException;
+	void deleteFromCache(Template template) throws DotDataException;
 
-	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException;
+	Template findWorkingTemplateByName(String name, Host host) throws DotDataException;
 	
-	public List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+	List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
-	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException;
+	void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
-	public Template find(String inode) throws DotStateException, DotDataException;
+	Template find(String inode) throws DotStateException, DotDataException;
 	
 
-	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;
 	
@@ -60,7 +60,7 @@ public interface TemplateFactory {
 	 * @param theme
 	 *
 	 */
-   public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
+	void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
 
    /**
 	 * Method will replace user references of the given userId in templates
@@ -71,5 +71,5 @@ public interface TemplateFactory {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+	 void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 }

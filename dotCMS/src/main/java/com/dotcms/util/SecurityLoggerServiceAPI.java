@@ -14,7 +14,7 @@ public interface SecurityLoggerServiceAPI extends Serializable {
      * @param cl {@link Class}
      * @param msg {@link String}
      */
-    public default void logInfo ( final Class cl, final String msg ) {
+    default void logInfo(final Class cl, final String msg) {
 
         com.dotmarketing.util.SecurityLogger.logInfo(cl, msg);
     }
@@ -24,7 +24,7 @@ public interface SecurityLoggerServiceAPI extends Serializable {
      * @param cl {@link Class}
      * @param msg {@link String}
      */
-    public default void logDebug ( final Class cl, final String msg ) {
+    default void logDebug(final Class cl, final String msg) {
 
         com.dotmarketing.util.SecurityLogger.logDebug(cl, msg);
     }

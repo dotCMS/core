@@ -74,9 +74,12 @@ public class DotResourceCache implements ResourceCache,Cachable {
     }    
     
     public void putMacro(String name, String content) {
-      String[] rw = {name, content};
-      cache.put(MACRO_PREFIX + name, content, macroCacheGroup);
-
+		if(name==null || content ==null){
+			Logger.warn(this.getClass(), "Cannot add a null macro to cache:" + name + " / " + content);
+			return;
+		}
+		String[] rw = {name, content};
+		cache.put(MACRO_PREFIX + name, rw, macroCacheGroup);
     }
 	/* (non-Javadoc)
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#get(java.lang.Object)

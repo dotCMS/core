@@ -13,6 +13,9 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -22,10 +25,6 @@ import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Util class for sanitize, tokenize, etc
  */
@@ -33,6 +32,11 @@ public class SQLUtil {
 
 	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
+
+	public static final String ASC  = "asc";
+	public static final String DESC  = "desc";
+	public static final String _ASC  = " " + ASC ;
+	public static final String _DESC  = " " + DESC;
 
     private static final Set<String> EVIL_SQL_CONDITION_WORDS =  ImmutableSet.of( "insert", "delete", "update",
             "replace", "create", "drop", "alter", "truncate", "declare", "exec", "--", "procedure", "pg_", "lock",
@@ -52,7 +56,8 @@ public class SQLUtil {
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
-			"mod_date,upper(name)", "relation_type_value");
+			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
+			"parent_relation_name");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -200,7 +205,7 @@ public class SQLUtil {
 		}
   	  return queryString.toString();
 	}
-	
+
 	/**
 	 * Method to sanitize order by SQL injection
 	 * @param parameter
@@ -212,7 +217,10 @@ public class SQLUtil {
 			return StringPool.BLANK;
 		}
 
-		String testParam=parameter.replaceAll(" asc", StringPool.BLANK).replaceAll(" desc", StringPool.BLANK).replaceAll("-", StringPool.BLANK).toLowerCase();
+		String testParam=parameter.replaceAll(_ASC, StringPool.BLANK)
+				.replaceAll(_DESC, StringPool.BLANK)
+				.replaceAll("-", StringPool.BLANK).toLowerCase();
+
 		if(ORDERBY_WHITELIST.contains(testParam)){
 			return parameter;
 		}
@@ -223,7 +231,6 @@ public class SQLUtil {
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return StringPool.BLANK;
 	}
-
 	/**
 	 * Applies the sanitize to the parameter argument in order to avoid evil sql words for a PARAMETER.
 	 * @param parameter SQL to filter.
@@ -282,9 +289,9 @@ public class SQLUtil {
                                     )
                     )) {
 
-                Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + query);
-                Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query, e);
-                securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query);
+				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				Logger.error(SQLUtil.class, message, new DotStateException(message));
+				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
 
                 return StringPool.BLANK;
             }
