@@ -97,6 +97,10 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findActions(step, user);
 	}
 
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException, DotSecurityException {
+		return wapi.findActions(steps, user);
+	}
+
 	public WorkflowStep findStep(String id) throws DotDataException {
 		return wapi.findStep(id);
 	}
