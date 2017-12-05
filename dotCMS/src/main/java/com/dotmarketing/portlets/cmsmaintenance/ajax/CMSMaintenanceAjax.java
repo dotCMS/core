@@ -59,6 +59,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -90,6 +92,8 @@ import java.util.Set;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+
+
 import org.quartz.JobExecutionContext;
 
 /**
@@ -433,28 +437,22 @@ public class CMSMaintenanceAjax {
 			Set<Class> tablesToDump = new HashSet<Class>();
 			try {
 
-				/* get a list of all our tables */
-				final Map map = new HashMap();
 
-				//Including Identifier.class because it is not mapped with Hibernate anymore
-				map.put(Identifier.class, null);
-				map.put(MultiTree.class, null);
+			    final Set ignoreClasses =  ImmutableSet.of(Inode.class, Clickstream.class,ClickstreamRequest.class,PluginProperty.class,Structure.class,Field.class,FieldVariable.class,PermissionReference.class);
+			    
+			    
+
+                //Including Identifier.class because it is not mapped with Hibernate anymore
+                tablesToDump.add(Identifier.class);
+                tablesToDump.add(MultiTree.class);
+                tablesToDump.add(Tree.class);
+                
+                
+                HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet().stream().forEach(key -> tablesToDump.add((Class) key));
+                
+                ignoreClasses.forEach(clazz -> tablesToDump.remove(clazz));
+                
 				
-				
-
-				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
-
-				Iterator it = map.entrySet().iterator();
-				while (it.hasNext()) {
-					Map.Entry pairs = (Map.Entry) it.next();
-					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
-							.equals(ClickstreamRequest.class)
-							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class)) {
-						tablesToDump.add(x);
-					}
-
-				}
 				XStream xstream = null;
 				HibernateUtil dh = null;
 				DotConnect dc = null;
@@ -463,14 +461,7 @@ public class CMSMaintenanceAjax {
 				BufferedOutputStream bout = null;
 
 				for (Class clazz : tablesToDump) {
-					if (clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz
-							.equals(FieldVariable.class)) {
-						continue;
-					}
-					//http://jira.dotmarketing.net/browse/DOTCMS-5031
-					if (PermissionReference.class.equals(clazz)) {
-						continue;
-					}
+
 
 					if (com.dotmarketing.portlets.contentlet.business.Contentlet.class
 							.equals(clazz)) {
@@ -533,7 +524,7 @@ public class CMSMaintenanceAjax {
 									.setStartRow(i).setMaxRows(step);
 							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
                         } else if (Tree.class.equals(clazz)) {
-                            dc.setSQL("select * from multi_tree order by parent, child, relation_type")
+                            dc.setSQL("select * from tree order by parent, child, relation_type")
                                         .setStartRow(i).setMaxRows(step);
                             list = new DBTreeTransformer(dc.loadObjectResults()).trees();
 						} else if (MultiTree.class.equals(clazz)) {
@@ -557,7 +548,13 @@ public class CMSMaintenanceAjax {
 
 						if (list != null && list.size() > 0 && list
 								.get(0) instanceof Comparable) {
-							java.util.Collections.sort(list);
+						    try {
+						        java.util.Collections.sort(list);
+						    }
+						    catch(Exception e) {
+						        System.err.println(list);
+						        
+						    }
 						}
 
 						writing = new File(
