@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -73,7 +72,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/steps/scheme/{schemeId}")
+    @Path("/schemes/{schemeId}/steps")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -118,7 +117,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/action/{actionId}")
+    @Path("/actions/{actionId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -165,7 +164,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/action/{actionId}/step/{stepId}")
+    @Path("/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -214,7 +213,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/actions/step/{stepId}")
+    @Path("/steps/{stepId}/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -260,7 +259,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/actions/scheme/{schemeId}")
+    @Path("/schemes/{schemeId}/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -297,7 +296,7 @@ public class WorkflowResource {
      * @return Response
      */
     @POST
-    @Path("/action")
+    @Path("/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -334,7 +333,7 @@ public class WorkflowResource {
      * @return Response
      */
     @POST
-    @Path("/action/step")
+    @Path("/steps/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -372,7 +371,7 @@ public class WorkflowResource {
      * @return Response
      */
     @DELETE
-    @Path("/step/{stepId}")
+    @Path("/steps/{stepId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -414,7 +413,7 @@ public class WorkflowResource {
      * @return Response
      */
     @DELETE
-    @Path("/action/{actionId}/step/{stepId}")
+    @Path("/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -459,7 +458,7 @@ public class WorkflowResource {
      * @return Response
      */
     @DELETE
-    @Path("/action/{actionId}")
+    @Path("/actions/{actionId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})

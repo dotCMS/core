@@ -317,32 +317,34 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private String createIntermediateTableForeignKeyActionId() {
 
+        String sql = H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+            sql = MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+            sql = POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+            sql = MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+            sql = ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         }
 
-        return H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        return sql;
     }
 
     private String createIntermediateTableForeignKeyStepId() {
 
+        String sql = H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+            sql =  MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+            sql =  POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+            sql =  MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+            sql =  ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         }
 
-        return H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        return sql;
     }
 
     /**
@@ -350,17 +352,19 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String selectTableIndex() {
+
+        String sql = null;
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  MYSQL_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  POSTGRES_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  MSSQL_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
-        } else {
-            return null;
+            sql =  ORACLE_SELECT_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         }
+
+        return sql;
     }
 
     /**
@@ -382,17 +386,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String dropTableIndex() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  POSTGRES_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+            sql =  MSSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
-        } else {
-            return null;
+            sql =  ORACLE_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         }
+
+        return sql;
     }
 
     /**
@@ -400,17 +407,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String findSchemeIdColumn() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_FIND_SCHEME_ID_COLUMN;
+            sql =  MYSQL_FIND_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_FIND_SCHEME_ID_COLUMN;
+            sql =  POSTGRES_FIND_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_FIND_SCHEME_ID_COLUMN;
+            sql =  MSSQL_FIND_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_FIND_SCHEME_ID_COLUMN;
-        } else {
-            return null;
+            sql =  ORACLE_FIND_SCHEME_ID_COLUMN;
         }
+
+        return sql;
     }
 
     /**
@@ -418,17 +428,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String findRequiresCheckoutOptionsColumn() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
-        } else {
-            return null;
+            sql =  ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
         }
+
+        return sql;
     }
 
     /**
@@ -450,17 +463,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String findIntermediateTable() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_FIND_INTERMEDIATE_TABLE;
+            sql =  MYSQL_FIND_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_FIND_INTERMEDIATE_TABLE;
+            sql =  POSTGRES_FIND_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_FIND_INTERMEDIATE_TABLE;
+            sql =  MSSQL_FIND_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_FIND_INTERMEDIATE_TABLE;
-        } else {
-            return null;
+            sql =  ORACLE_FIND_INTERMEDIATE_TABLE;
         }
+
+        return sql;
     }
 
     /**
@@ -468,17 +484,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String updateSchemeIdsForActions() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
+            sql =  MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS;
+            sql =  POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
+            sql =  MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS;
-        } else {
-            return null;
+            sql =  ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS;
         }
+
+        return sql;
     }
 
     /**
@@ -486,17 +505,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String selectSchemeIdsForActions() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
+            sql =  MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS;
+            sql =  POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
+            sql =  MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS;
-        } else {
-            return null;
+            sql =  ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS;
         }
+
+        return sql;
     }
 
     /**
@@ -505,17 +527,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String insertActionsAndSteps() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
+            sql =  MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_INSERT_INTO_INTERMEDIATE_TABLE;
+            sql =  POSTGRES_INSERT_INTO_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_INSERT_INTO_INTERMEDIATE_TABLE;
+            sql =  MSSQL_INSERT_INTO_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_INSERT_INTO_INTERMEDIATE_TABLE;
-        } else {
-            return null;
+            sql =  ORACLE_INSERT_INTO_INTERMEDIATE_TABLE;
         }
+
+        return sql;
     }
 
     /**
@@ -524,17 +549,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String selectActionsAndSteps() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_SELECT_ACTIONS_AND_STEPS;
+            sql =  MYSQL_SELECT_ACTIONS_AND_STEPS;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_SELECT_ACTIONS_AND_STEPS;
+            sql =  POSTGRES_SELECT_ACTIONS_AND_STEPS;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_SELECT_ACTIONS_AND_STEPS;
+            sql =  MSSQL_SELECT_ACTIONS_AND_STEPS;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_SELECT_ACTIONS_AND_STEPS;
-        } else {
-            return null;
+            sql =  ORACLE_SELECT_ACTIONS_AND_STEPS;
         }
+
+        return sql;
     }
 
     /**
@@ -543,17 +571,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String addSchemeIdColumn() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_ADD_SCHEME_ID_COLUMN;
+            sql =  MYSQL_ADD_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_ADD_SCHEME_ID_COLUMN;
+            sql =  POSTGRES_ADD_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_ADD_SCHEME_ID_COLUMN;
+            sql =  MSSQL_ADD_SCHEME_ID_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_ADD_SCHEME_ID_COLUMN;
-        } else {
-            return null;
+            sql =  ORACLE_ADD_SCHEME_ID_COLUMN;
         }
+
+        return sql;
     }
 
     /**
@@ -562,17 +593,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String addRequiresCheckoutOptionColumn() {
+
+        String sql = null;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
-        } else {
-            return null;
+            sql =  ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
         }
+
+        return sql;
     }
 
     /**
@@ -580,17 +614,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * @return
      */
     private String createIntermediateTable() {
+
+        String sql = StringUtils.EMPTY;
+
         if (DbConnectionFactory.isMySql()) {
-            return MYSQL_CREATE_INTERMEDIATE_TABLE;
+            sql =  MYSQL_CREATE_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isPostgres()) {
-            return POSTGRES_CREATE_INTERMEDIATE_TABLE;
+            sql =  POSTGRES_CREATE_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isMsSql()) {
-            return MSSQL_CREATE_INTERMEDIATE_TABLE;
+            sql =  MSSQL_CREATE_INTERMEDIATE_TABLE;
         } else if (DbConnectionFactory.isOracle()) {
-            return ORACLE_CREATE_INTERMEDIATE_TABLE;
-        } else {
-            return StringUtils.EMPTY;
+            sql =  ORACLE_CREATE_INTERMEDIATE_TABLE;
         }
+
+        return sql;
     }
 
 }
