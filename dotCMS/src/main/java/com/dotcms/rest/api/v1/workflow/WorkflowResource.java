@@ -536,4 +536,9 @@ public class WorkflowResource {
         return response;
     } // reorderAction
 
+
+    // todo: create one for get all schemes
+    // get content type schemes
+    // get both
+
 } // E:O:F:WorkflowResource.

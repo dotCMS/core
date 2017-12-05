@@ -84,7 +84,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
 
-    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,requires_checkout_option = ?  WHERE id = ?";
+    // private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,requires_checkout_option = ?  WHERE id = ?";
+    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?  WHERE id = ?";
     private static final String POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
@@ -176,8 +177,9 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private void updateWorkflowActionData(final DotConnect dc) throws DotDataException {
 
         Logger.info(this, "Associating Workflow Actions to Workflow Schemes.");
-        dc.setSQL(selectSchemeIdsForActions());
-        final List<Map<String, Object>> schemeIds = dc.loadObjectResults();
+
+        final List<Map<String, Object>> schemeIds =
+                dc.setSQL(selectSchemeIdsForActions()).loadObjectResults();
         schemeIds.stream().forEach(row -> {
 
             dc.setSQL(updateSchemeIdsForActions());
@@ -198,8 +200,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private void addWorkflowActionStepData(final DotConnect dc) throws DotDataException {
 
         Logger.info(this, "Adding data to 'workflow_action_step' table.");
-        dc.setSQL(selectActionsAndSteps())
-                .loadObjectResults().stream().forEach(row -> {
+        final List<Map<String, Object>> results =
+                dc.setSQL(selectActionsAndSteps()).loadObjectResults();
+
+        results.stream().forEach(row -> {
 
             dc.setSQL(insertActionsAndSteps());
             dc.addParam(row.get("action_id"));
