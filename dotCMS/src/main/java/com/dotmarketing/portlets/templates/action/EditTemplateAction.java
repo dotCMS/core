@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.action;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import java.net.URLDecoder;
@@ -503,7 +504,10 @@ public class EditTemplateAction extends DotPortletAction implements
 			errorBuilder.append(template.getName()).append("<br>");
 
 			for (Contentlet page : pages) {
-				errorBuilder.append("- ").append(page.getTitle()).append("<br>");
+				HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
+				Host host = APILocator.getHostAPI().find(pageAsset.getHost(), user, false);
+				errorBuilder.append("- ").append(host.getHostname()).append(":")
+					.append(pageAsset.getURI()).append("<br>");
 			}
 			return false;
 		}
