@@ -144,5 +144,13 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         xit('should auto select and disable require checkbox', () => {
             // TODO: It needs a real mock of FieldPropertyService
         });
+
+        xit('should save checked and auto checked checkbox', () => {
+        // TODO: It needs a real mock of FieldPropertyService
+        });
+
+        xit('should not unchecked indexed checkbox if unique checkbox is checked', () => {
+        // TODO: It needs a real mock of FieldPropertyService
+        });
     });
 });

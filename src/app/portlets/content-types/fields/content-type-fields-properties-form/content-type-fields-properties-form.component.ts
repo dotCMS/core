@@ -175,7 +175,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
             this.form.get('indexed').setValue(propertyValue);
         }
 
-        this.handleDisabledIndexed(propertyValue);
+        this.form.get('unique').value ? this.handleDisabledIndexed(true) : this.handleDisabledIndexed(propertyValue);
     }
 
     private handleUniqueValuesChecked(propertyValue: boolean): void {
