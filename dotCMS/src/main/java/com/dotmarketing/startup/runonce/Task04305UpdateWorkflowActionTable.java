@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
@@ -183,7 +184,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
             dc.setSQL(updateSchemeIdsForActions());
             dc.addParam(row.get("scheme_id").toString());
-            //dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
+            dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
             dc.addParam(row.get("action_id").toString());
 
             try {

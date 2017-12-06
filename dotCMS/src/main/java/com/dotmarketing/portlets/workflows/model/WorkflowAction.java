@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -11,7 +12,7 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- *
+ * Encapsulate the workflow action information.
  *
  * @author root
  * @version 1.x
@@ -19,13 +20,6 @@ import java.util.*;
  */
 public class WorkflowAction implements Permissionable, Serializable{
 
-	// requires lock options:
-	public static final String LOCKED   			  = "locked";
-	public static final String UNLOCKED 			  = "unlocked";
-	public static final String LOCKED_OR_UNLOCKED     = "both";
-
-	private final static Set<String> REQUIRES_LOCK_OPTION_SET =
-			Collections.unmodifiableSet(new HashSet<>(Arrays.asList(LOCKED, UNLOCKED, LOCKED_OR_UNLOCKED)));
 
 	private static final long serialVersionUID = 1L;
 
@@ -39,10 +33,64 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private String icon;
 	private boolean roleHierarchyForAssign;
 	private boolean requiresCheckout;
-	private String  requiresCheckoutOption;
 	private boolean assignable;
 	private boolean commentable;
 	private int order;
+	private Set<WorkflowStatus> showOn = Collections.emptySet();
+
+	/**
+	 * True if the action has to be show on locked status.
+	 * @return boolean
+	 */
+	public boolean showOnLock () {
+		return this.showOn.contains(WorkflowStatus.LOCKED);
+	}
+
+	/**
+	 * True if the action has to be show on unlocked status.
+	 * @return boolean
+	 */
+	public boolean showOnUnlock () {
+		return this.showOn.contains(WorkflowStatus.UNLOCKED);
+	}
+
+	/**
+	 * Returns the set of the status to show the action.
+	 * @return Set of {@link WorkflowStatus}
+	 */
+	public Set<WorkflowStatus> getShowOn() {
+		return showOn;
+	}
+
+	/**
+	 * Set the set set of the status to show the action.
+	 * @param showOn {@link Set} of {@link WorkflowStatus}
+	 */
+	public void setShowOn(final Set<WorkflowStatus> showOn) {
+		if (null != showOn) {
+			this.showOn = showOn;
+		}
+	}
+
+
+	/**
+	 * Set the set set of the status to show the action.
+	 * @param workflowStatusArray Array of WorkflowStatus
+	 */
+	public void setShowOn(final WorkflowStatus... workflowStatusArray) {
+
+		final ImmutableSet.Builder builder =
+				new ImmutableSet.Builder<WorkflowStatus>();
+
+		for (WorkflowStatus status : workflowStatusArray) {
+
+			builder.add(status);
+		}
+
+		this.setShowOn(builder.build());
+	}
+
+
 
 	public WorkflowAction() {
 	}
@@ -95,7 +143,6 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
-	 * @deprecated see {@link #getRequiresCheckoutOption()}
 	 * @return boolean
 	 */
 	public boolean requiresCheckout() {
@@ -103,7 +150,6 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
-	 * @deprecated see {@link #getRequiresCheckoutOption()}
 	 * @return boolean
 	 */
 	@Deprecated
@@ -112,41 +158,11 @@ public class WorkflowAction implements Permissionable, Serializable{
     }
 
 	/**
-	 * @deprecated see {@link #setRequiresCheckoutOption(String)}
-	 * p-pp0()}
 	 * @param requiresCheckout
 	 */
 	@Deprecated
 	public void setRequiresCheckout(boolean requiresCheckout) {
 		this.requiresCheckout = requiresCheckout;
-	}
-
-	/**
-	 * Option for requires checkout:
-	 * WorkflowAction.LOCKED
-	 * WorkflowAction.UNLOCKED
-	 * WorkflowAction.LOCKED_OR_UNLOCKED
-	 * @return String
-	 */
-	public String getRequiresCheckoutOption() {
-		return requiresCheckoutOption;
-	}
-
-	/**
-	 * Set the option for the requires checkout, valid options:
-	 * WorkflowAction.LOCKED
-	 * WorkflowAction.UNLOCKED
-	 * WorkflowAction.LOCKED_OR_UNLOCKED
-	 * @param requiresCheckoutOption
-	 */
-	public void setRequiresCheckoutOption(String requiresCheckoutOption) {
-
-		if (REQUIRES_LOCK_OPTION_SET.contains(requiresCheckoutOption)) {
-			this.requiresCheckoutOption = requiresCheckoutOption;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid option for RequiresCheckoutOption, valid options: " + REQUIRES_LOCK_OPTION_SET);
-		}
 	}
 
 	public boolean isRoleHierarchyForAssign() {
