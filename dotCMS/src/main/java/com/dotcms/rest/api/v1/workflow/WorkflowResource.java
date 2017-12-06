@@ -12,6 +12,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -74,17 +75,22 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findSchemes(@Context final HttpServletRequest request) {
+    public final Response findSchemes(@Context final HttpServletRequest request,
+                                      @QueryParam("contentTypeId") final String contentTypeId) {
 
-        this.webResource.init
+        final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         Response response;
         List<WorkflowScheme> schemes;
 
         try {
 
-            Logger.debug(this, "Getting the workflow schemes");
-            schemes   = this.workflowHelper.findSchemes();
+            Logger.debug(this,
+                    "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
+            schemes   = (null != contentTypeId)?
+                    this.workflowHelper.findSchemesByContentType
+                            (contentTypeId, initDataObject.getUser()):
+                    this.workflowHelper.findSchemes();
 
             response  =
                     Response.ok(new ResponseEntityView(schemes)).build(); // 200
@@ -99,44 +105,6 @@ public class WorkflowResource {
 
         return response;
     } // findSchemes.
-
-    /**
-     * Returns all schemes for the content type. 401 if the user does not have permission.
-     * @param request  HttpServletRequest
-     * @return Response
-     */
-    @GET
-    @Path("/schemes/contenttypes/{contentTypeId}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findSchemesByContentType(@Context                         final HttpServletRequest request,
-                                                   @PathParam("contentTypeId")      final String contentTypeId) {
-
-        final InitDataObject initDataObject = this.webResource.init
-                (null, true, request, true, null);
-        Response response;
-        List<WorkflowScheme> schemes;
-
-        try {
-
-            Logger.debug(this,
-                    "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
-            schemes   = this.workflowHelper.findSchemesByContentType
-                    (contentTypeId, initDataObject.getUser());
-            response  =
-                    Response.ok(new ResponseEntityView(schemes)).build(); // 200
-        } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on findSchemesByContentType exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        return response;
-    } // findSchemesByContentType.
 
     /**
      * Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.
