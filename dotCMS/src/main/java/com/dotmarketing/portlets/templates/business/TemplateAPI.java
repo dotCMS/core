@@ -16,9 +16,6 @@ import java.util.Map;
 
 public interface TemplateAPI {
 
-	String TEMPLATE_DELETE_ERROR = "message.template.full_delete.error";
-	int TEMPLATE_DEPENDENCY_SEARCH_LIMIT = 10;
-
 	/**
 	 *
 	 * Retrieves all non-archived templates assigned to the given host

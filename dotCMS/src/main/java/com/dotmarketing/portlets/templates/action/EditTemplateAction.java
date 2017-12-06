@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.servlet.SessionDialogMessage;
@@ -301,8 +302,8 @@ public class EditTemplateAction extends DotPortletAction implements
 
 				SessionDialogMessage error = new SessionDialogMessage(
 						LanguageUtil.get(user, "Delete-Template"),
-						LanguageUtil.get(user, TemplateAPI.TEMPLATE_DELETE_ERROR),
-						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
 								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
 						"<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
 								" +_all:" + webAsset.getIdentifier()
@@ -332,8 +333,8 @@ public class EditTemplateAction extends DotPortletAction implements
 				int errorCount =0;
 				SessionDialogMessage errors = new SessionDialogMessage(
 						LanguageUtil.get(user, "Delete-Template"),
-						LanguageUtil.get(user, TemplateAPI.TEMPLATE_DELETE_ERROR),
-						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
 								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
 										"<br>+baseType:" + BaseContentType.HTMLPAGE.getType()
 								));
@@ -362,7 +363,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq, SessionMessages.ERROR, TemplateAPI.TEMPLATE_DELETE_ERROR);
+				SessionMessages.add(httpReq, SessionMessages.ERROR, TemplateConstants.TEMPLATE_DELETE_ERROR);
 				_handleException(ae, req);
 				return;
 			}
@@ -522,7 +523,7 @@ public class EditTemplateAction extends DotPortletAction implements
 	private boolean canTemplateBeDeleted (WebAsset template, User user, SessionDialogMessage errorMessage)
 			throws DotDataException, DotSecurityException {
 		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false,
-				TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages!= null && !pages.isEmpty()) {
 

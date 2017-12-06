@@ -480,7 +480,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		Template template = find(templateInode, user, respectFrontendRoles);
 		// checking if there are pages using this template
 		List<Contentlet> pages=APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles,
-				TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages != null && !pages.isEmpty()) {
 			StringBuilder builder = new StringBuilder();
