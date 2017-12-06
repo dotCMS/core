@@ -241,7 +241,7 @@ public class WorkflowHelper {
 
         final ContentTypeAPI contentTypeAPI =
                 APILocator.getContentTypeAPI(user);
-        List<WorkflowScheme> schemes = Collections.EMPTY_LIST;
+        List<WorkflowScheme> schemes = Collections.emptyList();
         try {
 
             Logger.debug(this, "Getting the schemes by content type: " + contentTypeId);

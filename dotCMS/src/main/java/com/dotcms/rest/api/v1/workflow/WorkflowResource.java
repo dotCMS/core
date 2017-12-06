@@ -76,7 +76,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findSchemes(@Context final HttpServletRequest request) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         Response response;
         List<WorkflowScheme> schemes;
@@ -117,7 +117,6 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         Response response;
         List<WorkflowScheme> schemes;
-        Map<String, Object>  resultMap;
 
         try {
 
@@ -157,7 +156,6 @@ public class WorkflowResource {
         Response response;
         List<WorkflowScheme> schemes;
         List<WorkflowScheme> contentTypeSchemes;
-        Map<String, Object>  resultMap;
 
         try {
 
@@ -197,7 +195,7 @@ public class WorkflowResource {
     public final Response findStepsByScheme(@Context final HttpServletRequest request,
                                             @PathParam("schemeId") final String schemeId) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         Response response;
         List<WorkflowStep> steps;
@@ -498,7 +496,7 @@ public class WorkflowResource {
     public final Response deleteStep(@Context final HttpServletRequest request,
                                      @PathParam("stepId") final String stepId) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         Response response;
 
