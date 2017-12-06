@@ -5,17 +5,14 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
-@JsonDeserialize(builder = WorkflowReorderActionStepForm.Builder.class)
-public class WorkflowReorderActionStepForm extends Validated {
+@JsonDeserialize(builder = WorkflowActionStepBean.Builder.class)
+public class WorkflowActionStepBean extends Validated {
 
     @NotNull
     private final String        actionId;
 
     @NotNull
     private final String        stepId;
-
-    @NotNull
-    private final int           order;
 
     public String getActionId() {
         return actionId;
@@ -25,24 +22,18 @@ public class WorkflowReorderActionStepForm extends Validated {
         return stepId;
     }
 
-    public int getOrder() {
-        return order;
-    }
-
     @Override
     public String toString() {
-        return "WorkflowReorderActionStepForm{" +
+        return "WorkflowActionStepBean{" +
                 "actionId='" + actionId + '\'' +
                 ", stepId='" + stepId + '\'' +
-                ", order=" + order +
                 '}';
     }
 
-    public WorkflowReorderActionStepForm(final Builder builder) {
+    public WorkflowActionStepBean(final Builder builder) {
 
         this.actionId           = builder.actionId;
         this.stepId             = builder.stepId;
-        this.order              = builder.order;
         this.checkValid();
     }
 
@@ -52,8 +43,7 @@ public class WorkflowReorderActionStepForm extends Validated {
         private String        actionId;
         @JsonProperty(required = true)
         private String        stepId;
-        @JsonProperty(required = true)
-        private int           order;
+
 
         public Builder actionId(String actionId) {
             this.actionId = actionId;
@@ -65,15 +55,10 @@ public class WorkflowReorderActionStepForm extends Validated {
             return this;
         }
 
-        public Builder order(int order) {
-            this.order = order;
-            return this;
-        }
 
+        public WorkflowActionStepBean build() {
 
-        public WorkflowReorderActionStepForm build() {
-
-            return new WorkflowReorderActionStepForm(this);
+            return new WorkflowActionStepBean(this);
         }
     }
 }

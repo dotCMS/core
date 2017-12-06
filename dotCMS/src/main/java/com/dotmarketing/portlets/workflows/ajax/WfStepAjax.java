@@ -1,9 +1,8 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -121,7 +120,7 @@ public class WfStepAjax extends WfBaseAction {
 			Logger.debug(this, "Adding the action: " + actionId +
 							", to the step: " + stepId);
 			this.workflowHelper.saveActionToStep (
-					new WorkflowActionStepForm.Builder()
+					new WorkflowActionStepBean.Builder()
 							.stepId(stepId)
 							.actionId(actionId)
 							.build(), user);

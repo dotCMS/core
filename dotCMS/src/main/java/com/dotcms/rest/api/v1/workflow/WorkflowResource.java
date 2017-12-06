@@ -12,9 +12,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -169,8 +167,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionByStep(@Context final HttpServletRequest request,
-                                              @PathParam("actionId") final String actionId,
-                                              @PathParam("stepId")   final String stepId) {
+                                              @PathParam("stepId")   final String stepId,
+                                              @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -333,12 +331,13 @@ public class WorkflowResource {
      * @return Response
      */
     @POST
-    @Path("/steps/actions")
+    @Path("/steps/{stepId}/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveActionToStep(@Context final HttpServletRequest request,
-                               final WorkflowActionStepForm workflowActionStepForm) {
+                                           @PathParam("stepId")   final String stepId,
+                                           final WorkflowActionStepForm workflowActionStepForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -347,8 +346,9 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Saving a workflow action " + workflowActionStepForm.getActionId()
-                    + " in to a step: " + workflowActionStepForm.getStepId());
-            this.workflowHelper.saveActionToStep(workflowActionStepForm, initDataObject.getUser());
+                    + " in to a step: " + stepId);
+            this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
+                    .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
             response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
         } catch (Exception e) {
 
@@ -496,16 +496,18 @@ public class WorkflowResource {
     /**
      * Change the order of an action associated to the step
      * @param request                           HttpServletRequest
-     * @param workflowReorderActionStepForm     WorkflowReorderActionStepForm
+     * @param workflowReorderActionStepForm     WorkflowReorderBean
      * @return Response
      */
     @PUT
-    @Path("/reorder")
+    @Path("/reorder/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response reorderAction(@Context final HttpServletRequest request,
-                               final WorkflowReorderActionStepForm workflowReorderActionStepForm) {
+                                        @PathParam("stepId")   final String stepId,
+                                        @PathParam("actionId") final String actionId,
+                                        final WorkflowReorderWorkflowActionStepForm workflowReorderActionStepForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -514,7 +516,10 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Doing reordering of: " + workflowReorderActionStepForm);
-            this.workflowHelper.reorderAction(workflowReorderActionStepForm, initDataObject.getUser());
+            this.workflowHelper.reorderAction(
+                    new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
+                            .order(workflowReorderActionStepForm.getOrder()).build(),
+                    initDataObject.getUser());
             response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
         } catch (DoesNotExistException e) {
 
@@ -535,9 +540,5 @@ public class WorkflowResource {
         return response;
     } // reorderAction
 
-
-    // todo: create one for get all schemes
-    // get content type schemes
-    // get both
 
 } // E:O:F:WorkflowResource.

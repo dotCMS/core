@@ -4,8 +4,8 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.dotmarketing.db.HibernateUtil.addAsyncCommitListener;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 /**
@@ -66,10 +65,10 @@ public class WorkflowHelper {
 
     /**
      * Reorder the action associated to the scheme.
-     * @param workflowReorderActionStepForm WorkflowReorderActionStepForm
+     * @param workflowReorderActionStepForm WorkflowReorderBean
      */
     @WrapInTransaction
-    public void reorderAction(final WorkflowReorderActionStepForm workflowReorderActionStepForm,
+    public void reorderAction(final WorkflowReorderBean workflowReorderActionStepForm,
                               final User user)  {
 
         WorkflowAction action = null;
@@ -470,7 +469,7 @@ public class WorkflowHelper {
     } // save.
 
     @WrapInTransaction
-    public void saveActionToStep(final WorkflowActionStepForm workflowActionStepForm, final User user) {
+    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) {
 
         this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
                 workflowActionStepForm.getStepId(), user);
