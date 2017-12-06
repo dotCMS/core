@@ -1,22 +1,24 @@
 package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotmarketing.beans.Host;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.folders.model.Folder;
 
-public class FolderWrapper {
-	private Folder folder;
+import java.io.Serializable;
+
+public class FolderWrapper implements Serializable{
+
+    private static final long serialVersionUID = 1L;
+    private Folder folder;
 	private Identifier folderId;
-	private Host host;
 	private Identifier hostId;
 	private Operation operation;
 	public FolderWrapper() {}
 
-	public FolderWrapper(Folder folder, Identifier folderId, Host host, Identifier hostId, Operation operation) {
+	public FolderWrapper(Folder folder, Identifier folderId, Identifier hostId, Operation operation) {
 		this.folder = folder;
 		this.folderId = folderId;
-		this.host = host;
 		this.hostId = hostId;
 		this.operation = operation;
 	}
@@ -28,13 +30,6 @@ public class FolderWrapper {
 		this.folder = folder;
 	}
 	
-	public Host getHost() {
-		return host;
-	}
-
-	public void setHost(Host host) {
-		this.host = host;
-	}
 
 	public Identifier getFolderId() {
 		return folderId;
