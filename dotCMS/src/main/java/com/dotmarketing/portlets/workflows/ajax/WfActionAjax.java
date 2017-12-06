@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -37,7 +38,7 @@ public class WfActionAjax extends WfBaseAction {
 
 		try {
 
-			this.workflowHelper.reorderAction(new WorkflowReorderActionStepForm.Builder()
+			this.workflowHelper.reorderAction(new WorkflowReorderBean.Builder()
 						.actionId(actionId).stepId(stepId)
 						.order(Integer.parseInt(orderParam)).build(),
 											  this.userWebAPI.getUser(request));

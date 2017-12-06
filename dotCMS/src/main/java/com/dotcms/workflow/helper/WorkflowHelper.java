@@ -2,12 +2,11 @@ package com.dotcms.workflow.helper;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.dotmarketing.db.HibernateUtil.addAsyncCommitListener;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 /**
@@ -42,9 +40,8 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
-    private final WorkflowAPI    workflowAPI;
-    private final RoleAPI        roleAPI;
-
+    private final WorkflowAPI workflowAPI;
+    private final RoleAPI     roleAPI;
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -59,12 +56,13 @@ public class WorkflowHelper {
                 APILocator.getRoleAPI());
     }
 
-    @VisibleForTesting
-    protected WorkflowHelper(final WorkflowAPI    workflowAPI,
-                             final RoleAPI        roleAPI) {
 
-        this.workflowAPI    = workflowAPI;
-        this.roleAPI        = roleAPI;
+    @VisibleForTesting
+    protected WorkflowHelper(final WorkflowAPI workflowAPI,
+                             final RoleAPI     roleAPI) {
+
+        this.workflowAPI = workflowAPI;
+        this.roleAPI     = roleAPI;
     }
 
 
@@ -73,7 +71,7 @@ public class WorkflowHelper {
      * @param workflowReorderActionStepForm WorkflowReorderActionStepForm
      */
     @WrapInTransaction
-    public void reorderAction(final WorkflowReorderActionStepForm workflowReorderActionStepForm,
+    public void reorderAction(final WorkflowReorderBean workflowReorderActionStepForm,
                               final User user)  {
 
         WorkflowAction action = null;
@@ -523,7 +521,7 @@ public class WorkflowHelper {
     } // save.
 
     @WrapInTransaction
-    public void saveActionToStep(final WorkflowActionStepForm workflowActionStepForm, final User user) {
+    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) {
 
         this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
                 workflowActionStepForm.getStepId(), user);
