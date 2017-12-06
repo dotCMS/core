@@ -1986,7 +1986,8 @@ create table workflow_action(
 	assignable boolean default false,
 	commentable boolean default false,
 	requires_checkout boolean default false,
-	icon varchar(255) default 'defaultWfIcon',
+  icon varchar(255) default 'defaultWfIcon',
+	show_on varchar(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign bool default false,
   requires_checkout_option VARCHAR(16)  default 'both',
   scheme_id VARCHAR(36) NOT NULL
