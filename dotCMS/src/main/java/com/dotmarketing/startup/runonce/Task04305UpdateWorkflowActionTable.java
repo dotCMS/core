@@ -5,7 +5,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
@@ -43,10 +42,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_PK = "ALTER TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_PK = MYSQL_CREATE_INTERMEDIATE_TABLE_PK;
 
-    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT requires_checkout_option FROM workflow_action";
+    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT show_on FROM workflow_action";
+    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT show_on FROM workflow_action";
 
     private static final String MYSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
     private static final String POSTGRES_FIND_SCHEME_ID_COLUMN = "SELECT scheme_id FROM workflow_action";
@@ -58,10 +57,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36) NOT NULL";
     private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36) NOT NULL";
 
-    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
-    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
-    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option NVARCHAR(16) default 'both'";
-    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD requires_checkout_option varchar2(16) default 'both'";
+    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on NVARCHAR(255) default 'LOCKED,UNLOCKED'";
+    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD show_on varchar2(255) default 'LOCKED,UNLOCKED'";
 
 
     private static final String MYSQL_SELECT_ACTIONS_AND_STEPS = "SELECT wa.id action_id, ws.id step_id, wa.my_order FROM workflow_step ws INNER JOIN workflow_action wa ON ws.id = wa.step_id";
@@ -146,7 +145,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         // SCHEMA CHANGES
         this.createWorkflowActionStepTable     (dc);
         this.addSchemeIdColumn                 (dc);
-        //this.addRequiresCheckoutOptionColumn   (dc);
+        this.addShowOnColumn(dc);
 
         // DATA CHANGES
         this.addWorkflowActionStepData         (dc);
@@ -225,27 +224,27 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         });
     } // addWorkflowActionStepData.
 
-    private void addRequiresCheckoutOptionColumn(final DotConnect dc) throws DotDataException {
+    private void addShowOnColumn(final DotConnect dc) throws DotDataException {
 
         boolean needToCreate = false;
-        Logger.info(this, "Adding new 'requires_checkout_option' column to 'workflow_action' table.");
+        Logger.info(this, "Adding new 'show_on' column to 'workflow_action' table.");
 
         try {
-            dc.setSQL(findRequiresCheckoutOptionsColumn()).loadObjectResults();
+            dc.setSQL(findShowOnColumn()).loadObjectResults();
         } catch (Throwable e) {
 
-            Logger.info(this, "Column 'workflow_action.requires_checkout_option' does not exists, creating it");
+            Logger.info(this, "Column 'workflow_action.show_on' does not exists, creating it");
             needToCreate = true;
         }
 
         if (needToCreate) {
             try {
-                dc.executeStatement(addRequiresCheckoutOptionColumn());
+                dc.executeStatement(addShowOnColumn());
             } catch (SQLException e) {
-                throw new DotRuntimeException("The 'requires_checkout_option' column could not be created.", e);
+                throw new DotRuntimeException("The 'show_on' column could not be created.", e);
             }
         }
-    } // addRequiresCheckoutOptionColumn.
+    } // addShowOnColumn.
 
     private void addSchemeIdColumn(final DotConnect dc) throws DotDataException {
 
@@ -424,10 +423,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     }
 
     /**
-     * Verifies if the {@code requires_checkout_option} column already exists in the {@code workflow_action} table.
-     * @return
+     * Verifies if the {@code show_on} column already exists in the {@code workflow_action} table.
+     * @return String
      */
-    private String findRequiresCheckoutOptionsColumn() {
+    private String findShowOnColumn() {
 
         String sql = null;
 
@@ -592,7 +591,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * multivalue instead of boolean.
      * @return
      */
-    private String addRequiresCheckoutOptionColumn() {
+    private String addShowOnColumn() {
 
         String sql = null;
 
