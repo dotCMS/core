@@ -301,9 +301,9 @@ public class EditTemplateAction extends DotPortletAction implements
 
 				SessionDialogMessage error = new SessionDialogMessage(
 						LanguageUtil.get(user, "Delete-Template"),
-						LanguageUtil.get(user, "message.template.full_delete.error"),
-						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", 10) + "<br>" +
-								LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+						LanguageUtil.get(user, TemplateAPI.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
 						"<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
 								" +_all:" + webAsset.getIdentifier()
 						));
@@ -332,9 +332,9 @@ public class EditTemplateAction extends DotPortletAction implements
 				int errorCount =0;
 				SessionDialogMessage errors = new SessionDialogMessage(
 						LanguageUtil.get(user, "Delete-Template"),
-						LanguageUtil.get(user, "message.template.full_delete.error"),
-						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", 10) + "<br>" +
-								LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+						LanguageUtil.get(user, TemplateAPI.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
 										"<br>+baseType:" + BaseContentType.HTMLPAGE.getType()
 								));
 
@@ -362,7 +362,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq, SessionMessages.ERROR,"message.template.full_delete.error");
+				SessionMessages.add(httpReq, SessionMessages.ERROR, TemplateAPI.TEMPLATE_DELETE_ERROR);
 				_handleException(ae, req);
 				return;
 			}
@@ -520,8 +520,9 @@ public class EditTemplateAction extends DotPortletAction implements
 	 * @throws DotSecurityException
 	 */
 	private boolean canTemplateBeDeleted (WebAsset template, User user, SessionDialogMessage errorMessage)
-			throws LanguageException, DotDataException, DotSecurityException {
-		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false, 10);
+			throws DotDataException, DotSecurityException {
+		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false,
+				TemplateAPI.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages!= null && !pages.isEmpty()) {
 
