@@ -50,11 +50,31 @@ abstract class WorkflowSQL {
 	protected static String UPDATE_SCHEME= "update workflow_scheme set name = ?,description =?, archived=?,mandatory=?,entry_action_id=?, mod_date=? where id =? ";
 
 	protected static String SELECT_STEPS_BY_SCHEME= "select * from workflow_step where scheme_id = ? order by  my_order";
-	protected static String SELECT_ACTIONS_BY_STEP= "select * from workflow_action where step_id = ? order by  my_order";
+	protected static String SELECT_ACTIONS_BY_SCHEME= "select * from workflow_action where scheme_id = ? order by  name";
+	protected static String SELECT_ACTIONS_BY_STEP =
+		"select workflow_action.* from workflow_action join workflow_action_step on workflow_action.id = workflow_action_step.action_id  where workflow_action_step.step_id = ? order by  action_order";
 	protected static String SELECT_ACTION= "select * from workflow_action where id = ? ";
-	protected static String INSERT_ACTION= "insert into workflow_action (id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?)";
-	protected static String UPDATE_ACTION= "update  workflow_action set step_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=? where id=?";
+
+	/**
+	 * Select to get the action associated to the step.
+	 */
+	protected static String SELECT_ACTION_BY_STEP  = "select workflow_action.* from workflow_action join workflow_action_step on workflow_action.id = workflow_action_step.action_id  where workflow_action_step.action_id = ? and workflow_action_step.step_id = ?";
+
+	/**
+	 * Select to get the steps ids associated to the action
+	 */
+	protected static String SELECT_STEPS_ID_BY_ACTION  = "select workflow_action_step.step_id as stepid from workflow_action_step  where workflow_action_step.action_id = ?";
+
+	protected static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
+	protected static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";
+	//protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, requires_checkout_option) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
+	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?)";
+	//protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,requires_checkout_option=? where id=?";
+	protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=? where id=?";
 	protected static String DELETE_ACTION= "delete from workflow_action where id = ? ";
+	protected static String DELETE_ACTION_STEP     = "delete from workflow_action_step where action_id =? and step_id =? ";
+	protected static String DELETE_ACTIONS_STEP    = "delete from workflow_action_step where step_id   =? ";
+	protected static String DELETE_ACTIONS_BY_STEP = "delete from workflow_action_step where action_id =? ";
 
 	protected static String SELECT_STEP= "select * from workflow_step where id = ? ";
 	protected static String INSERT_STEP= "insert into workflow_step (id, name, scheme_id,my_order,resolved,escalation_enable,escalation_action,escalation_time) values (?, ?, ?, ?, ?, ?, ?, ?) ";

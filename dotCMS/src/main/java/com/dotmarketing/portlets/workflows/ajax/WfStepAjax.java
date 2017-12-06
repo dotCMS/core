@@ -1,33 +1,34 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerationException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.*;
 
 public class WfStepAjax extends WfBaseAction {
 
+	private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+	private final UserWebAPI     userWebAPI     = WebAPILocator.getUserWebAPI();
+	private final WorkflowAPI    workflowAPI 	= APILocator.getWorkflowAPI();
 
-
-	 public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 	
 	/**
 	 * @param request
@@ -81,23 +82,56 @@ public class WfStepAjax extends WfBaseAction {
 		}
 			
 	}
-	
-	public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String stepId = request.getParameter("stepId");
 
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
-		
+	public void delete(final HttpServletRequest request,
+					   final HttpServletResponse response) throws ServletException, IOException {
+
+		final String stepId = request.getParameter("stepId");
+
 		try {
 
-			WorkflowStep step = wapi.findStep(stepId);
-			wapi.deleteStep(step);
-		} catch (DotDataException e) {
+			this.workflowHelper.deleteStep (stepId);
+		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage());
 			writeError(response, "</br> Delete Failed : </br>"+  e.getMessage());
 		}
-		
-		
+	} // delete.
+
+	/**
+	 * Associated an existing action to the step.
+	 * If the action or step does not exists, returns fail.
+	 * If the action is already associated to the step returns fail.
+	 * If the user does not have permission to do the action returns fail.
+	 * @param request   HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	public void addActionToStep(final HttpServletRequest request,
+								final HttpServletResponse response) throws ServletException, IOException {
+
+		final String stepId   = request.getParameter("stepId");
+		final String actionId = request.getParameter("actionId");
+
+		try {
+
+			final User user   = this.userWebAPI.getUser(request);
+
+			Logger.debug(this, "Adding the action: " + actionId +
+							", to the step: " + stepId);
+			this.workflowHelper.saveActionToStep (
+					new WorkflowActionStepBean.Builder()
+							.stepId(stepId)
+							.actionId(actionId)
+							.build(), user);
+
+			writeSuccess(response, stepId );
+		} catch (Exception e) {
+			Logger.error(this.getClass(),e.getMessage(),e);
+			writeError(response, e.getMessage());
+		}
 	}
+
 	public void add(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		String stepName = URLDecoder.decode(request.getParameter("stepName"), "UTF-8");

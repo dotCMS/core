@@ -13,8 +13,9 @@
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	String stepId = request.getParameter("stepId");
-	String actionId = request.getParameter("actionId");
+	String schemeId  = request.getParameter("schemeId");
+	String stepId    = request.getParameter("stepId");
+	String actionId  = request.getParameter("actionId");
 
     WorkflowAction action = new WorkflowAction();
     Role nextAssignRole = new Role();
@@ -29,19 +30,17 @@
                 }
             }
         }
-        if ( stepId == null ) {
-            stepId = action.getStepId();
+
+        if ( schemeId == null ) {
+			schemeId = action.getSchemeId();
         }
     } catch ( Exception e ) {
         Logger.debug( this.getClass(), "can't find action" );
     }
-	WorkflowStep step = wapi.findStep(stepId);
-	String schemeId = step.getSchemeId();
 
-	WorkflowScheme scheme = new WorkflowScheme();
-	scheme = wapi.findScheme(schemeId);
+	final WorkflowScheme scheme = wapi.findScheme(schemeId);
+
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
-
 	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
 
 %>
@@ -54,8 +53,6 @@
 		mainAdmin.resetCrumbTrail();
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
-
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Step")%> : <%=step.getName()%>", stepAdmin.baseJsp + "?schemeId=<%=schemeId%>");
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
 		mainAdmin.refreshCrumbtrail();
 		
@@ -105,9 +102,6 @@
         },
         "actionAssignToSelect");
 		
-		//assignSelect._hasBeenBlurred=false;
-
-
 
 		actionAdmin.whoCanUse = new Array();
         <% Set<Role> roles = APILocator.getPermissionAPI().getRolesWithPermission(action, PermissionAPI.PERMISSION_USE);%>
@@ -136,8 +130,8 @@
 	
 	<div dojoType="dijit.form.Form" id="addEditAction" jsId="addEditAction" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax" method="POST">
 		<input type="hidden" name="cmd" value="save">
-		<input type="hidden" name="stepId"	value="<%=UtilMethods.webifyString(step.getId())%>">
 		<input type="hidden" name="schemeId"	value="<%=UtilMethods.webifyString(scheme.getId())%>">
+		<input type="hidden" name="stepId"	    value="<%=UtilMethods.webifyString(stepId)%>">
 		<input type="hidden" name="whoCanUse"	id="whoCanUse" value="">
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
@@ -199,10 +193,11 @@
 						<dd>
 							<div class="checkbox">
 								<input type="checkbox" name="actionRequiresCheckout"
-										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
-										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
+									<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
 								<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
 							</div>
+
 							<div class="checkbox">
 								<input type="checkbox" name="actionCommentable"
 									id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
@@ -313,7 +308,7 @@
 								<%=LanguageUtil.get(pageContext, "Delete")%>
 							</a>
 							<%} %>
-							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=stepId %>');">
+							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
 							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>

@@ -2035,7 +2035,7 @@ create index workflow_idx_step_scheme on workflow_step(scheme_id);
 -- Permissionable ---
 create table workflow_action(
     id varchar(36) primary key,
-    step_id varchar(36) not null  references workflow_step(id),
+    step_id varchar(36),
     name varchar(255) not null,
     condition_to_progress text,
     next_step_id varchar(36) not null references workflow_step(id),
@@ -2045,10 +2045,16 @@ create table workflow_action(
     commentable boolean default false,
     requires_checkout boolean default false,
     icon varchar(255) default 'defaultWfIcon',
-    use_role_hierarchy_assign bool default false
+    use_role_hierarchy_assign bool default false,
+    scheme_id VARCHAR(36) NOT NULL
 );
 create index workflow_idx_action_step on workflow_action(step_id);
 
+
+CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 
 create table workflow_action_class(
     id varchar(36) primary key,
@@ -2306,3 +2312,4 @@ CREATE TABLE system_event (
 );
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
+

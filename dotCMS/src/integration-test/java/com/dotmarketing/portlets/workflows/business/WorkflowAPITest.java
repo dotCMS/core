@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -43,6 +39,8 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -171,10 +169,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         /* Generate actions */
         workflowScheme1Step2Action1 = addWorkflowAction(workflowScheme1Step2Action1Name, 2,
-                workflowScheme1Step2.getId(), true, workflowScheme1Step2.getId(), reviewer);
+                workflowScheme1Step2.getId(), true, workflowScheme1Step2.getId(), reviewer, workflowScheme1.getId());
 
         workflowScheme1Step1Action1 = addWorkflowAction(workflowScheme1Step1Action1Name, 1,
-                workflowScheme1Step2.getId(), true, workflowScheme1Step1.getId(), contributor);
+                workflowScheme1Step2.getId(), true, workflowScheme1Step1.getId(), contributor, workflowScheme1.getId());
 
 
 
@@ -195,10 +193,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         /* Generate actions */
         workflowScheme2Step2Action1 = addWorkflowAction(workflowScheme2Step2Action1Name, 2,
-                workflowScheme2Step2.getId(), true, workflowScheme2Step2.getId(), reviewer);
+                workflowScheme2Step2.getId(), true, workflowScheme2Step2.getId(), reviewer,
+                workflowScheme2.getId());
 
         workflowScheme2Step1Action1 = addWorkflowAction(workflowScheme2Step1Action1Name, 1,
-                workflowScheme2Step2.getId(), true, workflowScheme2Step1.getId(), contributor);
+                workflowScheme2Step2.getId(), true, workflowScheme2Step1.getId(), contributor,
+                workflowScheme2.getId());
 
 
 
@@ -220,13 +220,16 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         /* Generate actions */
         workflowScheme3Step2Action1 = addWorkflowAction(workflowScheme3Step2Action1Name, 2,
-                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), reviewer);
+                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), reviewer,
+                workflowScheme3.getId());
 
         workflowScheme3Step2Action2 = addWorkflowAction(workflowScheme3Step2Action2Name, 3,
-                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), publisher);
+                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), publisher,
+                workflowScheme3.getId());
 
         workflowScheme3Step1Action1 = addWorkflowAction(workflowScheme3Step1Action1Name, 1,
-                workflowScheme3Step2.getId(), true, workflowScheme3Step1.getId(), contributor);
+                workflowScheme3Step2.getId(), true, workflowScheme3Step1.getId(), contributor,
+                workflowScheme3.getId());
 
     }
 
@@ -347,9 +350,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findActions() throws DotDataException, DotSecurityException {
 
         List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme3);
+        assertNotNull(steps);
+        assertEquals(2, steps.size());
+
         //check available actions for admin user
         List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
-        assertTrue(null != actions && actions.size() == 3);
+        assertNotNull(actions);
+        assertEquals(3, actions.size());
 
         //get a contributor users
         User contributorUser = roleAPI.findUsersForRole(contributor).get(0);
@@ -532,13 +539,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     protected static WorkflowAction addWorkflowAction(final String name, final int order,
             final String nextStep,
-            final boolean requiresCheckout, final String stepId, final Role whoCanUse)
+            final boolean requiresCheckout, final String stepId, final Role whoCanUse,
+            final String schemeId)
             throws DotDataException, DotSecurityException {
 
         WorkflowAction action = null;
         try {
             action = new WorkflowAction();
             action.setName(name);
+            action.setSchemeId(schemeId);
             action.setOwner(whoCanUse.getId());
             action.setOrder(order);
             action.setNextStep(nextStep);
@@ -552,6 +561,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             new Permission(action.getId(),
                                     whoCanUse.getId(),
                                     PermissionAPI.PERMISSION_USE)}));
+
+            workflowAPI.saveAction(action.getId(), stepId, APILocator.systemUser());
         } catch (AlreadyExistException e) {
             //scheme already exist
         }

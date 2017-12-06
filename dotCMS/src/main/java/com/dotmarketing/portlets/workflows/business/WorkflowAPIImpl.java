@@ -10,11 +10,9 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -285,31 +283,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 				if(otherStep.equals(step))
 					continue;
+
 				for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 					if(a.getNextStep().equals(step.getId())){
 						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
 								" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
 					}
-
 				}
 			}
 			
-			int contentletsRefeceningStep = getCountContentletsReferencingStep(step);
-			if(contentletsRefeceningStep > 0){
-				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+contentletsRefeceningStep+" contenlet(s)</b> </br></br>");
+			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
+			if(countContentletsReferencingStep > 0){
+				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+countContentletsReferencingStep+" contenlet(s)</b> </br></br>");
 			}
 
-			List<WorkflowAction> actions = workFlowFactory.findActions(step);
-			for(WorkflowAction action : actions){
-				List<WorkflowActionClass> actionClasses = workFlowFactory.findActionClasses(action);
-				for(WorkflowActionClass actionClass : actionClasses){
-					workFlowFactory.deleteWorkflowActionClassParameters(actionClass);
-					workFlowFactory.deleteActionClass(actionClass);
-				}
-				workFlowFactory.deleteAction(action);
-			}
-
-			workFlowFactory.deleteStep(step);
+			this.workFlowFactory.deleteActions(step);
+			this.workFlowFactory.deleteStep(step);
 		}
 		catch(Exception e){
 			throw new DotDataException(e.getMessage(), e);
@@ -442,14 +431,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowStep step, final User user) throws DotDataException,
 	DotSecurityException {
-		List<WorkflowAction> actions = workFlowFactory.findActions(step);
-		actions = APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
-		return actions;
+		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+		return  APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
 	}
 
 	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
+			DotSecurityException {
+
+		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
+		return APILocator.getPermissionAPI().filterCollection(actions,
+				PermissionAPI.PERMISSION_USE, true, user);
+	} // findActions.
+
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
 			DotSecurityException {
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
@@ -510,28 +506,39 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
 
-		WorkflowStep step = findStep(action.getStepId());
+		final WorkflowStep step = findStep(action.getStepId());
+		this.reorderAction(action, step, APILocator.systemUser(), order);
+	}
+
+	@WrapInTransaction
+	public void reorderAction(final WorkflowAction action,
+							  final WorkflowStep step,
+							  final User user,
+							  final int order) throws DotDataException, AlreadyExistException {
+
 		List<WorkflowAction> actions = null;
-		List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
+		final List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
+
 		try {
-			actions = findActions(step, APILocator.getUserAPI().getSystemUser());
+			actions = findActions(step, user);
 		} catch (Exception e) {
 			throw new DotDataException(e.getLocalizedMessage());
 		}
-		order = (order < 0) ? 0 : (order >= actions.size()) ? actions.size()-1 : order;
+
+		final int normalizedOrder =
+				(order < 0) ? 0 : (order >= actions.size()) ? actions.size()-1 : order;
 		for (int i = 0; i < actions.size(); i++) {
-			WorkflowAction a = actions.get(i);
-			if (action.equals(a)) {
+
+			final WorkflowAction currentAction = actions.get(i);
+			if (action.equals(currentAction)) {
 				continue;
 			}
-			newActions.add(a);
+			newActions.add(currentAction);
 		}
-		newActions.add(order, action);
-		int newOrder = 0;
-		for(WorkflowAction a : newActions){
-			a.setOrder(newOrder++);
 
-			saveAction(a);
+		newActions.add(normalizedOrder, action);
+		for (int i = 0; i < newActions.size(); i++) {
+			this.workFlowFactory.updateOrder(newActions.get(i), step, i);
 		}
 	}
 
@@ -545,15 +552,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return action;
 	}
 
+	@CloseDBIfOpened
+	public WorkflowAction findAction(final String actionId,
+									 final String stepId,
+									 final User user) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
+		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
+		if (null != action && !APILocator.getPermissionAPI().doesUserHavePermission
+				(action, PermissionAPI.PERMISSION_USE, user, true)) {
+
+			throw new DotSecurityException("User " + user + " cannot read action " + action.getName());
+		}
+
+		return action;
+	}
+
 	@WrapInTransaction
-	public void saveAction(final WorkflowAction action, final List<Permission> perms) throws DotDataException {
+	public void saveAction(final WorkflowAction action,
+						   final List<Permission> permissions) throws DotDataException {
 		try {
+
 			this.saveAction(action);
+
 			APILocator.getPermissionAPI().removePermissions(action);
-			if(perms != null){
-				for (Permission p : perms) {
-					p.setInode(action.getId());
-					APILocator.getPermissionAPI().save(p, action, APILocator.getUserAPI().getSystemUser(), false);
+			if(permissions != null){
+				for (Permission permission : permissions) {
+
+					permission.setInode(action.getId());
+					APILocator.getPermissionAPI().save
+							(permission, action, APILocator.getUserAPI().getSystemUser(), false);
 				}
 			}
 		} catch (Exception e) {
@@ -563,7 +591,56 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	private void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
+	public void saveAction(final String actionId, final String stepId, final User user) {
+
+		WorkflowAction workflowAction = null;
+		WorkflowStep   workflowStep   = null;
+
+		try {
+
+			Logger.debug(this, "Saving (doing the relationship) the actionId: " + actionId + ", stepId: " + stepId);
+
+			workflowAction = this.findAction(actionId, user);
+			workflowStep   = this.findStep  (stepId);
+
+			if (null == workflowAction) {
+
+				Logger.debug(this, "The action: " + actionId + ", does not exists");
+				throw new DoesNotExistException("Workflow-does-not-exists-action");
+			}
+
+			if (null == workflowStep) {
+
+				Logger.debug(this, "The step: " + stepId + ", does not exists");
+				throw new DoesNotExistException("Workflow-does-not-exists-step");
+			}
+
+			this.workFlowFactory.saveAction(workflowAction, workflowStep);
+		} catch (DoesNotExistException  e) {
+
+			throw e;
+		} catch (AlreadyExistException e) {
+
+			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			throw new DotWorkflowException("Workflow-action-already-exists", e);
+		} catch (DotSecurityException e) {
+
+			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			throw new DotWorkflowException("Workflow-permission-issue-save-action", e);
+		} catch (Exception e) {
+			if (DbConnectionFactory.isConstraintViolationException(e.getCause())) {
+
+				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				throw new DotWorkflowException("Workflow-action-already-exists", e);
+			} else {
+				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				throw new DotWorkflowException("Workflow-could-not-save-action", e);
+			}
+		}
+	} // saveAction.
+
+	@WrapInTransaction
+	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 		workFlowFactory.saveAction(action);
 	}
 
@@ -573,19 +650,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
+	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, "Removing the WorkflowAction: " + action.getId());
 
 		final List<WorkflowActionClass> workflowActionClasses =
 				findActionClasses(action);
 
+		Logger.debug(this, "Removing the WorkflowActionClass, for action: " + action.getId());
+
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
-			for(WorkflowActionClass clazz : workflowActionClasses){
-				deleteActionClass(clazz);
+			for(WorkflowActionClass actionClass : workflowActionClasses) {
+				this.deleteActionClass(actionClass);
 			}
 		}
 
-		workFlowFactory.deleteAction(action);
+		Logger.debug(this,
+				"Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
+		this.workFlowFactory.deleteAction(action);
 	}
+
+	@WrapInTransaction
+	public void deleteAction(final WorkflowAction action,
+							 final WorkflowStep step) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, "Deleting the action: " + action.getId() +
+					", from the step: " + step.getId());
+
+		this.workFlowFactory.deleteAction(action, step);
+
+	} // deleteAction.
 
 	@CloseDBIfOpened
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {

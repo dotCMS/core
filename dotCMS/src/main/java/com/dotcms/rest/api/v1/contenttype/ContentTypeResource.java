@@ -219,7 +219,7 @@ public class ContentTypeResource implements Serializable {
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
 		try {
-			ContentType type = tapi.find(idOrVar);
+			ContentType type = tapi.find(idOrVar); // todo: include here the findSchemesForStruct
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
 		} catch (NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404

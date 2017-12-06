@@ -15,6 +15,7 @@ import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -623,5 +624,23 @@ public class DbConnectionFactory {
         return defaultInteger;
     }
 
+    /**
+     * Returns true if the throwable is a constraint violation
+     * @param throwable Throwable
+     * @return boolean
+     */
+    public static boolean isConstraintViolationException(final Throwable throwable) {
+
+        boolean isConstraintViolationException = false;
+
+        if (null != throwable && throwable instanceof SQLException) {
+
+            isConstraintViolationException =
+                    (throwable instanceof SQLIntegrityConstraintViolationException ||
+                            throwable.getClass().getName().contains("IntegrityConstraint"));
+        }
+
+        return isConstraintViolationException;
+    } // isConstraintViolationException.
 
 }
