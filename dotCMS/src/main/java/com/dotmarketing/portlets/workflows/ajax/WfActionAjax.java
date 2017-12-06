@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowReorderActionStepForm;
 import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
