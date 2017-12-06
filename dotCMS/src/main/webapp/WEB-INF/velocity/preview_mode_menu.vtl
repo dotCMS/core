@@ -27,10 +27,10 @@
 #set($wfSchemes = $workflowtool.findSchemesForStruct($dotPageContent.structure))
 #set($wfScheme = '')
 
-#set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
+#set($wfSteps = $workflowtool.findStepsByContentlet($dotPageContent.contentObject))
 
-#if($wfStep)
-    #set($wfScheme = $workflowtool.findScheme($wfStep.getSchemeId()))
+#if($wfSteps && $wfSteps.size() == 1)
+    #set($wfScheme = $workflowtool.findScheme($wfSteps.get(0).getSchemeId()))
 #end
 
 #set($wfActions = $workflowtool.findActions($wfSteps, $backendUser))
@@ -838,10 +838,12 @@
     					#end
     				
     					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-    				
+                        #set($wfStep = $workflowtool.findStep($a.getStepId()) )
+    				    #set($wfScheme = $workflowtool.findScheme( $wfStep.getSchemeId()))
     					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
     								<span class="$a.icon"></span>
-    						$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName()))
+    						$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName())) <br/>
+    						<small> ( $wfScheme.getName() ) </small>
     					</a>
     	
     				#end
@@ -893,11 +895,13 @@
     					#end
     				
     					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-    				
-    	
+    				    #set($wfStep = $workflowtool.findStep($a.getStepId()) )
+                        #set($wfScheme = $workflowtool.findScheme( $wfStep.getSchemeId()))
+
     					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
     						<span class="$a.icon"></span>
-    							$UtilMethods.escapeSingleQuotes($text.get($a.getName()))
+    							$UtilMethods.escapeSingleQuotes($text.get($a.getName())) <br/>
+                                <small> ( $wfScheme.getName() ) </small>
     					</a>
     					
     				#end
