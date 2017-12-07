@@ -266,7 +266,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
 
-    List<ContentType> types = search("folder='" + folder.getInode() + "'", "mod_date", -1, 0);
+    final List<ContentType> types = search("folder='" + folder.getInode() + "'", "mod_date", -1, 0);
 
     for (ContentType type : types) {
       ContentTypeBuilder builder = ContentTypeBuilder.builder(type);

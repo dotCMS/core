@@ -693,7 +693,7 @@ public class FolderAPITest {
 
 	@Test
 	public void deleteFolderWithContentTypeInIt() throws DotDataException, DotSecurityException {
-		String folderPath = "/folder_with_content"+System.currentTimeMillis();
+		final String folderPath = "/folder_with_content"+System.currentTimeMillis();
 		ContentType contentType = null;
 		Folder folder = null;
 		try {
@@ -701,7 +701,7 @@ public class FolderAPITest {
 
 			contentType = ContentTypeBuilder
 					.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
-					.description("Content Type For Folder").folder(FolderAPI.SYSTEM_FOLDER)
+					.description("Content Type For Folder").folder(folder.getInode())
 					.host(folder.getHostId()).name("ContentTypeForFolder")
 					.owner(APILocator.systemUser().toString()).build();
 			contentType = contentTypeAPI.save(contentType);
