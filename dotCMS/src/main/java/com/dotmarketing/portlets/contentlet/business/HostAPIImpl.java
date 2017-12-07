@@ -617,15 +617,7 @@ public class HostAPIImpl implements HostAPI {
                 }
             }
             
-            /**
-             * Gradually deletes a whole site (host) by removing each piece of
-             * content in it (e.g., removes old files, HTML and Content pages,
-             * links, contentlets, and so on).
-             * 
-             * @throws Exception
-             *             An error occurred when executing a delete method.
-             */
-            @WrapInTransaction
+
             public void deleteHost() throws Exception {
                 if(host != null){
                     hostCache.remove(host);
