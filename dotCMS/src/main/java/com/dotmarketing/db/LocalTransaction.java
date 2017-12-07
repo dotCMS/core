@@ -154,7 +154,7 @@ public class LocalTransaction {
             wrap(delegate);
         }
         catch(Exception e) {
-            throw new DotRuntimeException(e);
+            throw SneakyThrow.sneakyThrow(e);
         }
     } // wrapNoException.
     
