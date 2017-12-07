@@ -192,9 +192,45 @@ public interface WorkflowAPI {
 
 	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * This is a legacy method for reorder
+	 * 
+	 * @deprecated On release 4.3, replaced by {@link #reorderAction(WorkflowAction, WorkflowStep, User, int)}
+	 * @param action WorkflowAction action you want to reorder, the getStepid has to be not empty and has to have the associated step to the action
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	@Deprecated
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * This method makes the reorder for the action associated to the step, reordering the rest of the actions too.
+	 * @param action WorkflowAction action you want to reorder
+	 * @param step   WorkflowStep   step which the action are associated
+	 * @param user   User           user that is executing the aciton
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	public void reorderAction(final WorkflowAction action,
+							  final WorkflowStep step,
+							  final User user,
+							  final int order) throws DotDataException, AlreadyExistException;
+
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds an action associated to the steps.
+	 * The action will be validated against the user permissions.
+	 * @param actionId String action id
+	 * @param stepId   String step  id
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
@@ -208,6 +244,17 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @return List of WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowScheme scheme, User user) throws DotDataException,
 			DotSecurityException;
 
 	/**
@@ -230,11 +277,40 @@ public interface WorkflowAPI {
 	 */
 	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
+	/**
+	 * Saves an single action the action is associated to the schema by default
+	 * @param action WorkflowAction
+	 * @param perms List of Permission
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 */
+	void saveAction(String actionId, String stepId, User user);
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
+	/**
+	 * Deletes the action associated to the scheme
+	 * @param action WorkflowAction
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes the action reference to the step, but the action associated to the scheme will continue alive.
+	 * @param action WorkflowAction action to delete
+	 * @param step   WorkflowStep   from the step to delete the action
+	 */
+	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
@@ -334,4 +410,6 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+
 }

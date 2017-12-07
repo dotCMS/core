@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Add the Workflow Roles
  */
-public class Task04305CreateWorkflowRoles extends AbstractJDBCStartupTask {
+public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
 
     private final String getSystemRole =
             "select id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, "
