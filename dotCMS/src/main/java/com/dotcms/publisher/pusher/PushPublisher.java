@@ -50,9 +50,9 @@ import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
-import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
-import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -101,8 +101,8 @@ public class PushPublisher extends Publisher {
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
     private Client restClient;
 
-    private static final String PROTOCOL_HTTP  = "http";
-    private static final String PROTOCOL_HTTPS = "https";
+    public static final String PROTOCOL_HTTP  = "http";
+	public static final String PROTOCOL_HTTPS = "https";
     private static final String HTTP_PORT      = "80";
 	private static final String HTTPS_PORT 	   = "443";
 
@@ -232,6 +232,7 @@ public class PushPublisher extends Publisher {
 	        					.queryParam("BUNDLE_NAME", b.getName())
 	        					.queryParam("ENDPOINT_ID", endpoint.getId())
 	        					.queryParam("FILE_NAME", bundle.getName())
+								.queryParam("FORCE_PUSH", b.isForcePush())
 	        			;
 
 	        			Response response = webTarget.request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
@@ -291,7 +292,7 @@ public class PushPublisher extends Publisher {
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
 
 				//Triggering event listener when all endpoints are successfully sent
-				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
+				localSystemEventsAPI.asyncNotify(new AllPushPublishEndpointsSuccessEvent(config));
 			} else {
 
 				/*
@@ -307,13 +308,13 @@ public class PushPublisher extends Publisher {
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when all endpoints failed during the process
-					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent());
+					localSystemEventsAPI.asyncNotify(new AllPushPublishEndpointsFailureEvent(config.getAssets()));
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when at least one endpoint is successfully sent but others failed
-					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent());
+					localSystemEventsAPI.asyncNotify(new SinglePushPublishEndpointFailureEvent(config.getAssets()));
 				}
 			}
 			return this.config;

@@ -2,21 +2,9 @@ package com.dotcms.publisher.business;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.jetbrains.annotations.NotNull;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
@@ -45,6 +33,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 /**
  * This job is in charge of auditing and triggering the push publishing process
@@ -271,8 +270,8 @@ public class PublisherQueueJob implements StatefulJob {
                 if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
                     MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
                     // Don't poll status for static publishing
-                    if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
-
+                    if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
+                            && !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
                         try {
                             // Try to get the status of the remote end-points to
                             // update the local history
@@ -329,16 +328,16 @@ public class PublisherQueueJob implements StatefulJob {
             bundleStatus = Status.FAILED_TO_PUBLISH;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
             pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        } else if (groupPushStats.getCountGroupFailed() > 0
-				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
-            // If bundle was installed in some groups only
-            bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
+        } else if (groupPushStats.getCountGroupFailed() > 0
+				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
+			// If bundle was installed in some groups only
+			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
             // If bundle was installed in all groups
             PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus = Status.SUCCESS;
@@ -348,10 +347,14 @@ public class PublisherQueueJob implements StatefulJob {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
             pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-        } else {
-            // Otherwise, just keep trying to publish the bundle
-            bundleStatus = Status.WAITING_FOR_PUBLISHING;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+        } else if (groupPushStats.getCountGroupSaved() > 0){
+			// If the static bundle was saved but has not been sent
+			bundleStatus = Status.BUNDLE_SAVED_SUCCESSFULLY;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+		}else{
+			// Otherwise, just keep trying to publish the bundle
+			bundleStatus = Status.WAITING_FOR_PUBLISHING;
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
         }
 
 		Logger.info(this, "===========================================================");
@@ -371,6 +374,7 @@ public class PublisherQueueJob implements StatefulJob {
             boolean isGroupOk = false;
             boolean isGroupPublishing = false;
             boolean isGroupFailed = false;
+            boolean isGroupSaved = false;
             for (final EndpointDetail detail : group.values() ) {
                 if ( detail.getStatus() == Status.SUCCESS.getCode() ) {
                     isGroupOk = true;
@@ -380,7 +384,10 @@ public class PublisherQueueJob implements StatefulJob {
                 } else if ( detail.getStatus() == Status.FAILED_TO_PUBLISH
                         .getCode() ) {
                     isGroupFailed = true;
-                }
+                } else if ( detail.getStatus() == Status.BUNDLE_SAVED_SUCCESSFULLY
+						.getCode() ) {
+					isGroupSaved = true;
+				}
             }
             if ( isGroupOk ) {
                 groupPushStats.increaseCountGroupOk();
@@ -391,6 +398,9 @@ public class PublisherQueueJob implements StatefulJob {
             if ( isGroupFailed ) {
                 groupPushStats.increaseCountGroupFailed();
             }
+			if ( isGroupSaved ) {
+				groupPushStats.increaseCountGroupSaved();
+			}
         }
 
         return groupPushStats;
@@ -451,7 +461,10 @@ public class PublisherQueueJob implements StatefulJob {
 	    try{
             Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
             //TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
-            Set<Class<?>> publishers = Sets.newHashSet(PushPublisher.class, AWSS3Publisher.class);
+            final Set<Class<?>> publishers = Sets.newHashSet(
+                    PushPublisher.class,
+                    AWSS3Publisher.class,
+					StaticPublisher.class);
 
             //Fill protocolPublisherMap with protocol -> publisher.
             for (Class publisher : publishers) {
@@ -512,6 +525,7 @@ public class PublisherQueueJob implements StatefulJob {
 		private int countGroupOk = 0;
 		private int countGroupPublishing = 0;
 		private int countGroupFailed = 0;
+		private int countGroupSaved = 0;
 
 		public void increaseCountGroupOk() {
 			countGroupOk++;
@@ -525,6 +539,10 @@ public class PublisherQueueJob implements StatefulJob {
 			countGroupFailed++;
 		}
 
+		public void increaseCountGroupSaved() {
+			countGroupSaved++;
+		}
+
 		public int getCountGroupOk() {
 			return countGroupOk;
 		}
@@ -535,6 +553,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 		public int getCountGroupFailed() {
 			return countGroupFailed;
+		}
+
+		public int getCountGroupSaved() {
+			return countGroupSaved;
 		}
 	}
 

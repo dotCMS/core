@@ -13,6 +13,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -80,6 +81,8 @@ public class RemotePublishAjaxActionTest {
 
 	private static User user;
 	private static User adminUser;
+    private final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+    private final String protocol = "http";
 
 	@BeforeClass
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
@@ -127,11 +130,11 @@ public class RemotePublishAjaxActionTest {
 		environmentAPI.saveEnvironment( environment, permissions );
 
 		//Now we need to create the end point
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+		endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -241,11 +244,11 @@ public class RemotePublishAjaxActionTest {
 		 */
 
 		//Create a receiving end point
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );
@@ -444,11 +447,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+		PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -558,11 +561,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
@@ -773,11 +776,13 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+
+
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "9999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
@@ -884,11 +889,11 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?

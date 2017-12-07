@@ -309,12 +309,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLPENDING);
-			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
-			dc.addParam(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
-			dc.addParam(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
-			dc.addParam(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING.getCode());
+			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			dc.addParam(Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
+			dc.addParam(Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
+			dc.addParam(Status.RECEIVED_BUNDLE.getCode());
+			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
+			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
