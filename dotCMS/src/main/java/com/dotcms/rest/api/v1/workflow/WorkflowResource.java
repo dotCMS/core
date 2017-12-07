@@ -12,6 +12,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +20,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.Beta;
@@ -28,6 +30,7 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -62,6 +65,89 @@ public class WorkflowResource {
         this.workflowAPI    = workflowAPI;
     }
 
+    /**
+     * Returns all schemes non-archived. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/schemes")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findSchemes(@Context final HttpServletRequest request,
+                                      @QueryParam("contentTypeId") final String contentTypeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowScheme> schemes;
+
+        try {
+
+            Logger.debug(this,
+                    "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
+            schemes   = (null != contentTypeId)?
+                    this.workflowHelper.findSchemesByContentType
+                            (contentTypeId, initDataObject.getUser()):
+                    this.workflowHelper.findSchemes();
+
+            response  =
+                    Response.ok(new ResponseEntityView(schemes)).build(); // 200
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findSchemes exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findSchemes.
+
+    /**
+     * Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/schemes/schemescontenttypes/{contentTypeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAllSchemesAndSchemesByContentType(@Context            final HttpServletRequest request,
+                                                   @PathParam("contentTypeId")      final String contentTypeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowScheme> schemes;
+        List<WorkflowScheme> contentTypeSchemes;
+
+        try {
+
+            Logger.debug(this,
+                    "Getting the workflow schemes for the contentTypeId: " + contentTypeId
+                            + " and including All Schemes");
+            schemes   = this.workflowHelper.findSchemes();
+            contentTypeSchemes = this.workflowHelper.findSchemesByContentType
+                    (contentTypeId, initDataObject.getUser());
+
+            response  =
+                    Response.ok(new ResponseEntityView(new SchemesAndSchemesContentTypeView
+                            (schemes, contentTypeSchemes))).build(); // 200
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findSchemes exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAllSchemesAndSchemesByContentType.
 
     /**
      * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
@@ -75,9 +161,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findStepsByScheme(@Context final HttpServletRequest request,
-                                     @PathParam("schemeId") final String schemeId) {
+                                            @PathParam("schemeId") final String schemeId) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         Response response;
         List<WorkflowStep> steps;
@@ -127,7 +213,7 @@ public class WorkflowResource {
         Response response;
         WorkflowAction action;
         final Locale locale = LocaleUtil.getLocale(request);
-        final User   user   = initDataObject.getUser();
+        final User user   = initDataObject.getUser();
 
         try {
 
@@ -167,8 +253,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionByStep(@Context final HttpServletRequest request,
-                                              @PathParam("stepId")   final String stepId,
-                                              @PathParam("actionId") final String actionId) {
+                                           @PathParam("stepId")   final String stepId,
+                                           @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -216,7 +302,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionsByStep(@Context final HttpServletRequest request,
-                                           @PathParam("stepId")   final String stepId) {
+                                            @PathParam("stepId")   final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -376,9 +462,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteStep(@Context final HttpServletRequest request,
-                                           @PathParam("stepId") final String stepId) {
+                                     @PathParam("stepId") final String stepId) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         Response response;
 
@@ -418,8 +504,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteAction(@Context final HttpServletRequest request,
-                                     @PathParam("actionId") final String actionId,
-                                     @PathParam("stepId")   final String stepId) {
+                                       @PathParam("actionId") final String actionId,
+                                       @PathParam("stepId")   final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -539,6 +625,4 @@ public class WorkflowResource {
 
         return response;
     } // reorderAction
-
-
 } // E:O:F:WorkflowResource.

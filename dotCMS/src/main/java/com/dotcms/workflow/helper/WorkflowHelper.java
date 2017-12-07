@@ -1,6 +1,7 @@
 package com.dotcms.workflow.helper;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -51,8 +52,10 @@ public class WorkflowHelper {
     }
 
     private WorkflowHelper() {
-        this( APILocator.getWorkflowAPI(), APILocator.getRoleAPI());
+        this( APILocator.getWorkflowAPI(),
+                APILocator.getRoleAPI());
     }
+
 
     @VisibleForTesting
     protected WorkflowHelper(final WorkflowAPI workflowAPI,
@@ -65,7 +68,7 @@ public class WorkflowHelper {
 
     /**
      * Reorder the action associated to the scheme.
-     * @param workflowReorderActionStepForm WorkflowReorderBean
+     * @param workflowReorderActionStepForm WorkflowReorderActionStepForm
      */
     @WrapInTransaction
     public void reorderAction(final WorkflowReorderBean workflowReorderActionStepForm,
@@ -226,6 +229,55 @@ public class WorkflowHelper {
 
         return step;
     } // deleteAction.
+
+    /**
+     * Find Schemes by content type id
+     * @param contentTypeId String
+     * @param user          User   the user that makes the request
+     * @return List
+     */
+    public List<WorkflowScheme> findSchemesByContentType(final String contentTypeId,
+                                                         final User   user) {
+
+        final ContentTypeAPI contentTypeAPI =
+                APILocator.getContentTypeAPI(user);
+        List<WorkflowScheme> schemes = Collections.emptyList();
+        try {
+
+            Logger.debug(this, "Getting the schemes by content type: " + contentTypeId);
+
+            schemes = this.workflowAPI.findSchemesForContentType
+                    (contentTypeAPI.find(contentTypeId));
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return schemes;
+    } // findSchemesByContentType.
+
+    /**
+     * Finds the non-archived schemes
+     * @return List
+     */
+    public List<WorkflowScheme> findSchemes() {
+
+        List<WorkflowScheme> schemes = null;
+
+        try {
+
+            Logger.debug(this, "Getting all non-archived schemes");
+            schemes =
+                    this.workflowAPI.findSchemes(false);
+        } catch (DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return schemes;
+    } // findSchemes.
 
     /**
      * Finds the action associated to the stepId
