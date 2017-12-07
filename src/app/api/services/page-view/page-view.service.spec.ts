@@ -3,7 +3,6 @@ import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { PageViewService } from './page-view.service';
 import { DOTTestBed } from './../../../test/dot-test-bed';
-import { DotLayout } from '../../../portlets/dot-edit-page/shared/models/dot-layout.model';
 
 describe('PageViewService', () => {
     beforeEach(() => {
@@ -21,6 +20,11 @@ describe('PageViewService', () => {
         this.pageViewService.get('about-us').subscribe(items => result = items);
 
         expect(this.lastConnection.request.url).toContain('v1/page/render/about-us?live=false');
+    });
+
+    it('should remove the leading slash if present when calling pageViewService', () => {
+        this.pageViewService.get('/aboutUs/index');
+        expect(this.lastConnection.request.url).toContain('v1/page/render/aboutUs/index');
     });
 
     it('should do a get request and return a pageView', fakeAsync(() => {

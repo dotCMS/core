@@ -3,7 +3,6 @@ import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
 import { DotPageView } from '../../../portlets/dot-edit-page/shared/models/dot-page-view.model';
-import { DotLayoutBody } from '../../../portlets/dot-edit-page/shared/models/dot-layout-body.model';
 import { DotLayout } from '../../../portlets/dot-edit-page/shared/models/dot-layout.model';
 
 /**
@@ -24,7 +23,7 @@ export class PageViewService {
     get(url: string): Observable<DotPageView> {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
-            url: `v1/page/render/${url}?live=false`
+            url: `v1/page/render/${url.replace(/^\//, '')}?live=false`
         }).pluck('bodyJsonObject');
     }
 

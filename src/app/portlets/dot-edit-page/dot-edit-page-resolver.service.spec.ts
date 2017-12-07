@@ -6,7 +6,7 @@ import { TestBed, async } from '@angular/core/testing';
 import { PageViewResolver } from './dot-edit-page-resolver.service';
 
 class PageViewServiceMock {
-    get(url) { }
+    get(url) {}
 }
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
@@ -30,7 +30,7 @@ describe('ContentTypeResolver', () => {
                         useValue: activatedRouteSnapshotMock
                     }
                 ],
-                imports: [ RouterTestingModule ]
+                imports: [RouterTestingModule]
             });
 
             router = TestBed.get(ActivatedRouteSnapshot);
@@ -48,7 +48,7 @@ describe('ContentTypeResolver', () => {
             })
         );
 
-        pageViewResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeRes: any) => result = fakeRes);
+        pageViewResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeRes: any) => (result = fakeRes));
 
         expect(result).toEqual({ object: 'Fake object' });
     });
