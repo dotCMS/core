@@ -2046,7 +2046,7 @@ create table workflow_action(
     requires_checkout boolean default false,
     icon varchar(255) default 'defaultWfIcon',
     show_on varchar(255) default 'LOCKED,UNLOCKED',
-    use_role_hierarchy_assign bool default false,
+    use _role_hierarchy_assign bool default false,
     scheme_id VARCHAR(36) NOT NULL
 );
 create index workflow_idx_action_step on workflow_action(step_id);

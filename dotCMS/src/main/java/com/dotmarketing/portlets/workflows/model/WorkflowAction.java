@@ -8,11 +8,16 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Encapsulate the workflow action information.
+ *
  *
  * @author root
  * @version 1.x
@@ -37,6 +42,9 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean commentable;
 	private int order;
 	private Set<WorkflowStatus> showOn = Collections.emptySet();
+
+	public WorkflowAction() {
+	}
 
 	/**
 	 * True if the action has to be show on locked status.
@@ -90,10 +98,6 @@ public class WorkflowAction implements Permissionable, Serializable{
 		this.setShowOn(builder.build());
 	}
 
-
-
-	public WorkflowAction() {
-	}
 
 	@JsonIgnore
 	public String getPermissionId() {
