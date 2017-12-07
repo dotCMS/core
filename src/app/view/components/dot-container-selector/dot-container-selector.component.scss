@@ -31,7 +31,7 @@
 .container-selector__list {
     height: 140px;
     margin: $basic-padding $basic-padding * 3 $basic-padding $basic-padding;
-    overflow-y: scroll;
+    overflow-x: hidden;
     padding: 0;
 }
 
