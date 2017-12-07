@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -81,6 +82,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1412,14 +1414,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return true;
     }
 
-    @WrapInTransaction
-    @Override
-    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        List<Contentlet> contentletsToDelete = findContentletsByHost(host, user,
-                respectFrontendRoles);
 
-        return deleteContentlets(contentletsToDelete, user, respectFrontendRoles, true);
+
+    @Override
+    public boolean deleteByHost(final Host host, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        
+        final DotConnect db = new DotConnect();
+
+        List<String> deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
+                .addParam(host.getIdentifier())
+                .setMaxRows(200)
+                .loadObjectResults()
+                .stream()
+                .map(map->(String)map.get("working_inode"))
+                .collect(Collectors.toList());
+
+        while(deleteMe.size()>0) {
+           final List<String> ids = deleteMe;
+            LocalTransaction.wrapNoException(() ->{
+
+                try {
+                    
+                    List<Contentlet> cons = findContentlets(ids);
+                    
+                    destroy(cons, user, respectFrontendRoles);
+                    
+                } catch (DotSecurityException e1) {
+                    throw new DotStateException(e1);
+                }
+            });
+
+            deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
+                    .addParam(host.getIdentifier())
+                    .setMaxRows(200)
+                    .loadObjectResults()
+                    .stream()
+                    .map(map->(String)map.get("working_inode"))
+                    .collect(Collectors.toList());
+        }
+        return true;
+
     }
 
     @WrapInTransaction

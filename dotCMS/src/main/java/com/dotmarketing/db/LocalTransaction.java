@@ -3,6 +3,7 @@ package com.dotmarketing.db;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 
 public class LocalTransaction {
 
@@ -147,7 +148,34 @@ public class LocalTransaction {
             }
         }
     } // wrap.
+    
+    static public void wrapNoException(final VoidDelegate delegate)  {
 
+        final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
+        boolean isLocalTransaction = false;
+        
+        try {
+            isLocalTransaction =  DbConnectionFactory.startTransactionIfNeeded();
+            delegate.execute();
+            if (isLocalTransaction) {
+                DbConnectionFactory.commit();
+            }
+        } catch (Exception e) {
+            try {
+                handleException(isLocalTransaction, e);
+            } catch (Exception e1) {
+                throw new DotRuntimeException(e1);
+            }
+        } finally {
+
+            if (isLocalTransaction) {
+                DbConnectionFactory.setAutoCommit(true);
+                if (isNewConnection) {
+                    DbConnectionFactory.closeSilently();
+                }
+            }
+        }
+    } // wrap.
     private static void handleException(final boolean isLocalTransaction,
                                         final Throwable  e) throws Exception {
         if(isLocalTransaction){

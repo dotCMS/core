@@ -283,9 +283,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	     if(UtilMethods.isSet(fatty.getIdentifier())){
 	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-	        Identifier identifier = identifierAPI.find(fatty.getIdentifier());
+	        Identifier identifier = identifierAPI.loadFromDb(fatty.getIdentifier());
 	        Folder folder = null;
-	        if(identifier.getParentPath().length()>1){
+	        if(identifier!=null && !"/".equals(identifier.getParentPath())){
 	            folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
 	        }else{
 	            folder = APILocator.getFolderAPI().findSystemFolder();
