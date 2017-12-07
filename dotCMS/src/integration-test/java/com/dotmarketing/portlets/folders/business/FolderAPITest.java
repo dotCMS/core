@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.folders.business;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -63,6 +67,7 @@ public class FolderAPITest {
 	private static HTMLPageAssetAPI htmlPageAssetAPI;
 	private static FileAssetAPI fileAssetAPI;
 	private static TemplateAPI templateAPI;
+	private static ContentTypeAPI contentTypeAPI;
 	private static FolderCache fc;
 	private static User user;
 	private static Host host;
@@ -90,8 +95,10 @@ public class FolderAPITest {
 		user   = userAPI.getSystemUser();
 		host   = hostAPI.findByName("demo.dotcms.com", user, false);
 		langId = languageAPI.getDefaultLanguage().getId();
+		fc     = CacheLocator.getFolderCache();
 
-		fc = CacheLocator.getFolderCache();
+		contentTypeAPI   = APILocator.getContentTypeAPI(user);
+
     }
 
 	@Rule
@@ -631,7 +638,7 @@ public class FolderAPITest {
 	@Test
 	public void delete() throws Exception {
 		final long langIdES= languageAPI.getLanguage("es", "ES").getId();
-		
+
 		final String folderPath = "/folderDeleteSourceTest"+System.currentTimeMillis();
 		final Folder ftest = folderAPI.createFolders(folderPath, host, user, false);
 
@@ -660,7 +667,7 @@ public class FolderAPITest {
 		contentAsset.setFolder(ftest.getInode());
 		contentAsset= contentletAPI.checkin(contentAsset, user, false);
 		contentletAPI.publish(contentAsset, user, false);
-		
+
 		contentAsset.setLanguageId(langIdES);
 		contentAsset.setInode(null);
 		contentAsset= contentletAPI.checkin(contentAsset, user, false);
@@ -682,6 +689,41 @@ public class FolderAPITest {
 
 		final Identifier dbFolderIdentifier = identifierAPI.find(folderIdentifier);
 		Assert.assertTrue(dbFolderIdentifier == null || !UtilMethods.isSet(dbFolderIdentifier.getId()));
+	}
+
+	@Test
+	public void deleteFolderWithContentTypeInIt() throws DotDataException, DotSecurityException {
+		String folderPath = "/folder_with_content"+System.currentTimeMillis();
+		ContentType contentType = null;
+		Folder folder = null;
+		try {
+			folder = folderAPI.createFolders(folderPath, host, user, false);
+
+			contentType = ContentTypeBuilder
+					.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+					.description("Content Type For Folder").folder(FolderAPI.SYSTEM_FOLDER)
+					.host(folder.getHostId()).name("ContentTypeForFolder")
+					.owner(APILocator.systemUser().toString()).build();
+			contentType = contentTypeAPI.save(contentType);
+
+			folderAPI.delete(folder, user, false);
+
+			folder = folderAPI.findFolderByPath(folderPath, host, user, false);
+			Assert.assertTrue(folder.getInode() == null);
+
+			contentType = contentTypeAPI.find(contentType.inode());
+			Assert.assertTrue(contentType != null);
+			Assert.assertTrue(contentType.host().equals(host.getIdentifier()));
+			Assert.assertTrue(contentType.folder().equals(FolderAPI.SYSTEM_FOLDER));
+		}finally{
+			if (contentType != null){
+				contentTypeAPI.delete(contentType);
+			}
+
+			if (folder != null && folder.getInode() != null){
+				folderAPI.delete(folder, user, false);
+			}
+		}
 	}
 
 	@Test

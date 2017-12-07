@@ -22,7 +22,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -267,7 +266,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
 
-    List<ContentType> types = search("folder='" + folder.getIdentifier() + "'", "mod_date", -1, 0);
+    List<ContentType> types = search("folder='" + folder.getInode() + "'", "mod_date", -1, 0);
 
     for (ContentType type : types) {
       ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
