@@ -40,7 +40,10 @@ describe('SearchableDropdownComponent', () => {
             for (let i = 0; i < NROWS; i++) {
                 data[i] = {
                     id: i,
-                    name: `site-${i}`
+                    name: `site-${i}`,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    }
                 };
             }
 
@@ -76,6 +79,26 @@ describe('SearchableDropdownComponent', () => {
 
         const pDataList = fixture.debugElement.query(By.css('p-dataList')).componentInstance;
         expect(comp.data).toEqual(pDataList.value);
+    });
+
+    it('should render a string property in p-dataList', () => {
+        comp.data = data;
+        comp.labelPropertyName = 'name';
+
+        fixture.detectChanges();
+
+        const dataListDataEl = fixture.debugElement.query(By.css('p-dataList ul li span'));
+        expect(dataListDataEl.nativeElement.textContent).toEqual('site-0');
+    });
+
+    it('should render a string array of properties in p-dataList', () => {
+        comp.data = data;
+        comp.labelPropertyName = ['name', 'parentPermissionable.hostname'];
+
+        fixture.detectChanges();
+
+        const dataListDataEl = fixture.debugElement.query(By.css('p-dataList ul li span'));
+        expect(dataListDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
     });
 
     it(

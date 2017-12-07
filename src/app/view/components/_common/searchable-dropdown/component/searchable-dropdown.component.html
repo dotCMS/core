@@ -18,7 +18,7 @@
         [value]="data"
         class="searchable-dropdown__data-list">
         <ng-template let-item pTemplate="item">
-            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{item[labelPropertyName]}}</span>
+            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ getLabel(item) }}</span>
         </ng-template>
     </p-dataList>
 </p-overlayPanel>

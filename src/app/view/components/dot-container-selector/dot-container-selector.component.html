@@ -8,7 +8,7 @@
             [pageLinkSize]="5"
             [rows]="paginationService.paginationPerPage"
             [totalRecords]="paginationService.totalRecords"
-            labelPropertyName="name"
+            [labelPropertyName]="['name', 'parentPermissionable.hostname']"
             placeholder="{{messageService.get('editpage.container.add.label')}}"
             persistentPlaceholder="true">
         </searchable-dropdown>
