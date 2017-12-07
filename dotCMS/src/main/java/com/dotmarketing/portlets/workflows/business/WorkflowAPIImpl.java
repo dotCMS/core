@@ -5,11 +5,14 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -445,7 +448,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
 	DotSecurityException {
 		List<WorkflowAction> actions = workFlowFactory.findActions(step);
-		actions = APILocator.getPermissionAPI().filterCollection(actions, PermissionAPI.PERMISSION_USE, true, user);
+        actions = filterActionsCollection(actions, user, true);
 		return actions;
 	}
 
@@ -457,7 +460,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
 
-		return APILocator.getPermissionAPI().filterCollection(actions.build(), PermissionAPI.PERMISSION_USE, true, user);
+		return filterActionsCollection(actions.build(), user, true);
 	}
 
 
@@ -1059,4 +1062,74 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException {
 		workFlowFactory.updateStepReferences(stepId, replacementStepId);
 	}
+
+    /**
+     * Filter the list of actions to display according to the user logged permissions
+     * @param actions List of action to filter
+     * @param user User to validate
+     * @return List<WorkflowAction>
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final User user, final boolean respectFrontEndRoles) throws DotDataException {
+
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		Role anyWhoCanViewContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+		Role anyWhoCanEditContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+		Role anyWhoCanPublishContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+		Role anyWhoCanEditPermisionsContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+
+		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
+			return actions;
+
+		List<WorkflowAction> permissionables = new ArrayList<WorkflowAction>(actions);
+		if(permissionables.isEmpty()){
+			return permissionables;
+		}
+
+		WorkflowAction action;
+		int i = 0;
+
+		while (i < permissionables.size()) {
+			action = permissionables.get(i);
+			boolean havePermission = false;
+			/* Validate if the action has one of the workflow special roles*/
+			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanViewContent)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)) {
+					havePermission = true;
+				}
+			}
+			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanEditContent)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
+					havePermission = true;
+				}
+			}
+			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanPublishContent)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE+PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles)) {
+					havePermission = true;
+				}
+			}
+			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanEditPermisionsContent)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE+PermissionAPI.PERMISSION_PUBLISH+PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles)) {
+					havePermission = true;
+				}
+			}
+
+			/* Validate if has other rolers permissions */
+			if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, respectFrontEndRoles)){
+				havePermission=true;
+			}
+
+			/* Remove the action if the user dont have permission */
+			if(!havePermission){
+				permissionables.remove(i);
+			}else {
+				++i;
+			}
+		}
+
+		return permissionables;
+	}
+
+
 }
