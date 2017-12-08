@@ -6,8 +6,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -57,7 +55,7 @@ public class ConvertToPOJOUtil {
      * @throws Exception
      */
     public static <T> List<T> convertDotConnectMapToPOJO(List<Map<String, Object>> results, final Class classToUse)
-            throws ParseException, IllegalAccessException, InvocationTargetException, InstantiationException,
+            throws  IllegalAccessException,  InstantiationException,
             NoSuchMethodException, NoSuchFieldException {
 
         List<T> ret = null;
@@ -100,7 +98,7 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Link> convertDotConnectMapToLink(final List<Map<String, Object>> results) throws ParseException {
+    public static List<Link> convertDotConnectMapToLink(final List<Map<String, Object>> results)  {
 
         List<Link> ret = new ArrayList<>();
 
@@ -114,7 +112,7 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Link getLinkFields(Map<String, Object> map) throws ParseException {
+    private static Link getLinkFields(Map<String, Object> map)  {
         final Link link = new Link();
         link.setInode((String) map.get(INODE));
         link.setOwner((String) map.get(OWNER));
@@ -140,8 +138,7 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String, Object>> results)
-            throws ParseException {
+    public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String, Object>> results) {
         final List<Identifier> ret = new ArrayList<>();
         if (results == null || results.isEmpty()) {
             return ret;
@@ -161,7 +158,7 @@ public class ConvertToPOJOUtil {
         return ret;
     }
 
-    public static List<Folder> convertDotConnectMapToFolder(final List<Map<String, Object>> results) throws ParseException {
+    public static List<Folder> convertDotConnectMapToFolder(final List<Map<String, Object>> results)  {
 
         List<Folder> ret = new ArrayList<>();
 
@@ -174,7 +171,7 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Folder getFolderFields(Map<String, Object> map) throws ParseException {
+    private static Folder getFolderFields(Map<String, Object> map)  {
         Folder folder;
         folder = new Folder();
         folder.setInode((String) map.get(INODE));
@@ -191,7 +188,7 @@ public class ConvertToPOJOUtil {
         return folder;
     }
 
-    public static List<Container> convertDotConnectMapToContainer(final List<Map<String, Object>> results) throws ParseException {
+    public static List<Container> convertDotConnectMapToContainer(final List<Map<String, Object>> results) {
 
         List<Container> ret = new ArrayList<>();
 
@@ -204,7 +201,7 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Container getContainerFields(Map<String, Object> map) throws ParseException {
+    private static Container getContainerFields(Map<String, Object> map)  {
         Container container;
         container = new Container();
         container.setInode((String) map.get(INODE));
@@ -229,7 +226,7 @@ public class ConvertToPOJOUtil {
         return container;
     }
 
-    public static List<Template> convertDotConnectMapToTemplate(final List<Map<String, Object>> results) throws ParseException {
+    public static List<Template> convertDotConnectMapToTemplate(final List<Map<String, Object>> results){
 
         List<Template> ret = new ArrayList<>();
 
@@ -242,7 +239,7 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Template getTemplateFields(Map<String, Object> map) throws ParseException {
+    private static Template getTemplateFields(Map<String, Object> map) {
         Template template;
         template = new Template();
         template.setInode(String.valueOf(map.get(INODE)));
