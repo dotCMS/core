@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -435,10 +436,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowStep step, final User user) throws DotDataException,
 	DotSecurityException {
-		List<WorkflowAction> actions = workFlowFactory.findActions(step);
-        actions = filterActionsCollection(actions, user, true);
-		return actions;
+		return findActions(step, user, null);
 	}
+
+    @CloseDBIfOpened
+    public List<WorkflowAction> findActions(final WorkflowStep step, final User user, final Permissionable permissionable) throws DotDataException,
+            DotSecurityException {
+        List<WorkflowAction> actions = workFlowFactory.findActions(step);
+        actions = filterActionsCollection(actions, user, true, permissionable);
+        return actions;
+    }
 
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
@@ -453,12 +460,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
 			DotSecurityException {
+		return findActions(steps, user, null);
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final List<WorkflowStep> steps,final User user, final Permissionable permissionable) throws DotDataException,
+			DotSecurityException {
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
-        for(WorkflowStep step : steps) {
+		for(WorkflowStep step : steps) {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
 
-		return filterActionsCollection(actions.build(), user, true);
+		return filterActionsCollection(actions.build(), user, true, permissionable);
 	}
 
 
@@ -493,7 +506,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		boolean hasLock = user.getUserId().equals(lockedUserId);
 		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions = findActions(steps, user);
+		List<WorkflowAction> unfilteredActions = findActions(steps, user,contentlet);
 
 		if(hasLock || isNew){
 			return unfilteredActions;
@@ -1163,11 +1176,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
      * Filter the list of actions to display according to the user logged permissions
      * @param actions List of action to filter
      * @param user User to validate
+     * @param respectFrontEndRoles indicates if should respect frontend roles
+     * @param permissionable ContentType or contentlet to validate special workflow roles
      * @return List<WorkflowAction>
      * @throws DotDataException
      */
     @CloseDBIfOpened
-	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final User user, final boolean respectFrontEndRoles) throws DotDataException {
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final User user, final boolean respectFrontEndRoles, final Permissionable permissionable) throws DotDataException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role anyWhoCanViewContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
@@ -1189,28 +1204,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		while (i < permissionables.size()) {
 			action = permissionables.get(i);
 			boolean havePermission = false;
+			if(null != permissionable) {
 			/* Validate if the action has one of the workflow special roles*/
-			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanViewContent)){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)) {
-					havePermission = true;
-				}
-			}
-			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanEditContent)){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
-					havePermission = true;
-				}
-			}
-			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanPublishContent)){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE+PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles)) {
-					havePermission = true;
-				}
-			}
-			if(APILocator.getPermissionAPI().doesRoleHavePermission(action,PermissionAPI.PERMISSION_USE,anyWhoCanEditPermisionsContent)){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_WRITE+PermissionAPI.PERMISSION_PUBLISH+PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles)) {
-					havePermission = true;
-				}
-			}
+                havePermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles, permissionable,
+                        anyWhoCanViewContent,
+                        anyWhoCanEditContent, anyWhoCanPublishContent,
+                        anyWhoCanEditPermisionsContent, action);
 
+			}
 			/* Validate if has other rolers permissions */
 			if(APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, respectFrontEndRoles)){
 				havePermission=true;
@@ -1226,6 +1227,67 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return permissionables;
 	}
+
+    /**
+     * Return true if the action has one of the workflow action roles and if the user havas those permission
+     * over the content or content type
+     * @param user User to validate
+     * @param respectFrontEndRoles indicates if should respect frontend roles
+     * @param permissionable ContentType or contentlet to validate special workflow roles
+     * @param anyWhoCanViewContent Workflow action role
+     * @param anyWhoCanEditContent Workflow action role
+     * @param anyWhoCanPublishContent Workflow action role
+     * @param anyWhoCanEditPermisionsContent Workflow action role
+     * @param action The action to validate
+     * @return true if the user has one of the special workflow action role permissions, false if not
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    private boolean hasSpecialWorkflowPermission(User user, boolean respectFrontEndRoles,
+            Permissionable permissionable, Role anyWhoCanViewContent, Role anyWhoCanEditContent,
+            Role anyWhoCanPublishContent, Role anyWhoCanEditPermisionsContent,
+            WorkflowAction action) throws DotDataException {
+        if (APILocator.getPermissionAPI()
+                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+                        anyWhoCanViewContent)) {
+            if (APILocator.getPermissionAPI()
+                    .doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ,
+                            user, respectFrontEndRoles)) {
+                return true;
+            }
+        }
+        if (APILocator.getPermissionAPI()
+                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+                        anyWhoCanEditContent)) {
+            if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE, user,
+                    respectFrontEndRoles)) {
+                return true;
+            }
+        }
+        if (APILocator.getPermissionAPI()
+                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+                        anyWhoCanPublishContent)) {
+            if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE
+                            + PermissionAPI.PERMISSION_PUBLISH, user,
+                    respectFrontEndRoles)) {
+                return true;
+            }
+        }
+        if (APILocator.getPermissionAPI()
+                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+                        anyWhoCanEditPermisionsContent)) {
+            if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE
+                            + PermissionAPI.PERMISSION_PUBLISH
+                            + PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user,
+                    respectFrontEndRoles)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 }

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
@@ -247,6 +248,18 @@ public interface WorkflowAPI {
 			DotSecurityException;
 
 	/**
+	 * Find the list of Workflow Actions available for the current user on the specified workflow step and permissionable
+	 * @param step The current step
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException,
+			DotSecurityException;
+
+	/**
 	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
 	 * @param scheme {@link WorkflowScheme}
 	 * @param user   {@link User}
@@ -266,6 +279,18 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * Find the list of Workflow Actions available for the current user ont the list of steps and permissionable
+	 * @param steps List of workflow steps
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
 	/**
