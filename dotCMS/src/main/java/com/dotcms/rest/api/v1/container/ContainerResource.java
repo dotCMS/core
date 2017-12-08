@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.container;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -14,10 +15,12 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -157,49 +160,66 @@ public class ContainerResource implements Serializable {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
-
+        PageMode mode = PageMode.get(req);
         Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
         ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find Container" + containerId);} );
         
         ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);} );
         
-        PageMode mode = PageMode.get(req);
+        
+        
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ?  APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive) 
+                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode==PageMode.ANON, id.getId(), user, mode==PageMode.ANON);
+
+        if(contentlet.getContentType().baseType() == BaseContentType.WIDGET) {
+            Map<String, String> response = new HashMap<>();
+            response.put("render", WidgetResource.parseWidget(req, res, contentlet));
+            
+            return Response.ok(response).build();
+            
+            
+        }
+        
         
         Container container = (containerShorty.subType == ShortType.CONTAINER) 
             ? APILocator.getContainerAPI().find(containerId, user, mode==PageMode.ANON)
                     : (mode.showLive) 
                         ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user, mode==PageMode.ANON)
                         :(Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user, mode==PageMode.ANON);
+                       
                         
         Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
         
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
         context.remove("EDIT_MODE");
 
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ?  APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive) 
-                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode==PageMode.ANON, id.getId(), user, mode==PageMode.ANON);
+
         
         context.put("contentletList" + container.getIdentifier(), Lists.newArrayList(contentlet.getIdentifier()));
+        StringWriter out = new StringWriter();  
+
+        final ContainerStructure cStruct = APILocator.getContainerAPI().getContainerStructures(container)
+                .stream()
+                .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId()))
+                .findFirst()
+                .orElseGet(() -> {throw new ResourceNotFoundException("Can't find container structure template:" + contentletId);}); 
         
         
+        
+        
+        // defensive copy
         container = (Container) BeanUtils.cloneBean(container);
         container.setPreLoop(null);
         container.setPostLoop(null);
         
-
-        StringWriter out = new StringWriter();  
 
         VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(),ContainerServices.buildVelocity(container, containerIdentifier, false));        
                 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());
         
-        final Response.ResponseBuilder responseBuilder = Response.ok(response);
+        return Response.ok(response).build();
 
-        
-        
-        
-        return responseBuilder.build();
         
     }
     
