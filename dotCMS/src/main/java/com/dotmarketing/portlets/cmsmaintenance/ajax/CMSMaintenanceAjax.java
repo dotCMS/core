@@ -529,7 +529,7 @@ public class CMSMaintenanceAjax {
 						}
 
 						if(Identifier.class.equals(clazz)){
-							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 						}else{
 							list = dh.list();
 						}

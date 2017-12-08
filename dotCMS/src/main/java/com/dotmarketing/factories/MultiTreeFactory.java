@@ -477,7 +477,7 @@ public class MultiTreeFactory {
 			dc.addParam(p1.getId());
 			dc.addParam(p2.getId());
 
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), c);
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadObjectResults(), c);
 		}
 		catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);

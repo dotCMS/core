@@ -91,11 +91,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadObjectResults());
+
 	}
 
 
@@ -280,7 +278,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadObjectResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)

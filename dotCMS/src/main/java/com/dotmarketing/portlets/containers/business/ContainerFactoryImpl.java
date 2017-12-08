@@ -66,11 +66,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append('\'');
 		dc.setSQL(sql.toString());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -92,11 +90,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append(".title");
 		dc.setSQL(sql.toString());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+
 	}
     @Override
     @SuppressWarnings("unchecked")
@@ -264,7 +260,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)

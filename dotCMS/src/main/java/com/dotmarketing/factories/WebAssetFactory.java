@@ -832,7 +832,7 @@ public class WebAssetFactory {
 
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				List<WebAsset> list = ConvertToPOJOUtil
-						.convertDotConnectMapToPOJO(dc.loadResults(), c);
+						.convertDotConnectMapToPOJO(dc.loadObjectResults(), c);
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;

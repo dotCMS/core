@@ -655,7 +655,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     }
 
 					if(Identifier.class.equals(clazz)){
-						_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+						_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 					}else{
 						_list = _dh.list();
 					}
