@@ -37,11 +37,14 @@ public class RulePermissionableUtil {
                 if(iden.getAssetType().equals("folder")){
                     permissionableParent = APILocator.getFolderAPI().find(parent,systemUser,false);
                 }else{
-					//Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
-					//		APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-                    Contentlet contentlet = APILocator.getContentletAPI()
-                            .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false)
-                            .get(0);
+                    Contentlet contentlet;
+                    try {
+                        contentlet = APILocator.getContentletAPI()
+                                .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false)
+                                .get(0);
+                    } catch (IndexOutOfBoundsException ie) {
+                        throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
+                    }
                     if (contentlet.isHost()) {
 						permissionableParent = contentlet;
 					} else {
