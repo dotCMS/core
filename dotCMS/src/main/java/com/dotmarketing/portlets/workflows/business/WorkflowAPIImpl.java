@@ -224,6 +224,38 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
+	@Override
+	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType) throws DotDataException {
+
+		final ImmutableList.Builder<WorkflowScheme> schemes =
+				new ImmutableList.Builder<>();
+
+		if (contentType == null || ! UtilMethods.isSet(contentType.inode())
+				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+
+			schemes.add(findDefaultScheme());
+		} else {
+
+			try {
+
+				Logger.debug(this, "Finding the schemes for: " + contentType);
+				final List<WorkflowScheme> contentTypeSchemes =
+						this.workFlowFactory.findSchemesForStruct(contentType.inode());
+				if(contentTypeSchemes.isEmpty()){
+					schemes.add(findDefaultScheme());
+				} else {
+					schemes.addAll(contentTypeSchemes);
+				}
+			}
+			catch(Exception e) {
+				schemes.add(findDefaultScheme());
+			}
+		}
+
+		return schemes.build();
+	} // findSchemesForContentType.
+
+	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
         List<WorkflowScheme> schemes = new ArrayList<>();

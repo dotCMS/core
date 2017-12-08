@@ -4,6 +4,7 @@ import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -176,6 +177,14 @@ public interface WorkflowAPI {
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
+
+	/**
+	 * Returns all the schemes associated to the content type
+	 * @param contentType ContentType
+	 * @return List
+	 * @throws DotDataException
+	 */
+	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
