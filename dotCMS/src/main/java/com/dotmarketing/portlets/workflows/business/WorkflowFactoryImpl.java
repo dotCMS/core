@@ -1,23 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -25,16 +11,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -42,7 +19,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+
 public class WorkflowFactoryImpl implements WorkFlowFactory {
+
 
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
@@ -74,12 +56,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("nextAssign", row.get("next_assign"));
 		row.put("order", row.get("my_order"));
 		row.put("requiresCheckout", row.get("requires_checkout"));
-		//row.put("requiresCheckoutOption", row.get("requires_checkout_option"));
+		row.put("showOn", WorkflowStatus.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
 
 		BeanUtils.copyProperties(action, row);
 		return action;
 	}
+
 
 	private WorkflowActionClass convertActionClass(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowActionClass actionClass = new WorkflowActionClass();
@@ -953,7 +936,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			//db.addParam(action.getRequiresCheckoutOption());
+			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
@@ -968,7 +951,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			//db.addParam(action.getRequiresCheckoutOption());
+			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
 			db.addParam(action.getId());
 			db.loadResult();
 		}
@@ -986,6 +969,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 
 	}
+
+
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 

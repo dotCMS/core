@@ -5,7 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
@@ -75,18 +75,13 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_INSERT_INTO_INTERMEDIATE_TABLE    = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
     private static final String ORACLE_INSERT_INTO_INTERMEDIATE_TABLE   = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
 
-    /*private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
-    private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
-    private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
-    private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;*/
-
-    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
+    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
     private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
 
-    // private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,requires_checkout_option = ?  WHERE id = ?";
-    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?  WHERE id = ?";
+
+    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,show_on = ?  WHERE id = ?";
     private static final String POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
@@ -147,7 +142,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         // SCHEMA CHANGES
         this.createWorkflowActionStepTable     (dc);
         this.addSchemeIdColumn                 (dc);
-        this.addShowOnColumn(dc);
+        this.addShowOnColumn                   (dc);
 
         // DATA CHANGES
         this.addWorkflowActionStepData         (dc);
@@ -185,7 +180,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
             dc.setSQL(updateSchemeIdsForActions());
             dc.addParam(row.get("scheme_id").toString());
-            //dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
+            dc.addParam(this.isLocked(row.get("requires_checkout"))?
+                    WorkflowStatus.LOCKED.name():WorkflowStatus.UNLOCKED.name());
             dc.addParam(row.get("action_id").toString());
 
             try {

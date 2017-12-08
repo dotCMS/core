@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -47,18 +49,18 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
-	 * True if the action has to be show on locked status.
+	 * True if the action should be show on locked status.
 	 * @return boolean
 	 */
-	public boolean showOnLock () {
+	public boolean shouldShowOnLock () {
 		return this.showOn.contains(WorkflowStatus.LOCKED);
 	}
 
 	/**
-	 * True if the action has to be show on unlocked status.
+	 * True if the action should be show on unlocked status.
 	 * @return boolean
 	 */
-	public boolean showOnUnlock () {
+	public boolean shouldShowOnUnlock () {
 		return this.showOn.contains(WorkflowStatus.UNLOCKED);
 	}
 
@@ -78,24 +80,6 @@ public class WorkflowAction implements Permissionable, Serializable{
 		if (null != showOn) {
 			this.showOn = showOn;
 		}
-	}
-
-
-	/**
-	 * Set the set set of the status to show the action.
-	 * @param workflowStatusArray Array of WorkflowStatus
-	 */
-	public void setShowOn(final WorkflowStatus... workflowStatusArray) {
-
-		final ImmutableSet.Builder builder =
-				new ImmutableSet.Builder<WorkflowStatus>();
-
-		for (WorkflowStatus status : workflowStatusArray) {
-
-			builder.add(status);
-		}
-
-		this.setShowOn(builder.build());
 	}
 
 

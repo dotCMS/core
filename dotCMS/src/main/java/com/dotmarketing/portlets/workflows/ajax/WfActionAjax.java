@@ -8,6 +8,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -118,7 +119,8 @@ public class WfActionAjax extends WfBaseAction {
                 .actionRoleHierarchyForAssign(request.getParameter("actionRoleHierarchyForAssign") != null)
                 .actionNextStep(request.getParameter  ("actionNextStep"))
                 .actionNextAssign(request.getParameter("actionAssignToSelect"))
-                .actionCondition(request.getParameter ("actionCondition"));
+                .actionCondition(request.getParameter ("actionCondition"))
+				.showOn(WorkflowStatus.toSet(request.getParameter ("showOn")));
 
 		final String whoCanUseTmp       = request.getParameter("whoCanUse");
 		final List<String> whoCanUse    = Arrays.asList(whoCanUseTmp.split(","));

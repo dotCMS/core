@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
@@ -19,10 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -31,6 +29,7 @@ import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
@@ -39,6 +38,8 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  * @author jsanca
  */
 public class WorkflowHelper {
+
+    private static final Set<WorkflowStatus> DEFAULT_SHOW_ON = CollectionsUtils.set(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
 
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;
@@ -460,8 +461,8 @@ public class WorkflowHelper {
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
         newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
-        newAction.setRequiresCheckoutOption((null != workflowActionForm.getRequiresCheckoutOption())?
-                workflowActionForm.getRequiresCheckoutOption().getName():WorkflowAction.LOCKED_OR_UNLOCKED);
+        newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
+                workflowActionForm.getShowOn():DEFAULT_SHOW_ON);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
 
         try {
