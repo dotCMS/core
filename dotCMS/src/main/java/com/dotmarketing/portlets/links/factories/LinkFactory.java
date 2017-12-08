@@ -129,7 +129,7 @@ public class LinkFactory {
             dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
             dc.addParam(o.getIdentifier());
 
-            return ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadResults());
+            return ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadObjectResults());
         } catch (Exception e) {
 			Logger.error(LinkFactory.class, "getLinkChildrenByCondition failed:" + e, e);
         }

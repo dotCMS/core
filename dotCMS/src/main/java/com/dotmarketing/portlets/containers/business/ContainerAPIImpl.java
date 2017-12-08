@@ -193,7 +193,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.addParam(destination.getIdentifier());
 
 		try {
-			containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
+			containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}

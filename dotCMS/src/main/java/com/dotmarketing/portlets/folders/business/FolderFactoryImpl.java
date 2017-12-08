@@ -225,7 +225,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
-				result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
+				result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -274,7 +274,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
-					result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
+					result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -1119,7 +1119,7 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), clazz);
+			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadObjectResults(), clazz);
 		}catch(Exception e){
         	Logger.warn(this, e.getMessage(), e);
 		}

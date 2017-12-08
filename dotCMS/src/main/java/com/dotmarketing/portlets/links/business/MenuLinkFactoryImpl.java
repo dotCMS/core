@@ -205,7 +205,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadResults());
+				resultList = ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadObjectResults());
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
