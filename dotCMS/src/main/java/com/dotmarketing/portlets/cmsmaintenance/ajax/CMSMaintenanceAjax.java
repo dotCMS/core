@@ -247,6 +247,7 @@ public class CMSMaintenanceAjax {
 
 		if (!contentlets.isEmpty()) {
 			for (Contentlet contentlet : contentlets) {
+				contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
 				boolean delete = conAPI.delete(contentlet, user, true, true);
 
 				if (!delete){
