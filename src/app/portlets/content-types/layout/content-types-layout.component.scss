@@ -42,6 +42,7 @@ $top-height: ($toolbar-height + $tabview-nav-height);
     width: 200px;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 
     content-types-fields-list {
         overflow: auto;

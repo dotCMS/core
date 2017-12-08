@@ -36,7 +36,8 @@
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-workflow" class="form__label">{{i18nMessages['contenttypes.form.label.workflow']}}</label>
-                    <p-dropdown [options]="workflowOptions" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow" tabindex="4"></p-dropdown>
+                    <!--//TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. -->
+                    <p-multiSelect [options]="workflowOptions | async" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow" tabindex="4" defaultLabel="Select Workflow" appendTo="body" maxSelectedLabels="1" ></p-multiSelect>
                 </div>
                 <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{i18nMessages['contenttypes.form.hint.error.only.default.scheme.available.in.Community']}}</span>
             </div>
@@ -53,7 +54,7 @@
                     <div class="ui-g-6">
                         <label for="content-type-form-expire-date-field" class="form__label">{{i18nMessages['contenttypes.form.field.expire.date.field']}}</label>
                         <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}" tabindex="6"></p-dropdown>
-                    </div>                    
+                    </div>
                 </div>
                 <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{i18nMessages['contenttypes.form.message.no.date.fields.defined']}}</span>
 

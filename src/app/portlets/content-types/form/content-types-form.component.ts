@@ -25,6 +25,9 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 
 // TODO: move this to models
 import { Field } from '../fields';
+import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { Workflow } from '../../../shared/models/workflow/workflow.model';
+import { Observable } from 'rxjs/Observable';
 
 /**
   * Form component to create or edit content types
@@ -79,7 +82,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         placeholder: '',
         action: ''
     };
-    workflowOptions: SelectItem[] = [];
+    workflowOptions: Observable<SelectItem[]>;
 
     private originalValue: any;
 
@@ -88,7 +91,8 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         private fb: FormBuilder,
         private contentTypesInfoService: ContentTypesInfoService,
         public messageService: MessageService,
-        private hotkeysService: HotkeysService
+        private hotkeysService: HotkeysService,
+        private workflowService: WorkflowService
     ) {
         super(
             [
@@ -306,7 +310,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             host: this.data.host || '',
             name: [this.data.name || '', [Validators.required]],
             publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
-            workflow: [{ value: this.data.workflow || '', disabled: true }],
+            workflow: [{ value: this.data.workflow || [], disabled: true }],
             defaultType: this.data.defaultType,
             fixed: this.data.fixed,
             folder: this.data.folder,
@@ -327,12 +331,11 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
     }
 
     private initWorkflowField(): void {
-        this.workflowOptions = [
-            {
-                label: 'Select Workflow',
-                value: ''
-            }
-        ];
+        this.workflowOptions = this.workflowService
+            .get()
+            .flatMap((workflows: Workflow[]) => workflows)
+            .map((workflow: Workflow) => this.getWorkflowFieldOption(workflow))
+            .toArray();
 
         this.dotcmsConfig
             .getConfig()
@@ -340,6 +343,13 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             .subscribe(res => {
                 this.updateWorkflowFormControl(res.license);
             });
+    }
+
+    private getWorkflowFieldOption(workflow: Workflow): SelectItem {
+        return {
+            label: workflow.name,
+            value: workflow.identifier
+        };
     }
 
     private isBaseTypeContent(): boolean {

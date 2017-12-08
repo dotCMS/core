@@ -36,10 +36,10 @@ import {
     SplitButtonModule,
     RadioButtonModule,
     CheckboxModule,
-    TabViewModule
+    TabViewModule,
+    MultiSelectModule
 } from 'primeng/primeng';
 import {
-
     NamePropertyComponent,
     CheckboxPropertyComponent,
     CategoriesPropertyComponent,
@@ -49,12 +49,11 @@ import {
     RegexCheckPropertyComponent,
     ValuesPropertyComponent
 } from './fields/content-type-fields-properties-form/field-properties';
-import {
-    DynamicFieldPropertyDirective
-} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '../../view/components/_common/iframe';
 import { DotTextareaContentModule } from '../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';
+import { WorkflowService } from '../../api/services/workflow/workflow.service';
 
 @NgModule({
     declarations: [
@@ -79,7 +78,7 @@ import { SearchableDropDownModule } from '../../view/components/_common/searchab
         HintPropertyComponent,
         NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent,
+        ValuesPropertyComponent
     ],
     entryComponents: [
         NamePropertyComponent,
@@ -91,9 +90,7 @@ import { SearchableDropDownModule } from '../../view/components/_common/searchab
         RegexCheckPropertyComponent,
         ValuesPropertyComponent
     ],
-    exports: [
-        ContentTypesPortletComponent
-    ],
+    exports: [ContentTypesPortletComponent],
     imports: [
         ButtonModule,
         CheckboxModule,
@@ -117,7 +114,8 @@ import { SearchableDropDownModule } from '../../view/components/_common/searchab
         ContentTypeFieldsAddRowModule,
         SplitButtonModule,
         TabViewModule,
-        DotTextareaContentModule
+        DotTextareaContentModule,
+        MultiSelectModule
     ],
     providers: [
         ContentTypesInfoService,
@@ -126,7 +124,8 @@ import { SearchableDropDownModule } from '../../view/components/_common/searchab
         FieldPropertyService,
         FieldService,
         FormatDateService,
-        ContentTypeResolver
+        ContentTypeResolver,
+        WorkflowService
     ]
 })
 export class ContentTypesModule {}

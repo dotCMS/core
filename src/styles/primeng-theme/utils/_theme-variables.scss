@@ -124,6 +124,11 @@ $dropdown-active-color: $field-active-color;
 $dropdown-disabled-color: $field-disabled-color;
 $dropdown-height: $field-height;
 
+//MULTISELECT
+$multiselect-active-color: $dropdown-active-color;
+$multiselect-disabled-color: $dropdown-disabled-color;
+$multiselect-height: $dropdown-height;
+
 // AUTOCOMPLETE
 $autocomplete-height: $field-height;
 

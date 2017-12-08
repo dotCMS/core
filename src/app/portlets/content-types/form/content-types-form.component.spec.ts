@@ -20,6 +20,7 @@ import { HotkeysService } from 'angular2-hotkeys';
 import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
 import { SiteService } from 'dotcms-js/dotcms-js';
 import { SiteServiceMock } from '../../../test/site-service.mock';
+import { WorkflowService } from '../../../api/services/workflow/workflow.service';
 
 class HotkeysServiceMock {
     add() {}
@@ -75,7 +76,8 @@ describe('ContentTypesFormComponent', () => {
                     { provide: SiteService, useValue: siteServiceMock },
                     DotcmsConfig,
                     ContentTypesInfoService,
-                    SocketFactory
+                    SocketFactory,
+                    WorkflowService
                 ]
             });
 
@@ -258,7 +260,7 @@ describe('ContentTypesFormComponent', () => {
         expect(submittButton.nativeElement.disabled).toBe(true, 'revert the change button disabled');
     });
 
-    it('should have submit button disabled after then form it\'s submitted correctly', () => {
+    it("should have submit button disabled after then form it's submitted correctly", () => {
         comp.data = {
             baseType: 'CONTENT',
             id: '123',
@@ -632,7 +634,7 @@ describe('ContentTypesFormComponent', () => {
         });
     });
 
-    it('should show workflow disabled and with message if the license community it\'s true', () => {
+    it("should show workflow disabled and with message if the license community it's true", () => {
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(
             Observable.of({
                 license: { isCommunity: true }
@@ -649,7 +651,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('workflow').disabled).toBeTruthy();
     });
 
-    it('should show workflow enable and no message if the license community it\'s false', () => {
+    it("should show workflow enable and no message if the license community it's false", () => {
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(
             Observable.of({
                 license: { isCommunity: false }

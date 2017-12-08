@@ -25,7 +25,8 @@ import {
     SplitButtonModule,
     TabViewModule,
     ToolbarModule,
-    TreeTableModule
+    TreeTableModule,
+    MultiSelectModule
 } from 'primeng/primeng';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
@@ -58,5 +59,6 @@ export const NGFACES_MODULES = [
     SplitButtonModule,
     TabViewModule,
     ToolbarModule,
-    TreeTableModule
+    TreeTableModule,
+    MultiSelectModule
 ];
