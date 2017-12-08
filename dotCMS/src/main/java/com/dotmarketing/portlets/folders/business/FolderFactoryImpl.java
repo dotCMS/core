@@ -170,7 +170,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
-			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
+			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
 		}catch(ParseException | DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}

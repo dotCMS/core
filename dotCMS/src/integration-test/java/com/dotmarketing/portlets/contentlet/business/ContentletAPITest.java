@@ -2042,10 +2042,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
-        assertTrue(ConvertToPOJOUtil.df.format(d1)
-                .equals(ConvertToPOJOUtil.df.format(ident.getSysPublishDate())));
-        assertTrue(ConvertToPOJOUtil.df.format(d2)
-                .equals(ConvertToPOJOUtil.df.format(ident.getSysExpireDate())));
+        assertTrue(d1
+                .equals(ident.getSysPublishDate()));
+        assertTrue(d2.equals(ident.getSysExpireDate()));
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2062,15 +2061,15 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
-        assertTrue(ConvertToPOJOUtil.df.format(d3)
-                .equals(ConvertToPOJOUtil.df.format(ident2.getSysPublishDate())));
-        assertTrue(ConvertToPOJOUtil.df.format(d4)
-                .equals(ConvertToPOJOUtil.df.format(ident2.getSysExpireDate())));
+        assertTrue(d3
+                .equals(ident2.getSysPublishDate()));
+        assertTrue(d4
+                .equals(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(ConvertToPOJOUtil.df.format(d3).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
-        assertTrue(ConvertToPOJOUtil.df.format(d4).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
+        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
+        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
 
         Thread.sleep(2000); // wait a bit for the index
         

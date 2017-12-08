@@ -65,7 +65,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetType);
 
 		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
@@ -157,7 +157,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 		try {
-			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
@@ -187,7 +187,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
 		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
@@ -205,7 +205,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 		try {
-			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}
@@ -390,7 +390,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.setSQL("select * from identifier");
 
 		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		} catch (ParseException e) {
 			throw new DotDataException(e);
 		}

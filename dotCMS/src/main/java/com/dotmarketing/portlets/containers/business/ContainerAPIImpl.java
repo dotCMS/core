@@ -270,7 +270,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.addParam(parentTemplate.getIdentifier());
 
 		try{
-			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 		}catch(ParseException e){
 			throw new DotDataException(e);
 		}
