@@ -118,40 +118,19 @@ public class ConvertToPOJOUtil {
         final Link link = new Link();
         link.setInode((String) map.get(INODE));
         link.setOwner((String) map.get(OWNER));
-
-
         link.setIDate((Date) map.get(IDATE));
-
-
-
-        link.setShowOnMenu((Boolean) map.get(SHOW_ON_MENU));
-
-
+        link.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
         link.setTitle((String) map.get(TITLE));
-
         link.setModDate((Date) map.get(MOD_DATE));
-
-
         link.setModUser((String) map.get(MOD_USER));
-
-
-        link.setSortOrder((Integer) map.get(SORT_ORDER));
-
-
+        link.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
         link.setFriendlyName((String) map.get(FRIENDLY_NAME));
-
         link.setIdentifier((String) map.get(IDENTIFIER));
-
         link.setProtocal((String) map.get("protocal"));
-
         link.setUrl((String) map.get("url"));
-
         link.setTarget((String) map.get("target"));
-
         link.setInternalLinkIdentifier((String) map.get("internal_link_identifier"));
-
         link.setLinkType((String) map.get("link_type"));
-
         link.setLinkCode((String) map.get("link_code"));
         return link;
     }
@@ -175,15 +154,8 @@ public class ConvertToPOJOUtil {
             i.setHostId((String) map.get("host_inode"));
             i.setId((String) map.get("id"));
             i.setParentPath((String) map.get("parent_path"));
-
-
             i.setSysPublishDate((Date) map.get(SYSPUBLISH_DATE));
-
-
-
             i.setSysExpireDate((Date) map.get(SYSEXPIRE_DATE));
-
-
             ret.add(i);
         }
         return ret;
@@ -207,31 +179,15 @@ public class ConvertToPOJOUtil {
         folder = new Folder();
         folder.setInode((String) map.get(INODE));
         folder.setOwner((String) map.get(OWNER));
-
-
         folder.setIDate((Date) map.get(IDATE));
-
-
-
         folder.setName((String) map.get("name"));
         folder.setTitle((String) map.get(TITLE));
-
-
-        folder.setShowOnMenu((Boolean) map.get(SHOW_ON_MENU));
-
-
-
-        folder.setSortOrder((Integer) map.get(SORT_ORDER));
-
-
+        folder.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
+        folder.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
         folder.setFilesMasks((String) map.get("files_masks"));
-
         folder.setIdentifier((String) map.get(IDENTIFIER));
-
         folder.setDefaultFileType((String) map.get("default_file_type"));
-
         folder.setModDate((Date) map.get(MOD_DATE));
-
         return folder;
     }
 
@@ -253,44 +209,22 @@ public class ConvertToPOJOUtil {
         container = new Container();
         container.setInode((String) map.get(INODE));
         container.setOwner((String) map.get(OWNER));
-
         container.setIDate((Date) map.get(IDATE));
         container.setCode((String) map.get("code"));
         container.setPreLoop((String) map.get("pre_loop"));
         container.setPostLoop((String) map.get("post_loop"));
-        container.setShowOnMenu((Boolean) map.get(SHOW_ON_MENU));
+        container.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
         container.setTitle((String) map.get(TITLE));
-
-
         container.setModDate((Date) map.get(MOD_DATE));
-
-
         container.setModUser((String) map.get(MOD_USER));
-
-
-        container.setSortOrder((Integer) map.get(SORT_ORDER));
-
-
+        container.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
         container.setFriendlyName((String) map.get(FRIENDLY_NAME));
-
-
-        container.setMaxContentlets((Integer) map.get(MAX_CONTENTLETS));
-
-
-
-        container.setUseDiv((Boolean) map.get(USE_DIV));
-
-
-
-        container.setStaticify((Boolean) map.get(STATICIFY));
-
-
+        container.setMaxContentlets((Integer) map.getOrDefault(MAX_CONTENTLETS,0));
+        container.setUseDiv((Boolean) map.getOrDefault(USE_DIV,false));
+        container.setStaticify((Boolean) map.getOrDefault(STATICIFY,false));
         container.setSortContentletsBy((String) map.get("sort_contentlets_by"));
-
         container.setLuceneQuery((String) map.get("lucene_query"));
-
         container.setNotes((String) map.get("notes"));
-
         container.setIdentifier((String) map.get(IDENTIFIER));
         return container;
     }
@@ -313,36 +247,22 @@ public class ConvertToPOJOUtil {
         template = new Template();
         template.setInode(String.valueOf(map.get(INODE)));
         template.setOwner(String.valueOf(map.get(OWNER)));
-
         template.setIDate((Date) map.get(IDATE));
-
-
-        template.setShowOnMenu((Boolean) map.get(SHOW_ON_MENU));
-
-
+        template.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
         template.setTitle(String.valueOf(map.get(TITLE)));
         template.setModDate((Date) map.get(MOD_DATE));
-
-
         template.setModUser(String.valueOf(map.get(MOD_USER)));
-
-        template.setSortOrder((Integer) map.get(SORT_ORDER));
-
+        template.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
         template.setFriendlyName(String.valueOf(map.get(FRIENDLY_NAME)));
-
         template.setBody(String.valueOf(map.get("body")));
         template.setHeader(String.valueOf(map.get("header")));
         template.setFooter(String.valueOf(map.get("footer")));
         template.setImage(String.valueOf(map.get("image")));
         template.setIdentifier(String.valueOf(map.get(IDENTIFIER)));
-
         template.setDrawed((Boolean) map.get(DRAWED));
-
-
         template.setDrawedBody((String) map.get("drawed_body"));
-        template.setCountAddContainer((Integer) map.get(ADD_CONTAINER_LINKS));
-
-        template.setCountContainers((Integer) map.get(CONTAINERS_ADDED));
+        template.setCountAddContainer((Integer) map.getOrDefault(ADD_CONTAINER_LINKS,0));
+        template.setCountContainers((Integer) map.getOrDefault(CONTAINERS_ADDED,0));
         template.setHeadCode((String) map.get("head_code"));
         template.setTheme((String) map.get("theme"));
         return template;
