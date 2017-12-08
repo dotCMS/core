@@ -1,37 +1,61 @@
 package com.dotcms.rest.api.v1.container;
 
-import com.dotcms.contenttype.model.type.ContentType;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.site.SiteHelper;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.SitePaginator;
-import com.dotmarketing.beans.Host;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.VelocityUtil;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.Map;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import com.liferay.portal.model.User;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -46,6 +70,11 @@ public class ContainerResource implements Serializable {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
 
+
+    
+    
+    
+    
     public ContainerResource() {
         this(new WebResource(),
                 new PaginationUtil(new ContainerPaginator()));
@@ -112,4 +141,70 @@ public class ContainerResource implements Serializable {
 
         }
     }
+    
+    
+    
+    @GET
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/{containerId}/content/{contentletId}")
+    public final Response containerContent(@Context final HttpServletRequest req,@Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId,
+            @PathParam("contentletId") final String contentletId) 
+                    throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+
+        Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find Container" + containerId);} );
+        
+        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);} );
+        
+        PageMode mode = PageMode.get(req);
+        
+        Container container = (containerShorty.subType == ShortType.CONTAINER) 
+            ? APILocator.getContainerAPI().find(containerId, user, mode==PageMode.ANON)
+                    : (mode.showLive) 
+                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user, mode==PageMode.ANON)
+                        :(Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user, mode==PageMode.ANON);
+                        
+        Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
+        
+        org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+        context.remove("EDIT_MODE");
+
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ?  APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive) 
+                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode==PageMode.ANON, id.getId(), user, mode==PageMode.ANON);
+        
+        context.put("contentletList" + container.getIdentifier(), Lists.newArrayList(contentlet.getIdentifier()));
+        
+        
+        container = (Container) BeanUtils.cloneBean(container);
+        container.setPreLoop(null);
+        container.setPostLoop(null);
+        
+
+        StringWriter out = new StringWriter();  
+
+        VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(),ContainerServices.buildVelocity(container, containerIdentifier, false));        
+                
+        Map<String, String> response = new HashMap<>();
+        response.put("render", out.toString());
+        
+        final Response.ResponseBuilder responseBuilder = Response.ok(response);
+
+        
+        
+        
+        return responseBuilder.build();
+        
+    }
+    
+    
+
+    
+    
 }
