@@ -30,7 +30,6 @@ public class DefaultFrontEndLoginRequiredWebInterceptor implements WebIntercepto
         if (null != session) {
             final boolean isAdminMode = PageMode.get(request).isAdmin;
 
-
             // if we are not logged in and you are not admin mode. go to login page
             if (session.getAttribute(WebKeys.CMS_USER) == null
                     && !isAdminMode) {
