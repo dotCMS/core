@@ -583,8 +583,9 @@ public class ContentResourceTest {
                                 saveDraft.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
+        APILocator.getWorkflowAPI().saveAction(saveDraft.getId(), step1.getId(),user);
 
-     // Save as Draft Step1 -> Step1
+        // Save as Draft Step1 -> Step1
         WorkflowAction escalate=new WorkflowAction();
         escalate.setId(UUIDGenerator.generateUuid());
         escalate.setSchemeId(scheme.getId());
@@ -603,6 +604,11 @@ public class ContentResourceTest {
                                 escalate.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
+        APILocator.getWorkflowAPI().saveAction(escalate.getId(), step1.getId(),user);
+
+        //Set mandatory workflow default action
+        scheme.setEntryActionId(saveDraft.getId());
+        APILocator.getWorkflowAPI().saveScheme(scheme);
 
         // Send for review Step1 -> Step2
         WorkflowAction sendReview=new WorkflowAction();
@@ -621,6 +627,7 @@ public class ContentResourceTest {
                                 sendReview.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
+        APILocator.getWorkflowAPI().saveAction(sendReview.getId(), step1.getId(),user);
 
         // reject Step2 -> Step1
         WorkflowAction reject=new WorkflowAction();
@@ -639,6 +646,7 @@ public class ContentResourceTest {
                                 reject.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
+        APILocator.getWorkflowAPI().saveAction(sendReview.getId(), step2.getId(),user);
 
         // publish Step2 -> Step3
         WorkflowAction publish=new WorkflowAction();
@@ -657,6 +665,8 @@ public class ContentResourceTest {
                                 publish.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
+        APILocator.getWorkflowAPI().saveAction(publish.getId(), step2.getId(),user);
+
         WorkflowActionClass publishlet=new WorkflowActionClass();
         publishlet.setActionId(publish.getId());
         publishlet.setClazz(com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.class.getCanonicalName());
