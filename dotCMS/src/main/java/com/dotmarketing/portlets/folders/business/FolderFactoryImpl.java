@@ -171,7 +171,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		try{
 			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
-		}catch(ParseException | DotDataException e){
+		}catch(DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
 

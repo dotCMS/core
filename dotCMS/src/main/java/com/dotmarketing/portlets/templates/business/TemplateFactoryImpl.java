@@ -91,11 +91,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadObjectResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadObjectResults());
+
 	}
 
 

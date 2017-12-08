@@ -66,11 +66,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append('\'');
 		dc.setSQL(sql.toString());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -92,11 +90,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append(".title");
 		dc.setSQL(sql.toString());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+
 	}
     @Override
     @SuppressWarnings("unchecked")

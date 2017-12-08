@@ -192,11 +192,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.setSQL(sql);
 		dc.addParam(destination.getIdentifier());
 
-		try {
-			containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+
 
 		boolean isContainerTitle = false;
 
@@ -269,11 +267,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 						"and template_containers.template_id = ? ");
 		dc.addParam(parentTemplate.getIdentifier());
 
-		try{
-			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
-		}catch(ParseException e){
-			throw new DotDataException(e);
-		}
+
+		identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+
+
 
 		final List<Container> containers = new ArrayList<>();
 		for (Identifier id : identifiers) {
