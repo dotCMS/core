@@ -38,6 +38,7 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.PrincipalException;
@@ -514,9 +515,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 				PreviewFactory.setVelocityURLS(req, layout);
 
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, true);
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true);
+				PageMode.setPageMode(req, PageMode.PREVIEW);
 
 				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
 					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));

@@ -10,10 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.*;
-import org.apache.jasper.security.SecurityUtil;
-import org.apache.velocity.runtime.parser.node.BooleanPropertyExecutor;
 import org.apache.velocity.tools.view.context.ChainedContext;
 
 import java.io.IOException;
@@ -36,10 +33,10 @@ public class ClientVelocityServlet extends VelocityServlet {
     private static final long serialVersionUID = 1L;
 
     protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        boolean adminMode = PageRequestModeUtil.isAdminMode( req.getSession() );
+        PageMode mode = PageMode.get(req);
         boolean notRedirect = notRedirect( req );
 
-        if ( adminMode  && !notRedirect ){
+        if ( mode.isAdmin  && !notRedirect ){
             String pageUrl = req.getAttribute(Constants.ORIGINAL_REQUEST_URL_HTTP_HEADER).toString();
 
             if (pageUrl != null && pageUrl.indexOf(IN_FRAME_PARAMETER_NAME) == -1) {

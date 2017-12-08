@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -41,8 +42,7 @@ public class PersonaTool implements ViewTool {
 
 			if (session != null) {
 				timemachine = session.getAttribute("tm_date") != null;
-				ADMIN_MODE = !timemachine && session != null
-						&& (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+		        boolean ADMIN_MODE =   PageMode.get(request) .isAdmin;
 				try {
 					user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 				} catch (DotRuntimeException | PortalException | SystemException e) {

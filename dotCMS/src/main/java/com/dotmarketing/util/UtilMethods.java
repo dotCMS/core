@@ -3501,50 +3501,31 @@ public class UtilMethods {
     }
 
     public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
-        HttpSession session = request.getSession(false);
 
         // set the preview mode
-        boolean adminMode = false;
+        boolean adminMode =   PageMode.get(request).isAdmin;
 
-        if (session != null) {
+        if (adminMode) {
+            HttpSession session = request.getSession();
+
             // struts crappy messages have to be retrived from session
-            if (session.getAttribute(Globals.ERROR_KEY) != null) {
-                request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-                session.removeAttribute(Globals.ERROR_KEY);
-            }
-            if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-                request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-                session.removeAttribute(Globals.MESSAGE_KEY);
-            }
-            // set the preview mode
-            adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+
+            request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
+            session.removeAttribute(Globals.ERROR_KEY);
+            request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
+            session.removeAttribute(Globals.MESSAGE_KEY);
+
 
             if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
+                PageMode.setPageMode(request, PageMode.LIVE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.EDIT);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.PREVIEW);
             }
         }
         return adminMode;

@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.github.rjeschke.txtmark.Configuration;
 import com.github.rjeschke.txtmark.Processor;
@@ -75,11 +76,8 @@ public class MarkdownTool implements ViewTool {
 	}
 
 	private String getFileContents(String path, boolean parseFirst) throws Throwable {
-		boolean EDIT_MODE = false;
-		if (request != null) {
-			EDIT_MODE = (request.getSession().getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)
-					&& request.getSession().getAttribute("tm_date") == null;
-		}
+		boolean EDIT_MODE =   PageMode.get(request) == PageMode.EDIT;
+
 
 		String templatePath = path;
 

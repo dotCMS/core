@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -56,21 +57,14 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		User systemUser = userWebAPI.getSystemUser();
 		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
-        boolean adminMode = false;
-        boolean previewMode = false;
-        boolean editMode = false;
-        
-        if(session != null) {
-        	adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-        	previewMode = (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null && adminMode);
-        	editMode = (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null && adminMode);
-        }
+
+		PageMode mode = PageMode.get(request);
 
         String pageHostId = request.getParameter("host_id");
-        if(pageHostId != null && (editMode || previewMode)) {
-        	host = find(pageHostId, systemUser, respectFrontendRoles);
+        if(pageHostId != null && !mode.showLive) {
+            host = find(pageHostId, systemUser, respectFrontendRoles);
         } else {
-            if(session != null && adminMode && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
+            if(session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
             	host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
             } else if(request.getAttribute(WebKeys.CURRENT_HOST) != null) {
         		host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
@@ -83,7 +77,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         }
         
         request.setAttribute(WebKeys.CURRENT_HOST, host);
-        if(session != null && adminMode) {
+        if(session != null && mode.isAdmin) {
             session.setAttribute(WebKeys.CURRENT_HOST, host);
         }
         return host;

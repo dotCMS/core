@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -76,21 +77,14 @@ public class ContentTool implements ViewTool {
 		}
 		
 		tmDate=null;
-		ADMIN_MODE=false;
-		PREVIEW_MODE=false;
-		EDIT_MODE=false;
+
 		HttpSession session = req.getSession(false);
-		
+		PageMode mode = PageMode.get(req);
 		
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
 			boolean tm=tmDate!=null;
-			ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-			EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-			if(EDIT_MODE || PREVIEW_MODE){
-				EDIT_OR_PREVIEW_MODE = true;
-			}
+
 		}
 		try{
 			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(req);

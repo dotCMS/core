@@ -45,6 +45,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -711,10 +712,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         if (!liveMode) {
-            requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
+            requestProxy.setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.PREVIEW);
+            requestProxy.setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.PREVIEW);
         }
         boolean signedIn = false;
 

@@ -14,7 +14,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
@@ -28,7 +29,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
@@ -223,37 +224,23 @@ public class CMSFilter implements Filter {
     }
 
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
-
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if(mode == PageMode.ANON) {
             NumberOfTimeVisitedCounter.maybeCount(request, response);
-
         }
     }
 
     private void countPageVisit(HttpServletRequest request) {
 
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if(mode == PageMode.ANON) {
             Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
             if (visitor.isPresent()) {
                 visitor.get().addPagesViewed(request.getRequestURI());
             }
-
         }
+
     }
 
 

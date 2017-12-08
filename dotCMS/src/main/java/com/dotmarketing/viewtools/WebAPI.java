@@ -47,6 +47,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -95,14 +96,11 @@ public class WebAPI implements ViewTool {
 
 
 		
- 
-        HttpSession session = request.getSession(false);
+		PageMode mode = PageMode.get(request);
+          ADMIN_MODE = mode.isAdmin;
+          PREVIEW_MODE = mode==PageMode.PREVIEW;
+          EDIT_MODE = mode==PageMode.EDIT;
         
-        if(session!=null){
-          ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-          PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-          EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-        }
 	}
 
 	// Utility Methods
@@ -439,9 +437,6 @@ public class WebAPI implements ViewTool {
 			}
 			
 			HttpSession session = request.getSession();
-			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 
 			Identifier id = APILocator.getIdentifierAPI().find(host, path);
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
@@ -840,9 +835,6 @@ public class WebAPI implements ViewTool {
 	}
 
 	public boolean doesUserHasPermissionOverFile (String fileInode, int permission) throws DotDataException {
-		HttpSession session = request.getSession();
-		boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 
 		Permissionable fileAsset = null;
 		Identifier ident = getIdentifierByInode(fileInode);

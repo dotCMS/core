@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
 public class RenderParams {
@@ -30,11 +30,12 @@ public class RenderParams {
       this.currentHost = params.currentHost;
       this.editMode = params.editMode;
     } else {
-      live = PageRequestModeUtil.isLive(request);
+      PageMode mode = PageMode.get(request);
+      live = mode.showLive;
       user = WebAPILocator.getUserWebAPI().getUser(request);
       language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
       currentHost = WebAPILocator.getHostWebAPI().getHost(request);
-      editMode = PageRequestModeUtil.isEditMode(request);
+      editMode = mode == PageMode.EDIT;
       request.setAttribute(RENDER_PARAMS_ATTRIBUTE, this);
     }
     

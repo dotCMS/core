@@ -89,9 +89,9 @@ public class VelocityWebUtil implements ViewTool {
 				In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to
 				continue with the render of the page.
 				 */
-				Object editMode = ctx.get(WebKeys.EDIT_MODE_SESSION);
+				PageMode mode = (PageMode) ctx.get(WebKeys.PAGE_MODE_SESSION);
 
-				if ( null == editMode || !Boolean.valueOf((String) editMode) ) {
+				if ( null == mode || mode != PageMode.EDIT  ) {
 					Logger.error(this.getClass(), "Error parsing elements", e);
 					return sw.toString();
 				}
