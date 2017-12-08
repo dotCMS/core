@@ -569,6 +569,7 @@ public class ContentResourceTest {
         // Save as Draft Step1 -> Step1
         WorkflowAction saveDraft=new WorkflowAction();
         saveDraft.setId(UUIDGenerator.generateUuid());
+        saveDraft.setSchemeId(scheme.getId());
         saveDraft.setName("Save as Draft");
         saveDraft.setOrder(1);
         saveDraft.setNextStep(step1.getId());
@@ -586,6 +587,7 @@ public class ContentResourceTest {
      // Save as Draft Step1 -> Step1
         WorkflowAction escalate=new WorkflowAction();
         escalate.setId(UUIDGenerator.generateUuid());
+        escalate.setSchemeId(scheme.getId());
         escalate.setName("Save and Assign");
         escalate.setOrder(2);
         escalate.setNextStep(step1.getId());
@@ -605,6 +607,7 @@ public class ContentResourceTest {
         // Send for review Step1 -> Step2
         WorkflowAction sendReview=new WorkflowAction();
         sendReview.setId(UUIDGenerator.generateUuid());
+        sendReview.setSchemeId(scheme.getId());
         sendReview.setName("Send for review");
         sendReview.setOrder(3);
         sendReview.setNextStep(step2.getId());
@@ -622,6 +625,7 @@ public class ContentResourceTest {
         // reject Step2 -> Step1
         WorkflowAction reject=new WorkflowAction();
         reject.setId(UUIDGenerator.generateUuid());
+        reject.setSchemeId(scheme.getId());
         reject.setName("Reject");
         reject.setOrder(1);
         reject.setNextStep(step1.getId());
@@ -639,6 +643,7 @@ public class ContentResourceTest {
         // publish Step2 -> Step3
         WorkflowAction publish=new WorkflowAction();
         publish.setId(UUIDGenerator.generateUuid());
+        publish.setSchemeId(scheme.getId());
         publish.setName("Publish");
         publish.setOrder(2);
         publish.setNextStep(step3.getId());

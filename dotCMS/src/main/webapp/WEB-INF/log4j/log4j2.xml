@@ -21,7 +21,6 @@
         <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
         <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
         <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
-        <Property name="MDC_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %m - %X{EndpointName} %X{BundleId} %n</Property>
     </Properties>
 
     <Appenders>
@@ -115,7 +114,7 @@
         <RollingFile name="PUSHPUBLISH-FILE"
                      fileName="${PUSHPUBLISH_LOG_FILE}"
                      filePattern="${PUSHPUBLISH_FILENAME_PATTERN}">
-            <PatternLayout pattern="${MDC_MESSAGE_PATTERN}"/>
+            <PatternLayout pattern="${MESSAGE_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
@@ -206,6 +205,12 @@
         </Logger>
         <Logger name="org.apache.velocity" level="warn" additivity="false">
             <AppenderRef ref="velocity"/>
+        </Logger>
+        <Logger name="com.dotcms.api.aop" level="debug" additivity="false">
+            <AppenderRef ref="generic"/>
+        </Logger>
+        <Logger name="com.dotmarketing.util.ImportExportUtil" level="debug" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
     </Loggers>
 </Configuration>
