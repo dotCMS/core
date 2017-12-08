@@ -52,10 +52,8 @@ public class ContentTool implements ViewTool {
 
 	private HttpServletRequest req;
 	private User user = null;
-	private boolean ADMIN_MODE;
-	private boolean PREVIEW_MODE;
-	private boolean EDIT_MODE;
-	private boolean EDIT_OR_PREVIEW_MODE;
+
+	private boolean EDIT_OR_PREVIEW_MODE=false;
 	private String tmDate;
 	private Context context;
 	private Host currentHost;
@@ -80,7 +78,7 @@ public class ContentTool implements ViewTool {
 
 		HttpSession session = req.getSession(false);
 		PageMode mode = PageMode.get(req);
-		
+		EDIT_OR_PREVIEW_MODE=!mode.showLive;
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
 			boolean tm=tmDate!=null;
