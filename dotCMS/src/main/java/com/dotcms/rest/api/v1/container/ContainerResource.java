@@ -162,7 +162,7 @@ public class ContainerResource implements Serializable {
         final User user = initData.getUser();
         PageMode mode = PageMode.get(req);
         Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
-        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find Container" + containerId);} );
+
         
         ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);} );
         
@@ -180,6 +180,7 @@ public class ContainerResource implements Serializable {
             
         }
         
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find Container:" + containerId);} );
         
         Container container = (containerShorty.subType == ShortType.CONTAINER) 
             ? APILocator.getContainerAPI().find(containerId, user, mode==PageMode.ANON)
