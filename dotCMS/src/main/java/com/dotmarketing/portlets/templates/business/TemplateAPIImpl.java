@@ -142,7 +142,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			// persists the webasset
 			save(newTemplate);
 			List<Container> destinationContainers = getContainersInTemplate(newTemplate, user, respectFrontendRoles);
-			associateContainers(destinationContainers, newTemplate);
+
 
 			//Copy the host again
 			newIdentifier.setHostId(destination.getIdentifier());
@@ -272,7 +272,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		///parses the body tag to get all identifier ids and saves them as children
 		List<Container> containers = getContainersInTemplate(template, user, respectFrontendRoles);
-		associateContainers(containers, template);
+		
 
         //Adding the permissions for this Permissionable to cache
         permissionAPI.addPermissionsToCache( template );
@@ -287,7 +287,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
     			throw new DotSecurityException("You don't have permission to read the source file.");
     		}
-
 
     		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
 	    }
@@ -462,10 +461,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
-	@WrapInTransaction
-	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException {
-		templateFactory.associateContainers(containerIdentifiers, template);
-	}
+
 
 
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

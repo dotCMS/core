@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -26,6 +27,9 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.DBTreeTransformer;
+import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.plugin.model.PluginProperty;
@@ -55,6 +59,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -86,6 +92,8 @@ import java.util.Set;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+
+
 import org.quartz.JobExecutionContext;
 
 /**
@@ -429,25 +437,22 @@ public class CMSMaintenanceAjax {
 			Set<Class> tablesToDump = new HashSet<Class>();
 			try {
 
-				/* get a list of all our tables */
-				final Map map = new HashMap();
 
-				//Including Identifier.class because it is not mapped with Hibernate anymore
-				map.put(Identifier.class, null);
+			    final Set ignoreClasses =  ImmutableSet.of(Inode.class, Clickstream.class,ClickstreamRequest.class,PluginProperty.class,Structure.class,Field.class,FieldVariable.class,PermissionReference.class);
+			    
+			    
 
-				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
-
-				Iterator it = map.entrySet().iterator();
-				while (it.hasNext()) {
-					Map.Entry pairs = (Map.Entry) it.next();
-					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
-							.equals(ClickstreamRequest.class)
-							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class)) {
-						tablesToDump.add(x);
-					}
-
-				}
+                //Including Identifier.class because it is not mapped with Hibernate anymore
+                tablesToDump.add(Identifier.class);
+                tablesToDump.add(MultiTree.class);
+                tablesToDump.add(Tree.class);
+                
+                
+                HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet().stream().forEach(key -> tablesToDump.add((Class) key));
+                
+                ignoreClasses.forEach(clazz -> tablesToDump.remove(clazz));
+                
+				
 				XStream xstream = null;
 				HibernateUtil dh = null;
 				DotConnect dc = null;
@@ -456,14 +461,7 @@ public class CMSMaintenanceAjax {
 				BufferedOutputStream bout = null;
 
 				for (Class clazz : tablesToDump) {
-					if (clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz
-							.equals(FieldVariable.class)) {
-						continue;
-					}
-					//http://jira.dotmarketing.net/browse/DOTCMS-5031
-					if (PermissionReference.class.equals(clazz)) {
-						continue;
-					}
+
 
 					if (com.dotmarketing.portlets.contentlet.business.Contentlet.class
 							.equals(clazz)) {
@@ -496,7 +494,7 @@ public class CMSMaintenanceAjax {
 					java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
 					/* we will only export 10,000,000 items of any given type */
 					for (i = 0; i < 10000000; i = i + step) {
-
+					    dc = new DotConnect();
 						dh = new HibernateUtil(clazz);
 						dh.setFirstResult(i);
 						dh.setMaxResults(step);
@@ -506,31 +504,43 @@ public class CMSMaintenanceAjax {
 						//This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
 						//by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
 						//ordering is done only on the first field for the tables, which is INODE
-						if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
-						} else if (MultiTree.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
-						} else if (TagInode.class.equals(clazz)) {
+						if (TagInode.class.equals(clazz)) {
 							dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
+							list = dh.list();
 						} else if (TemplateVersionInfo.class.equals(clazz)) {
 							dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
+							list = dh.list();
 						} else if (ContainerVersionInfo.class.equals(clazz)) {
 							dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
+							list = dh.list();
 						} else if (LinkVersionInfo.class.equals(clazz)) {
 							dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
+							list = dh.list();
 						} else if (CalendarReminder.class.equals(clazz)) {
 							dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
+							list = dh.list();
 						} else if (Identifier.class.equals(clazz)) {
-							dc = new DotConnect();
 							dc.setSQL("select * from identifier order by parent_path, id")
 									.setStartRow(i).setMaxRows(step);
+							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+                        } else if (Tree.class.equals(clazz)) {
+                            dc.setSQL("select * from tree order by parent, child, relation_type")
+                                        .setStartRow(i).setMaxRows(step);
+                            list = new DBTreeTransformer(dc.loadObjectResults()).trees();
+						} else if (MultiTree.class.equals(clazz)) {
+	                        dc.setSQL("select * from multi_tree order by parent1, parent2, child, relation_type")
+	                                    .setStartRow(i).setMaxRows(step);
+	                        list = MultiTreeFactory.dbToMultiTree(dc.loadResults());
 						} else {
 							dh.setQuery("from " + clazz.getName() + " order by 1");
+<<<<<<< HEAD
 						}
 
 						if(Identifier.class.equals(clazz)){
 							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 						}else{
+=======
+>>>>>>> issue-13164-delete-template_container
 							list = dh.list();
 						}
 
@@ -546,7 +556,13 @@ public class CMSMaintenanceAjax {
 
 						if (list != null && list.size() > 0 && list
 								.get(0) instanceof Comparable) {
-							java.util.Collections.sort(list);
+						    try {
+						        java.util.Collections.sort(list);
+						    }
+						    catch(Exception e) {
+						        System.err.println(list);
+						        
+						    }
 						}
 
 						writing = new File(

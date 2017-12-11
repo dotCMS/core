@@ -19,7 +19,8 @@ import javax.servlet.http.HttpSession;
  */
 public enum PageMode {
 
-    ANON(true, false), LIVE(true, true), PREVIEW(false, true), EDIT(false, true);
+    ANON(true, false), 
+    LIVE(true, true), PREVIEW(false, true), EDIT(false, true);
 
     public final boolean showLive;
     public final boolean isAdmin;

@@ -1,81 +1,93 @@
 package com.dotmarketing.beans;
 
-import java.io.Serializable;
-
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.io.Serializable;
+
 /**
  *
- * @author  maria
+ * @author maria
  */
 public class MultiTree implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-	/** identifier field */
-    private String parent1;
+    /** identifier field */
+    private String htmlPage;
 
     /** identifier field */
-    private String parent2;
+    private  String container;
 
     /** identifier field */
-    private String child;
+    private  String contentlet;
 
     /** nullable persistent field */
-    private String relationType;
+    private  String relationType;
 
     /** nullable persistent field */
-    private int treeOrder;
+    private  int treeOrder;
 
     /** full constructor */
 
-    public MultiTree(String parent1, String parent2, String child, java.lang.String relationType, int treeOrder) {
-
-        this.parent1 = parent1;
-        this.parent2 = parent2;
-        this.child = child;
+    public MultiTree(String htmlPage, String container, String child, String relationType, int treeOrder) {
+        this.htmlPage = htmlPage;
+        this.container = container;
+        this.contentlet = child;
         this.relationType = relationType;
         this.treeOrder = treeOrder;
     }
 
     /** default constructor */
     public MultiTree() {
-
-        this.parent1 = "";
-        this.parent2 = "";
-        this.child = "";
+        this(null, null, null, null,0);
     }
 
     /** minimal constructor */
 
-    public MultiTree(String parent1, String parent2,  String child) {
-        this.parent1 = parent1;
-        this.parent2 = parent2;
-        this.child = child;
+    public MultiTree(String htmlPage, String container, String child) {
+        this(htmlPage, container, child, null,0);
     }
-
+    /**
+     * 
+     * {@link #getContentlet()}
+     */
+    @Deprecated
     public String getChild() {
-        return this.child;
+        return  getContentlet();
     }
 
-    public void setChild(String child) {
-        this.child = child;
+    public String getContentlet() {
+        return this.contentlet;
     }
+
+
+    @Deprecated
+    public MultiTree setChild(String child) {
+        return setContentlet(child);
+    }
+
     public java.lang.String getRelationType() {
         return this.relationType;
     }
-
-    public void setRelationType(java.lang.String relationType) {
-        this.relationType = relationType;
+    public MultiTree setContentlet(String contentlet) {
+        this.contentlet = contentlet;
+        return new MultiTree(this.htmlPage, this.container, contentlet, this.relationType, this.treeOrder);
     }
+
+    public MultiTree setRelationType(java.lang.String relationType) {
+        this.relationType = relationType;
+        return new MultiTree(this.htmlPage, this.container, this.contentlet, relationType, this.treeOrder);
+    }
+
     public int getTreeOrder() {
         return this.treeOrder;
     }
 
-    public void setTreeOrder(int treeOrder) {
+    public MultiTree setTreeOrder(int treeOrder) {
         this.treeOrder = treeOrder;
+        return new MultiTree(this.htmlPage, this.container, this.contentlet, this.relationType, treeOrder);
     }
 
     public String toString() {
@@ -83,44 +95,79 @@ public class MultiTree implements Serializable {
     }
 
     public boolean equals(Object other) {
-        if ( !(other instanceof MultiTree) ) return false;
+        if (!(other instanceof MultiTree))
+            return false;
         MultiTree castOther = (MultiTree) other;
-        return new EqualsBuilder()
-            .append(this.parent1, castOther.parent1)
-            .append(this.parent2, castOther.parent2)
-            .append(this.child, castOther.child)
-            .isEquals();
+        return new EqualsBuilder().append(this.htmlPage, castOther.htmlPage).append(this.container, castOther.container)
+                .append(this.contentlet, castOther.contentlet).isEquals();
     }
 
     public int hashCode() {
-        return new HashCodeBuilder()
-            .append(parent1)
-            .append(parent2)
-            .append(child)
-            .toHashCode();
+        return new HashCodeBuilder().append(htmlPage).append(container).append(contentlet).toHashCode();
     }
-	/**
-	 * @return Returns the parent1.
-	 */
-	public String getParent1() {
-		return parent1;
-	}
-	/**
-	 * @param parent1 The parent1 to set.
-	 */
-	public void setParent1(String parent1) {
-		this.parent1 = parent1;
-	}
-	/**
-	 * @return Returns the parent2.
-	 */
-	public String getParent2() {
-		return parent2;
-	}
-	/**
-	 * @param parent2 The parent2 to set.
-	 */
-	public void setParent2(String parent2) {
-		this.parent2 = parent2;
-	}
+
+    /**
+     * 
+     * {@link #getHtmlPage()}
+     */
+    @Deprecated
+    public String getParent1() {
+        return htmlPage;
+    }
+    /**
+     * 
+     * {@link #getContainer()}
+     */
+    @Deprecated
+    public String getParent2() {
+        return container;
+    }
+
+    /**
+     * @return Returns the htmlPage.
+     */
+    public String getHtmlPage() {
+        return htmlPage;
+    }
+    /**
+     * 
+     * {@link #setHtmlPage(String)}
+     */
+    @Deprecated
+    public MultiTree setParent1(String htmlPage) {
+        return setHtmlPage(htmlPage);
+    }
+    /**
+     * 
+     * {@link #setContainer(String)}
+     */
+    @Deprecated
+    public MultiTree setParent2(String container) {
+        return setContainer(container);
+    }
+
+    /**
+     * @param htmlPage The htmlPage to set.
+     */
+    public MultiTree setHtmlPage(String htmlPage) {
+        return new MultiTree(htmlPage, this.container, this.contentlet, this.relationType, this.treeOrder);
+    }
+
+    /**
+     * @return Returns the container.
+     */
+    public String getContainer() {
+        return container;
+    }
+
+    /**
+     * @param container The container to set.
+     */
+    public MultiTree setContainer(String container) {
+        this.container = container;
+        return new MultiTree(this.htmlPage, container, this.contentlet, this.relationType, this.treeOrder);
+    }
+
+
+
 }

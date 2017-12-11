@@ -158,6 +158,13 @@ public class PageResourceHelper implements Serializable {
         final String pageUri = ('/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), false);
+        
+        
+        
+        
+        
+        
+        
         if (isRendered) {
             try {
                 page.setProperty("rendered", VelocityUtil.mergeTemplate("/live/" + page
@@ -174,6 +181,12 @@ public class PageResourceHelper implements Serializable {
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
                 (template, user, RESPECT_FE_ROLES);
+        
+        templateContainers.addAll(APILocator.getContainerAPI().getContainersOnPage(page));
+
+        
+
+        
         final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
         for (final Container container : templateContainers) {
             final List<ContainerStructure> containerStructures = this.containerAPI

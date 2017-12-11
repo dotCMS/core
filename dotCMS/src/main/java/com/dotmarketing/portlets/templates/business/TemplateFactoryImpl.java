@@ -39,9 +39,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -327,24 +329,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
-	@Override
-	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
-		try{
 
-			HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
-			for(Container container:containerIdentifiers){
-				TemplateContainers templateContainer = new  TemplateContainers();
-				templateContainer.setTemplateId(template.getIdentifier());
-				templateContainer.setContainerId(container.getIdentifier());
-				HibernateUtil.save(templateContainer);
-			}
-			
-
-		}catch(DotHibernateException e){
-
-			throw new DotWorkflowException(e.getMessage());
-		}
-	}
 	
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -403,26 +388,18 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-	    List<String> ids = new LinkedList<String>();
+	    Set<String> ids = new HashSet<String>();
 	    if(!UtilMethods.isSet(templateBody)){
-	        return ids;
+	        return new ArrayList<>(ids);
 	    }
-		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
+
 		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
-		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		
+		Matcher matcher = newContainerReferencesRegex.matcher(templateBody);
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
 			ids.add(containerId);
 		}
-		matcher = newContainerReferencesRegex.matcher(templateBody);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
-			ids.add(containerId);
-		}
-		return ids;
+        return new ArrayList<>(ids);
 	}
 	
 	
