@@ -57,12 +57,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
     protected static ContentletAPI contentletAPI;
 
     private static String contentTypeName;
+    private static String contentTypeName2;
     private static String workflowSchemeName1;
     private static String workflowSchemeName2;
     private static String workflowSchemeName3;
+    private static String workflowSchemeName4;
 
     private static ContentType contentType;
     private static Structure contentTypeStructure;
+
+    private static ContentType contentType2;
+    private static Structure contentTypeStructure2;
 
     /* Workflow Scheme 1 */
     private static WorkflowScheme workflowScheme1;
@@ -110,9 +115,57 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static WorkflowAction workflowScheme3Step2Action2;
     private static String workflowScheme3Step2Action2Name;
 
+    /* Workflow Scheme 4 */
+    private static WorkflowScheme workflowScheme4;
+
+    private static WorkflowStep workflowScheme4Step1;
+    private static String workflowScheme4Step1Name;
+    private static WorkflowAction workflowScheme4Step1ActionView;
+    private static String workflowScheme4Step1ActionViewName;
+    private static WorkflowAction workflowScheme4Step1ActionEdit;
+    private static String workflowScheme4Step1ActionEditName;
+    private static WorkflowAction workflowScheme4Step1ActionPublish;
+    private static String workflowScheme4Step1ActionPublishName;
+    private static WorkflowAction workflowScheme4Step1ActionEditPermissions;
+    private static String workflowScheme4Step1ActionEditPermissionsName;
+    private static WorkflowAction workflowScheme4Step1ActionContributor;
+    private static String workflowScheme4Step1ActionContributorName;
+
+    private static WorkflowStep workflowScheme4Step2;
+    private static String workflowScheme4Step2Name;
+    private static WorkflowAction workflowScheme4Step2ActionView;
+    private static String workflowScheme4Step2ActionViewName;
+    private static WorkflowAction workflowScheme4Step2ActionEdit;
+    private static String workflowScheme4Step2ActionEditName;
+    private static WorkflowAction workflowScheme4Step2ActionPublish;
+    private static String workflowScheme4Step2ActionPublishName;
+    private static WorkflowAction workflowScheme4Step2ActionEditPermissions;
+    private static String workflowScheme4Step2ActionEditPermissionsName;
+    private static WorkflowAction workflowScheme4Step2ActionReviewer;
+    private static String workflowScheme4Step2ActionReviewerName;
+
+    private static WorkflowStep workflowScheme4Step3;
+    private static String workflowScheme4Step3Name;
+    private static WorkflowAction workflowScheme4Step3ActionView;
+    private static String workflowScheme4Step3ActionViewName;
+    private static WorkflowAction workflowScheme4Step3ActionEdit;
+    private static String workflowScheme4Step3ActionEditName;
+    private static WorkflowAction workflowScheme4Step3ActionPublish;
+    private static String workflowScheme4Step3ActionPublishName;
+    private static WorkflowAction workflowScheme4Step3ActionEditPermissions;
+    private static String workflowScheme4Step3ActionEditPermissionsName;
+    private static WorkflowAction workflowScheme4Step3ActionPublisher;
+    private static String workflowScheme4Step3ActionPublisherName;
+
+    /* Roles */
     private static Role reviewer;
     private static Role contributor;
     private static Role publisher;
+    private static Role intranet;
+    private static Role anyWhoView;
+    private static Role anyWhoEdit;
+    private static Role anyWhoPublish;
+    private static Role anyWhoEditPermissions;
 
     private static final String FIELD_NAME ="Title";
     private static final String FIELD_VAR_NAME ="title";
@@ -137,6 +190,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
         publisher = roleAPI.findRoleByName("Publisher / Legal", null);
         reviewer = roleAPI.findRoleByName("Reviewer", publisher);
         contributor = roleAPI.findRoleByName("Contributor", reviewer);
+        intranet = roleAPI.findRoleByName("Intranet", null);
+        anyWhoView = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+        anyWhoEdit = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+        anyWhoPublish = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+        anyWhoEditPermissions = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
 
         long time = System.currentTimeMillis();
         contentTypeName = "WorkflowTesting_" + time;
@@ -230,6 +288,88 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme3Step1Action1 = addWorkflowAction(workflowScheme3Step1Action1Name, 1,
                 workflowScheme3Step2.getId(), true, workflowScheme3Step1.getId(), contributor,
                 workflowScheme3.getId());
+
+        //fourth Workflow Scheme
+        contentTypeName2 = "WorkflowTesting2_" + time;
+        /* Mandatory Workflow */
+        workflowSchemeName4 = "WorkflowSchemeTest4" + time;
+        workflowScheme4Step1Name = "WorkflowScheme4Step1_" + time;
+        workflowScheme4Step1ActionViewName = "WorkflowScheme4Step1Action1_" + time;
+        workflowScheme4Step1ActionEditName = "WorkflowScheme4Step1Action2_" + time;
+        workflowScheme4Step1ActionPublishName = "WorkflowScheme4Step1Action3_" + time;
+        workflowScheme4Step1ActionEditPermissionsName = "WorkflowScheme4Step1Action4_" + time;
+        workflowScheme4Step1ActionContributorName = "WorkflowScheme4Step1Action5_" + time;
+
+        workflowScheme4Step2Name = "WorkflowScheme4Step2_" + time;
+        workflowScheme4Step2ActionViewName = "WorkflowScheme4Step2Action1_" + time;
+        workflowScheme4Step2ActionEditName = "WorkflowScheme4Step2Action2_" + time;
+        workflowScheme4Step2ActionPublishName = "WorkflowScheme4Step2Action3_" + time;
+        workflowScheme4Step2ActionEditPermissionsName = "WorkflowScheme4Step2Action4_" + time;
+        workflowScheme4Step2ActionReviewerName = "WorkflowScheme4Step2Action5_" + time;
+
+        workflowScheme4Step3Name = "WorkflowScheme4Step3_" + time;
+        workflowScheme4Step3ActionViewName = "WorkflowScheme4Step3Action1_" + time;
+        workflowScheme4Step3ActionEditName = "WorkflowScheme4Step3Action2_" + time;
+        workflowScheme4Step3ActionPublishName = "WorkflowScheme4Step3Action3_" + time;
+        workflowScheme4Step3ActionEditPermissionsName = "WorkflowScheme4Step3Action4_" + time;
+        workflowScheme4Step3ActionPublisherName = "WorkflowScheme4Step3Action5_" + time;
+
+        /**
+         * Generate ContentType
+         */
+        contentType2 = insertContentType(contentTypeName2, BaseContentType.CONTENT);
+        contentTypeStructure2 = new StructureTransformer(ContentType.class.cast(contentType2))
+                .asStructure();
+
+        /**
+         * Generate workflow schemes
+         */
+        workflowScheme4 = addWorkflowScheme(workflowSchemeName4, true);
+
+        /* Generate scheme steps */
+        workflowScheme4Step1 = addWorkflowStep(workflowScheme4Step1Name, 1, false, false,
+                workflowScheme4.getId());
+
+        workflowScheme4Step2 = addWorkflowStep(workflowScheme4Step2Name, 2, true, false,
+                workflowScheme4.getId());
+
+        workflowScheme4Step3 = addWorkflowStep(workflowScheme4Step3Name, 3, true, false,
+                workflowScheme4.getId());
+
+        /* Generate actions */
+        workflowScheme4Step3ActionView = addWorkflowAction(workflowScheme4Step3ActionViewName, 1,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step3.getId(), anyWhoView, workflowScheme4.getId());
+        workflowScheme4Step3ActionEdit = addWorkflowAction(workflowScheme4Step3ActionEditName, 2,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step3.getId(), anyWhoEdit, workflowScheme4.getId());
+        workflowScheme4Step3ActionPublish = addWorkflowAction(workflowScheme4Step3ActionPublishName, 3,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step3.getId(), anyWhoPublish, workflowScheme4.getId());
+        workflowScheme4Step3ActionEditPermissions = addWorkflowAction(workflowScheme4Step2ActionEditPermissionsName, 4,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step3.getId(), anyWhoEditPermissions, workflowScheme4.getId());
+        workflowScheme4Step3ActionPublisher = addWorkflowAction(workflowScheme4Step2ActionReviewerName, 5,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step3.getId(), publisher, workflowScheme4.getId());
+
+        workflowScheme4Step2ActionView = addWorkflowAction(workflowScheme4Step2ActionViewName, 1,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step2.getId(), anyWhoView, workflowScheme4.getId());
+        workflowScheme4Step2ActionEdit = addWorkflowAction(workflowScheme4Step2ActionEditName, 2,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step2.getId(), anyWhoEdit, workflowScheme4.getId());
+        workflowScheme4Step2ActionPublish = addWorkflowAction(workflowScheme4Step2ActionPublishName, 3,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step2.getId(), anyWhoPublish, workflowScheme4.getId());
+        workflowScheme4Step2ActionEditPermissions = addWorkflowAction(workflowScheme4Step2ActionEditPermissionsName, 4,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step2.getId(), anyWhoEditPermissions, workflowScheme4.getId());
+        workflowScheme4Step2ActionReviewer = addWorkflowAction(workflowScheme4Step2ActionReviewerName, 5,
+                workflowScheme4Step3.getId(), true, workflowScheme4Step2.getId(), reviewer, workflowScheme4.getId());
+
+        workflowScheme4Step1ActionView = addWorkflowAction(workflowScheme4Step1ActionViewName, 1,
+                workflowScheme4Step2.getId(), true, workflowScheme4Step1.getId(), anyWhoView, workflowScheme4.getId());
+        workflowScheme4Step1ActionEdit = addWorkflowAction(workflowScheme4Step1ActionEditName, 2,
+                workflowScheme4Step2.getId(), true, workflowScheme4Step1.getId(), anyWhoEdit, workflowScheme4.getId());
+        workflowScheme4Step1ActionPublish = addWorkflowAction(workflowScheme4Step1ActionPublishName, 3,
+                workflowScheme4Step2.getId(), true, workflowScheme4Step1.getId(), anyWhoPublish, workflowScheme4.getId());
+        workflowScheme4Step1ActionEditPermissions = addWorkflowAction(workflowScheme4Step1ActionEditPermissionsName, 4,
+                workflowScheme4Step2.getId(), true, workflowScheme4Step1.getId(), anyWhoEditPermissions, workflowScheme4.getId());
+        workflowScheme4Step1ActionContributor = addWorkflowAction(workflowScheme4Step1ActionContributorName, 5,
+                workflowScheme4Step2.getId(), true, workflowScheme4Step1.getId(), contributor, workflowScheme4.getId());
+
 
     }
 
@@ -419,6 +559,28 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentletAPI.archive(c1,user,false);
             contentletAPI.delete(c1,user,false);
         }
+    }
+
+
+    /**
+     * Test the find findAvailableActions  methods
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findAvailableActions() throws DotDataException, DotSecurityException {
+
+        //Users
+        final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789s");
+        final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
+        final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        final User billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+
+        /*
+        * Need to do the test checking with different user the actions displayed.We need to specify
+        * the permission for Intranet, Reviewer, Contributor and Publisher to see if the action
+        * returned are the right ones
+        * */
     }
 
     /**
