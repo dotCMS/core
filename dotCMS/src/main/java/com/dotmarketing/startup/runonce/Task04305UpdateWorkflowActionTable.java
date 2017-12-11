@@ -3,11 +3,13 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +55,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
     private static final String ORACLE_FIND_SCHEME_ID_COLUMN   = "SELECT scheme_id FROM workflow_action";
 
-    private static final String MYSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id VARCHAR(36) NOT NULL";
+    private static final String MYSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id VARCHAR(36)";
     private static final String POSTGRES_ADD_SCHEME_ID_COLUMN = MYSQL_ADD_SCHEME_ID_COLUMN;
-    private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36) NOT NULL";
-    private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36) NOT NULL";
+    private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36)";
+    private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36)";
 
     private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
     private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
@@ -258,12 +260,16 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
             Logger.info(this, "Column 'workflow_action.scheme_id' does not exists, creating it");
             needToCreate = true;
+            // in some databases if an error is throw the transaction is not longer valid
+            this.closeAndStartTransaction();
         }
         if (needToCreate) {
             try {
                 dc.executeStatement(addSchemeIdColumn());
             } catch (SQLException e) {
                 throw new DotRuntimeException("The 'scheme_id' column could not be created.", e);
+            } finally {
+                this.closeCommitAndStartTransaction();
             }
         }
     } // addSchemeIdColumn.
@@ -280,26 +286,43 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
             Logger.info(this, "Table 'workflow_action_step' does not exists, creating it");
             needToCreate = true;
+            // in some databases if an error is throw the transaction is not longer valid
+            this.closeAndStartTransaction();
         }
 
         if (needToCreate) {
             try {
-                dc.executeStatement(createIntermediateTable());
+                dc.setSQL(createIntermediateTable()).loadResult();
                 // The SQL Server and Oracle table definition already include de PK creation
                 if (DbConnectionFactory.isMySql() || DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement(createIntermediateTablePk());
+                    dc.setSQL(createIntermediateTablePk()).loadResult();
                 }
 
                 // adding the FK
                 Logger.info(this, "Creating the Workflow action step intermediate FKs.");
-                dc.executeStatement(this.createIntermediateTableForeignKeyActionId());
-                dc.executeStatement(this.createIntermediateTableForeignKeyStepId());
-            } catch (SQLException e) {
+                dc.setSQL(this.createIntermediateTableForeignKeyActionId()).loadResult();
+                dc.setSQL(this.createIntermediateTableForeignKeyStepId()).loadResult();
+            } catch (Exception e) {
                 throw new DotRuntimeException(
                         "The 'workflow_action_step' table could not be created.", e);
+            } finally {
+                this.closeCommitAndStartTransaction();
             }
         }
     } // createWorkflowActionStepTable.
+
+    private void closeCommitAndStartTransaction() throws DotHibernateException {
+        if (DbConnectionFactory.inTransaction()) {
+            HibernateUtil.closeAndCommitTransaction();
+            HibernateUtil.startTransaction();
+        }
+    }
+
+    private void closeAndStartTransaction() throws DotHibernateException {
+
+        HibernateUtil.closeSessionSilently();
+        HibernateUtil.startTransaction();
+    }
 
     private boolean isLocked(final Object requiresCheckout) {
 
