@@ -618,7 +618,10 @@ public interface ContentletAPI {
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
-	 * This method completely deletes the given contentlet from the system
+	 * Deletes the specified list of {@link Contentlet} objects ONLY in the
+	 * specified language. If any of the specified contentlets is not archived,
+	 * an exception will be thrown. If there's only one language for a given
+	 * contentlet, the object will be destroyed.
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
