@@ -2,12 +2,18 @@ package com.dotcms.rest.api.v1.container;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
 import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -19,6 +25,7 @@ import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.enums.BaseType
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -31,16 +38,21 @@ import com.dotcms.uuid.shorty.ShortyId;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
 import java.io.IOException;
@@ -221,11 +233,97 @@ public class ContainerResource implements Serializable {
         
         return Response.ok(response).build();
 
-        
     }
     
     
+    
+    
+    
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Path("add/{containerId}/content/{contentletId}/uid/{uid}/order/{}")
+    public final Response addContentToContainer(
+            @Context final HttpServletRequest req,
+            @Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId,
+            @PathParam("contentletId") final String contentletId, 
+            @QueryParam("order")   final int order,
+            @PathParam("uid") final String uid
+            ) 
+                    throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
 
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        final PageMode mode = PageMode.get(req);
+        final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        
+        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);} );
+        
+        
+        
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ?  APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive) 
+                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode==PageMode.ANON, id.getId(), user, mode==PageMode.ANON);
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {throw new ResourceNotFoundException("Can't find Container:" + containerId);} );
+        
+        
+        Container container = (containerShorty.subType == ShortType.CONTAINER) 
+            ? APILocator.getContainerAPI().find(containerId, user, mode==PageMode.ANON)
+                    : (mode.showLive) 
+                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user, mode==PageMode.ANON)
+                        :(Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user, mode==PageMode.ANON);
+                       
+                        
+         APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.EDIT, user);               
+         APILocator.getPermissionAPI().checkPermission(container, PermissionLevel.EDIT, user);    
+                        
+        
+        
+        MultiTree mt = new MultiTree()
+                .setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid)
+                .setTreeOrder(order);
+
+        MultiTreeFactory.saveMultiTree(mt);
+        
+        
+        
+        
+        return Response.ok("ok").build();
+    }
+    
+    
+    @DELETE
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Path("delete/{containerId}/content/{contentletId}/uid/{uid}")
+    public final Response removeContentletFromContainer(
+            @Context final HttpServletRequest req,
+            @Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId,
+            @PathParam("contentletId") final String contentletId, 
+            @QueryParam("order")   final long order, 
+            @PathParam("uid") final String uid
+            ) 
+                    throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        final PageMode mode = PageMode.get(req);
+        final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+        
+        
+        
+        
+        return Response.ok("ok").build();
+    }
     
     
 }
