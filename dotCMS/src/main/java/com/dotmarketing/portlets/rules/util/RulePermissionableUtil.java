@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.List;
 
 /**
  * Created by Oscar Arrieta on 2/6/16.
@@ -37,9 +38,16 @@ public class RulePermissionableUtil {
                 if(iden.getAssetType().equals("folder")){
                     permissionableParent = APILocator.getFolderAPI().find(parent,systemUser,false);
                 }else{
-                    Contentlet contentlet = APILocator.getContentletAPI()
-                            .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false)
-                            .get(0);
+                    Contentlet contentlet;
+
+                    List<Contentlet> results = APILocator.getContentletAPI()
+                            .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false);
+                    if (!results.isEmpty()) {
+                        contentlet = results.get(0);
+                    } else {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
+                                    APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                    }
                     if (contentlet.isHost()) {
 						permissionableParent = contentlet;
 					} else {
