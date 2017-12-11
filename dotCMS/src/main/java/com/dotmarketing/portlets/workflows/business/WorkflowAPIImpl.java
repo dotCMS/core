@@ -538,7 +538,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		boolean hasLock = user.getUserId().equals(lockedUserId);
 		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions = findActions(steps, user,contentlet);
+		List<WorkflowAction> unfilteredActions = null;
+		if(isNew){
+			unfilteredActions = findActions(steps, user,contentlet.getContentType());
+		}else{
+			unfilteredActions = findActions(steps, user,contentlet);
+		}
 
 		if(hasLock || isNew){
 			return unfilteredActions;
@@ -1261,8 +1266,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
     /**
-     * Return true if the action has one of the workflow action roles and if the user havas those permission
-     * over the content or content type
+     * Return true if the action has one of the workflow action roles and if the user has  any of
+     * those permission over the content or content type
      * @param user User to validate
      * @param respectFrontEndRoles indicates if should respect frontend roles
      * @param permissionable ContentType or contentlet to validate special workflow roles
@@ -1292,8 +1297,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
                         anyWhoCanEditContent)) {
             if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE, user,
-                    respectFrontEndRoles)) {
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
                 return true;
             }
         }
@@ -1301,9 +1305,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
                         anyWhoCanPublishContent)) {
             if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE
-                            + PermissionAPI.PERMISSION_PUBLISH, user,
-                    respectFrontEndRoles)) {
+                    PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles)) {
                 return true;
             }
         }
@@ -1311,10 +1313,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
                         anyWhoCanEditPermisionsContent)) {
             if (APILocator.getPermissionAPI().doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_WRITE
-                            + PermissionAPI.PERMISSION_PUBLISH
-                            + PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user,
-                    respectFrontEndRoles)) {
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles)) {
                 return true;
             }
         }
