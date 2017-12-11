@@ -37,9 +37,10 @@ public class RulePermissionableUtil {
                 if(iden.getAssetType().equals("folder")){
                     permissionableParent = APILocator.getFolderAPI().find(parent,systemUser,false);
                 }else{
-					Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
-							APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-					if (contentlet.isHost()) {
+                    Contentlet contentlet = APILocator.getContentletAPI()
+                            .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false)
+                            .get(0);
+                    if (contentlet.isHost()) {
 						permissionableParent = contentlet;
 					} else {
 						permissionableParent = contentlet.getParentPermissionable();
@@ -48,7 +49,7 @@ public class RulePermissionableUtil {
             } else {
                 throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
             }
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | IndexOutOfBoundsException e) {
             Logger.error(Rule.class, e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
