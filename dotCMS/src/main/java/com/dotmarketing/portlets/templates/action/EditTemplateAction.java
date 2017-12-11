@@ -1,9 +1,13 @@
 package com.dotmarketing.portlets.templates.action;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.servlet.SessionDialogMessage;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.List;
@@ -296,12 +300,20 @@ public class EditTemplateAction extends DotPortletAction implements
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.TEMPLATE_EDIT);
 
-				StringBuilder error = new StringBuilder();
+				SessionDialogMessage error = new SessionDialogMessage(
+						LanguageUtil.get(user, "Delete-Template"),
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+						"<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
+								" +_all:" + webAsset.getIdentifier()
+						));
+
 				if (canTemplateBeDeleted(webAsset, user, error)) {
 					WebAssetFactory.deleteAsset(webAsset,user);
 					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
-					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
+					SessionMessages.add(httpReq, SessionMessages.DIALOG_MESSAGE, error);
 				}
 			}
 			catch(Exception ae)
@@ -319,25 +331,39 @@ public class EditTemplateAction extends DotPortletAction implements
 				String [] inodes = req.getParameterValues("publishInode");
 
 				int errorCount =0;
+				SessionDialogMessage errors = new SessionDialogMessage(
+						LanguageUtil.get(user, "Delete-Template"),
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+										"<br>+baseType:" + BaseContentType.HTMLPAGE.getType()
+								));
+
 				for(String inode  : inodes)	{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
 
-					StringBuilder errors = new StringBuilder();
 					if (canTemplateBeDeleted(webAsset, user, errors)) {
 						WebAssetFactory.deleteAsset(webAsset,user);
 					} else {
-						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, errors.toString());
+						if (errorCount == 0) {
+							errors.setFooter(errors.getFooter() + " +(_all:" + webAsset.getIdentifier());
+						} else {
+							errors.setFooter(errors.getFooter() + " OR _all:" + webAsset.getIdentifier());
+						}
+						errorCount++;
+						SessionMessages.add(httpReq,SessionMessages.DIALOG_MESSAGE, errors);
 					}
 				}
 
-				if(errorCount == 0)
-				{
-					SessionMessages.add(httpReq,"message","message.template.full_delete");
+				if (errorCount == 0) {
+					SessionMessages.add(httpReq, "message", "message.template.full_delete");
+				} else {
+					errors.setFooter(errors.getFooter() + ")");
 				}
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq, SessionMessages.ERROR,"message.template.full_delete.error");
+				SessionMessages.add(httpReq, SessionMessages.ERROR, TemplateConstants.TEMPLATE_DELETE_ERROR);
 				_handleException(ae, req);
 				return;
 			}
@@ -494,16 +520,20 @@ public class EditTemplateAction extends DotPortletAction implements
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder)
-			throws LanguageException, DotDataException, DotSecurityException {
-		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false);
+	private boolean canTemplateBeDeleted (WebAsset template, User user, SessionDialogMessage errorMessage)
+			throws DotDataException, DotSecurityException {
+		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false,
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages!= null && !pages.isEmpty()) {
-			errorBuilder.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
-			errorBuilder.append(template.getName()).append("<br>");
 
 			for (Contentlet page : pages) {
-				errorBuilder.append("- ").append(page.getTitle()).append("<br>");
+				HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
+				Host host = APILocator.getHostAPI().find(pageAsset.getHost(), user, false);
+
+				errorMessage.addMessage(template.getName(),
+						host.getHostname() + ":" + pageAsset.getURI()
+				);
 			}
 			return false;
 		}
