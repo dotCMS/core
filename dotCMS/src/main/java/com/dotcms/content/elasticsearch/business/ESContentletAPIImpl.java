@@ -28,6 +28,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
@@ -2538,7 +2539,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
 
-        Map<Relationship, List<Contentlet>> contentRelationships = null;
         Contentlet workingCon = null;
 
         //If the contentlet has identifier does not mean is already in DB
@@ -2550,25 +2550,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(cats==null) {
                     cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
                 }
-                contentRelationships = findContentRelationships(workingCon);
 
-            } else { //If contentlet is new.
-                contentRelationships = findContentRelationships(contentlet);
             }
-        } else{
-            contentRelationships = findContentRelationships(contentlet);
         }
 
         if(permissions == null)
             permissions = new ArrayList<Permission>();
         if(cats == null)
             cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
         if(workingCon == null)
             workingCon = contentlet;
 
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+        return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions, user, respectFrontendRoles);
 
     }
 
@@ -2768,21 +2761,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
                                List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles,
                                boolean generateSystemEvent)
-            throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet, contentRelationships);
+
+        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles, true, generateSystemEvent);
+    }
+
+    private ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet,
+                                                                      Map<Relationship, List<Contentlet>> contentRelationships) {
+
+        if(contentRelationships == null) {
+            return null;
+        }
 
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
+        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
             boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
+            ContentletRelationshipRecords
+                records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
-
-        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles, true, generateSystemEvent);
+        return relationshipsData;
     }
 
     @Override
@@ -2793,17 +2798,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
-        relationshipsData.setRelationshipsRecords(relationshipsRecords);
-        for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-            records.setRecords(relEntry.getValue());
-            relationshipsRecords.add(records);
-        }
+        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet, contentRelationships);
         return checkin(contentlet, relationshipsData, cats , permissions, user, respectFrontendRoles, false, false);
     }
 
@@ -2848,6 +2843,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
+
+            if(contentRelationships==null) {
+                contentRelationships = getExistingContentRelationships(contentlet);
+            }
+////
+//            if(cats==null) {
+//
+//            }
 
             boolean saveWithExistingID=false;
             String existingInode=null, existingIdentifier=null;
@@ -3541,6 +3544,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+    }
+
+    private ContentletRelationships getExistingContentRelationships(Contentlet contentlet)
+        throws DotDataException, DotSecurityException {
+        Map<Relationship, List<Contentlet>> contentRelationships;
+
+        Identifier ident=null;
+        if(InodeUtils.isSet(contentlet.getIdentifier()))
+            ident = APILocator.getIdentifierAPI().find(contentlet);
+
+        //If contentlet is not new
+        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
+            Contentlet workingCon = findWorkingContentlet(contentlet);
+            if(workingCon != null) {
+                contentRelationships = findContentRelationshipsFromIndex(workingCon);
+            } else {
+                contentRelationships = findContentRelationshipsFromIndex(contentlet);
+            }
+        } else {
+            contentRelationships = findContentRelationshipsFromIndex(contentlet);
+        }
+
+        return getContentletRelationshipsFromMap(contentlet, contentRelationships);
+
     }
 
     private void throwSecurityException(final Contentlet contentlet,

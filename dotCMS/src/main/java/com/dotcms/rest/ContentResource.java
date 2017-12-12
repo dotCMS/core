@@ -1206,7 +1206,7 @@ public class ContentResource {
                 }
 
                 // look for relationships
-                Map<Relationship, List<Contentlet>> relationships = new HashMap<Relationship, List<Contentlet>>();
+                Map<Relationship, List<Contentlet>> relationships = null;
                 for (Relationship rel : FactoryLocator.getRelationshipFactory()
                         .byContentType(type)) {
                     String relname = rel.getRelationTypeValue();
@@ -1217,6 +1217,9 @@ public class ContentResource {
                                     query, 0, 0, null, APILocator.getUserAPI().getSystemUser(),
                                     false);
                             if (cons.size() > 0) {
+                                if(relationships==null) {
+                                    relationships = new HashMap<>();
+                                }
                                 relationships.put(rel, cons);
                             }
                             Logger.info(this, "got " + cons.size() + " related contents");
