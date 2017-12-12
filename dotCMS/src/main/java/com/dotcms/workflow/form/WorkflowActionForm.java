@@ -165,8 +165,6 @@ public class WorkflowActionForm extends Validated {
         @JsonProperty(required = true)
         private boolean       requiresCheckout;
         @JsonProperty(required = true)
-        private String       requiresCheckoutOption;
-        @JsonProperty(required = true)
         private boolean       actionRoleHierarchyForAssign;
         @JsonProperty(required = true)
         private String        actionNextStep;
@@ -226,11 +224,6 @@ public class WorkflowActionForm extends Validated {
 
         public Builder requiresCheckout(boolean requiresCheckout) {
             this.requiresCheckout = requiresCheckout;
-            return this;
-        }
-
-        public Builder requiresCheckoutOption(String requiresCheckoutOption) {
-            this.requiresCheckoutOption = requiresCheckoutOption;
             return this;
         }
 

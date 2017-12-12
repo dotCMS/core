@@ -604,6 +604,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions) throws DotDataException {
+
+		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
+
+			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+		}
+
 		try {
 
 			this.saveAction(action);
@@ -621,6 +627,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+	}
+
+	private boolean existsScheme(final String schemeId) {
+
+		boolean existsScheme = false;
+
+		try {
+
+			existsScheme = null != this.findScheme(schemeId);
+		} catch (Exception e) {
+			existsScheme = false;
+		}
+
+		return existsScheme;
 	}
 
 	@WrapInTransaction
@@ -674,6 +694,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+
+		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
+
+			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+		}
+
 		workFlowFactory.saveAction(action);
 	}
 

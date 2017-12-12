@@ -115,7 +115,6 @@ public class WfActionAjax extends WfBaseAction {
                 .actionAssignable (request.getParameter("actionAssignable") != null)
                 .actionCommentable(request.getParameter("actionCommentable") != null)
 				.requiresCheckout(request.getParameter("actionRequiresCheckout") != null)
-                .requiresCheckoutOption (request.getParameter("actionRequiresCheckoutOption"))
                 .actionRoleHierarchyForAssign(request.getParameter("actionRoleHierarchyForAssign") != null)
                 .actionNextStep(request.getParameter  ("actionNextStep"))
                 .actionNextAssign(request.getParameter("actionAssignToSelect"))

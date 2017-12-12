@@ -61,6 +61,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36)";
     private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36)";
 
+    private static final String MYSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN     = "ALTER TABLE workflow_action MODIFY       scheme_id VARCHAR(36)  NOT NULL;";
+    private static final String POSTGRES_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN  = "ALTER TABLE workflow_action ALTER COLUMN scheme_id SET          NOT NULL;";
+    private static final String MSSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN     = "ALTER TABLE workflow_action ALTER COLUMN scheme_id NVARCHAR(36) NOT NULL";
+    private static final String ORACLE_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN    = "ALTER TABLE workflow_action MODIFY       scheme_id varchar2(36) NOT NULL";
+
     private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
     private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
     private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on NVARCHAR(255) default 'LOCKED,UNLOCKED'";
@@ -143,14 +148,46 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
         // SCHEMA CHANGES
         this.createWorkflowActionStepTable     (dc);
-        this.addSchemeIdColumn                 (dc);
+        final boolean schemeIdColumnCreated =
+                this.addSchemeIdColumn         (dc);
         this.addShowOnColumn                   (dc);
 
         // DATA CHANGES
         this.addWorkflowActionStepData         (dc);
         this.updateWorkflowActionData          (dc);
         this.updateWorkflowSchemeXStructureData(dc);
+
+        if (schemeIdColumnCreated) {
+            this.addNotNullConstraintShowOnColumn(dc);
+        }
     } // executeUpgrade.
+
+    private void addNotNullConstraintShowOnColumn(final DotConnect dc) throws DotHibernateException {
+
+        Logger.info(this, "Adding new 'scheme_id' constraints");
+
+        try {
+            dc.executeStatement(getNotNullConstraintShowOnColumn());
+        } catch (SQLException e) {
+            throw new DotRuntimeException("The 'scheme_id' column could not add the not null constraints.", e);
+        }
+    } // addNotNullConstraintShowOnColumn.
+
+    private String getNotNullConstraintShowOnColumn() {
+
+        String sql = null;
+        if (DbConnectionFactory.isMySql()) {
+            sql = MYSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isPostgres()) {
+            sql = POSTGRES_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isMsSql()) {
+            sql = MSSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isOracle()) {
+            sql = ORACLE_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        }
+
+        return sql;
+    } // getNotNullConstraintShowOnColumn.
 
     private void updateWorkflowSchemeXStructureData(DotConnect dc) throws DotDataException {
         Logger.info(this, "Updating index in 'workflow_scheme_x_structure' table.");
@@ -250,7 +287,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     } // addShowOnColumn.
 
-    private void addSchemeIdColumn(final DotConnect dc) throws DotDataException {
+    private boolean addSchemeIdColumn(final DotConnect dc) throws DotDataException {
 
         boolean needToCreate = false;
         Logger.info(this, "Adding new 'scheme_id' column to 'workflow_action' table.");
@@ -264,6 +301,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
             // in some databases if an error is throw the transaction is not longer valid
             this.closeAndStartTransaction();
         }
+
         if (needToCreate) {
             try {
                 dc.executeStatement(addSchemeIdColumn());
@@ -273,6 +311,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
                 this.closeCommitAndStartTransaction();
             }
         }
+
+        return needToCreate;
     } // addSchemeIdColumn.
 
     private void createWorkflowActionStepTable(final DotConnect dc) throws DotDataException {
