@@ -18,6 +18,8 @@
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
 <%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
+<%@page import="java.util.regex.Matcher"%>
+<%@page import="java.util.regex.Pattern"%>
 
 <%
 	LanguageAPI langAPI = APILocator.getLanguageAPI();
@@ -700,7 +702,9 @@
 								v = v.replace("\r\n","");
 								v = v.replace("\n","");
 								v = v.replace("\r","");
-								if(v.matches("(.*)-(.*)-(.*):(.*):(.*)")){
+								Pattern p = Pattern.compile("(.*)-(.*)-(.*):(.*):(.*)");
+								Matcher m = p.matcher(v);
+								if(m.matches()){
 									int index = v.lastIndexOf( ':' );
 									v = v.substring(0,index);
 								}
