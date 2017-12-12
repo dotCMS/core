@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -478,13 +479,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		String result = null;
 		Template template = find(templateInode, user, respectFrontendRoles);
 		// checking if there are pages using this template
-		List<Contentlet> pages=APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles);
+		List<Contentlet> pages=APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles,
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages != null && !pages.isEmpty()) {
 			StringBuilder builder = new StringBuilder();
 			int i = 0;
 			for (Contentlet page : pages) {
-				builder.append(page.getTitle());
+				HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
+				Host host = APILocator.getHostAPI().find(pageAsset.getHost(), user, false);
+				builder.append(host.getHostname()).append(":").append(pageAsset.getURI());
 				if(i++ != pages.size() - 1){
 					builder.append(",");
 				}
