@@ -9,7 +9,7 @@ export class FormatDateService {
     setLang(lang: string, messages: any): void {
         // Only "creating" the language once
         if (moment.locale(lang) !== lang) {
-            moment.fn.defineLocale(lang, {relativeTime: messages} || {});
+            moment.defineLocale(lang, {relativeTime: messages} || {});
         }
         moment.locale(lang);
     }

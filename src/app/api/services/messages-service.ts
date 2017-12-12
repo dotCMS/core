@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import * as _ from 'lodash';
 import { CoreWebService, LoginService, User } from 'dotcms-js/dotcms-js';
 import { FormatDateService } from './format-date-service';
 import { Injectable } from '@angular/core';

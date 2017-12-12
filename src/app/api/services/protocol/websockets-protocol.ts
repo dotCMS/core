@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import * as _ from 'lodash';
 import { Subject } from 'rxjs/Subject';
 import { LoggerService, Protocol, Url } from 'dotcms-js/dotcms-js';
 
