@@ -17,13 +17,13 @@ public class MultiTree implements Serializable {
     public static final String LEGACY_RELATION_TYPE="LEGACY_RELATION_TYPE";
     
     /** identifier field */
-    private String htmlPage;
+    private String parent1;
 
     /** identifier field */
-    private  String container;
+    private  String parent2;
 
     /** identifier field */
-    private  String contentlet;
+    private  String child;
 
     /** nullable persistent field */
     private  String relationType;
@@ -32,11 +32,10 @@ public class MultiTree implements Serializable {
     private  int treeOrder;
 
     /** full constructor */
-
     public MultiTree(String htmlPage, String container, String child, String relationType, int treeOrder) {
-        this.htmlPage = htmlPage;
-        this.container = container;
-        this.contentlet = child;
+        this.parent1 = htmlPage;
+        this.parent2 = container;
+        this.child = child;
         this.relationType = (relationType==null) ? LEGACY_RELATION_TYPE : relationType;
         this.treeOrder =  (treeOrder<0)? 0  : treeOrder;
     }
@@ -61,7 +60,7 @@ public class MultiTree implements Serializable {
     }
 
     public String getContentlet() {
-        return this.contentlet;
+        return this.child;
     }
 
 
@@ -74,13 +73,13 @@ public class MultiTree implements Serializable {
         return this.relationType;
     }
     public MultiTree setContentlet(String contentlet) {
-        this.contentlet = contentlet;
-        return new MultiTree(this.htmlPage, this.container, contentlet, this.relationType, this.treeOrder);
+        this.child = contentlet;
+        return new MultiTree(this.parent1, this.parent2, contentlet, this.relationType, this.treeOrder);
     }
 
     public MultiTree setRelationType(java.lang.String relationType) {
         this.relationType = (relationType==null) ? LEGACY_RELATION_TYPE : relationType;
-        return new MultiTree(this.htmlPage, this.container, this.contentlet, relationType, this.treeOrder);
+        return new MultiTree(this.parent1, this.parent2, this.child, relationType, this.treeOrder);
     }
 
     public int getTreeOrder() {
@@ -90,7 +89,7 @@ public class MultiTree implements Serializable {
     public MultiTree setTreeOrder(int treeOrder) {
         treeOrder = (treeOrder<0)? 0  : treeOrder;
         this.treeOrder = treeOrder;
-        return new MultiTree(this.htmlPage, this.container, this.contentlet, this.relationType, treeOrder);
+        return new MultiTree(this.parent1, this.parent2, this.child, this.relationType, treeOrder);
     }
 
     public String toString() {
@@ -101,12 +100,12 @@ public class MultiTree implements Serializable {
         if (!(other instanceof MultiTree))
             return false;
         MultiTree castOther = (MultiTree) other;
-        return new EqualsBuilder().append(this.htmlPage, castOther.htmlPage).append(this.container, castOther.container)
-                .append(this.contentlet, castOther.contentlet).isEquals();
+        return new EqualsBuilder().append(this.parent1, castOther.parent1).append(this.parent2, castOther.parent2)
+                .append(this.child, castOther.child).isEquals();
     }
 
     public int hashCode() {
-        return new HashCodeBuilder().append(htmlPage).append(container).append(contentlet).toHashCode();
+        return new HashCodeBuilder().append(parent1).append(parent2).append(child).toHashCode();
     }
 
     /**
@@ -115,7 +114,7 @@ public class MultiTree implements Serializable {
      */
     @Deprecated
     public String getParent1() {
-        return htmlPage;
+        return parent1;
     }
     /**
      * 
@@ -123,14 +122,14 @@ public class MultiTree implements Serializable {
      */
     @Deprecated
     public String getParent2() {
-        return container;
+        return parent2;
     }
 
     /**
      * @return Returns the htmlPage.
      */
     public String getHtmlPage() {
-        return htmlPage;
+        return parent1;
     }
     /**
      * 
@@ -153,22 +152,22 @@ public class MultiTree implements Serializable {
      * @param htmlPage The htmlPage to set.
      */
     public MultiTree setHtmlPage(String htmlPage) {
-        return new MultiTree(htmlPage, this.container, this.contentlet, this.relationType, this.treeOrder);
+        return new MultiTree(htmlPage, this.parent2, this.child, this.relationType, this.treeOrder);
     }
 
     /**
      * @return Returns the container.
      */
     public String getContainer() {
-        return container;
+        return parent2;
     }
 
     /**
      * @param container The container to set.
      */
     public MultiTree setContainer(String container) {
-        this.container = container;
-        return new MultiTree(this.htmlPage, container, this.contentlet, this.relationType, this.treeOrder);
+        this.parent2 = container;
+        return new MultiTree(this.parent1, container, this.child, this.relationType, this.treeOrder);
     }
 
 

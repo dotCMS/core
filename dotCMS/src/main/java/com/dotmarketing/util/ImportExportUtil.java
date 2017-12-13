@@ -488,9 +488,8 @@ public class ImportExportUtil {
             		ident.setParentPath(ident.getParentPath().toLowerCase());
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
-                Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-
-                APILocator.getIdentifierAPI().save(ident);
+             Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
+             APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -1089,10 +1088,7 @@ public class ImportExportUtil {
             boolean logsMappers = false;
             boolean portletpreferences = false;
             boolean address = false;
-            boolean pollschoice = false;
-            boolean pollsdisplay = false;
-            boolean pollsquestion = false;
-            boolean pollsvote = false;
+
 
             Logger.debug(this, "**** Importing the file: " + f + " *****");
 
@@ -1116,21 +1112,13 @@ public class ImportExportUtil {
                 logsMappers = true;
             }else if(_className.equals("Portletpreferences")){
                 portletpreferences = true;
-            }else if(_className.equals("Pollschoice")){
-                pollschoice = true;
             }else if(_className.equals("Address")){
                 address = true;
-            }else if(_className.equals("Pollsdisplay")){
-                pollsdisplay = true;
-            }else if(_className.equals("Pollsquestion")){
-                pollsquestion = true;
-            }else if(_className.equals("Pollsvote")){
-                pollsvote = true;
             }else{
                 try{
                     _importClass = Class.forName(_className);
                 }catch (Exception e) {
-                    Logger.error(this, "Class not found " + _className, e);
+                    Logger.error(this, "Class not found " + _className);
                     return;
                 }
             }

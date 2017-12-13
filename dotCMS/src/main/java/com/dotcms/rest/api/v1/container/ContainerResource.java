@@ -156,43 +156,51 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         PageMode mode = PageMode.get(req);
-        Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        Language id = WebAPILocator.getLanguageWebAPI()
+            .getLanguage(req);
 
 
-        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {
-            throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-        });
+        ShortyId contentShorty = APILocator.getShortyAPI()
+            .getShorty(contentletId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+            });
 
 
 
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET)
-                ? APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive)
-                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode == PageMode.ANON,
-                        id.getId(), user, mode == PageMode.ANON);
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
+            .find(contentShorty.longId, user, mode.showLive)
+                : APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentShorty.longId, mode == PageMode.ANON, id.getId(), user,
+                            mode == PageMode.ANON);
 
-        if (contentlet.getContentType().baseType() == BaseContentType.WIDGET) {
+        if (contentlet.getContentType()
+            .baseType() == BaseContentType.WIDGET) {
             Map<String, String> response = new HashMap<>();
             response.put("render", WidgetResource.parseWidget(req, res, contentlet));
 
-            return Response.ok(response).build();
+            return Response.ok(response)
+                .build();
 
 
         }
 
-        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {
-            throw new ResourceNotFoundException("Can't find Container:" + containerId);
-        });
+        ShortyId containerShorty = APILocator.getShortyAPI()
+            .getShorty(containerId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find Container:" + containerId);
+            });
 
-        Container container = (containerShorty.subType == ShortType.CONTAINER)
-                ? APILocator.getContainerAPI().find(containerId, user, mode == PageMode.ANON)
-                : (mode.showLive)
-                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user,
-                                mode == PageMode.ANON)
-                        : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user,
-                                mode == PageMode.ANON);
+        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
+            .find(containerId, user, mode == PageMode.ANON)
+                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    .findLiveVersion(containerShorty.longId, user, mode == PageMode.ANON)
+                        : (Container) APILocator.getVersionableAPI()
+                            .findWorkingVersion(containerShorty.longId, user, mode == PageMode.ANON);
 
 
-        Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
+        Identifier containerIdentifier = APILocator.getIdentifierAPI()
+            .find(container);
 
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
         context.remove("EDIT_MODE");
@@ -202,10 +210,15 @@ public class ContainerResource implements Serializable {
         context.put("contentletList" + container.getIdentifier(), Lists.newArrayList(contentlet.getIdentifier()));
         StringWriter out = new StringWriter();
 
-        final ContainerStructure cStruct = APILocator.getContainerAPI().getContainerStructures(container).stream()
-                .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId())).findFirst().orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find container structure template:" + contentletId);
-                });
+        final ContainerStructure cStruct = APILocator.getContainerAPI()
+            .getContainerStructures(container)
+            .stream()
+            .filter(cs -> contentlet.getStructureInode()
+                .equals(cs.getStructureId()))
+            .findFirst()
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find container structure template:" + contentletId);
+            });
 
 
 
@@ -215,13 +228,15 @@ public class ContainerResource implements Serializable {
         container.setPostLoop(null);
 
 
-        VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(),
-                ContainerServices.buildVelocity(container, containerIdentifier, false));
+        VelocityUtil.getEngine()
+            .evaluate(context, out, this.getClass()
+                .getName(), ContainerServices.buildVelocity(container, containerIdentifier, false));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());
 
-        return Response.ok(response).build();
+        return Response.ok(response)
+            .build();
 
     }
 
@@ -232,7 +247,7 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("add/{containerId}/content/{contentletId}/uid/{uid}/order/{}")
+    @Path("add/{containerId}/content/{contentletId}/uid/{uid}/order/{order}")
     public final Response addContentToContainer(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
             @QueryParam("order") final int order, @PathParam("uid") final String uid) throws DotDataException,
@@ -243,45 +258,52 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
-        final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        final Language id = WebAPILocator.getLanguageWebAPI()
+            .getLanguage(req);
 
-        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {
-            throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-        });
-
-
-
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET)
-                ? APILocator.getContentletAPI().find(contentShorty.longId, user, mode.showLive)
-                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode == PageMode.ANON,
-                        id.getId(), user, mode == PageMode.ANON);
-        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {
-            throw new ResourceNotFoundException("Can't find Container:" + containerId);
-        });
-
-
-        Container container = (containerShorty.subType == ShortType.CONTAINER)
-                ? APILocator.getContainerAPI().find(containerId, user, mode == PageMode.ANON)
-                : (mode.showLive)
-                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user,
-                                mode == PageMode.ANON)
-                        : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user,
-                                mode == PageMode.ANON);
-
-
-        APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.EDIT, user);
-        APILocator.getPermissionAPI().checkPermission(container, PermissionLevel.EDIT, user);
+        ShortyId contentShorty = APILocator.getShortyAPI()
+            .getShorty(contentletId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+            });
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
+            .find(contentShorty.longId, user, mode.showLive)
+                : APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentShorty.longId, mode == PageMode.ANON, id.getId(), user,
+                            mode == PageMode.ANON);
 
 
 
-        MultiTree mt =
-                new MultiTree().setContainer(containerId).setContentlet(contentletId).setRelationType(uid).setTreeOrder(order);
+        ShortyId containerShorty = APILocator.getShortyAPI()
+            .getShorty(containerId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find Container:" + containerId);
+            });
+        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
+            .find(containerId, user, mode == PageMode.ANON)
+                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    .findLiveVersion(containerShorty.longId, user, mode == PageMode.ANON)
+                        : (Container) APILocator.getVersionableAPI()
+                            .findWorkingVersion(containerShorty.longId, user, mode == PageMode.ANON);
+
+
+        APILocator.getPermissionAPI()
+            .checkPermission(contentlet, PermissionLevel.READ, user);
+        APILocator.getPermissionAPI()
+            .checkPermission(container, PermissionLevel.EDIT, user);
+
+
+
+        MultiTree mt = new MultiTree().setContainer(containerId)
+            .setContentlet(contentletId)
+            .setRelationType(uid)
+            .setTreeOrder(order);
 
         MultiTreeFactory.saveMultiTree(mt);
 
 
-
-        return Response.ok("ok").build();
+        return Response.ok("ok")
+            .build();
     }
 
 
@@ -301,17 +323,49 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
-        final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        final Language id = WebAPILocator.getLanguageWebAPI()
+            .getLanguage(req);
+
+        ShortyId contentShorty = APILocator.getShortyAPI()
+            .getShorty(contentletId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+            });
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
+            .find(contentShorty.longId, user, mode.showLive)
+                : APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentShorty.longId, mode == PageMode.ANON, id.getId(), user,
+                            mode == PageMode.ANON);
 
 
-        
-        
-        
-        
-        
-        
 
-        return Response.ok("ok").build();
+        ShortyId containerShorty = APILocator.getShortyAPI()
+            .getShorty(containerId)
+            .orElseGet(() -> {
+                throw new ResourceNotFoundException("Can't find Container:" + containerId);
+            });
+        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
+            .find(containerId, user, mode == PageMode.ANON)
+                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    .findLiveVersion(containerShorty.longId, user, mode == PageMode.ANON)
+                        : (Container) APILocator.getVersionableAPI()
+                            .findWorkingVersion(containerShorty.longId, user, mode == PageMode.ANON);
+
+
+        APILocator.getPermissionAPI()
+            .checkPermission(contentlet, PermissionLevel.READ, user);
+        APILocator.getPermissionAPI()
+            .checkPermission(container, PermissionLevel.EDIT, user);
+
+        MultiTree mt = new MultiTree().setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid);
+
+        
+        MultiTreeFactory.deleteMultiTree(mt);
+        
+        return Response.ok("ok")
+                .build();
     }
 
 
@@ -325,26 +379,46 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
 
-        Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        Language id = WebAPILocator.getLanguageWebAPI()
+            .getLanguage(req);
 
         PageMode mode = PageMode.get(req);
 
-        Container container = APILocator.getContainerAPI().find(containerId, user, mode == PageMode.ANON);
+        Container container = APILocator.getContainerAPI()
+            .find(containerId, user, mode == PageMode.ANON);
 
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-        Contentlet contentlet = APILocator.getContentletAPI().find(contentInode, user, mode == PageMode.ANON);
-        ContainerStructure cStruct = APILocator.getContainerAPI().getContainerStructures(container).stream()
-                .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId())).findFirst().orElse(null);
+        Contentlet contentlet = APILocator.getContentletAPI()
+            .find(contentInode, user, mode == PageMode.ANON);
+        ContainerStructure cStruct = APILocator.getContainerAPI()
+            .getContainerStructures(container)
+            .stream()
+            .filter(cs -> contentlet.getStructureInode()
+                .equals(cs.getStructureId()))
+            .findFirst()
+            .orElse(null);
 
         StringWriter in = new StringWriter();
         StringWriter out = new StringWriter();
-        in.append("#set ($contentletList").append(container.getIdentifier()).append(" = [").append(contentlet.getIdentifier())
-                .append("] )").append("#set ($totalSize").append(container.getIdentifier()).append("=").append("1").append(")")
-                .append("#parseContainer(\"").append(container.getIdentifier()).append("\")");
+        in.append("#set ($contentletList")
+            .append(container.getIdentifier())
+            .append(" = [")
+            .append(contentlet.getIdentifier())
+            .append("] )")
+            .append("#set ($totalSize")
+            .append(container.getIdentifier())
+            .append("=")
+            .append("1")
+            .append(")")
+            .append("#parseContainer(\"")
+            .append(container.getIdentifier())
+            .append("\")");
 
 
 
-        VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(), IOUtils.toInputStream(in.toString()));
+        VelocityUtil.getEngine()
+            .evaluate(context, out, this.getClass()
+                .getName(), IOUtils.toInputStream(in.toString()));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());
