@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
