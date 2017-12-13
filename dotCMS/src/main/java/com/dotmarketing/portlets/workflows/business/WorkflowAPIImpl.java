@@ -60,6 +60,7 @@ import com.liferay.portal.model.User;
 
 import org.osgi.framework.BundleContext;
 
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -310,17 +311,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void deleteStep(final WorkflowStep step) throws DotDataException {
 
+		Savepoint savepoint = null;
 		try {
 
 			// Checking for Next Step references
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
-				if(otherStep.equals(step))
-					continue;
+				//if(otherStep.equals(step))
+				//		continue;
 
-				for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
-					if(a.getNextStep().equals(step.getId())){
+				for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+
+					if(action.getNextStep().equals(step.getId())) {
 						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
-								" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
+								" Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
 					}
 				}
 			}
@@ -330,10 +333,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+countContentletsReferencingStep+" contenlet(s)</b> </br></br>");
 			}
 
-			this.workFlowFactory.deleteActions(step);
-			this.workFlowFactory.deleteStep(step);
-		}
-		catch(Exception e){
+			this.workFlowFactory.deleteActions(step); // workflow_action_step
+			this.workFlowFactory.deleteStep(step);    // workflow_step
+		} catch(Exception e){
+
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
@@ -448,7 +451,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						comment}, false)
 					);
 		} catch (LanguageException e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(WorkflowAPIImpl.class,e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class,e.getMessage(),e);
 		}
 		saveWorkflowHistory(history);
 	}
@@ -624,7 +628,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		} catch (Exception e) {
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
@@ -674,19 +679,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw e;
 		} catch (AlreadyExistException e) {
 
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException("Workflow-action-already-exists", e);
 		} catch (DotSecurityException e) {
 
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException("Workflow-permission-issue-save-action", e);
 		} catch (Exception e) {
 			if (DbConnectionFactory.isConstraintViolationException(e.getCause())) {
 
-				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-action-already-exists", e);
 			} else {
-				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+
+				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
 		}
@@ -763,7 +773,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).newInstance();
 							actionletList.add(actionlet);
 						} catch (Exception e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 
@@ -772,9 +783,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						try {
 							actionletList.add(z.newInstance());
 						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 
@@ -788,9 +801,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 								actionletClasses.add( actionlet.getClass() );
 							}
 						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+							Logger.error(WorkflowAPIImpl.class,e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+							Logger.error(WorkflowAPIImpl.class,e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 				}
@@ -946,7 +961,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				HibernateUtil.closeAndCommitTransaction();
 			}
 		} catch (Exception e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(WorkflowAPIImpl.class,e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			if(localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
@@ -1059,7 +1075,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				HibernateUtil.rollbackTransaction();
 			}
 			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
 		} finally {
 			if(local){

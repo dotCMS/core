@@ -16,6 +16,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
@@ -956,9 +957,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		}
 
-		final WorkflowStep proxyStep = new WorkflowStep();
-		proxyStep.setId(action.getStepId());
-		cache.removeActions(proxyStep);
+		final List<WorkflowStep> relatedProxiesSteps =
+				this.findProxiesSteps(action);
+		relatedProxiesSteps.forEach( proxyStep -> cache.removeActions(proxyStep) );
 
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());
@@ -970,6 +971,33 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	private List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
+
+		final ImmutableList.Builder<WorkflowStep> stepsBuilder =
+				new ImmutableList.Builder<>();
+
+		final List<Map<String, Object>> stepIdList =
+				new DotConnect().setSQL(sql.SELECT_STEPS_ID_BY_ACTION)
+						.addParam(action.getId()).loadObjectResults();
+
+		if (null != stepIdList) {
+
+			stepIdList.forEach( mapRow ->  stepsBuilder.add
+					(this.buildProxyWorkflowStep((String)mapRow.get("stepid"))) );
+		}
+
+		return stepsBuilder.build();
+	}
+
+	private WorkflowStep buildProxyWorkflowStep (final String stepId) {
+
+		final WorkflowStep proxyWorkflowStep =
+				new WorkflowStep();
+
+		proxyWorkflowStep.setId(stepId);
+
+		return proxyWorkflowStep;
+	}
 
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {

@@ -107,7 +107,8 @@ public class WorkflowHelper {
                     workflowReorderActionStepForm.getOrder());
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
     }  // reorderAction.
@@ -127,7 +128,8 @@ public class WorkflowHelper {
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (Exception e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowStep) {
@@ -137,7 +139,8 @@ public class WorkflowHelper {
                 Logger.debug(this, "deleting step: " + stepId);
                 this.workflowAPI.deleteStep(workflowStep);
             } catch (DotDataException e) {
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -165,7 +168,8 @@ public class WorkflowHelper {
                     (actionId, user);
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != action) {
@@ -176,7 +180,8 @@ public class WorkflowHelper {
                 this.workflowAPI.deleteAction(action);
             } catch (DotDataException | AlreadyExistException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -224,7 +229,8 @@ public class WorkflowHelper {
             this.workflowAPI.deleteAction(action, step);
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -251,7 +257,8 @@ public class WorkflowHelper {
                     (contentTypeAPI.find(contentTypeId));
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -273,7 +280,8 @@ public class WorkflowHelper {
                     this.workflowAPI.findSchemes(false);
         } catch (DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -297,7 +305,8 @@ public class WorkflowHelper {
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (Exception e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowStep) {
@@ -308,7 +317,8 @@ public class WorkflowHelper {
                 actions = this.workflowAPI.findActions(workflowStep, user);
             } catch (DotDataException  | DotSecurityException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -335,7 +345,8 @@ public class WorkflowHelper {
             workflowScheme = this.workflowAPI.findScheme(schemeId);
         } catch (DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowScheme) {
@@ -345,7 +356,8 @@ public class WorkflowHelper {
                 workflowSteps = this.workflowAPI.findSteps(workflowScheme);
             } catch (DotDataException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -427,7 +439,8 @@ public class WorkflowHelper {
                             APILocator.getUserAPI().getSystemUser(): user);
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -508,13 +521,15 @@ public class WorkflowHelper {
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass);
                     } catch (Exception e) {
-                        Logger.error(this.getClass(), e.getMessage(), e);
+                        Logger.error(this.getClass(), e.getMessage());
+                        Logger.debug(this, e.getMessage(), e);
                         throw new DotWorkflowException(e.getMessage(), e);
                     }
                 });
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 

@@ -2,6 +2,8 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.common.db.ForeignKey;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -12,6 +14,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -147,20 +150,42 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
 
         // SCHEMA CHANGES
-        this.createWorkflowActionStepTable     (dc);
+        this.createWorkflowActionStepTable           (dc);
         final boolean schemeIdColumnCreated =
-                this.addSchemeIdColumn         (dc);
-        this.addShowOnColumn                   (dc);
-
+                this.addSchemeIdColumn               (dc);
+        this.addShowOnColumn                         (dc);
+        this.removeWorkflowActionStepIdWorkflowStepFK();
         // DATA CHANGES
-        this.addWorkflowActionStepData         (dc);
-        this.updateWorkflowActionData          (dc);
-        this.updateWorkflowSchemeXStructureData(dc);
+        this.addWorkflowActionStepData               (dc);
+        this.updateWorkflowActionData                (dc);
+        this.updateWorkflowSchemeXStructureData      (dc);
 
         if (schemeIdColumnCreated) {
-            this.addNotNullConstraintShowOnColumn(dc);
+            this.addNotNullConstraintShowOnColumn    (dc);
         }
+
+
     } // executeUpgrade.
+
+    private void removeWorkflowActionStepIdWorkflowStepFK() throws DotDataException {
+
+        final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
+        final ForeignKey foreignKey        = metaData.findForeignKeys
+                ("workflow_action", "workflow_step",
+                        Arrays.asList("step_id"), Arrays.asList("id"));
+
+        if (null != foreignKey) {
+
+            try {
+                Logger.info(this, "Droping the FK: " +foreignKey);
+                metaData.dropForeignKey(foreignKey);
+            } catch (SQLException e) {
+                throw new DotDataException(e.getMessage(), e);
+            } finally {
+                this.closeCommitAndStartTransaction();
+            }
+        }
+    }
 
     private void addNotNullConstraintShowOnColumn(final DotConnect dc) throws DotHibernateException {
 
