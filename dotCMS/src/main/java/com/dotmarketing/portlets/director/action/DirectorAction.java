@@ -500,7 +500,7 @@ public class DirectorAction extends DotPortletAction {
 	
 	                if (InodeUtils.isSet(identifier.getInode()) && InodeUtils.isSet(htmlPageIdentifier.getInode()) && InodeUtils.isSet(containerIdentifier.getInode())) {
 	                    MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(),containerIdentifier.getInode(),identifier.getInode());
-	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTree(htmlPage, container);
+	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
 	                    for (int i = 0; i < treeList.size(); i++) {
 	                    	if(treeList.get(i).getChild().equals(identifier.getInode())){
 	                    	duplicateContentCheck = true;

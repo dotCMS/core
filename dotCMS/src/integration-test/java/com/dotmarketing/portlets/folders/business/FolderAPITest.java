@@ -348,7 +348,7 @@ public class FolderAPITest {
 		pages = htmlPageAssetAPI.getLiveHTMLPages(newftest3,user, false);
 		Assert.assertTrue(pages.size() == 1 && pages.get(0).getTitle().equals(page2Str));		
 		
-		final List<MultiTree> mt= MultiTreeFactory.getMultiTree(pages.get(0).getIdentifier());
+		final List<MultiTree> mt= MultiTreeFactory.getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
 		
 	}
@@ -592,7 +592,7 @@ public class FolderAPITest {
 				.getPageByPath(newftest1.getPath()+page1Str, host, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr));
 
-		List<MultiTree> mt= MultiTreeFactory.getMultiTree(page.getIdentifier());
+		List<MultiTree> mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
 		Thread.sleep(3000);
 		List<FileAsset> files = fileAssetAPI
@@ -626,7 +626,7 @@ public class FolderAPITest {
 				.getPageByPath(newftest3.getPath()+pageStr3, host, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr3));
 		
-		mt= MultiTreeFactory.getMultiTree(page.getIdentifier());
+		mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset7.getIdentifier()) );
 		
 	}

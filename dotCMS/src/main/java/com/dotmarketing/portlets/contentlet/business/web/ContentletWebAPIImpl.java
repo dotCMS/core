@@ -288,7 +288,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					Logger.debug(this, "Coming from multitree parent1=" + multiTree.getParent1() + " parent2="
 							+ multiTree.getParent2());
 
-					int contentletCount = MultiTreeFactory.getMultiTree(htmlParentId).size();
+					int contentletCount = MultiTreeFactory.getMultiTrees(htmlParentId).size();
 
 					if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 						Logger.debug(this, "MTree is null!!! Creating new one!");

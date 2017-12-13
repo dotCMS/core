@@ -972,7 +972,7 @@ public class WebAssetFactory {
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
 			if (currWebAsset instanceof Container)
 			{
-				multiTrees = MultiTreeFactory.getMultiTree(identifier);
+				multiTrees = MultiTreeFactory.getMultiTrees(identifier);
 			}
 			if(UtilMethods.isSet(multiTrees))
 			{

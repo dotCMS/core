@@ -667,7 +667,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -993,7 +993,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {

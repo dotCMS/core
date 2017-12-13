@@ -815,7 +815,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getId());
+        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreesByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {
@@ -1003,7 +1003,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Identifier id = APILocator.getIdentifierAPI().find(contentlet);
         if (!InodeUtils.isSet(id.getId()))
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getId());
+        List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
         for (MultiTree tree : trees) {
             IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
@@ -1535,7 +1535,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
             // Remove page contents (if the content is a Content Page)
-            List<MultiTree> mts = MultiTreeFactory.getMultiTreeByChild(con.getIdentifier());
+            List<MultiTree> mts = MultiTreeFactory.getMultiTreesByChild(con.getIdentifier());
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {

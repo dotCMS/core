@@ -1106,7 +1106,7 @@ public class BrowserAjax {
                 	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
                 }
                 /*copy page associated contentlets*/
-                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+                List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
                 for(MultiTree m : pageContents){
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
                    	MultiTreeFactory.saveMultiTree(mt);

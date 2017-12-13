@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
+
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Identifier;
@@ -29,9 +30,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.DBTreeTransformer;
 import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.fixtask.FixTasksExecutor;
-import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.plugin.model.PluginProperty;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
@@ -60,17 +59,6 @@ import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 
-import com.google.common.collect.ImmutableSet;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.ImageLocalManagerUtil;
-import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -83,18 +71,28 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-
 import org.quartz.JobExecutionContext;
+
+import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.ImageLocalManagerUtil;
+import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * This class provides access to maintenance routines that dotCMS users can run
@@ -533,14 +531,13 @@ public class CMSMaintenanceAjax {
 	                        list = MultiTreeFactory.dbToMultiTree(dc.loadResults());
 						} else {
 							dh.setQuery("from " + clazz.getName() + " order by 1");
-<<<<<<< HEAD
+
 						}
 
 						if(Identifier.class.equals(clazz)){
 							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
 						}else{
-=======
->>>>>>> issue-13164-delete-template_container
+
 							list = dh.list();
 						}
 

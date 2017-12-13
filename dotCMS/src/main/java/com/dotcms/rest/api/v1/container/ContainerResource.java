@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.container;
 
-import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -56,10 +55,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+import com.beust.jcommander.internal.Maps;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 
@@ -129,7 +130,8 @@ public class ContainerResource implements Serializable {
         final User user = initData.getUser();
 
         try {
-            final Map<String, Object> extraParams = map(ContainerPaginator.HOST_PARAMETER_ID, hostId);
+            final Map<String, Object> extraParams = Maps.newHashMap();
+            extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, (Object) hostId);
             return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
         } catch (Exception e) {
@@ -138,8 +140,6 @@ public class ContainerResource implements Serializable {
 
         }
     }
-
-
 
     @GET
     @JSONP
@@ -304,9 +304,60 @@ public class ContainerResource implements Serializable {
         final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
 
 
+        
+        
+        
+        
+        
+        
 
         return Response.ok("ok").build();
     }
 
 
+
+    @Path("/containerContent/{params:.*}")
+    public final Response containerContents(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
+            @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
+            throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
+            ResourceNotFoundException, IOException {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+
+        Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+        PageMode mode = PageMode.get(req);
+
+        Container container = APILocator.getContainerAPI().find(containerId, user, mode == PageMode.ANON);
+
+        org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+        Contentlet contentlet = APILocator.getContentletAPI().find(contentInode, user, mode == PageMode.ANON);
+        ContainerStructure cStruct = APILocator.getContainerAPI().getContainerStructures(container).stream()
+                .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId())).findFirst().orElse(null);
+
+        StringWriter in = new StringWriter();
+        StringWriter out = new StringWriter();
+        in.append("#set ($contentletList").append(container.getIdentifier()).append(" = [").append(contentlet.getIdentifier())
+                .append("] )").append("#set ($totalSize").append(container.getIdentifier()).append("=").append("1").append(")")
+                .append("#parseContainer(\"").append(container.getIdentifier()).append("\")");
+
+
+
+        VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(), IOUtils.toInputStream(in.toString()));
+
+        Map<String, String> response = new HashMap<>();
+        response.put("render", out.toString());
+
+        final Response.ResponseBuilder responseBuilder = Response.ok(response);
+
+
+
+        return responseBuilder.build();
+
+    }
+
+
+
 }
+

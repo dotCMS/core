@@ -712,8 +712,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         if (!liveMode) {
-            requestProxy.setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.PREVIEW);
-            requestProxy.setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.PREVIEW);
+            PageMode.setPageMode(requestProxy, PageMode.PREVIEW);
         }
         boolean signedIn = false;
 

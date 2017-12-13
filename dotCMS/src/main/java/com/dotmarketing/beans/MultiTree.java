@@ -14,6 +14,8 @@ public class MultiTree implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String LEGACY_RELATION_TYPE="LEGACY_RELATION_TYPE";
+    
     /** identifier field */
     private String htmlPage;
 
@@ -35,19 +37,19 @@ public class MultiTree implements Serializable {
         this.htmlPage = htmlPage;
         this.container = container;
         this.contentlet = child;
-        this.relationType = relationType;
-        this.treeOrder = treeOrder;
+        this.relationType = (relationType==null) ? LEGACY_RELATION_TYPE : relationType;
+        this.treeOrder =  (treeOrder<0)? 0  : treeOrder;
     }
 
     /** default constructor */
     public MultiTree() {
-        this(null, null, null, null,0);
+        this(null, null, null, LEGACY_RELATION_TYPE,0);
     }
 
     /** minimal constructor */
 
     public MultiTree(String htmlPage, String container, String child) {
-        this(htmlPage, container, child, null,0);
+        this(htmlPage, container, child, LEGACY_RELATION_TYPE,0);
     }
     /**
      * 
@@ -77,7 +79,7 @@ public class MultiTree implements Serializable {
     }
 
     public MultiTree setRelationType(java.lang.String relationType) {
-        this.relationType = relationType;
+        this.relationType = (relationType==null) ? LEGACY_RELATION_TYPE : relationType;
         return new MultiTree(this.htmlPage, this.container, this.contentlet, relationType, this.treeOrder);
     }
 
@@ -86,6 +88,7 @@ public class MultiTree implements Serializable {
     }
 
     public MultiTree setTreeOrder(int treeOrder) {
+        treeOrder = (treeOrder<0)? 0  : treeOrder;
         this.treeOrder = treeOrder;
         return new MultiTree(this.htmlPage, this.container, this.contentlet, this.relationType, treeOrder);
     }
