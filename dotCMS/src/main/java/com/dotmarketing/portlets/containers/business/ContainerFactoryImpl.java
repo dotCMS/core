@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -309,22 +310,35 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return assets;
 	}
 
-    public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
-        HibernateUtil dh = new HibernateUtil(Container.class);
+    public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException {
+        return findContainersForStructure(structureIdentifier, false);
+    }
 
-        StringBuilder query = new StringBuilder();
+	@Override
+	public List<Container> findContainersForStructure(String structureIdentifier,
+			boolean workingOrLiveOnly) throws DotDataException {
+		HibernateUtil dh = new HibernateUtil(Container.class);
 
-        query.append("FROM c IN CLASS ");
+		StringBuilder query = new StringBuilder();
+
+		query.append("FROM c IN CLASS ");
 		query.append(Container.class);
 		query.append(" WHERE  exists ( from cs in class ");
 		query.append(ContainerStructure.class.getName());
-		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ) ");
-        dh.setQuery(query.toString());
-        dh.setParam(structureInode);
-        return dh.list();
-    }
-    
-    /**
+		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ");
+		if (workingOrLiveOnly) {
+			query.append(" AND EXISTS ( FROM vi IN CLASS ");
+			query.append(ContainerVersionInfo.class.getName());
+			query.append(" WHERE vi.identifier = c.identifier AND ");
+			query.append(" (cs.containerInode = vi.workingInode OR cs.containerInode = vi.liveInode ) ) ");
+		}
+		query.append(") ");
+		dh.setQuery(query.toString());
+		dh.setParam(structureIdentifier);
+		return dh.list();
+	}
+
+	/**
 	 * Method will replace user references of the given userId in containers 
 	 * with the replacement user id 
 	 * @param userId User Identifier

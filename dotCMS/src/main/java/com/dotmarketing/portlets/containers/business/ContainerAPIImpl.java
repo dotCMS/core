@@ -506,7 +506,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	    return containerFactory.findContainersForStructure(structureInode);
 	}
 
-    @Override
+	@CloseDBIfOpened
+	@Override
+	public List<Container> findContainersForStructure(String structureInode,
+			boolean workingOrLiveOnly) throws DotDataException {
+		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly);
+	}
+
+	@Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }

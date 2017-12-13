@@ -562,7 +562,7 @@ public class StructureAjax {
 		List<Map<String,String>> containersList = new ArrayList<Map<String,String>>();
 		
 		// checking if there are containers using this structure
-		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode);
+		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode, true);
 		Map<String, Container> containersInUse = new HashMap<String, Container>();		
 		
 		for(Container c : containers) {
