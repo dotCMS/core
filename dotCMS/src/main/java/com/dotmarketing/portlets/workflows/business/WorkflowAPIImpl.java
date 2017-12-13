@@ -809,7 +809,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					task.setAssignedTo(processor.getNextAssign().getId());
 				task.setStatus(processor.getNextStep().getId());
 
-				saveWorkflowTask(task,processor);
 				if(processor.getWorkflowMessage() != null){
 					WorkflowComment comment = new WorkflowComment();
 					comment.setComment(processor.getWorkflowMessage());
@@ -834,6 +833,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
+			saveWorkflowTask(task,processor);
 			if(UtilMethods.isSet(processor.getContentlet())){
 			    APILocator.getContentletAPI().refresh(processor.getContentlet());
 			}
