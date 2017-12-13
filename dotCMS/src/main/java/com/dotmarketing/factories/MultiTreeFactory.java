@@ -41,15 +41,18 @@ import com.google.common.collect.Lists;
 public class MultiTreeFactory {
 
     final static String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
-    final static String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
-    
-    final static String INSERT_SQL="insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
-    
+    final static String SELECT_SQL =
+            "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
+
+    final static String INSERT_SQL =
+            "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
+
     final static String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
     final static String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     final static String SELECT_ALL = "select * from multi_tree  ";
     final static String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
-    final static String SELECT_BY_PARENTS_AND_RELATIONS = " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
+    final static String SELECT_BY_PARENTS_AND_RELATIONS =
+            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
 
     public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
@@ -69,14 +72,12 @@ public class MultiTreeFactory {
      */
     private static void _dbDelete(final MultiTree mTree) throws DotDataException {
 
-
         DotConnect db = new DotConnect().setSQL(DELETE_SQL)
             .addParam(mTree.getHtmlPage())
             .addParam(mTree.getContainer())
             .addParam(mTree.getContentlet())
             .addParam(mTree.getRelationType());
         db.loadResult();
-
 
     }
 
@@ -106,8 +107,6 @@ public class MultiTreeFactory {
     public static MultiTree getMultiTree(String htmlPage, String container, String childContent, String relationType)
             throws DotDataException {
 
-
-
         DotConnect db = new DotConnect().setSQL(SELECT_SQL)
             .addParam(htmlPage)
             .addParam(container)
@@ -115,12 +114,9 @@ public class MultiTreeFactory {
             .addParam(relationType);
         db.loadResult();
 
-
         return dbToMultiTree(db.loadObjectResults()).stream()
             .findFirst()
             .orElse(null);
-
-
 
     }
 
@@ -210,29 +206,10 @@ public class MultiTreeFactory {
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
 
-
     }
-
-    @WrapInTransaction
-    public static void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException {
-        if (mTrees == null || mTrees.isEmpty())
-            throw new DotDataException("empty list passed in");
-        int i = 0;
-        for (MultiTree tree : mTrees) {
-            _dbUpsert(tree.setTreeOrder(i++));
-        }
-        MultiTree mTree = mTrees.get(0);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
-        refreshPageInCache(mTree.getHtmlPage());
-
-
-    }
-
-
 
     /**
-     * Saves a multi-tree construct using the default language in the system. A muti-tree is usually
-     * composed of the following five parts:
+     * Saves a multi-tree 
      * <ol>
      * <li>The identifier of the Content Page.</li>
      * <li>The identifier of the container in the page.</li>
@@ -246,12 +223,25 @@ public class MultiTreeFactory {
      * @throws DotSecurityException
      */
     @WrapInTransaction
+    public static void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty())
+            throw new DotDataException("empty list passed in");
+        int i = 0;
+        for (MultiTree tree : mTrees) {
+            _dbUpsert(tree.setTreeOrder(i++));
+        }
+        MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
+
+    }
+
+
+
     private static void _dbUpsert(final MultiTree mtree) throws DotDataException {
 
         _dbDelete(mtree);
         _dbInsert(mtree);
-
-
 
     }
 
@@ -266,14 +256,12 @@ public class MultiTreeFactory {
 
         saveMultiTrees(trees);
 
-
     }
 
 
 
     private static void _dbInsert(final MultiTree o) throws DotDataException {
-        new DotConnect()
-            .setSQL(INSERT_SQL)
+        new DotConnect().setSQL(INSERT_SQL)
             .addParam(o.getHtmlPage())
             .addParam(o.getContainer())
             .addParam(o.getContentlet())
@@ -295,7 +283,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException
      * 
      */
-    private static void updateHTMLPageVersionTS(String id) throws DotDataException {
+    private static void updateHTMLPageVersionTS(final String id) throws DotDataException {
         List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
             .findContentletVersionInfos(id);
         for (ContentletVersionInfo versionInfo : infos) {
@@ -315,7 +303,7 @@ public class MultiTreeFactory {
      * @throws DotDataException
      * 
      */
-    private static void refreshPageInCache(String pageIdentifier) throws DotDataException {
+    private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
         Set<String> inodes = new HashSet<String>();
         List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
             .findContentletVersionInfos(pageIdentifier);
@@ -346,8 +334,6 @@ public class MultiTreeFactory {
         final String child = (String) row.getOrDefault("child", null);
         final int order = Integer.valueOf((Integer) row.getOrDefault("tree_order", 0));
         return new MultiTree(parent1, parent2, child, relationType, order);
-
-
     }
 
     public static List<MultiTree> dbToMultiTree(List<Map<String, Object>> dbRows) {
