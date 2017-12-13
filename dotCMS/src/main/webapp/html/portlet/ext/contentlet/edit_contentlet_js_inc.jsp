@@ -77,14 +77,19 @@
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
     function cancelEditCallback(callbackData){
-
-        if(callbackData.indexOf("referer") != -1){
-            var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
-            sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
-            callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
-            self.location = callbackData+"&referer="+escape(sourceReferer);
-        }else{
-            self.location = callbackData;
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                event: 'cancel'
+            });
+        } else {
+            if (callbackData.indexOf("referer") != -1) {
+                var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
+                sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
+                callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
+                self.location = callbackData+"&referer="+escape(sourceReferer);
+            } else {
+                self.location = callbackData;
+            }
         }
     }
 
@@ -577,8 +582,13 @@
             return;
         }
 
-
-
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                event: 'save',
+                data: data
+            });
+            return;
+        }
 
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
