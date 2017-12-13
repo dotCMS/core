@@ -755,6 +755,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
         buffy.append(")");
+        
+        if(user==null || "anonymous".equals(user.getUserId())) {
+            buffy.append(" +live:true ");
+        }
+        
+        
     }
 
     @Override
