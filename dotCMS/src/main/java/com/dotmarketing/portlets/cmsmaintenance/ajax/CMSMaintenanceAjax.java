@@ -253,7 +253,7 @@ public class CMSMaintenanceAjax {
 
 		if (!contentlets.isEmpty()) {
 			for (Contentlet contentlet : contentlets) {
-				boolean delete = conAPI.delete(contentlet, user, true, true);
+				boolean delete = conAPI.destroy(contentlet, user, true);
 
 				if (!delete){
 					conditionletWithErrors.add(contentlet.getIdentifier());

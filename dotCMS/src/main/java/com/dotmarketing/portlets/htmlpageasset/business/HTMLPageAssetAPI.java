@@ -170,6 +170,19 @@ public interface HTMLPageAssetAPI {
 	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
 			throws  DotDataException, DotSecurityException;
 
+	/**
+	 * Gets a list of Page Contentlets using a specific Template
+	 * @param template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param limit
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles, int limit)
+			throws  DotDataException, DotSecurityException;
+
     List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
     
     public String getHTML(IHTMLPage htmlPage, String userAgent)

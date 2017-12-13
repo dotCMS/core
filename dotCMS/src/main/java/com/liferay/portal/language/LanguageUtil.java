@@ -189,14 +189,17 @@ public class LanguageUtil {
         return value;
     }
 
-	public static String get(PageContext pageContext, String key)
+	public static String get(PageContext pageContext, String key) throws LanguageException {
+    	return get(pageContext, key, null);
+	}
+	public static String get(PageContext pageContext, String key, Object... args)
 		throws LanguageException {
 		Logger.debug(LanguageUtil.class, key);
 		String value = null;
 
 		try {
 			value = TagUtils.getInstance().message(
-				pageContext, null, null, key);
+				pageContext, null, null, key, args);
 		}
 		catch (Exception e) {
 			_log.error(e.getMessage());
