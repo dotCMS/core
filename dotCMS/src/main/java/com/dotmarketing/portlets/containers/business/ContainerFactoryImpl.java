@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -20,13 +21,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +66,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		dc.setSQL(sql.toString());
 
 
-		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
 
 	}
 
@@ -91,7 +90,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		dc.setSQL(sql.toString());
 
 
-		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
 
 	}
     @Override
@@ -260,7 +259,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)

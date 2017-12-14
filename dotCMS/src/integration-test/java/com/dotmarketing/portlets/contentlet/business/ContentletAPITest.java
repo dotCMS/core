@@ -69,7 +69,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -88,6 +87,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -2042,9 +2043,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
-        assertTrue(d1
-                .equals(ident.getSysPublishDate()));
-        assertTrue(d2.equals(ident.getSysExpireDate()));
+        assertTrue(compareDates(d1, ident.getSysPublishDate()));
+        assertTrue(compareDates(d2, ident.getSysExpireDate()));
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2061,15 +2061,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
-        assertTrue(d3
-                .equals(ident2.getSysPublishDate()));
-        assertTrue(d4
-                .equals(ident2.getSysExpireDate()));
+        assertTrue(compareDates(d3, ident2.getSysPublishDate()));
+        assertTrue(compareDates(d4, ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
-        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+        assertTrue(compareDates(d3, c11.getDateProperty(fieldPubDate.getVelocityVarName())));
+        assertTrue(compareDates(d4, c11.getDateProperty(fieldExpDate.getVelocityVarName())));
 
         Thread.sleep(2000); // wait a bit for the index
         
@@ -2080,6 +2078,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
+    }
+
+    private boolean compareDates(Date date1, Date date2) {
+
+        DateFormat dateFormat = SimpleDateFormat
+                .getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
+        return dateFormat.format(date1).equals(dateFormat.format(date2));
     }
 
 

@@ -16,6 +16,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
 import com.dotmarketing.beans.ClickstreamRequest;
@@ -52,7 +53,6 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.HibernateCollectionConverter;
 import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.ImportExportUtil;
@@ -655,7 +655,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     }
 
 					if(Identifier.class.equals(clazz)){
-						_list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+						_list = TransformerLocator
+								.createIdentifierTransformer(dc.loadObjectResults()).asList();
 					}else{
 						_list = _dh.list();
 					}
