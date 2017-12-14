@@ -310,7 +310,9 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             host: this.data.host || '',
             name: [this.data.name || '', [Validators.required]],
             publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
-            workflow: [{ value: this.data.workflow || [], disabled: true }],
+            workflow: [
+                { value: this.data.workflows ? this.data.workflows.map(workflow => workflow.id) : [], disabled: true }
+            ],
             defaultType: this.data.defaultType,
             fixed: this.data.fixed,
             folder: this.data.folder,
@@ -331,12 +333,6 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
     }
 
     private initWorkflowField(): void {
-        this.workflowOptions = this.workflowService
-            .get()
-            .flatMap((workflows: Workflow[]) => workflows)
-            .map((workflow: Workflow) => this.getWorkflowFieldOption(workflow))
-            .toArray();
-
         this.dotcmsConfig
             .getConfig()
             .take(1)
@@ -345,10 +341,18 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             });
     }
 
+    private fillWorkflowFieldOptions(): void {
+        this.workflowOptions = this.workflowService
+            .get()
+            .flatMap((workflows: Workflow[]) => workflows)
+            .map((workflow: Workflow) => this.getWorkflowFieldOption(workflow))
+            .toArray();
+    }
+
     private getWorkflowFieldOption(workflow: Workflow): SelectItem {
         return {
             label: workflow.name,
-            value: workflow.identifier
+            value: workflow.id
         };
     }
 
@@ -407,6 +411,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
     private updateWorkflowFormControl(license): void {
         if (!license.isCommunity) {
             const workflowControl = this.form.get('workflow');
+            this.fillWorkflowFieldOptions();
             workflowControl.enable();
 
             if (this.originalValue) {

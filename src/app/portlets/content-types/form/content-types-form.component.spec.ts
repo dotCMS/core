@@ -260,7 +260,7 @@ describe('ContentTypesFormComponent', () => {
         expect(submittButton.nativeElement.disabled).toBe(true, 'revert the change button disabled');
     });
 
-    it("should have submit button disabled after then form it's submitted correctly", () => {
+    it('should have submit button disabled after then form its submitted correctly', () => {
         comp.data = {
             baseType: 'CONTENT',
             id: '123',
@@ -530,7 +530,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.submitContent).toHaveBeenCalledTimes(1);
     });
 
-    // .focus() it's not being triggered
+    // .focus() its not being triggered
     xit('should toggle formState when the user focus on the name field', () => {
         comp.data = {
             baseType: 'CONTENT',
@@ -634,7 +634,7 @@ describe('ContentTypesFormComponent', () => {
         });
     });
 
-    it("should show workflow disabled and with message if the license community it's true", () => {
+    it('should show workflow disabled and with message if the license community its true', () => {
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(
             Observable.of({
                 license: { isCommunity: true }
@@ -651,7 +651,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('workflow').disabled).toBeTruthy();
     });
 
-    it("should show workflow enable and no message if the license community it's false", () => {
+    it('should show workflow enable and no message if the license community its false', () => {
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(
             Observable.of({
                 license: { isCommunity: false }
@@ -666,6 +666,21 @@ describe('ContentTypesFormComponent', () => {
         const workflowMsg = de.query(By.css('#field-workflow-hint'));
         expect(workflowMsg).toBeFalsy();
         expect(comp.form.get('workflow').disabled).toBeFalsy();
+    });
+
+    it('should call the WorkFlow endpoint if the license community its false', () => {
+        let workflowService: WorkflowService = fixture.debugElement.injector.get(WorkflowService);
+        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+            Observable.of({
+                license: { isCommunity: false }
+            })
+        );
+        spyOn(workflowService, 'get').and.returnValue(Observable.of([{'id': '123'}]));
+        comp.data = {
+            baseType: 'CONTENT'
+        };
+        fixture.detectChanges();
+        expect(workflowService.get).toHaveBeenCalled();
     });
 
     it('should render disabled dates fields and hint when date fields are not passed', () => {

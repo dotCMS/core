@@ -3,7 +3,7 @@ import { SelectItem } from 'primeng/primeng';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
-import {Workflow} from '../../../shared/models/workflow/workflow.model';
+import { Workflow } from '../../../shared/models/workflow/workflow.model';
 
 /**
  * Provide util methods to get Workflows.
@@ -21,28 +21,11 @@ export class WorkflowService {
      * @memberof WorkflowService
      */
     get(): Observable<Workflow[]> {
-        const dummyWorkflows: Workflow[] = [
-            {
-                name: 'WorkFlow #1',
-                identifier: '1'
-            },
-            {
-                name: 'WorkFlow #2',
-                identifier: '2'
-            },
-            {
-                name: 'Long Description WorkFlow #3. Lorem Ipsum. Lorem Ipsum',
-                identifier: '3'
-            },
-            {
-                name: 'WorkFlow #4',
-                identifier: '4'
-            },
-            {
-                name: 'WorkFlow #5',
-                identifier: '5'
-            }
-        ];
-        return Observable.of(dummyWorkflows);
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: 'v1/workflow/schemes'
+            })
+            .pluck('entity');
     }
 }
