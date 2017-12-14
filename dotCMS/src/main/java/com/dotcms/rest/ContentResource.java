@@ -891,7 +891,7 @@ public class ContentResource {
         try {
 
             // preparing categories
-            List<Category> cats = new ArrayList<Category>();
+            List<Category> cats = new ArrayList<>();
             List<Field> fields = new LegacyFieldTransformer(
                     APILocator.getContentTypeAPI(APILocator.systemUser()).
                             find(contentlet.getContentType().inode()).fields()).asOldFieldList();
@@ -968,9 +968,10 @@ public class ContentResource {
             boolean allowFrontEndSaving = Config
                     .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 
+            cats = UtilMethods.isSet(cats)?cats:null;
+
             contentlet = APILocator.getContentletAPI()
-                    .checkin(contentlet, relationships, cats, new ArrayList<Permission>(),
-                            init.getUser(), allowFrontEndSaving);
+                    .checkin(contentlet, relationships, cats, init.getUser(), allowFrontEndSaving);
 
             if (live) {
                 APILocator.getContentletAPI()
