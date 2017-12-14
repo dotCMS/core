@@ -471,16 +471,24 @@ public class RoleAPIImpl implements RoleAPI {
 		ImmutableList.Builder<Role> roleList = new ImmutableList.Builder<>();
 
 		Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-		roleList.add( anyWhoCanView );
+		if (null != anyWhoCanView) {
+			roleList.add(anyWhoCanView);
+		}
 
 		Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-		roleList.add( anyWhoCanEdit );
+		if (null != anyWhoCanEdit) {
+			roleList.add(anyWhoCanEdit);
+		}
 
 		Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-		roleList.add( anyWhoCanPublish );
+		if (null != anyWhoCanPublish) {
+			roleList.add(anyWhoCanPublish);
+		}
 
 		Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-		roleList.add( anyWhoCanEditPermissions );
+		if (null != anyWhoCanEditPermissions) {
+			roleList.add(anyWhoCanEditPermissions);
+		}
 
 		return roleList.build();
 	}
