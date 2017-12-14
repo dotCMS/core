@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.beans.TemplateContainers;
@@ -26,7 +27,6 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.services.TemplateServices;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
@@ -34,7 +34,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -91,11 +90,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
-		try {
-			return ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+
 	}
 
 
@@ -142,8 +139,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.addParam(host.getIdentifier());
 		dc.addParam(name);
 		try{
-			final List<Template> result = ConvertToPOJOUtil
-					.convertDotConnectMapToTemplate(dc.loadResults());
+			final List<Template> result = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 			if (result!= null && !result.isEmpty()){
 				return result.get(0);
 			}
@@ -280,7 +276,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToTemplate(dc.loadResults());
+				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
