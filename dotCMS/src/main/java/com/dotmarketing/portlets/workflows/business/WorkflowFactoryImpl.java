@@ -959,7 +959,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final List<WorkflowStep> relatedProxiesSteps =
 				this.findProxiesSteps(action);
-		relatedProxiesSteps.forEach( proxyStep -> cache.removeActions(proxyStep) );
+		relatedProxiesSteps.forEach( cache::removeActions );
 
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());

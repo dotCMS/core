@@ -3,7 +3,6 @@ package com.dotmarketing.common.db;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 
 import java.sql.*;
@@ -14,6 +13,9 @@ import java.util.*;
  * @author jsanca
  */
 public class DotDatabaseMetaData {
+
+    public static final String ALTER_TABLE = "ALTER TABLE ";
+    public static final String DROP_FOREIGN_KEY = " DROP FOREIGN KEY ";
 
     /**
      * Find the foreign key on the table, with the primary keys and columns assigned.
@@ -262,10 +264,10 @@ public class DotDatabaseMetaData {
 
         if(DbConnectionFactory.isMySql()) {
             sql = (constraintName.indexOf("PRIMARY")>-1)?
-                "ALTER TABLE " + tableName + " DROP PRIMARY KEY ":
-                "ALTER TABLE " + tableName + " DROP INDEX " + constraintName;
+                ALTER_TABLE + tableName + " DROP PRIMARY KEY ":
+                ALTER_TABLE + tableName + " DROP INDEX " + constraintName;
         }  else {
-            sql = "ALTER TABLE " + tableName + " DROP CONSTRAINT " + constraintName;
+            sql = ALTER_TABLE + tableName + " DROP CONSTRAINT " + constraintName;
         }
 
         try {
@@ -299,11 +301,11 @@ public class DotDatabaseMetaData {
         PreparedStatement preparedStatement = null;
         try {
 
-            preparedStatement = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + constraintName);
-            Logger.info(this, "Executing: " + "ALTER TABLE " + tableName + " DROP FOREIGN KEY " + constraintName);
+            preparedStatement = conn.prepareStatement(ALTER_TABLE + tableName + DROP_FOREIGN_KEY + constraintName);
+            Logger.info(this, "Executing: " + ALTER_TABLE + tableName + DROP_FOREIGN_KEY + constraintName);
             preparedStatement.execute();
         } catch (SQLException e) {
-            Logger.error(this, "Error executing: " + "ALTER TABLE " + tableName + " DROP FOREIGN KEY " + constraintName + " - NOT A FOREIGN KEY.");
+            Logger.error(this, "Error executing: " + ALTER_TABLE + tableName + DROP_FOREIGN_KEY + constraintName + " - NOT A FOREIGN KEY.");
             throw e;
         } finally {
             CloseUtils.closeQuietly(preparedStatement);

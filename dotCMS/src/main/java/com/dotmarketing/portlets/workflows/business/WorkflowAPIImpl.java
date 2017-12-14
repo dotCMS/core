@@ -311,13 +311,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void deleteStep(final WorkflowStep step) throws DotDataException {
 
-		Savepoint savepoint = null;
 		try {
 
 			// Checking for Next Step references
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
-				//if(otherStep.equals(step))
-				//		continue;
 
 				for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 

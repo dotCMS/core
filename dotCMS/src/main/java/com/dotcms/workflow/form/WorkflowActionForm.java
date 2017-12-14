@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -77,7 +78,7 @@ public class WorkflowActionForm extends Validated {
     }
 
     public Set<WorkflowStatus> getShowOn() {
-        return showOn;
+        return Collections.unmodifiableSet(showOn);
     }
 
     public boolean isActionRoleHierarchyForAssign() {

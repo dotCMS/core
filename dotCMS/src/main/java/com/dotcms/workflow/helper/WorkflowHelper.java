@@ -26,10 +26,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
@@ -39,7 +36,7 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
-    private static final Set<WorkflowStatus> DEFAULT_SHOW_ON = CollectionsUtils.set(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
+    private static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
 
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;

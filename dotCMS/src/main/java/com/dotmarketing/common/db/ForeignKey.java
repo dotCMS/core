@@ -1,6 +1,7 @@
 package com.dotmarketing.common.db;
 
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -36,6 +37,13 @@ public class ForeignKey {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        int result = primaryKeyTableName.hashCode();
+        result = 31 * result + foreignKeyTableName.hashCode();
+        result = 31 * result + foreignKeyName.hashCode();
+        return result;
+    }
 
     /**
      * Adds a new value to the list of columns for the primary key.
@@ -77,7 +85,7 @@ public class ForeignKey {
     }
 
     public Set<String> getPrimaryKeyColumnNames() {
-        return primaryKeyColumnNames;
+        return Collections.unmodifiableSet(primaryKeyColumnNames);
     }
 
     public String getForeignKeyTableName() {
@@ -85,7 +93,7 @@ public class ForeignKey {
     }
 
     public Set<String> getForeignKeyColumnNames() {
-        return foreignKeyColumnNames;
+        return Collections.unmodifiableSet(foreignKeyColumnNames);
     }
 
     public String getForeignKeyName() {
