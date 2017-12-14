@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.links.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.links.model.Link;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,7 +27,7 @@ public class LinkTransformer implements DBTransformer {
     }
 
     @Override
-    public List<Link> asList() throws DotStateException {
+    public List<Link> asList()  {
 
         return this.list;
     }

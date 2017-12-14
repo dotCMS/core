@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.folders.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.templates.model.Template;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,7 +27,7 @@ public class TemplateTransformer implements DBTransformer {
     }
 
     @Override
-    public List<Template> asList() throws DotStateException {
+    public List<Template> asList() {
 
         return this.list;
     }

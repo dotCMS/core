@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.containers.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.containers.model.Container;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,7 +27,7 @@ public class ContainerTransformer implements DBTransformer {
     }
 
     @Override
-    public List<Container> asList() throws DotStateException {
+    public List<Container> asList() {
 
         return this.list;
     }

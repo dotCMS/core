@@ -2,7 +2,6 @@ package com.dotmarketing.beans.transform;
 
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.DotStateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -28,7 +27,7 @@ public class IdentifierTransformer implements DBTransformer {
     }
 
     @Override
-    public List<Identifier> asList() throws DotStateException {
+    public List<Identifier> asList() {
 
         return this.list;
     }

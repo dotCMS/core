@@ -1,6 +1,5 @@
 package com.dotcms.util.transform;
 
-import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -11,8 +10,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.transform.LinkTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.transform.FolderTransformer;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

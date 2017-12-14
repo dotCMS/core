@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.templates.transform;
 
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,8 +27,7 @@ public class FolderTransformer implements DBTransformer {
     }
 
     @Override
-    public List<Folder> asList() throws DotStateException {
-
+    public List<Folder> asList() {
         return this.list;
     }
 

@@ -1,6 +1,5 @@
 package com.dotcms.util.transform;
 
-import com.dotmarketing.business.DotStateException;
 import java.util.List;
 
 /**
@@ -12,7 +11,6 @@ public interface DBTransformer<T> {
 
     /**
      * @return List of converted objects
-     * @throws DotStateException
      */
-    List<T> asList() throws DotStateException;
+    List<T> asList();
 }
