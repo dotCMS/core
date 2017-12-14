@@ -354,7 +354,7 @@ public class MultiTreeFactory {
 
 			return dh.list();
 
-		} catch (Exception e) {
+		} catch (DotHibernateException e) {
 			Logger.error(MultiTreeFactory.class, "getContainerStructureMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}

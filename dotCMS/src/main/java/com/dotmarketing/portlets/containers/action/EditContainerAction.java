@@ -1,11 +1,9 @@
 package com.dotmarketing.portlets.containers.action;
 
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.factories.MultiTreeFactory;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -572,7 +570,6 @@ public class EditContainerAction extends DotPortletAction implements
 			String structuresIdsStr = req.getParameter("structuresIds");
 
 			String[] structuresIds = structuresIdsStr.split("#");
-			List<String> unusedStructures = new ArrayList<>();
 
 			for (String structureId : structuresIds) {
 				String code = req.getParameter("code_"+structureId);
