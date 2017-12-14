@@ -331,6 +331,35 @@ public class MultiTreeFactory {
 			throw new DotRuntimeException(e.toString());
 		}
 	}
+
+	/**
+	 * Get a list of MultiTree for Contentlets using a specific Structure and specific Container
+	 * @param containerIdentifier
+	 * @param structureIdentifier
+	 * @return List of MultiTree
+	 */
+	public static List<MultiTree> getContainerStructureMultiTree(String containerIdentifier, String structureInode) {
+		try {
+			HibernateUtil dh = new HibernateUtil(MultiTree.class);
+			StringBuilder query = new StringBuilder();
+			query.append("FROM mt IN CLASS com.dotmarketing.beans.MultiTree ");
+			query.append("WHERE (mt.parent1 = ? or mt.parent2 = ?) ");
+			query.append("AND EXISTS (FROM c IN class com.dotmarketing.portlets.contentlet.business.Contentlet ");
+			query.append("  WHERE c.identifier = mt.child AND c.structureInode = ? )");
+
+			dh.setQuery(query.toString());
+			dh.setParam(containerIdentifier);
+			dh.setParam(containerIdentifier);
+			dh.setParam(structureInode);
+
+			return dh.list();
+
+		} catch (Exception e) {
+			Logger.error(MultiTreeFactory.class, "getContainerStructureMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
 		try {

@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.containers.action;
 
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.factories.MultiTreeFactory;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -559,12 +563,16 @@ public class EditContainerAction extends DotPortletAction implements
 		identifier.setHostId(host.getIdentifier());
 		APILocator.getIdentifierAPI().save(identifier);
 
+
+		List<ContainerStructure> oldContainerStructures = APILocator.getContainerAPI().getContainerStructures(currentContainer);
+		List<ContainerStructure> csList = new LinkedList<>();
+
 		// saving the multiple structures
 		if(container.getMaxContentlets()>0) {
 			String structuresIdsStr = req.getParameter("structuresIds");
 
 			String[] structuresIds = structuresIdsStr.split("#");
-			List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
+			List<String> unusedStructures = new ArrayList<>();
 
 			for (String structureId : structuresIds) {
 				String code = req.getParameter("code_"+structureId);
@@ -576,8 +584,28 @@ public class EditContainerAction extends DotPortletAction implements
 				csList.add(cs);
 			}
 
+			//Save new structures
 			APILocator.getContainerAPI().saveContainerStructures(csList);
 
+		}
+
+		//Delete MultiTree for old / unused ContainerStructures
+		for (ContainerStructure oldCS : oldContainerStructures) {
+			boolean unused = true;
+			for (ContainerStructure newCS : csList) {
+				if (newCS.getStructureId().equals(oldCS.getStructureId())) {
+					unused = false;
+					break;
+				}
+			}
+
+			if (unused) {
+				List<MultiTree> multiTreeList = MultiTreeFactory
+						.getContainerStructureMultiTree(oldCS.getContainerId(), oldCS.getStructureId());
+				for (MultiTree mt : multiTreeList) {
+					MultiTreeFactory.deleteMultiTree(mt);
+				}
+			}
 		}
 
 
