@@ -43,6 +43,19 @@
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
 	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
 
+	boolean showOnBoth   = true;
+	boolean showLocked   = false;
+	boolean showUnLocked = false;
+	if (null != action) {
+		if (action.shouldShowOnLock() && !action.shouldShowOnUnlock()) {
+			showOnBoth   = showUnLocked = false;
+			showLocked   = true;
+		} else if (!action.shouldShowOnLock() && action.shouldShowOnUnlock()) {
+			showOnBoth   = showLocked = false;
+			showUnLocked = true;
+		}
+	}
+
 %>
 <script type="text/javascript">
 
@@ -210,6 +223,28 @@
 									<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
 								<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
 							</div>
+						</dd>
+					</dl>
+					<dl class="vertical">
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "show-on")%>:</label>
+						</dt>
+						<dd>
+							<select name="showOn" id="showOn"  onChange="actionAdmin.doChange()"
+									dojoType="dijit.form.FilteringSelect">
+								<option value="LOCKED"
+										<%=(showLocked) ? "selected='true'" : "" %>>
+									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %>
+								</option>
+								<option value="UNLOCKED"
+										<%=(showUnLocked) ? "selected='true'" : "" %>>
+									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked") %>
+								</option>
+								<option value="LOCKED,UNLOCKED"
+										<%=(showOnBoth) ? "selected='true'" : "" %>>
+									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Both") %>
+								</option>
+							</select>
 						</dd>
 					</dl>
 					<dl class="vertical">
