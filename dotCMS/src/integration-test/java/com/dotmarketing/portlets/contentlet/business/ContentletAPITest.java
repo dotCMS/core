@@ -50,6 +50,8 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -89,6 +91,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -100,6 +104,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -3035,6 +3040,144 @@ public class ContentletAPITest extends ContentletBaseTest {
         }finally{
             if(contentType != null) contentTypeAPI.delete(contentType);
         }
+    }
+
+    @Test
+    public void testCheckin1_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+            null, null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.containsAll(categories));
+    }
+
+    @Test
+    public void testCheckin2_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.containsAll(categories));
+    }
+
+    @Test
+    public void testCheckin3_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.containsAll(categories));
+    }
+
+    @Test
+    public void testCheckin_ExistingContentWithCats_EmptyCats_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+//        final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+        contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+            new ArrayList<>(), null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.isEmpty());
+    }
+
+    private ContentletRelationships getACoupleOfRelationships(Contentlet contentlet)
+        throws DotDataException, DotSecurityException {
+        ContentletRelationships relationships = new ContentletRelationships(contentlet);
+        final Relationship blogComments = APILocator.getRelationshipAPI().byInode("631a07ea-c840-402d-a330-37ed2826ba30");
+
+        ContentletRelationships.ContentletRelationshipRecords records =
+            relationships.new ContentletRelationshipRecords(blogComments, false);
+
+        final String comment1Inode = "a1fab2fa-4804-498c-b932-9186f5dced58";
+        final String comment2Inode = "1bb14290-6dca-4e76-a19b-3f2a5422dabe";
+        final Contentlet comment1 = contentletAPI.find(comment1Inode, user, false);
+        final Contentlet comment2 = contentletAPI.find(comment2Inode, user, false);
+
+        records.setRecords(Arrays.asList(comment1, comment2));
+        relationships.setRelationshipsRecords(Collections.singletonList(records));
+
+        return relationships;
+    }
+
+    @NotNull
+    private List<Category> getACoupleOfCategories() throws DotDataException, DotSecurityException {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final String firstTimeInvestorCatId = "36abf3c4-d58b-4e42-8e1d-e9a1fe661831";
+        final String retirementCatId = "bba0fcba-eb79-46dc-ae36-fe2f3d9cf1e7";
+        final Category firstTimeInvestorCat = categoryAPI.find(firstTimeInvestorCatId, user, false);
+        final Category retirementCat = categoryAPI.find(retirementCatId, user, false);
+
+        return Arrays.asList(firstTimeInvestorCat, retirementCat);
+    }
+
+    @NotNull
+    private Contentlet getBlogContent() throws DotDataException, DotSecurityException {
+        final ContentType blogType = APILocator.getContentTypeAPI(user).find("Blog");
+        Contentlet blogContent = new Contentlet();
+        blogContent.setContentTypeId(blogType.id());
+        blogContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        blogContent.setStringProperty("title", "blogContent");
+        blogContent.setStringProperty("urlTitle", "blogContent");
+        blogContent.setStringProperty("author", "systemUser");
+        blogContent.setDateProperty("sysPublishDate", new Date());
+        blogContent.setStringProperty("body", "blogBody");
+        return blogContent;
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {
