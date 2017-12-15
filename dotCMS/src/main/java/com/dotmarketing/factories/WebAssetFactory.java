@@ -8,6 +8,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -47,7 +49,6 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.services.TemplateServices;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -56,6 +57,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -831,8 +833,18 @@ public class WebAssetFactory {
 				dc.setMaxRows(internalLimit);
 
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				List<WebAsset> list = ConvertToPOJOUtil
-						.convertDotConnectMapToPOJO(dc.loadResults(), c);
+
+				DBTransformer transformer = TransformerLocator
+						.createDBTransformer(dc.loadObjectResults(), c);
+
+				List<WebAsset> list;
+
+				if (transformer != null){
+					list = (List<WebAsset>) transformer.asList();
+				}else{
+					return Collections.emptyList();
+				}
+
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
@@ -857,7 +869,7 @@ public class WebAssetFactory {
 			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
 		}
 
-		return new ArrayList<>();
+		return Collections.emptyList();
 
 	}
 
