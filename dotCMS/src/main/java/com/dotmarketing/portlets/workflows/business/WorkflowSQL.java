@@ -79,8 +79,9 @@ abstract class WorkflowSQL {
 	protected static String INSERT_STEP= "insert into workflow_step (id, name, scheme_id,my_order,resolved,escalation_enable,escalation_action,escalation_time) values (?, ?, ?, ?, ?, ?, ?, ?) ";
 	protected static String UPDATE_STEP= "update workflow_step set name=?, scheme_id=?, my_order=?, resolved = ?, escalation_enable = ?, escalation_action=?, escalation_time = ? where id = ?";
 	protected static String DELETE_STEP= "delete from workflow_step where id = ?";
-	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?";
+	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_task.id as workflowid, workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?";
 	protected static String RESET_CONTENTLET_STEPS= "update workflow_task set status = ? where webasset= ?";
+	protected static String DELETE_CONTENTLET_STEPS= "delete from workflow_task where status = ? and webasset= ?";
 	protected static String SELECT_COUNT_CONTENTLES_BY_STEP= "select count(workflow_task.id) as count from workflow_task join workflow_step on workflow_task.status=workflow_step.id where workflow_step.id=?";
 
 	protected static String SELECT_ACTION_CLASSES_BY_ACTION= "select * from workflow_action_class where action_id = ? order by  my_order";
