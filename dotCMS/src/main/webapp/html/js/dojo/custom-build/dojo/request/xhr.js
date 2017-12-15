@@ -77,7 +77,7 @@ define("dojo/request/xhr", [
 			}
 			function onError(evt){
 				var _xhr = evt.target;
-				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response); 
+				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response);
 				dfd.handleResponse(response, error);
 			}
 
@@ -97,6 +97,7 @@ define("dojo/request/xhr", [
 				_xhr.removeEventListener('load', onLoad, false);
 				_xhr.removeEventListener('error', onError, false);
 				_xhr.removeEventListener('progress', onProgress, false);
+				_xhr = null;
 			};
 		};
 	}else{
@@ -117,15 +118,16 @@ define("dojo/request/xhr", [
 		};
 	}
 
+	function getHeader(headerName){
+		return this.xhr.getResponseHeader(headerName);
+	}
+
 	var undefined,
 		defaultOptions = {
 			data: null,
 			query: null,
 			sync: false,
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			}
+			method: 'GET'
 		};
 	function xhr(url, options, returnDeferred){
 		var response = util.parseArgs(
@@ -159,9 +161,7 @@ define("dojo/request/xhr", [
 			return returnDeferred ? dfd : dfd.promise;
 		}
 
-		response.getHeader = function(headerName){
-			return this.xhr.getResponseHeader(headerName);
-		};
+		response.getHeader = getHeader;
 
 		if(addListeners){
 			remover = addListeners(_xhr, dfd, response);
@@ -180,7 +180,7 @@ define("dojo/request/xhr", [
 			}
 
 			var headers = options.headers,
-				contentType;
+				contentType = 'application/x-www-form-urlencoded';
 			if(headers){
 				for(var hdr in headers){
 					if(hdr.toLowerCase() === 'content-type'){
