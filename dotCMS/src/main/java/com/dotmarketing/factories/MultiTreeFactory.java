@@ -60,7 +60,19 @@ public class MultiTreeFactory {
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
     }
-
+    public static void deleteMultiTree(final List<MultiTree> mTree) throws DotDataException {
+        for(MultiTree tree : mTree) {
+            deleteMultiTree(tree);
+        }
+    }
+    
+    public static void deleteMultiTreeByParent(String pageOrContainer) throws DotDataException {
+        deleteMultiTree(getMultiTrees(pageOrContainer));
+    }
+    
+    public static void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException {
+        deleteMultiTree(getMultiTreesByChild(contentIdentifier));
+    }
     /**
      * Deletes multi-tree relationship given a MultiTree object. It also updates the version_ts of
      * all versions of the htmlpage passed in (multiTree.parent1)

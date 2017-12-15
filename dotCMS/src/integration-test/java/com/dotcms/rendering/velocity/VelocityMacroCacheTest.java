@@ -1,4 +1,4 @@
-package com.dotcms.velocity;
+package com.dotcms.rendering.velocity;
 
 import org.apache.velocity.context.Context;
 import org.junit.BeforeClass;

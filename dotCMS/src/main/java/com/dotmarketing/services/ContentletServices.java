@@ -33,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -187,6 +188,31 @@ public class ContentletServices {
 		// let's write this puppy out to our file
 		StringBuilder sb= new StringBuilder();
 
+		
+        StringWriter contentDiv = new StringWriter();
+        contentDiv.append("<div")
+            .append(" data-dot-object=")
+            .append("\"contentlet\"")
+            .append(" data-dot-inode=")
+            .append("\"" + content.getInode() + "\"")
+            .append(" data-dot-identifier=")
+            .append("\"" + content.getIdentifier() + "\"")
+            .append(" data-dot-type=")
+            .append("\"" + content.getContentType().variable()+ "\"")
+            .append(" data-dot-lang=")
+            .append("\"" + content.getLanguageId()+ "\"")
+            .append(">");
+        
+		
+        sb.append("#if($API_EDIT_MODE)")
+        .append(contentDiv)
+        .append("#end");
+		
+		
+		
+		
+		
+		
 		// CONTENTLET CONTROLS BEGIN
 		sb.append("#if($EDIT_MODE)");
 		sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( ")");
@@ -477,6 +503,11 @@ public class ContentletServices {
 			sb.append("#set($isWidget= \"" ).append( false ).append( "\")");
 		}
 
+		// close contentlet div
+        sb.append("#if($API_EDIT_MODE)")
+        .append("</div>")
+        .append("#end");
+		
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
 				String veloExt= Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");

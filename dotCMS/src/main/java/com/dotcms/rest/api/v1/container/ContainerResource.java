@@ -146,9 +146,9 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/{containerId}/content/{contentletId}")
+    @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId)
+            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId, @PathParam("uuid") final String uuid)
             throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
             ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException, InvocationTargetException,
             NoSuchMethodException {
@@ -230,7 +230,7 @@ public class ContainerResource implements Serializable {
 
         VelocityUtil.getEngine()
             .evaluate(context, out, this.getClass()
-                .getName(), ContainerServices.buildVelocity(container, containerIdentifier, false));
+                .getName(), ContainerServices.buildVelocity(container, containerIdentifier, uuid, false));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());

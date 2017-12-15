@@ -6,6 +6,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -31,6 +33,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
@@ -55,6 +58,8 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
+
+import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -78,6 +83,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -838,8 +845,6 @@ public abstract class VelocityServlet extends HttpServlet {
 
         Host host = hostWebAPI.getCurrentHost(request);
 
-        StringBuilder preExecuteCode = new StringBuilder();
-        Boolean widgetPreExecute = false;
 
         // Getting the user to check the permissions
         com.liferay.portal.model.User backendUser = null;
@@ -851,8 +856,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
         // Getting the identifier from the uri
         Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-        request.setAttribute("idInode", String.valueOf(id.getInode()));
-        Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + id.getInode());
+        request.setAttribute("idInode", String.valueOf(id.getId()));
+        Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + id.getId());
 
         Template template;
         Template hostVariablesTemplate = null;
@@ -863,37 +868,10 @@ public abstract class VelocityServlet extends HttpServlet {
         Context context = VelocityUtil.getWebContext(request, response);
 
         IHTMLPage htmlPage = VelocityUtil.getPage(id, request, false, context);
-        if ("contentlet".equals(htmlPage.getType())) {
-            context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), backendUser, true, host, context));
-        }
 
-        PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-        List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
-        // to check user has permission to write on this page
-        boolean hasAddChildrenPermOverHTMLPage =
-                permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser);
-        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, backendUser);
-        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
-        boolean hasRemotePublishPermOverHTMLPage =
-                hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
-        boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), backendUser, true, host, context));
 
-        context.put("ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean(hasAddChildrenPermOverHTMLPage));
-        context.put("EDIT_HTMLPAGE_PERMISSION", new Boolean(hasWritePermOverHTMLPage));
-        context.put("PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasPublishPermOverHTMLPage));
-        context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage));
-        context.put("REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints));
-        context.put("canAddForm", Boolean.valueOf(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false));
-        context.put("canViewDiff", Boolean.valueOf(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false));
-
-        context.put("HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet) htmlPage).getStructureInode() : "0");
-        context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
-
-        boolean canUserWriteOnTemplate =
-                permissionAPI.doesUserHavePermission(APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),
-                        PERMISSION_WRITE, backendUser) && portletAPI.hasTemplateManagerRights(backendUser);
-        context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
-
+        
         com.dotmarketing.portlets.templates.model.Template cmsTemplate =
                 APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true);
         // issue- 1775 If User doesn't have edit permission on HTML Pages
@@ -913,137 +891,11 @@ public abstract class VelocityServlet extends HttpServlet {
         // added to show tabs
         context.put("previewPage", "1");
         // get the containers for the page and stick them in context
-        List<Container> containers =
-                APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate, APILocator.getUserAPI().getSystemUser(), false);
-        for (Container c : containers) {
 
-            context.put(String.valueOf("container" + c.getIdentifier()),
-                    "/working/" + c.getIdentifier() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"));
-
-            boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(c, PERMISSION_WRITE, backendUser, false)
-                    && portletAPI.hasContainerManagerRights(backendUser);
-            boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(c, PERMISSION_READ, backendUser, false);
-            context.put("EDIT_CONTAINER_PERMISSION" + c.getIdentifier(), hasWritePermissionOnContainer);
-            if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true))
-                context.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), true);
-            else
-                context.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), hasReadPermissionOnContainer);
-
-            // to check user has permission to write this container
-            boolean hasWritePermOverTheStructure = false;
-
-            for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
-                Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-
-                hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, backendUser);
-            }
-
-
-            context.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
-
-            Logger.debug(VelocityServlet.class, String.valueOf("container" + c.getIdentifier()) + "=/working/" + c.getIdentifier()
-                    + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"));
-
-            String sort = (c.getSortContentletsBy() == null) ? "tree_order" : c.getSortContentletsBy();
-
-            List<Contentlet> contentlets = null;
-
-            boolean staticContainer = !UtilMethods.isSet(c.getLuceneQuery());
-
-            // get contentlets only for main frame
-            if (request.getParameter("mainFrame") != null) {
-                if (staticContainer) {
-                    Logger.debug(VelocityServlet.class, "Static Container!!!!");
-
-                    Logger.debug(VelocityServlet.class, "html=" + htmlPage.getInode() + " container=" + c.getInode());
-
-                    // The container doesn't have categories
-                    Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(htmlPage);
-                    Identifier idenContainer = APILocator.getIdentifierAPI().find(c);
-                    contentlets = conAPI.findPageContentlets(idenHtmlPage.getInode(), idenContainer.getInode(), sort, true, -1,
-                            backendUser, true);
-                    Logger.debug(VelocityServlet.class,
-                            "Getting contentlets for language="
-                                    + (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)
-                                    + " contentlets =" + contentlets.size());
-
-                } else {
-                    String luceneQuery = c.getLuceneQuery();
-                    int limit = c.getMaxContentlets();
-                    String sortBy = c.getSortContentletsBy();
-                    int offset = 0;
-                    contentlets = conAPI.search(luceneQuery, limit, offset, sortBy, backendUser, true);
-                }
-
-                if (UtilMethods.isSet(contentlets) && contentlets.size() > 0) {
-                    Set<String> contentletIdentList = new HashSet<String>();
-                    List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
-                    for (Contentlet cont : contentlets) {
-                        if (!contentletIdentList.contains(cont.getIdentifier())) {
-                            contentletIdentList.add(cont.getIdentifier());
-                            contentletsFilter.add(cont);
-                        }
-                    }
-                    contentlets = contentletsFilter;
-                }
-                List<String> contentletList = new ArrayList<String>();
-
-                if (contentlets != null) {
-                    Iterator<Contentlet> iter = contentlets.iterator();
-                    int count = 0;
-
-                    while (iter.hasNext() && (count < c.getMaxContentlets())) {
-                        count++;
-
-                        Contentlet contentlet = (Contentlet) iter.next();
-                        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-
-                        boolean hasWritePermOverContentlet =
-                                permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, backendUser);
-
-                        context.put("EDIT_CONTENT_PERMISSION" + contentletIdentifier.getInode(),
-                                new Boolean(hasWritePermOverContentlet));
-
-                        contentletList.add(String.valueOf(contentletIdentifier.getInode()));
-                        Logger.debug(this, "Adding contentlet=" + contentletIdentifier.getInode());
-                        Structure contStructure = contentlet.getStructure();
-                        if (contStructure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
-                            Field field = contStructure.getFieldVar("widgetPreexecute");
-                            if (field != null && UtilMethods.isSet(field.getValues())) {
-                                preExecuteCode.append(field.getValues().trim() + "\n");
-                                widgetPreExecute = true;
-                            }
-
-                        }
-                    }
-                }
-                // sets contentletlist with all the files to load per
-                // container
-                context.put("contentletList" + c.getIdentifier(), contentletList);
-                context.put("totalSize" + c.getIdentifier(), new Integer(contentletList.size()));
-                // ### Add the structure fake contentlet ###
-                if (contentletList.size() == 0) {
-
-                    List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(c);
-                    for (ContainerStructure cs : csList) {
-                        contentletList.add(cs.getStructureId() + "");
-                    }
-
-
-                    // sets contentletlist with all the files to load per
-                    // container
-                    context.remove("contentletList" + c.getIdentifier());
-                    context.remove("totalSize" + c.getIdentifier());
-                    // http://jira.dotmarketing.net/browse/DOTCMS-2876
-                    context.put("contentletList" + c.getIdentifier(), new long[0]);
-                    context.put("totalSize" + c.getIdentifier(), 0);
-                }
-                // ### END Add the structure fake contentlet ###
-
-            }
+        if (request.getParameter("mainFrame") != null) {
+        
         }
-
-        Logger.debug(VelocityServlet.class, "Before finding template: /working/" + templateIdentifier.getInode() + "."
+        Logger.debug(VelocityServlet.class, "Before finding template: /working/" + templateIdentifier.getId() + "."
                 + Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"));
 
         Logger.debug(VelocityServlet.class,
@@ -1092,7 +944,7 @@ public abstract class VelocityServlet extends HttpServlet {
                 // Our designed template
                 template = VelocityUtil.getEngine().getTemplate((String) dotThemeData.get("templatePath"));
             } else {
-                template = VelocityUtil.getEngine().getTemplate("/working/" + templateIdentifier.getInode() + "."
+                template = VelocityUtil.getEngine().getTemplate("/working/" + templateIdentifier.getId() + "."
                         + Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"));
             }
         } else {
@@ -1106,8 +958,8 @@ public abstract class VelocityServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         request.setAttribute("velocityContext", context);
         try {
-            if (widgetPreExecute) {
-                VelocityUtil.getEngine().evaluate(context, out, "", preExecuteCode.toString());
+            if (context.containsKey("WIDGET_PRE_EXECUTE")) {
+                VelocityUtil.getEngine().evaluate(context, out, "", context.get("WIDGET_PRE_EXECUTE").toString());
             }
             if (hostVariablesTemplate != null)
                 hostVariablesTemplate.merge(context, out);

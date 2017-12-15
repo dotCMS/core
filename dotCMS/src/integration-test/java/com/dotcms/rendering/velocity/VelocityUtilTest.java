@@ -1,4 +1,4 @@
-package com.dotcms.velocity;
+package com.dotcms.rendering.velocity;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;

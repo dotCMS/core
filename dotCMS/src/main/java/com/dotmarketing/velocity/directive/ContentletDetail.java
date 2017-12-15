@@ -28,10 +28,10 @@ public class ContentletDetail extends DotDirective {
 
 
   @Override
-  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String argument) {
+  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String[] arguments) {
 
     ContentletVersionInfo cv;
-
+    final String argument = arguments[0];
     try {
       cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, params.language.getId());
       if (cv == null) {

@@ -36,7 +36,7 @@ abstract class DotDirective extends InputBase {
   }
 
 
-  abstract String resolveTemplatePath(Context context, Writer writer, RenderParams params, String argument);
+  abstract String resolveTemplatePath(Context context, Writer writer, RenderParams params, String[] arguments);
 
   final Template loadTemplate(InternalContextAdapter context,  String templatePath){
     
@@ -70,13 +70,24 @@ abstract class DotDirective extends InputBase {
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
     HttpServletRequest request = (HttpServletRequest) context.get("request");
-    Object value = node.jjtGetChild(0).value(context);
-    String argument = value == null ? null : value.toString();
+    int args = node.jjtGetNumChildren();
+    String[] arguments = new String[args];
+    
+    for(int i=0;i<args;i++) {
+        Object value = node.jjtGetChild(i).value(context);
+        arguments[i]= (value == null) ? null : value.toString();
+    }
+    
+    
+
+    
+    
+
 
     RenderParams params = new RenderParams(request);
 
     try{
-      String templatePath = this.resolveTemplatePath(context, writer, params, argument);
+      String templatePath = this.resolveTemplatePath(context, writer, params, arguments);
       Template t = loadTemplate(context, templatePath);
       return this.renderTemplate(context, writer, t, templatePath);
     }

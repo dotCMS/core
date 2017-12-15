@@ -31,6 +31,9 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.LanguageWebAPI;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.BufferedInputStream;
@@ -69,7 +72,7 @@ public class DotResourceLoader extends ResourceLoader {
     private String VELOCITY_BANNER_EXTENSION = null;
     private String VELOCITY_HOST_EXTENSION= null;
     private ContentletAPI conAPI = APILocator.getContentletAPI();
-    private DotResourceCache resourceCache = CacheLocator.getVeloctyResourceCache();
+
 
     private static String velocityCanoncalPath;
     private static String assetCanoncalPath;
@@ -236,44 +239,38 @@ public class DotResourceLoader extends ResourceLoader {
     }
 
     @SuppressWarnings("resource")
-    private InputStream generateStream(String arg0) throws Exception {
-    	User user=APILocator.getUserAPI().getSystemUser();
+    private InputStream generateStream(final String arg0) throws Exception {
+    final User user=APILocator.getUserAPI().getSystemUser();
 
-        // get the identifier
-        String x;
-        int startSub = 0;
-        int endSub = arg0.length();
-        if(arg0.lastIndexOf('\\') > -1){
-        	startSub = arg0.lastIndexOf("\\") + 1;
-        }else if(arg0.lastIndexOf('/') > -1){
-        	startSub = arg0.lastIndexOf('/') + 1;
-        }
-        if(arg0.lastIndexOf(".") > -1){
-        	endSub = arg0.lastIndexOf(".");
-        }
-        x = arg0.substring(startSub, endSub);
+    	String paths = (arg0.charAt(0) =='/') ? arg0.substring(1, arg0.length()) : arg0;
 
-        Logger.debug(this,"DotResourceLoader:\tInode: " + x);
+    	final String[] path = paths.split("[/\\.]",-1);
+    	final String liveWorking=path[0];
+    final String id = path[1].indexOf("_")> -1 ? path[1].substring(0, path[1].indexOf("_")): path[1];
+    String language = path[1].indexOf("_")> -1 ? path[1].substring(path[1].indexOf("_")+1, path[1].length()): String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    final String type = path[path.length-1];
+    final String id2 = path.length>3 ? path[2] : null;
+    
 
-        boolean preview = arg0.indexOf("working") > -1;
+        Logger.debug(this,"DotResourceLoader:\tInode: " + id);
+
+        boolean preview = "working".equals(liveWorking);
 
         InputStream result = new ByteArrayInputStream("".getBytes());
-        if (arg0.endsWith(VELOCITY_CONTAINER_EXTENSION)) {
-
+        if (type.equals(VELOCITY_CONTAINER_EXTENSION)) {
             try {
-                //Integer.parseInt(x);
-                Identifier identifier = APILocator.getIdentifierAPI().find(x);
+                Identifier identifier = APILocator.getIdentifierAPI().find(id);
                 VersionableAPI versionableAPI=APILocator.getVersionableAPI();
                 Container container = null;
                 if (preview) {
-                	container=(Container)versionableAPI.findWorkingVersion(identifier, user, true);
+                	    container=(Container)versionableAPI.findWorkingVersion(identifier, user, true);
                 } else {
-                	container=(Container)versionableAPI.findLiveVersion(identifier, user, true);
+                	    container=(Container)versionableAPI.findLiveVersion(identifier, user, true);
                 }
 
                 Logger.debug(this,"DotResourceLoader:\tWriting out container inode = " + container.getInode());
 
-                result = ContainerServices.buildVelocity(container, identifier, preview);
+                result = ContainerServices.buildVelocity(container, identifier,id2, preview);
             } catch (NumberFormatException e) {
             	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
                 Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
@@ -283,19 +280,10 @@ public class DotResourceLoader extends ResourceLoader {
     				Logger.error(DotResourceLoader.class,e1.getMessage(),e1);
     			}
             }
-        }else if (arg0.endsWith(VELOCITY_CONTENT_EXTENSION)) {
-            String language = "";
-            if (x.indexOf("_") > -1) {
-                Logger.debug(this,"x=" + x);
-                language = x.substring(x.indexOf("_") + 1, x.length());
-                Logger.debug(this,"language=" + language);
-                x = x.substring(0, x.indexOf("_"));
-                Logger.debug(this,"x=" + x);
-            }
+        }else if (type.equals(VELOCITY_CONTENT_EXTENSION)) {
             try {
-                //Integer.parseInt(x);
-                //Identifier identifier = (Identifier) InodeFactory.getInode(x, Identifier.class);
-            	Identifier identifier = APILocator.getIdentifierAPI().find(x);
+
+                Identifier identifier = APILocator.getIdentifierAPI().find(id);
                 Contentlet contentlet = null;
                 if(CacheLocator.getVeloctyResourceCache().isMiss(arg0)){
                 	if(LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
@@ -350,9 +338,9 @@ public class DotResourceLoader extends ResourceLoader {
         }else if (arg0.endsWith(VELOCITY_FIELD_EXTENSION)) {
         	//long contentletInode;
         	//long fieldInode;
-        	if (x.indexOf("_") > -1) {
-        		String fieldID = x.substring(x.indexOf("_") + 1, x.length());
-        		String conInode = x.substring(0,x.indexOf("_"));
+        	if (id.indexOf("_") > -1) {
+        		String fieldID = id.substring(id.indexOf("_") + 1, id.length());
+        		String conInode = id.substring(0,id.indexOf("_"));
         		//contentletInode = Integer.parseInt(conInode);
         		//fieldInode = Integer.parseInt(fieldID);
         		result = FieldServices.buildVelocity(fieldID, conInode, preview);
@@ -360,14 +348,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         }else if (arg0.endsWith(VELOCITY_CONTENT_MAP_EXTENSION)) {
             try {
-	            String language = "";
-	            if (x.indexOf("_") > -1) {
-	                Logger.debug(this,"x=" + x);
-	                language = x.substring(x.indexOf("_") + 1, x.length());
-	                Logger.debug(this,"language=" + language);
-	                x = x.substring(0, x.indexOf("_"));
-	                Logger.debug(this,"x=" + x);
-	            }
+
 
 	            Contentlet contentlet = null;
 	            if(CacheLocator.getVeloctyResourceCache().isMiss(arg0)){
@@ -375,7 +356,7 @@ public class DotResourceLoader extends ResourceLoader {
             	}
 	            
 	            try {
-	                contentlet = conAPI.findContentletByIdentifier(new String(x), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+	                contentlet = conAPI.findContentletByIdentifier(new String(id), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
 	            }
 	            catch(Exception ex) {
 	                contentlet = null;
@@ -399,22 +380,14 @@ public class DotResourceLoader extends ResourceLoader {
     			}
             }
         }else if (arg0.endsWith(VELOCITY_HTMLPAGE_EXTENSION)) {
-        	String language = "";
-            if (x.indexOf("_") > -1) {
-                Logger.debug(this,"x=" + x);
-                language = x.substring(x.indexOf("_") + 1, x.length());
-                Logger.debug(this,"language=" + language);
-                x = x.substring(0, x.indexOf("_"));
-                Logger.debug(this,"x=" + x);
-            }
-            
+
             try {
-            	Identifier identifier = APILocator.getIdentifierAPI().find(x);
+            	Identifier identifier = APILocator.getIdentifierAPI().find(id);
             	VersionableAPI versionableAPI=APILocator.getVersionableAPI();
                 IHTMLPage page;
                 if(identifier.getAssetType().equals("contentlet")) {
                     page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                            APILocator.getContentletAPI().findContentletByIdentifier(x, !preview, Long.parseLong(language), user, true));
+                            APILocator.getContentletAPI().findContentletByIdentifier(id, !preview, Long.parseLong(language), user, true));
                 }
                 else {
                     if (preview) {
@@ -439,7 +412,7 @@ public class DotResourceLoader extends ResourceLoader {
 
                 //Integer.parseInt(x)
 
-                Host host= APILocator.getHostAPI().find(x, APILocator.getUserAPI().getSystemUser(), false);
+                Host host= APILocator.getHostAPI().find(id, APILocator.getUserAPI().getSystemUser(), false);
 
                  if (!InodeUtils.isSet(host.getInode()))
                 Logger.debug(this,"host not found");
@@ -451,7 +424,7 @@ public class DotResourceLoader extends ResourceLoader {
             try {
                 //Integer.parseInt(x);
                 //Identifier identifier = (Identifier) InodeFactory.getInode(x, Identifier.class);
-            	Identifier identifier = APILocator.getIdentifierAPI().find(x);
+            	Identifier identifier = APILocator.getIdentifierAPI().find(id);
             	VersionableAPI versionableAPI=APILocator.getVersionableAPI();
                 Template template = null;
                 if (preview) {
@@ -475,7 +448,7 @@ public class DotResourceLoader extends ResourceLoader {
                 Structure structure = null;
 
                 //Search for the given ContentType inode
-                ContentType foundContentType = contentTypeAPI.find(x);
+                ContentType foundContentType = contentTypeAPI.find(id);
                 if ( null != foundContentType ) {
                     //Transform the found content type to a Structure
                     structure = new StructureTransformer(foundContentType).asStructure();
@@ -512,7 +485,7 @@ public class DotResourceLoader extends ResourceLoader {
      */
     @Override
     public long getLastModified(Resource resource) {
-        return 0;
+        return System.currentTimeMillis();
     }
 
     /* (non-Javadoc)
@@ -520,7 +493,7 @@ public class DotResourceLoader extends ResourceLoader {
      */
     @Override
     public boolean isSourceModified(Resource resource) {
-        return false;
+        return true;
     }
 
     public static DotResourceLoader getInstance(){

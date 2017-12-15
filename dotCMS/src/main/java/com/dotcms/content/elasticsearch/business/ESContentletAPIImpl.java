@@ -23,6 +23,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -311,11 +313,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         List<Contentlet> l = new ArrayList<Contentlet>();
-        Long languageIdLong = languageId <= 0?null:new Long(languageId);
+
         for(String identifier : identifiers){
-            Contentlet con = findContentletByIdentifier(identifier.trim(), live, languageIdLong, user, respectFrontendRoles);
+            Contentlet con = findContentletByIdentifier(identifier.trim(), live, languageId, user, respectFrontendRoles);
             l.add(con);
         }
+        
         return l;
     }
 

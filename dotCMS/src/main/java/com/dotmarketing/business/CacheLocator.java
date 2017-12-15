@@ -17,6 +17,9 @@ import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
+import com.dotcms.rendering.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
+
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
@@ -64,8 +67,6 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.DotResourceCache;
-import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
 
 import java.util.List;
@@ -193,10 +194,12 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (ContentletCache)getInstance(CacheIndex.Contentlet);
 	}
 
-	public static DotResourceCache getVeloctyResourceCache(){
-		return (DotResourceCache)getInstance(CacheIndex.Velocity);
+	public static com.dotmarketing.velocity.DotResourceCache getVeloctyResourceCache(){
+		return (com.dotmarketing.velocity.DotResourceCache)getInstance(CacheIndex.Velocity);
 	}
-
+    public static DotResourceCache getVeloctyResourceCache2(){
+        return (DotResourceCache)getInstance(CacheIndex.Velocity);
+    }
     public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
     }
@@ -275,9 +278,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static IndiciesCache getIndiciesCache() {
 	    return (IndiciesCache)getInstance(CacheIndex.Indicies);
 	}
-
-	public static NavToolCache getNavToolCache() {
-	    return (NavToolCache)getInstance(CacheIndex.NavTool);
+	
+    public static NavToolCache getNavToolCache2() {
+        return (NavToolCache)getInstance(CacheIndex.NavTool2);
+    }
+    
+	public static com.dotmarketing.viewtools.navigation.NavToolCache getNavToolCache() {
+	    return (com.dotmarketing.viewtools.navigation.NavToolCache)getInstance(CacheIndex.NavTool);
 	}
 
 	public static PublishingEndPointCache getPublishingEndPointCache() {
@@ -420,6 +427,8 @@ enum CacheIndex
 	VanityURLCache("Vanity URL Cache"),
 	ContentTypeCache("Legacy Content Type Cache"),
 	ContentTypeCache2("New Content Type Cache"),
+	Velocity2("Velocity2"),
+	NavTool2("Navigation Tool2"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -431,7 +440,8 @@ enum CacheIndex
 	      	case TagInode: return new TagInodeCacheImpl();
 	      	case Role: return new RoleCacheImpl();
 	      	case Contentlet: return new ContentletCacheImpl();
-	      	case Velocity : return new DotResourceCache();
+	      	case Velocity : return new com.dotmarketing.velocity.DotResourceCache();
+	        case Velocity2 : return new DotResourceCache();
 	      	case Relationship: return new RelationshipCacheImpl();
 	        case LogMapper: return new LogMapperCacheImpl();
 	      	case Plugin : return new PluginCacheImpl();
@@ -453,7 +463,8 @@ enum CacheIndex
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
 	      	case Indicies: return new IndiciesCacheImpl();
-	      	case NavTool: return new NavToolCacheImpl();
+	      	case NavTool2: return new NavToolCacheImpl();
+	        case NavTool: return new NavToolCacheImpl();
 	      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
 	      	case PushedAssets: return new PushedAssetsCacheImpl();
 	      	case CSSCache: return new CSSCacheImpl();

@@ -216,7 +216,7 @@
 	
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>
-		<servlet-class>com.dotmarketing.velocity.ClientVelocityServlet</servlet-class>
+		<servlet-class>com.dotcms.velocity.ClientVelocityServlet</servlet-class>
 		<load-on-startup>10</load-on-startup>
 	</servlet>
 	

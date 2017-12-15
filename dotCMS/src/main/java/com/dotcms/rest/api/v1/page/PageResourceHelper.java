@@ -24,8 +24,10 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.viewtools.DotTemplateTool;
@@ -35,6 +37,8 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.rmi.CORBA.Util;
 import javax.servlet.http.HttpServletRequest;
@@ -134,6 +138,37 @@ public class PageResourceHelper implements Serializable {
         return getPageMetadata(request, response, user, uri, true, live);
     }
 
+    
+    public String getPageRendered(final HttpServletRequest request, final
+    HttpServletResponse response, final User user, final String uri, boolean live) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
+        
+        final Context velocityContext = VelocityUtil.getWebContext(request, response);
+
+        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+
+        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+                site, this.languageAPI.getDefaultLanguage().getId(), false);
+
+        final String liveWorking = live ?"live" : "working";
+        
+        if(live) {
+            PageMode.setPageMode(request, PageMode.LIVE);
+        }else {
+            PageMode.setPageMode(request, PageMode.PREVIEW);
+        }
+        
+        
+        if(!live) velocityContext.put(WebKeys.API_EDIT_MODE, true);
+        return VelocityUtil.mergeTemplate("/" + liveWorking + "/" + page
+                .getIdentifier() + "_" + page.getLanguageId() + ".dotpage",
+                velocityContext);
+    }
+
+    
+    
     /**
      * @param request    The {@link HttpServletRequest} object.
      * @param response   The {@link HttpServletResponse} object.
@@ -155,21 +190,15 @@ public class PageResourceHelper implements Serializable {
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
 
-        final String pageUri = ('/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
-                site, this.languageAPI.getDefaultLanguage().getId(), false);
-        
-        
-        
-        
-        
-        
+                site, this.languageAPI.getDefaultLanguage().getId(), live);
+
+
         
         if (isRendered) {
             try {
-                page.setProperty("rendered", VelocityUtil.mergeTemplate("/live/" + page
-                        .getIdentifier() + "_" + page.getLanguageId() + ".dotpage",
-                        velocityContext));
+                page.setProperty("rendered", getPageRendered(request, response, user, uri, live));
             } catch (Exception e) {
                 throw new DotDataException(String.format("Page '%s' could not be rendered via " +
                         "Velocity.", pageUri), e);

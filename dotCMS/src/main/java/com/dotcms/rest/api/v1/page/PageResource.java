@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -135,7 +136,7 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
-    public Response renderPage(@Context final HttpServletRequest request, @Context final
+    public Response renderPageObject(@Context final HttpServletRequest request, @Context final
     HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
@@ -172,7 +173,45 @@ public class PageResource {
         }
         return res;
     }
+    
 
+    @NoCache
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/renderHTML/{uri: .*}")
+    public Response renderHTMLOnly(@Context final HttpServletRequest request, @Context final
+    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
+        // Force authentication
+        final InitDataObject auth = webResource.init(false, request, true);
+        final User user = auth.getUser();
+        Response res = null;
+        try {
+
+            final String html = this.pageResourceHelper.getPageRendered(request, response, user, uri, live);
+            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html));
+            responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
+            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
+                    "Content-Type, " + "Accept, Authorization");
+            res = responseBuilder.build();
+        } catch (JsonProcessingException e) {
+            final String errorMsg = "An error occurred when generating the JSON response (" + e.getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        } catch (DotSecurityException e) {
+            final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        } catch (DotDataException e) {
+            final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        } catch (Exception e) {
+            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return res;
+    }
     /**
      * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
      * otherwise a new template is created and the old link template remains unchanged
