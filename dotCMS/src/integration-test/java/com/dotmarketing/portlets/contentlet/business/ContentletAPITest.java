@@ -3042,6 +3042,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)
+     *
+     */
     @Test
     public void testCheckin1_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
         throws DotDataException, DotSecurityException {
@@ -3065,6 +3072,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertTrue(existingCats.containsAll(categories));
     }
 
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent)
+     *
+     */
     @Test
     public void testCheckin2_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
         throws DotDataException, DotSecurityException {
@@ -3079,8 +3093,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
         // checking in with NULL rels and cats, should keep them
-        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
-            (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, null,
+            null, null, user, false, false);
 
         List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
             false);
@@ -3088,6 +3102,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertTrue(existingCats.containsAll(categories));
     }
 
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,
+     * List<Permission> permissions, User user,boolean respectFrontendRoles)
+     *
+     */
     @Test
     public void testCheckin3_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
         throws DotDataException, DotSecurityException {
@@ -3109,6 +3130,202 @@ public class ContentletAPITest extends ContentletBaseTest {
             false);
 
         assertTrue(existingCats.containsAll(categories));
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+     * User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin4_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.containsAll(categories));
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertTrue(existingCats.containsAll(categories));
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin1_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+            new ArrayList<>(), null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertFalse(UtilMethods.isSet(existingCats));
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent)
+     *
+     */
+    @Test
+    public void testCheckin2_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, null,
+            new ArrayList<>(), null, user, false, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertFalse(UtilMethods.isSet(existingCats));
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,
+     * List<Permission> permissions, User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin3_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertFalse(UtilMethods.isSet(existingCats));
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+     * User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin4_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertFalse(UtilMethods.isSet(existingCats));
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithCats_EmptyCats_ShouldWipeExistingCats()
+        throws DotDataException, DotSecurityException {
+
+        Contentlet blogContent = getBlogContent();
+
+        final List<Category> categories = getACoupleOfCategories();
+
+        contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+            false);
+
+        Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+        // checking in with NULL rels and cats, should keep them
+        Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(checkedoutBlogContent,
+            (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), null, user, false);
+
+        List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+            false);
+
+        assertFalse(UtilMethods.isSet(existingCats));
     }
 
     @Test
