@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
@@ -12,18 +13,24 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.util.StringPool;
 
 import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
+
 public class StringUtils {
 
     public static final String TRUE = "true";
 
+    private final static char COMMA = ',';
+
+    private static Map<String, Pattern> patternCacheMap = new ConcurrentHashMap<>();
+
     public static String formatPhoneNumber(String phoneNumber) {
         try {
             String s = phoneNumber.replaceAll("\\(|\\)|:|-|\\.", "");
-            ;
+
             s = s.replaceAll("(\\d{3})(\\d{3})(\\d{4})(\\d{3})*", "($1) $2-$3x$4");
 
-            if (s.endsWith("x"))
+            if (s.endsWith("x")){
                 s = s.substring(0, s.length() - 1);
+            }
             return s;
         } catch (Exception ex) {
             return "";
@@ -34,7 +41,7 @@ public class StringUtils {
 
 
     public static boolean isJson(String jsonString) {
-        if(jsonString.indexOf("{") <0 || jsonString.indexOf("}") <0){
+        if(!jsonString.contains("{") || !jsonString.contains("}")){
             return false;
         }
         try {
@@ -49,9 +56,9 @@ public class StringUtils {
         }
     }
 
-       // Pattern is threadsafe
-    private static Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
-    private static Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
+    // Pattern is threadsafe
+    private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
+    private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
     
     
     public static String camelCaseLower(String variable) {
@@ -72,9 +79,9 @@ public class StringUtils {
             return variable;
         }
         String ret = camelCaseLower(variable);
-        String firtChar = ret.substring(0,1);
+        String firstChar = ret.substring(0,1);
         
-        return firtChar.toUpperCase() + ret.substring(1,ret.length());
+        return firstChar.toUpperCase() + ret.substring(1,ret.length());
     }
     
     public static boolean isSet(String test){
@@ -86,12 +93,12 @@ public class StringUtils {
     }
     
     /**
-     * Split the string by commans
+     * Split the string by commas
      * Pre: string argument must be not null
      * @param string {@link String}
      * @return String array
      */
-    final static char COMMA = ',';
+
     public static String [] splitByCommas (final String string) {
 
         return split(string, COMMA);
@@ -123,7 +130,9 @@ public class StringUtils {
 
         final StringBuilder interpolatedBuilder =
                 new StringBuilder(expression);
-        String normalizeMatch = null;
+
+        String normalizeMatch;
+
         final List<RegExMatch> regExMatches =
                 RegEX.find(expression, ALPHA_HYPHEN_VARIABLE_REGEX);
 
@@ -153,7 +162,7 @@ public class StringUtils {
     } // interpolate.
 
     /**
-     * Retrieve a map with all the expresion that successfully found a match in the parametersMap.
+     * Retrieve a map with all the expression that successfully found a match in the parametersMap.
      *
      * @param expression {@link String}
      * @param parametersMap {@link Map}
@@ -185,6 +194,21 @@ public class StringUtils {
         }
 
         return interpolateMatches;
+    }
+
+    /**
+     * Returns true if the pattern match on the string
+     * @param string  String string to search
+     * @param pattern String pattern to search
+     * @return boolean true if match
+     */
+    public static boolean matches (final String string, final String pattern) {
+
+        if (!patternCacheMap.containsKey(pattern)) {
+            patternCacheMap.put(pattern, Pattern.compile(pattern));
+        }
+
+        return patternCacheMap.get(pattern).matcher(string).matches();
     }
     
     
