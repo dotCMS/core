@@ -19,6 +19,10 @@ public class StringUtils {
     public static final String TRUE = "true";
 
     private final static char COMMA = ',';
+    
+    // Pattern is threadsafe
+    private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
+    private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
 
     private static Map<String, Pattern> patternCacheMap = new ConcurrentHashMap<>();
 
@@ -55,11 +59,6 @@ public class StringUtils {
             return false;
         }
     }
-
-    // Pattern is threadsafe
-    private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
-    private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
-    
     
     public static String camelCaseLower(String variable) {
         // are we already camelCase?
