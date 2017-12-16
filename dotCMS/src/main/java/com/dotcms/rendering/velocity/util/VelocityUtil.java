@@ -2,48 +2,22 @@ package com.dotcms.rendering.velocity.util;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-import java.io.File;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.base.CaseFormat;
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.visitor.domain.Visitor;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
-import com.dotmarketing.viewtools.LanguageWebAPI;
-import com.liferay.portal.model.User;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.tools.view.ToolboxManager;
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -54,10 +28,32 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.dotmarketing.viewtools.RequestWrapper;
+
+import java.io.File;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.tools.view.ToolboxManager;
+import org.apache.velocity.tools.view.context.ChainedContext;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+
 import com.liferay.portal.model.Company;
-import com.liferay.util.*;
+import com.liferay.portal.model.User;
+import com.liferay.util.SystemProperties;
 
 
 public class VelocityUtil {
@@ -161,7 +157,6 @@ public class VelocityUtil {
 
 	public static Context getBasicContext() {
 		Context context = new VelocityContext();
-		VelocityServlet.velocityCtx.set(context);
 		context.put("UtilMethods", new UtilMethods());
 		context.put("PortletURLUtil", new PortletURLUtil());
 		context.put("quote", "\"");
@@ -196,7 +191,7 @@ public class VelocityUtil {
 
 		//get the context from the request if possible
         ChainedContext context;
-        if ( request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) != null && request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
+        if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
             return (ChainedContext) request.getAttribute( "velocityContext" );
         } else {
             RequestWrapper rw = new RequestWrapper( request );
@@ -207,7 +202,7 @@ public class VelocityUtil {
         }
 
         context.put("context", context);
-		Logger.debug(VelocityServlet.class, "ChainedContext=" + context);
+		Logger.debug(VelocityUtil.class, "ChainedContext=" + context);
 		/*
 		 * if we have a toolbox manager, get a toolbox from it See
 		 * /WEB-INF/toolbox.xml
@@ -241,10 +236,9 @@ public class VelocityUtil {
 				context.put("visitor", visitor);
 
 			} catch (Exception nsue) {
-				Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
+				Logger.error(VelocityUtil.class, nsue.getMessage(), nsue);
 			}
 		}
-		VelocityServlet.velocityCtx.set(context);
 		return context;
 
 	}
@@ -536,7 +530,7 @@ public class VelocityUtil {
 									false);
 				} catch (Exception e) {
 					Logger.debug(
-							VelocityServlet.class,
+					        VelocityUtil.class,
 							"The page is not available in language "
 									+ language.getId() + ". Just keep going.");
 

@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.services;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.rendering.velocity.services.ContainerServices;
 import com.dotcms.rendering.velocity.services.ContentletServices;
 import com.dotcms.rendering.velocity.services.NGContainerServices;
@@ -12,6 +13,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -19,7 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -36,26 +38,57 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 /**
  * @author will
  */
-public class ContainerServices {
+public class ContainerServices implements VelocityCMSObject {
 
-    public static void invalidate(Container container) throws DotStateException, DotDataException {
 
+    @Override
+    public InputStream writeObject(String id1, String id2, boolean live, String language, final String filePath)
+            throws DotDataException, DotSecurityException {
         Identifier identifier = APILocator.getIdentifierAPI()
-            .find(container);
-        invalidate(container, identifier, false);
-        invalidate(container, identifier, true);
+            .find(id1);
+        VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        Container container = null;
+        if (live) {
+            container = (Container) versionableAPI.findLiveVersion(identifier, sysUser(), true);
+        } else {
+            container = (Container) versionableAPI.findWorkingVersion(identifier, sysUser(), true);
+        }
+
+        Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
+
+        return this.buildVelocity(container, identifier, id2, live, filePath);
+    }
+
+    @Override
+    public void invalidate(Object obj) {
+        try {
+            Container container = (Container) obj;
+            Identifier identifier;
+
+            identifier = APILocator.getIdentifierAPI()
+                .find(container);
+            invalidate(container, identifier, false);
+            invalidate(container, identifier, true);
+        } catch (DotStateException | DotDataException e) {
+            throw new DotStateException(e);
+        }
+
 
     }
 
-    public static void invalidate(Container container, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(container);
-        invalidate(container, identifier, EDIT_MODE);
-
+    @Override
+    public void invalidate(Object obj, boolean EDIT_MODE) {
+        try {
+            Container container = (Container) obj;
+            Identifier identifier = APILocator.getIdentifierAPI()
+                .find(container);
+            invalidate(container, identifier, EDIT_MODE);
+        } catch (DotStateException | DotDataException e) {
+            throw new DotStateException(e);
+        }
     }
 
-    public static InputStream buildVelocity(Container container, Identifier identifier, String uuid, boolean EDIT_MODE) {
+    private InputStream buildVelocity(Container container, Identifier identifier, String uuid, boolean EDIT_MODE, String filePath) {
 
         ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         InputStream result;
@@ -64,7 +97,8 @@ public class ContainerServices {
 
         List<ContainerStructure> csList = new ArrayList<>();
         try {
-            csList = APILocator.getContainerAPI().getContainerStructures(container);
+            csList = APILocator.getContainerAPI()
+                .getContainerStructures(container);
         } catch (Exception e) {
             throw new DotStateException(e.getMessage());
         }
@@ -75,8 +109,8 @@ public class ContainerServices {
             .append(identifier.getId())
             .append("')");
         sb.append("#set ($CONTAINER_UNIQUE_ID = '")
-        .append(uuid)
-        .append("')");
+            .append(uuid)
+            .append("')");
         sb.append("#set ($CONTAINER_INODE = '")
             .append(container.getInode())
             .append("')");
@@ -114,13 +148,13 @@ public class ContainerServices {
             .append(identifier.getId())
             .append(uuid)
             .append(")");
-        
-        sb  .append("#if(!$CONTAINER_NUM_CONTENTLETS)" )
+
+        sb.append("#if(!$CONTAINER_NUM_CONTENTLETS)")
             .append("#set($CONTAINER_NUM_CONTENTLETS = 0)")
             .append("#end");
-        
-        
-        
+
+
+
         sb.append("#set ($CONTAINER_NAME = \"")
             .append(UtilMethods.espaceForVelocity(container.getTitle()))
             .append("\")");
@@ -134,7 +168,7 @@ public class ContainerServices {
         else
             sb.append("#set ($CONTAINER_NOTES = \"\")");
 
-      
+
 
         if (EDIT_MODE) {
             StringWriter containerDiv = new StringWriter();
@@ -161,12 +195,12 @@ public class ContainerServices {
                 }
             }
             containerDiv.append("\">");
-            
+
             sb.append("#if($API_EDIT_MODE)")
-            .append(containerDiv)
-            .append("#end");
-            
-            
+                .append(containerDiv)
+                .append("#end");
+
+
         }
 
 
@@ -174,16 +208,17 @@ public class ContainerServices {
         // if the container needs to get its contentlets
         if (container.getMaxContentlets() > 0) {
             sb.append("#if($EDIT_MODE) ");
-            
-            sb.append("<div class='dotContainer'> ");  // To edit the look, see WEB-INF/velocity/static/preview/container_controls.vtl
+
+            sb.append("<div class='dotContainer'> "); // To edit the look, see
+                                                      // WEB-INF/velocity/static/preview/container_controls.vtl
             sb.append("#end");
 
             // pre loop if it exists
             if (UtilMethods.isSet(container.getPreLoop())) {
                 sb.append(container.getPreLoop());
             }
-            //sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
-            
+            // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
+
             // START CONTENT LOOP
             sb.append("#foreach ($contentletId in $contentletList")
                 .append(identifier.getId())
@@ -191,8 +226,6 @@ public class ContainerServices {
                 .append(")");
 
 
-
-  
 
             // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
             sb.append("#set($_show_working_=false) ");
@@ -285,10 +318,8 @@ public class ContainerServices {
             sb.append("#end ");
             // ### END BODY ###
 
-            
-            
-            
-            
+
+
             // ### FOOTER ###
 
             if (!containsEndTag) {
@@ -325,14 +356,14 @@ public class ContainerServices {
 
             // ##End of foreach loop
             sb.append("#end ");
-            
-            
+
+
             // End of Container
             sb.append("#if($API_EDIT_MODE)")
-            .append("</div>")
-            .append("#end");
-            
-            
+                .append("</div>")
+                .append("#end");
+
+
             // post loop if it exists
             if (UtilMethods.isSet(container.getPostLoop())) {
                 sb.append(container.getPostLoop());
@@ -348,12 +379,13 @@ public class ContainerServices {
             sb.append(container.getCode());
         }
 
-        final String folderPath = (!EDIT_MODE) ? "live" + File.separator : "working" + File.separator;
-        final String filePath = folderPath + identifier.getId() + "_" + uuid +"." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
-        final String VelocityFilePath = ConfigUtils.getDynamicVelocityPath() + File.separator + filePath;
+
 
         if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(Paths.get(VelocityFilePath)));
+            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
+            f.mkdirs();
+            f.delete();
+            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
                     OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
                 out.write(sb.toString());
                 out.flush();
@@ -374,32 +406,35 @@ public class ContainerServices {
         return result;
     }
 
-    public static void invalidate(Container container, Identifier identifier, boolean EDIT_MODE) {
+    private static void invalidate(Container container, Identifier identifier, boolean EDIT_MODE) {
         removeContainerFile(container, identifier, EDIT_MODE);
     }
 
-    public static void unpublishContainerFile(Container container) throws DotStateException, DotDataException {
+    private static void unpublishContainerFile(Container container) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(container);
         removeContainerFile(container, identifier, false);
     }
 
-    public static void removeContainerFile(Container container, boolean EDIT_MODE) throws DotStateException, DotDataException {
+    private static void removeContainerFile(Container container, boolean EDIT_MODE) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(container);
         removeContainerFile(container, identifier, EDIT_MODE);
     }
 
-    public static void removeContainerFile(Container container, Identifier identifier, boolean EDIT_MODE) {
+    private static void removeContainerFile(Container container, Identifier identifier, boolean EDIT_MODE) {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
-        String filePath = folderPath + identifier.getId() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
+        String filePath = folderPath + identifier.getId() + "." + VelocityType.CONTAINER.fileExtension;
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete();
         DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
+
+
+
 }

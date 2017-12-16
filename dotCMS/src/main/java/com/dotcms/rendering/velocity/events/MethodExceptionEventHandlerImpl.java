@@ -13,10 +13,12 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.ParseErrorException;
 
+import com.dotcms.rendering.velocity.DotResourceLoader;
+
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceLoader;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+
 
 public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.event.MethodExceptionEventHandler {
 

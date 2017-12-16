@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.PageServices;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -15,7 +16,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.services.PageServices;
+
 import com.dotmarketing.util.Logger;
 
 import java.util.Date;

@@ -73,7 +73,7 @@ import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

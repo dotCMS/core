@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -35,7 +36,7 @@ public class NavTool implements ViewTool {
     private static User systemUser=null;
     private HttpServletRequest request = null;
     private long currentLanguage = 0;
-    
+    private Context ctx;
     static {
 
         try {
@@ -48,7 +49,7 @@ public class NavTool implements ViewTool {
     @Override
     public void init(Object initData) {
         ViewContext context = (ViewContext) initData;
-
+        ctx = context.getVelocityContext();
         try {
     		this.request = context.getRequest();
             this.currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
@@ -62,24 +63,22 @@ public class NavTool implements ViewTool {
         return getNav(host, path, this.currentLanguage, this.systemUser);
     }
     
-    protected static NavResult getNav(Host host, String path, long languageId, User systemUserParam) throws DotDataException, DotSecurityException {
+    protected NavResult getNav(Host host, String path, long languageId, User systemUserParam) throws DotDataException, DotSecurityException {
         
         if(path != null && path.contains(".")){
-        	path = path.substring(0, path.lastIndexOf("/"));
+        	    path = path.substring(0, path.lastIndexOf("/"));
         }
 
         Folder folder=!path.equals("/") ? APILocator.getFolderAPI().findFolderByPath(path, host, systemUserParam, true) : APILocator.getFolderAPI().findSystemFolder();
-        if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
+        if(folder==null || !UtilMethods.isSet(folder.getIdentifier())) {
             return null;
-        
+        }
         NavResult result=CacheLocator.getNavToolCache2().getNav(host.getIdentifier(), folder.getInode(), languageId);
-
         if(result != null) {
-        	
-        	return result;
-        	
+            result.setContext(ctx);
+        	    return result;
         } else {
-        	String parentId;
+        	    String parentId;
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
                 parentId=ident.getParentPath().equals("/") ? 
@@ -88,6 +87,7 @@ public class NavTool implements ViewTool {
                 parentId=null;
             }
             result=new NavResult(parentId, host.getIdentifier(),folder.getInode(),languageId);
+            result.setContext(ctx);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
             result.setHref(ident.getURI());
             result.setTitle(folder.getTitle());
@@ -110,7 +110,8 @@ public class NavTool implements ViewTool {
                 if(item instanceof Folder) {
                     Folder itemFolder=(Folder)item;
                     ident=APILocator.getIdentifierAPI().find(itemFolder);
-                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),itemFolder.getInode(),languageId);
+                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),itemFolder.getInode(),languageId, ctx);
+
                     nav.setTitle(itemFolder.getTitle());
                     nav.setHref(ident.getURI());
                     nav.setOrder(itemFolder.getSortOrder());
@@ -132,7 +133,8 @@ public class NavTool implements ViewTool {
                         ident=APILocator.getIdentifierAPI().find(itemPage);
 
                         String redirectUri = itemPage.getRedirect();
-                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
+                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId, ctx);
+                        result.setContext(ctx);
                         nav.setTitle(itemPage.getTitle());
                         if(UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")){
                             if(redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)){
@@ -157,7 +159,8 @@ public class NavTool implements ViewTool {
                 }
                 else if(item instanceof Link) {
                     Link itemLink=(Link)item;
-                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
+                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId, ctx);
+                    result.setContext(ctx);
                     if(itemLink.getLinkType().equals(LinkType.CODE.toString()) && LinkType.CODE.toString() !=null  ) {
                         nav.setCodeLink(itemLink.getLinkCode());
                     }
@@ -177,7 +180,8 @@ public class NavTool implements ViewTool {
                     
                     if(itemFile.getLanguageId() == languageId || LanguageWebAPI.canDefaultFileToDefaultLanguage()){
                         ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
-                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId);
+                        NavResult nav=new NavResult(folder.getInode(),host.getIdentifier(),languageId, ctx);
+                        result.setContext(ctx);
                         nav.setTitle(itemFile.getFriendlyName());
                         nav.setHref(ident.getURI());
                         nav.setOrder(itemFile.getMenuOrder());
@@ -190,7 +194,7 @@ public class NavTool implements ViewTool {
             }
 
             CacheLocator.getNavToolCache2().putNav(host.getIdentifier(), folder.getInode(), result, languageId);
-            
+            result.setContext(ctx);
             return result;
         }
     }
@@ -227,7 +231,7 @@ public class NavTool implements ViewTool {
     }
     
     public NavResult getNav() throws DotDataException, DotSecurityException {
-    	return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
+        return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
     }
     
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {

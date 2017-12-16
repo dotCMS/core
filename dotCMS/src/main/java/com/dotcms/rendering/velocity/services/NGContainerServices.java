@@ -2,7 +2,7 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-
+import com.dotcms.rendering.velocity.DotResourceCache;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
@@ -16,8 +16,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -337,7 +336,7 @@ public class NGContainerServices {
         String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
 }

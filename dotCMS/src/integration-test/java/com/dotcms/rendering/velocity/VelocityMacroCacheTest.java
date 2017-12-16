@@ -9,7 +9,7 @@ import org.junit.runners.MethodSorters;
 import static org.junit.Assert.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 /**
  * VelocityUtilTest

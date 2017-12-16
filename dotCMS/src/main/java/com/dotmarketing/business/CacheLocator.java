@@ -198,7 +198,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (com.dotmarketing.velocity.DotResourceCache)getInstance(CacheIndex.Velocity);
 	}
     public static DotResourceCache getVeloctyResourceCache2(){
-        return (DotResourceCache)getInstance(CacheIndex.Velocity);
+        return (DotResourceCache)getInstance(CacheIndex.Velocity2);
     }
     public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );

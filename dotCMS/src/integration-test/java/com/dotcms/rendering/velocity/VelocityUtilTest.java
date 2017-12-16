@@ -2,7 +2,7 @@ package com.dotcms.rendering.velocity;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;

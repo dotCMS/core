@@ -12,6 +12,7 @@ import javax.servlet.http.HttpSession;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.util.PageMode;
@@ -82,5 +83,14 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         }
         return host;
 	}
-	
+
+	@Override
+    public Host getCurrentHostNoThrow(HttpServletRequest request) {
+       try {
+           return getCurrentHost(request);
+       }
+       catch(Exception e) {
+           throw new DotRuntimeException(e);
+       }
+    }
 }

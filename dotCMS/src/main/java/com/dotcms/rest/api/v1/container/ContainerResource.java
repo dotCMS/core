@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.container;
 
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.rendering.velocity.DotResourceLoader;
+import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
@@ -40,7 +42,7 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.services.ContainerServices;
+
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
@@ -230,7 +232,7 @@ public class ContainerResource implements Serializable {
 
         VelocityUtil.getEngine()
             .evaluate(context, out, this.getClass()
-                .getName(), ContainerServices.buildVelocity(container, containerIdentifier, uuid, false));
+                .getName(), DotResourceLoader.getInstance().getResourceStream("/working/" + container.getIdentifier() + "/" + uuid + "." + VelocityType.CONTAINER.fileExtension ));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());

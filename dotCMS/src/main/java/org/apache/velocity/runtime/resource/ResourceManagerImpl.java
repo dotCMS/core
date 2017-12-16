@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import com.dotcms.rendering.velocity.DotResourceLoader;
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -36,7 +37,7 @@ import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.velocity.DotResourceLoader;
+
 
 
 /**

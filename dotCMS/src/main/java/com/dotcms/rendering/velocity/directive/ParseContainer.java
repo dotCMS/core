@@ -1,10 +1,8 @@
 package com.dotcms.rendering.velocity.directive;
 
-import com.dotcms.rendering.velocity.directive.DotDirective;
-import com.dotcms.rendering.velocity.directive.RenderParams;
+import com.dotcms.rendering.velocity.VelocityType;
 
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.util.Config;
 
 import java.io.Writer;
 
@@ -16,7 +14,6 @@ import org.apache.velocity.runtime.parser.node.Node;
 
 public class ParseContainer extends DotDirective {
 
-	private final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
 
 	private static final long serialVersionUID = 1L;
 
@@ -38,7 +35,7 @@ public class ParseContainer extends DotDirective {
         final String uid = (arguments.length>1) ? arguments[1] :  MultiTree.LEGACY_RELATION_TYPE;
         final String liveWorking = params.live ? "live" : "working";
         
-		return "/" +liveWorking + "/" + id  + "/" + uid + "." + EXTENSION ;
+		return "/" +liveWorking + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;
 		             
 	}
 }

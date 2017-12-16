@@ -2,8 +2,9 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.rendering.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.repackage.bsh.This;
-
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
@@ -26,10 +28,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TagUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.google.common.collect.Table;
@@ -51,7 +54,7 @@ import com.liferay.portal.model.User;
  *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
  *         to Window>Preferences>Java>Code Generation.
  */
-public class PageServices {
+public class PageServices implements VelocityCMSObject {
 
     /**
      * Invalidates live and working html page
@@ -65,6 +68,30 @@ public class PageServices {
             .find(htmlPage);
         invalidate(htmlPage, identifier, false);
         invalidate(htmlPage, identifier, true);
+    }
+
+    @Override
+    public void invalidate(Object obj) {
+        IHTMLPage htmlPage = (IHTMLPage) obj;
+        try {
+            invalidateAll(htmlPage);
+        } catch (DotStateException | DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void invalidate(Object obj, boolean live) {
+        IHTMLPage htmlPage = (IHTMLPage) obj;
+        Identifier identifier;
+        try {
+            identifier = APILocator.getIdentifierAPI()
+                .find(htmlPage);
+
+            invalidate(htmlPage, identifier, live);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e.getMessage());
+        }
     }
 
     /**
@@ -106,11 +133,11 @@ public class PageServices {
         }
     }
 
-    public static InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
+    public static InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE, final String filePath) throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(htmlPage);
         try {
-            return buildStream(htmlPage, identifier, EDIT_MODE);
+            return buildStream(htmlPage, identifier, EDIT_MODE,   filePath);
         } catch (Exception e) {
             Logger.error(PageServices.class, e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage());
@@ -118,7 +145,7 @@ public class PageServices {
     }
 
     @SuppressWarnings("unchecked")
-    public static InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE)
+    public static InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE, final String filePath)
             throws DotDataException, DotSecurityException {
         String folderPath = (!EDIT_MODE) ? "live/" : "working/";
         InputStream result;
@@ -147,17 +174,15 @@ public class PageServices {
 
             List<Tag> htmlPageFoundTags = APILocator.getTagAPI()
                 .getTagsByInode(htmlPage.getInode());
-            if (htmlPageFoundTags != null) {
+            if (htmlPageFoundTags != null && !htmlPageFoundTags.isEmpty()) {
                 pageFoundTags.addAll(htmlPageFoundTags);
             }
         }
 
 
 
-
-
         sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
-        
+
 
         // set the host variables
 
@@ -168,11 +193,9 @@ public class PageServices {
             .append(folderPath)
             .append(host.getIdentifier())
             .append(".")
-            .append(Config.getStringProperty("VELOCITY_HOST_EXTENSION", "html"))
+            .append(VelocityType.SITE.fileExtension)
             .append("')")
             .append(" #end ");
-
-
 
 
 
@@ -251,28 +274,28 @@ public class PageServices {
                     sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))")
                         .append(widgetpreeFull)
                         .append("#set ($contentletList")
-                        .append(containerId +uniqueId)
+                        .append(containerId + uniqueId)
                         .append(" = [")
                         .append(contentletListFull.toString())
                         .append("] )")
                         .append("#set ($totalSize")
-                        .append(containerId +uniqueId)
+                        .append(containerId + uniqueId)
                         .append("=")
                         .append(contentletsFull.size())
                         .append(")")
-                    .append("#else ")
+                        .append("#else ")
                         .append(widgetpree)
                         .append("#set ($contentletList")
-                        .append(containerId +uniqueId)
+                        .append(containerId + uniqueId)
                         .append(" = [")
                         .append(contentletList.toString())
                         .append("] )")
                         .append("#set ($totalSize")
-                        .append(containerId +uniqueId)
+                        .append(containerId + uniqueId)
                         .append("=")
                         .append(contentlets.size())
                         .append(")")
-                    .append("#end ");
+                        .append("#end ");
 
                 }
             }
@@ -287,17 +310,19 @@ public class PageServices {
         if (htmlPage.isHttpsRequired()) {
             sb.append("#if(!$ADMIN_MODE  && !$request.isSecure())");
             sb.append("#if($request.getQueryString())");
-            sb.append("#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
+            sb.append(
+                    "#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
             sb.append("#else");
-            sb.append("#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
+            sb.append(
+                    "#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
             sb.append("#end");
             sb.append("$response.sendRedirect(\"$REDIRECT_URL\")");
             sb.append("#end");
         }
 
-        sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
+        sb.append("#if($HTMLPAGE_REDIRECT) && ${HTMLPAGE_REDIRECT}.length()>0");
         sb.append(" $response.setStatus(301)");
-        sb.append(" $response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
+        sb.append(" $response.setHeader(\"Location\", \"$!HTMLPAGE_REDIRECT\")");
         sb.append("#end");
 
         Identifier iden = APILocator.getIdentifierAPI()
@@ -322,7 +347,7 @@ public class PageServices {
                 .append(folderPath)
                 .append(iden.getInode())
                 .append(".")
-                .append(Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION", "template"))
+                .append(VelocityType.TEMPLATE.fileExtension)
                 .append("')");
         }
         sb.append("#end");
@@ -331,15 +356,12 @@ public class PageServices {
         try {
 
             if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-                String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
 
-                String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-
-                String filePath = realFolderPath + identifier.getInode() + languageStr + "."
-                        + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION", "dotpage");
-
+                File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
+                f.mkdirs();
+                f.delete();
                 java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(Files
-                    .newOutputStream(Paths.get(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath)));
+                    .newOutputStream(f.toPath()));
                 // Specify a proper character encoding
                 OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
 
@@ -367,13 +389,28 @@ public class PageServices {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
-        String filePath = folderPath + identifier.getInode() + languageStr + "."
-                + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION", "dotpage");
+        String filePath = folderPath + identifier.getId() + languageStr + "."
+                + VelocityType.HTMLPAGE.fileExtension;
         velocityRootPath += java.io.File.separator;
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
+
+    @Override
+    public InputStream writeObject(String id1, String id2, boolean live, String language, final String filePath)
+            throws DotDataException, DotSecurityException {
+
+        HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
+            .fromContentlet(APILocator.getContentletAPI()
+                .findContentletByIdentifier(id1, live, Long.parseLong(language), sysUser(), true));
+
+
+        return buildStream(page, !live, filePath);
+
+
+    }
+
 
 }

@@ -17,13 +17,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.model.User;
-
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.tools.ViewRenderTool;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -32,6 +26,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.servlet.VelocityServlet;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewRenderTool;
+
+import com.liferay.portal.model.User;
 
 public class NavResult implements Iterable<NavResult>, Permissionable, Serializable {
 
@@ -60,12 +62,19 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private User sysuser=null;
     private boolean checkPermissions;
     
+    private transient Context context;
     public NavResult(String parent, String hostId, String folderId, Long languageId) {
+        this(parent, hostId, folderId, languageId, null);
+        
+    }
+    
+    
+    public NavResult(String parent, String hostId, String folderId, Long languageId, Context context) {
         this.hostId=hostId;
         this.folderId=folderId;
         this.parent=parent;
         this.languageId=languageId;
-
+        this.context = context;
         title=href="";
         order=0;
         checkPermissions=Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK",false);
@@ -77,8 +86,15 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         
     }
     
-    public NavResult(String parent, String host, Long languageId) {
-        this(parent,host,null,languageId);
+    
+    protected void setContext(Context ctx) {
+        this.context = ctx;
+    }
+    
+    
+    
+    public NavResult(String parent, String host, Long languageId, Context context) {
+        this(parent,host,null,languageId, context);
     }
     
     public String getTitle() throws Exception {
@@ -120,7 +136,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     
     public String getCodeLink() {
     	if(this.codeLink !=null  && (this.codeLink.contains("$") || this.codeLink.contains("#"))){ 
-    		return   UtilMethods.evaluateVelocity(codeLink, VelocityServlet.velocityCtx.get());
+    		return   UtilMethods.evaluateVelocity(codeLink, context);
     	}else{
 			return codeLink;
 		}
@@ -141,8 +157,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     }
 
     public boolean isActive() {
-        Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
-        HttpServletRequest req=(HttpServletRequest) ctx.get("request");
+
+        HttpServletRequest req=(HttpServletRequest) context.get("request");
         if(req!=null){
             //We exclude the page name from the Request URI so we can check if page's parent object is the real active object
             String reqURI = req.getRequestURI();
@@ -178,7 +194,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             Host host=APILocator.getHostAPI().find(hostId, sysuser, true);
             Folder folder=APILocator.getFolderAPI().find(folderId, sysuser, true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
-            NavResult lazyMe=NavTool.getNav(host, ident.getPath(), languageId, sysuser);
+            NavResult lazyMe=new NavTool().getNav(host, ident.getPath(), languageId, sysuser);
+            lazyMe.setContext(context);
             children=lazyMe.getChildren();
             childrenFolderIds=lazyMe.getChildrenFolderIds();
         }
@@ -189,7 +206,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     // for folders we avoid returning the same instance
                     // it could be changed elsewhere and we need it to
                     // load its children lazily
-                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId,nn.languageId);
+                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId,nn.languageId, context);
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
@@ -206,8 +223,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             if(checkPermissions) {
                 // now filtering permissions
                 List<NavResult> allow=new ArrayList<NavResult>(list.size());
-                Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
-                HttpServletRequest req=(HttpServletRequest) ctx.get("request");
+
+                HttpServletRequest req=(HttpServletRequest) context.get("request");
                 User currentUser=WebAPILocator.getUserWebAPI().getLoggedInUser(req);
                 if(currentUser==null) currentUser=APILocator.getUserAPI().getAnonymousUser();
                 for(NavResult nv : list) {
@@ -240,7 +257,9 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public NavResult getParent() throws DotDataException, DotSecurityException {
         String path=getParentPath();
         if(path!=null) {
-            return NavTool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path, languageId, sysuser);
+            NavResult lazyMe = new NavTool().getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path, languageId, sysuser);
+
+            return lazyMe;
         }
         else return null;
     }

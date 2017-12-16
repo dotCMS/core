@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.directive;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.rendering.velocity.directive.DotDirective;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 
@@ -20,7 +21,7 @@ public class ContentletDetail extends DotDirective {
 
 
   private static final long serialVersionUID = 1L;
-  final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTENT_EXTENSION", "content");
+  final static String EXTENSION = VelocityType.CONTENT.fileExtension;
 
 
   @Override

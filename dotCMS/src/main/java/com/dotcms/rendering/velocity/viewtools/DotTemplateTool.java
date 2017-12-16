@@ -19,7 +19,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
+
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -101,9 +101,6 @@ public class DotTemplateTool implements ViewTool {
 
                 Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
 
-                if (!template.getInode().equals(themeInode)) {
-                    template = (Template) InodeFactory.getInode(themeInode, Template.class);
-                }
 
                 drawedBody = template.getDrawedBody();
                 title = template.getTitle();

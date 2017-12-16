@@ -12,6 +12,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -50,12 +51,6 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.model.User;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -69,6 +64,13 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.servlet.VelocityServlet;
+
+import com.liferay.portal.model.User;
 
 
 
@@ -824,7 +826,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             Logger.error(this, e1.getMessage(), e1);
         } finally {
             context = null;
-            VelocityServlet.velocityCtx.remove();
+
         }
 
         if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {

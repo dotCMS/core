@@ -102,7 +102,7 @@ public class CMSFilter implements Filter {
         // Get the user language
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        iAm = this.resolveResourceType(iAm, uri, site, languageId);
+        iAm = this.urlUtil.resolveResourceType(iAm, uri, site, languageId);
 
         if (iAm == IAm.FOLDER) {
 
@@ -150,7 +150,7 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.FILE) {
+        else if (iAm == IAm.FILE) {
             Identifier ident;
             try {
                 //Serving the file through the /dotAsset servlet
@@ -173,11 +173,16 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.PAGE) {
+        else if (iAm == IAm.PAGE) {
             // Serving a page through the velocity servlet
             StringWriter forward = new StringWriter();
-            forward.append("/servlets/VelocityServlet");
-
+            if(PageMode.get(request).showLive) {
+                forward.append("/servlets/VelocityLiveServlet");
+            }
+            else {
+                forward.append("/servlets/VelocityPreviewServlet");
+            }
+            
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
                     queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
@@ -190,33 +195,19 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (uri.startsWith("/contentAsset/")) {
+        else if (uri.startsWith("/contentAsset/")) {
             if (response.isCommitted()) {
 				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
                 return;
             }
         }
-
-        // otherwise, pass
-        chain.doFilter(req, res);
+        else {
+            // otherwise, pass
+            chain.doFilter(req, res);
+        }
     }
 
-    private IAm resolveResourceType(final IAm iAm,
-                                    final String uri,
-                                    final Host site,
-                                    final long languageId) {
 
-        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
-        if (this.urlUtil.isFileAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.FILE;
-        } else if (this.urlUtil.isPageAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.PAGE;
-        } else if (this.urlUtil.isFolder(uriWithoutQueryString, site)) {
-            return IAm.FOLDER;
-        }
-
-        return iAm;
-    } // resolveResourceType.
 
     @Override
     public void destroy() {
