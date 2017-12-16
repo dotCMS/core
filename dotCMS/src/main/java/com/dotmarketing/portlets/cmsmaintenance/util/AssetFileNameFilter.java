@@ -24,30 +24,32 @@ public class AssetFileNameFilter implements FileFilter {
 		if(dir.getAbsolutePath().contains("dotGenerated") ){
 			return false;
 		}
-		
+
 		String name = dir.getName();
-		String osName = System.getProperty("os.name");
+		final String osName = System.getProperty("os.name");
+
 		String[] path;
 
-		if (osName.startsWith("Windows"))
+		if (osName.startsWith("Windows")) {
 			path = dir.getAbsolutePath().split("\\\\");
-		else
+		}
+		else {
 			path = dir.getAbsolutePath().split(File.separator);
+		}
 
 		String[] test = new String[0];
 
 		String assetPath;
+
         try {
         	assetPath = Config.getStringProperty("ASSET_REAL_PATH", FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
         	test = new File(assetPath).getAbsolutePath().split(File.separator);
         } catch (Exception e) {
         	Logger.debug(this.getClass(), e.getMessage());
         }
-        if(test.length + 1 == path.length &&
-                ( name.startsWith(".") || EXCLUDE_FOLDERS_LIST.contains(name) )){
-            return false;
-        }
-		return true;
+
+        return test.length + 1 != path.length || (name.charAt(0) != '.' && !EXCLUDE_FOLDERS_LIST.contains(name));
+        
 	}
 
 }
