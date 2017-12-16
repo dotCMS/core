@@ -14,7 +14,8 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@ page import="com.dotmarketing.util.Config" %>
+<%@page import="com.dotmarketing.util.Config" %>
+<%@page import="com.dotmarketing.util.StringUtils" %>
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
 <%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
@@ -696,17 +697,16 @@
 							Map.Entry pairs = (Map.Entry)it.next();
 							String v = "";
 							if(pairs.getValue()!=null){
+							    final String regexPattern = "(.*)-(.*)-(.*):(.*):(.*)";
 								v = pairs.getValue().toString();
 								v = v.replace("\'","\\\\'");
 								v = v.replace("\"","\\\\\"");
 								v = v.replace("\r\n","");
 								v = v.replace("\n","");
 								v = v.replace("\r","");
-								Pattern p = Pattern.compile("(.*)-(.*)-(.*):(.*):(.*)");
-								Matcher m = p.matcher(v);
-								if(m.matches()){
-									int index = v.lastIndexOf( ':' );
-									v = v.substring(0,index);
+								if(StringUtils.matches(v,regexPattern)) {
+								    int index = v.lastIndexOf( ':' );
+                                	v = v.substring(0,index);
 								}
 							}
 						%>
