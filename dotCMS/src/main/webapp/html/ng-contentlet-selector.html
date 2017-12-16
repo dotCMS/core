@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Contentlet Search</title>
+
+    <style type="text/css">
+        @import "/html/js/dojo/custom-build/dijit/themes/dijit.css";
+        @import "/html/css/dijit-dotcms/dotcms.css";
+
+        body,
+        .contentlet-search,
+        .related-content-form {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script type="text/javascript">
+        function contentSelected(content) {
+            console.log(content);
+            
+            if (ngEditContentletEvents) {
+                ngEditContentletEvents.next({
+                    event: "add",
+                    data: {
+                        inode: "inode",
+                        identifier: "identifier",
+                        type: "type"
+                    }
+                })
+            }
+        }
+
+        function isInodeSet(x) {
+            return (x && x != undefined && x != "" && x.length > 15);
+        }
+
+        djConfig = {
+            parseOnLoad: true,
+            i18n: "/html/js/dojo/custom-build/custom-build/build/",
+            useXDomain: false,
+            isDebug: false,
+            locale: "en-us",
+            modulePaths: { dotcms: "/html/js/dotcms" }
+        };
+    </script>
+
+    <script type="text/javascript" src="/html/js/log4js/log4javascript.js"></script>
+    <script type="text/javascript" src="/html/js/log4js/dotcms-log4js.js"></script>
+    <script type="text/javascript" src="/html/js/dojo/custom-build/dojo/dojo.js"></script>
+    <script type="text/javascript" src="/html/js/dojo/custom-build/build/build.js"></script>
+    <script type="text/javascript" src="/html/common/javascript.jsp"></script>
+    <script type="text/javascript" src="/dwr/engine.js"></script>
+    <script type="text/javascript" src="/dwr/util.js"></script>
+    <script type="text/javascript" src="/dwr/interface/LanguageAjax.js"></script>
+    <script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
+    <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
+    <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
+
+    <script type="text/javascript">
+        dojo.require("dotcms.dijit.form.ContentSelector");
+
+        dojo.addOnLoad(function () {
+            contentSelector.show();
+            contentSelector.containerStructures = [
+                {
+                    "inode":"d2a77f80-2628-4819-bfe9-e9916eb6ba70",
+                    "name":"Location"
+                },
+                {
+                    "inode":"d8262b9f-84ea-46f9-88c4-0c8959271d67",
+                    "name":"Document"
+                },
+                {
+                    "inode":"9ea36ae1-7775-48ae-99fe-f4ebca03a3de",
+                    "name":"Products"
+                },
+                {
+                    "inode":"f6259cc9-5d78-453e-8167-efd7b72b2e96",
+                    "name":"Event"
+                },
+                {
+                    "inode":"2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
+                    "name":"Content (Generic)"
+                },
+                {
+                    "inode":"28039964-5615-4ccf-bb96-ded62adbcc6a",
+                    "name":"News"
+                },
+                {
+                    "inode":"799f176a-d32e-4844-a07c-1b5fcd107578",
+                    "name":"Blog"
+                },
+                {
+                    "inode":"2182e848-0240-4931-b63d-824962b66007",
+                    "name":"Media"
+                }
+            ];
+            contentSelector._fillStructures();
+        })
+    </script>
+</head>
+<body>
+    <div jsId="contentSelector" onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
+</body>
+</html>
