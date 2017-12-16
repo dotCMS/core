@@ -46,7 +46,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
     @Input() archive: boolean;
     @Input() id: string;
     @Input() live: boolean;
-    @Input() system = true;
+    @Input() system: boolean;
     @Output() change: EventEmitter<Site> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
     @Output() show: EventEmitter<any> = new EventEmitter();

@@ -35,10 +35,11 @@ describe('PaginatorService setting', () => {
     });
 
     it('should do a request with extra params', () => {
-        this.paginatorService.addExtraParams('hello', 'world');
-        this.paginatorService.addExtraParams('hola', 'mundo');
+        this.paginatorService.addExtraParams('archive', 'false');
+        this.paginatorService.addExtraParams('system', 'true');
+        this.paginatorService.addExtraParams('live', null);
         this.paginatorService.get().subscribe(items => this.result = items);
-        expect(this.lastConnection.request.url).toContain('v1/urldemo?hello=world&hola=mundo');
+        expect(this.lastConnection.request.url).toContain('v1/urldemo?archive=false&system=true');
     });
 });
 
