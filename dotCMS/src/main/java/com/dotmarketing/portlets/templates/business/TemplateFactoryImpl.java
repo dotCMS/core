@@ -30,7 +30,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.text.ParseException;

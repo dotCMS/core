@@ -30,7 +30,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;

@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.viewtools.content.ContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -19,6 +19,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
+import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
@@ -67,7 +68,7 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
+
 
 import java.util.List;
 import java.util.Set;
@@ -278,13 +279,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static IndiciesCache getIndiciesCache() {
 	    return (IndiciesCache)getInstance(CacheIndex.Indicies);
 	}
-	
-    public static NavToolCache getNavToolCache2() {
-        return (NavToolCache)getInstance(CacheIndex.NavTool2);
-    }
+
     
-	public static com.dotmarketing.viewtools.navigation.NavToolCache getNavToolCache() {
-	    return (com.dotmarketing.viewtools.navigation.NavToolCache)getInstance(CacheIndex.NavTool);
+	public static NavToolCache getNavToolCache() {
+	    return (NavToolCache) getInstance(CacheIndex.NavTool);
 	}
 
 	public static PublishingEndPointCache getPublishingEndPointCache() {
@@ -463,7 +461,6 @@ enum CacheIndex
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
 	      	case Indicies: return new IndiciesCacheImpl();
-	      	case NavTool2: return new NavToolCacheImpl();
 	        case NavTool: return new NavToolCacheImpl();
 	      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
 	      	case PushedAssets: return new PushedAssetsCacheImpl();

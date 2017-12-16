@@ -66,7 +66,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-import com.dotmarketing.viewtools.content.util.ContentUtils;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
 import static com.dotmarketing.util.NumberUtil.*;

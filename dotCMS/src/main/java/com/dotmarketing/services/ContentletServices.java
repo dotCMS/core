@@ -26,7 +26,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.dotmarketing.viewtools.LanguageWebAPI;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.ByteArrayInputStream;

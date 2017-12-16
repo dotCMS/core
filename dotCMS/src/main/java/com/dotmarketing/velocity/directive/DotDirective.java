@@ -20,7 +20,7 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.viewtools.VelocityWebUtil;
+import com.dotcms.rendering.velocity.viewtools.VelocityWebUtil;
 
 abstract class DotDirective extends InputBase {
 

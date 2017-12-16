@@ -11,7 +11,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.viewtools.bean.XSLTranformationDoc;
+import com.dotcms.rendering.velocity.viewtools.bean.XSLTranformationDoc;
 
 /**
  * This class manage the XSLTransformation plugin cache

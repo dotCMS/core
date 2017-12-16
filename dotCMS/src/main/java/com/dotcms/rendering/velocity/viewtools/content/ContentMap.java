@@ -32,7 +32,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.ContentsWebAPI;
+import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
 
 /**

@@ -46,10 +46,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.DotTemplateTool;
-import com.dotmarketing.viewtools.RequestWrapper;
-import com.dotmarketing.viewtools.content.ContentMap;
+
 
 import java.io.File;
 import java.io.FilterWriter;

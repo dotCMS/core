@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.browser.ajax;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.*;
@@ -36,7 +37,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-import com.dotmarketing.viewtools.BrowserAPI;
+
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;

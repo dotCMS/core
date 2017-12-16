@@ -28,8 +28,8 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.LanguageWebAPI;
-import com.dotmarketing.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
 import java.io.File;
 import java.io.StringWriter;

@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.LanguageWebAPI;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
 import java.io.File;

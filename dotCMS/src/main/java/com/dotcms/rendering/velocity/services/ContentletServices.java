@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.DotResourceCache;
 import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.services.VanityUrlServices;
 
 import com.dotmarketing.beans.Identifier;
@@ -44,7 +45,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.LanguageWebAPI;
+
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;

@@ -73,7 +73,7 @@ public class NavTool implements ViewTool {
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier())) {
             return null;
         }
-        NavResult result=CacheLocator.getNavToolCache2().getNav(host.getIdentifier(), folder.getInode(), languageId);
+        NavResult result=CacheLocator.getNavToolCache().getNav(host.getIdentifier(), folder.getInode(), languageId);
         if(result != null) {
             result.setContext(ctx);
         	    return result;
@@ -193,7 +193,7 @@ public class NavTool implements ViewTool {
                 }
             }
 
-            CacheLocator.getNavToolCache2().putNav(host.getIdentifier(), folder.getInode(), result, languageId);
+            CacheLocator.getNavToolCache().putNav(host.getIdentifier(), folder.getInode(), result, languageId);
             result.setContext(ctx);
             return result;
         }

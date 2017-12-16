@@ -31,7 +31,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.content.util.ContentUtils;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
 /**

@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -15,7 +17,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.content.PaginatedContentList;
+
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
