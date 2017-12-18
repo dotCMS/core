@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
-import { MessageService } from '../../../../../api/services/messages-service';
+import { MessageService } from '../../../../api/services/messages-service';
 
 @Component({
     selector: 'dot-edit-page-toolbar',

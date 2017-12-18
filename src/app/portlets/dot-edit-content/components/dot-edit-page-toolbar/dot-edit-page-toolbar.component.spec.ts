@@ -3,8 +3,8 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MessageService } from '../../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../../test/message-service.mock';
+import { MessageService } from '../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../test/message-service.mock';
 
 describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;

@@ -1,0 +1,25 @@
+@import "mixins";
+@import "variables";
+
+:host {
+    background-color: $gray-lightest-x;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dot-edit__page-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin: $basic-padding * 2;
+}
+
+.dot-edit__iframe {
+    border: solid 1px $gray-lighter;
+    flex-grow: 1;    
+}
+
+.dot-edit__toolbar {
+    flex-shrink: 0;
+}

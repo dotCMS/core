@@ -31,5 +31,21 @@
     "/image/company_logo": {
         "target": "http://localhost:8080",
         "changeOrigin": false
+    },
+    "/DOTLESS": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/application": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/images": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/dA": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
     }
 }

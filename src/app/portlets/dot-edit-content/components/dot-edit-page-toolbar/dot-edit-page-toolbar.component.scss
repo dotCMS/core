@@ -2,6 +2,7 @@
 @import "variables";
 
 :host {
+    background-color: $white;
     display: block;
     position: relative;
     z-index: 1;
