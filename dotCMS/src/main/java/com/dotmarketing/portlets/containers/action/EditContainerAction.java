@@ -591,7 +591,8 @@ public class EditContainerAction extends DotPortletAction implements
 	 * @param currentContainer Container as currently exists
 	 * @param container Container with the new changes to be persisted
 	 */
-	private void saveContainerStructures (ActionRequest req, Container currentContainer, Container container) throws DotDataException, DotSecurityException {
+	private void saveContainerStructures (ActionRequest req, Container currentContainer, Container container)
+			throws DotDataException, DotSecurityException {
 		List<ContainerStructure> oldContainerStructures = APILocator.getContainerAPI().getContainerStructures(currentContainer);
 		List<ContainerStructure> csList = new LinkedList<>();
 
