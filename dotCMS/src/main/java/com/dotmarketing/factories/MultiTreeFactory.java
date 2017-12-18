@@ -384,7 +384,7 @@ public class MultiTreeFactory {
 		mt.setParent1(map.get(PARENT1));
 		mt.setParent2(map.get(PARENT2));
 		if (UtilMethods.isSet(map.get(RELATION_TYPE))) {
-			mt.setParent2(map.get(RELATION_TYPE));
+			mt.setRelationType(map.get(RELATION_TYPE));
 		}
 		if (UtilMethods.isSet(map.get(TREE_ORDER))) {
 			mt.setTreeOrder(Integer.parseInt(map.get(TREE_ORDER)));
