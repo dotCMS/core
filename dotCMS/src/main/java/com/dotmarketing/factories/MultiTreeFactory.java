@@ -2,8 +2,10 @@ package com.dotmarketing.factories;
 
 import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -536,12 +538,19 @@ public class MultiTreeFactory {
 			dc.addParam(p1.getId());
 			dc.addParam(p2.getId());
 
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), c);
+			DBTransformer transformer = TransformerLocator
+					.createDBTransformer(dc.loadObjectResults(), c);
+
+			if (transformer != null){
+				return transformer.asList();
+			}
 		}
 		catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
+
+		return Collections.emptyList();
 	}
 	
 	public static java.util.List getChildrenClass(Inode p1, Inode p2, Class c, String orderBy) {

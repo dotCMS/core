@@ -166,6 +166,7 @@ public interface WorkFlowFactory {
 	 */
 	void deleteActions(WorkflowStep step) throws DotDataException, AlreadyExistException;
 
+
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 	
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException;
