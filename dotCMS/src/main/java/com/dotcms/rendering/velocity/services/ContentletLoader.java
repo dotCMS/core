@@ -17,8 +17,6 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.services.VanityUrlServices;
@@ -40,22 +38,17 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -72,16 +65,16 @@ import com.liferay.util.FileUtil;
 /**
  * @author will
  */
-public class ContentletServices implements VelocityCMSObject {
+public class ContentletLoader implements VelocityCMSObject {
 
-    private static CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+    private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
-    public static CategoryAPI getCategoryAPI() {
+    public CategoryAPI getCategoryAPI() {
         return categoryAPI;
     }
 
-    public static void setCategoryAPI(CategoryAPI categoryAPI) {
-        ContentletServices.categoryAPI = categoryAPI;
+    public void setCategoryAPI(CategoryAPI categoryAPI) {
+        this.categoryAPI = categoryAPI;
     }
 
     /**
@@ -91,7 +84,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static void invalidateAll(Contentlet contentlet) throws DotDataException, DotSecurityException {
+    public void invalidateAll(Contentlet contentlet) throws DotDataException, DotSecurityException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(contentlet);
 
@@ -109,7 +102,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotStateException
      */
-    public static void invalidateAll(List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
+    public void invalidateAll(List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
         for (Contentlet contentlet : contentlets) {
             invalidateAll(contentlet);
         }
@@ -122,7 +115,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static void invalidateLive(Contentlet contentlet) throws DotDataException, DotSecurityException {
+    public void invalidateLive(Contentlet contentlet) throws DotDataException, DotSecurityException {
         invalidateLive(contentlet, null);
     }
 
@@ -140,8 +133,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static void invalidateLive(Contentlet contentlet, Identifier identifier)
-            throws DotDataException, DotSecurityException {
+    public void invalidateLive(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
         Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI()
             .find(contentlet) : identifier;
 
@@ -158,7 +150,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static void invalidateWorking(Contentlet contentlet) throws DotDataException, DotSecurityException {
+    public void invalidateWorking(Contentlet contentlet) throws DotDataException, DotSecurityException {
         invalidateWorking(contentlet, null);
     }
 
@@ -176,8 +168,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static void invalidateWorking(Contentlet contentlet, Identifier identifier)
-            throws DotDataException, DotSecurityException {
+    public void invalidateWorking(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
         Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI()
             .find(contentlet) : identifier;
 
@@ -186,14 +177,14 @@ public class ContentletServices implements VelocityCMSObject {
 
     }
 
-    private static void invalidate(final Contentlet content, final Identifier identifier, final boolean EDIT_MODE)
+    private void invalidate(final Contentlet content, final Identifier identifier, final boolean EDIT_MODE)
             throws DotDataException, DotSecurityException {
 
         removeContentletFile(content, identifier, EDIT_MODE);
 
         if (content.getContentType()
             .baseType() == BaseContentType.HTMLPAGE) {
-            PageServices.removePageFile(APILocator.getHTMLPageAssetAPI()
+            new PageLoader().removePageFile(APILocator.getHTMLPageAssetAPI()
                 .fromContentlet(content), identifier, EDIT_MODE);
         }
         if (content != null && content.isVanityUrl()) {
@@ -208,7 +199,7 @@ public class ContentletServices implements VelocityCMSObject {
         }
     }
 
-    public static InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE, String filePath)
+    public InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE, String filePath)
             throws DotDataException, DotSecurityException {
         InputStream result;
         ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -302,8 +293,8 @@ public class ContentletServices implements VelocityCMSObject {
                 }
                 if (field.variable()
                     .equals("widgetCode")) {
-                    widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" + velPath + content.getInode() + "_"
-                            + field.inode() + "." + VelocityType.FIELD.fileExtension + "\"))";
+                    widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" + velPath + content.getInode()
+                            + File.separator + field.inode() + "." + VelocityType.FIELD.fileExtension + "\"))";
                     continue;
                 } else {
                     String fieldValues = field.values() == null ? "" : field.values();
@@ -313,7 +304,7 @@ public class ContentletServices implements VelocityCMSObject {
                             .append("= $velutil.mergeTemplate(\"")
                             .append(velPath)
                             .append(content.getInode())
-                            .append("_")
+                            .append(File.separator)
                             .append(field.inode())
                             .append(".")
                             .append(VelocityType.FIELD.fileExtension)
@@ -329,12 +320,14 @@ public class ContentletServices implements VelocityCMSObject {
                     continue;
                 }
             }
+
+
             if (UtilMethods.isSet(contField)) {
                 try {
                     contFieldValueObject = conAPI.getFieldValue(content, field);
                     contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
                 } catch (Exception e) {
-                    Logger.error(ContentletServices.class, "writeContentletToFile: " + e.getMessage());
+                    Logger.error(this.getClass(), "writeContentletToFile: " + e.getMessage());
                 }
                 if (!(field instanceof DateTimeField || field instanceof DateField || field instanceof TimeField)) {
                     if (contFieldValue.contains("$") || contFieldValue.contains("#")) {
@@ -343,7 +336,7 @@ public class ContentletServices implements VelocityCMSObject {
                             .append("=$velutil.mergeTemplate(\"")
                             .append(velPath)
                             .append(content.getInode())
-                            .append("_")
+                            .append(File.separator)
                             .append(field.inode())
                             .append(".")
                             .append(VelocityType.FIELD.fileExtension)
@@ -497,8 +490,8 @@ public class ContentletServices implements VelocityCMSObject {
                         filesize = FileUtil.getsize(binFile);
                     }
                 } catch (IOException e) {
-                    Logger.error(ContentletServices.class, "Unable to retrive binary file for content id "
-                            + content.getIdentifier() + " field " + field.variable(), e);
+                    Logger.error(this.getClass(), "Unable to retrive binary file for content id " + content.getIdentifier()
+                            + " field " + field.variable(), e);
                     continue;
                 }
                 sb.append("#set($")
@@ -817,19 +810,9 @@ public class ContentletServices implements VelocityCMSObject {
             .append("</div>")
             .append("#end");
 
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-            f.mkdirs();
-            f.delete();
-            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
-                out.write(sb.toString());
-                out.flush();
-            } catch (Exception e) {
-                Logger.error(ContentletServices.class, e.toString(), e);
-            }
+        writeOutVelocity(filePath, sb.toString());
 
-        }
+
         try {
             result = new ByteArrayInputStream(sb.toString()
                 .getBytes("UTF-8"));
@@ -842,9 +825,9 @@ public class ContentletServices implements VelocityCMSObject {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Contentlet> sortContentlets(List<Contentlet> contentletList, String sortBy) {
+    public List<Contentlet> sortContentlets(List<Contentlet> contentletList, String sortBy) {
 
-        Logger.debug(ContentletServices.class, "I'm ordering by " + sortBy);
+        Logger.debug(this.getClass(), "I'm ordering by " + sortBy);
 
         if (sortBy.equals("tree_order")) {
             Collections.sort(contentletList, new WebAssetSortOrderComparator());
@@ -864,7 +847,7 @@ public class ContentletServices implements VelocityCMSObject {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public static void removeContentletFile(Structure structure) throws DotDataException, DotSecurityException {
+    public void removeContentletFile(Structure structure) throws DotDataException, DotSecurityException {
         ContentletAPI conAPI = APILocator.getContentletAPI();
         int limit = 500;
         int offset = 0;
@@ -882,7 +865,7 @@ public class ContentletServices implements VelocityCMSObject {
         }
     }
 
-    private static void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE)
+    private void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE)
             throws DotDataException, DotSecurityException {
         CacheLocator.getContentletCache()
             .remove(asset.getInode());
@@ -909,7 +892,7 @@ public class ContentletServices implements VelocityCMSObject {
         List<Field> fields = asset.getContentType()
             .fields();
         for (Field field : fields) {
-            new FieldServices().invalidate(field);
+            new FieldLoader().invalidate(field);
         }
     }
 

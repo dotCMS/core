@@ -1,8 +1,9 @@
 package com.dotcms.rendering.velocity.services;
 
 
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.business.APILocator;
@@ -11,22 +12,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -35,30 +26,31 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  * @since 1.6.5
  *
  */
-public class FieldServices implements VelocityCMSObject {
-	public static void invalidate(String fieldInode, String contentletIdent, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
+public class FieldLoader implements VelocityCMSObject {
+	public void invalidate(String fieldInode, String contentletIdent, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
 		removeFieldFile(fieldInode, contentletIdent, EDIT_MODE);
 	}
 	
-	public static InputStream buildVelocity(String fieldInode, String contentInode, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
+	public InputStream buildVelocity(String fieldInode, String contentInode, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
 		InputStream result;
-		Field field = FieldFactory.getFieldByInode(fieldInode);
+		Field field = APILocator.getContentTypeFieldAPI().find(fieldInode);
 		if(!UtilMethods.isSet(field)){
-			Logger.warn(FieldServices.class,"Field not found.  Unable to load velocity code");
+			Logger.warn(this.getClass(),"Field not found.  Unable to load velocity code");
 			return new ByteArrayInputStream("".toString().getBytes());
 		}
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		FieldAPI fAPI = APILocator.getFieldAPI();
 		Contentlet content = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
 		if(!UtilMethods.isSet(content)){
-			Logger.warn(FieldServices.class,"Content not found.  Unable to load velocity code");
+			Logger.warn(this.getClass(),"Content not found.  Unable to load velocity code");
 			return new ByteArrayInputStream("".toString().getBytes());
 		}
 		Object contFieldValueObject = conAPI.getFieldValue(content, field);
 		String contFieldValue = "";
 		
-		if(fAPI.isElementConstant(field) || fAPI.isElementHidden(field)){
-			contFieldValue = field.getValues() == null ? "" : field.getValues();
+		
+		
+		if(field instanceof ConstantField || field instanceof HiddenField){
+			contFieldValue = field.values() == null ? "" : field.values();
 		}else{
 			contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
 		}
@@ -68,30 +60,21 @@ public class FieldServices implements VelocityCMSObject {
 			contFieldValue += "$esc.h";
 		}
 		
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-            f.mkdirs();
-            f.delete();
-            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
-                out.write(contFieldValue.toString());
-                out.flush();
-            } catch (Exception e) {
-                Logger.error(ContentletServices.class, e.toString(), e);
-            }
 
-        }
 		
 		try {
+
 			result = new ByteArrayInputStream(contFieldValue.getBytes("UTF-8"));
+	         writeOutVelocity(filePath, contFieldValue);
 		} catch (UnsupportedEncodingException e1) {
 			result = new ByteArrayInputStream(contFieldValue.getBytes());
-			Logger.error(FieldServices.class,e1.getMessage(), e1);
+			Logger.error(this.getClass(),e1.getMessage(), e1);
 		}
+        
 		return result;
 	}
 	
-	public static void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {
+	public void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
@@ -106,7 +89,7 @@ public class FieldServices implements VelocityCMSObject {
     public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
             throws DotDataException, DotSecurityException {
 
-            return FieldServices.buildVelocity(id2, id1, !live, filePath);
+            return this.buildVelocity(id2, id1, !live, filePath);
         
     }
 

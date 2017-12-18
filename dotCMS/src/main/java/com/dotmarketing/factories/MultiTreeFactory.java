@@ -1,7 +1,7 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.rendering.velocity.services.PageServices;
+import com.dotcms.rendering.velocity.services.PageLoader;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -332,7 +332,7 @@ public class MultiTreeFactory {
             for (Contentlet pageContent : contentlets) {
                 IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(pageContent);
-                PageServices.invalidateAll(htmlPage);
+               new PageLoader().invalidateAll(htmlPage);
             }
         } catch (DotStateException | DotSecurityException e) {
             Logger.warn(MultiTreeFactory.class, "unable to refresh page cache:" + e.getMessage());

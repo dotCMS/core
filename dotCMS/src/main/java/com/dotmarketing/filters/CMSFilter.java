@@ -195,16 +195,16 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        else if (uri.startsWith("/contentAsset/")) {
+        if (uri.startsWith("/contentAsset/")) {
             if (response.isCommitted()) {
 				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
                 return;
             }
         }
-        else {
-            // otherwise, pass
-            chain.doFilter(req, res);
-        }
+
+
+       chain.doFilter(req, res);
+        
     }
 
 

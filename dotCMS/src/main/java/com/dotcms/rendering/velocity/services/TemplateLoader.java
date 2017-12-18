@@ -1,8 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -17,7 +16,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -26,7 +24,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -37,9 +34,9 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
  *         to Window>Preferences>Java>Code Generation.
  */
-public class TemplateServices implements VelocityCMSObject {
+public class TemplateLoader implements VelocityCMSObject {
 
-    public static void invalidate(Template template) throws DotStateException, DotDataException {
+    public void invalidate(Template template) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(template);
@@ -47,7 +44,7 @@ public class TemplateServices implements VelocityCMSObject {
 
     }
 
-    public static void invalidate(Template template, boolean EDIT_MODE) throws DotStateException, DotDataException {
+    public void invalidate(Template template, boolean EDIT_MODE) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(template);
@@ -55,14 +52,14 @@ public class TemplateServices implements VelocityCMSObject {
 
     }
 
-    public static InputStream buildVelocity(Template template, boolean EDIT_MODE, String filePath)
+    public InputStream buildVelocity(Template template, boolean EDIT_MODE, String filePath)
             throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(template);
         return buildVelocity(template, identifier, EDIT_MODE, filePath);
     }
 
-    public static InputStream buildVelocity(Template template, Identifier identifier, boolean EDIT_MODE, String filePath) {
+    public InputStream buildVelocity(Template template, Identifier identifier, boolean EDIT_MODE, String filePath) {
 
         InputStream result;
         StringBuilder templateBody = new StringBuilder();
@@ -88,7 +85,7 @@ public class TemplateServices implements VelocityCMSObject {
             }
 
         } catch (Exception e) {
-            Logger.error(TemplateServices.class, e.toString(), e);
+            Logger.error(this.getClass(), e.toString(), e);
         }
 
         try {
@@ -97,17 +94,17 @@ public class TemplateServices implements VelocityCMSObject {
         } catch (UnsupportedEncodingException e1) {
             result = new ByteArrayInputStream(templateBody.toString()
                 .getBytes());
-            Logger.error(TemplateServices.class, e1.getMessage(), e1);
+            Logger.error(this.getClass(), e1.getMessage(), e1);
         }
         return result;
     }
 
-    public static void invalidate(Template template, Identifier identifier, boolean EDIT_MODE) {
+    public void invalidate(Template template, Identifier identifier, boolean EDIT_MODE) {
         removeTemplateFile(template, identifier, EDIT_MODE);
     }
 
 
-    public static void unpublishTemplateFile(Template asset) throws DotStateException, DotDataException {
+    public void unpublishTemplateFile(Template asset) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(asset);
@@ -115,14 +112,14 @@ public class TemplateServices implements VelocityCMSObject {
         removeTemplateFile(asset, identifier, true);
     }
 
-    public static void removeTemplateFile(Template asset, boolean EDIT_MODE) throws DotStateException, DotDataException {
+    public void removeTemplateFile(Template asset, boolean EDIT_MODE) throws DotStateException, DotDataException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(asset);
         removeTemplateFile(asset, identifier, EDIT_MODE);
     }
 
-    public static void removeTemplateFile(Template asset, Identifier identifier, boolean EDIT_MODE) {
+    public void removeTemplateFile(Template asset, Identifier identifier, boolean EDIT_MODE) {
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
 

@@ -16,8 +16,6 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -44,27 +42,27 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 /**
  * @author will
  */
-public class ContentTypeServices implements VelocityCMSObject {
+public class ContentTypeLoader implements VelocityCMSObject {
 
-    private static long fakeIdentifier = Long.MAX_VALUE;
-    private static long fakeInode = Long.MAX_VALUE;
-    private static String fakeTitle = "Content Title";
+    private long fakeIdentifier = Long.MAX_VALUE;
+    private long fakeInode = Long.MAX_VALUE;
+    private String fakeTitle = "Content Title";
 
-    public static void invalidate(ContentType contentType) {
+    public void invalidate(ContentType contentType) {
         invalidate(contentType, true);
         invalidate(contentType, false);
     }
 
-    public static void invalidate(ContentType contentType, boolean EDIT_MODE) {
+    public void invalidate(ContentType contentType, boolean EDIT_MODE) {
         removeContentTypeFile(contentType);
     }
 
-    public static InputStream buildVelocity(ContentType contentType, String filePath) {
+    public InputStream buildVelocity(ContentType contentType, String filePath) {
         return buildVelocity(contentType, true,filePath);
     }
 
     @SuppressWarnings("deprecation")
-    public static InputStream buildVelocity(ContentType type, boolean EDIT_MODE, String filePath) {
+    public InputStream buildVelocity(ContentType type, boolean EDIT_MODE, String filePath) {
 
         // let's write this puppy out to our file
         StringBuilder sb = new StringBuilder();
@@ -106,7 +104,7 @@ public class ContentTypeServices implements VelocityCMSObject {
                     contFieldValueObject = field.name();
                     contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
                 } catch (Exception e) {
-                    Logger.error(ContentletServices.class, "writeContentletToFile: " + e.getMessage());
+                    Logger.error(this.getClass(), "writeContentletToFile: " + e.getMessage());
                 }
                 if (!(field instanceof DateTimeField || field instanceof DateField || field instanceof TimeField)) {
                     sb.append("#set( $")
@@ -284,7 +282,7 @@ public class ContentTypeServices implements VelocityCMSObject {
         } catch (UnsupportedEncodingException e1) {
             result = new ByteArrayInputStream(sb.toString()
                 .getBytes());
-            Logger.error(ContentTypeServices.class, e1.getMessage(), e1);
+            Logger.error(this.getClass(), e1.getMessage(), e1);
         }
 
         try {
@@ -297,18 +295,18 @@ public class ContentTypeServices implements VelocityCMSObject {
                     out.write(sb.toString());
                     out.flush();
                 } catch (Exception e) {
-                    Logger.error(ContentletServices.class, e.toString(), e);
+                    Logger.error(this.getClass(), e.toString(), e);
                 }
 
             }
 
         } catch (Exception e) {
-            Logger.error(ContentTypeServices.class, e.toString(), e);
+            Logger.error(this.getClass(), e.toString(), e);
         }
         return result;
     }
 
-    public static void removeContentTypeFile(ContentType contentType) {
+    public void removeContentTypeFile(ContentType contentType) {
         String folderPath = "working/";
         String filePath = folderPath + contentType.inode() + "." + VelocityType.CONTENT_TYPE.fileExtension;
 

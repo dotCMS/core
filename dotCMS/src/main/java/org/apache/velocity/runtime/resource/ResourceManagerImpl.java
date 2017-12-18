@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import com.dotcms.rendering.velocity.DotResourceLoader;
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;

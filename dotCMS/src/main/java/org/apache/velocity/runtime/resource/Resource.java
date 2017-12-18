@@ -116,7 +116,7 @@ public abstract class Resource implements Serializable
      */
     public boolean isSourceModified()
     {
-        return com.dotcms.rendering.velocity.DotResourceLoader.getInstance().isSourceModified(this);
+        return com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().isSourceModified(this);
     }
 
     /**

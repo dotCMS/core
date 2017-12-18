@@ -2,8 +2,8 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.PageVelocityContext;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.bsh.This;
 
 import com.dotmarketing.beans.Host;
@@ -11,7 +11,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,22 +25,20 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.google.common.collect.Table;
@@ -54,7 +51,7 @@ import com.liferay.portal.model.User;
  *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
  *         to Window>Preferences>Java>Code Generation.
  */
-public class PageServices implements VelocityCMSObject {
+public class PageLoader implements VelocityCMSObject {
 
     /**
      * Invalidates live and working html page
@@ -101,7 +98,7 @@ public class PageServices implements VelocityCMSObject {
      * @throws DotStateException
      * @throws DotDataException
      */
-    public static void invalidateLive(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+    public void invalidateLive(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(htmlPage);
         invalidate(htmlPage, identifier, false);
@@ -114,7 +111,7 @@ public class PageServices implements VelocityCMSObject {
      * @throws DotStateException
      * @throws DotDataException
      */
-    public static void invalidateWorking(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+    public void invalidateWorking(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(htmlPage);
         invalidate(htmlPage, identifier, true);
@@ -126,31 +123,32 @@ public class PageServices implements VelocityCMSObject {
 
         if (htmlPage instanceof Contentlet) {
             if (EDIT_MODE) {
-                ContentletServices.invalidateWorking((Contentlet) htmlPage, identifier);
+                new ContentletLoader().invalidateWorking((Contentlet) htmlPage, identifier);
             } else {
-                ContentletServices.invalidateLive((Contentlet) htmlPage, identifier);
+                new ContentletLoader().invalidateLive((Contentlet) htmlPage, identifier);
             }
         }
     }
 
-    public static InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE, final String filePath) throws DotStateException, DotDataException {
+    public InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE, final String filePath)
+            throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(htmlPage);
         try {
-            return buildStream(htmlPage, identifier, EDIT_MODE,   filePath);
+            return buildStream(htmlPage, identifier, EDIT_MODE, filePath);
         } catch (Exception e) {
-            Logger.error(PageServices.class, e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage());
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE, final String filePath)
+
+    public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE, final String filePath)
             throws DotDataException, DotSecurityException {
         String folderPath = (!EDIT_MODE) ? "live/" : "working/";
         InputStream result;
         StringBuilder sb = new StringBuilder();
-        VersionableAPI vers = APILocator.getVersionableAPI();
+
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Template cmsTemplate = APILocator.getHTMLPageAssetAPI()
             .getTemplate(htmlPage, EDIT_MODE);
@@ -197,7 +195,12 @@ public class PageServices implements VelocityCMSObject {
             .append("')")
             .append(" #end ");
 
-
+        PageMode mode = (EDIT_MODE) ? PageMode.PREVIEW :PageMode.LIVE;
+        
+        //sb.append( new PageVelocityContext(htmlPage, sys, mode).printForVelocity());
+        
+        
+        
 
         Table<String, String, Set<String>> pageContents = new MultiTreeAPI().getPageMultiTrees(htmlPage, !EDIT_MODE);
 
@@ -320,7 +323,7 @@ public class PageServices implements VelocityCMSObject {
             sb.append("#end");
         }
 
-        sb.append("#if($HTMLPAGE_REDIRECT) && ${HTMLPAGE_REDIRECT}.length()>0");
+        sb.append("#if($HTMLPAGE_REDIRECT) && ${HTMLPAGE_REDIRECT}.length()>0)");
         sb.append(" $response.setStatus(301)");
         sb.append(" $response.setHeader(\"Location\", \"$!HTMLPAGE_REDIRECT\")");
         sb.append("#end");
@@ -345,7 +348,7 @@ public class PageServices implements VelocityCMSObject {
         } else {
             sb.append("#parse('")
                 .append(folderPath)
-                .append(iden.getInode())
+                .append(iden.getId())
                 .append(".")
                 .append(VelocityType.TEMPLATE.fileExtension)
                 .append("')");
@@ -353,26 +356,16 @@ public class PageServices implements VelocityCMSObject {
         sb.append("#end");
 
 
-        try {
-
-            if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-
-                File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-                f.mkdirs();
-                f.delete();
-                java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(Files
-                    .newOutputStream(f.toPath()));
-                // Specify a proper character encoding
-                OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
-
+        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
+            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
+            f.mkdirs();
+            f.delete();
+            try ( BufferedWriter out = new java.io.BufferedWriter(new VelocityPrettyWriter(new FileOutputStream(f)))) {
                 out.write(sb.toString());
-
                 out.flush();
-                out.close();
-                tmpOut.close();
+            } catch (Exception e) {
+                Logger.error(this.getClass(), e.toString(), e);
             }
-        } catch (Exception e) {
-            Logger.error(PageServices.class, e.toString(), e);
         }
         try {
             result = new ByteArrayInputStream(sb.toString()
@@ -380,7 +373,7 @@ public class PageServices implements VelocityCMSObject {
         } catch (UnsupportedEncodingException e1) {
             result = new ByteArrayInputStream(sb.toString()
                 .getBytes());
-            Logger.error(ContainerServices.class, e1.getMessage(), e1);
+            Logger.error(this.getClass(), e1.getMessage(), e1);
         }
         return result;
     }
@@ -389,8 +382,7 @@ public class PageServices implements VelocityCMSObject {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
-        String filePath = folderPath + identifier.getId() + languageStr + "."
-                + VelocityType.HTMLPAGE.fileExtension;
+        String filePath = folderPath + identifier.getId() + languageStr + "." + VelocityType.HTMLPAGE.fileExtension;
         velocityRootPath += java.io.File.separator;
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete();

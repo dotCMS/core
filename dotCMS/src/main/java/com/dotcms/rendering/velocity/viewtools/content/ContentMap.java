@@ -3,6 +3,7 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
@@ -13,6 +14,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
@@ -286,7 +288,7 @@ public class ContentMap {
 				Template template = null;
 				StringWriter sw = new StringWriter();
 
-				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + "_" + f.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION"));
+				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
 				template.merge(context, sw);
 				ret = sw.toString();
 			}

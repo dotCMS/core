@@ -66,7 +66,7 @@ public class ContentResource extends Resource
             StringWriter sw = new StringWriter();
 
             reader = new BufferedReader(
-                new InputStreamReader(com.dotcms.rendering.velocity.DotResourceLoader.getInstance().getResourceStream(name),
+                new InputStreamReader(com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().getResourceStream(name),
                                       encoding));
 
             char buf[] = new char[1024];

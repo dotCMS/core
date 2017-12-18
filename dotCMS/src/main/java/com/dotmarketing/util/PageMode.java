@@ -33,24 +33,23 @@ public enum PageMode {
     }
 
 
-    public static PageMode get(HttpSession ses) {
+    public static PageMode get(final HttpSession ses) {
 
         PageMode mode = (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null
                 && ses.getAttribute("tm_date") == null)
                         ? (PageMode) ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION)
                         : ANON;
-
         return mode;
     }
 
-    public static PageMode get(HttpServletRequest req) {
-        if (req == null || req.getSession(false) == null) {
+    public static PageMode get(final HttpServletRequest req) {
+        if (req == null || req.getSession(false) == null || null!= req.getHeader("X-Requested-With")) {
             return ANON;
         }
         return get(req.getSession());
     }
 
-    public static void setPageMode(HttpServletRequest request, boolean contentLocked, boolean canLock) {
+    public static void setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
         if (contentLocked && canLock) {
             setPageMode(request,EDIT);
         } else {
@@ -58,7 +57,7 @@ public enum PageMode {
         }
     }
 
-    public static void setPageMode(HttpServletRequest request, PageMode mode) {
+    public static void setPageMode(final HttpServletRequest request, PageMode mode) {
         request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         request.setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
     }

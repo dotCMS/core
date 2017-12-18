@@ -2,11 +2,7 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
-import com.dotcms.rendering.velocity.services.ContainerServices;
-import com.dotcms.rendering.velocity.services.ContentletServices;
-import com.dotcms.rendering.velocity.services.NGContainerServices;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
@@ -21,24 +17,23 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import java.io.BufferedOutputStream;
+
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
  */
-public class ContainerServices implements VelocityCMSObject {
+public class ContainerLoader implements VelocityCMSObject {
 
 
     @Override
@@ -104,7 +99,7 @@ public class ContainerServices implements VelocityCMSObject {
         }
 
         // let's write this puppy out to our file
-        sb.append("#set ($SERVER_NAME =\"$host.getHostname()\" ) ");
+        sb.append("#set ($SERVER_NAME =$host.getHostname() ) ");
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '")
             .append(identifier.getId())
             .append("')");
@@ -161,13 +156,13 @@ public class ContainerServices implements VelocityCMSObject {
         // commented by issue-2093
         // sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" ).append(
         // UtilMethods.espaceForVelocity(st.getName()) ).append( "\")");
-        if (UtilMethods.isSet(container.getNotes()))
+        if (UtilMethods.isSet(container.getNotes())) {
             sb.append("#set ($CONTAINER_NOTES = \"")
                 .append(UtilMethods.espaceForVelocity(container.getNotes()))
                 .append("\")");
-        else
+        }else {
             sb.append("#set ($CONTAINER_NOTES = \"\")");
-
+        }
 
 
         if (EDIT_MODE) {
@@ -191,7 +186,7 @@ public class ContainerServices implements VelocityCMSObject {
                     containerDiv.append(t.variable())
                         .append(",");
                 } catch (DotDataException | DotSecurityException e) {
-                    Logger.warn(NGContainerServices.class, "unable to find content type:" + struct);
+                    Logger.warn(this.getClass(), "unable to find content type:" + struct);
                 }
             }
             containerDiv.append("\">");
@@ -381,19 +376,7 @@ public class ContainerServices implements VelocityCMSObject {
 
 
 
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-            f.mkdirs();
-            f.delete();
-            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
-                out.write(sb.toString());
-                out.flush();
-            } catch (Exception e) {
-                Logger.error(ContentletServices.class, e.toString(), e);
-            }
-
-        }
+        writeOutVelocity(filePath, sb.toString());
 
         try {
             result = new ByteArrayInputStream(sb.toString()
@@ -401,7 +384,7 @@ public class ContainerServices implements VelocityCMSObject {
         } catch (UnsupportedEncodingException e1) {
             result = new ByteArrayInputStream(sb.toString()
                 .getBytes());
-            Logger.error(ContainerServices.class, e1.getMessage(), e1);
+            Logger.error(this.getClass(), e1.getMessage(), e1);
         }
         return result;
     }

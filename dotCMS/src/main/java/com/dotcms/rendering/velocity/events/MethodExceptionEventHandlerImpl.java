@@ -13,10 +13,10 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.ParseErrorException;
 
-import com.dotcms.rendering.velocity.DotResourceLoader;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 

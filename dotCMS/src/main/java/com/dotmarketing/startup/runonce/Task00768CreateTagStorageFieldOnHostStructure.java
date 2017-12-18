@@ -2,7 +2,11 @@ package com.dotmarketing.startup.runonce;
 
 import java.util.List;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.services.DotResourceCache;
+
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
@@ -119,7 +123,7 @@ public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTas
 
 			FieldsCache.removeFields(structure);
 			CacheLocator.getContentTypeCache().remove(structure);
-			new com.dotcms.rendering.velocity.services.ContentTypeServices().invalidate(structure);
+			CacheLocator.getVeloctyResourceCache2().removeContentTypeFile(new StructureTransformer(structure).from());
 			StructureFactory.saveStructure(structure);
 			
 			//Populate host contents with tag storage value = SYSTEM_HOST

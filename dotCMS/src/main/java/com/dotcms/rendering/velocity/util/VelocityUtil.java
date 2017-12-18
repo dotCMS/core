@@ -4,6 +4,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.visitor.domain.Visitor;
 
 import com.dotmarketing.beans.Host;
@@ -28,8 +30,6 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
-import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
 import java.io.File;
 import java.io.StringWriter;
@@ -51,7 +51,6 @@ import org.apache.velocity.tools.view.ToolboxManager;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
-import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
 
@@ -59,7 +58,6 @@ import com.liferay.util.SystemProperties;
 public class VelocityUtil {
 
 	private static VelocityEngine ve = null;
-	private static String dotResourceLoaderClassName = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 	
 	private synchronized static void init(){
@@ -68,7 +66,7 @@ public class VelocityUtil {
 		ve = new VelocityEngine();
 		try{
 			ve.init(SystemProperties.getProperties());
-			dotResourceLoaderClassName = SystemProperties.get(SystemProperties.get("resource.loader") + ".resource.loader.class");
+
 			Logger.debug(VelocityUtil.class, SystemProperties.getProperties().toString());
 		}catch (Exception e) {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
@@ -99,16 +97,7 @@ public class VelocityUtil {
 		return s;
 	}
 
-	public static String getDotResourceLoaderClassName() {
-		if(dotResourceLoaderClassName == null){
-			init();
-			if(dotResourceLoaderClassName == null){
-				Logger.fatal(VelocityUtil.class,"Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-			}
-		}
-		return dotResourceLoaderClassName;
-	}
+
 	
 	public String parseVelocity(String velocityCode, Context ctx){
 		VelocityEngine ve = VelocityUtil.getEngine();
@@ -359,12 +348,11 @@ public class VelocityUtil {
 	            // Check if the user is a CMS Administrator
 	            boolean adminUser = false;
 	            try {
-	                Company company = null;
-	                company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+
 
 	                String adminRoleKey = "";
 	                try {
-	                    Role adminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+	                    Role adminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE", "CMS Administrator"));
 	                    adminRoleKey = adminRole.getRoleKey();
 	                } catch (Exception e) {
 	                }
@@ -571,10 +559,10 @@ public class VelocityUtil {
 	public static IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live, Context context) throws DotDataException, DotSecurityException{
 
 		long langId = getLanguageId(request);
-		request.setAttribute("idInode", String.valueOf(id.getInode()));
+		request.setAttribute("idInode", String.valueOf(id.getId()));
 
 		IHTMLPage htmlPage;
-		if(id.getAssetType().equals("contentlet")) {
+
 
 			Contentlet contentlet;
 
@@ -603,9 +591,7 @@ public class VelocityUtil {
 			if(UtilMethods.isSet(context)){
 				context.put("availablePageLangs", getAvailableContentPageLanguages(contentlet));
 			}
-		} else {
-			htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-		}
+		 
 
 		return htmlPage;
 	}

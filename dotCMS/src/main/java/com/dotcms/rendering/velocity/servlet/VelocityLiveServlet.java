@@ -3,7 +3,7 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
@@ -35,7 +35,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
-
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -59,6 +58,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 public class VelocityLiveServlet extends HttpServlet {
 
@@ -66,7 +66,7 @@ public class VelocityLiveServlet extends HttpServlet {
     private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
     private String CHARSET = "UTF-8";
-    private final String VELOCITY_HTMLPAGE_EXTENSION = "dotpage2";
+
 
 
     @Override
@@ -203,64 +203,8 @@ public class VelocityLiveServlet extends HttpServlet {
             request.setAttribute("idInode", String.valueOf(ident.getId()));
             Logger.debug(VelocityLiveServlet.class, "VELOCITY HTML INODE=" + ident.getId());
 
-            Optional<Visitor> visitor = visitorAPI.getVisitor(request);
-
-            boolean newVisitor = false;
-            boolean newVisit = false;
-
-            /*
-             * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659 //Set long lived cookie
-             * regardless of who this is
-             */
-            String _dotCMSID =
-                    UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
-
-            if (!UtilMethods.isSet(_dotCMSID)) {
-                // create unique generator engine
-                Cookie idCookie = CookieUtil.createCookie();
-                _dotCMSID = idCookie.getValue();
-                response.addCookie(idCookie);
-                newVisitor = true;
-
-                if (visitor.isPresent()) {
-                    visitor.get()
-                        .setDmid(UUID.fromString(_dotCMSID));
-                }
-
-            }
-
-            String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(), WebKeys.ONCE_PER_VISIT_COOKIE);
-
-            if (!UtilMethods.isSet(_oncePerVisitCookie)) {
-                newVisit = true;
-            }
-
-            if (newVisitor) {
-                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
-                if (response.isCommitted()) {
-                    /*
-                     * Some form of redirect, error, or the request has already been fulfilled in
-                     * some fashion by one or more of the actionlets.
-                     */
-                    Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
-                    return;
-                }
-            }
-
-            if (newVisit) {
-                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
-                if (response.isCommitted()) {
-                    /*
-                     * Some form of redirect, error, or the request has already been fulfilled in
-                     * some fashion by one or more of the actionlets.
-                     */
-                    Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
-                    return;
-                }
-            }
-
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
-
+            RulesEngine.fireRules(request, response);
+            
             if (response.isCommitted()) {
                 /*
                  * Some form of redirect, error, or the request has already been fulfilled in some
@@ -271,11 +215,11 @@ public class VelocityLiveServlet extends HttpServlet {
             }
 
 
-            com.liferay.portal.model.User user = null;
+            User user = null;
             HttpSession session = request.getSession(false);
             try {
                 if (session != null)
-                    user = (com.liferay.portal.model.User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+                    user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
             } catch (Exception nsue) {
                 Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
             }
@@ -391,6 +335,12 @@ public class VelocityLiveServlet extends HttpServlet {
 
     }
 
+    
+    
+    
+    
+    
+    
     public class VelocityFilterWriter extends FilterWriter {
 
         private boolean firstNonWhiteSpace = false;

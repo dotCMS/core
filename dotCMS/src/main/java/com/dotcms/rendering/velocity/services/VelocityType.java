@@ -1,16 +1,16 @@
-package com.dotcms.rendering.velocity;
+package com.dotcms.rendering.velocity.services;
 
 
 import com.dotmarketing.util.UtilMethods;
 
 public enum VelocityType {
-    CONTAINER("containers"), 
+    CONTAINER("container"), 
     CONTENT("contentlet"), 
     CONTENT_MAP("oldContentMap"), 
     FIELD("fields"), 
     HTMLPAGE("dotHtmlPage"), 
     TEMPLATE("templateLayout"), 
-    CONTENT_TYPE("containers"), 
+    CONTENT_TYPE("contentType"), 
     SITE("site"),
     VTL("vtl"), 
     VELOCITY_MACROS("vm"),

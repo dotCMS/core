@@ -112,7 +112,7 @@ public class Template extends Resource
          */
         try
         {
-            is = com.dotcms.rendering.velocity.DotResourceLoader.getInstance().getResourceStream(name);
+            is = com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().getResourceStream(name);
         }
         catch( ResourceNotFoundException rnfe )
         {

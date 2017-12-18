@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.container;
 
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.rendering.velocity.DotResourceLoader;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;

@@ -2,9 +2,9 @@ package com.dotcms.rendering.velocity.directive;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.VelocityType;
 import com.dotcms.rendering.velocity.directive.DotDirective;
 import com.dotcms.rendering.velocity.directive.RenderParams;
+import com.dotcms.rendering.velocity.services.VelocityType;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;

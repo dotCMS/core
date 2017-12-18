@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.ArrayList;
 
-import com.dotcms.rendering.velocity.DotResourceLoader;
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.repackage.bsh.This;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.Template;

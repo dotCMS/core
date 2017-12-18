@@ -15,22 +15,22 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.liferay.util.FileUtil;
 
-public class VTLServices implements VelocityCMSObject {
+public class VTLLoader implements VelocityCMSObject {
     private static String velocityCanoncalPath;
     private static String assetCanoncalPath;
     private static String assetRealCanoncalPath;
     private static String VELOCITY_ROOT;
-    private static VTLServices vtlServices;
+    private static VTLLoader vtlServices;
 
-    private VTLServices() {
+    private VTLLoader() {
         init();
     }
 
-    public static VTLServices instance() {
+    public static VTLLoader instance() {
         if (vtlServices == null) {
-            synchronized (VTLServices.class) {
+            synchronized (VTLLoader.class) {
                 if (vtlServices == null) {
-                    vtlServices = new VTLServices();
+                    vtlServices = new VTLLoader();
                 }
             }
         }

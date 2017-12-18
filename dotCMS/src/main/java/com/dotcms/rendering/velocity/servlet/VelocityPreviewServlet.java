@@ -8,16 +8,16 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.visitor.business.VisitorAPI;
-import com.dotcms.visitor.domain.Visitor;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BlockPageCache;
-import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.portal.PortletAPI;
@@ -25,39 +25,24 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.rules.business.RulesEngine;
-import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
-import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
-
-import com.dotmarketing.util.WebKeys;
-
 
 import java.io.File;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -65,17 +50,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
@@ -83,17 +64,13 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.tools.view.context.ChainedContext;
 
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
 
-public abstract class VelocityPreviewServlet extends HttpServlet {
+public class VelocityPreviewServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
@@ -198,7 +175,17 @@ public abstract class VelocityPreviewServlet extends HttpServlet {
             }
 
             
-            
+            switch (mode) {
+                case PREVIEW:
+                    Logger.debug(VelocityPreviewServlet.class, "VELOCITY SERVLET I'M ON PREVIEW MODE!!!");
+                    doPreviewMode(request, response);
+                    break;
+                case EDIT:
+                    Logger.debug(VelocityPreviewServlet.class, "VELOCITY SERVLET I'M ON EDIT MODE!!!");
+                    doEditMode(request, response);
+                    break;
+
+            }
             
 
 

@@ -1,6 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.services.VelocityType;
 
 import com.dotmarketing.beans.MultiTree;
 

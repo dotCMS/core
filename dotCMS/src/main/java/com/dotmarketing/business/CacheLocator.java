@@ -17,7 +17,7 @@ import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
-import com.dotcms.rendering.velocity.DotResourceCache;
+import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 

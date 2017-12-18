@@ -1,8 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 
-import com.dotcms.rendering.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.VelocityType;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -12,47 +11,35 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.liferay.portal.model.User;
-import java.io.BufferedOutputStream;
+
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
-/**
- * @author will
- *
- *         To change this generated comment edit the template variable "typecomment":
- *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
- *         to Window>Preferences>Java>Code Generation.
- */
-public class SiteServices implements VelocityCMSObject {
+import com.liferay.portal.model.User;
 
-    public static void invalidate(Host host) {
+
+public class SiteLoader implements VelocityCMSObject {
+
+    public void invalidate(Host host) {
 
 
         invalidate(host, false);
         invalidate(host, true);
     }
 
-    public static void invalidate(Host host, boolean EDIT_MODE) {
+    public void invalidate(Host host, boolean EDIT_MODE) {
         removeHostFile(host, EDIT_MODE);
     }
 
     @SuppressWarnings("unchecked")
-    public static InputStream buildStream(Host host, boolean EDIT_MODE, String filePath) throws DotDataException, DotSecurityException {
+    public InputStream buildStream(Host host, boolean EDIT_MODE, String filePath) throws DotDataException, DotSecurityException {
 
         InputStream result;
         StringBuilder sb = new StringBuilder();
@@ -79,19 +66,7 @@ public class SiteServices implements VelocityCMSObject {
             }
         }
 
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-            File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-            f.mkdirs();
-            f.delete();
-            try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                    OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
-                out.write(sb.toString());
-                out.flush();
-            } catch (Exception e) {
-                Logger.error(SiteServices.class, e.toString(), e);
-            }
-
-        }
+        writeOutVelocity(filePath, sb.toString());
 
         try {
             result = new ByteArrayInputStream(sb.toString()
@@ -99,20 +74,20 @@ public class SiteServices implements VelocityCMSObject {
         } catch (UnsupportedEncodingException e1) {
             result = new ByteArrayInputStream(sb.toString()
                 .getBytes());
-            Logger.error(ContainerServices.class, e1.getMessage(), e1);
+            Logger.error(this.getClass(), e1.getMessage(), e1);
         }
         return result;
     }
 
 
-    public static void unpublishPageFile(Host host) {
+    public void unpublishPageFile(Host host) {
 
         removeHostFile(host, false);
     }
 
 
 
-    public static void removeHostFile(Host host, boolean EDIT_MODE) {
+    public void removeHostFile(Host host, boolean EDIT_MODE) {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         String filePath = folderPath + host.getIdentifier() + "." + VelocityType.SITE.fileExtension;

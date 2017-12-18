@@ -1,13 +1,6 @@
-package com.dotcms.rendering.velocity;
+package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.rendering.velocity.services.ContainerServices;
-import com.dotcms.rendering.velocity.services.ContentTypeServices;
-import com.dotcms.rendering.velocity.services.ContentletServices;
-import com.dotcms.rendering.velocity.services.FieldServices;
-import com.dotcms.rendering.velocity.services.PageServices;
-import com.dotcms.rendering.velocity.services.SiteServices;
-import com.dotcms.rendering.velocity.services.TemplateServices;
-import com.dotcms.rendering.velocity.services.VTLServices;
+
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
 import com.dotmarketing.business.APILocator;
@@ -32,7 +25,7 @@ public class DotResourceLoader extends ResourceLoader {
 
     }
 
-
+    
     @Override
     public InputStream getResourceStream(final String filePath) throws ResourceNotFoundException {
         if (!UtilMethods.isSet(filePath)) {
@@ -67,40 +60,40 @@ public class DotResourceLoader extends ResourceLoader {
                             .getResourceStream(filePath);
                     }
                     case CONTAINER: {
-                        return new ContainerServices().writeObject(id1, id2, live, language, filePath);
+                        return new ContainerLoader().writeObject(id1, id2, live, language, filePath);
                     }
                     case TEMPLATE: {
 
-                        return new TemplateServices().writeObject(id1, id2, live, language, filePath);
+                        return new TemplateLoader().writeObject(id1, id2, live, language, filePath);
 
                     }
                     case CONTENT: {
-                        return new ContentletServices().writeObject(id1, id2, live, language, filePath);
+                        return new ContentletLoader().writeObject(id1, id2, live, language, filePath);
                     }
                     case FIELD: {
-                        return new FieldServices().writeObject(id1, id2, live, language, filePath);
+                        return new FieldLoader().writeObject(id1, id2, live, language, filePath);
                     }
                     case CONTENT_TYPE: {
-                        return new ContentTypeServices().writeObject(id1, id2, live, language, filePath);
+                        return new ContentTypeLoader().writeObject(id1, id2, live, language, filePath);
                     }
                     case SITE: {
-                        return new SiteServices().writeObject(id1, id2, live, language, filePath);
+                        return new SiteLoader().writeObject(id1, id2, live, language, filePath);
 
                     }
                     case HTMLPAGE: {
-                        return new PageServices().writeObject(id1, id2, live, language, filePath);
+                        return new PageLoader().writeObject(id1, id2, live, language, filePath);
 
                     }
                     case VELOCITY_MACROS: {
-                        return VTLServices.instance()
+                        return VTLLoader.instance()
                             .writeObject(id1, id2, live, language, filePath);
                     }
                     case VTL: {
-                        return VTLServices.instance()
+                        return VTLLoader.instance()
                             .writeObject(id1, id2, live, language, filePath);
                     }
                     case VELOCITY_LEGACY_VL: {
-                        return VTLServices.instance()
+                        return VTLLoader.instance()
                             .writeObject(id1, id2, live, language, filePath);
                     }
                     default: {
