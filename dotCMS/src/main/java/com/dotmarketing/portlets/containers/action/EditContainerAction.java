@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.containers.action;
 
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -562,6 +564,34 @@ public class EditContainerAction extends DotPortletAction implements
 		APILocator.getIdentifierAPI().save(identifier);
 
 
+		//Save/Update/Delete the ContainerStructures associated
+		saveContainerStructures(req, currentContainer, container);
+
+
+		SessionMessages.add(httpReq, "message", "message.containers.save");
+		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+		// saves to working folder under velocity
+		ContainerServices.invalidate(container, true);
+
+		// copies the information back into the form bean
+		BeanUtils.copyProperties(form, req
+				.getAttribute(WebKeys.CONTAINER_FORM_EDIT));
+
+		APILocator.getVersionableAPI().setWorking(container);
+
+
+
+
+		HibernateUtil.flush();
+	}
+
+	/**
+	 * Containers are associated with multiple Structures. This method takes care of the ContainerStructure save/update/delete logic
+	 * @param req Request
+	 * @param currentContainer Container as currently exists
+	 * @param container Container with the new changes to be persisted
+	 */
+	private void saveContainerStructures (ActionRequest req, Container currentContainer, Container container) throws DotDataException, DotSecurityException {
 		List<ContainerStructure> oldContainerStructures = APILocator.getContainerAPI().getContainerStructures(currentContainer);
 		List<ContainerStructure> csList = new LinkedList<>();
 
@@ -575,7 +605,7 @@ public class EditContainerAction extends DotPortletAction implements
 				String code = req.getParameter("code_"+structureId);
 				ContainerStructure cs = new ContainerStructure();
 				cs.setContainerId(container.getIdentifier());
-                cs.setContainerInode(container.getInode());
+				cs.setContainerInode(container.getInode());
 				cs.setStructureId(structureId);
 				cs.setCode(code);
 				csList.add(cs);
@@ -604,23 +634,6 @@ public class EditContainerAction extends DotPortletAction implements
 				}
 			}
 		}
-
-
-		SessionMessages.add(httpReq, "message", "message.containers.save");
-		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
-		// saves to working folder under velocity
-		ContainerServices.invalidate(container, true);
-
-		// copies the information back into the form bean
-		BeanUtils.copyProperties(form, req
-				.getAttribute(WebKeys.CONTAINER_FORM_EDIT));
-
-		APILocator.getVersionableAPI().setWorking(container);
-
-
-
-
-		HibernateUtil.flush();
 	}
 
 	public void _copyWebAsset(ActionRequest req, ActionResponse res,
