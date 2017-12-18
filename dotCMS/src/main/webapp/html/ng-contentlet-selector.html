@@ -10,6 +10,10 @@
         @import "/html/js/dojo/custom-build/dijit/themes/dijit.css";
         @import "/html/css/dijit-dotcms/dotcms.css";
 
+        body {
+            background-color: #fff;
+        }
+
         body,
         .contentlet-search,
         .related-content-form {
@@ -20,14 +24,12 @@
 
     <script type="text/javascript">
         function contentSelected(content) {
-            console.log(content);
-            
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
-                    event: "add",
+                    event: "select",
                     data: {
-                        inode: "inode",
-                        identifier: "identifier",
+                        inode: content.inode,
+                        identifier: content.identifier,
                         type: "type"
                     }
                 })
