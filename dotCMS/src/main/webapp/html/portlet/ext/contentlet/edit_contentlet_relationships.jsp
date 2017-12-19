@@ -19,8 +19,6 @@
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
 <%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
-<%@page import="java.util.regex.Matcher"%>
-<%@page import="java.util.regex.Pattern"%>
 
 <%
 	LanguageAPI langAPI = APILocator.getLanguageAPI();
@@ -654,10 +652,8 @@
 					href += "&relname_inodes=" + '<%= rel.getInode()%>';
 					href += "&referer=" + escape(referer);
 
-					if(doesChanges()){
-						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-							return;
-					}
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+                        return;
 
 					window.location=href;
 				}
@@ -676,49 +672,6 @@
 				var <%= relationJsName %>RelatedCons;
 				
 				<jsp:include page="/html/portlet/ext/contentlet/field/tiny_mce_config.jsp"/>
-				
-				function doesChanges(){
-
-					var formEle = document.getElementById('fm').elements;
-					for (var i=0;i<formEle.length;i++){
-						if(formEle[i].className=="editWYSIWYGField"){
-							if(tinymce.EditorManager.get(formEle[i].id)){
-								tinymce.EditorManager.get(formEle[i].id).remove();
-								(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();	
-							}
-						}
-						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
-						formEle[i].value = formEle[i].value.replace(/\r\n/g, '');
-						formEle[i].value = formEle[i].value.replace(/\n/g, '');
-						formEle[i].value = formEle[i].value.replace(/\r/g, '');
-						<%
-						Iterator it = con.entrySet().iterator();
-						while (it.hasNext()) {
-							Map.Entry pairs = (Map.Entry)it.next();
-							String v = "";
-							if(pairs.getValue()!=null){
-							    final String regexPattern = "(.*)-(.*)-(.*):(.*):(.*)";
-								v = pairs.getValue().toString();
-								v = v.replace("\'","\\\\'");
-								v = v.replace("\"","\\\\\"");
-								v = v.replace("\r\n","");
-								v = v.replace("\n","");
-								v = v.replace("\r","");
-								if(StringUtils.matches(v,regexPattern)) {
-								    int index = v.lastIndexOf( ':' );
-                                	v = v.substring(0,index);
-								}
-							}
-						%>
-						if ("<%=pairs.getKey()%>"== formEle[i].id && "<%= UtilMethods.htmlifyString(v)%>" != formEle[i].value && formEle[i].value != "") {
-							return true;
-						}				
-					<%}
-						    
-					%>
-					}
-					return false;
-				}
 
 				function <%= relationJsName %>buildListing(nodeId,data){
 					var srcNode = document.getElementById(nodeId);
@@ -827,11 +780,9 @@
 
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
-					
-					if(doesChanges()){
-						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-							return;
-					}
+
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+						return;
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
