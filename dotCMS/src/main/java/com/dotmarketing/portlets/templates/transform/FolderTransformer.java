@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.transform;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class FolderTransformer implements DBTransformer {
         folder.setIDate((Date) map.get("idate"));
         folder.setName((String) map.get("name"));
         folder.setTitle((String) map.get("title"));
-        folder.setShowOnMenu((Boolean) map.getOrDefault("show_on_menu",false));
+        folder.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
         folder.setSortOrder((Integer) map.getOrDefault("sort_order",0));
         folder.setFilesMasks((String) map.get("files_masks"));
         folder.setIdentifier((String) map.get("identifier"));

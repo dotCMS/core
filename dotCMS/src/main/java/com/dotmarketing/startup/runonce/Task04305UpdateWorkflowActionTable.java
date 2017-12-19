@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.ForeignKey;
@@ -392,16 +393,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private boolean isLocked(final Object requiresCheckout) {
 
-        boolean isLocked = false;
-
-        if (null != requiresCheckout) {
-
-            isLocked = (requiresCheckout instanceof Boolean)?
-                        Boolean.class.cast(requiresCheckout):
-                        DbConnectionFactory.isDBTrue(requiresCheckout.toString());
-        }
-
-        return isLocked;
+        return (null != requiresCheckout)?
+                ConversionUtils.toBooleanFromDb(requiresCheckout):false;
     }
 
     private String createIntermediateTableForeignKeyActionId() {

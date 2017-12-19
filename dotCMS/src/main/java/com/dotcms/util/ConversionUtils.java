@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -211,6 +212,19 @@ public class ConversionUtils implements Serializable {
 		} catch (Exception e) {
 			return defaultBool;
 		}
+	}
+
+	/**
+	 * Based on a value get from the database, if it is a boolean will returns a cast.
+	 * Otherwise will use the {@link DbConnectionFactory} to determinate the boolean value cross-db
+	 * @param objectBoolean {@link Object}
+	 * @return boolean
+	 */
+	public static boolean toBooleanFromDb(final Object objectBoolean) {
+
+		return (objectBoolean instanceof Boolean)?
+				Boolean.class.cast(objectBoolean):
+				DbConnectionFactory.isDBTrue(objectBoolean.toString());
 	}
 
 }
