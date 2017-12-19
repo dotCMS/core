@@ -3389,7 +3389,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
         throws DotSecurityException, DotDataException {
-        List<Category> cats = null;
+        List<Category> cats = new ArrayList<>();
         Contentlet workingCon = findWorkingContentlet(contentlet);
 
         if(workingCon!=null) {
@@ -4622,30 +4622,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentRelationships;
     }
-
-
-    private Map<Relationship, List<Contentlet>> findContentRelationshipsFromIndex(Contentlet contentlet)
-            throws DotDataException, DotSecurityException{
-        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(contentlet == null) {
-            return contentRelationships;
-        }
-
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
-        for (Relationship r : rels) {
-            if(!contentRelationships.containsKey(r)){
-                contentRelationships.put(r, new ArrayList<Contentlet>());
-            }
-            List<Contentlet> cons = getRelatedContentFromIndex(contentlet, r, APILocator.getUserAPI().getSystemUser(),
-                    true);
-            for (Contentlet c : cons) {
-                List<Contentlet> l = contentRelationships.get(r);
-                l.add(c);
-            }
-        }
-        return contentRelationships;
-    }
-
 
     @WrapInTransaction
     @Override

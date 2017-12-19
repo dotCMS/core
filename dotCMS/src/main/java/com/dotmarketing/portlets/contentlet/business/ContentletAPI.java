@@ -922,7 +922,7 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/**
+	/** TODO: TESTED CHECKIN 3
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.
@@ -939,7 +939,7 @@ public interface ContentletAPI {
 	 */
 	public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
-	/**
+	/** TODO: TESTED checkin 1 remove this
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
 	 * This version of checkin contains a more complex structure to pass the relationship in order
 	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
@@ -955,7 +955,7 @@ public interface ContentletAPI {
 	 */
 	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)  throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 
-	/**
+	/** TODO TESTED CHECKIN 2
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * This version of checkin contains a more complex structure to pass the relationship in order
 	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
@@ -1023,7 +1023,7 @@ public interface ContentletAPI {
 	 */
 	public Contentlet checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
-	/**
+	/** todo: TESTED CHECKIN 4 remove this
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.
