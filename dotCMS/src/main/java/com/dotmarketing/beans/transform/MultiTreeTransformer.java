@@ -17,7 +17,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String RELATION_TYPE = "relation_type";
     private static final String TREE_ORDER = "tree_order";
 
-    private List<MultiTree> list = new ArrayList<>();
+    private final List<MultiTree> list = new ArrayList<>();
 
     @Override
     public List<MultiTree> asList() {
@@ -25,14 +25,11 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     }
 
     public MultiTreeTransformer(List<Map<String, Object>> initList){
-        List<MultiTree> newList = new ArrayList<>();
         if (initList != null){
             for(Map<String, Object> map : initList){
-                newList.add(transform(map));
+                this.list.add(transform(map));
             }
         }
-
-        this.list = newList;
     }
 
     @NotNull
