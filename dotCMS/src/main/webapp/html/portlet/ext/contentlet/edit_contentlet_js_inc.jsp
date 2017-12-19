@@ -548,6 +548,7 @@
 
 
     function saveContentCallback(data){
+        console.log('saveContentCallback', data["saveContentErrors"]);
         isContentAutoSaving = false;
         dojo.byId("subcmd").value="";
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
@@ -558,7 +559,7 @@
 
 
         // Show DotContentletValidationExceptions.
-        if(data["saveContentErrors"] != null ){
+        if(data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
             var exceptionData = data["saveContentErrors"];
             var errorList = "";
