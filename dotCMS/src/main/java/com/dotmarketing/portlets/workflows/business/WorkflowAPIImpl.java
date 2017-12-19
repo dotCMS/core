@@ -39,16 +39,7 @@ import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -61,16 +52,7 @@ import com.liferay.portal.model.User;
 import org.osgi.framework.BundleContext;
 
 import java.sql.Savepoint;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -631,6 +613,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	private boolean isValidShowOn(final Set<WorkflowStatus> showOn) {
+		return null != showOn && !showOn.isEmpty();
+	}
+
 	private boolean existsScheme(final String schemeId) {
 
 		boolean existsScheme = false;
@@ -705,6 +691,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
 
 			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+		}
+
+		if (!this.isValidShowOn(action.getShowOn())) {
+
+			Logger.info(this, "No show On data on workflow action record, bad data?");
+			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
 		}
 
 		workFlowFactory.saveAction(action);
