@@ -1,4 +1,4 @@
-package com.dotcms.rendering.velocity;
+package com.dotcms.rendering.velocity.services;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
@@ -11,6 +11,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+import com.dotcms.repackage.org.jsoup.select.Collector;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
@@ -25,13 +26,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.TagUtil;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.StringWriter;
-import java.sql.Timestamp;
-import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.velocity.context.AbstractContext;
 
@@ -52,42 +55,54 @@ public class PageVelocityContext extends AbstractContext {
     final User user;
     final Map<String, Object> context;
     final PageMode mode;
+    final Date timeMachine;
+    List<Tag> pageFoundTags;
 
-
-
-    public PageVelocityContext(IHTMLPage htmlPage, User user, PageMode mode) throws DotSecurityException, DotDataException {
+    public PageVelocityContext(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
+            throws DotSecurityException, DotDataException {
         super();
         this.htmlPage = htmlPage;
         this.user = user;
         this.context = new HashMap<>();
         this.mode = mode;
+        this.timeMachine = timeMachine;
         populateContext();
-        populateContainers() ;
+        populateContainers();
+    }
+
+
+
+    public PageVelocityContext(IHTMLPage htmlPage, User user, PageMode mode) throws DotSecurityException, DotDataException {
+        this(htmlPage, user, mode, null);
     }
 
     private void populateContext() throws DotDataException, DotSecurityException {
-        
+
         // set the page cache var
         if (htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level) {
-            context.put("dotPageCacheDate",new java.util.Date());
-            context.put("dotPageCacheTTL",htmlPage.getCacheTTL());
+            context.put("dotPageCacheDate", new java.util.Date());
+            context.put("dotPageCacheTTL", htmlPage.getCacheTTL());
         }
-        
+
         String templateId = htmlPage.getTemplateId();
-        Template template = (mode.showLive) ? (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, user, false)
-                :(Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, user, false);
-        
-        Identifier pageIdent = APILocator.getIdentifierAPI().find(htmlPage.getIdentifier());
-        
+        Template template = (mode.showLive) ? (Template) APILocator.getVersionableAPI()
+            .findLiveVersion(templateId, user, false)
+                : (Template) APILocator.getVersionableAPI()
+                    .findWorkingVersion(templateId, user, false);
+
+        Identifier pageIdent = APILocator.getIdentifierAPI()
+            .find(htmlPage.getIdentifier());
+
         // gets pageChannel for this path
         java.util.StringTokenizer st = new java.util.StringTokenizer(String.valueOf(pageIdent.getURI()), "/");
         String pageChannel = null;
         if (st.hasMoreTokens()) {
             pageChannel = st.nextToken();
         }
-        
+
         // to check user has permission to write on this page
-        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();
+        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI()
+            .getReceivingEndPoints();
         boolean hasAddChildrenPermOverHTMLPage =
                 permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user);
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
@@ -96,11 +111,11 @@ public class PageVelocityContext extends AbstractContext {
                 hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
         boolean canUserWriteOnTemplate =
-                permissionAPI.doesUserHavePermission(template,
-                        PERMISSION_WRITE, user) && APILocator.getPortletAPI().hasTemplateManagerRights(user);
-        
-        
-        
+                permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
+                    .hasTemplateManagerRights(user);
+
+
+
         context.put("ADD_CHILDREN_HTMLPAGE_PERMISSION", hasAddChildrenPermOverHTMLPage);
         context.put("EDIT_HTMLPAGE_PERMISSION", hasWritePermOverHTMLPage);
         context.put("PUBLISH_HTMLPAGE_PERMISSION", hasPublishPermOverHTMLPage);
@@ -115,8 +130,8 @@ public class PageVelocityContext extends AbstractContext {
 
         context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
-        
-        
+
+
         context.put("HTMLPAGE_INODE", htmlPage.getInode());
         context.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
         context.put("HTMLPAGE_FRIENDLY_NAME", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
@@ -131,29 +146,19 @@ public class PageVelocityContext extends AbstractContext {
         context.put("pageTitle", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
         context.put("friendlyName", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
         context.put("HTML_PAGE_LAST_MOD_DATE", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
-        context.put("HTMLPAGE_MOD_DATE",  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
+        context.put("HTMLPAGE_MOD_DATE", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
 
 
 
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
     }
-    
-    
-    
-    
-    
-    
+
+
+
     private void populateContainers() throws DotDataException, DotSecurityException {
         Table<String, String, Set<String>> pageContents = new MultiTreeAPI().getPageMultiTrees(htmlPage, mode.showLive);
+
+
+
         if (!pageContents.isEmpty()) {
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
@@ -196,7 +201,7 @@ public class PageVelocityContext extends AbstractContext {
 
                     if (contentlets != null) {
                         for (Contentlet contentlet : contentlets) {
-                            context.put("EDIT_CONTENT_PERMISSION" + c,
+                            context.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                                     permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
                             ContentType type = contentlet.getContentType();
                             if (type.baseType() == BaseContentType.WIDGET) {
@@ -209,6 +214,21 @@ public class PageVelocityContext extends AbstractContext {
                                     context.put("WIDGET_PRE_EXECUTE", x + field.values() + "\n");
                                 }
                             }
+
+                            // Check if we want to accrue the tags associated to each contentlet on
+                            // this page
+                            if (Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false)) {
+
+
+                                // Search for the tags associated to this contentlet inode
+                                List<Tag> contentletFoundTags = APILocator.getTagAPI()
+                                    .getTagsByInode(contentlet.getInode());
+                                if (contentletFoundTags != null) {
+                                    this.pageFoundTags.addAll(contentletFoundTags);
+                                }
+
+                            }
+
                         }
                     }
                     // sets contentletlist with all the files to load per
@@ -217,11 +237,11 @@ public class PageVelocityContext extends AbstractContext {
                         .map(con -> con.getIdentifier())
                         .toArray(size -> new String[size]));
                     context.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
+
                 }
             }
         }
     }
-
 
     @Override
     public Object internalGet(String key) {
@@ -249,83 +269,99 @@ public class PageVelocityContext extends AbstractContext {
     public Object internalRemove(Object key) {
         return this.context.remove(key);
     }
-    
-    
-    
+
+
+
     public String printForVelocity() {
+
+        
+        List<Tag> tags = (List<Tag>) context.get(FOUND_TAG_LIST);
+        context.remove(FOUND_TAG_LIST);
+        //Now we need to use the found tags in order to accrue them each time this page is visited
+        if ( !pageFoundTags.isEmpty() ) {
+            //Velocity call to accrue tags on each request to this page
+            sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
+        }
+        
+        
+        
+        
+        
         
         final StringWriter s = new StringWriter();
-        for(String key : this.context.keySet()) {
+        for (String key : this.context.keySet()) {
             s.append("#set($")
-            .append(key)
-            .append("=")
-            .append(stringifyObject(context.get(key)))
-            .append(')');
+                .append(key)
+                .append("=")
+                .append(stringifyObject(context.get(key)))
+                .append(')');
         }
-  
-        
+
+
         return s.toString();
-        
+
     }
-    
+
     public String stringifyObject(Object o) {
         StringWriter sw = new StringWriter();
-        if(o instanceof String[]) {
+
+
+
+        if (o instanceof String[]) {
             String[] str = (String[]) o;
             sw.append('[');
-            for(String x : str) {
+            for (int i = 0; i < str.length; i++) {
                 sw.append('"')
-                .append(x)
-                .append('"');
+                    .append(str[i])
+                    .append("\"");
+                if (i != str.length - 1) {
+                    sw.append(",");
+                }
             }
             sw.append(']');
             return sw.toString();
-            
-        }
-        else if(o instanceof List || o instanceof Set) {
+
+        } else if (o instanceof List || o instanceof Set) {
             Collection co = (Collection) o;
             sw.append('[');
-            Iterator<Object> it =co.iterator();
-            while(it.hasNext()) {
+            Iterator<Object> it = co.iterator();
+            while (it.hasNext()) {
                 Object obj = it.next();
                 sw.append('"')
-                .append(obj.toString())
-                .append('"');
+                    .append(obj.toString())
+                    .append("\",");
             }
             sw.append(']');
             return sw.toString();
-            
-        }
-        else if(o instanceof Boolean) {
+
+        } else if (o instanceof Boolean) {
             Boolean b = (Boolean) o;
             return b.toString();
-        }
-        else if(o instanceof String) {
-            
-            String x = (String)o;
-            if(x.startsWith("$")) {
+        } else if (o instanceof String) {
+
+            String x = (String) o;
+            if (x.startsWith("$")) {
                 return x;
             }
-            
-            
+
+
             sw.append('"');
             sw.append(o.toString());
             sw.append('"');
             return sw.toString();
+        } else if (o instanceof Date) {
+            String d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format((Date) o);
+            sw.append('"');
+            sw.append(d);
+            sw.append('"');
+            return sw.toString();
         }
         return o.toString();
-        
-        
-        
-        
-        
-        
-        
+
+
+
     }
-    
-    
-    
-    
-    
-    
+
+
+
 }
