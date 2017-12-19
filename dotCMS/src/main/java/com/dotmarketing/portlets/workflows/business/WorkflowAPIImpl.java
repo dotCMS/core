@@ -695,7 +695,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (!this.isValidShowOn(action.getShowOn())) {
 
-			Logger.info(this, "No show On data on workflow action record, bad data?");
+			Logger.error(this, "No show On data on workflow action record, bad data?");
 			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
 		}
 
