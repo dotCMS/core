@@ -1,12 +1,15 @@
 package com.dotmarketing.factories;
 
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.dotmarketing.beans.Identifier;
@@ -29,6 +32,7 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree
@@ -45,6 +49,13 @@ public class MultiTreeFactory {
     
     private static final String DELETE_MULTITREE_ERROR_MSG = "Deleting MultiTree Object failed:";
     private static final String SAVE_MULTITREE_ERROR_MSG = "Saving MultiTree Object failed:";
+
+    //MultiTree fields
+	private static final String CHILD = "child";
+	private static final String PARENT1 = "parent1";
+	private static final String PARENT2 = "parent2";
+	private static final String RELATION_TYPE = "relation_type";
+	private static final String TREE_ORDER = "tree_order";
 
 	public static void deleteMultiTree(Object o1, Object o2, Object o3) {
 		Inode inode1 = (Inode) o1;
@@ -332,6 +343,55 @@ public class MultiTreeFactory {
 			throw new DotRuntimeException(e.toString());
 		}
 	}
+
+	/**
+	 * Get a list of MultiTree for Contentlets using a specific Structure and specific Container
+	 * @param containerIdentifier
+	 * @param structureIdentifier
+	 * @return List of MultiTree
+	 */
+	public static List<MultiTree> getContainerStructureMultiTree(String containerIdentifier, String structureInode) {
+		try {
+			DotConnect dc = new DotConnect();
+			StringBuilder query = new StringBuilder();
+			query.append("SELECT mt.* FROM multi_tree mt JOIN contentlet c ON c.identifier = mt.child ");
+			query.append("WHERE mt.parent2 = ? AND c.structure_inode = ? ");
+
+			dc.setSQL(query.toString());
+			dc.addParam(containerIdentifier);
+			dc.addParam(structureInode);
+
+			List<MultiTree> ret = new ArrayList<>();
+			List<Map<String,String>> results = dc.loadResults();
+			if(results != null && !results.isEmpty()){
+				for (Map<String, String> map : results) {
+					ret.add(getMultiTreeFields(map));
+				}
+			}
+
+			return ret;
+
+		} catch (DotDataException e) {
+			Logger.error(MultiTreeFactory.class, "getContainerStructureMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
+	}
+
+	@NotNull
+	private static MultiTree getMultiTreeFields(Map<String, String> map) {
+		MultiTree mt = new MultiTree();
+		mt.setChild(map.get(CHILD));
+		mt.setParent1(map.get(PARENT1));
+		mt.setParent2(map.get(PARENT2));
+		if (UtilMethods.isSet(map.get(RELATION_TYPE))) {
+			mt.setRelationType(map.get(RELATION_TYPE));
+		}
+		if (UtilMethods.isSet(map.get(TREE_ORDER))) {
+			mt.setTreeOrder(Integer.parseInt(map.get(TREE_ORDER)));
+		}
+		return mt;
+	}
+
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
 		try {
