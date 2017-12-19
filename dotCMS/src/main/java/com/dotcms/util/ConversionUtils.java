@@ -215,8 +215,8 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
-	 * Based on a value get from the database, if it is a boolean will returns a cast.
-	 * Otherwise will use the {@link DbConnectionFactory} to determinate the boolean value cross-db
+	 * Based on a value obtained from database, if it is a boolean will return a cast.
+	 * Otherwise will use the {@link DbConnectionFactory} to determine the boolean value cross-db
 	 * @param objectBoolean {@link Object}
 	 * @return boolean
 	 */
