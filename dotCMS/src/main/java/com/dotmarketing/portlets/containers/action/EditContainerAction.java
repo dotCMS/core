@@ -620,7 +620,8 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 
 		//Delete MultiTree for old / unused ContainerStructures
-		final Map<String, Object> newContainerStructures = csList.stream().collect(Collectors.toMap(cs -> cs.getStructureId(), cs -> cs));
+		final Map<String, Object> newContainerStructures = csList.stream().collect(
+				Collectors.toMap(ContainerStructure::getStructureId, (ContainerStructure cs) -> cs));
 		for (ContainerStructure oldCS : oldContainerStructures) {
 
 			if (!newContainerStructures.containsKey(oldCS.getStructureId())) {
