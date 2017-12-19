@@ -36,8 +36,6 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
-    private static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
-
     private final WorkflowAPI workflowAPI;
     private final RoleAPI     roleAPI;
 
@@ -472,7 +470,7 @@ public class WorkflowHelper {
         newAction.setCondition  (workflowActionForm.getActionCondition());
         newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
         newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
-                workflowActionForm.getShowOn():DEFAULT_SHOW_ON);
+                workflowActionForm.getShowOn():WorkflowAPI.DEFAULT_SHOW_ON);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
 
         try {

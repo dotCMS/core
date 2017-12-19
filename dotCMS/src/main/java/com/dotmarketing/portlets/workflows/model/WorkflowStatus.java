@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,16 +34,21 @@ public enum WorkflowStatus {
      * @param value Object
      * @return Set of {@link WorkflowStatus}
      */
-    public static  Set<WorkflowStatus> toSet(Object value) {
+    public static  Set<WorkflowStatus> toSet(final Object value) {
 
         Set<WorkflowStatus> workflowStatusSet = Collections.emptySet();
 
-        if (null != value) {
+        if (null != value && UtilMethods.isSet(value.toString())) {
 
-            workflowStatusSet = Stream
-                    .<String>of(value.toString().split(DELIMITER))
-                    .map(WorkflowStatus::valueOf)
-                    .collect(Collectors.toSet());
+            try {
+                workflowStatusSet = Stream
+                        .<String>of(value.toString().split(DELIMITER))
+                        .map(WorkflowStatus::valueOf)
+                        .collect(Collectors.toSet());
+            } catch (Exception e) {
+                Logger.error(WorkflowStatus.class, "No show On data on workflow action record, bad data?");
+                workflowStatusSet = Collections.emptySet();
+            }
         }
 
         return workflowStatusSet;
