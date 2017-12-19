@@ -183,7 +183,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
-    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_3'
+    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_4'
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'

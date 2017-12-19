@@ -10,7 +10,7 @@
             <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.cargo-ant-0.9_2.jar"/>
             <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.cargo-core-uberjar-0.9_2.jar"/>
             <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.commons-httpclient-3.1_2.jar"/>
-            <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.tika-app-1.3_3.jar"/>
+            <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.tika-app-1.3_4.jar"/>
         </classpath>
     </taskdef>
 
