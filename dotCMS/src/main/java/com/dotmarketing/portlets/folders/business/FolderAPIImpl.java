@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
@@ -457,7 +461,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 			for (Contentlet c : conList) {
 				// Find all multi-language contentlets and archive them
+
+
 				Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+
+				if (c.isHTMLPage()){
+					validateRelatedContentType(user, c, ident);
+				}
+
 	            List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
 	            for (Contentlet cv : otherLanguageCons) {
 					if(cv.isLive()){
@@ -515,6 +526,34 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		}
 
+	}
+
+	/**
+	 * Verifies if a page is being used as a detail page for any content type
+	 * @param user
+	 * @param c
+	 * @param ident
+	 * @throws DotDataException
+	 * @throws LanguageException
+	 */
+	private void validateRelatedContentType(User user, Contentlet c, Identifier ident)
+			throws DotDataException, LanguageException {
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		List<ContentType> relatedContentTypes = contentTypeAPI.search("page_detail='" + ident.getId() + "'");
+		HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+		String uri = htmlPageAssetAPI.fromContentlet(c).getURI();
+		//Verifies if the page is related to any content type
+		if (relatedContentTypes != null && !relatedContentTypes.isEmpty()){
+            StringBuilder relatedPagesMessage = new StringBuilder();
+            relatedPagesMessage.append(UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
+                    "HTML-Page-related-content-type-delete-error")));
+
+            relatedPagesMessage.append(relatedContentTypes.stream()
+                    .map(t -> t.name() + " - Detail Page: " + uri)
+                    .collect(Collectors.joining("<br/>")));
+
+            throw new DotDataException(relatedPagesMessage.toString());
+        }
 	}
 
 	/**
