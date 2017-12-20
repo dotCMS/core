@@ -65,7 +65,7 @@ import com.liferay.util.FileUtil;
 /**
  * @author will
  */
-public class ContentletLoader implements VelocityCMSObject {
+public class ContentletLoader implements DotLoader {
 
     private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
@@ -810,18 +810,7 @@ public class ContentletLoader implements VelocityCMSObject {
             .append("</div>")
             .append("#end");
 
-        writeOutVelocity(filePath, sb.toString());
-
-
-        try {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes());
-            Logger.error(ContainerServices.class, e1.getMessage(), e1);
-        }
-        return result;
+        return writeOutVelocity(filePath, sb.toString());
     }
 
     @SuppressWarnings("unchecked")

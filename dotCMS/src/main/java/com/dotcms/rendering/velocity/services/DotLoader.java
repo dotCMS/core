@@ -7,15 +7,18 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 import com.liferay.portal.model.User;
 
-public interface VelocityCMSObject {
+public interface DotLoader {
     default User sysUser() {
         try {
             return APILocator.getUserAPI()
@@ -32,21 +35,26 @@ public interface VelocityCMSObject {
 
     public void invalidate(Object obj, boolean live);
 
-    default String writeOutVelocity(final String filePath, final String strOut) {
+    default InputStream writeOutVelocity(final String filePath, final String strOut) {
         if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
             try {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
                 f.delete();
-                try (final  BufferedWriter out = new java.io.BufferedWriter(new VelocityPrettyWriter(new FileOutputStream(f)))) {
+                try (final BufferedWriter out = new java.io.BufferedWriter(new VelocityPrettyWriter(new FileOutputStream(f)))) {
                     out.write(strOut);
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 new DotStateException(e);
             }
         }
-        return strOut;
+        try {
+            return new ByteArrayInputStream(strOut.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e1) {
+            Logger.error(this.getClass(), e1.getMessage(), e1);
+            return new ByteArrayInputStream(strOut.getBytes());
+
+        }
     }
 
 }

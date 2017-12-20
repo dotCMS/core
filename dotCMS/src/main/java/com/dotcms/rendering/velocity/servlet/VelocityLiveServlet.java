@@ -159,7 +159,7 @@ public class VelocityLiveServlet extends HttpServlet {
         } catch (MethodInvocationException mie) {
             Logger.error(this, "MethodInvocationException" + mie.toString(), mie);
             response.sendError(500, "MethodInvocationException Error on template");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.error(this, "Exception" + e.toString(), e);
             response.sendError(500, "Exception Error on template");
 

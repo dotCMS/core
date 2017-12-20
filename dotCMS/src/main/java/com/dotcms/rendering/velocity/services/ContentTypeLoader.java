@@ -42,7 +42,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 /**
  * @author will
  */
-public class ContentTypeLoader implements VelocityCMSObject {
+public class ContentTypeLoader implements DotLoader {
 
     private long fakeIdentifier = Long.MAX_VALUE;
     private long fakeInode = Long.MAX_VALUE;
@@ -275,35 +275,7 @@ public class ContentTypeLoader implements VelocityCMSObject {
             .append("\" )");
         sb.append("#set( $isWidget = false)");
 
-        InputStream result;
-        try {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes());
-            Logger.error(this.getClass(), e1.getMessage(), e1);
-        }
-
-        try {
-            if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-                File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-                f.mkdirs();
-                f.delete();
-                try (BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                        OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration())) {
-                    out.write(sb.toString());
-                    out.flush();
-                } catch (Exception e) {
-                    Logger.error(this.getClass(), e.toString(), e);
-                }
-
-            }
-
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.toString(), e);
-        }
-        return result;
+        return writeOutVelocity(filePath, sb.toString());
     }
 
     public void removeContentTypeFile(ContentType contentType) {

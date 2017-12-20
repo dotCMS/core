@@ -22,6 +22,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.TagUtil;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -43,7 +44,7 @@ import com.liferay.portal.model.User;
  *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
  *         to Window>Preferences>Java>Code Generation.
  */
-public class PageLoader implements VelocityCMSObject {
+public class PageLoader implements DotLoader {
 
     /**
      * Invalidates live and working html page
@@ -189,22 +190,46 @@ public class PageLoader implements VelocityCMSObject {
 
         PageMode mode = (EDIT_MODE) ? PageMode.PREVIEW :PageMode.LIVE;
         
-        sb.append( new PageVelocityContext(htmlPage, sys, mode).printForVelocity());
-        
-        
+        sb.append( new PageContextBuilder(htmlPage, sys, mode).asString());
         
 
-
-
-        try {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes());
-            Logger.error(this.getClass(), e1.getMessage(), e1);
+        //Now we need to use the found tags in order to accrue them each time this page is visited
+        if ( !pageFoundTags.isEmpty() ) {
+            //Velocity call to accrue tags on each request to this page
+            sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
         }
-        return result;
+        if(htmlPage.isHttpsRequired()){     
+            sb.append(" #if(!$ADMIN_MODE  && !$request.isSecure())");
+            sb.append("    #if($request.getQueryString())");
+            sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
+            sb.append("    #else ");
+            sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
+            sb.append("    #end ");
+            sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")"); 
+            sb.append(" #end ");
+        }
+
+        sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
+        sb.append(" $response.setStatus(301)");
+        sb.append(" $response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
+        sb.append("#end");
+        
+        
+        sb.append("#if(!$doNotParseTemplate)");
+        if ( cmsTemplate.isDrawed() ) {//We have a designed template
+            //Setting some theme variables
+            sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
+            sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
+            //Merging our template
+            sb.append( "#parse(\"$dotTheme.templatePath\")" );
+        } else {
+            sb.append( "#parse('" ).append( folderPath ).append( cmsTemplate.getIdentifier() ).append( "." ).append( VelocityType.TEMPLATE.fileExtension ).append( "')" );
+        }
+        sb.append("#end");
+        
+        return writeOutVelocity(filePath, sb.toString());
+
+
     }
 
     public static void removePageFile(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {

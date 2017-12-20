@@ -26,7 +26,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  * @since 1.6.5
  *
  */
-public class FieldLoader implements VelocityCMSObject {
+public class FieldLoader implements DotLoader {
 	public void invalidate(String fieldInode, String contentletIdent, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
 		removeFieldFile(fieldInode, contentletIdent, EDIT_MODE);
 	}
@@ -61,17 +61,9 @@ public class FieldLoader implements VelocityCMSObject {
 		}
 		
 
-		
-		try {
+        return writeOutVelocity(filePath, contFieldValue);
 
-			result = new ByteArrayInputStream(contFieldValue.getBytes("UTF-8"));
-	         writeOutVelocity(filePath, contFieldValue);
-		} catch (UnsupportedEncodingException e1) {
-			result = new ByteArrayInputStream(contFieldValue.getBytes());
-			Logger.error(this.getClass(),e1.getMessage(), e1);
-		}
-        
-		return result;
+
 	}
 	
 	public void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {

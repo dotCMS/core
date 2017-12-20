@@ -34,7 +34,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  *         Window>Preferences>Java>Templates. To enable and disable the creation of type comments go
  *         to Window>Preferences>Java>Code Generation.
  */
-public class TemplateLoader implements VelocityCMSObject {
+public class TemplateLoader implements DotLoader {
 
     public void invalidate(Template template) throws DotStateException, DotDataException {
 
@@ -63,40 +63,15 @@ public class TemplateLoader implements VelocityCMSObject {
 
         InputStream result;
         StringBuilder templateBody = new StringBuilder();
-        try {
 
-            templateBody.append(Constants.TEMPLATE_PREPROCESS);
-            templateBody.append(template.getBody());
-            templateBody.append(Constants.TEMPLATE_POSTPROCESS);
 
-            if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
-                File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
-                f.mkdirs();
-                f.delete();
-                final BufferedOutputStream tmpOut = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-                // Specify a proper character encoding
-                OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+        templateBody.append(Constants.TEMPLATE_PREPROCESS);
+        templateBody.append(template.getBody());
+        templateBody.append(Constants.TEMPLATE_POSTPROCESS);
 
-                out.write(templateBody.toString());
 
-                out.flush();
-                out.close();
-                tmpOut.close();
-            }
 
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.toString(), e);
-        }
-
-        try {
-            result = new ByteArrayInputStream(templateBody.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(templateBody.toString()
-                .getBytes());
-            Logger.error(this.getClass(), e1.getMessage(), e1);
-        }
-        return result;
+        return writeOutVelocity(filePath, templateBody.toString());
     }
 
     public void invalidate(Template template, Identifier identifier, boolean EDIT_MODE) {

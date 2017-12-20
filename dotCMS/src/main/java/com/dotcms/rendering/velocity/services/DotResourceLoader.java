@@ -22,7 +22,6 @@ public class DotResourceLoader extends ResourceLoader {
 
     public DotResourceLoader() {
         super();
-
     }
 
     

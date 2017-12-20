@@ -15,7 +15,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.liferay.util.FileUtil;
 
-public class VTLLoader implements VelocityCMSObject {
+public class VTLLoader implements DotLoader {
     private static String velocityCanoncalPath;
     private static String assetCanoncalPath;
     private static String assetRealCanoncalPath;

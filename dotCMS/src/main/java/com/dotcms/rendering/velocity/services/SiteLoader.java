@@ -25,7 +25,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 import com.liferay.portal.model.User;
 
 
-public class SiteLoader implements VelocityCMSObject {
+public class SiteLoader implements DotLoader {
 
     public void invalidate(Host host) {
 
@@ -66,17 +66,7 @@ public class SiteLoader implements VelocityCMSObject {
             }
         }
 
-        writeOutVelocity(filePath, sb.toString());
-
-        try {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes());
-            Logger.error(this.getClass(), e1.getMessage(), e1);
-        }
-        return result;
+        return writeOutVelocity(filePath, sb.toString());
     }
 
 

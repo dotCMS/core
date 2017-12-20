@@ -12,11 +12,31 @@ final class StringifyObject {
 
     public StringifyObject(final Object o) {
 
-        this.stringified = o.toString();
+        if(o instanceof String[]) {
+            this.stringified = stringifyObject((String[]) o);
+        }
+        else if(o instanceof Collection) {
+            this.stringified = stringifyObject((Collection) o);
+        }
+        else if(o instanceof Boolean) {
+            
+            this.stringified = stringifyObject((Boolean) o);
+        }
+        else if(o instanceof Date) {
+            
+            this.stringified = stringifyObject((Date) o);
+        }
+        else if(o instanceof String) {
+            
+            this.stringified = stringifyObject((String) o);
+        }
+        else {
+            this.stringified = o.toString();
+        }
     }
 
 
-    public StringifyObject(final String[] str) {
+    private String stringifyObject(final String[] str) {
         StringWriter sw = new StringWriter();
         sw.append('[');
         for (int i = 0; i < str.length; i++) {
@@ -28,10 +48,10 @@ final class StringifyObject {
             }
         }
         sw.append(']');
-        this.stringified = sw.toString();
+        return  sw.toString();
     }
 
-    public StringifyObject(final Collection co) {
+    private String  stringifyObject(final Collection co) {
         StringWriter sw = new StringWriter();
 
         sw.append('[');
@@ -47,33 +67,33 @@ final class StringifyObject {
             }
         }
         sw.append(']');
-        this.stringified = sw.toString();
+        return  sw.toString();
     }
 
-    public StringifyObject(final Boolean o) {
+    private String  stringifyObject(final Boolean o) {
 
-        this.stringified = o.toString();
+        return ((Boolean)o).toString();
     }
 
-    public StringifyObject(final String x) {
+    private String  stringifyObject(final String x) {
         StringWriter sw = new StringWriter();
         if (x.startsWith("$")) {
-            this.stringified = x;
+            return  sw.toString();
         } else {
             sw.append('"');
             sw.append(x.toString());
             sw.append('"');
-            this.stringified = sw.toString();
+            return  sw.toString();
         }
     }
 
-    public StringifyObject(final Date x) {
+    private String  stringifyObject(final Date x) {
         StringWriter sw = new StringWriter();
         String d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(x);
         sw.append('"');
         sw.append(d);
         sw.append('"');
-        this.stringified = sw.toString();
+        return  sw.toString();
     }
 
 

@@ -33,7 +33,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 /**
  * @author will
  */
-public class ContainerLoader implements VelocityCMSObject {
+public class ContainerLoader implements DotLoader {
 
 
     @Override
@@ -376,17 +376,7 @@ public class ContainerLoader implements VelocityCMSObject {
 
 
 
-        writeOutVelocity(filePath, sb.toString());
-
-        try {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            result = new ByteArrayInputStream(sb.toString()
-                .getBytes());
-            Logger.error(this.getClass(), e1.getMessage(), e1);
-        }
-        return result;
+        return writeOutVelocity(filePath, sb.toString());
     }
 
     private static void invalidate(Container container, Identifier identifier, boolean EDIT_MODE) {

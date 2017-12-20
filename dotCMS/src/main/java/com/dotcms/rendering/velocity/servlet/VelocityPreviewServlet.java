@@ -20,7 +20,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -78,7 +77,7 @@ public class VelocityPreviewServlet extends HttpServlet {
 
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-    private static PortletAPI portletAPI = APILocator.getPortletAPI();
+
 
     private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 
@@ -90,7 +89,7 @@ public class VelocityPreviewServlet extends HttpServlet {
 
     private String CHARSET = "UTF-8";
 
-    private final String VELOCITY_HTMLPAGE_EXTENSION = "dotpage";
+
 
     public static final String VELOCITY_CONTEXT = "velocityContext";
     private final String PREVIEW_MODE_VTL= "preview_mode.vtl";
@@ -184,7 +183,9 @@ public class VelocityPreviewServlet extends HttpServlet {
                     Logger.debug(VelocityPreviewServlet.class, "VELOCITY SERVLET I'M ON EDIT MODE!!!");
                     doEditMode(request, response);
                     break;
-
+                default:
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
             }
             
 

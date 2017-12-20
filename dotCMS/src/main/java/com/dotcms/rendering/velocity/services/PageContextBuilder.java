@@ -37,27 +37,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.velocity.context.AbstractContext;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 
-public class PageVelocityContext extends AbstractContext {
+public class PageContextBuilder {
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     final IHTMLPage htmlPage;
     final User user;
-    final Map<String, Object> context;
+    final Map<String, Object> ctxHashMap;
     final PageMode mode;
     final Date timeMachine;
     List<Tag> pageFoundTags;
 
-    public PageVelocityContext(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
+    public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
             throws DotSecurityException, DotDataException {
         super();
         this.htmlPage = htmlPage;
         this.user = user;
-        this.context = new HashMap<>();
+        this.ctxHashMap = new HashMap<>();
         this.mode = mode;
         this.timeMachine = timeMachine;
         populateContext();
@@ -66,7 +67,7 @@ public class PageVelocityContext extends AbstractContext {
 
 
 
-    public PageVelocityContext(IHTMLPage htmlPage, User user, PageMode mode) throws DotSecurityException, DotDataException {
+    public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode) throws DotSecurityException, DotDataException {
         this(htmlPage, user, mode, null);
     }
 
@@ -74,8 +75,8 @@ public class PageVelocityContext extends AbstractContext {
 
         // set the page cache var
         if (htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level) {
-            context.put("dotPageCacheDate", new java.util.Date());
-            context.put("dotPageCacheTTL", htmlPage.getCacheTTL());
+            ctxHashMap.put("dotPageCacheDate", new java.util.Date());
+            ctxHashMap.put("dotPageCacheTTL", htmlPage.getCacheTTL());
         }
 
         String templateId = htmlPage.getTemplateId();
@@ -110,37 +111,37 @@ public class PageVelocityContext extends AbstractContext {
 
 
 
-        context.put("ADD_CHILDREN_HTMLPAGE_PERMISSION", hasAddChildrenPermOverHTMLPage);
-        context.put("EDIT_HTMLPAGE_PERMISSION", hasWritePermOverHTMLPage);
-        context.put("PUBLISH_HTMLPAGE_PERMISSION", hasPublishPermOverHTMLPage);
-        context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", hasRemotePublishPermOverHTMLPage);
-        context.put("REMOTE_PUBLISH_END_POINTS", hasEndPoints);
-        context.put("canAddForm", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
-        context.put("canViewDiff", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
-        context.put("pageChannel", pageChannel);
-        context.put("HTMLPAGE_ASSET_STRUCTURE_TYPE", true);
-        context.put("HTMLPAGE_IS_CONTENT", true);
+        ctxHashMap.put("ADD_CHILDREN_HTMLPAGE_PERMISSION", hasAddChildrenPermOverHTMLPage);
+        ctxHashMap.put("EDIT_HTMLPAGE_PERMISSION", hasWritePermOverHTMLPage);
+        ctxHashMap.put("PUBLISH_HTMLPAGE_PERMISSION", hasPublishPermOverHTMLPage);
+        ctxHashMap.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", hasRemotePublishPermOverHTMLPage);
+        ctxHashMap.put("REMOTE_PUBLISH_END_POINTS", hasEndPoints);
+        ctxHashMap.put("canAddForm", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
+        ctxHashMap.put("canViewDiff", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
+        ctxHashMap.put("pageChannel", pageChannel);
+        ctxHashMap.put("HTMLPAGE_ASSET_STRUCTURE_TYPE", true);
+        ctxHashMap.put("HTMLPAGE_IS_CONTENT", true);
 
 
-        context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
+        ctxHashMap.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
 
 
-        context.put("HTMLPAGE_INODE", htmlPage.getInode());
-        context.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
-        context.put("HTMLPAGE_FRIENDLY_NAME", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
-        context.put("HTMLPAGE_TITLE", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
-        context.put("TEMPLATE_INODE", template.getIdentifier());
-        context.put("HTMLPAGE_META", UtilMethods.espaceForVelocity(htmlPage.getMetadata()));
-        context.put("HTMLPAGE_DESCRIPTION", UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()));
-        context.put("HTMLPAGE_KEYWORDS", UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()));
-        context.put("HTMLPAGE_SECURE", htmlPage.isHttpsRequired());
-        context.put("VTLSERVLET_URI", UtilMethods.encodeURIComponent(pageIdent.getURI()));
-        context.put("HTMLPAGE_REDIRECT", UtilMethods.espaceForVelocity(htmlPage.getRedirect()));
-        context.put("pageTitle", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
-        context.put("friendlyName", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
-        context.put("HTML_PAGE_LAST_MOD_DATE", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
-        context.put("HTMLPAGE_MOD_DATE", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
+        ctxHashMap.put("HTMLPAGE_INODE", htmlPage.getInode());
+        ctxHashMap.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
+        ctxHashMap.put("HTMLPAGE_FRIENDLY_NAME", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
+        ctxHashMap.put("HTMLPAGE_TITLE", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
+        ctxHashMap.put("TEMPLATE_INODE", template.getIdentifier());
+        ctxHashMap.put("HTMLPAGE_META", UtilMethods.espaceForVelocity(htmlPage.getMetadata()));
+        ctxHashMap.put("HTMLPAGE_DESCRIPTION", UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()));
+        ctxHashMap.put("HTMLPAGE_KEYWORDS", UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()));
+        ctxHashMap.put("HTMLPAGE_SECURE", htmlPage.isHttpsRequired());
+        ctxHashMap.put("VTLSERVLET_URI", UtilMethods.encodeURIComponent(pageIdent.getURI()));
+        ctxHashMap.put("HTMLPAGE_REDIRECT", UtilMethods.espaceForVelocity(htmlPage.getRedirect()));
+        ctxHashMap.put("pageTitle", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
+        ctxHashMap.put("friendlyName", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
+        ctxHashMap.put("HTML_PAGE_LAST_MOD_DATE", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
+        ctxHashMap.put("HTMLPAGE_MOD_DATE", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
 
 
 
@@ -168,11 +169,11 @@ public class PageVelocityContext extends AbstractContext {
                             permissionAPI.doesUserHavePermission(c, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
                                 .hasContainerManagerRights(user);
                     boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(c, PERMISSION_READ, user, false);
-                    context.put("EDIT_CONTAINER_PERMISSION" + c.getIdentifier(), hasWritePermissionOnContainer);
+                    ctxHashMap.put("EDIT_CONTAINER_PERMISSION" + c.getIdentifier(), hasWritePermissionOnContainer);
                     if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true))
-                        context.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), true);
+                        ctxHashMap.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), true);
                     else
-                        context.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), hasReadPermissionOnContainer);
+                        ctxHashMap.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), hasReadPermissionOnContainer);
 
                     // to check user has permission to write this container
                     boolean hasWritePermOverTheStructure = false;
@@ -185,7 +186,7 @@ public class PageVelocityContext extends AbstractContext {
                         hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user);
                     }
 
-                    context.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
+                    ctxHashMap.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
                         .findContentletsByIdentifiers(cons.stream()
@@ -195,7 +196,7 @@ public class PageVelocityContext extends AbstractContext {
 
                     if (contentlets != null) {
                         for (Contentlet contentlet : contentlets) {
-                            context.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
+                            ctxHashMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                                     permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
                             ContentType type = contentlet.getContentType();
                             if (type.baseType() == BaseContentType.WIDGET) {
@@ -203,9 +204,9 @@ public class PageVelocityContext extends AbstractContext {
                                     .get("widgetPreexecute");
                                 if (field != null && UtilMethods.isSet(field.values())) {
 
-                                    String x = context.containsKey("WIDGET_PRE_EXECUTE") ? ""
-                                            : (String) context.get("WIDGET_PRE_EXECUTE");
-                                    context.put("WIDGET_PRE_EXECUTE", x + field.values() + "\n");
+                                    String x = ctxHashMap.containsKey("WIDGET_PRE_EXECUTE") ? ""
+                                            : (String) ctxHashMap.get("WIDGET_PRE_EXECUTE");
+                                    ctxHashMap.put("WIDGET_PRE_EXECUTE", x + field.values() + "\n");
                                 }
                             }
 
@@ -227,54 +228,40 @@ public class PageVelocityContext extends AbstractContext {
                     }
                     // sets contentletlist with all the files to load per
                     // container
-                    context.put("contentletList" + c.getIdentifier() + uniqueId, contentlets.stream()
+                    ctxHashMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlets.stream()
                         .map(con -> con.getIdentifier())
                         .toArray(size -> new String[size]));
-                    context.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
+                    ctxHashMap.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }
             }
         }
     }
 
-    @Override
-    public Object internalGet(String key) {
-        return this.context.get(key);
-    }
 
-    @Override
-    public Object internalPut(String key, Object value) {
-        return this.context.put(key, value);
-    }
 
-    @Override
-    public boolean internalContainsKey(Object key) {
-        return this.context.containsKey(key);
-    }
+    public Context asContext() {
+        final Context context = new VelocityContext();
+        for (String key : this.ctxHashMap.keySet()) {
+            context.put(key, ctxHashMap.get(key));
+        }
 
-    @Override
-    public Object[] internalGetKeys() {
-        return this.context.keySet()
-            .toArray(new String[this.context.keySet()
-                .size()]);
-    }
 
-    @Override
-    public Object internalRemove(Object key) {
-        return this.context.remove(key);
+
+        return context;
     }
 
 
 
-    public String printForVelocity() {
+    public String asString() {
 
- 
+
         final StringWriter s = new StringWriter();
-        for (String key : this.context.keySet()) {
+        for (String key : this.ctxHashMap.keySet()) {
             s.append("#set($")
                 .append(key)
                 .append("=")
-                .append(new StringifyObject(context.get(key)).from())
+                .append(new StringifyObject(ctxHashMap.get(key)).from())
                 .append(')');
         }
 
@@ -283,7 +270,6 @@ public class PageVelocityContext extends AbstractContext {
 
     }
 
- 
 
 
 }
