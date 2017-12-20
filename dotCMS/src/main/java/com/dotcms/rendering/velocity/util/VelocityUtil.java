@@ -425,21 +425,7 @@ public class VelocityUtil {
 	   }
 	
 	   
-	public static void makeBackendContext(Context context, IHTMLPage htmlPage, String cmsTemplateInode, String idURI, HttpServletRequest request,
-			boolean ADMIN_MODE, boolean EDIT_MODE, boolean PREVIEW_MODE, Host host) throws DotDataException {
 
-	    
-	        PageMode mode = (EDIT_MODE) 
-	                ? PageMode.EDIT 
-	                : (PREVIEW_MODE) 
-	                    ? PageMode.PREVIEW 
-	                    : (ADMIN_MODE) 
-	                        ? PageMode.LIVE 
-	                        : PageMode.ANON;
-	    
-	    
-	        makeBackendContext(context, htmlPage, cmsTemplateInode, idURI, request, mode, host );
-	}
 
 	/**
 	 * This method tries to build a cache key based on information given in the

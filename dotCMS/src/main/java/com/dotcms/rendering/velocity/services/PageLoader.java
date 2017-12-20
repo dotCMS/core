@@ -18,18 +18,13 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,89 +41,43 @@ import com.liferay.portal.model.User;
  */
 public class PageLoader implements DotLoader {
 
-    /**
-     * Invalidates live and working html page
-     * 
-     * @param htmlPage
-     * @throws DotStateException
-     * @throws DotDataException
-     */
-    public static void invalidateAll(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(htmlPage);
-        invalidate(htmlPage, identifier, false);
-        invalidate(htmlPage, identifier, true);
-    }
+
 
     @Override
     public void invalidate(Object obj) {
         IHTMLPage htmlPage = (IHTMLPage) obj;
-        try {
-            invalidateAll(htmlPage);
-        } catch (DotStateException | DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e.getMessage());
+        for (PageMode mode : PageMode.values()) {
+            invalidate(htmlPage, mode);
         }
+
+
     }
 
     @Override
-    public void invalidate(Object obj, boolean live) {
+    public void invalidate(Object obj, PageMode mode) {
         IHTMLPage htmlPage = (IHTMLPage) obj;
-        Identifier identifier;
-        try {
-            identifier = APILocator.getIdentifierAPI()
-                .find(htmlPage);
 
-            invalidate(htmlPage, identifier, live);
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e.getMessage());
-        }
+
+        String folderPath = mode.name() + File.separator;
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
+        String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
+        String filePath = folderPath + htmlPage.getIdentifier() + languageStr + "." + VelocityType.HTMLPAGE.fileExtension;
+        velocityRootPath += java.io.File.separator;
+        java.io.File f = new java.io.File(velocityRootPath + filePath);
+        f.delete();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+
     }
 
-    /**
-     * Invalidates live html page
-     * 
-     * @param htmlPage
-     * @throws DotStateException
-     * @throws DotDataException
-     */
-    public void invalidateLive(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(htmlPage);
-        invalidate(htmlPage, identifier, false);
-    }
 
-    /**
-     * Invalidates working html page
-     * 
-     * @param htmlPage
-     * @throws DotStateException
-     * @throws DotDataException
-     */
-    public void invalidateWorking(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(htmlPage);
-        invalidate(htmlPage, identifier, true);
-    }
 
-    private static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE)
-            throws DotDataException, DotSecurityException {
-        removePageFile(htmlPage, identifier, EDIT_MODE);
-
-        if (htmlPage instanceof Contentlet) {
-            if (EDIT_MODE) {
-                new ContentletLoader().invalidateWorking((Contentlet) htmlPage, identifier);
-            } else {
-                new ContentletLoader().invalidateLive((Contentlet) htmlPage, identifier);
-            }
-        }
-    }
-
-    public InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE, final String filePath)
+    public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath)
             throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(htmlPage);
         try {
-            return buildStream(htmlPage, identifier, EDIT_MODE, filePath);
+            return buildStream(htmlPage, identifier, mode, filePath);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage());
@@ -136,15 +85,15 @@ public class PageLoader implements DotLoader {
     }
 
 
-    public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE, final String filePath)
+    public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, PageMode mode, final String filePath)
             throws DotDataException, DotSecurityException {
-        String folderPath = (!EDIT_MODE) ? "live/" : "working/";
+        String folderPath = mode.name() + File.separator;
         InputStream result;
         StringBuilder sb = new StringBuilder();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Template cmsTemplate = APILocator.getHTMLPageAssetAPI()
-            .getTemplate(htmlPage, EDIT_MODE);
+            .getTemplate(htmlPage, mode.showLive);
 
 
         User sys = APILocator.systemUser();
@@ -188,24 +137,25 @@ public class PageLoader implements DotLoader {
             .append("')")
             .append(" #end ");
 
-        PageMode mode = (EDIT_MODE) ? PageMode.PREVIEW :PageMode.LIVE;
-        
-        sb.append( new PageContextBuilder(htmlPage, sys, mode).asString());
-        
 
-        //Now we need to use the found tags in order to accrue them each time this page is visited
-        if ( !pageFoundTags.isEmpty() ) {
-            //Velocity call to accrue tags on each request to this page
+        sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
+
+
+        // Now we need to use the found tags in order to accrue them each time this page is visited
+        if (!pageFoundTags.isEmpty()) {
+            // Velocity call to accrue tags on each request to this page
             sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
         }
-        if(htmlPage.isHttpsRequired()){     
+        if (htmlPage.isHttpsRequired()) {
             sb.append(" #if(!$ADMIN_MODE  && !$request.isSecure())");
             sb.append("    #if($request.getQueryString())");
-            sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
+            sb.append(
+                    "        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
             sb.append("    #else ");
-            sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
+            sb.append(
+                    "        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
             sb.append("    #end ");
-            sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")"); 
+            sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")");
             sb.append(" #end ");
         }
 
@@ -213,47 +163,47 @@ public class PageLoader implements DotLoader {
         sb.append(" $response.setStatus(301)");
         sb.append(" $response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
         sb.append("#end");
-        
-        
+
+
         sb.append("#if(!$doNotParseTemplate)");
-        if ( cmsTemplate.isDrawed() ) {//We have a designed template
-            //Setting some theme variables
-            sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
-            sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
-            //Merging our template
-            sb.append( "#parse(\"$dotTheme.templatePath\")" );
+        if (cmsTemplate.isDrawed()) {// We have a designed template
+            // Setting some theme variables
+            sb.append("#set ($dotTheme = $templatetool.theme(\"")
+                .append(cmsTemplate.getTheme())
+                .append("\",\"")
+                .append(host.getIdentifier())
+                .append("\"))");
+            sb.append("#set ($dotThemeLayout = $templatetool.themeLayout(\"")
+                .append(cmsTemplate.getInode())
+                .append("\" ))");
+            // Merging our template
+            sb.append("#parse(\"$dotTheme.templatePath\")");
         } else {
-            sb.append( "#parse('" ).append( folderPath ).append( cmsTemplate.getIdentifier() ).append( "." ).append( VelocityType.TEMPLATE.fileExtension ).append( "')" );
+            sb.append("#parse('")
+                .append(folderPath)
+                .append(cmsTemplate.getIdentifier())
+                .append(".")
+                .append(VelocityType.TEMPLATE.fileExtension)
+                .append("')");
         }
         sb.append("#end");
-        
+
         return writeOutVelocity(filePath, sb.toString());
 
 
     }
 
-    public static void removePageFile(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
-        String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
-        String filePath = folderPath + identifier.getId() + languageStr + "." + VelocityType.HTMLPAGE.fileExtension;
-        velocityRootPath += java.io.File.separator;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-    }
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, final String filePath)
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, final String filePath)
             throws DotDataException, DotSecurityException {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
             .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(id1, live, Long.parseLong(language), sysUser(), true));
+                .findContentletByIdentifier(id1, mode.showLive, Long.parseLong(language), sysUser(), true));
 
 
-        return buildStream(page, !live, filePath);
+        return buildStream(page, mode, filePath);
 
 
     }

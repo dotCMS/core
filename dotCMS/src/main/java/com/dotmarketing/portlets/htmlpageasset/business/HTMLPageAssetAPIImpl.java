@@ -12,6 +12,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityType;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -52,6 +53,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 
+import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -816,9 +818,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 langStr = "_" + langId;
             }
 
-            String VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-            String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
-                    : "/working/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
+            String VELOCITY_HTMLPAGE_EXTENSION = VelocityType.HTMLPAGE.fileExtension;
+            String vTempalate = (liveMode) ? File.separator+PageMode.LIVE.name() + File.separator+ idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
+                    : File.separator+PageMode.PREVIEW.name() + File.separator  + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
 
             ve.getTemplate(vTempalate).merge(context, out);
 

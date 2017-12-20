@@ -47,6 +47,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -232,7 +233,7 @@ public class ContainerResource implements Serializable {
 
         VelocityUtil.getEngine()
             .evaluate(context, out, this.getClass()
-                .getName(), DotResourceLoader.getInstance().getResourceStream("/working/" + container.getIdentifier() + "/" + uuid + "." + VelocityType.CONTAINER.fileExtension ));
+                .getName(), DotResourceLoader.getInstance().getResourceStream(mode.name() + File.separator + container.getIdentifier() + "/" + uuid + "." + VelocityType.CONTAINER.fileExtension ));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());

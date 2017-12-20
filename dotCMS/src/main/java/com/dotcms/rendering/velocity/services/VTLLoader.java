@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.services;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.BufferedInputStream;
@@ -122,7 +123,7 @@ public class VTLLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath) {
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath) {
         try {
             return streamFile(filePath);
         } catch (IOException e) {
@@ -137,7 +138,7 @@ public class VTLLoader implements DotLoader {
     }
 
     @Override
-    public void invalidate(Object obj, boolean live) {
+    public void invalidate(Object obj, PageMode mode) {
         // TODO Auto-generated method stub
 
     }

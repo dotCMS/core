@@ -48,7 +48,15 @@ public enum PageMode {
         }
         return get(req.getSession());
     }
-
+    
+    public static PageMode get(final String modeStr) {
+        for(PageMode mode : values()) {
+                if(mode.name().equals(modeStr)) {
+                    return mode;
+                }
+        }
+        return ANON;
+    }
     public static void setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
         if (contentLocked && canLock) {
             setPageMode(request,EDIT);

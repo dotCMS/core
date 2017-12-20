@@ -8,16 +8,17 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -27,11 +28,11 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  *
  */
 public class FieldLoader implements DotLoader {
-	public void invalidate(String fieldInode, String contentletIdent, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
-		removeFieldFile(fieldInode, contentletIdent, EDIT_MODE);
+	public void invalidate(String fieldInode, String contentletIdent, PageMode mode,String filePath) throws DotDataException, DotSecurityException {
+		removeFieldFile(fieldInode, contentletIdent, mode);
 	}
 	
-	public InputStream buildVelocity(String fieldInode, String contentInode, boolean EDIT_MODE,String filePath) throws DotDataException, DotSecurityException {
+	public InputStream buildVelocity(String fieldInode, String contentInode, PageMode mode,String filePath) throws DotDataException, DotSecurityException {
 		InputStream result;
 		Field field = APILocator.getContentTypeFieldAPI().find(fieldInode);
 		if(!UtilMethods.isSet(field)){
@@ -66,10 +67,10 @@ public class FieldLoader implements DotLoader {
 
 	}
 	
-	public void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {
+	public void removeFieldFile (String fieldInode, String contentInode, PageMode mode) {
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
-        String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+        String folderPath = mode.name() + java.io.File.separator;
         String filePath=folderPath + contentInode + "_" + fieldInode + "." + VelocityType.FIELD.fileExtension;
         java.io.File f  = new java.io.File(velocityRootPath + filePath);
         f.delete();
@@ -78,22 +79,18 @@ public class FieldLoader implements DotLoader {
     }
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
             throws DotDataException, DotSecurityException {
 
-            return this.buildVelocity(id2, id1, !live, filePath);
+            return this.buildVelocity(id2, id1, mode, filePath);
         
     }
 
-    @Override
-    public void invalidate(Object obj) {
-        // TODO Auto-generated method stub
-        
-    }
+
 
     @Override
-    public void invalidate(Object obj, boolean live) {
-        // TODO Auto-generated method stub
+    public void invalidate(Object obj, PageMode mode) {
+        throw new DotStateException("Not Implemented, use removeFieldFile");
         
     }
 }

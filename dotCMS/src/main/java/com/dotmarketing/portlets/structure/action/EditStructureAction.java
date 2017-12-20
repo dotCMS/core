@@ -2,20 +2,13 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-import com.google.common.collect.ImmutableList;
-import java.net.URLDecoder;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -23,6 +16,7 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -43,7 +37,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -52,6 +45,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -423,7 +425,7 @@ public class EditStructureAction extends DotPortletAction {
 			// Saving the structure in cache
 			CacheLocator.getContentTypeCache().remove(structure);
 			CacheLocator.getContentTypeCache().add(structure);
-			StructureServices.removeStructureFile(structure);
+			new ContentTypeLoader().invalidate(structure);
 
 			String message = "message.structure.savestructure";
 			if (structure.getStructureType() == 3) {

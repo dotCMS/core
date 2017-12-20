@@ -16,7 +16,7 @@ public class RenderParams {
   final User user;
   final Language language;
   final Host currentHost;
-  final boolean editMode;
+  final PageMode mode;
 
 
   public RenderParams(HttpServletRequest request) {
@@ -30,14 +30,13 @@ public class RenderParams {
       this.user = params.user;
       this.language = params.language;
       this.currentHost = params.currentHost;
-      this.editMode = params.editMode;
+      this.mode = params.mode;
     } else {
-      PageMode mode = PageMode.get(request);
+      mode = PageMode.get(request);
       live = mode.showLive;
       user = WebAPILocator.getUserWebAPI().getUser(request);
       language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
       currentHost = WebAPILocator.getHostWebAPI().getHost(request);
-      editMode = mode == PageMode.EDIT;
       request.setAttribute(RENDER_PARAMS_ATTRIBUTE, this);
     }
     

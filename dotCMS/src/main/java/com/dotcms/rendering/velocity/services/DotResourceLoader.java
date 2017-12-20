@@ -6,6 +6,7 @@ import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.InputStream;
@@ -40,7 +41,7 @@ public class DotResourceLoader extends ResourceLoader {
             String paths = (filePath.charAt(0) == '/') ? filePath.substring(1, filePath.length()) : filePath;
 
             final String[] path = paths.split("[/\\.]", -1);
-            final boolean live = (!"working".equals(path[0]));
+            final PageMode mode = PageMode.get(path[0]);
             final String id1 = path[1].indexOf("_") > -1 ? path[1].substring(0, path[1].indexOf("_")) : path[1];
             final String language = path[1].indexOf("_") > -1 ? path[1].substring(path[1].indexOf("_") + 1, path[1].length())
                     : String.valueOf(APILocator.getLanguageAPI()
@@ -60,41 +61,41 @@ public class DotResourceLoader extends ResourceLoader {
                     throw new ResourceNotFoundException("Cannot find velocity file : " + path);
                     }
                     case CONTAINER: {
-                        return new ContainerLoader().writeObject(id1, id2, live, language, filePath);
+                        return new ContainerLoader().writeObject(id1, id2, mode, language, filePath);
                     }
                     case TEMPLATE: {
 
-                        return new TemplateLoader().writeObject(id1, id2, live, language, filePath);
+                        return new TemplateLoader().writeObject(id1, id2, mode, language, filePath);
 
                     }
                     case CONTENT: {
-                        return new ContentletLoader().writeObject(id1, id2, live, language, filePath);
+                        return new ContentletLoader().writeObject(id1, id2, mode, language, filePath);
                     }
                     case FIELD: {
-                        return new FieldLoader().writeObject(id1, id2, live, language, filePath);
+                        return new FieldLoader().writeObject(id1, id2, mode, language, filePath);
                     }
                     case CONTENT_TYPE: {
-                        return new ContentTypeLoader().writeObject(id1, id2, live, language, filePath);
+                        return new ContentTypeLoader().writeObject(id1, id2, mode, language, filePath);
                     }
                     case SITE: {
-                        return new SiteLoader().writeObject(id1, id2, live, language, filePath);
+                        return new SiteLoader().writeObject(id1, id2, mode, language, filePath);
 
                     }
                     case HTMLPAGE: {
-                        return new PageLoader().writeObject(id1, id2, live, language, filePath);
+                        return new PageLoader().writeObject(id1, id2, mode, language, filePath);
 
                     }
                     case VELOCITY_MACROS: {
                         return VTLLoader.instance()
-                            .writeObject(id1, id2, live, language, filePath);
+                            .writeObject(id1, id2, mode, language, filePath);
                     }
                     case VTL: {
                         return VTLLoader.instance()
-                            .writeObject(id1, id2, live, language, filePath);
+                            .writeObject(id1, id2, mode, language, filePath);
                     }
                     case VELOCITY_LEGACY_VL: {
                         return VTLLoader.instance()
-                            .writeObject(id1, id2, live, language, filePath);
+                            .writeObject(id1, id2, mode, language, filePath);
                     }
                     default: {
                         CacheLocator.getVeloctyResourceCache()

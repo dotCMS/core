@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -28,13 +29,24 @@ public interface DotLoader {
         }
     }
 
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
             throws DotDataException, DotSecurityException;
 
-    public void invalidate(Object obj);
+    default void invalidate(Object obj) {
+        for(PageMode mode : PageMode.values()) {
+            invalidate(obj, mode);
+        }
+    }
 
-    public void invalidate(Object obj, boolean live);
+    public void invalidate(Object obj, PageMode mode);
 
+    
+    default void invalidate(Object obj, PageMode ...modes) {
+        for(PageMode mode : modes) {
+            invalidate(obj, mode);
+        }
+    }
+    
     default InputStream writeOutVelocity(final String filePath, final String strOut) {
         if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
             try {

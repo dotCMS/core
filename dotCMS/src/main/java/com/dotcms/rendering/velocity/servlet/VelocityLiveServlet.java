@@ -1,6 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.services.VelocityType;
@@ -29,23 +29,21 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
+import java.io.File;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.Optional;
-import java.util.UUID;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -70,7 +68,7 @@ public class VelocityLiveServlet extends HttpServlet {
 
 
     @Override
-    @CloseDBIfOpened
+    @CloseDB
     protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
         final String uri = URLDecoder.decode((req.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE) != null)
@@ -184,7 +182,7 @@ public class VelocityLiveServlet extends HttpServlet {
     public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
         LicenseUtil.startLiveMode();
         try {
-            
+
             String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
             Host host = hostWebAPI.getCurrentHostNoThrow(request);
 
@@ -204,7 +202,7 @@ public class VelocityLiveServlet extends HttpServlet {
             Logger.debug(VelocityLiveServlet.class, "VELOCITY HTML INODE=" + ident.getId());
 
             RulesEngine.fireRules(request, response);
-            
+
             if (response.isCommitted()) {
                 /*
                  * Some form of redirect, error, or the request has already been fulfilled in some
@@ -307,9 +305,10 @@ public class VelocityLiveServlet extends HttpServlet {
             Logger.debug(VelocityLiveServlet.class, "HTMLPage Identifier:" + ident.getId());
 
             try {
-                    VelocityUtil.getEngine()
-                        .getTemplate("/live/" + ident.getId() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension)
-                        .merge(context, out);
+                VelocityUtil.getEngine()
+                    .getTemplate(
+                            PageMode.LIVE.name() + File.separator + ident.getId() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension)
+                    .merge(context, out);
             } catch (Throwable e) {
                 Logger.warn(this, "can't do live mode merge", e);
             }
@@ -335,12 +334,8 @@ public class VelocityLiveServlet extends HttpServlet {
 
     }
 
-    
-    
-    
-    
-    
-    
+
+
     public class VelocityFilterWriter extends FilterWriter {
 
         private boolean firstNonWhiteSpace = false;

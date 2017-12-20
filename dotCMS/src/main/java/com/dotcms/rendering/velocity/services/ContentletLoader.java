@@ -38,17 +38,15 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -77,139 +75,18 @@ public class ContentletLoader implements DotLoader {
         this.categoryAPI = categoryAPI;
     }
 
-    /**
-     * Invalidate contentlet that is live and working
-     *
-     * @param contentlet
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public void invalidateAll(Contentlet contentlet) throws DotDataException, DotSecurityException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(contentlet);
 
 
-        invalidate(contentlet, identifier, true);
-
-
-    }
-
-    /**
-     * Will remove all contentlet files for both live and working
-     *
-     * @param contentlets
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws DotStateException
-     */
-    public void invalidateAll(List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
-        for (Contentlet contentlet : contentlets) {
-            invalidateAll(contentlet);
-        }
-    }
-
-    /**
-     * Invalidate contentlet that is live.
-     *
-     * @param contentlet
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public void invalidateLive(Contentlet contentlet) throws DotDataException, DotSecurityException {
-        invalidateLive(contentlet, null);
-    }
-
-    /**
-     * Invalidate contentlet that is live.
-     * <p>
-     * NOTE: This method is helpful when you would like to save calls finding the identifier,
-     * otherwise you should use the other method {@link #invalidateLive(Contentlet) invalidateLive}
-     * where you only pass the contentlet
-     * </p>
-     *
-     * @param contentlet
-     * @param identifier of the contentlet, if its null then it will do a search using contentlet
-     *        parameter
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public void invalidateLive(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
-        Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI()
-            .find(contentlet) : identifier;
-
-
-        invalidate(contentlet, localIdentifier, false);
-
-
-    }
-
-    /**
-     * Invalidate contentlet that is working
-     *
-     * @param contentlet
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public void invalidateWorking(Contentlet contentlet) throws DotDataException, DotSecurityException {
-        invalidateWorking(contentlet, null);
-    }
-
-    /**
-     * Invalidate contentlet that is working.
-     * <p>
-     * NOTE: This method is helpful when you would like to save calls finding the identifier,
-     * otherwise you should use the other method {@link #invalidateWorking(Contentlet)
-     * invalidateWorking} where you only pass the contentlet
-     * </p>
-     *
-     * @param contentlet
-     * @param identifier of the contentlet, if its null then it will do a search using contentlet
-     *        parameter
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public void invalidateWorking(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
-        Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI()
-            .find(contentlet) : identifier;
-
-
-        invalidate(contentlet, localIdentifier, true);
-
-    }
-
-    private void invalidate(final Contentlet content, final Identifier identifier, final boolean EDIT_MODE)
+    public InputStream buildVelocity(Contentlet content, Identifier identifier, PageMode mode, String filePath)
             throws DotDataException, DotSecurityException {
+        StringBuilder sb = new StringBuilder();
 
-        removeContentletFile(content, identifier, EDIT_MODE);
-
-        if (content.getContentType()
-            .baseType() == BaseContentType.HTMLPAGE) {
-            new PageLoader().removePageFile(APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(content), identifier, EDIT_MODE);
-        }
-        if (content != null && content.isVanityUrl()) {
-            // remove from cache
-            VanityUrlServices.getInstance()
-                .invalidateVanityUrl(content);
-        }
-        if (content != null && content.isKeyValue()) {
-            // remove from cache
-            CacheLocator.getKeyValueCache()
-                .remove(content);
-        }
-    }
-
-    public InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE, String filePath)
-            throws DotDataException, DotSecurityException {
-        InputStream result;
         ContentletAPI conAPI = APILocator.getContentletAPI();
 
-        User systemUser = APILocator.getUserAPI()
-            .getSystemUser();
-
+        User systemUser = sysUser();
 
         // let's write this puppy out to our file
-        StringBuilder sb = new StringBuilder();
+
 
 
         StringWriter contentDiv = new StringWriter();
@@ -285,7 +162,7 @@ public class ContentletLoader implements DotLoader {
             String contField = field.dbColumn();
             String contFieldValue = null;
             Object contFieldValueObject = null;
-            String velPath = (!EDIT_MODE) ? "live/" : "working/";
+            String velPath = mode.name() + "/";
             if (field instanceof HiddenField || field instanceof ConstantField) {
                 if (field.variable()
                     .equals("widgetPreexecute")) {
@@ -356,7 +233,7 @@ public class ContentletLoader implements DotLoader {
             if (field instanceof ImageField || field instanceof FileField) {
                 String identifierValue = content.getStringProperty(field.variable());
                 if (InodeUtils.isSet(identifierValue)) {
-                    if (EDIT_MODE) {
+                    if (PageMode.EDIT == mode) {
                         sb.append("#set($")
                             .append(field.variable())
                             .append("Object= $filetool.getFile('")
@@ -756,7 +633,7 @@ public class ContentletLoader implements DotLoader {
         // To edit the look, see
         // WEB-INF/velocity/static/preview/content_controls.vtl
 
-        if (EDIT_MODE) {
+        if (PageMode.EDIT == mode) {
             sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
                 .append(identifier.getId())
                 .append(" )");
@@ -836,7 +713,7 @@ public class ContentletLoader implements DotLoader {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public void removeContentletFile(Structure structure) throws DotDataException, DotSecurityException {
+    public void invalidate(Structure structure) throws DotDataException, DotSecurityException {
         ContentletAPI conAPI = APILocator.getContentletAPI();
         int limit = 500;
         int offset = 0;
@@ -845,7 +722,7 @@ public class ContentletLoader implements DotLoader {
         int size = contentlets.size();
         while (size > 0) {
             for (Contentlet contentlet : contentlets) {
-                invalidateAll(contentlet);
+                invalidate(contentlet);
             }
             offset += limit;
             contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI()
@@ -854,41 +731,10 @@ public class ContentletLoader implements DotLoader {
         }
     }
 
-    private void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE)
-            throws DotDataException, DotSecurityException {
-        CacheLocator.getContentletCache()
-            .remove(asset.getInode());
-
-        String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-
-        Set<Long> langs = new HashSet<Long>();
-        langs.add(asset.getLanguageId());
-        if (LanguageWebAPI.canApplyToAllLanguages(asset)) {
-            for (Language ll : APILocator.getLanguageAPI()
-                .getLanguages()) {
-                langs.add(ll.getId());
-            }
-        }
-        for (Long langId : langs) {
-            String filePath = folderPath + identifier.getId() + "_" + langId + "." + VelocityType.CONTENT.fileExtension;
-            java.io.File f = new java.io.File(velocityRootPath + filePath);
-            f.delete();
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-        }
-        List<Field> fields = asset.getContentType()
-            .fields();
-        for (Field field : fields) {
-            new FieldLoader().invalidate(field);
-        }
-    }
-
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath) {
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath) {
         try {
 
             Identifier identifier = APILocator.getIdentifierAPI()
@@ -907,7 +753,7 @@ public class ContentletLoader implements DotLoader {
 
             try {
                 contentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifier(identifier.getId(), live, new Long(language), APILocator.getUserAPI()
+                    .findContentletByIdentifier(identifier.getId(), mode.showLive, new Long(language), APILocator.getUserAPI()
                         .getSystemUser(), true);
             } catch (DotContentletStateException e) {
                 contentlet = null;
@@ -920,7 +766,7 @@ public class ContentletLoader implements DotLoader {
                     .getId();
                 if (lid != Long.parseLong(language)) {
                     Contentlet cc = APILocator.getContentletAPI()
-                        .findContentletByIdentifier(identifier.getId(), live, lid, APILocator.getUserAPI()
+                        .findContentletByIdentifier(identifier.getId(), mode.showLive, lid, APILocator.getUserAPI()
                             .getSystemUser(), true);
                     if (cc != null && UtilMethods.isSet(cc.getInode()) && !cc.isArchived()
                             && LanguageWebAPI.canApplyToAllLanguages(cc)) {
@@ -934,7 +780,7 @@ public class ContentletLoader implements DotLoader {
             }
 
             Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
-            return buildVelocity(contentlet, identifier, !live, filePath);
+            return buildVelocity(contentlet, identifier, mode, filePath);
 
         } catch (Exception e) {
             throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
@@ -943,16 +789,63 @@ public class ContentletLoader implements DotLoader {
 
 
 
-    @Override
-    public void invalidate(Object obj) {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
-    public void invalidate(Object obj, boolean live) {
-        // TODO Auto-generated method stub
+    public void invalidate(Object obj, PageMode mode) {
+        Contentlet asset = (Contentlet) obj;
+        CacheLocator.getContentletCache()
+            .remove(asset.getInode());
 
+        String folderPath = mode.name() + java.io.File.separator;
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
+        velocityRootPath += java.io.File.separator;
+
+        Set<Long> langs = new HashSet<Long>();
+        langs.add(asset.getLanguageId());
+        if (LanguageWebAPI.canApplyToAllLanguages(asset)) {
+            for (Language ll : APILocator.getLanguageAPI()
+                .getLanguages()) {
+                langs.add(ll.getId());
+            }
+        }
+        for (Long langId : langs) {
+            String filePath = folderPath + asset.getIdentifier() + "_" + langId + "." + VelocityType.CONTENT.fileExtension;
+            java.io.File f = new java.io.File(velocityRootPath + filePath);
+            f.delete();
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+        }
+        List<Field> fields;
+        try {
+            fields = asset.getContentType()
+                .fields();
+            for (Field field : fields) {
+                new FieldLoader().invalidate(field, mode);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+
+
+        try {
+            if (asset.getContentType()
+                .baseType() == BaseContentType.HTMLPAGE) {
+                new PageLoader().invalidate(asset, mode);
+            }
+
+            if (asset != null && asset.isVanityUrl()) {
+                // remove from cache
+                VanityUrlServices.getInstance()
+                    .invalidateVanityUrl(asset);
+            }
+            if (asset != null && asset.isKeyValue()) {
+                // remove from cache
+                CacheLocator.getKeyValueCache()
+                    .remove(asset);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
+        }
     }
 
 }

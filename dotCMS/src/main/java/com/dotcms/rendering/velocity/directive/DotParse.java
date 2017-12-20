@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.Writer;
@@ -76,10 +77,10 @@ public class DotParse extends DotDirective {
         continue with the render of the page, on the DotDirective.render we are catching ResourceNotFoundException's
         and on the catch we continue with the render.
          */
-        if ( params.editMode ) {
-          throw new DotStateException(errorMessage);
+        if ( params.mode.showLive ) {
+            throw new ResourceNotFoundException(errorMessage);
         } else {
-          throw new ResourceNotFoundException(errorMessage);
+            throw new DotStateException(errorMessage);
         }
       }
 
@@ -105,7 +106,7 @@ public class DotParse extends DotDirective {
       
       
       // add the edit control if we have run through a page render
-      if (!context.containsKey("dontShowIcon") && params.editMode &&  (request.getAttribute(
+      if (!context.containsKey("dontShowIcon") && PageMode.EDIT == params.mode &&  (request.getAttribute(
               Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
         if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
           String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",

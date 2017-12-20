@@ -9,16 +9,13 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,9 +23,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import com.liferay.portal.model.User;
@@ -37,7 +31,11 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
 
     private static final long serialVersionUID = 1L;
-    private Long languageId;
+    private long languageId;
+    public long getLanguageId() {
+        return languageId;
+    }
+
     private String title;
     private String href;
     private int order;
@@ -47,40 +45,49 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String permissionId;
     private String target;
     private boolean showOnMenu;
-    private boolean active;
+
     private String hostId;
     private String folderId;
     private List<String> childrenFolderIds;
-    private List<NavResult> children;
+    private List<? extends NavResult> children;
     private User sysuser = null;
-    private boolean checkPermissions;
-    private transient ViewContext context;
 
 
+    public NavResult(NavResult navResult) {
+        this(navResult.getParentStr(), navResult.getHostId(), navResult.getFolderId(), navResult.getLanguageId());
+    }
 
-    public NavResult(String parent, String hostId, String folderId, Long languageId, ViewContext context) {
+    public String getFolderId() {
+        return folderId;
+    }
+
+    public String getParentStr() {
+        return this.parent;
+    }
+
+    public NavResult(String parent, String hostId, String folderId, Long languageId) {
         this.hostId = hostId;
         this.folderId = folderId;
         this.parent = parent;
         this.languageId = languageId;
-        this.context = context;
-        this.active = false;
+
+
         title = href = "";
         order = 0;
-        checkPermissions = Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK", false);
+
         try {
             sysuser = APILocator.getUserAPI()
                 .getSystemUser();
         } catch (DotDataException e) {
             Logger.warn(this, e.getMessage(), e);
         }
-        amIActive();
+
     }
 
 
 
-    public NavResult(String parent, String host, Long languageId, ViewContext context) {
-        this(parent, host, null, languageId, context);
+    public NavResult(String parent, String host, Long languageId) {
+        this(parent, host, null, languageId);
     }
 
     public String getTitle() throws Exception {
@@ -120,7 +127,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
     public void setHref(String href) {
         this.href = href;
-        amIActive();
+
     }
 
     public boolean isCodeLink() {
@@ -129,11 +136,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
 
     public String getCodeLink() {
-        if (context != null && this.codeLink != null && (this.codeLink.contains("$") || this.codeLink.contains("#"))) {
-            return UtilMethods.evaluateVelocity(codeLink, context.getVelocityContext());
-        } else {
-            return codeLink;
-        }
+        return codeLink;
     }
 
     public void setCodeLink(String codeLink) {
@@ -150,40 +153,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         this.order = order;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
-    private void amIActive() {
-        if (context != null && UtilMethods.isSet(href)) {
-            HttpServletRequest req = (HttpServletRequest) context.getRequest();
-            if (req != null) {
-                // We exclude the page name from the Request URI so we can check if page's parent
-                // object is the real active object
-                String reqURI = req.getRequestURI();
-                String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
-                if (!parentPath.endsWith("/"))
-                    // Adding a slash at the end of the path, so it avoids false positives
-                    // when two or more paths from the same level starts with the same name
-                    parentPath = parentPath + "/";
-                // If the current item is a folder, we check if it's part of current URI
-                
-                //System.err.println(href + " : " + reqURI);
-                if (isFolder() && !href.endsWith("/")) {
-                    String tempHref = href + "/";
-                    this.active = parentPath.startsWith(tempHref);
-                } else {
-                    // If it's a page, we check instead if it's the current URI
-                    this.active = !isCodeLink() && href.equalsIgnoreCase(reqURI);
-                }
-            }
-        }
-        else {
-            this.active = false;
-        }
 
 
-    }
 
     public void setChildren(List<NavResult> children) {
         this.children = children;
@@ -193,7 +164,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         return folderId != null;
     }
 
-    public List<NavResult> getChildren() throws Exception {
+    public List<? extends NavResult> getChildren() throws Exception {
         if (children == null && hostId != null && folderId != null) {
             // lazy loadinge children
             Host host = APILocator.getHostAPI()
@@ -202,7 +173,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                 .find(folderId, sysuser, true);
             Identifier ident = APILocator.getIdentifierAPI()
                 .find(folder);
-            NavResult lazyMe = new NavTool().getNav(host, ident.getPath(), languageId, sysuser, context);
+            NavResult lazyMe = new NavTool().getNav(host, ident.getPath(), languageId, sysuser);
 
             children = lazyMe.getChildren();
             childrenFolderIds = lazyMe.getChildrenFolderIds();
@@ -214,7 +185,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     // for folders we avoid returning the same instance
                     // it could be changed elsewhere and we need it to
                     // load its children lazily
-                    NavResult ff = new NavResult(folderId, nn.hostId, nn.folderId, nn.languageId, context);
+                    NavResult ff = new NavResult(folderId, nn.hostId, nn.folderId, nn.languageId);
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
@@ -226,30 +197,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     list.add(nn);
                 }
             }
-
-            if (checkPermissions) {
-                // now filtering permissions
-                List<NavResult> allow = new ArrayList<NavResult>(list.size());
-
-                HttpServletRequest req = (HttpServletRequest) context.getRequest();
-                User currentUser = WebAPILocator.getUserWebAPI()
-                    .getLoggedInUser(req);
-                if (currentUser == null)
-                    currentUser = APILocator.getUserAPI()
-                        .getAnonymousUser();
-                for (NavResult nv : list) {
-                    try {
-                        if (APILocator.getPermissionAPI()
-                            .doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
-                            allow.add(nv);
-                        }
-                    } catch (Exception ex) {
-                        Logger.error(this, ex.getMessage(), ex);
-                    }
-                }
-                return allow;
-            } else
-                return list;
+            return list;
         } else {
             return new ArrayList<NavResult>();
         }
@@ -271,7 +219,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         String path = getParentPath();
         if (path != null) {
             NavResult lazyMe = new NavTool().getNav(APILocator.getHostAPI()
-                .find(hostId, sysuser, true), path, languageId, sysuser, context);
+                .find(hostId, sysuser, true), path, languageId, sysuser);
 
             return lazyMe;
         } else
@@ -303,7 +251,12 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     @Override
     public Iterator<NavResult> iterator() {
         try {
-            return getChildren().iterator();
+            List<? extends NavResult>  childs= getChildren();
+            List<NavResult> ret = new ArrayList<>();
+            for(NavResult child  : childs) {
+                ret.add(child);
+            }
+            return ret.iterator();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -416,9 +369,6 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                                                                          // point
     }
 
-    public void setContext(ViewContext context2) {
-        this.context = context2;
-        amIActive();
-    }
+
 
 }

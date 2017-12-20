@@ -325,7 +325,7 @@ public class MultiTreeFactory {
             for (Contentlet pageContent : contentlets) {
                 IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(pageContent);
-               new PageLoader().invalidateAll(htmlPage);
+               new PageLoader().invalidate(htmlPage);
             }
         } catch (DotStateException | DotSecurityException e) {
             Logger.warn(MultiTreeFactory.class, "unable to refresh page cache:" + e.getMessage());

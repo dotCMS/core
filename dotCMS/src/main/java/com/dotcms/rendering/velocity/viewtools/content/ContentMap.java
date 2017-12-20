@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
@@ -63,16 +64,18 @@ public class ContentMap {
 	private Structure structure;
 	private String title;
 	private Context context;
-
+    public ContentMap(Contentlet content, User user, PageMode mode, Host host, Context context) {
+        this( content,  user, !mode.showLive,  host,  context) ;
+    }
 	public ContentMap(Contentlet content, User user, boolean EDIT_OR_PREVIEW_MODE, Host host, Context context) {
-		this.content = content;
-		this.conAPI = APILocator.getContentletAPI();
-		this.perAPI = APILocator.getPermissionAPI();
-		this.fields = FieldsCache.getFieldsByStructureInode(content.getStructureInode());
-		this.user = user;
-		this.EDIT_OR_PREVIEW_MODE = EDIT_OR_PREVIEW_MODE;
-		this.host = host;
-		this.context = context;
+        this.content = content;
+        this.conAPI = APILocator.getContentletAPI();
+        this.perAPI = APILocator.getPermissionAPI();
+        this.fields = FieldsCache.getFieldsByStructureInode(content.getStructureInode());
+        this.user = user;
+        this.EDIT_OR_PREVIEW_MODE = EDIT_OR_PREVIEW_MODE;
+        this.host = host;
+        this.context = context;
 	}
 	
 	/**
@@ -288,7 +291,7 @@ public class ContentMap {
 				Template template = null;
 				StringWriter sw = new StringWriter();
 
-				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
+				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
 				template.merge(context, sw);
 				ret = sw.toString();
 			}

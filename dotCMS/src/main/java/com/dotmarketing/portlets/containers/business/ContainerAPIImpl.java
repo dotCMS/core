@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.util.transform.TransformerLocator;
 
 import com.dotmarketing.beans.ContainerStructure;
@@ -32,7 +33,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
@@ -128,7 +128,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		permissionAPI.copyPermissions(source, newContainer);
 
 		//saves to working folder under velocity
-		ContainerServices.invalidate(newContainer, newIdentifier, true);
+		new ContainerLoader().invalidate(newContainer);
 
 		return newContainer;
 	}
@@ -457,7 +457,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 		saveContainerStructures(containerStructureList);
 		// saves to working folder under velocity
-		ContainerServices.invalidate(container, true);
+		new ContainerLoader().invalidate(container);
 
 		return container;
 	}

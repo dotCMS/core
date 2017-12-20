@@ -1,12 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.rendering.velocity.services.DotResourceCache;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
@@ -18,11 +14,12 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.VelocityUtil;
+
+import java.util.List;
 
 public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTask {
     

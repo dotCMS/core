@@ -14,6 +14,7 @@ import com.dotmarketing.util.Config;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+import java.io.File;
 import java.io.Writer;
 
 public class ContentletDetail extends DotDirective {
@@ -43,7 +44,7 @@ public class ContentletDetail extends DotDirective {
         if (defaultLang != params.language.getId()) {
           cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, defaultLang);
           String inode = (params.live) ? cv.getLiveInode() : cv.getWorkingInode();
-          Contentlet test = APILocator.getContentletAPI().find(inode, params.user, !params.editMode);
+          Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.showLive);
           ContentType type = APILocator.getContentTypeAPI(params.user).find(test.getContentTypeId());
           if(type.baseType() == BaseContentType.CONTENT  && !Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)){
             throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
@@ -57,21 +58,10 @@ public class ContentletDetail extends DotDirective {
       throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
     }
 
-      // _show_working_ context variable is used on Container Services. If the time machine date is after the Publish
-      // date of the Contentlet (identifier data) we need to show the working. If not we only show the live.
-      //
-      // #if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))
-      //    #set($_show_working_=true)
-      //
-      boolean showWorking = false;
 
-      if (context.get("_show_working_") != null && (boolean)context.get("_show_working_")) {
-          showWorking = true;
-      }
 
-      return  (params.live && !showWorking)
-          ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
-          : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
+
+      return  File.separator +  params.mode.name() + File.separator   + argument + "_" + cv.getLang() + "." + EXTENSION;
   }
 }
 

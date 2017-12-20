@@ -4,7 +4,10 @@
 package com.dotmarketing.business;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -23,12 +26,9 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.liferay.portal.model.User;
 
 /**
  * @author jtesser
@@ -283,12 +285,13 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
                 dc.addParam(currWebAsset.getIdentifier());
                 dc.loadResult();
 
-				ContainerServices.unpublishContainerFile((Container)currWebAsset);
+				new ContainerLoader().invalidate((Container)currWebAsset);
 				CacheLocator.getContainerCache().remove(currWebAsset.getInode());
 			}
 			else if(currWebAsset instanceof Template)
 			{
-				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
+	             new TemplateLoader().invalidate((Template)currWebAsset);
+	
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
 			}
 

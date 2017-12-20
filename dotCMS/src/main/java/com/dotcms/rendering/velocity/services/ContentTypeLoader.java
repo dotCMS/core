@@ -16,25 +16,18 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
@@ -48,21 +41,15 @@ public class ContentTypeLoader implements DotLoader {
     private long fakeInode = Long.MAX_VALUE;
     private String fakeTitle = "Content Title";
 
-    public void invalidate(ContentType contentType) {
-        invalidate(contentType, true);
-        invalidate(contentType, false);
-    }
 
-    public void invalidate(ContentType contentType, boolean EDIT_MODE) {
+
+    public void invalidate(ContentType contentType, PageMode mode) {
         removeContentTypeFile(contentType);
     }
 
-    public InputStream buildVelocity(ContentType contentType, String filePath) {
-        return buildVelocity(contentType, true,filePath);
-    }
 
-    @SuppressWarnings("deprecation")
-    public InputStream buildVelocity(ContentType type, boolean EDIT_MODE, String filePath) {
+
+    public InputStream buildVelocity(ContentType type, String filePath, PageMode mode ) {
 
         // let's write this puppy out to our file
         StringBuilder sb = new StringBuilder();
@@ -279,19 +266,11 @@ public class ContentTypeLoader implements DotLoader {
     }
 
     public void removeContentTypeFile(ContentType contentType) {
-        String folderPath = "working/";
-        String filePath = folderPath + contentType.inode() + "." + VelocityType.CONTENT_TYPE.fileExtension;
 
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        String absolutPath = velocityRootPath + File.separator + filePath;
-        java.io.File f = new java.io.File(absolutPath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
             throws DotDataException, DotSecurityException {
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(sysUser());
@@ -301,19 +280,24 @@ public class ContentTypeLoader implements DotLoader {
         ContentType foundContentType = contentTypeAPI.find(id1);
 
 
-        return buildVelocity(foundContentType,  filePath);
+        return buildVelocity(foundContentType,  filePath, mode);
 
     }
 
-    @Override
-    public void invalidate(Object obj) {
-        removeContentTypeFile((ContentType) obj);
 
-    }
 
     @Override
-    public void invalidate(Object obj, boolean live) {
-        removeContentTypeFile((ContentType) obj);
+    public void invalidate(Object obj, PageMode mode) {
+        ContentType contentType = (ContentType)obj;
+        String folderPath =  mode.name() + File.separator;
+        String filePath = folderPath + contentType.inode() + "." + VelocityType.CONTENT_TYPE.fileExtension;
+
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
+        String absolutPath = velocityRootPath + File.separator + filePath;
+        java.io.File f = new java.io.File(absolutPath);
+        f.delete();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
 
     }
 }

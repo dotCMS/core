@@ -11,19 +11,11 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.PageMode;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -36,32 +28,18 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  */
 public class TemplateLoader implements DotLoader {
 
-    public void invalidate(Template template) throws DotStateException, DotDataException {
 
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(template);
-        invalidate(template, identifier, false);
 
-    }
-
-    public void invalidate(Template template, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(template);
-        invalidate(template, identifier, EDIT_MODE);
-
-    }
-
-    public InputStream buildVelocity(Template template, boolean EDIT_MODE, String filePath)
+    public InputStream buildVelocity(Template template, PageMode mode, String filePath)
             throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(template);
-        return buildVelocity(template, identifier, EDIT_MODE, filePath);
+        return buildVelocity(template, identifier, mode, filePath);
     }
 
-    public InputStream buildVelocity(Template template, Identifier identifier, boolean EDIT_MODE, String filePath) {
+    public InputStream buildVelocity(Template template, Identifier identifier, PageMode mode, String filePath) {
 
-        InputStream result;
+
         StringBuilder templateBody = new StringBuilder();
 
 
@@ -74,47 +52,17 @@ public class TemplateLoader implements DotLoader {
         return writeOutVelocity(filePath, templateBody.toString());
     }
 
-    public void invalidate(Template template, Identifier identifier, boolean EDIT_MODE) {
-        removeTemplateFile(template, identifier, EDIT_MODE);
-    }
 
-
-    public void unpublishTemplateFile(Template asset) throws DotStateException, DotDataException {
-
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(asset);
-        removeTemplateFile(asset, identifier, false);
-        removeTemplateFile(asset, identifier, true);
-    }
-
-    public void removeTemplateFile(Template asset, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(asset);
-        removeTemplateFile(asset, identifier, EDIT_MODE);
-    }
-
-    public void removeTemplateFile(Template asset, Identifier identifier, boolean EDIT_MODE) {
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-
-        String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-        String filePath = folderPath + identifier.getInode() + "." + VelocityType.TEMPLATE.fileExtension;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete(); // todo: check if the file exists before remove?
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-    }
 
     @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
             throws DotDataException, DotSecurityException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
             .find(id1);
         VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         Template template = null;
-        if (live) {
+        if (mode.showLive) {
             template = (Template) versionableAPI.findLiveVersion(identifier, sysUser(), true);
 
         } else {
@@ -123,20 +71,32 @@ public class TemplateLoader implements DotLoader {
 
         Logger.debug(this, "DotResourceLoader:\tWriting out Template inode = " + template.getInode());
 
-        return buildVelocity(template, !live, filePath);
+        return buildVelocity(template, mode, filePath);
 
 
     }
 
     @Override
     public void invalidate(Object obj) {
-        // TODO Auto-generated method stub
+        for (PageMode mode : PageMode.values()) {
+            invalidate(obj, mode);
+        }
 
     }
 
     @Override
-    public void invalidate(Object obj, boolean live) {
-        // TODO Auto-generated method stub
+    public void invalidate(Object obj, PageMode mode) {
+        Template template = (Template) obj;
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
+        velocityRootPath += java.io.File.separator;
+
+        String folderPath = mode.name() + java.io.File.separator;
+        String filePath = folderPath + template.getIdentifier() + "." + VelocityType.TEMPLATE.fileExtension;
+        java.io.File f = new java.io.File(velocityRootPath + filePath);
+        f.delete(); // todo: check if the file exists before remove?
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+
 
     }
 }

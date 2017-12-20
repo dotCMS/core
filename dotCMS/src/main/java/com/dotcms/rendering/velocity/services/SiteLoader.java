@@ -9,9 +9,11 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.ByteArrayInputStream;
@@ -27,19 +29,9 @@ import com.liferay.portal.model.User;
 
 public class SiteLoader implements DotLoader {
 
-    public void invalidate(Host host) {
-
-
-        invalidate(host, false);
-        invalidate(host, true);
-    }
-
-    public void invalidate(Host host, boolean EDIT_MODE) {
-        removeHostFile(host, EDIT_MODE);
-    }
 
     @SuppressWarnings("unchecked")
-    public InputStream buildStream(Host host, boolean EDIT_MODE, String filePath) throws DotDataException, DotSecurityException {
+    public InputStream buildStream(Host host, PageMode mode, String filePath) throws DotDataException, DotSecurityException {
 
         InputStream result;
         StringBuilder sb = new StringBuilder();
@@ -78,7 +70,31 @@ public class SiteLoader implements DotLoader {
 
 
     public void removeHostFile(Host host, boolean EDIT_MODE) {
-        String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
+
+    }
+
+    @Override
+    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
+            throws DotDataException, DotSecurityException {
+
+        Host host = APILocator.getHostAPI()
+            .find(id1, sysUser(), false);
+
+        return buildStream(host, mode, filePath);
+
+    }
+
+    @Override
+    public void invalidate(Object obj) {
+        for(PageMode mode : PageMode.values()) {
+            invalidate(obj, mode);
+        }
+    }
+
+    @Override
+    public void invalidate(Object obj, PageMode mode) {
+        Host host = (Host)obj;
+        String folderPath = mode.name() + java.io.File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
         String filePath = folderPath + host.getIdentifier() + "." + VelocityType.SITE.fileExtension;
         velocityRootPath += java.io.File.separator;
@@ -86,28 +102,6 @@ public class SiteLoader implements DotLoader {
         f.delete();
         DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-    }
-
-    @Override
-    public InputStream writeObject(String id1, String id2, boolean live, String language, String filePath)
-            throws DotDataException, DotSecurityException {
-
-        Host host = APILocator.getHostAPI()
-            .find(id1, sysUser(), false);
-
-        return buildStream(host, !live, filePath);
-
-    }
-
-    @Override
-    public void invalidate(Object obj) {
-        removeHostFile((Host)obj, true);
-        removeHostFile((Host)obj, false);
-    }
-
-    @Override
-    public void invalidate(Object obj, boolean live) {
-        removeHostFile((Host)obj, !live);
 
     }
 

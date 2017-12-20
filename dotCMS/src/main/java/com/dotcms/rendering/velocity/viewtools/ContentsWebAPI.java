@@ -545,25 +545,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 
-	/**
-	 * This methods retrieves the disk paths for a list of contents hits retrieved from lucene
-	 * this method is used in the dynamic containers code to get the list of contents paths
-	 * @param assets The assets hits
-	 * @param working True if you want the working path to the content file, false if you the live path to the file
-	 * @return A list of paths to the contents
-	 */
-	public List<String> getContentsPathsFromLuceneHits(LuceneHits assets, boolean working) {
-		ArrayList<String> paths = new ArrayList<String>();
-		for (int i = 0; i < assets.length(); i++) {
-			Logger.debug(this, "getContentsPathsFromLuceneHits: Adding asset path: "
-					+ (working ? "/working/" : "/live/") + assets.doc(i).get("identifier") + "_"
-					+ assets.doc(i).get("languageId") + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"));
-			paths.add((working ? "/working/" : "/live/") + assets.doc(i).get("identifier") + "_"
-					+ assets.doc(i).get("languageId") + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"));
 
-		}
-		return paths;
-	}
 
 	/**
 	 * This methods retrieves the identifier for a list of contents hits retrieved from lucene

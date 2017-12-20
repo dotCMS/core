@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import eu.bitwalker.useragentutils.Browser;
@@ -72,12 +73,13 @@ public class TimeMachineFilter implements Filter {
 			req.getSession().removeAttribute(TM_DATE_VAR);
 			req.getSession().removeAttribute(TM_LANG_VAR);
 			req.getSession().removeAttribute(TM_HOST_VAR);
+			
 		}
 		// If a Time Machine request is present...
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-
+			PageMode.setPageMode(req, PageMode.PREVIEW);
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){
@@ -165,7 +167,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append("live").append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.PREVIEW.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;
