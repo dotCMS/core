@@ -95,8 +95,8 @@ public class WorkflowImportExportUtil {
 				wapi.saveStep(step);
 			}
 
-			for (WorkflowAction aciton : importer.getActions()) {
-				wapi.saveAction(aciton, null);
+			for (WorkflowAction action : importer.getActions()) {
+				wapi.saveAction(action, null);
 			}
 
 			for (WorkflowActionClass actionClass : importer.getActionClasses()) {

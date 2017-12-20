@@ -566,18 +566,25 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
-		List<WorkflowStep> steps = new ArrayList<>();
-        List<WorkflowStep> currentSteps = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes = this.findSchemesForStruct(contentlet.getContentTypeId());
+		List<WorkflowStep> steps            = new ArrayList<>();
+        List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
+		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
+		String workflowTaskId        		= null;
+		List<Map<String, Object>> dbResults = null;
+
 		if (currentSteps == null) {
             WorkflowStep step = null;
 			try {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
-                step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+
+				dbResults = db.loadObjectResults();
+                step      = (WorkflowStep) this.convertListToObjects
+						(dbResults, WorkflowStep.class).get(0);
                 steps.add(step);
 
+				workflowTaskId =  (String)dbResults.get(0).get("workflowid");
 			} catch (final Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
@@ -593,19 +600,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
 				}
 			}
-
-
-		}else {
+		} else {
 			steps.addAll(currentSteps);
 		}
-        // if the existing task belongs to another workflow schema, then blank
-        // the workflow task status
+        // if the existing task belongs to another workflow schema, then remove it
 		if (steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
-		    final DotConnect db = new DotConnect();
-		    db.setSQL(sql.RESET_CONTENTLET_STEPS);
-            db.addParam(StringPool.BLANK);
-            db.addParam(contentlet.getIdentifier());
-            db.loadResult();
+
+			if (null != workflowTaskId) {
+				this.deleteWorkflowTask(this.findWorkFlowTaskById(workflowTaskId));
+			}
+
             steps = new ArrayList<>();
 		}
 

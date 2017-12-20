@@ -230,6 +230,17 @@ public interface ContainerAPI {
     List<Container> findContainersForStructure(String structureInode)
             throws DotDataException;
 
+	/**
+	 * Retrieves containers using the specified structure
+	 *
+	 * @param structureInode
+	 * @param workingOrLiveOnly
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Container> findContainersForStructure(String structureInode, boolean workingOrLiveOnly)
+			throws DotDataException;
+
     /**
      * 
      * @param assetsOlderThan
