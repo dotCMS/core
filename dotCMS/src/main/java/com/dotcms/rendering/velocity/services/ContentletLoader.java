@@ -820,7 +820,7 @@ public class ContentletLoader implements DotLoader {
             fields = asset.getContentType()
                 .fields();
             for (Field field : fields) {
-                new FieldLoader().invalidate(field, mode);
+                new FieldLoader().invalidate(field, asset, mode);
             }
         } catch (DotDataException | DotSecurityException e) {
             throw new DotStateException(e);

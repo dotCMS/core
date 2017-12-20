@@ -68,14 +68,7 @@ public class FieldLoader implements DotLoader {
 	}
 	
 	public void removeFieldFile (String fieldInode, String contentInode, PageMode mode) {
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-        String folderPath = mode.name() + java.io.File.separator;
-        String filePath=folderPath + contentInode + "_" + fieldInode + "." + VelocityType.FIELD.fileExtension;
-        java.io.File f  = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+
     }
 
     @Override
@@ -87,10 +80,20 @@ public class FieldLoader implements DotLoader {
     }
 
 
+    public void invalidate(Field field, Contentlet content, PageMode mode) {
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
+        velocityRootPath += java.io.File.separator;
+        String folderPath = mode.name() + java.io.File.separator;
+        String filePath=folderPath + content.getInode() + "_" + field.id() + "." + VelocityType.FIELD.fileExtension;
+        java.io.File f  = new java.io.File(velocityRootPath + filePath);
+        f.delete();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+    }
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
-        throw new DotStateException("Not Implemented, use removeFieldFile");
+        throw new DotStateException("Not Implemented, use invalidate(String fieldInode, String contentInode, PageMode mode) ");
         
     }
 }
