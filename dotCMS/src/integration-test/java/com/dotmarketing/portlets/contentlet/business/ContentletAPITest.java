@@ -3377,7 +3377,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 false);
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(newsContent,
-                (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), null, user, false);
+                null, new ArrayList<>(), null, user, false);
 
             List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
                 false);
@@ -3590,9 +3590,14 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final List<Category> categories = getACoupleOfCategories();
 
+            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords =
+                relationships.getRelationshipsRecords().get(0);
+
+            final Relationship relationship = relationshipRecords.getRelationship();
+
             final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
-                relationships.getRelationshipsRecords().get(0).getRecords());
+            relationshipsMap.put(relationship,
+                relationshipRecords.getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
@@ -3601,8 +3606,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 new HashMap<>(), null, null, user, false);
-
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
