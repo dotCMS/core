@@ -119,7 +119,7 @@ public class Macro extends Directive
         String macroName = node.jjtGetChild(0).getFirstTokenImage();
         String macroContent = node.literal();
 
-        CacheLocator.getVeloctyResourceCache2().putMacro(macroName,macroContent);
+        CacheLocator.getVeloctyResourceCache().putMacro(macroName,macroContent);
     }
     
     /**

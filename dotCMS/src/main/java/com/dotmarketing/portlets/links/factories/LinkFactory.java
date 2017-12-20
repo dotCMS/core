@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -31,7 +32,6 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -129,7 +129,9 @@ public class LinkFactory {
             dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
             dc.addParam(o.getIdentifier());
 
-            return ConvertToPOJOUtil.convertDotConnectMapToLink(dc.loadObjectResults());
+
+            return TransformerLocator.createLinkTransformer(dc.loadObjectResults()).asList();
+
         } catch (Exception e) {
 			Logger.error(LinkFactory.class, "getLinkChildrenByCondition failed:" + e, e);
         }

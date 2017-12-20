@@ -314,7 +314,7 @@ public class ContentTypeLoader implements VelocityCMSObject {
         String absolutPath = velocityRootPath + File.separator + filePath;
         java.io.File f = new java.io.File(absolutPath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
 

@@ -12,7 +12,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -333,7 +333,7 @@ public class ContainerServices {
         String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
         java.io.File f  = new java.io.File(velocityRootPath + filePath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        com.dotcms.rendering.velocity.services.DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
     }
 }

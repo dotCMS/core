@@ -11,7 +11,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-import com.dotcms.repackage.org.jsoup.select.Collector;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
@@ -29,19 +28,14 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.TagUtil;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.velocity.context.AbstractContext;
 
@@ -274,26 +268,13 @@ public class PageVelocityContext extends AbstractContext {
 
     public String printForVelocity() {
 
-        
-        List<Tag> tags = (List<Tag>) context.get(FOUND_TAG_LIST);
-        context.remove(FOUND_TAG_LIST);
-        //Now we need to use the found tags in order to accrue them each time this page is visited
-        if ( !pageFoundTags.isEmpty() ) {
-            //Velocity call to accrue tags on each request to this page
-            sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
-        }
-        
-        
-        
-        
-        
-        
+ 
         final StringWriter s = new StringWriter();
         for (String key : this.context.keySet()) {
             s.append("#set($")
                 .append(key)
                 .append("=")
-                .append(stringifyObject(context.get(key)))
+                .append(new StringifyObject(context.get(key)).from())
                 .append(')');
         }
 
@@ -302,66 +283,7 @@ public class PageVelocityContext extends AbstractContext {
 
     }
 
-    public String stringifyObject(Object o) {
-        StringWriter sw = new StringWriter();
-
-
-
-        if (o instanceof String[]) {
-            String[] str = (String[]) o;
-            sw.append('[');
-            for (int i = 0; i < str.length; i++) {
-                sw.append('"')
-                    .append(str[i])
-                    .append("\"");
-                if (i != str.length - 1) {
-                    sw.append(",");
-                }
-            }
-            sw.append(']');
-            return sw.toString();
-
-        } else if (o instanceof List || o instanceof Set) {
-            Collection co = (Collection) o;
-            sw.append('[');
-            Iterator<Object> it = co.iterator();
-            while (it.hasNext()) {
-                Object obj = it.next();
-                sw.append('"')
-                    .append(obj.toString())
-                    .append("\",");
-            }
-            sw.append(']');
-            return sw.toString();
-
-        } else if (o instanceof Boolean) {
-            Boolean b = (Boolean) o;
-            return b.toString();
-        } else if (o instanceof String) {
-
-            String x = (String) o;
-            if (x.startsWith("$")) {
-                return x;
-            }
-
-
-            sw.append('"');
-            sw.append(o.toString());
-            sw.append('"');
-            return sw.toString();
-        } else if (o instanceof Date) {
-            String d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format((Date) o);
-            sw.append('"');
-            sw.append(d);
-            sw.append('"');
-            return sw.toString();
-        }
-        return o.toString();
-
-
-
-    }
-
+ 
 
 
 }

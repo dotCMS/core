@@ -56,8 +56,9 @@ public class DotResourceLoader extends ResourceLoader {
             try {
                 switch (type) {
                     case NOT_VELOCITY: {
-                        return com.dotmarketing.velocity.DotResourceLoader.getInstance()
-                            .getResourceStream(filePath);
+                        CacheLocator.getVeloctyResourceCache()
+                        .addMiss(path);
+                    throw new ResourceNotFoundException("Cannot find velocity file : " + path);
                     }
                     case CONTAINER: {
                         return new ContainerLoader().writeObject(id1, id2, live, language, filePath);
@@ -97,7 +98,7 @@ public class DotResourceLoader extends ResourceLoader {
                             .writeObject(id1, id2, live, language, filePath);
                     }
                     default: {
-                        CacheLocator.getVeloctyResourceCache2()
+                        CacheLocator.getVeloctyResourceCache()
                             .addMiss(path);
                         throw new ResourceNotFoundException("Cannot find velocity file : " + path);
                     }

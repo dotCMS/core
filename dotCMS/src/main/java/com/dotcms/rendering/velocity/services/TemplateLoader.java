@@ -127,7 +127,7 @@ public class TemplateLoader implements VelocityCMSObject {
         String filePath = folderPath + identifier.getInode() + "." + VelocityType.TEMPLATE.fileExtension;
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete(); // todo: check if the file exists before remove?
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
 

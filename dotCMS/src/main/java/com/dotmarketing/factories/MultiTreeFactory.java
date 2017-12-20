@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.PageLoader;
 
@@ -16,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-
 import com.dotmarketing.util.Logger;
 
 import java.util.Date;
@@ -40,6 +40,8 @@ import com.google.common.collect.Lists;
  * @author will
  */
 public class MultiTreeFactory {
+
+
 
     final static String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
     final static String SELECT_SQL =
@@ -94,21 +96,6 @@ public class MultiTreeFactory {
 
     }
 
-    /**
-     * use the relationType for specificity{link
-     * {@link #getMultiTree(String, String, String, String)}
-     * 
-     * @param htmlPage
-     * @param container
-     * @param childContent
-     * @return
-     * @throws DotDataException
-     */
-    @Deprecated
-    public static MultiTree getMultiTree(Identifier htmlPage, Identifier container, Identifier childContent)
-            throws DotDataException {
-        return getMultiTree(htmlPage, container, childContent, MultiTree.LEGACY_RELATION_TYPE);
-    }
 
 
     public static MultiTree getMultiTree(Identifier htmlPage, Identifier container, Identifier childContent, String relationType)
@@ -243,6 +230,7 @@ public class MultiTreeFactory {
         for (MultiTree tree : mTrees) {
             _dbUpsert(tree.setTreeOrder(i++));
         }
+
         MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
@@ -282,6 +270,11 @@ public class MultiTreeFactory {
             .addParam(o.getTreeOrder())
             .loadResult();
     }
+
+
+
+
+
 
 
 

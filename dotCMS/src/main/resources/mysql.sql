@@ -2032,7 +2032,7 @@ create table workflow_step(
 );
 create index workflow_idx_step_scheme on workflow_step(scheme_id);
 
--- Permissionable ---
+-- Permissionable  ---
 create table workflow_action(
     id varchar(36) primary key,
     step_id varchar(36),
@@ -2045,6 +2045,7 @@ create table workflow_action(
     commentable boolean default false,
     requires_checkout boolean default false,
     icon varchar(255) default 'defaultWfIcon',
+    show_on varchar(255) default 'LOCKED,UNLOCKED',
     use_role_hierarchy_assign bool default false,
     scheme_id VARCHAR(36) NOT NULL
 );

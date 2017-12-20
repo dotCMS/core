@@ -886,7 +886,7 @@ public class ContentletLoader implements VelocityCMSObject {
             String filePath = folderPath + identifier.getId() + "_" + langId + "." + VelocityType.CONTENT.fileExtension;
             java.io.File f = new java.io.File(velocityRootPath + filePath);
             f.delete();
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
             vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
         }
         List<Field> fields = asset.getContentType()
@@ -905,7 +905,7 @@ public class ContentletLoader implements VelocityCMSObject {
             Identifier identifier = APILocator.getIdentifierAPI()
                 .find(id1);
             Contentlet contentlet = null;
-            if (CacheLocator.getVeloctyResourceCache2()
+            if (CacheLocator.getVeloctyResourceCache()
                 .isMiss(filePath)) {
                 if (LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
                     LanguageAPI langAPI = APILocator.getLanguageAPI();
@@ -937,7 +937,7 @@ public class ContentletLoader implements VelocityCMSObject {
                             && LanguageWebAPI.canApplyToAllLanguages(cc)) {
                         contentlet = cc;
                     } else {
-                        CacheLocator.getVeloctyResourceCache2()
+                        CacheLocator.getVeloctyResourceCache()
                             .addMiss(filePath);
                         throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
                     }

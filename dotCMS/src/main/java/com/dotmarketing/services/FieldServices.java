@@ -3,6 +3,8 @@
  */
 package com.dotmarketing.services;
 
+import com.dotcms.rendering.velocity.services.DotResourceCache;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,13 +19,14 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**

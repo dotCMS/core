@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.containers.action;
 
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Iterator;
@@ -559,26 +563,9 @@ public class EditContainerAction extends DotPortletAction implements
 		identifier.setHostId(host.getIdentifier());
 		APILocator.getIdentifierAPI().save(identifier);
 
-		// saving the multiple structures
-		if(container.getMaxContentlets()>0) {
-			String structuresIdsStr = req.getParameter("structuresIds");
 
-			String[] structuresIds = structuresIdsStr.split("#");
-			List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
-
-			for (String structureId : structuresIds) {
-				String code = req.getParameter("code_"+structureId);
-				ContainerStructure cs = new ContainerStructure();
-				cs.setContainerId(container.getIdentifier());
-                cs.setContainerInode(container.getInode());
-				cs.setStructureId(structureId);
-				cs.setCode(code);
-				csList.add(cs);
-			}
-
-			APILocator.getContainerAPI().saveContainerStructures(csList);
-
-		}
+		//Save/Update/Delete the ContainerStructures associated
+		saveContainerStructures(req, currentContainer, container);
 
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");
@@ -596,6 +583,52 @@ public class EditContainerAction extends DotPortletAction implements
 
 
 		HibernateUtil.flush();
+	}
+
+	/**
+	 * Containers are associated with multiple Structures. This method takes care of the ContainerStructure save/update/delete logic
+	 * @param req Request
+	 * @param currentContainer Container as currently exists
+	 * @param container Container with the new changes to be persisted
+	 */
+	private void saveContainerStructures (ActionRequest req, Container currentContainer, Container container)
+			throws DotDataException, DotSecurityException {
+		List<ContainerStructure> oldContainerStructures = APILocator.getContainerAPI().getContainerStructures(currentContainer);
+		List<ContainerStructure> csList = new LinkedList<>();
+
+		// saving the multiple structures
+		if(container.getMaxContentlets()>0) {
+			String structuresIdsStr = req.getParameter("structuresIds");
+
+			String[] structuresIds = structuresIdsStr.split("#");
+
+			for (String structureId : structuresIds) {
+				String code = req.getParameter("code_"+structureId);
+				ContainerStructure cs = new ContainerStructure();
+				cs.setContainerId(container.getIdentifier());
+				cs.setContainerInode(container.getInode());
+				cs.setStructureId(structureId);
+				cs.setCode(code);
+				csList.add(cs);
+			}
+
+			//Save new structures
+			APILocator.getContainerAPI().saveContainerStructures(csList);
+
+		}
+
+		//Delete MultiTree for old / unused ContainerStructures
+		for (ContainerStructure oldCS : oldContainerStructures) {
+			boolean unused = true;
+			for (ContainerStructure newCS : csList) {
+				if (newCS.getStructureId().equals(oldCS.getStructureId())) {
+					unused = false;
+					break;
+				}
+			}
+
+
+		}
 	}
 
 	public void _copyWebAsset(ActionRequest req, ActionResponse res,

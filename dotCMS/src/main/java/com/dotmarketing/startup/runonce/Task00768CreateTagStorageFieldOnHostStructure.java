@@ -123,7 +123,7 @@ public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTas
 
 			FieldsCache.removeFields(structure);
 			CacheLocator.getContentTypeCache().remove(structure);
-			CacheLocator.getVeloctyResourceCache2().removeContentTypeFile(new StructureTransformer(structure).from());
+			CacheLocator.getVeloctyResourceCache().removeContentTypeFile(new StructureTransformer(structure).from());
 			StructureFactory.saveStructure(structure);
 			
 			//Populate host contents with tag storage value = SYSTEM_HOST

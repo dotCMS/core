@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -18,7 +19,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -28,7 +28,6 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetType);
 
 
-		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+
+		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 	}
 
@@ -155,7 +156,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 		
-		results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+
+		results = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 
 		if (results != null && !results.isEmpty()){
@@ -183,7 +186,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
 
-		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+
+		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 
 	}
 
@@ -199,7 +203,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 
-		results = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+
+		results = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 
 		return  (results != null && !results.isEmpty())?results.get(0):null;
@@ -381,8 +387,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier");
 
-
-		return ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadObjectResults());
+		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 
 	}
 

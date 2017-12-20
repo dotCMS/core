@@ -117,7 +117,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAllSchemesAndSchemesByContentType(@Context            final HttpServletRequest request,
-                                                   @PathParam("contentTypeId")      final String contentTypeId) {
+                                                                @PathParam("contentTypeId")      final String contentTypeId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);

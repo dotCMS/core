@@ -2,7 +2,9 @@ package com.dotmarketing.services;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.repackage.bsh.This;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -26,7 +28,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TagUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -40,6 +42,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**

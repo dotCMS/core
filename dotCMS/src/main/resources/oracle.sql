@@ -2224,6 +2224,7 @@ create table workflow_action(
 	commentable number(1,0) default 0,
 	requires_checkout number(1,0) default 0,
 	icon varchar2(255) default 'defaultWfIcon',
+  show_on varchar2(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign number(1,0) default 0,
   scheme_id VARCHAR(36) NOT NULL
 );

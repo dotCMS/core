@@ -5,6 +5,8 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -37,13 +39,11 @@ import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AssetsComparator;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -170,7 +170,9 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
-			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
+
+			return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 		}catch(DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
@@ -225,7 +227,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
-				result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
+
+				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -274,7 +278,10 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
-					result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadObjectResults());
+
+					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
+							.asList();
+
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -1119,7 +1126,14 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadObjectResults(), clazz);
+
+			DBTransformer transformer = TransformerLocator.createDBTransformer(dc.loadObjectResults(), clazz);
+
+			if (transformer != null){
+				return transformer.asList();
+			}
+
+
 		}catch(Exception e){
         	Logger.warn(this, e.getMessage(), e);
 		}

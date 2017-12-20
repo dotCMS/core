@@ -1,6 +1,9 @@
 package com.dotmarketing.services;
 
+import com.dotcms.rendering.velocity.services.DotResourceCache;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.services.VanityUrlServices;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -25,10 +28,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
+
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * @author will

@@ -1,5 +1,7 @@
 package com.dotmarketing.services;
 
+import com.dotcms.rendering.velocity.services.DotResourceCache;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -8,7 +10,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**

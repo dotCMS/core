@@ -81,7 +81,7 @@ public class FieldLoader implements VelocityCMSObject {
         String filePath=folderPath + contentInode + "_" + fieldInode + "." + VelocityType.FIELD.fileExtension;
         java.io.File f  = new java.io.File(velocityRootPath + filePath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
     }
 

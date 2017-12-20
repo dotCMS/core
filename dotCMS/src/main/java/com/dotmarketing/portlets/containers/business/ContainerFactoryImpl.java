@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -20,17 +22,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.ConvertToPOJOUtil;
+import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import java.text.ParseException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.liferay.portal.model.User;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
@@ -66,8 +69,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append('\'');
 		dc.setSQL(sql.toString());
 
+		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
 
-		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
 
 	}
 
@@ -90,8 +93,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append(".title");
 		dc.setSQL(sql.toString());
 
+		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
 
-		return ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
 
 	}
     @Override
@@ -260,7 +263,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				resultList = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadObjectResults());
+				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -305,22 +309,35 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return assets;
 	}
 
-    public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
-        HibernateUtil dh = new HibernateUtil(Container.class);
+    public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException {
+        return findContainersForStructure(structureIdentifier, false);
+    }
 
-        StringBuilder query = new StringBuilder();
+	@Override
+	public List<Container> findContainersForStructure(String structureIdentifier,
+			boolean workingOrLiveOnly) throws DotDataException {
+		HibernateUtil dh = new HibernateUtil(Container.class);
 
-        query.append("FROM c IN CLASS ");
+		StringBuilder query = new StringBuilder();
+
+		query.append("FROM c IN CLASS ");
 		query.append(Container.class);
 		query.append(" WHERE  exists ( from cs in class ");
 		query.append(ContainerStructure.class.getName());
-		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ) ");
-        dh.setQuery(query.toString());
-        dh.setParam(structureInode);
-        return dh.list();
-    }
-    
-    /**
+		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ");
+		if (workingOrLiveOnly) {
+			query.append(" AND EXISTS ( FROM vi IN CLASS ");
+			query.append(ContainerVersionInfo.class.getName());
+			query.append(" WHERE vi.identifier = c.identifier AND ");
+			query.append(" (cs.containerInode = vi.workingInode OR cs.containerInode = vi.liveInode ) ) ");
+		}
+		query.append(") ");
+		dh.setQuery(query.toString());
+		dh.setParam(structureIdentifier);
+		return dh.list();
+	}
+
+	/**
 	 * Method will replace user references of the given userId in containers 
 	 * with the replacement user id 
 	 * @param userId User Identifier

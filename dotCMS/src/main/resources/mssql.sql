@@ -2366,12 +2366,13 @@ create table workflow_action(
     commentable tinyint default 0,
     requires_checkout tinyint default 0,
     icon NVARCHAR(255) default 'defaultWfIcon',
+    show_on NVARCHAR(255) default 'LOCKED,UNLOCKED',
     use_role_hierarchy_assign tinyint default 0,
     scheme_id NVARCHAR(36) NOT NULL
 );
 create index workflow_idx_action_step on workflow_action(step_id);
 
-CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) );
+CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL, action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) );
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 

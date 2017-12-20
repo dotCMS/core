@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
@@ -19,18 +20,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
@@ -106,7 +102,8 @@ public class WorkflowHelper {
                     workflowReorderActionStepForm.getOrder());
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
     }  // reorderAction.
@@ -126,7 +123,8 @@ public class WorkflowHelper {
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (Exception e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowStep) {
@@ -136,7 +134,8 @@ public class WorkflowHelper {
                 Logger.debug(this, "deleting step: " + stepId);
                 this.workflowAPI.deleteStep(workflowStep);
             } catch (DotDataException e) {
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -153,7 +152,7 @@ public class WorkflowHelper {
      */
     @WrapInTransaction
     public void deleteAction(final String actionId,
-                                     final User user) {
+                             final User user) {
 
         WorkflowAction action = null;
 
@@ -164,7 +163,8 @@ public class WorkflowHelper {
                     (actionId, user);
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != action) {
@@ -175,7 +175,8 @@ public class WorkflowHelper {
                 this.workflowAPI.deleteAction(action);
             } catch (DotDataException | AlreadyExistException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -184,13 +185,13 @@ public class WorkflowHelper {
         }
     } // deleteAction.
 
-        /**
-         * Deletes the action which is part of the step, but the action still being part of the scheme.
-         * @param actionId String action id
-         * @param stepId   String step   id
-         * @param user     User   the user that makes the request
-         * @return WorkflowStep
-         */
+    /**
+     * Deletes the action which is part of the step, but the action still being part of the scheme.
+     * @param actionId String action id
+     * @param stepId   String step   id
+     * @param user     User   the user that makes the request
+     * @return WorkflowStep
+     */
     @WrapInTransaction
     public WorkflowStep deleteAction(final String actionId,
                                      final String stepId,
@@ -223,7 +224,8 @@ public class WorkflowHelper {
             this.workflowAPI.deleteAction(action, step);
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -250,7 +252,8 @@ public class WorkflowHelper {
                     (contentTypeAPI.find(contentTypeId));
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -272,7 +275,8 @@ public class WorkflowHelper {
                     this.workflowAPI.findSchemes(false);
         } catch (DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -296,7 +300,8 @@ public class WorkflowHelper {
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (Exception e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowStep) {
@@ -307,7 +312,8 @@ public class WorkflowHelper {
                 actions = this.workflowAPI.findActions(workflowStep, user);
             } catch (DotDataException  | DotSecurityException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -334,7 +340,8 @@ public class WorkflowHelper {
             workflowScheme = this.workflowAPI.findScheme(schemeId);
         } catch (DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
         }
 
         if (null != workflowScheme) {
@@ -344,7 +351,8 @@ public class WorkflowHelper {
                 workflowSteps = this.workflowAPI.findSteps(workflowScheme);
             } catch (DotDataException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, e.getMessage());
+                Logger.debug(this, e.getMessage(), e);
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
@@ -426,7 +434,8 @@ public class WorkflowHelper {
                             APILocator.getUserAPI().getSystemUser(): user);
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -460,8 +469,8 @@ public class WorkflowHelper {
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
         newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
-        newAction.setRequiresCheckoutOption((null != workflowActionForm.getRequiresCheckoutOption())?
-                workflowActionForm.getRequiresCheckoutOption().getName():WorkflowAction.LOCKED_OR_UNLOCKED);
+        newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
+                workflowActionForm.getShowOn():WorkflowAPI.DEFAULT_SHOW_ON);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
 
         try {
@@ -507,13 +516,15 @@ public class WorkflowHelper {
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass);
                     } catch (Exception e) {
-                        Logger.error(this.getClass(), e.getMessage(), e);
+                        Logger.error(this.getClass(), e.getMessage());
+                        Logger.debug(this, e.getMessage(), e);
                         throw new DotWorkflowException(e.getMessage(), e);
                     }
                 });
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 

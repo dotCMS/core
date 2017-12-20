@@ -39,14 +39,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -481,6 +479,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 
 	/**
+>>>>>>> origin/master
 	 * Will zip up all files in the tmp directory and send the result to the
 	 * given OutputStream
 	 *

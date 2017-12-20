@@ -4,9 +4,11 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @JsonDeserialize(builder = WorkflowActionForm.Builder.class)
 public class WorkflowActionForm extends Validated {
@@ -30,7 +32,7 @@ public class WorkflowActionForm extends Validated {
     @NotNull
     private final boolean       requiresCheckout;
     @NotNull
-    private final RequiresCheckoutOption requiresCheckoutOption;
+    private final Set<WorkflowStatus> showOn;
     @NotNull
     private final boolean       actionRoleHierarchyForAssign;
     private final boolean       roleHierarchyForAssign;
@@ -75,8 +77,8 @@ public class WorkflowActionForm extends Validated {
         return requiresCheckout;
     }
 
-    public RequiresCheckoutOption getRequiresCheckoutOption() {
-        return requiresCheckoutOption;
+    public Set<WorkflowStatus> getShowOn() {
+        return Collections.unmodifiableSet(showOn);
     }
 
     public boolean isActionRoleHierarchyForAssign() {
@@ -104,12 +106,14 @@ public class WorkflowActionForm extends Validated {
         return "WorkflowActionForm{" +
                 "actionId='" + actionId + '\'' +
                 ", schemeId='" + schemeId + '\'' +
+                ", stepId='" + stepId + '\'' +
                 ", actionName='" + actionName + '\'' +
                 ", whoCanUse=" + whoCanUse +
                 ", actionIcon='" + actionIcon + '\'' +
                 ", actionAssignable=" + actionAssignable +
                 ", actionCommentable=" + actionCommentable +
-                ", requiresCheckoutOption=" + requiresCheckoutOption +
+                ", requiresCheckout=" + requiresCheckout +
+                ", showOn=" + showOn +
                 ", actionRoleHierarchyForAssign=" + actionRoleHierarchyForAssign +
                 ", roleHierarchyForAssign=" + roleHierarchyForAssign +
                 ", actionNextStep='" + actionNextStep + '\'' +
@@ -128,7 +132,7 @@ public class WorkflowActionForm extends Validated {
         this.actionIcon                 = builder.actionIcon;
         this.actionCommentable          = builder.actionCommentable;
         this.requiresCheckout           = builder.requiresCheckout;
-        this.requiresCheckoutOption     = valueOf(builder.requiresCheckoutOption);
+        this.showOn                     = builder.showOn;
         this.actionNextStep             = builder.actionNextStep;
         this.actionNextAssign           = builder.actionNextAssign;
         this.actionCondition            = builder.actionCondition;
@@ -138,32 +142,7 @@ public class WorkflowActionForm extends Validated {
         this.checkValid();
     }
 
-    private RequiresCheckoutOption valueOf (final String option) {
-
-        try {
-            return RequiresCheckoutOption.valueOf(option.toUpperCase());
-        } catch (Throwable e) {
-            return RequiresCheckoutOption.BOTH;
-        }
-    }
-
-    public enum RequiresCheckoutOption {
-
-        LOCKED(WorkflowAction.LOCKED),
-        UNLOCKED(WorkflowAction.UNLOCKED),
-        BOTH(WorkflowAction.LOCKED_OR_UNLOCKED);
-
-        private final String name;
-        RequiresCheckoutOption (final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        };
-    }
-
-    public static final class Builder {
+       public static final class Builder {
 
         @JsonProperty()
         private String        actionId;
@@ -187,8 +166,6 @@ public class WorkflowActionForm extends Validated {
         @JsonProperty(required = true)
         private boolean       requiresCheckout;
         @JsonProperty(required = true)
-        private String       requiresCheckoutOption;
-        @JsonProperty(required = true)
         private boolean       actionRoleHierarchyForAssign;
         @JsonProperty(required = true)
         private String        actionNextStep;
@@ -196,6 +173,15 @@ public class WorkflowActionForm extends Validated {
         private String        actionNextAssign;
         @JsonProperty()
         private String        actionCondition;
+
+        @JsonProperty(required = true)
+        private Set<WorkflowStatus> showOn;
+
+
+       public Builder showOn(Set<WorkflowStatus> showOn) {
+           this.showOn = showOn;
+           return this;
+       }
 
         public Builder stepId(String stepId) {
             this.stepId = stepId;
@@ -239,11 +225,6 @@ public class WorkflowActionForm extends Validated {
 
         public Builder requiresCheckout(boolean requiresCheckout) {
             this.requiresCheckout = requiresCheckout;
-            return this;
-        }
-
-        public Builder requiresCheckoutOption(String requiresCheckoutOption) {
-            this.requiresCheckoutOption = requiresCheckoutOption;
             return this;
         }
 

@@ -195,10 +195,8 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (ContentletCache)getInstance(CacheIndex.Contentlet);
 	}
 
-	public static com.dotmarketing.velocity.DotResourceCache getVeloctyResourceCache(){
-		return (com.dotmarketing.velocity.DotResourceCache)getInstance(CacheIndex.Velocity);
-	}
-    public static DotResourceCache getVeloctyResourceCache2(){
+
+    public static DotResourceCache getVeloctyResourceCache(){
         return (DotResourceCache)getInstance(CacheIndex.Velocity2);
     }
     public static LogMapperCache getLogMapperCache () {
@@ -438,7 +436,6 @@ enum CacheIndex
 	      	case TagInode: return new TagInodeCacheImpl();
 	      	case Role: return new RoleCacheImpl();
 	      	case Contentlet: return new ContentletCacheImpl();
-	      	case Velocity : return new com.dotmarketing.velocity.DotResourceCache();
 	        case Velocity2 : return new DotResourceCache();
 	      	case Relationship: return new RelationshipCacheImpl();
 	        case LogMapper: return new LogMapperCacheImpl();

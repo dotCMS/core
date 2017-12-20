@@ -39,16 +39,7 @@ import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -60,16 +51,8 @@ import com.liferay.portal.model.User;
 
 import org.osgi.framework.BundleContext;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.sql.Savepoint;
+import java.util.*;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -314,13 +297,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			// Checking for Next Step references
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
-				if(otherStep.equals(step))
-					continue;
 
-				for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
-					if(a.getNextStep().equals(step.getId())){
+				for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+
+					if(action.getNextStep().equals(step.getId())) {
 						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
-								" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
+								" Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
 					}
 				}
 			}
@@ -330,10 +312,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+countContentletsReferencingStep+" contenlet(s)</b> </br></br>");
 			}
 
-			this.workFlowFactory.deleteActions(step);
-			this.workFlowFactory.deleteStep(step);
-		}
-		catch(Exception e){
+			this.workFlowFactory.deleteActions(step); // workflow_action_step
+			this.workFlowFactory.deleteStep(step);    // workflow_step
+		} catch(Exception e){
+
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
@@ -448,7 +430,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						comment}, false)
 					);
 		} catch (LanguageException e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(WorkflowAPIImpl.class,e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class,e.getMessage(),e);
 		}
 		saveWorkflowHistory(history);
 	}
@@ -604,6 +587,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions) throws DotDataException {
+
+		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
+
+			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+		}
+
 		try {
 
 			this.saveAction(action);
@@ -618,9 +607,28 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		} catch (Exception e) {
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+	}
+
+	private boolean isValidShowOn(final Set<WorkflowStatus> showOn) {
+		return null != showOn && !showOn.isEmpty();
+	}
+
+	private boolean existsScheme(final String schemeId) {
+
+		boolean existsScheme = false;
+
+		try {
+
+			existsScheme = null != this.findScheme(schemeId);
+		} catch (Exception e) {
+			existsScheme = false;
+		}
+
+		return existsScheme;
 	}
 
 	@WrapInTransaction
@@ -654,19 +662,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw e;
 		} catch (AlreadyExistException e) {
 
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException("Workflow-action-already-exists", e);
 		} catch (DotSecurityException e) {
 
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException("Workflow-permission-issue-save-action", e);
 		} catch (Exception e) {
 			if (DbConnectionFactory.isConstraintViolationException(e.getCause())) {
 
-				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-action-already-exists", e);
 			} else {
-				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+
+				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
 		}
@@ -674,6 +687,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+
+		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
+
+			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+		}
+
+		if (!this.isValidShowOn(action.getShowOn())) {
+
+			Logger.error(this, "No show On data on workflow action record, bad data?");
+			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
+		}
+
 		workFlowFactory.saveAction(action);
 	}
 
@@ -737,7 +762,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).newInstance();
 							actionletList.add(actionlet);
 						} catch (Exception e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 
@@ -746,9 +772,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						try {
 							actionletList.add(z.newInstance());
 						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+							Logger.error(WorkflowAPIImpl.class, e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 
@@ -762,9 +790,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 								actionletClasses.add( actionlet.getClass() );
 							}
 						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+							Logger.error(WorkflowAPIImpl.class,e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+							Logger.error(WorkflowAPIImpl.class,e.getMessage());
+							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
 				}
@@ -920,7 +950,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				HibernateUtil.closeAndCommitTransaction();
 			}
 		} catch (Exception e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(WorkflowAPIImpl.class,e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			if(localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
@@ -1033,7 +1064,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				HibernateUtil.rollbackTransaction();
 			}
 			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage(), e);
+			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
+			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
 		} finally {
 			if(local){

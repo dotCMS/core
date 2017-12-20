@@ -414,7 +414,7 @@ public class ContainerLoader implements VelocityCMSObject {
         String filePath = folderPath + identifier.getId() + "." + VelocityType.CONTAINER.fileExtension;
         java.io.File f = new java.io.File(velocityRootPath + filePath);
         f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache2();
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
     }
 

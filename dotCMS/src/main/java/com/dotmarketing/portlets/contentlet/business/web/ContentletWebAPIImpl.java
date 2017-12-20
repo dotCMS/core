@@ -282,7 +282,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					Identifier containerIdentifier = identifierAPI.find(containerParent);
 					Identifier contenletIdentifier = identifierAPI.find(contentlet);
 					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlParentId, containerIdentifier,
-							contenletIdentifier);
+							contenletIdentifier, MultiTree.LEGACY_RELATION_TYPE);
 					Logger.debug(this, "Getting multitree for=" + htmlpage_inode + " ," + containerParent.getInode()
 							+ " ," + contentlet.getIdentifier());
 					Logger.debug(this, "Coming from multitree parent1=" + multiTree.getParent1() + " parent2="

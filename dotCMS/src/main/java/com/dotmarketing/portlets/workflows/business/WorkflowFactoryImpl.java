@@ -1,23 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -25,24 +11,21 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+
 public class WorkflowFactoryImpl implements WorkFlowFactory {
+
 
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
@@ -74,12 +57,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("nextAssign", row.get("next_assign"));
 		row.put("order", row.get("my_order"));
 		row.put("requiresCheckout", row.get("requires_checkout"));
-		//row.put("requiresCheckoutOption", row.get("requires_checkout_option"));
+		row.put("showOn", WorkflowStatus.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
 
 		BeanUtils.copyProperties(action, row);
 		return action;
 	}
+
 
 	private WorkflowActionClass convertActionClass(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowActionClass actionClass = new WorkflowActionClass();
@@ -582,18 +566,25 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
-		List<WorkflowStep> steps = new ArrayList<>();
-        List<WorkflowStep> currentSteps = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes = this.findSchemesForStruct(contentlet.getContentTypeId());
+		List<WorkflowStep> steps            = new ArrayList<>();
+        List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
+		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
+		String workflowTaskId        		= null;
+		List<Map<String, Object>> dbResults = null;
+
 		if (currentSteps == null) {
             WorkflowStep step = null;
 			try {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
-                step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+
+				dbResults = db.loadObjectResults();
+                step      = (WorkflowStep) this.convertListToObjects
+						(dbResults, WorkflowStep.class).get(0);
                 steps.add(step);
 
+				workflowTaskId =  (String)dbResults.get(0).get("workflowid");
 			} catch (final Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
@@ -609,19 +600,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					throw new DotDataException("Unable to find workflow step for content id:" + contentlet.getIdentifier());
 				}
 			}
-
-
-		}else {
+		} else {
 			steps.addAll(currentSteps);
 		}
-        // if the existing task belongs to another workflow schema, then blank
-        // the workflow task status
+        // if the existing task belongs to another workflow schema, then remove it
 		if (steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
-		    final DotConnect db = new DotConnect();
-		    db.setSQL(sql.RESET_CONTENTLET_STEPS);
-            db.addParam(StringPool.BLANK);
-            db.addParam(contentlet.getIdentifier());
-            db.loadResult();
+
+			if (null != workflowTaskId) {
+				this.deleteWorkflowTask(this.findWorkFlowTaskById(workflowTaskId));
+			}
+
             steps = new ArrayList<>();
 		}
 
@@ -953,7 +941,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			//db.addParam(action.getRequiresCheckoutOption());
+			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
@@ -968,14 +956,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			//db.addParam(action.getRequiresCheckoutOption());
+			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
 			db.addParam(action.getId());
 			db.loadResult();
 		}
 
-		final WorkflowStep proxyStep = new WorkflowStep();
-		proxyStep.setId(action.getStepId());
-		cache.removeActions(proxyStep);
+		final List<WorkflowStep> relatedProxiesSteps =
+				this.findProxiesSteps(action);
+		relatedProxiesSteps.forEach( cache::removeActions );
 
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());
@@ -986,6 +974,35 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 
 	}
+
+	private List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
+
+		final ImmutableList.Builder<WorkflowStep> stepsBuilder =
+				new ImmutableList.Builder<>();
+
+		final List<Map<String, Object>> stepIdList =
+				new DotConnect().setSQL(sql.SELECT_STEPS_ID_BY_ACTION)
+						.addParam(action.getId()).loadObjectResults();
+
+		if (null != stepIdList) {
+
+			stepIdList.forEach( mapRow ->  stepsBuilder.add
+					(this.buildProxyWorkflowStep((String)mapRow.get("stepid"))) );
+		}
+
+		return stepsBuilder.build();
+	}
+
+	private WorkflowStep buildProxyWorkflowStep (final String stepId) {
+
+		final WorkflowStep proxyWorkflowStep =
+				new WorkflowStep();
+
+		proxyWorkflowStep.setId(stepId);
+
+		return proxyWorkflowStep;
+	}
+
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 

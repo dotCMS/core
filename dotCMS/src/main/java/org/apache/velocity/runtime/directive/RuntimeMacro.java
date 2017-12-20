@@ -357,7 +357,7 @@ public class RuntimeMacro extends Directive
 
         else if(vmProxy==null && !strictRef){
             try{
-               String[] macroMap = CacheLocator.getVeloctyResourceCache2().getMacro(macroName);
+               String[] macroMap = CacheLocator.getVeloctyResourceCache().getMacro(macroName);
                 if(macroMap != null && context.get(EVALING_MACRO)==null) {
                     Context contextForEval = new VelocityContext(context);
                     contextForEval.put(EVALING_MACRO, Boolean.TRUE);
