@@ -1,5 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,6 +28,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -64,7 +69,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
@@ -1699,6 +1703,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     destroyContentlets(Lists.newArrayList(con), user, false);
                 }
             } else {
+
+                if (con.isHTMLPage()){
+                    validateRelatedContentType(user, con);
+                }
+
                 //If we are not deleting a site, the course of action will depend
                 // on the amount of languages of each contentlet.
 
@@ -1735,6 +1744,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return noErrors;
+    }
+
+    /**
+     * Verifies if a page is being used as a detail page for any content type
+     * @param user
+     * @param c
+     * @throws DotDataException
+     * @throws LanguageException
+     */
+    private void validateRelatedContentType(User user, Contentlet c)
+            throws DotDataException{
+        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        List<ContentType> relatedContentTypes = contentTypeAPI.search("page_detail='" + c.getIdentifier() + "'");
+        HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+        String uri = htmlPageAssetAPI.fromContentlet(c).getURI();
+        //Verifies if the page is related to any content type
+        if (relatedContentTypes != null && !relatedContentTypes.isEmpty()){
+
+            //Unlinking url map and detail page
+            relatedContentTypes.forEach(contentType -> {
+                try {
+                    contentTypeAPI.unlinkPageFromContentType(contentType);
+                } catch (DotSecurityException | DotDataException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            StringBuilder relatedPagesMessage = new StringBuilder();
+            try {
+                relatedPagesMessage.append(UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
+                        "HTML-Page-related-content-type-delete-warning")));
+            } catch (LanguageException e) {
+                Logger.warn(this, e.getMessage());
+            }
+
+            relatedPagesMessage.append(relatedContentTypes.stream()
+                    .map(t -> t.name() + " - Detail Page: " + uri)
+                    .collect(Collectors.joining("<br/>")));
+
+
+
+            Logger.warn(this, relatedPagesMessage.toString());
+        }
     }
 
     @WrapInTransaction

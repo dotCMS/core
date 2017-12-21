@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -289,4 +290,12 @@ public interface ContentTypeAPI {
 
   boolean updateModDate(Field field) throws DotDataException;
 
+  /**
+   * Remove url mapping and detail page from a specific content type
+   * @param contentType Content Type that is going to be modified
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
+  void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException;
 }
