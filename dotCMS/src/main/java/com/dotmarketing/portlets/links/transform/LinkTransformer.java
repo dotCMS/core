@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.links.transform;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.portlets.links.model.Link;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class LinkTransformer implements DBTransformer {
         link.setInode((String) map.get("inode"));
         link.setOwner((String) map.get("owner"));
         link.setIDate((Date) map.get("idate"));
-        link.setShowOnMenu((Boolean) map.getOrDefault("show_on_menu",false));
+        link.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
         link.setTitle((String) map.get("title"));
         link.setModDate((Date) map.get("mod_date"));
         link.setModUser((String) map.get("mod_user"));
