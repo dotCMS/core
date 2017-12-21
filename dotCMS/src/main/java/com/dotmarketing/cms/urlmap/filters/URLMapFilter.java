@@ -144,7 +144,7 @@ public class URLMapFilter implements Filter {
         }
         if (RegEX.contains(url, mastRegEx)) {
             boolean ADMIN_MODE =   PageMode.get(request) .isAdmin;
-            boolean EDIT_MODE =   PageMode.get(request)  == PageMode.EDIT;
+            boolean EDIT_MODE =   PageMode.get(request)  == PageMode.EDIT_MODE;
 
             Structure structure = null;
 

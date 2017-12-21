@@ -33,9 +33,9 @@ public class ParseContainer extends DotDirective {
 			final String[] arguments) {
 	    final String id = arguments[0];
         final String uid = (arguments.length>1) ? arguments[1] :  MultiTree.LEGACY_RELATION_TYPE;
-        final String liveWorking = params.live ? "live" : "working";
+
         
-		return "/" +liveWorking + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;
+		return "/" +params.mode.name() + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;
 		             
 	}
 }

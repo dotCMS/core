@@ -28,7 +28,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
  */
 public class ContainerLoader implements DotLoader {
 
-
+public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
     @Override
     public InputStream writeObject(String id1, String id2, PageMode mode, String language, final String filePath)
             throws DotDataException, DotSecurityException {
@@ -116,9 +116,9 @@ public class ContainerLoader implements DotLoader {
         }
 
 
-        if (mode == PageMode.EDIT) {
-            StringWriter containerDiv = new StringWriter();
-            containerDiv.append("<div")
+        if (mode == PageMode.EDIT_MODE) {
+            StringWriter editWrapperDiv = new StringWriter();
+            editWrapperDiv.append("<div")
                 .append(" data-dot-object=")
                 .append("\"container\"")
                 .append(" data-dot-inode=")
@@ -134,17 +134,16 @@ public class ContainerLoader implements DotLoader {
             for (ContainerStructure struct : csList) {
                 try {
                     ContentType t = typeAPI.find(struct.getStructureId());
-                    containerDiv.append(t.variable())
+                    editWrapperDiv.append(t.variable())
                         .append(",");
                 } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this.getClass(), "unable to find content type:" + struct);
                 }
             }
-            containerDiv.append("\">");
-
-
-            sb.append(containerDiv);
-
+            editWrapperDiv.append("\">");
+            sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
+            sb.append(editWrapperDiv);
+            sb.append("#end");
 
         }
 
@@ -156,7 +155,9 @@ public class ContainerLoader implements DotLoader {
 
             // pre loop if it exists
             if (UtilMethods.isSet(container.getPreLoop())) {
+                sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(container.getPreLoop());
+                sb.append("#end");
             }
             // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
 
@@ -229,16 +230,18 @@ public class ContainerLoader implements DotLoader {
             // ##End of foreach loop
             sb.append("#end ");
             
-            if (mode == PageMode.EDIT) {
-                sb.append("</div>");
-            }
+
 
 
             // post loop if it exists
             if (UtilMethods.isSet(container.getPostLoop())) {
+                sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(container.getPostLoop());
+                if (mode == PageMode.EDIT_MODE) {
+                    sb.append("</div>");
+                }
+                sb.append("#end ");
             }
-
 
         } else {
 

@@ -75,7 +75,7 @@ public class MarkdownTool implements ViewTool {
 	}
 
 	private String getFileContents(String path, boolean parseFirst) throws Throwable {
-		boolean EDIT_MODE =   PageMode.get(request) == PageMode.EDIT;
+		boolean EDIT_MODE =   PageMode.get(request) == PageMode.EDIT_MODE;
 
 
 		String templatePath = path;

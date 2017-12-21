@@ -105,7 +105,7 @@ public class ContentletLoader implements DotLoader {
             .append(">");
 
 
-        sb.append("#if($API_EDIT_MODE)")
+        sb.append("#if($EDIT_MODE)")
             .append(contentDiv)
             .append("#end");
 
@@ -233,7 +233,7 @@ public class ContentletLoader implements DotLoader {
             if (field instanceof ImageField || field instanceof FileField) {
                 String identifierValue = content.getStringProperty(field.variable());
                 if (InodeUtils.isSet(identifierValue)) {
-                    if (PageMode.EDIT == mode) {
+                    if (PageMode.EDIT_MODE == mode) {
                         sb.append("#set($")
                             .append(field.variable())
                             .append("Object= $filetool.getFile('")
@@ -633,7 +633,7 @@ public class ContentletLoader implements DotLoader {
         // To edit the look, see
         // WEB-INF/velocity/static/preview/content_controls.vtl
 
-        if (PageMode.EDIT == mode) {
+        if (PageMode.EDIT_MODE == mode) {
             sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
                 .append(identifier.getId())
                 .append(" )");

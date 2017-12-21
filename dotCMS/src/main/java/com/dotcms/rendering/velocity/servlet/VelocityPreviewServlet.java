@@ -149,11 +149,11 @@ public class VelocityPreviewServlet extends HttpServlet {
 
 
             switch (mode) {
-                case PREVIEW:
+                case PREVIEW_MODE:
                     Logger.debug(VelocityPreviewServlet.class, "VELOCITY SERVLET I'M ON PREVIEW MODE!!!");
                     doPreviewMode(request, response);
                     break;
-                case EDIT:
+                case EDIT_MODE:
                     Logger.debug(VelocityPreviewServlet.class, "VELOCITY SERVLET I'M ON EDIT MODE!!!");
                     doEditMode(request, response);
                     break;
@@ -193,7 +193,7 @@ public class VelocityPreviewServlet extends HttpServlet {
     public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-        PageMode mode = PageMode.PREVIEW;
+        PageMode mode = PageMode.PREVIEW_MODE;
 
         Host host = hostWebAPI.getCurrentHost(request);
 
@@ -230,13 +230,13 @@ public class VelocityPreviewServlet extends HttpServlet {
 
 
 
-        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.PREVIEW);
+        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE);
         builder.addAll(context);
 
 
 
         hostVariablesTemplate = VelocityUtil.getEngine()
-            .getTemplate(PageMode.PREVIEW.name() + File.separator + host.getIdentifier() + "." + VelocityType.SITE.fileExtension);
+            .getTemplate(PageMode.PREVIEW_MODE.name() + File.separator + host.getIdentifier() + "." + VelocityType.SITE.fileExtension);
 
         if (cmsTemplate.isDrawed()) {// We have a designed template
             // Setting some theme variables
@@ -248,7 +248,7 @@ public class VelocityPreviewServlet extends HttpServlet {
                 .getTemplate((String) dotThemeData.get("templatePath"));
         } else {
             template = VelocityUtil.getEngine()
-                .getTemplate(PageMode.PREVIEW.name() + File.separator + cmsTemplate.getIdentifier() + "."
+                .getTemplate(PageMode.PREVIEW_MODE.name() + File.separator + cmsTemplate.getIdentifier() + "."
                         + VelocityType.TEMPLATE.fileExtension);
         }
 
@@ -273,7 +273,7 @@ public class VelocityPreviewServlet extends HttpServlet {
 
 
     protected void doEditMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        PageMode mode = PageMode.PREVIEW;
+        PageMode mode = PageMode.PREVIEW_MODE;
         String uri = request.getRequestURI();
 
         Host host = hostWebAPI.getCurrentHost(request);
@@ -318,11 +318,11 @@ public class VelocityPreviewServlet extends HttpServlet {
         VelocityUtil.makeBackendContext(context, htmlPage, cmsTemplate.getInode(), id.getURI(), request, mode, host);
 
 
-        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.PREVIEW);
+        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE);
         builder.addAll(context);
 
         hostVariablesTemplate = VelocityUtil.getEngine()
-            .getTemplate(PageMode.EDIT.name() + File.separator + host.getIdentifier() + "." + VelocityType.SITE.fileExtension);
+            .getTemplate(PageMode.EDIT_MODE.name() + File.separator + host.getIdentifier() + "." + VelocityType.SITE.fileExtension);
 
         if (cmsTemplate.isDrawed()) {// We have a designed template
             // Setting some theme variables
@@ -334,7 +334,7 @@ public class VelocityPreviewServlet extends HttpServlet {
                 .getTemplate((String) dotThemeData.get("templatePath"));
         } else {
             template = VelocityUtil.getEngine()
-                .getTemplate(PageMode.EDIT.name() + File.separator + templateIdentifier.getId() + "."
+                .getTemplate(PageMode.EDIT_MODE.name() + File.separator + templateIdentifier.getId() + "."
                         + VelocityType.TEMPLATE.fileExtension);
         }
 

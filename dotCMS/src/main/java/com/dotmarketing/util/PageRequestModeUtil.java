@@ -17,11 +17,11 @@ public abstract  class PageRequestModeUtil {
     }
 
     public static boolean isPreviewMode( HttpSession session ){
-        return PageMode.get(session) == PageMode.PREVIEW;
+        return PageMode.get(session) == PageMode.PREVIEW_MODE;
     }
 
     public static boolean isEditMode( HttpSession session ){
-        return PageMode.get(session) == PageMode.EDIT;
+        return PageMode.get(session) == PageMode.EDIT_MODE;
     }
     
     public static boolean isEditMode( HttpServletRequest request ){
@@ -51,9 +51,9 @@ public abstract  class PageRequestModeUtil {
     public static void setBackEndModeInSession( HttpServletRequest request, boolean contentLocked, boolean canLock ){
 
         if(contentLocked && canLock){
-            PageMode.setPageMode(request, PageMode.EDIT);
+            PageMode.setPageMode(request, PageMode.EDIT_MODE);
 		}else{
-		    PageMode.setPageMode(request, PageMode.PREVIEW);
+		    PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
 		}
       }
     

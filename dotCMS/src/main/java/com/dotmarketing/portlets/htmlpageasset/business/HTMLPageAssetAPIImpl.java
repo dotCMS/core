@@ -725,7 +725,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         if (!liveMode) {
-            PageMode.setPageMode(requestProxy, PageMode.PREVIEW);
+            PageMode.setPageMode(requestProxy, PageMode.PREVIEW_MODE);
         }
         boolean signedIn = false;
 
@@ -820,7 +820,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             String VELOCITY_HTMLPAGE_EXTENSION = VelocityType.HTMLPAGE.fileExtension;
             String vTempalate = (liveMode) ? File.separator+PageMode.LIVE.name() + File.separator+ idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
-                    : File.separator+PageMode.PREVIEW.name() + File.separator  + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
+                    : File.separator+PageMode.PREVIEW_MODE.name() + File.separator  + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
 
             ve.getTemplate(vTempalate).merge(context, out);
 

@@ -90,7 +90,7 @@ public class VelocityWebUtil implements ViewTool {
                  */
                 PageMode mode = (PageMode) ctx.get(WebKeys.PAGE_MODE_SESSION);
 
-                if (null == mode || mode != PageMode.EDIT) {
+                if (null == mode || mode != PageMode.EDIT_MODE) {
                     Logger.error(this.getClass(), "Error parsing elements", e);
                     return sw.toString();
                 }

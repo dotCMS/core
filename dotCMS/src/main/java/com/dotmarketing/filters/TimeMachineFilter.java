@@ -79,7 +79,7 @@ public class TimeMachineFilter implements Filter {
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-			PageMode.setPageMode(req, PageMode.PREVIEW);
+			PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){
@@ -167,7 +167,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append(PageMode.PREVIEW.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.PREVIEW_MODE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;

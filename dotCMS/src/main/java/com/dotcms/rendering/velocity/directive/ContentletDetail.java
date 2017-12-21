@@ -43,9 +43,9 @@ public class ContentletDetail extends DotDirective {
         long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if (defaultLang != params.language.getId()) {
           cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, defaultLang);
-          String inode = (params.live) ? cv.getLiveInode() : cv.getWorkingInode();
-          Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.showLive);
-          ContentType type = APILocator.getContentTypeAPI(params.user).find(test.getContentTypeId());
+          String inode = (params.mode.showLive) ? cv.getLiveInode() : cv.getWorkingInode();
+          Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.respectAnonPerms);
+          ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(test.getContentTypeId());
           if(type.baseType() == BaseContentType.CONTENT  && !Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)){
             throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
           }

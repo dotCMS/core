@@ -73,11 +73,9 @@ public class PageContextBuilder {
 
     private void populateContext() throws DotDataException, DotSecurityException {
 
+
+            ctxMap.put(mode.name(), Boolean.TRUE);
         
-        if(mode==PageMode.PREVIEW) {
-            ctxMap.put("previewPage", "2");
-            ctxMap.put("livePage", "0");
-        }
         
         
         
@@ -136,7 +134,7 @@ public class PageContextBuilder {
         ctxMap.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
 
-
+        ctxMap.put(ContainerLoader.SHOW_PRE_POST_LOOP, true);
         ctxMap.put("HTMLPAGE_INODE", htmlPage.getInode());
         ctxMap.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
         ctxMap.put("HTMLPAGE_FRIENDLY_NAME", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));

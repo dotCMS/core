@@ -17,6 +17,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -180,14 +182,17 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
+    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("mode") @DefaultValue("LIVE_ADMIN") String modeStr) {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
+
+        PageMode mode = PageMode.get(modeStr);
+        PageMode.setPageMode(request, mode);
         try {
 
-            final String html = this.pageResourceHelper.getPageRendered(request, response, user, uri, live);
+            final String html = this.pageResourceHelper.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html));
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
@@ -198,6 +203,7 @@ public class PageResource {
             Logger.error(this, e.getMessage(), e);
             res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotSecurityException e) {
+            PageMode.setPageMode(request, PageMode.ADMIN_MODE);
             final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);

@@ -515,7 +515,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 				PreviewFactory.setVelocityURLS(req, layout);
 
-				PageMode.setPageMode(req, PageMode.PREVIEW);
+				PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 
 				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
 					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));

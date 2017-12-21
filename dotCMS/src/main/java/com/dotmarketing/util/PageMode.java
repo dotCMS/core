@@ -7,12 +7,20 @@ import javax.servlet.http.HttpSession;
  * Usage:
  * 
  * PageMode mode = PageMode.get(request);
+ * PageMode mode = PageMode.get(session);
  * 
- * mode.isAdmin ; mode.showLive ;
+ * mode.isAdmin ; mode.showLive ; mode.respectAnonPerms ;
  * 
- * or
  * 
  * if( PageMode.get(request).isAdmin){ doAdminStuff(); }
+ * 
+ * contentAPI.find("sad", user, mode.respectAnonPerms);
+ * 
+ * contentAPI.findByIdentifier("id", 1, mode.showLive, user, mode.respectAnonPerms);
+ * 
+ * PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
+ * 
+ * 
  * 
  * @author will
  *
@@ -20,16 +28,18 @@ import javax.servlet.http.HttpSession;
 public enum PageMode {
 
     LIVE(true, false), 
-    LIVE_ADMIN(true, true), 
-    PREVIEW(false, true), 
-    EDIT(false, true);
+    ADMIN_MODE(true, true), 
+    PREVIEW_MODE(false, true), 
+    EDIT_MODE(false, true);
 
     public final boolean showLive;
     public final boolean isAdmin;
+    public final boolean respectAnonPerms;
 
     PageMode(boolean live, boolean admin) {
         this.showLive = live;
         this.isAdmin = admin;
+        this.respectAnonPerms=!admin;
     }
 
 
@@ -59,9 +69,9 @@ public enum PageMode {
     }
     public static void setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
         if (contentLocked && canLock) {
-            setPageMode(request,EDIT);
+            setPageMode(request,EDIT_MODE);
         } else {
-            setPageMode(request,PREVIEW);
+            setPageMode(request,PREVIEW_MODE);
         }
     }
 

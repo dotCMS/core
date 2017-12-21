@@ -49,9 +49,9 @@ public class DotParse extends DotDirective {
       
       final String argument = arguments[0];
     String templatePath = argument;
-    boolean live = params.live;
-    Host host = params.currentHost;;
+    Host host = params.currentHost;
     User user = params.user;
+    
     HttpServletRequest request = (HttpServletRequest) context.get("request");
     
     try {
@@ -61,7 +61,7 @@ public class DotParse extends DotDirective {
         templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
         String hostName = templatePath.substring(0, templatePath.indexOf('/'));
         templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
-        host = APILocator.getHostAPI().resolveHostName(hostName, user, live);
+        host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
       }
 
       long lang = params.language.getId();
@@ -92,21 +92,21 @@ public class DotParse extends DotDirective {
           cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), defaultLang);
         }
       }
-      String inode = ((live) ? cv.getLiveInode() : cv.getWorkingInode());
+      String inode = (params.mode.showLive) ? cv.getLiveInode() : cv.getWorkingInode();
 
       //We found the resource but not the version we are looking for
       if ( null == inode ) {
-        String errorMessage = String.format("Not found %s version of [%s]", (live) ? "Live" : "Working", templatePath);
+        String errorMessage = String.format("Not found %s version of [%s]",  params.mode, templatePath);
         throw new ResourceNotFoundException(errorMessage);
       }
-      boolean respectFrontEndRolesForVTL = (!params.live) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.live;
+      boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
 
       Contentlet c = APILocator.getContentletAPI().find(inode, params.user, respectFrontEndRolesForVTL);
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
       
       
       // add the edit control if we have run through a page render
-      if (!context.containsKey("dontShowIcon") && PageMode.EDIT == params.mode &&  (request.getAttribute(
+      if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode &&  (request.getAttribute(
               Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
         if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
           String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",

@@ -328,8 +328,8 @@ public class VelocityUtil {
 
 	        context.put("mainFrame", request.getParameter("mainFrame"));
 	        context.put("previewFrame", request.getParameter("previewFrame"));
-
-	        if (mode == PageMode.EDIT) {
+	        context.put(mode.name(), true);
+	        if (mode == PageMode.EDIT_MODE) {
 	            // gets user id from request for mod user
 	            com.liferay.portal.model.User backendUser = null;
 
@@ -373,8 +373,8 @@ public class VelocityUtil {
 	        // gets pageChannel for this path
 	        String pageChannel = UtilMethods.getPageChannel(idURI);
 	        context.put("pageChannel", pageChannel);
-	        context.put("PREVIEW_MODE", new Boolean(mode == PageMode.PREVIEW));
-	        context.put("EDIT_MODE", new Boolean(mode == PageMode.EDIT));
+	        context.put("PREVIEW_MODE", new Boolean(mode == PageMode.PREVIEW_MODE));
+	        context.put("EDIT_MODE", new Boolean(mode == PageMode.EDIT_MODE));
 	        context.put("ADMIN_MODE", new Boolean(mode.isAdmin));
 
 	        // for publish button on admin control

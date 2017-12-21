@@ -3522,11 +3522,11 @@ public class UtilMethods {
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-                PageMode.setPageMode(request, PageMode.EDIT);
+                PageMode.setPageMode(request, PageMode.EDIT_MODE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-                PageMode.setPageMode(request, PageMode.PREVIEW);
+                PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
             }
         }
         return adminMode;

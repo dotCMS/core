@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.container;
 
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -31,7 +31,6 @@ import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
@@ -42,7 +41,6 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
@@ -151,10 +149,10 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId, @PathParam("uuid") final String uuid)
-            throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
-            ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException, InvocationTargetException,
-            NoSuchMethodException {
+            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
+            @PathParam("uuid") final String uuid) throws DotDataException, DotSecurityException, ParseErrorException,
+            MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
+            InvocationTargetException, NoSuchMethodException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
@@ -171,12 +169,10 @@ public class ContainerResource implements Serializable {
 
 
 
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) 
-                ? APILocator.getContentletAPI()
-            .find(contentShorty.longId, user, !mode.isAdmin)
+        final Contentlet contentlet = (contentShorty.type == ShortType.IDENTIFIER) ? APILocator.getContentletAPI()
+            .findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(), user, mode.respectAnonPerms)
                 : APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(), user,
-                            !mode.isAdmin);
+                    .find(contentShorty.longId, user, mode.respectAnonPerms);
 
         if (contentlet.getContentType()
             .baseType() == BaseContentType.WIDGET) {
@@ -195,47 +191,29 @@ public class ContainerResource implements Serializable {
                 throw new ResourceNotFoundException("Can't find Container:" + containerId);
             });
 
-        Container container = (containerShorty.subType == ShortType.CONTAINER) 
+        Container container = (containerShorty.type != ShortType.IDENTIFIER)
                 ? APILocator.getContainerAPI()
-            .find(containerId, user, mode.showLive)
+                    .find(containerId, user, mode.showLive)
                 : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                    .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
+                    .findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
                         : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
+                            .findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
 
 
-        Identifier containerIdentifier = APILocator.getIdentifierAPI()
-            .find(container);
 
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-        context.remove("EDIT_MODE");
 
 
-
-        context.put("contentletList" + container.getIdentifier(), Lists.newArrayList(contentlet.getIdentifier()));
+        context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
+        context.put("contentletList" + container.getIdentifier() + uuid, Lists.newArrayList(contentlet.getIdentifier()));
         StringWriter out = new StringWriter();
 
-        final ContainerStructure cStruct = APILocator.getContainerAPI()
-            .getContainerStructures(container)
-            .stream()
-            .filter(cs -> contentlet.getStructureInode()
-                .equals(cs.getStructureId()))
-            .findFirst()
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find container structure template:" + contentletId);
-            });
 
-
-
-        // defensive copy
-        container = (Container) BeanUtils.cloneBean(container);
-        container.setPreLoop(null);
-        container.setPostLoop(null);
 
 
         VelocityUtil.getEngine()
-            .evaluate(context, out, this.getClass()
-                .getName(), DotResourceLoader.getInstance().getResourceStream(mode.name() + File.separator + container.getIdentifier() + "/" + uuid + "." + VelocityType.CONTAINER.fileExtension ));
+            .mergeTemplate(mode.name() + File.separator + container.getIdentifier() + "/" + uuid + "."
+                    + VelocityType.CONTAINER.fileExtension, context, out);
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());
@@ -274,8 +252,7 @@ public class ContainerResource implements Serializable {
         final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
             .find(contentShorty.longId, user, !mode.showLive)
                 : APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user,
-                            mode.isAdmin);
+                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
 
 
 
@@ -339,8 +316,7 @@ public class ContainerResource implements Serializable {
         final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
             .find(contentShorty.longId, user, !mode.isAdmin)
                 : APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user,
-                            !mode.isAdmin);
+                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, !mode.isAdmin);
 
 
 
@@ -363,14 +339,14 @@ public class ContainerResource implements Serializable {
             .checkPermission(container, PermissionLevel.EDIT, user);
 
         MultiTree mt = new MultiTree().setContainer(containerId)
-                .setContentlet(contentletId)
-                .setRelationType(uid);
+            .setContentlet(contentletId)
+            .setRelationType(uid);
 
-        
+
         MultiTreeFactory.deleteMultiTree(mt);
-        
+
         return Response.ok("ok")
-                .build();
+            .build();
     }
 
 

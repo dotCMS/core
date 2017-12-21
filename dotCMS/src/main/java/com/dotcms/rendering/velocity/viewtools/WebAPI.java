@@ -97,8 +97,8 @@ public class WebAPI implements ViewTool {
 		
 		PageMode mode = PageMode.get(request);
           ADMIN_MODE = mode.isAdmin;
-          PREVIEW_MODE = mode==PageMode.PREVIEW;
-          EDIT_MODE = mode==PageMode.EDIT;
+          PREVIEW_MODE = mode==PageMode.PREVIEW_MODE;
+          EDIT_MODE = mode==PageMode.EDIT_MODE;
         
 	}
 

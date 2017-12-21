@@ -6,6 +6,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -30,6 +31,8 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -74,7 +77,6 @@ public class PageResourceHelper implements Serializable {
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
 
     private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
-    private static final boolean RESPECT_ANON_PERMISSIONS = Boolean.TRUE;
 
     /**
      * Private constructor
@@ -115,7 +117,8 @@ public class PageResourceHelper implements Serializable {
     public PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
             response, final User user, final String uri, boolean live) throws DotSecurityException,
             DotDataException {
-        return getPageMetadata(request, response, user, uri, false, live);
+        
+        return getPageMetadata(request, response, user, uri, false, PageMode.get(request));
     }
 
     /**
@@ -135,12 +138,12 @@ public class PageResourceHelper implements Serializable {
     public PageView getPageMetadataRendered(final HttpServletRequest request, final
     HttpServletResponse response, final User user, final String uri, boolean live) throws DotSecurityException,
             DotDataException {
-        return getPageMetadata(request, response, user, uri, true, live);
+        return getPageMetadata(request, response, user, uri, true, PageMode.get(request));
     }
 
     
     public String getPageRendered(final HttpServletRequest request, final
-    HttpServletResponse response, final User user, final String uri, boolean live) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
+    HttpServletResponse response, final User user, final String uri, PageMode mode) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
         
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
@@ -150,20 +153,17 @@ public class PageResourceHelper implements Serializable {
 
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
-                site, this.languageAPI.getDefaultLanguage().getId(), false);
+                site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
 
-        final String liveWorking = live ?"live" : "working";
-        
-        if(live) {
-            PageMode.setPageMode(request, PageMode.LIVE);
-        }else {
-            PageMode.setPageMode(request, PageMode.PREVIEW);
+        if(mode.isAdmin ) {
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
         
         
-        if(!live) velocityContext.put(WebKeys.API_EDIT_MODE, true);
-        return VelocityUtil.mergeTemplate("/" + liveWorking + "/" + page
-                .getIdentifier() + "_" + page.getLanguageId() + ".dotpage",
+        
+        
+        return VelocityUtil.mergeTemplate("/" +  mode.name() + "/" + page
+                .getIdentifier() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension,
                 velocityContext);
     }
 
@@ -182,7 +182,7 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException     An error occurred when accessing the data source.
      */
     private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
-            response, final User user, final String uri, final boolean isRendered, boolean live) throws
+            response, final User user, final String uri, final boolean isRendered, PageMode mode) throws
             DotSecurityException, DotDataException {
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
@@ -192,21 +192,21 @@ public class PageResourceHelper implements Serializable {
 
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
-                site, this.languageAPI.getDefaultLanguage().getId(), live);
+                site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
 
         
         if (isRendered) {
             try {
-                page.setProperty("rendered", getPageRendered(request, response, user, uri, live));
+                page.setProperty("rendered", getPageRendered(request, response, user, uri, mode));
             } catch (Exception e) {
                 throw new DotDataException(String.format("Page '%s' could not be rendered via " +
                         "Velocity.", pageUri), e);
             }
         }
 
-        Template template = live ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, RESPECT_ANON_PERMISSIONS) :
-                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, RESPECT_ANON_PERMISSIONS);
+        Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
+                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
                 (template, user, RESPECT_FE_ROLES);

@@ -291,7 +291,7 @@ public class ContentMap {
 				Template template = null;
 				StringWriter sw = new StringWriter();
 
-				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
+				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
 				template.merge(context, sw);
 				ret = sw.toString();
 			}
