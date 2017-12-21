@@ -2,7 +2,8 @@ import { Injectable, ElementRef } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { EDIT_PAGE_CSS } from '../shared/iframe-edit-mode.css';
 import { DotContainerContentletService } from './dot-container-contentlet.service';
-import { EDIT_PAGE_JS } from '../shared/iframe-edit-mode.js';
+import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
+import { MODEL_VAR_NAME } from './html/iframe-edit-mode.js';
 
 @Injectable()
 export class DotEditContentHtmlService {
@@ -13,7 +14,8 @@ export class DotEditContentHtmlService {
     private addContentContainer: string;
 
     constructor(
-        private dotContainerContentletService: DotContainerContentletService
+        private dotContainerContentletService: DotContainerContentletService,
+        private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService
     ) {
         this.contentletEvents.subscribe((res) => {
             if (res.event === 'save') {
@@ -43,7 +45,7 @@ export class DotEditContentHtmlService {
 
         const iframeElement = this.getEditPageIframe();
 
-        iframeElement.contentWindow.model = this.model;
+        iframeElement.contentWindow[MODEL_VAR_NAME] = this.model;
         iframeElement.contentWindow.contentletEvents = this.contentletEvents;
 
         iframeElement.addEventListener('load', () => {
@@ -230,33 +232,6 @@ export class DotEditContentHtmlService {
         return dotEditContentletEl;
     }
 
-    private getDragAndDropCss(): any {
-        const dragulaCss = this.getEditPageDocument().createElement('link');
-        dragulaCss.rel = 'stylesheet';
-        dragulaCss.type = 'text/css';
-        dragulaCss.media = 'all';
-        dragulaCss.href = '//bevacqua.github.io/dragula/dist/dragula.css';
-
-        return dragulaCss;
-    }
-
-    private getDragAndDropScript(): any {
-        const doc = this.getEditPageDocument();
-
-        const script = doc.createElement('script');
-
-        script.type = 'text/javascript';
-        script.src = '//bevacqua.github.io/dragula/dist/dragula.js';
-        script.onload = function() {
-            const dragAndDropScript = doc.createElement('script');
-            dragAndDropScript.type = 'text/javascript';
-            dragAndDropScript.text =  EDIT_PAGE_JS;
-            doc.body.appendChild(dragAndDropScript);
-        };
-
-        return script;
-    }
-
     private getEditPageIframe(): any {
         return this.iframe.nativeElement;
     }
@@ -265,11 +240,7 @@ export class DotEditContentHtmlService {
         return this.getEditPageIframe().contentDocument || this.getEditPageIframe().contentWindow.document;
     }
 
-    private initDragAndDropContentlets(): void {
-        const doc = this.getEditPageDocument();
-        doc.head.appendChild(this.getDragAndDropCss());
-        doc.body.appendChild(this.getDragAndDropScript());
-    }
+
 
     private loadCodeIntoIframe(editPageHTML: string): void {
         const doc = this.getEditPageDocument();
@@ -296,7 +267,7 @@ export class DotEditContentHtmlService {
         this.addContainerToolbar();
         this.addContentletMarkup();
 
-        this.initDragAndDropContentlets();
+        this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageDocument());
         this.setEditContentletStyles();
     }
 

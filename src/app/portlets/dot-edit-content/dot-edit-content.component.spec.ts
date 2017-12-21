@@ -14,6 +14,8 @@ import { DOTTestBed } from '../../test/dot-test-bed';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { MockMessageService } from '../../test/message-service.mock';
+import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
+import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 
 describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
@@ -41,6 +43,8 @@ describe('DotEditContentComponent', () => {
                             data: Observable.of({editPageHTML: ''})
                         },
                     },
+                    DotDragDropAPIHtmlService,
+                    DotDOMHtmlUtilService
                 ],
             });
         }),
