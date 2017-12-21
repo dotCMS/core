@@ -119,7 +119,7 @@ public class PageContextBuilder {
                 permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
                     .hasTemplateManagerRights(user);
 
-
+        ctxMap.put("dotPageMode", mode.name());
 
         ctxMap.put("ADD_CHILDREN_HTMLPAGE_PERMISSION", hasAddChildrenPermOverHTMLPage);
         ctxMap.put("EDIT_HTMLPAGE_PERMISSION", hasWritePermOverHTMLPage);

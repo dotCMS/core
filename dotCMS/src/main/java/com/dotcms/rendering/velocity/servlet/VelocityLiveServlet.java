@@ -304,10 +304,11 @@ public class VelocityLiveServlet extends HttpServlet {
             request.setAttribute("velocityContext", context);
             Logger.debug(VelocityLiveServlet.class, "HTMLPage Identifier:" + ident.getId());
 
+            PageMode mode = PageMode.get(request);
             try {
                 VelocityUtil.getEngine()
                     .getTemplate(
-                            PageMode.LIVE.name() + File.separator + ident.getId() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension)
+                            mode.name() + File.separator + ident.getId() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension)
                     .merge(context, out);
             } catch (Throwable e) {
                 Logger.warn(this, "can't do live mode merge", e);

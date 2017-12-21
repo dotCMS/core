@@ -557,12 +557,12 @@ public class FieldFactoryImpl implements FieldFactory {
           break;
         }
       }
-      if (var != null)
-        return var;
+      if (!UtilMethods.isSet(var)) {
+          throw new DotDataValidationException("Unable to suggest a variable name.  Got to:" + var,
+                  "field.validation.variable.already.taken");
+      }
     }
-    throw new DotDataValidationException("Unable to suggest a variable name.  Got to:" + var,
-        "field.validation.variable.already.taken");
-
+    return var;
   }
 
   public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {

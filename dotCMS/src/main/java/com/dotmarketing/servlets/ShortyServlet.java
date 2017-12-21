@@ -64,7 +64,7 @@ public class ShortyServlet extends HttpServlet {
 
 
     // Checking if host is active
-    if (mode == PageMode.ANON && !APILocator.getVersionableAPI().hasLiveVersion(host)) {
+    if (!mode.isAdmin && !APILocator.getVersionableAPI().hasLiveVersion(host)) {
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
           LanguageUtil.get("server-unavailable-error-message"));
       return;

@@ -216,7 +216,7 @@ public class CMSFilter implements Filter {
 
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
         PageMode mode = PageMode.get(request);
-        if(mode == PageMode.ANON) {
+        if(mode == PageMode.LIVE) {
             NumberOfTimeVisitedCounter.maybeCount(request, response);
         }
     }
@@ -224,7 +224,7 @@ public class CMSFilter implements Filter {
     private void countPageVisit(HttpServletRequest request) {
 
         PageMode mode = PageMode.get(request);
-        if(mode == PageMode.ANON) {
+        if(mode == PageMode.LIVE) {
             Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
             if (visitor.isPresent()) {

@@ -19,8 +19,8 @@ import javax.servlet.http.HttpSession;
  */
 public enum PageMode {
 
-    ANON(true, false), 
-    LIVE(true, true), 
+    LIVE(true, false), 
+    LIVE_ADMIN(true, true), 
     PREVIEW(false, true), 
     EDIT(false, true);
 
@@ -38,13 +38,13 @@ public enum PageMode {
         PageMode mode = (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null
                 && ses.getAttribute("tm_date") == null)
                         ? (PageMode) ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION)
-                        : ANON;
+                        : LIVE;
         return mode;
     }
 
     public static PageMode get(final HttpServletRequest req) {
         if (req == null || req.getSession(false) == null || null!= req.getHeader("X-Requested-With")) {
-            return ANON;
+            return LIVE;
         }
         return get(req.getSession());
     }
@@ -55,7 +55,7 @@ public enum PageMode {
                     return mode;
                 }
         }
-        return ANON;
+        return LIVE;
     }
     public static void setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
         if (contentLocked && canLock) {
