@@ -10,8 +10,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -620,11 +618,16 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 
 		//Delete MultiTree for old / unused ContainerStructures
-		final Map<String, Object> newContainerStructures = csList.stream().collect(
-				Collectors.toMap(ContainerStructure::getStructureId, (ContainerStructure cs) -> cs));
 		for (ContainerStructure oldCS : oldContainerStructures) {
+			boolean unused = true;
+			for (ContainerStructure newCS : csList) {
+				if (newCS.getStructureId().equals(oldCS.getStructureId())) {
+					unused = false;
+					break;
+				}
+			}
 
-			if (!newContainerStructures.containsKey(oldCS.getStructureId())) {
+			if (unused) {
 				List<MultiTree> multiTreeList = MultiTreeFactory
 						.getContainerStructureMultiTree(oldCS.getContainerId(), oldCS.getStructureId());
 				for (MultiTree mt : multiTreeList) {

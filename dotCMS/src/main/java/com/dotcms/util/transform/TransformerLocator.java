@@ -1,9 +1,7 @@
 package com.dotcms.util.transform;
 
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
-import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -41,7 +39,6 @@ public class TransformerLocator {
         transformerMapping.put (Template.class, TransformerLocator::createTemplateTransformer);
         transformerMapping.put (Container.class, TransformerLocator::createContainerTransformer);
         transformerMapping.put (Link.class, TransformerLocator::createLinkTransformer);
-        transformerMapping.put (MultiTree.class, TransformerLocator::createMultiTreeTransformer);
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
     }
 
@@ -112,15 +109,6 @@ public class TransformerLocator {
     public static LinkTransformer createLinkTransformer(List<Map<String, Object>> initList) {
 
         return new LinkTransformer(initList);
-    }
-
-    /**
-     * Creates a DBTransformer for MultiTree objects
-     * @param initList List of DB results to be transformed
-     * @return
-     */
-    public static MultiTreeTransformer createMultiTreeTransformer(List<Map<String, Object>> initList) {
-        return new MultiTreeTransformer(initList);
     }
 
     /**
