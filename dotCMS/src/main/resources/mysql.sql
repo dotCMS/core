@@ -2054,8 +2054,8 @@ create index workflow_idx_action_step on workflow_action(step_id);
 
 CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id);
-ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id);
-ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 
 create table workflow_action_class(
     id varchar(36) primary key,
