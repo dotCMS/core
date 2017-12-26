@@ -85,19 +85,15 @@ public class ContentTypeForm  {
 
                 for (int i = 0; i < jarr.size(); i++) {
                     final JSONObject fieldJsonObject = (JSONObject) jarr.get(i);
-
-                    if (fieldJsonObject.has("workflow")){
-                        getWorkflowsId(workflows, fieldJsonObject);
-                    }
+                    List<String> workflowsIds = getWorkflowsId(fieldJsonObject);
+                    workflows.add(workflowsIds);
                 }
             } catch (JSONException e) {
 
                 try {
                     final JSONObject  fieldJsonObject = new JSONObject(json);
-
-                    if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)){
-                        getWorkflowsId(workflows, fieldJsonObject);
-                    }
+                    List<String> workflowsIds = getWorkflowsId(fieldJsonObject);
+                    workflows.add(workflowsIds);
                 } catch (JSONException e1) {
                     throw new DotRuntimeException(e1);
                 }
@@ -105,15 +101,18 @@ public class ContentTypeForm  {
             return workflows;
         }
 
-        private static void getWorkflowsId(List<List<String>> workflows, JSONObject fieldJsonObject) throws JSONException {
-            JSONArray workflowsJaonArray = (JSONArray) fieldJsonObject.get(WORKFLOW_ATTRIBUTE_NAME);
-            List<String> worflowsArray = new ArrayList<>(workflowsJaonArray.size());
+        private static List<String> getWorkflowsId(JSONObject fieldJsonObject) throws JSONException {
+            List<String> worflowsArray = new ArrayList<>();
 
-            for (int k = 0; k < workflowsJaonArray.size(); k++) {
-                worflowsArray.add((String) workflowsJaonArray.get(k));
+            if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)) {
+                JSONArray workflowsJaonArray = (JSONArray) fieldJsonObject.get(WORKFLOW_ATTRIBUTE_NAME);
+
+                for (int k = 0; k < workflowsJaonArray.size(); k++) {
+                    worflowsArray.add((String) workflowsJaonArray.get(k));
+                }
             }
 
-            workflows.add(worflowsArray);
+            return worflowsArray;
         }
     }
 
