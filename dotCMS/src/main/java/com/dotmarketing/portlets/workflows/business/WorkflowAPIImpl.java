@@ -509,7 +509,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
-		//boolean isLocked = contentlet.isLocked();
 		boolean canLock = false;
 		String lockedUserId =  null;
 		try{
@@ -521,11 +520,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		boolean hasLock = user.getUserId().equals(lockedUserId);
 		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions = null;
-		if(isNew){
-			unfilteredActions = findActions(steps, user,contentlet.getContentType());
-		}else{
-			unfilteredActions = findActions(steps, user,contentlet);
+		List<WorkflowAction> unfilteredActions;
+		if (isNew) {
+			unfilteredActions = findActions(steps, user, contentlet.getContentType());
+		} else {
+			unfilteredActions = findActions(steps, user, contentlet);
 		}
 
 		if(hasLock || isNew){
@@ -1262,7 +1261,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
 			return actions;
 
-		List<WorkflowAction> permissionables = new ArrayList<WorkflowAction>(actions);
+		List<WorkflowAction> permissionables = new ArrayList<>(actions);
 		if(permissionables.isEmpty()){
 			return permissionables;
 		}
@@ -1274,7 +1273,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			action = permissionables.get(i);
 			boolean havePermission = false;
 			if(null != permissionable) {
-			/* Validate if the action has one of the workflow special roles*/
+				/* Validate if the action has one of the workflow special roles*/
                 havePermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles, permissionable,
                         anyWhoCanViewContent,
                         anyWhoCanEditContent, anyWhoCanPublishContent,
@@ -1316,7 +1315,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             Permissionable permissionable, Role anyWhoCanViewContent, Role anyWhoCanEditContent,
             Role anyWhoCanPublishContent, Role anyWhoCanEditPermisionsContent,
             WorkflowAction action) throws DotDataException {
-        if (APILocator.getPermissionAPI()
+
+    	if (APILocator.getPermissionAPI()
                 .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
                         anyWhoCanViewContent)) {
             if (APILocator.getPermissionAPI()
