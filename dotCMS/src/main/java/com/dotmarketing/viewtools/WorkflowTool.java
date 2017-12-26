@@ -1,5 +1,6 @@
 package com.dotmarketing.viewtools;
 
+import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
@@ -97,8 +98,17 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findActions(step, user);
 	}
 
+	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException, DotSecurityException {
+		return wapi.findActions(step, user, permissionable);
+	}
+
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException, DotSecurityException {
 		return wapi.findActions(steps, user);
+	}
+
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user,
+			Permissionable permissionable) throws DotDataException, DotSecurityException {
+		return wapi.findActions(steps, user, permissionable);
 	}
 
 	public WorkflowStep findStep(String id) throws DotDataException {
