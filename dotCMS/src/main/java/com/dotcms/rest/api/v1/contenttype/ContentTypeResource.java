@@ -1,9 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -46,7 +44,6 @@ import com.liferay.portal.model.User;
 
 import com.dotcms.repackage.javax.ws.rs.*;
 import static com.dotcms.util.CollectionsUtils.map;
-import java.util.Map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -78,7 +75,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response createType(@Context final HttpServletRequest req, final String json)
+	public final Response createType(@Context final HttpServletRequest req, final ContentTypeForm form)
 			throws DotDataException, DotSecurityException {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
@@ -86,15 +83,20 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+			Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<ContentType> retTypes = new ArrayList<>();
 
 			// Validate input
-			for (ContentType type : typesToSave) {
+			for (ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+				ContentType type = entry.contentType;
+				List<String> workflowsIds = entry.workflowsIds;
+
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 				}
-				retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+				ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
+				retTypes.add(contentTypeSaved);
+				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.inode(), user, workflowsIds);
 			}
 
 
@@ -123,7 +125,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response updateType(@PathParam("id") final String id, final String json,
+	public Response updateType(@PathParam("id") final String id, final ContentTypeForm form,
 							   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -133,7 +135,8 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			ContentType contentType = new JsonContentTypeTransformer(json).from();
+			ContentType contentType = form.getContentType();
+
 			if (!UtilMethods.isSet(contentType.id())) {
 
 				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
@@ -150,6 +153,8 @@ public class ContentTypeResource implements Serializable {
 
 					contentType = capi.save(contentType);
 
+					List<String> workflowsIds = form.getWorkflowsIds();
+					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
 					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
 				}
 			}

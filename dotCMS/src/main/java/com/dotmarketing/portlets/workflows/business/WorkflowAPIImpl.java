@@ -204,6 +204,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	public void saveSchemeIdsForStruct(final ContentType contentType, List<String> schemesIds) throws DotDataException {
+		try {
+			workFlowFactory.saveSchemeIdsForStruct(contentType.inode(), schemesIds);
+		} catch(DotDataException e){
+			throw e;
+		}
+	}
+
 	@CloseDBIfOpened
 	@Override
 	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType) throws DotDataException {

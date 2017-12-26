@@ -260,6 +260,24 @@ public class WorkflowHelper {
         return schemes;
     } // findSchemesByContentType.
 
+    public void saveSchemesByContentType(final String contentTypeId, User user, final List<String> workflowIds) {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        try {
+
+            Logger.debug(this, "Getting the schemes by content type: " + contentTypeId);
+
+            this.workflowAPI.saveSchemeIdsForStruct(contentTypeAPI.find(contentTypeId), workflowIds);
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+    }
+
     /**
      * Finds the non-archived schemes
      * @return List

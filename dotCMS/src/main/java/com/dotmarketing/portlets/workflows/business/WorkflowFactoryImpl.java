@@ -23,6 +23,7 @@ import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
@@ -1139,8 +1140,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
-
+	public void saveSchemeIdsForStruct(String struc, List<String> schemesIds) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
@@ -1151,10 +1151,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(struc);
 			db.loadResult();
 
-            for(WorkflowScheme scheme : schemes) {
+			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
-				db.addParam(scheme.getId());
+				db.addParam(id);
 				db.addParam(struc);
 				db.loadResult();
 			}
@@ -1175,6 +1175,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage());
 		}
+	}
+
+	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
+		List<String> ids = schemes.stream()
+				.map(scheme -> scheme.getId())
+				.collect(Collectors.toList());
+
+		this.saveSchemeIdsForStruct(struc, ids);
 	}
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
