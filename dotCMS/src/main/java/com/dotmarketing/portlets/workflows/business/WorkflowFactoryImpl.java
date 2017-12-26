@@ -1140,7 +1140,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemeIdsForStruct(String struc, List<String> schemesIds) throws DotDataException {
+	public void saveSchemeIdsForContentType(String struc, List<String> schemesIds) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
@@ -1182,7 +1182,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				.map(scheme -> scheme.getId())
 				.collect(Collectors.toList());
 
-		this.saveSchemeIdsForStruct(struc, ids);
+		this.saveSchemeIdsForContentType(struc, ids);
 	}
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {

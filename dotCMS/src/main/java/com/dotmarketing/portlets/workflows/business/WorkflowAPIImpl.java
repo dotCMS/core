@@ -211,7 +211,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
 
-			workFlowFactory.saveSchemeIdsForStruct(contentType.inode(), schemesIds);
+			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(), schemesIds);
 		} catch(DotDataException e){
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
