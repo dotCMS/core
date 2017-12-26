@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Identifier;
@@ -48,7 +49,6 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.HibernateCollectionConverter;
 import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.Logger;
@@ -529,7 +529,8 @@ public class CMSMaintenanceAjax {
 						}
 
 						if(Identifier.class.equals(clazz)){
-							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
+							list = TransformerLocator
+									.createIdentifierTransformer(dc.loadObjectResults()).asList();
 						}else{
 							list = dh.list();
 						}

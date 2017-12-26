@@ -1,16 +1,21 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.common.db.ForeignKey;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -39,16 +44,16 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private static final String MYSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE = MYSQL_CREATE_INTERMEDIATE_TABLE;
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) )";
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) )";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL, action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) )";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE = "CREATE TABLE workflow_action_step ( action_id varchar2(36) NOT NULL, step_id varchar2(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) )";
 
     private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_PK = "ALTER TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_PK = MYSQL_CREATE_INTERMEDIATE_TABLE_PK;
 
-    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT requires_checkout_option FROM workflow_action";
-    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT requires_checkout_option FROM workflow_action";
+    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT show_on FROM workflow_action";
+    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT show_on FROM workflow_action";
 
     private static final String MYSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
     private static final String POSTGRES_FIND_SCHEME_ID_COLUMN = "SELECT scheme_id FROM workflow_action";
@@ -60,10 +65,15 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_ADD_SCHEME_ID_COLUMN    = "ALTER TABLE workflow_action ADD scheme_id NVARCHAR(36)";
     private static final String ORACLE_ADD_SCHEME_ID_COLUMN   = "ALTER TABLE workflow_action ADD scheme_id varchar2(36)";
 
-    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
-    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD requires_checkout_option VARCHAR(16)  default 'both'";
-    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD requires_checkout_option NVARCHAR(16) default 'both'";
-    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD requires_checkout_option varchar2(16) default 'both'";
+    private static final String MYSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN     = "ALTER TABLE workflow_action MODIFY       scheme_id VARCHAR(36)  NOT NULL;";
+    private static final String POSTGRES_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN  = "ALTER TABLE workflow_action ALTER COLUMN scheme_id SET          NOT NULL;";
+    private static final String MSSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN     = "ALTER TABLE workflow_action ALTER COLUMN scheme_id NVARCHAR(36) NOT NULL";
+    private static final String ORACLE_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN    = "ALTER TABLE workflow_action MODIFY       scheme_id varchar2(36) NOT NULL";
+
+    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on NVARCHAR(255) default 'LOCKED,UNLOCKED'";
+    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD show_on varchar2(255) default 'LOCKED,UNLOCKED'";
 
 
     private static final String MYSQL_SELECT_ACTIONS_AND_STEPS = "SELECT wa.id action_id, ws.id step_id, wa.my_order FROM workflow_step ws INNER JOIN workflow_action wa ON ws.id = wa.step_id";
@@ -76,18 +86,13 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_INSERT_INTO_INTERMEDIATE_TABLE    = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
     private static final String ORACLE_INSERT_INTO_INTERMEDIATE_TABLE   = MYSQL_INSERT_INTO_INTERMEDIATE_TABLE;
 
-    /*private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
-    private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
-    private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
-    private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;*/
-
-    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
+    private static final String MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = "SELECT wa.id action_id, ws.scheme_id, wa.requires_checkout FROM workflow_action wa INNER JOIN workflow_step ws ON ws.id = wa.step_id";
     private static final String POSTGRES_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_SELECT_SCHEME_IDS_FOR_ACTIONS = MYSQL_SELECT_SCHEME_IDS_FOR_ACTIONS;
 
-    // private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,requires_checkout_option = ?  WHERE id = ?";
-    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?  WHERE id = ?";
+
+    private static final String MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = "UPDATE workflow_action SET scheme_id = ?,show_on = ?  WHERE id = ?";
     private static final String POSTGRES_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String MSSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
     private static final String ORACLE_UPDATE_SCHEME_IDS_FOR_ACTIONS = MYSQL_UPDATE_SCHEME_IDS_FOR_ACTIONS;
@@ -113,20 +118,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
 
     // FOREIGH KEYS
-    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID  = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID  = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID    = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID     = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_workflow_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_workflow_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
+    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
     @Override
     public boolean forceRun() {
@@ -146,15 +151,69 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
 
         // SCHEMA CHANGES
-        this.createWorkflowActionStepTable     (dc);
-        this.addSchemeIdColumn                 (dc);
-        //this.addRequiresCheckoutOptionColumn   (dc);
-
+        this.createWorkflowActionStepTable           (dc);
+        final boolean schemeIdColumnCreated =
+                this.addSchemeIdColumn               (dc);
+        this.addShowOnColumn                         (dc);
+        this.removeWorkflowActionStepIdWorkflowStepFK();
         // DATA CHANGES
-        this.addWorkflowActionStepData         (dc);
-        this.updateWorkflowActionData          (dc);
-        this.updateWorkflowSchemeXStructureData(dc);
+        this.addWorkflowActionStepData               (dc);
+        this.updateWorkflowActionData                (dc);
+        this.updateWorkflowSchemeXStructureData      (dc);
+
+        if (schemeIdColumnCreated) {
+            this.addNotNullConstraintShowOnColumn    (dc);
+        }
+
+
     } // executeUpgrade.
+
+    private void removeWorkflowActionStepIdWorkflowStepFK() throws DotDataException {
+
+        final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
+        final ForeignKey foreignKey        = metaData.findForeignKeys
+                ("workflow_action", "workflow_step",
+                        Arrays.asList("step_id"), Arrays.asList("id"));
+
+        if (null != foreignKey) {
+
+            try {
+                Logger.info(this, "Droping the FK: " +foreignKey);
+                metaData.dropForeignKey(foreignKey);
+            } catch (SQLException e) {
+                throw new DotDataException(e.getMessage(), e);
+            } finally {
+                this.closeCommitAndStartTransaction();
+            }
+        }
+    }
+
+    private void addNotNullConstraintShowOnColumn(final DotConnect dc) throws DotHibernateException {
+
+        Logger.info(this, "Adding new 'scheme_id' constraints");
+
+        try {
+            dc.executeStatement(getNotNullConstraintShowOnColumn());
+        } catch (SQLException e) {
+            throw new DotRuntimeException("The 'scheme_id' column could not add the not null constraints.", e);
+        }
+    } // addNotNullConstraintShowOnColumn.
+
+    private String getNotNullConstraintShowOnColumn() {
+
+        String sql = null;
+        if (DbConnectionFactory.isMySql()) {
+            sql = MYSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isPostgres()) {
+            sql = POSTGRES_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isMsSql()) {
+            sql = MSSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        } else if (DbConnectionFactory.isOracle()) {
+            sql = ORACLE_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN;
+        }
+
+        return sql;
+    } // getNotNullConstraintShowOnColumn.
 
     private void updateWorkflowSchemeXStructureData(DotConnect dc) throws DotDataException {
         Logger.info(this, "Updating index in 'workflow_scheme_x_structure' table.");
@@ -186,7 +245,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
             dc.setSQL(updateSchemeIdsForActions());
             dc.addParam(row.get("scheme_id").toString());
-            //dc.addParam(this.isLocked(row.get("requires_checkout"))? WorkflowAction.LOCKED:WorkflowAction.UNLOCKED);
+            dc.addParam(this.isLocked(row.get("requires_checkout"))?
+                    WorkflowStatus.LOCKED.name():WorkflowStatus.UNLOCKED.name());
             dc.addParam(row.get("action_id").toString());
 
             try {
@@ -227,29 +287,33 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         });
     } // addWorkflowActionStepData.
 
-    private void addRequiresCheckoutOptionColumn(final DotConnect dc) throws DotDataException {
+    private void addShowOnColumn(final DotConnect dc) throws DotDataException {
 
         boolean needToCreate = false;
-        Logger.info(this, "Adding new 'requires_checkout_option' column to 'workflow_action' table.");
+        Logger.info(this, "Adding new 'show_on' column to 'workflow_action' table.");
 
         try {
-            dc.setSQL(findRequiresCheckoutOptionsColumn()).loadObjectResults();
+            dc.setSQL(findShowOnColumn()).loadObjectResults();
         } catch (Throwable e) {
 
-            Logger.info(this, "Column 'workflow_action.requires_checkout_option' does not exists, creating it");
+            Logger.info(this, "Column 'workflow_action.show_on' does not exists, creating it");
             needToCreate = true;
+            // in some databases if an error is throw the transaction is not longer valid
+            this.closeAndStartTransaction();
         }
 
         if (needToCreate) {
             try {
-                dc.executeStatement(addRequiresCheckoutOptionColumn());
+                dc.executeStatement(addShowOnColumn());
             } catch (SQLException e) {
-                throw new DotRuntimeException("The 'requires_checkout_option' column could not be created.", e);
+                throw new DotRuntimeException("The 'show_on' column could not be created.", e);
+            } finally {
+                this.closeCommitAndStartTransaction();
             }
         }
-    } // addRequiresCheckoutOptionColumn.
+    } // addShowOnColumn.
 
-    private void addSchemeIdColumn(final DotConnect dc) throws DotDataException {
+    private boolean addSchemeIdColumn(final DotConnect dc) throws DotDataException {
 
         boolean needToCreate = false;
         Logger.info(this, "Adding new 'scheme_id' column to 'workflow_action' table.");
@@ -263,6 +327,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
             // in some databases if an error is throw the transaction is not longer valid
             this.closeAndStartTransaction();
         }
+
         if (needToCreate) {
             try {
                 dc.executeStatement(addSchemeIdColumn());
@@ -272,6 +337,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
                 this.closeCommitAndStartTransaction();
             }
         }
+
+        return needToCreate;
     } // addSchemeIdColumn.
 
     private void createWorkflowActionStepTable(final DotConnect dc) throws DotDataException {
@@ -326,16 +393,8 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private boolean isLocked(final Object requiresCheckout) {
 
-        boolean isLocked = false;
-
-        if (null != requiresCheckout) {
-
-            isLocked = (requiresCheckout instanceof Boolean)?
-                        Boolean.class.cast(requiresCheckout):
-                        DbConnectionFactory.isDBTrue(requiresCheckout.toString());
-        }
-
-        return isLocked;
+        return (null != requiresCheckout)?
+                ConversionUtils.toBooleanFromDb(requiresCheckout):false;
     }
 
     private String createIntermediateTableForeignKeyActionId() {
@@ -447,10 +506,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     }
 
     /**
-     * Verifies if the {@code requires_checkout_option} column already exists in the {@code workflow_action} table.
-     * @return
+     * Verifies if the {@code show_on} column already exists in the {@code workflow_action} table.
+     * @return String
      */
-    private String findRequiresCheckoutOptionsColumn() {
+    private String findShowOnColumn() {
 
         String sql = null;
 
@@ -615,7 +674,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
      * multivalue instead of boolean.
      * @return
      */
-    private String addRequiresCheckoutOptionColumn() {
+    private String addShowOnColumn() {
 
         String sql = null;
 

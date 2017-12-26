@@ -67,10 +67,9 @@ abstract class WorkflowSQL {
 
 	protected static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
 	protected static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";
-	//protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, requires_checkout_option) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
-	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?)";
+	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
 	//protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,requires_checkout_option=? where id=?";
-	protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=? where id=?";
+	protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,show_on=? where id=?";
 	protected static String DELETE_ACTION= "delete from workflow_action where id = ? ";
 	protected static String DELETE_ACTION_STEP     = "delete from workflow_action_step where action_id =? and step_id =? ";
 	protected static String DELETE_ACTIONS_STEP    = "delete from workflow_action_step where step_id   =? ";
@@ -80,8 +79,9 @@ abstract class WorkflowSQL {
 	protected static String INSERT_STEP= "insert into workflow_step (id, name, scheme_id,my_order,resolved,escalation_enable,escalation_action,escalation_time) values (?, ?, ?, ?, ?, ?, ?, ?) ";
 	protected static String UPDATE_STEP= "update workflow_step set name=?, scheme_id=?, my_order=?, resolved = ?, escalation_enable = ?, escalation_action=?, escalation_time = ? where id = ?";
 	protected static String DELETE_STEP= "delete from workflow_step where id = ?";
-	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?";
+	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_task.id as workflowid, workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?";
 	protected static String RESET_CONTENTLET_STEPS= "update workflow_task set status = ? where webasset= ?";
+	protected static String DELETE_CONTENTLET_STEPS= "delete from workflow_task where status = ? and webasset= ?";
 	protected static String SELECT_COUNT_CONTENTLES_BY_STEP= "select count(workflow_task.id) as count from workflow_task join workflow_step on workflow_task.status=workflow_step.id where workflow_step.id=?";
 
 	protected static String SELECT_ACTION_CLASSES_BY_ACTION= "select * from workflow_action_class where action_id = ? order by  my_order";

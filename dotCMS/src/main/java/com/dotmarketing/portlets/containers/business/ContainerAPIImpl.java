@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,11 +31,9 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -192,11 +191,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.setSQL(sql);
 		dc.addParam(destination.getIdentifier());
 
-		try {
-			containers = ConvertToPOJOUtil.convertDotConnectMapToContainer(dc.loadResults());
-		} catch (ParseException e) {
-			throw new DotDataException(e);
-		}
+
+		containers = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
 
 		boolean isContainerTitle = false;
 
@@ -269,11 +266,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 						"and template_containers.template_id = ? ");
 		dc.addParam(parentTemplate.getIdentifier());
 
-		try{
-			identifiers = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
-		}catch(ParseException e){
-			throw new DotDataException(e);
-		}
+
+		identifiers = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
+
 
 		final List<Container> containers = new ArrayList<>();
 		for (Identifier id : identifiers) {
@@ -506,7 +502,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	    return containerFactory.findContainersForStructure(structureInode);
 	}
 
-    @Override
+	@CloseDBIfOpened
+	@Override
+	public List<Container> findContainersForStructure(String structureInode,
+			boolean workingOrLiveOnly) throws DotDataException {
+		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly);
+	}
+
+	@Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }

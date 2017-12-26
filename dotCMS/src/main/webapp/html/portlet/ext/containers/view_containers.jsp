@@ -337,7 +337,6 @@ function processDelete(inode, referer) {
 				<% } %>
 			</td>
 			<td nowrap <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>>
-					<span class="container"></span>&nbsp;
 					<%=container.getTitle()%>
 			</td>
 			<td nowrap <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %></td>

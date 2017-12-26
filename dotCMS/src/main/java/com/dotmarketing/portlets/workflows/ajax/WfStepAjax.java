@@ -76,7 +76,8 @@ public class WfStepAjax extends WfBaseAction {
 			
 		}
 		catch(Exception e){
-			Logger.error(this.getClass(),e.getMessage(),e);
+			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 			return;
 		}
@@ -93,6 +94,7 @@ public class WfStepAjax extends WfBaseAction {
 			this.workflowHelper.deleteStep (stepId);
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, "</br> Delete Failed : </br>"+  e.getMessage());
 		}
 	} // delete.
@@ -127,7 +129,8 @@ public class WfStepAjax extends WfBaseAction {
 
 			writeSuccess(response, stepId );
 		} catch (Exception e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
+ 			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 		}
 	}
@@ -158,10 +161,12 @@ public class WfStepAjax extends WfBaseAction {
 			wapi.saveStep(step);
 			
 		} catch (DotDataException e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
+			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 		}catch (AlreadyExistException e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
+			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 		}
 		
@@ -186,7 +191,8 @@ public class WfStepAjax extends WfBaseAction {
 			
 		}
 		catch(Exception e){
-			Logger.error(this.getClass(),e.getMessage(),e);
+			Logger.error(this.getClass(),e.getMessage());
+			Logger.debug(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 			return;
 		}
