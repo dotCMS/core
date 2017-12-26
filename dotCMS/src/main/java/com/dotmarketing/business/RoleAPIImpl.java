@@ -470,22 +470,22 @@ public class RoleAPIImpl implements RoleAPI {
 	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException {
 		ImmutableList.Builder<Role> roleList = new ImmutableList.Builder<>();
 
-		Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+		final Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
 		if (null != anyWhoCanView) {
 			roleList.add(anyWhoCanView);
 		}
 
-		Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+		final Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
 		if (null != anyWhoCanEdit) {
 			roleList.add(anyWhoCanEdit);
 		}
 
-		Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+		final Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
 		if (null != anyWhoCanPublish) {
 			roleList.add(anyWhoCanPublish);
 		}
 
-		Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+		final Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
 		if (null != anyWhoCanEditPermissions) {
 			roleList.add(anyWhoCanEditPermissions);
 		}

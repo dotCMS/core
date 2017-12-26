@@ -106,7 +106,8 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findActions(steps, user);
 	}
 
-	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user, Permissionable permissionable) throws DotDataException, DotSecurityException {
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user,
+			Permissionable permissionable) throws DotDataException, DotSecurityException {
 		return wapi.findActions(steps, user, permissionable);
 	}
 

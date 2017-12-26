@@ -987,22 +987,28 @@ public class RoleAjax {
 	}
 
 	/**
-	 * Get a string comma separated with the worflow special roles. These Workflow roles should not
+	 * Get a string comma separated with the workflow special roles. These Workflow roles should not
 	 * be displayed in the permission tabs
 	 *
 	 * @return String of comma separated ID's of the workflow roles
 	 */
 	private String getWorkflowRolesId() throws DotDataException {
-		String workflowRolesIds="";
+
+		StringBuilder workflowRolesIds = new StringBuilder();
 		try {
 			for (Role role : APILocator.getRoleAPI().findWorkflowSpecialRoles()) {
-				workflowRolesIds += "," + role.getId();
+				if (workflowRolesIds.length() > 0) {
+					workflowRolesIds.append(",").append(role.getId());
+				} else {
+					workflowRolesIds.append(role.getId());
+				}
 			}
-			workflowRolesIds = workflowRolesIds.substring(1);
-		}catch(DotSecurityException e){
+
+		} catch (DotSecurityException e) {
 			Logger.error(this, "Error getting workflow roles.", e);
 
 		}
-		return workflowRolesIds;
+		return workflowRolesIds.toString();
 	}
+
 }

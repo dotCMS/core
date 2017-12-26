@@ -75,7 +75,7 @@ public class RoleResource {
 		String roleId = paramsMap.get("id");
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-        List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
+        final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
 		CacheControl cc = new CacheControl();
         cc.setNoCache( true );
 

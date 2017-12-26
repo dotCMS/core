@@ -1250,7 +1250,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
      * @throws DotDataException
      */
     @CloseDBIfOpened
-	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final User user, final boolean respectFrontEndRoles, final Permissionable permissionable) throws DotDataException {
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions,
+			final User user, final boolean respectFrontEndRoles,
+			final Permissionable permissionable) throws DotDataException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role anyWhoCanViewContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
@@ -1258,8 +1260,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Role anyWhoCanPublishContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
 		Role anyWhoCanEditPermisionsContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
 
-		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
+		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
 			return actions;
+		}
 
 		List<WorkflowAction> permissionables = new ArrayList<>(actions);
 		if(permissionables.isEmpty()){

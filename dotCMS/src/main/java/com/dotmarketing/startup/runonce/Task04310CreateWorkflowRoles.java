@@ -5,7 +5,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
@@ -19,29 +18,29 @@ import java.util.Map;
  */
 public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
 
-    private final String getSystemRole =
+    private static final String getSystemRole =
             "select id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, "
                     +
                     "locked, system from cms_role where role_key = 'System' and id = parent";
 
-    private final String selectSystemRoles =
+    private static final String selectSystemRoles =
             "select id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, "
                     +
                     "locked, system from cms_role where parent = ? and parent <> id";
 
-    private final String insertRole =
+    private static final String insertRole =
             "insert into cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, "
                     +
                     "edit_users, edit_layouts, locked, system) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private final String AnyoneWhoCanReadRole = "Anyone who can View Content";
-    private final String AnyoneWhoCanReadRoleId = "0f995057-5c35-4ae7-998a-774dda146c63";
-    private final String AnyoneWhoCanEditRole = "Anyone who can Edit Content";
-    private final String AnyoneWhoCanEditRoleId = "617f7300-5c7b-463f-9554-380b918520bc";
-    private final String AnyoneWhoCanPublishRole = "Anyone who can Publish Content";
-    private final String AnyoneWhoCanPublishRoleId = "c3eb4526-6d96-48d8-9540-e5fa560cfc0f";
-    private final String AnyoneWhoCanEditPermissionsRole = "Anyone who can Edit Permissions Content";
-    private final String AnyoneWhoCanEditPermissionsRoleId = "52181fb6-65c8-4221-8d17-1da8b0e20784";
+    private static final String AnyoneWhoCanReadRole = "Anyone who can View Content";
+    private static final String AnyoneWhoCanReadRoleId = "0f995057-5c35-4ae7-998a-774dda146c63";
+    private static final String AnyoneWhoCanEditRole = "Anyone who can Edit Content";
+    private static final String AnyoneWhoCanEditRoleId = "617f7300-5c7b-463f-9554-380b918520bc";
+    private static final String AnyoneWhoCanPublishRole = "Anyone who can Publish Content";
+    private static final String AnyoneWhoCanPublishRoleId = "c3eb4526-6d96-48d8-9540-e5fa560cfc0f";
+    private static final String AnyoneWhoCanEditPermissionsRole = "Anyone who can Edit Permissions Content";
+    private static final String AnyoneWhoCanEditPermissionsRoleId = "52181fb6-65c8-4221-8d17-1da8b0e20784";
 
     private DotConnect dc = null;
     private String systemRootRoleId;
@@ -49,7 +48,7 @@ public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
     @Override
     @WrapInTransaction
     @CloseDBIfOpened
-    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+    public void executeUpgrade() throws DotDataException {
 
         dc = new DotConnect();
 
@@ -60,7 +59,7 @@ public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
             return;
         }
 
-        List<Map<String, String>> systemRoles = getSystemRoles();
+        final List<Map<String, String>> systemRoles = getSystemRoles();
 
         if (!containsRole(AnyoneWhoCanReadRole, systemRoles)) {
             insertRole(AnyoneWhoCanReadRole, AnyoneWhoCanReadRoleId,
@@ -133,7 +132,8 @@ public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
      */
     private boolean containsRole(final String roleName,
             final List<Map<String, String>> systemRoles) {
-        for (Map<String, String> systemRole : systemRoles) {
+
+        for (final Map<String, String> systemRole : systemRoles) {
             if (systemRole.get("role_name").equals(roleName.trim())) {
                 return true;
             }
