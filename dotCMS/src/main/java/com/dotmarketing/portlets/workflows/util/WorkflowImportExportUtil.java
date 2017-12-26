@@ -124,7 +124,7 @@ public class WorkflowImportExportUtil {
 
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
-						this.getCurrentUser(),
+						APILocator.systemUser(),
 						ConversionUtils.toInt(actionStepMap.get(ACTION_ORDER), 0));
 			}
 
@@ -152,26 +152,6 @@ public class WorkflowImportExportUtil {
 
 			CloseUtils.closeQuietly(bufferedReader);
 		}
-	}
-
-	private User getCurrentUser () {
-
-		User user = null;
-
-		final HttpServletRequest request =
-				HttpServletRequestThreadLocal.INSTANCE.getRequest();
-
-		if (null != request) {
-
-			try {
-				user = PortalUtil.getUser(request);
-			} catch (PortalException | SystemException e) {
-				user = null;
-			}
-		}
-
-		return user == null?
-				APILocator.systemUser(): user;
 	}
 
 	public WorkflowSchemeImportExportObject buildExportObject() throws DotDataException, DotSecurityException {
