@@ -83,18 +83,18 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
+			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<ContentType> retTypes = new ArrayList<>();
 
 			// Validate input
 			for (ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-				ContentType type = entry.contentType;
-				List<String> workflowsIds = entry.workflowsIds;
+				final ContentType type = entry.contentType;
+				final List<String> workflowsIds = entry.workflowsIds;
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 				}
-				ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
+				final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
 				retTypes.add(contentTypeSaved);
 				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.inode(), user, workflowsIds);
 			}
