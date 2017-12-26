@@ -49,6 +49,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import com.liferay.util.StringUtil;
 import org.osgi.framework.BundleContext;
 
 import java.sql.Savepoint;
@@ -204,11 +205,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	public void saveSchemeIdsForStruct(final ContentType contentType, List<String> schemesIds) throws DotDataException {
+	@WrapInTransaction
+	public void saveSchemeIdsForContentType(final ContentType contentType, List<String> schemesIds) throws DotDataException {
 		try {
+			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
+					String.join(",", schemesIds), contentType.inode()));
+
 			workFlowFactory.saveSchemeIdsForStruct(contentType.inode(), schemesIds);
 		} catch(DotDataException e){
-			throw e;
+			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
+					String.join(",", schemesIds), contentType.inode()));
 		}
 	}
 

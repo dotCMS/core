@@ -67,9 +67,9 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 			}
 		}
 
-		ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeResource resource = new ContentTypeResource();
 
-		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 		ContentTypeForm contentTypeForm = contentTypeFormDeserialize.buildForm(json);
 		Response response = resource.createType(getHttpRequest(), contentTypeForm);
 

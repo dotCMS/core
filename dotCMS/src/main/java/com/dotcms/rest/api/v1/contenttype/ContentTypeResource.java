@@ -83,11 +83,13 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
+			Logger.debug(this, String.format("Saving new content type", form.getRequestJson()));
+
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<ContentType> retTypes = new ArrayList<>();
 
 			// Validate input
-			for (ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
 				final ContentType type = entry.contentType;
 				final List<String> workflowsIds = entry.workflowsIds;
 
@@ -102,11 +104,7 @@ public class ContentTypeResource implements Serializable {
 
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
 
-		} catch (DotStateException e) {
-
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
-
-		} catch (DotDataException e) {
+		} catch (DotStateException | DotDataException e) {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
@@ -137,6 +135,8 @@ public class ContentTypeResource implements Serializable {
 		try {
 			ContentType contentType = form.getContentType();
 
+			Logger.debug(this, String.format("Updating content type", form.getRequestJson()));
+
 			if (!UtilMethods.isSet(contentType.id())) {
 
 				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
@@ -153,20 +153,16 @@ public class ContentTypeResource implements Serializable {
 
 					contentType = capi.save(contentType);
 
-					List<String> workflowsIds = form.getWorkflowsIds();
+					final List<String> workflowsIds = form.getWorkflowsIds();
 					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
 					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
 				}
 			}
-		} catch (DotStateException e) {
-
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
-
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-		} catch (DotDataException e) {
+		} catch ( DotStateException | DotDataException e) {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 

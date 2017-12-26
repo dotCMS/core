@@ -22,9 +22,11 @@ import java.util.List;
 @JsonDeserialize(using = ContentTypeForm.ContentTypeFormDeserialize.class)
 public class ContentTypeForm  {
 
-    private List<ContentTypeFormEntry> entries;
+    private final List<ContentTypeFormEntry> entries;
+    private final String requestJson;
 
-    public ContentTypeForm(List<ContentTypeFormEntry> entries) {
+    public ContentTypeForm(final List<ContentTypeFormEntry> entries, final String requestJson) {
+        this.requestJson = requestJson;
         this.entries = entries;
     }
 
@@ -40,48 +42,53 @@ public class ContentTypeForm  {
         return entries.get(0).workflowsIds;
     }
 
+    public Object getRequestJson() {
+        return requestJson;
+    }
+
+
     public static final class ContentTypeFormDeserialize extends JsonDeserializer<ContentTypeForm> {
 
         public static final String WORKFLOW_ATTRIBUTE_NAME = "workflow";
 
         @Override
-        public ContentTypeForm deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+        public ContentTypeForm deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
                 throws IOException {
 
-            String json = jsonParser.readValueAsTree().toString();
+            final String json = jsonParser.readValueAsTree().toString();
             return buildForm(json);
         }
 
         @VisibleForTesting
-        public ContentTypeForm buildForm(String json) {
+        public ContentTypeForm buildForm(final String json) {
             final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
             final List<List<String>> workflows = getWorkflowIdsFromJson(json);
 
-            List<ContentTypeFormEntry> entries = getContentTypeFormEntries(typesToSave, workflows);
+            final List<ContentTypeFormEntry> entries = getContentTypeFormEntries(typesToSave, workflows);
 
-            return new ContentTypeForm(entries);
+            return new ContentTypeForm(entries, json);
         }
 
-        private List<ContentTypeFormEntry> getContentTypeFormEntries(List<ContentType> typesToSave,
-                                                                     List<List<String>> workflows) {
+        private List<ContentTypeFormEntry> getContentTypeFormEntries(final List<ContentType> typesToSave,
+                                                                     final List<List<String>> workflows) {
 
-            List<ContentTypeFormEntry> entries = new ArrayList<>();
+            final List<ContentTypeFormEntry> entries = new ArrayList<>();
 
             for (int i = 0; i < workflows.size(); i++) {
-                List<String> worflows = workflows.get(i);
-                ContentType contentType = typesToSave.get(i);
+                final List<String> worflows = workflows.get(i);
+                final ContentType contentType = typesToSave.get(i);
 
-                ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType, worflows);
+                final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType, worflows);
                 entries.add(entry);
             }
             return entries;
         }
 
-        private static List<List<String>> getWorkflowIdsFromJson(String json) {
+        private static List<List<String>> getWorkflowIdsFromJson(final String json) {
             final List<List<String>> workflows = new ArrayList<>();
 
             try {
-                JSONArray jarr = new JSONArray(json);
+                final JSONArray jarr = new JSONArray(json);
 
                 for (int i = 0; i < jarr.size(); i++) {
                     final JSONObject fieldJsonObject = (JSONObject) jarr.get(i);
@@ -105,7 +112,7 @@ public class ContentTypeForm  {
             List<String> worflowsArray = new ArrayList<>();
 
             if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)) {
-                JSONArray workflowsJaonArray = (JSONArray) fieldJsonObject.get(WORKFLOW_ATTRIBUTE_NAME);
+                final JSONArray workflowsJaonArray = (JSONArray) fieldJsonObject.get(WORKFLOW_ATTRIBUTE_NAME);
 
                 for (int k = 0; k < workflowsJaonArray.size(); k++) {
                     worflowsArray.add((String) workflowsJaonArray.get(k));
@@ -120,7 +127,7 @@ public class ContentTypeForm  {
         ContentType contentType;
         List<String> workflowsIds;
 
-        public ContentTypeFormEntry(ContentType contentType, List<String> workflowsIds) {
+        ContentTypeFormEntry(final ContentType contentType, final List<String> workflowsIds) {
             this.contentType = contentType;
             this.workflowsIds = workflowsIds;
         }

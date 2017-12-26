@@ -281,7 +281,7 @@ public interface WorkflowAPI {
 	 */
 	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
-	public void saveSchemeIdsForStruct(final ContentType contentType, List<String> schemesIds) throws DotDataException;
+	public void saveSchemeIdsForContentType(final ContentType contentType, List<String> schemesIds) throws DotDataException;
 
 	/**
 	 * Saves an single action the action is associated to the schema by default
