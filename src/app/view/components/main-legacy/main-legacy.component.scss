@@ -1,4 +1,5 @@
 @import "mixins";
+@import "../../../../styles/primeng-theme/utils/_mixins.scss";
 @import "variables";
 $sidebar-width: 190px;
 
@@ -13,6 +14,7 @@ $sidebar-width: 190px;
     display: flex;
     flex-grow: 1;
     overflow: hidden;
+    position: relative;
 }
 
 .layout__main,
@@ -22,6 +24,29 @@ $sidebar-width: 190px;
 
 .layout__main {
     flex-grow: 1;
+
+    &.layout__main--tablet-only {
+        &::after {
+            background-color: $black;
+            content: "";
+            position: absolute;
+            height: 100%;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            opacity: 0.3;
+            z-index: 9;
+            transition: opacity 2s ease-in;
+        }
+    
+        .collapsed & {
+            &::after { 
+                position: static;
+                transition: opacity 2s ease-out;
+            }
+        }
+    }
 }
 
 .layout__sidebar {
@@ -30,6 +55,16 @@ $sidebar-width: 190px;
     flex-shrink: 0;
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
     width: $sidebar-width;
+    position: absolute;
+    z-index: 10;
+    height: 100%;
+    box-shadow: $md-shadow-2;
+
+    @include large {
+        position: static;
+        height: auto;
+        box-shadow: none;
+    }
 
     .collapsed & {
         overflow: hidden;

@@ -1,5 +1,5 @@
 <accordion>
-    <nav #menuElement>
+    <nav>
         <ng-template ngFor let-menu [ngForOf]="menu | async">
             <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon" [open]="menu.isOpen">
                 <div class="main-nav__submenu">

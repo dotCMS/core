@@ -26,7 +26,8 @@ export class DotNavigationComponent implements OnInit {
      * @param {string} id menu item id
      * @memberof MainNavigationComponent
      */
-    onClick(event: any, id: string): void {
+    onClick(event: MouseEvent, id: string): void {
+        event.stopPropagation();
         if (!event.ctrlKey && !event.metaKey) {
             this.dotNavigationService.reloadCurrentPortlet(id);
         }

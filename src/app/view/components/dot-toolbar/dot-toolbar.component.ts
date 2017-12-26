@@ -9,7 +9,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     templateUrl: './dot-toolbar.component.html'
 })
 export class ToolbarComponent {
-    @Input() collapsed;
+    @Input() collapsed: boolean;
     @Output() mainButtonClick: EventEmitter<MouseEvent> = new EventEmitter();
 
     constructor(public iframeOverlayService: IframeOverlayService, private siteService: SiteService) {}
@@ -19,6 +19,7 @@ export class ToolbarComponent {
     }
 
     handleMainButtonClick($event): void {
+        $event.stopPropagation();
         this.mainButtonClick.emit($event);
     }
 }
