@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.directive;
 import com.dotcms.rendering.velocity.services.VelocityType;
 
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.util.UtilMethods;
 
 import java.io.Writer;
 
@@ -32,7 +33,7 @@ public class ParseContainer extends DotDirective {
 	String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,
 			final String[] arguments) {
 	    final String id = arguments[0];
-        final String uid = (arguments.length>1) ? arguments[1] :  MultiTree.LEGACY_RELATION_TYPE;
+        final String uid = (arguments.length>1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  MultiTree.LEGACY_RELATION_TYPE;
 
         
 		return "/" +params.mode.name() + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;

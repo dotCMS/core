@@ -71,7 +71,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
 
         // let's write this puppy out to our file
-        sb.append("#set ($SERVER_NAME =$host.getHostname() ) ");
+        sb.append("#set ($SERVER_NAME =$host.getHostname() )");
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '")
             .append(container.getIdentifier())
             .append("')");
@@ -170,31 +170,31 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
 
             // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
-            sb.append("#set($_show_working_=false) ");
+            sb.append("#set($_show_working_=false)");
 
             // if timemachine future enabled
             sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
-            sb.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
-            sb.append("#set($_ident=$webapi.findIdentifierById($contentletId)) ");
+            sb.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
+            sb.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
 
             // if the content has expired we rewrite the identifier so it isn't loaded
             sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-            sb.append("#set($contentletId='') ");
+            sb.append("#set($contentletId='')");
             sb.append("#end");
 
             // if the content should be published then force to show the working version
             sb.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
-            sb.append("#set($_show_working_=true) ");
+            sb.append("#set($_show_working_=true)");
             sb.append("#end");
 
-            sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
+            sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
                 .append("#set($contentletId='')") // working contentlet still not published
                 .append("#end");
             sb.append("#end");
 
             sb.append("#set($CONTENT_INODE = '')");
-            sb.append("#if($contentletId != '') ");
-            sb.append("#contentDetail($contentletId) ");
+            sb.append("#if($contentletId != '')");
+            sb.append("#contentDetail($contentletId)");
             sb.append("#end");
 
 

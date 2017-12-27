@@ -30,8 +30,6 @@ public final class FixBreaks extends InputBase {
     return "fixBreaks";
   }
 
-
-
   final public boolean render(InternalContextAdapter context, Writer writer, Node node)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 

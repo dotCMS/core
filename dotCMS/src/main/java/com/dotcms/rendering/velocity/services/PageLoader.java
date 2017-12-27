@@ -144,7 +144,7 @@ public class PageLoader implements DotLoader {
             .append(".")
             .append(VelocityType.SITE.fileExtension)
             .append("')")
-            .append(" #end ");
+            .append("#end");
 
 
         sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
@@ -157,20 +157,18 @@ public class PageLoader implements DotLoader {
         }
         if (htmlPage.isHttpsRequired()) {
             sb.append(" #if(!$ADMIN_MODE  && !$request.isSecure())");
-            sb.append("    #if($request.getQueryString())");
-            sb.append(
-                    "        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
-            sb.append("    #else ");
-            sb.append(
-                    "        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
-            sb.append("    #end ");
-            sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")");
-            sb.append(" #end ");
+            sb.append("#if($request.getQueryString())");
+            sb.append("#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
+            sb.append("#else");
+            sb.append("#set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
+            sb.append("#end");
+            sb.append("$response.sendRedirect(\"$REDIRECT_URL\")");
+            sb.append("#end");
         }
 
         sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
-        sb.append(" $response.setStatus(301)");
-        sb.append(" $response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
+        sb.append("$response.setStatus(301)");
+        sb.append("$response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
         sb.append("#end");
 
 
@@ -184,7 +182,7 @@ public class PageLoader implements DotLoader {
                 .append("\"))");
             sb.append("#set ($dotThemeLayout = $templatetool.themeLayout(\"")
                 .append(cmsTemplate.getInode())
-                .append("\" ))");
+                .append("\"))");
             // Merging our template
             sb.append("#parse(\"$dotTheme.templatePath\")");
         } else {
