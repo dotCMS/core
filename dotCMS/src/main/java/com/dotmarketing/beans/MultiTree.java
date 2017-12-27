@@ -26,7 +26,7 @@ public class MultiTree implements Serializable {
     private String child;
 
     /** nullable persistent field */
-    private String relationType;
+    private String relationType = LEGACY_RELATION_TYPE;
 
     /** nullable persistent field */
     private int treeOrder;
@@ -44,9 +44,13 @@ public class MultiTree implements Serializable {
     public MultiTree() {
         this(null, null, null, LEGACY_RELATION_TYPE, 0);
     }
+    
 
+    private MultiTree(MultiTree tree) {
+        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder);
+    }
+    
     /** minimal constructor */
-
     public MultiTree(String htmlPage, String container, String child) {
         this(htmlPage, container, child, LEGACY_RELATION_TYPE, 0);
     }
@@ -76,12 +80,12 @@ public class MultiTree implements Serializable {
 
     public MultiTree setContentlet(String contentlet) {
         this.child = contentlet;
-        return new MultiTree(this.parent1, this.parent2, contentlet, this.relationType, this.treeOrder);
+        return new MultiTree(this);
     }
 
     public MultiTree setRelationType(java.lang.String relationType) {
         this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
-        return new MultiTree(this.parent1, this.parent2, this.child, relationType, this.treeOrder);
+        return new MultiTree(this);
     }
 
     public int getTreeOrder() {
@@ -91,7 +95,7 @@ public class MultiTree implements Serializable {
     public MultiTree setTreeOrder(int treeOrder) {
         treeOrder = (treeOrder < 0) ? 0 : treeOrder;
         this.treeOrder = treeOrder;
-        return new MultiTree(this.parent1, this.parent2, this.child, this.relationType, treeOrder);
+        return new MultiTree(this);
     }
 
     public String toString() {
@@ -167,6 +171,7 @@ public class MultiTree implements Serializable {
      */
     @Deprecated
     public MultiTree setParent2(String container) {
+        
         return setContainer(container);
     }
 
@@ -174,7 +179,8 @@ public class MultiTree implements Serializable {
      * @param htmlPage The htmlPage to set.
      */
     public MultiTree setHtmlPage(String htmlPage) {
-        return new MultiTree(htmlPage, this.parent2, this.child, this.relationType, this.treeOrder);
+        this.parent1 = htmlPage;
+        return new MultiTree(this);
     }
 
     /**
@@ -189,7 +195,7 @@ public class MultiTree implements Serializable {
      */
     public MultiTree setContainer(String container) {
         this.parent2 = container;
-        return new MultiTree(this.parent1, container, this.child, this.relationType, this.treeOrder);
+        return new MultiTree(this);
     }
 
 
