@@ -51,6 +51,9 @@ public class RulePermissionableUtil {
                             contentlet = results.get(0);
                         }
                     }
+                    if (contentlet == null) {
+                        throw new DotDataException("Identifier: " + parent + " does not exist.");
+                    }
 
                     if (contentlet.isHost()) {
 						permissionableParent = contentlet;
