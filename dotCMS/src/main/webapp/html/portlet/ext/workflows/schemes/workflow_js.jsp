@@ -1096,7 +1096,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 
 var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "actionAssignToSelect"});
-var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect"});
+var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect",includeWfRoles: "true"});
 
 var myIconStore = new dojo.data.ItemFileReadStore({data:
 	<%@ include file="/html/portlet/ext/workflows/schemes/workflow_icons.json" %>
