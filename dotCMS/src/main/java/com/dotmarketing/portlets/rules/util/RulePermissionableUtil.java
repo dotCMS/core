@@ -40,18 +40,14 @@ public class RulePermissionableUtil {
                 }else{
                     Contentlet contentlet;
 
-                    contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
-                            APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-
-                    if (contentlet == null) {
-                        List<Contentlet> results = APILocator.getContentletAPI()
-                                .search("+identifier:" + parent + " +working:true", 1, 0, null,
-                                        systemUser, false);
-                        if (!results.isEmpty()) {
-                            contentlet = results.get(0);
-                        }
+                    List<Contentlet> results = APILocator.getContentletAPI()
+                            .search("+identifier:" + parent + " +working:true", 1, 0, null, systemUser, false);
+                    if (!results.isEmpty()) {
+                        contentlet = results.get(0);
+                    } else {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
+                                    APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
                     }
-
                     if (contentlet.isHost()) {
 						permissionableParent = contentlet;
 					} else {
