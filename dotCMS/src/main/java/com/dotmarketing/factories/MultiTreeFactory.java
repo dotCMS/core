@@ -297,10 +297,6 @@ public class MultiTreeFactory {
 
 
 
-
-
-
-
     /**
      * Update the version_ts of all versions of the HTML Page with the given id. If a MultiTree
      * Object has been added or deleted from this page, its version_ts value needs to be updated so
@@ -324,14 +320,8 @@ public class MultiTreeFactory {
         }
     }
 
-    /**
-     * Refresh cached objects for all versions of the HTMLPage with the given pageIdentifier.
-     * 
-     * @param pageIdentifier The HTMLPage Identifier to pass in
-     * @throws DotContentletStateException
-     * @throws DotDataException
-     * 
-     */
+	
+
     private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
         Set<String> inodes = new HashSet<String>();
         List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
@@ -373,7 +363,7 @@ public class MultiTreeFactory {
 
     /**
      * {link {@link #saveMultiTree(MultiTree)} The multitree does not respect language
-     * 
+     * @deprecated
      * @param multiTreeEN
      * @param english
      * @throws DotDataException
@@ -382,6 +372,7 @@ public class MultiTreeFactory {
     public static void saveMultiTree(MultiTree multiTree, long lang) throws DotDataException {
         saveMultiTree(multiTree);
     }
+
 
 
 }

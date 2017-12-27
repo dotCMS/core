@@ -6,6 +6,9 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Logger;
 
@@ -138,11 +141,29 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     
     
     
+
     
     
     
-    
-    
+    @Test
+    public void testLegacyMultiTreeSave() throws Exception {
+
+        
+        long time = System.currentTimeMillis();
+
+        
+        MultiTree multiTree = new MultiTree();
+        multiTree.setParent1( PAGE+time);
+        multiTree.setParent2( CONTAINER +time);
+        multiTree.setChild( CONTENTLET +time);
+        multiTree.setTreeOrder( 1 );
+        MultiTreeFactory.saveMultiTree( multiTree );
+        
+        
+        MultiTree mt2 = MultiTreeFactory.getMultiTree(PAGE+time, CONTAINER +time, CONTENTLET +time, Container.LEGACY_RELATION_TYPE);
+        
+        assertTrue("multiTree save without relationtype and get equals", multiTree.equals(mt2));
+    }
     
     
     @Test
