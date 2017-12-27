@@ -119,30 +119,7 @@ public class MultiTreeFactory {
             .orElse(null);
 
     }
-    /**
-     * Use {@link #getMultiTree(String, String, String, String)} This method does not use the unique id specified 
-     * in the #parseContainer code
-     * @param htmlPage
-     * @param container
-     * @param childContent
-     * @throws DotDataException
-     */
-    @Deprecated
-    public static MultiTree getMultiTree(String htmlPage, String container, String childContent)
-            throws DotDataException {
 
-        DotConnect db = new DotConnect().setSQL(SELECT_SQL)
-            .addParam(htmlPage)
-            .addParam(container)
-            .addParam(childContent)
-            .addParam(Container.LEGACY_RELATION_TYPE);
-        db.loadResult();
-
-        return dbToMultiTree(db.loadObjectResults()).stream()
-            .findFirst()
-            .orElse(null);
-
-    }
     public static java.util.List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException {
         return getMultiTrees(parent.getId());
     }
