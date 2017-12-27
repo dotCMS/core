@@ -2,6 +2,14 @@ define("dojox/gfx/renderer", ["./_base","dojo/_base/lang", "dojo/_base/sniff", "
   function(g, lang, has, win, config){
   //>> noBuildResolver
 	var currentRenderer = null;
+
+	has.add("vml", function(global, document, element){
+		element.innerHTML = "<v:shape adj=\"1\"/>";
+		var supported = ("adj" in element.firstChild);
+		element.innerHTML = "";
+		return supported;
+	});
+
 	return {
 		// summary:
 		//		This module is an AMD loader plugin that loads the appropriate graphics renderer
@@ -28,7 +36,7 @@ define("dojox/gfx/renderer", ["./_base","dojo/_base/lang", "dojo/_base/sniff", "
 						}
 						break;
 					case "vml":
-						if(has("ie")){
+						if(has("vml")){
 							renderer = "vml";
 						}
 						break;

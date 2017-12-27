@@ -318,7 +318,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 					//are any parent zIndexs to overlay.
 					var cNode = target.parentNode;
 					var oldZi = -100000;
-					while(cNode && cNode !== baseWindow.body()){
+					while(cNode && cNode !== baseWindow.body() && target !== baseWindow.body()){
 						zi = domStyle.get(cNode, "zIndex");
 						if(!zi || zi === "auto"){
 							cNode = cNode.parentNode;
