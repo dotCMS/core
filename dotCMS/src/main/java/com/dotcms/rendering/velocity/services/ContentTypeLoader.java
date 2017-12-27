@@ -16,12 +16,14 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -288,7 +290,16 @@ public class ContentTypeLoader implements DotLoader {
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
-        ContentType contentType = (ContentType)obj;
+        
+        ContentType contentType = null;
+        if(obj instanceof Structure) {
+            contentType = new StructureTransformer((Structure) obj).from();
+        }
+        else if(obj instanceof ContentType) {
+            contentType = (ContentType) obj;
+        }
+
+        if(contentType==null)return;
         String folderPath =  mode.name() + File.separator;
         String filePath = folderPath + contentType.inode() + "." + VelocityType.CONTENT_TYPE.fileExtension;
 
