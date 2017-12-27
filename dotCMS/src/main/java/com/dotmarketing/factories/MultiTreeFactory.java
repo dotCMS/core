@@ -297,10 +297,6 @@ public class MultiTreeFactory {
 
 
 
-
-
-
-
     /**
      * Update the version_ts of all versions of the HTML Page with the given id. If a MultiTree
      * Object has been added or deleted from this page, its version_ts value needs to be updated so
@@ -324,34 +320,8 @@ public class MultiTreeFactory {
         }
     }
 
-    /**
-     * Refresh cached objects for all versions of the HTMLPage with the given pageIdentifier.
-     * 
-     * @param pageIdentifier The HTMLPage Identifier to pass in
-     * @throws DotContentletStateException
-<<<<<<< HEAD
-     * @throws DotDataException
-=======
-     * @throws DotDataException 
-     * @throws DotSecurityException 
-     *            
-     */
-	private static void updateVersionTs(String id, Long languageId) throws DotDataException {
-
-        ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(id, languageId);
-        if(versionInfo!=null){
-          versionInfo.setVersionTs(new Date());
-          APILocator.getVersionableAPI().saveContentletVersionInfo(
-                  versionInfo);
-        }
-	}
 	
-    /**
-     * Refresh Cached objects of page given a HTMLPage Identifier.
->>>>>>> 11009c2b7c53074f2173aa0b73fb8d1d4a27e804
-     * 
-     */
+
     private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
         Set<String> inodes = new HashSet<String>();
         List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
