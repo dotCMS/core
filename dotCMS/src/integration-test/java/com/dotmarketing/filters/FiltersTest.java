@@ -6,8 +6,10 @@ import static org.mockito.Matchers.startsWith;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveServlet;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,9 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.velocity.ClientVelocityServlet;
-import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -30,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -44,12 +45,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import com.liferay.portal.model.User;
 
 public class FiltersTest {
 
@@ -372,7 +376,7 @@ public class FiltersTest {
                     public void forward(ServletRequest arg0, ServletResponse arg1)
                             throws ServletException, IOException {
 
-                        VelocityServlet servlet = new ClientVelocityServlet();
+                        VelocityLiveServlet servlet = new VelocityLiveServlet();
                         servlet.init(null);
                         servlet.service(arg0, arg1);
                     }

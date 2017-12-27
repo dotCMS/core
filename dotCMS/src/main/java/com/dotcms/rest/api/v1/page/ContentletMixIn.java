@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @version 4.2
  * @since Oct 9, 2017
  */
-public abstract class ContentletMixIn {
+abstract class ContentletMixIn {
 
     @JsonIgnore
     public abstract Permissionable getParentPermissionable();

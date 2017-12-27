@@ -71,7 +71,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -1426,8 +1427,8 @@ public class ContentletAjax {
                         iCanLock=false;
                         contentLocked = false;
                      }
-                     
-                    PageRequestModeUtil.setBackEndModeInSession(req, contentLocked, iCanLock);
+                    PageMode.setPageMode(req, contentLocked, iCanLock);
+
                 }
 
 			}

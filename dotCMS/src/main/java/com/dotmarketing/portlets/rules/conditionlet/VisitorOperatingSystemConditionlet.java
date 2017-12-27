@@ -11,7 +11,7 @@ import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.viewtools.UserAgentTool;
+import com.dotcms.rendering.velocity.viewtools.UserAgentTool;
 import eu.bitwalker.useragentutils.OperatingSystem;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 
 /**
  * This conditionlet will allow CMS users to check the SO name a user
- * request is issued from. The information is obtained by {@link com.dotmarketing.viewtools.UserAgentTool},
+ * request is issued from. The information is obtained by {@link com.dotcms.rendering.velocity.viewtools.UserAgentTool},
  * the list of possible values is in {@link eu.bitwalker.useragentutils.OperatingSystem}.
  * 
  *

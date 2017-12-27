@@ -25,7 +25,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -58,14 +59,12 @@ public class ShortyServlet extends HttpServlet {
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 
-    HttpSession session = request.getSession(false);
-    boolean ADMIN_MODE = PageRequestModeUtil.isAdminMode(session);
-    boolean PREVIEW_MODE = PageRequestModeUtil.isPreviewMode(session);
-    boolean EDIT_MODE = PageRequestModeUtil.isEditMode(session);
+    PageMode mode = PageMode.get(request);
+
 
 
     // Checking if host is active
-    if (!ADMIN_MODE && !APILocator.getVersionableAPI().hasLiveVersion(host)) {
+    if (!mode.isAdmin && !APILocator.getVersionableAPI().hasLiveVersion(host)) {
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
           LanguageUtil.get("server-unavailable-error-message"));
       return;
@@ -102,14 +101,10 @@ public class ShortyServlet extends HttpServlet {
     boolean jpegp = jpeg && uri.contains("jpegp");
     boolean isImage = jpeg || w+h>0;
     
-    
-    
-    
-
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);
     User user = WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(request);
-    boolean live = (user != null) ? (EDIT_MODE || PREVIEW_MODE) ? false : true : true;
+    boolean live = mode.showLive;
     if (!live) {
       response.setHeader("Pragma", "no-cache");
       response.setHeader("Cache-Control", "no-cache");

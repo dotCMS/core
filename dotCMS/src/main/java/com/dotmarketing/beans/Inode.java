@@ -518,19 +518,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	 */
 	public boolean hasParents() {
 
-		HibernateUtil dh = new HibernateUtil();
-		String query = "select count(*) from " + Inode.class.getName()
-				+ "  inode where inode.inode in (select tree.parent from "
-				+ Tree.class.getName() + "  tree where tree.child = "
-				+ this.inode + ")";
-		List results = new ArrayList();
-		try {
-			dh.setQuery(query);
-			results = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-		}
-		return ((Integer) results.get(0)).intValue() > 0;
+	    return TreeFactory.getTreesByChild(this.inode).size()>0;
 	}
 
 	public boolean equals(Object other) {

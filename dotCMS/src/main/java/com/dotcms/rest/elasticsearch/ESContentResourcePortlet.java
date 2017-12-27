@@ -16,6 +16,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,13 +40,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		User user = initData.getUser();
 		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-		boolean live = true;
-		boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-		if (EDIT_MODE || PREVIEW_MODE) {
-			live = false;
-		}
+		PageMode mode = PageMode.get(request);
 
 		JSONObject esQuery;
 		try {
@@ -55,7 +51,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		}
 
 		try {
-			ESSearchResults esresult = esapi.esSearch(esQuery.toString(), live, user, live);
+			ESSearchResults esresult = esapi.esSearch(esQuery.toString(), mode.showLive, user, mode.showLive);
 			
 			JSONObject json = new JSONObject();
 			JSONArray jsonCons = new JSONArray();
@@ -117,13 +113,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 		HttpSession session = request.getSession();
 
-		boolean live = true;
-		boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-		if (EDIT_MODE || PREVIEW_MODE) {
-			live = false;
-		}
+        PageMode mode = PageMode.get(request);
 
 		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
@@ -131,7 +121,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
 
-			return responseResource.response(esapi.esSearchRaw(esQuery, live, user, live).toString());
+			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);

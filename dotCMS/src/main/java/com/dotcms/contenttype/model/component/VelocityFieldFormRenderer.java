@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.component;
 
 import org.apache.velocity.context.Context;
 
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 public class VelocityFieldFormRenderer implements FieldFormRenderer{
 
