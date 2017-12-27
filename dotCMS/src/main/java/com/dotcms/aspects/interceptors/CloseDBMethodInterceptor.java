@@ -10,11 +10,15 @@ import com.dotcms.business.CloseDB;
 import com.dotmarketing.db.DbConnectionFactory;
 
 /**
- * Method handler for the {@link CloseDBIfOpened} annotation aspect
+ * Method handler for the {@link CloseDB} annotation aspect
  * @author jsanca
  */
 public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     public static final CloseDBMethodInterceptor INSTANCE = new CloseDBMethodInterceptor();
 
 
@@ -29,8 +33,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
         try {
             methodReturn = delegate.proceed();
         } finally {
-
-                DbConnectionFactory.closeSilently();
+            DbConnectionFactory.closeSilently();
         }
 
         return methodReturn;

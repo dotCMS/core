@@ -2,6 +2,7 @@ package com.dotcms.aspects.aspectj;
 
 import com.dotcms.aspects.MethodInterceptor;
 import com.dotcms.aspects.interceptors.CloseDBMethodInterceptor;
+import com.dotcms.business.CloseDB;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -9,7 +10,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 
 /**
- * This aspect handles the @{@link CloseDBIfOpened} with AspectJ
+ * This aspect handles the @{@link CloseDB} with AspectJ
  * @author jsanca
  */
 @Aspect
@@ -27,14 +28,14 @@ public class CloseDBAspect {
     }
 
     /**
-     * Aspect implementation for the {@link CloseDBIfOpened} annotation
+     * Aspect implementation for the {@link CloseDB} annotation
      *
      * @param point Joint point
      * @return The result of call
      * @throws Throwable If something goes wrong inside
      */
     @Around("execution(* *(..))"
-            + " && @annotation(com.dotcms.business.CloseDBIfOpened)")
+            + " && @annotation(com.dotcms.business.CloseDB)")
     public Object invoke(final ProceedingJoinPoint point) throws Throwable {
 
         return

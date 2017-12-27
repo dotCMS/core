@@ -3,7 +3,7 @@ package com.dotcms.business;
 import java.lang.annotation.*;
 
 /**
- * A method annotated with CloseDBIfOpened annotation will close resources in the current thread if needed, such as database connections...
+ * A method annotated with CloseDB annotation will close resources in the current thread if needed, such as database connections...
  * @author jsanca
  */
 @Documented
