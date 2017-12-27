@@ -61,7 +61,6 @@ var StackContainer = declare("dijit.layout.StackContainer", _LayoutWidget, {
 	buildRendering: function(){
 		this.inherited(arguments);
 		domClass.add(this.domNode, "dijitLayoutContainer");
-		this.containerNode.setAttribute("role", "tabpanel");
 	},
 
 	postCreate: function(){

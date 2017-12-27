@@ -765,11 +765,11 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 			on(this.domNode, on.selector(".dijitTreeNode", touch.leave), function(evt){
 				self._onNodeMouseLeave(registry.byNode(this), evt);
 			}),
-			on(this.domNode, on.selector(".dijitTreeNode", "click"), function(evt){
-				self._onClick(registry.byNode(this), evt);
+			on(this.domNode, on.selector(".dijitTreeRow", "click"), function(evt){
+				self._onClick(registry.getEnclosingWidget(this), evt);
 			}),
-			on(this.domNode, on.selector(".dijitTreeNode", "dblclick"), function(evt){
-				self._onDblClick(registry.byNode(this), evt);
+			on(this.domNode, on.selector(".dijitTreeRow", "dblclick"), function(evt){
+				self._onDblClick(registry.getEnclosingWidget(this), evt);
 			}),
 			on(this.domNode, on.selector(".dijitTreeNode", "keypress"), function(evt){
 				self._onKeyPress(registry.byNode(this), evt);
@@ -883,7 +883,15 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 					this.domNode.setAttribute("role", "presentation");
 					this.domNode.removeAttribute("aria-expanded");
 					this.domNode.removeAttribute("aria-multiselectable");
-					
+
+					// move the aria-label or aria-labelledby to the element with the role
+					if(this["aria-label"]){
+						rn.containerNode.setAttribute("aria-label", this["aria-label"]);
+						this.domNode.removeAttribute("aria-label");
+					}else if(this["aria-labelledby"]){
+						rn.containerNode.setAttribute("aria-labelledby", this["aria-labelledby"]);
+						this.domNode.removeAttribute("aria-labelledby");
+					}
 					rn.labelNode.setAttribute("role", "presentation");
 					rn.containerNode.setAttribute("role", "tree");
 					rn.containerNode.setAttribute("aria-expanded","true");

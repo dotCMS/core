@@ -455,7 +455,7 @@
 					}else if(p=="*now"){
 						now = item;
 					}else if(p!="*noref"){
-						m = getModuleInfo(p, referenceModule);
+						m = getModuleInfo(p, referenceModule, true);
 						cache[m.mid] = cache[urlKeyPrefix + m.url] = item;
 					}
 				}
@@ -994,8 +994,8 @@
 			return makeModuleInfo(pid, mid, pack, compactPath(url));
 		},
 
-		getModuleInfo = function(mid, referenceModule){
-			return getModuleInfo_(mid, referenceModule, packs, modules, req.baseUrl, mapProgs, pathsMapProg);
+		getModuleInfo = function(mid, referenceModule, fromPendingCache){
+			return getModuleInfo_(mid, referenceModule, packs, modules, req.baseUrl, fromPendingCache ? [] : mapProgs, fromPendingCache ? [] : pathsMapProg);
 		},
 
 		resolvePluginResourceId = function(plugin, prid, referenceModule){
@@ -2062,7 +2062,7 @@ define(["../has", "./config", "require", "module"], function(has, config, requir
 	dojo.isAsync = ! 1  || require.async;
 	dojo.locale = config.locale;
 
-	var rev = "$Rev: 30226 $".match(/\d+/);
+	var rev = "$Rev: d4c0bbf $".match(/[0-9a-f]{7,}/);
 	dojo.version = {
 		// summary:
 		//		Version number of the Dojo Toolkit
@@ -2073,10 +2073,10 @@ define(["../has", "./config", "require", "module"], function(has, config, requir
 		//		- minor: Integer: Minor version. If total version is "1.2.0beta1", will be 2
 		//		- patch: Integer: Patch version. If total version is "1.2.0beta1", will be 0
 		//		- flag: String: Descriptor flag. If total version is "1.2.0beta1", will be "beta1"
-		//		- revision: Number: The SVN rev from which dojo was pulled
+		//		- revision: Number: The Git rev from which dojo was pulled
 
-		major: 1, minor: 8, patch: 3, flag: "",
-		revision: rev ? +rev[0] : NaN,
+		major: 1, minor: 8, patch: 6, flag: "",
+		revision: rev ? rev[0] : NaN,
 		toString: function(){
 			var v = dojo.version;
 			return v.major + "." + v.minor + "." + v.patch + v.flag + " (" + v.revision + ")";	// String
@@ -2375,6 +2375,8 @@ define(["require", "module"], function(require, module){
 		// has as it would have otherwise been initialized by the dojo loader; use has.add to the builder
 		// can optimize these away iff desired
 		 1 || has.add("host-browser", isBrowser);
+		 0 && has.add("host-node", (typeof process == "object" && process.versions && process.versions.node && process.versions.v8));
+		 0 && has.add("host-rhino", (typeof load == "function" && (typeof Packages == "function" || typeof Packages == "object")));
 		 1 || has.add("dom", isBrowser);
 		 1 || has.add("dojo-dom-ready-api", 1);
 		 1 || has.add("dojo-sniff", 1);
@@ -2383,7 +2385,7 @@ define(["require", "module"], function(require, module){
 	if( 1 ){
 		// Common application level tests
 		has.add("dom-addeventlistener", !!document.addEventListener);
-		has.add("touch", "ontouchstart" in document);
+		has.add("touch", "ontouchstart" in document || window.navigator.msMaxTouchPoints > 0);
 		// I don't know if any of these tests are really correct, just a rough guess
 		has.add("device-width", screen.availWidth || innerWidth);
 
@@ -2676,6 +2678,7 @@ define(["./has"], function(has){
 		has.add("quirks", document.compatMode == "BackCompat");
 		has.add("ios", /iPhone|iPod|iPad/.test(dua));
 		has.add("android", parseFloat(dua.split("Android ")[1]) || undefined);
+		has.add("trident", parseFloat(dav.split("Trident/")[1]) || undefined);
 
 		if(!has("webkit")){
 			// Opera
@@ -2686,7 +2689,7 @@ define(["./has"], function(has){
 			}
 
 			// Mozilla and firefox
-			if(dua.indexOf("Gecko") >= 0 && !has("khtml") && !has("webkit")){
+			if(dua.indexOf("Gecko") >= 0 && !has("khtml") && !has("webkit") && !has("trident")){
 				has.add("mozilla", tv);
 			}
 			if(has("mozilla")){
@@ -3723,9 +3726,9 @@ define(["./_base/kernel", "./has", "require", "./domReady", "./_base/lang"], fun
 			}
 		};
 
-	require.on("idle", onLoad);
+	require.on && require.on("idle", onLoad);
 	requestCompleteSignal = function(){
-		if(require.idle()){
+		if(require.idle ? require.idle() : true){
 			onLoad();
 		} // else do nothing, onLoad will be called with the next idle signal
 	};
@@ -5348,6 +5351,9 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 		has.add("jscript", major && (major() + ScriptEngineMinorVersion() / 10));
 		has.add("event-orientationchange", has("touch") && !has("android")); // TODO: how do we detect this?
 		has.add("event-stopimmediatepropagation", window.Event && !!window.Event.prototype && !!window.Event.prototype.stopImmediatePropagation);
+		has.add("event-focusin", function(global, doc, element){
+			return 'onfocusin' in element;
+		});
 	}
 	var on = function(target, type, listener, dontFix){
 		// summary:
@@ -5381,7 +5387,7 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 		//		|	obj.onfoo({key:"value"});
 		//		If you use on.emit on a DOM node, it will use native event dispatching when possible.
 
-		if(typeof target.on == "function" && typeof type != "function"){
+		if(typeof target.on == "function" && typeof type != "function" && !target.nodeType){
 			// delegate to the target's on() method, so it can handle it's own listening if it wants
 			return target.on(type, listener);
 		}
@@ -5618,7 +5624,7 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 		}while(event && event.bubbles && (target = target.parentNode));
 		return event && event.cancelable && event; // if it is still true (was cancelable and was cancelled), return the event to indicate default action should happen
 	};
-	var captures = {};
+	var captures = has("event-focusin") ? {} : {focusin: "focus", focusout: "blur"};
 	if(!has("event-stopimmediatepropagation")){
 		var stopImmediatePropagation =function(){
 			this.immediatelyStopped = true;
@@ -5634,12 +5640,6 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 		}
 	} 
 	if(has("dom-addeventlistener")){
-		// normalize focusin and focusout
-		captures = {
-			focusin: "focus",
-			focusout: "blur"
-		};
-
 		// emiter that works with native event handling
 		on.emit = function(target, type, event){
 			if(target.dispatchEvent && document.createEvent){
@@ -5649,7 +5649,8 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 				// that would be a lot of extra code, with little benefit that I can see, seems 
 				// best to use the generic constructor and copy properties over, making it 
 				// easy to have events look like the ones created with specific initializers
-				var nativeEvent = target.ownerDocument.createEvent("HTMLEvents");
+				var ownerDocument = target.ownerDocument || document;
+				var nativeEvent = ownerDocument.createEvent("HTMLEvents");
 				nativeEvent.initEvent(type, !!event.bubbles, !!event.cancelable);
 				// and copy all our properties over
 				for(var i in event){
@@ -5813,8 +5814,17 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 					}catch(e){} 
 					if(originalEvent.type){
 						// deleting properties doesn't work (older iOS), have to use delegation
-						Event.prototype = originalEvent;
-						var event = new Event;
+						if(has('mozilla')){
+							// Firefox doesn't like delegated properties, so we have to copy
+							var event = {};
+							for(var name in originalEvent){
+								event[name] = originalEvent[name];
+							}
+						}else{
+							// old iOS branch
+							Event.prototype = originalEvent;
+							var event = new Event;
+						}
 						// have to delegate methods to make them work
 						event.preventDefault = function(){
 							originalEvent.preventDefault();
@@ -5953,31 +5963,38 @@ define("dojo/aspect", [], function(){
 			});
 			signal = {
 				remove: function(){
-					signal.cancelled = true;
+					if(advised){
+						advised = dispatcher = advice = null;
+					}
 				},
 				advice: function(target, args){
-					return signal.cancelled ?
-						previous.advice(target, args) : // cancelled, skip to next one
-						advised.apply(target, args);	// called the advised function
+					return advised ?
+						advised.apply(target, args) :  // called the advised function
+						previous.advice(target, args); // cancelled, skip to next one
 				}
 			};
 		}else{
 			// create the remove handler
 			signal = {
 				remove: function(){
-					var previous = signal.previous;
-					var next = signal.next;
-					if(!next && !previous){
-						delete dispatcher[type];
-					}else{
-						if(previous){
-							previous.next = next;
+					if(signal.advice){
+						var previous = signal.previous;
+						var next = signal.next;
+						if(!next && !previous){
+							delete dispatcher[type];
 						}else{
-							dispatcher[type] = next;
+							if(previous){
+								previous.next = next;
+							}else{
+								dispatcher[type] = next;
+							}
+							if(next){
+								next.previous = previous;
+							}
 						}
-						if(next){
-							next.previous = previous;
-						}
+
+						// remove the advice to signal that this signal has been removed
+						dispatcher = advice = signal.advice = null;
 					}
 				},
 				id: nextId++,
@@ -5988,7 +6005,7 @@ define("dojo/aspect", [], function(){
 		if(previous && !around){
 			if(type == "after"){
 				// add the listener to the end of the list
-				// note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug 
+				// note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug
 				while(previous.next && (previous = previous.next)){}
 				previous.next = signal;
 				signal.previous = previous;
@@ -8917,8 +8934,8 @@ define([
 		var nativePromise = receivedPromise && valueOrPromise instanceof Promise;
 
 		if(!receivedPromise){
-			if(callback){
-				return callback(valueOrPromise);
+			if(arguments.length > 1){
+				return callback ? callback(valueOrPromise) : valueOrPromise;
 			}else{
 				return new Deferred().resolve(valueOrPromise);
 			}
@@ -10596,19 +10613,22 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 		return tag; // DomNode
 	};
 
-	var _empty = has("ie") ?
-		function(/*DomNode*/ node){
+	function _empty(/*DomNode*/ node){
+		if(node.canHaveChildren){
 			try{
-				node.innerHTML = ""; // really fast when it works
-			}catch(e){ // IE can generate Unknown Error
-				for(var c; c = node.lastChild;){ // intentional assignment
-					_destroy(c, node); // destroy is better than removeChild so TABLE elements are removed in proper order
-				}
+				// fast path
+				node.innerHTML = "";
+				return;
+			}catch(e){
+				// innerHTML is readOnly (e.g. TABLE (sub)elements in quirks mode)
+				// Fall through (saves bytes)
 			}
-		} :
-		function(/*DomNode*/ node){
-			node.innerHTML = "";
-		};
+		}
+		// SVG/strict elements don't support innerHTML/canHaveChildren, and OBJECT/APPLET elements in quirks node have canHaveChildren=false
+		for(var c; c = node.lastChild;){ // intentional assignment
+			_destroy(c, node); // destroy is better than removeChild so TABLE subelements are removed in proper order
+		}
+	}
 
 	exports.empty = function empty(/*DOMNode|String*/ node){
 		 // summary:
@@ -10628,11 +10648,16 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 
 
 	function _destroy(/*DomNode*/ node, /*DomNode*/ parent){
+		// in IE quirks, node.canHaveChildren can be false but firstChild can be non-null (OBJECT/APPLET)
 		if(node.firstChild){
 			_empty(node);
 		}
 		if(parent){
-			parent.removeChild(node);
+			// removeNode(false) doesn't leak in IE 6+, but removeChild() and removeNode(true) are known to leak under IE 8- while 9+ is TBD.
+			// In IE quirks mode, PARAM nodes as children of OBJECT/APPLET nodes have a removeNode method that does nothing and
+			// the parent node has canHaveChildren=false even though removeChild correctly removes the PARAM children.
+			// In IE, SVG/strict nodes don't have a removeNode method nor a canHaveChildren boolean.
+			has("ie") && parent.canHaveChildren && "removeNode" in node ? node.removeNode(false) : parent.removeChild(node);
 		}
 	}
 	exports.destroy = function destroy(/*DOMNode|String*/ node){
@@ -12496,6 +12521,14 @@ define([
 			//		A contentHandler returning an XML Document parsed from the response data
 			var result = xhr.responseXML;
 
+			if(result && has("dom-qsa2.1") && !result.querySelectorAll && has("dom-parser")){
+				// http://bugs.dojotoolkit.org/ticket/15631
+				// IE9 supports a CSS3 querySelectorAll implementation, but the DOM implementation 
+				// returned by IE9 xhr.responseXML does not. Manually create the XML DOM to gain 
+				// the fuller-featured implementation and avoid bugs caused by the inconsistency
+				result = new DOMParser().parseFromString(xhr.responseText, "application/xml");
+			}
+
 			if(has("ie")){
 				if((!result || !result.documentElement)){
 					//WARNING: this branch used by the xml handling in dojo.io.iframe,
@@ -13458,8 +13491,9 @@ define([
 	'../Deferred',
 	'../io-query',
 	'../_base/array',
-	'../_base/lang'
-], function(exports, RequestError, CancelError, Deferred, ioQuery, array, lang){
+	'../_base/lang',
+	'../promise/Promise'
+], function(exports, RequestError, CancelError, Deferred, ioQuery, array, lang, Promise){
 	exports.deepCopy = function deepCopy(target, source){
 		for(var name in source){
 			var tval = target[name],
@@ -13494,6 +13528,9 @@ define([
 	function okHandler(response){
 		return freeze(response);
 	}
+	function dataHandler (response) {
+		return response.data || response.text;
+	}
 
 	exports.deferred = function deferred(response, cancel, isValid, isReady, handleResponse, last){
 		var def = new Deferred(function(reason){
@@ -13523,13 +13560,22 @@ define([
 			);
 		}
 
-		var dataPromise = responsePromise.then(function(response){
-				return response.data || response.text;
-			});
+		var dataPromise = responsePromise.then(dataHandler);
 
-		var promise = freeze(lang.delegate(dataPromise, {
-			response: responsePromise
-		}));
+		// http://bugs.dojotoolkit.org/ticket/16794
+		// The following works around a leak in IE9 through the
+		// prototype using lang.delegate on dataPromise and
+		// assigning the result a property with a reference to
+		// responsePromise.
+		var promise = new Promise();
+		for (var prop in dataPromise) {
+			if (dataPromise.hasOwnProperty(prop)) {
+				promise[prop] = dataPromise[prop];
+			}
+		}
+		promise.response = responsePromise;
+		freeze(promise);
+		// End leak fix
 
 
 		if(last){
@@ -13714,7 +13760,7 @@ define([
 			}
 			function onError(evt){
 				var _xhr = evt.target;
-				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response); 
+				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response);
 				dfd.handleResponse(response, error);
 			}
 
@@ -13734,6 +13780,7 @@ define([
 				_xhr.removeEventListener('load', onLoad, false);
 				_xhr.removeEventListener('error', onError, false);
 				_xhr.removeEventListener('progress', onProgress, false);
+				_xhr = null;
 			};
 		};
 	}else{
@@ -13754,15 +13801,16 @@ define([
 		};
 	}
 
+	function getHeader(headerName){
+		return this.xhr.getResponseHeader(headerName);
+	}
+
 	var undefined,
 		defaultOptions = {
 			data: null,
 			query: null,
 			sync: false,
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			}
+			method: 'GET'
 		};
 	function xhr(url, options, returnDeferred){
 		var response = util.parseArgs(
@@ -13796,9 +13844,7 @@ define([
 			return returnDeferred ? dfd : dfd.promise;
 		}
 
-		response.getHeader = function(headerName){
-			return this.xhr.getResponseHeader(headerName);
-		};
+		response.getHeader = getHeader;
 
 		if(addListeners){
 			remover = addListeners(_xhr, dfd, response);
@@ -13817,7 +13863,7 @@ define([
 			}
 
 			var headers = options.headers,
-				contentType;
+				contentType = 'application/x-www-form-urlencoded';
 			if(headers){
 				for(var hdr in headers){
 					if(hdr.toLowerCase() === 'content-type'){
@@ -13958,9 +14004,13 @@ define([
 	'../json',
 	'../_base/kernel',
 	'../_base/array',
-	'../has'
+	'../has',
+	'../selector/_loader' // only included for has() qsa tests
 ], function(JSON, kernel, array, has){
 	has.add('activex', typeof ActiveXObject !== 'undefined');
+	has.add('dom-parser', function(global){
+		return 'DOMParser' in global;
+	});
 
 	var handleXML;
 	if(has('activex')){
@@ -13974,6 +14024,14 @@ define([
 
 		handleXML = function(response){
 			var result = response.data;
+
+			if(result && has('dom-qsa2.1') && !result.querySelectorAll && has('dom-parser')){
+				// http://bugs.dojotoolkit.org/ticket/15631
+				// IE9 supports a CSS3 querySelectorAll implementation, but the DOM implementation 
+				// returned by IE9 xhr.responseXML does not. Manually create the XML DOM to gain 
+				// the fuller-featured implementation and avoid bugs caused by the inconsistency
+				result = new DOMParser().parseFromString(response.text, 'application/xml');
+			}
 
 			if(!result || !result.documentElement){
 				var text = response.text;
