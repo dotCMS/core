@@ -387,7 +387,7 @@ public class RemotePublishAjaxActionTest {
 		Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset);
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId);
 		Identifier contenletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
+		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier, Container.LEGACY_RELATION_TYPE);
 		int contentletCount = MultiTreeFactory.getMultiTrees(workinghtmlPageAsset.getIdentifier()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
@@ -399,7 +399,7 @@ public class RemotePublishAjaxActionTest {
 		/*
 		 * Relating content to archived page
 		 */
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier, Container.LEGACY_RELATION_TYPE);
 		contentletCount = MultiTreeFactory.getMultiTrees(workinghtmlPageAsset.getIdentifier()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
@@ -707,7 +707,7 @@ public class RemotePublishAjaxActionTest {
 		Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset);
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId);
 		Identifier contenletIdentifier1 = APILocator.getIdentifierAPI().find(contentlet1);
-		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier1);
+		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier1, Container.LEGACY_RELATION_TYPE);
 		int contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
@@ -717,7 +717,7 @@ public class RemotePublishAjaxActionTest {
 		}
 
 		Identifier contenletIdentifier2 = APILocator.getIdentifierAPI().find(contentlet2);
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier2);
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier2, Container.LEGACY_RELATION_TYPE);
 		contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
@@ -727,7 +727,7 @@ public class RemotePublishAjaxActionTest {
 		}
 
 		Identifier contenletIdentifier3 = APILocator.getIdentifierAPI().find(contentlet3);
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier3);
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier3, Container.LEGACY_RELATION_TYPE);
 		contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
