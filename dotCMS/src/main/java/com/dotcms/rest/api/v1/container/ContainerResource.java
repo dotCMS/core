@@ -161,6 +161,14 @@ public class ContainerResource implements Serializable {
             .getLanguage(req);
 
 
+        
+        
+        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        
+        
+        
+        
+        
         ShortyId contentShorty = APILocator.getShortyAPI()
             .getShorty(contentletId)
             .orElseGet(() -> {
@@ -305,6 +313,8 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
+        
+        
         final Language id = WebAPILocator.getLanguageWebAPI()
             .getLanguage(req);
 

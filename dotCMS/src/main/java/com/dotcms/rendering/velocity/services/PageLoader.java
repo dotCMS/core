@@ -55,12 +55,21 @@ public class PageLoader implements DotLoader {
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
-        IHTMLPage htmlPage = (IHTMLPage) obj;
+        HTMLPageAsset htmlPage =null;
+        if(obj instanceof IHTMLPage) {
+            htmlPage = (HTMLPageAsset) obj;
+        }else if(obj instanceof Contentlet) {
+             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet((Contentlet) obj);
+        }
+       if(htmlPage==null) {
+           return;
+       }
+        
 
 
         String folderPath = mode.name() + File.separator;
         String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        String languageStr = htmlPage.isContent() ? "_" + ((Contentlet) htmlPage).getLanguageId() : "";
+        String languageStr = htmlPage.getLanguageId() +"";
         String filePath = folderPath + htmlPage.getIdentifier() + languageStr + "." + VelocityType.HTMLPAGE.fileExtension;
         velocityRootPath += java.io.File.separator;
         java.io.File f = new java.io.File(velocityRootPath + filePath);

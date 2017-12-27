@@ -33,7 +33,13 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
         try {
             methodReturn = delegate.proceed();
         } finally {
-            DbConnectionFactory.closeSilently();
+            try {
+                DbConnectionFactory.closeAndCommit();
+            } finally {
+                DbConnectionFactory.closeSilently();
+            }
+
+            
         }
 
         return methodReturn;
