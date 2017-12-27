@@ -56,7 +56,7 @@ public class MultiTree implements Serializable {
     }
 
     /**
-     * 
+     * @deprecated
      * {@link #getContentlet()}
      */
     @Deprecated
@@ -64,11 +64,18 @@ public class MultiTree implements Serializable {
         return getContentlet();
     }
 
+    /**
+     * returns the contentlet Id of the multitree
+     * @return
+     */
     public String getContentlet() {
         return this.child;
     }
 
-
+    /**
+     * @deprecated 
+     * {@link #setContentlet(String)}
+     */
     @Deprecated
     public MultiTree setChild(String child) {
         return setContentlet(child);
@@ -132,7 +139,7 @@ public class MultiTree implements Serializable {
     }
 
     /**
-     * 
+     * @deprecated 
      * {@link #getHtmlPage()}
      */
     @Deprecated
@@ -141,7 +148,7 @@ public class MultiTree implements Serializable {
     }
 
     /**
-     * 
+     * @deprecated
      * {@link #getContainer()}
      */
     @Deprecated
@@ -157,7 +164,7 @@ public class MultiTree implements Serializable {
     }
 
     /**
-     * 
+     * @deprecated
      * {@link #setHtmlPage(String)}
      */
     @Deprecated
@@ -166,7 +173,7 @@ public class MultiTree implements Serializable {
     }
 
     /**
-     * 
+     * @deprecated
      * {@link #setContainer(String)}
      */
     @Deprecated

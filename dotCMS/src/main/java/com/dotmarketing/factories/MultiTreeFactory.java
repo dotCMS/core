@@ -363,12 +363,11 @@ public class MultiTreeFactory {
 
     /**
      * {link {@link #saveMultiTree(MultiTree)} The multitree does not respect language
-     * 
+     * @deprecated
      * @param multiTreeEN
      * @param english
      * @throws DotDataException
      */
-
     @Deprecated
     public static void saveMultiTree(MultiTree multiTree, long lang) throws DotDataException {
         saveMultiTree(multiTree);
