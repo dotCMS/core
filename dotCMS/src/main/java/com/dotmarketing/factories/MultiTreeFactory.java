@@ -329,7 +329,27 @@ public class MultiTreeFactory {
      * 
      * @param pageIdentifier The HTMLPage Identifier to pass in
      * @throws DotContentletStateException
+<<<<<<< HEAD
      * @throws DotDataException
+=======
+     * @throws DotDataException 
+     * @throws DotSecurityException 
+     *            
+     */
+	private static void updateVersionTs(String id, Long languageId) throws DotDataException {
+
+        ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(id, languageId);
+        if(versionInfo!=null){
+          versionInfo.setVersionTs(new Date());
+          APILocator.getVersionableAPI().saveContentletVersionInfo(
+                  versionInfo);
+        }
+	}
+	
+    /**
+     * Refresh Cached objects of page given a HTMLPage Identifier.
+>>>>>>> 11009c2b7c53074f2173aa0b73fb8d1d4a27e804
      * 
      */
     private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
@@ -378,10 +398,12 @@ public class MultiTreeFactory {
      * @param english
      * @throws DotDataException
      */
+
     @Deprecated
     public static void saveMultiTree(MultiTree multiTree, long lang) throws DotDataException {
         saveMultiTree(multiTree);
     }
+
 
 
 }
