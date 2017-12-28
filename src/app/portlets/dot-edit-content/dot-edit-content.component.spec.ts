@@ -4,7 +4,6 @@ import { DialogModule } from 'primeng/primeng';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotConfirmationService } from '../../api/services/dot-confirmation/index';
-import { ConfirmationService } from 'primeng/components/common/confirmationservice';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
@@ -16,6 +15,7 @@ import { LoginServiceMock } from '../../test/login-service.mock';
 import { MockMessageService } from '../../test/message-service.mock';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
+import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
 describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
@@ -40,14 +40,15 @@ describe('DotEditContentComponent', () => {
                     {
                         provide: ActivatedRoute,
                         useValue: {
-                            data: Observable.of({editPageHTML: ''})
-                        },
+                            data: Observable.of({ editPageHTML: '' })
+                        }
                     },
                     DotDragDropAPIHtmlService,
-                    DotDOMHtmlUtilService
-                ],
+                    DotDOMHtmlUtilService,
+                    DotEditContentToolbarHtmlService
+                ]
             });
-        }),
+        })
     );
 
     beforeEach(() => {

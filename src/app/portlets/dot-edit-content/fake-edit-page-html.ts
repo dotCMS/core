@@ -25,16 +25,6 @@ export const FAKE_EDIT_PAGE_HTML = `<!doctype html>
     <link rel="shortcut icon" href="http://dotcms.com/favicon.ico" type="image/x-icon">
     <link href='//fonts.googleapis.com/css?family=Kameron|Oxygen:300,400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="/DOTLESS/application/themes/quest/less/main.css">
-
-    <script src="//ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js"></script>
-    <script>
-        WebFont.load({
-            google : {
-                families : ['Open Sans:300,700', 'Roboto Slab:100,500,700']
-            }
-        });
-    </script>
-
     <!-- Load jQuery from Google CDN -->
     <script src="//code.jquery.com/jquery.min.js"></script>
 

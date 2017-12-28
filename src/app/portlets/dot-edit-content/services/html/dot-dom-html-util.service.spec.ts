@@ -28,6 +28,11 @@ describe('DotDOMHtmlUtilService', () => {
         expect(cssElementCreated.href).toEqual(href);
     });
 
+    it('should create an style element', () => {
+        const styleElementCreated = dotDOMHtmlUtilService.createStyleElement('h1 {color: red}');
+        expect(styleElementCreated.innerHTML).toEqual('h1 {color: red}');
+    });
+
     it('should create a external script', () => {
         const src = 'https://testing/test.js';
         const onloadCallbackFunc = () => {};
