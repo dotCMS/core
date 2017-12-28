@@ -89,26 +89,6 @@ public class ContentletLoader implements DotLoader {
 
 
 
-        StringWriter contentDiv = new StringWriter();
-        contentDiv.append("<div")
-            .append(" data-dot-object=")
-            .append("\"contentlet\"")
-            .append(" data-dot-inode=")
-            .append("\"" + content.getInode() + "\"")
-            .append(" data-dot-identifier=")
-            .append("\"" + content.getIdentifier() + "\"")
-            .append(" data-dot-type=")
-            .append("\"" + content.getContentType()
-                .variable() + "\"")
-            .append(" data-dot-lang=")
-            .append("\"" + content.getLanguageId() + "\"")
-            .append(">");
-
-
-        sb.append("#if($EDIT_MODE)")
-            .append(contentDiv)
-            .append("#end");
-
 
 
         // CONTENTLET CONTROLS BEGIN
@@ -124,7 +104,17 @@ public class ContentletLoader implements DotLoader {
             .append("#set($IDENTIFIER_INODE='")
             .append(identifier.getId())
             .append("' )");
+        
+        sb.append("#set($CONTENT_TYPE='")
+            .append(content.getContentType().variable())
+            .append("' )");
 
+        
+        sb.append("#set($CONTENT_LANGUAGE='")
+        .append(content.getLanguageId())
+        .append("' )");
+        
+        
         // set all properties from the contentlet
         sb.append("#set($ContentInode='")
             .append(content.getInode())
@@ -681,11 +671,6 @@ public class ContentletLoader implements DotLoader {
                 .append(false)
                 .append("\")");
         }
-
-        // close contentlet div
-        sb.append("#if($API_EDIT_MODE)")
-            .append("</div>")
-            .append("#end");
 
         return writeOutVelocity(filePath, sb.toString());
     }
