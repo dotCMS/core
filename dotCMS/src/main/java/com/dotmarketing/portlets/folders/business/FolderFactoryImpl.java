@@ -78,23 +78,37 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void delete(Folder f) throws DotDataException {
-		Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
-		HibernateUtil.delete(f);
-		fc.removeFolder(f, id);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
+
+           Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
+           new DotConnect()
+                .setSQL("delete from folder where folder.inode = ? ")
+                .addParam(f.getInode()).loadResult();
+        
+           new DotConnect()
+            .setSQL("delete from inode where inode = ? ")
+            .addParam(f.getInode()).loadResult();
+           fc.removeFolder(f, id);
+
+        
+	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
+
 
 	@Override
 	protected Folder find(String folderInode) throws DotDataException {
 		Folder folder = fc.getFolder(folderInode);
 		if (folder == null) {
 			try{
-				folder = (Folder) new HibernateUtil(Folder.class).load(folderInode);
+			     DotConnect dc    = new DotConnect()
+			             .setSQL("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_ where folder.inode = ? ")
+			             .addParam(folderInode);
+
+				folder = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 				fc.addFolder(folder, id);
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
