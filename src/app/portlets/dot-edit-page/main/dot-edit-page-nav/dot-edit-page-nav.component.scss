@@ -1,0 +1,40 @@
+@import "variables";
+@import "mixins";
+
+:host {
+    display: flex;
+    background-color: $gray-darker;
+    order: 2;
+    width: 64px;
+    flex-shrink: 0;
+}
+
+.edit-page-nav {
+    @include naked-list;
+    width: 100%;
+}
+
+.edit-page-nav__item {
+    align-items: center;
+    color: $white;
+    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 64px;
+    justify-content: center;
+    text-decoration: none;
+    transition: background-color $basic-speed ease-in;
+
+    &:hover {
+        background-color: rgba($white, 0.1);
+    }
+
+    & > .fa {
+        font-size: 1.25em;
+        margin-bottom: 8px;
+    }
+}
+
+.edit-page-nav__item--active {
+    background-color: $brand-primary;
+}

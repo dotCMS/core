@@ -8,10 +8,23 @@ import { DotActionButtonModule } from '../../../../view/components/_common/dot-a
 import { DotTemplateAdditionalActionsModule } from '../dot-template-additional-actions/dot-template-additional-actions.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
+import { Routes, RouterModule } from '@angular/router';
+import { PageViewResolver } from '../../dot-edit-page-resolver.service';
+
+const routes: Routes = [
+    {
+        component: DotEditLayoutComponent,
+        path: '',
+        resolve: {
+            pageView: PageViewResolver
+        }
+    },
+];
 
 @NgModule({
     declarations: [DotEditLayoutComponent],
     imports: [
+        RouterModule.forChild(routes),
         ButtonModule,
         CheckboxModule,
         CommonModule,

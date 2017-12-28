@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { EDIT_PAGE_CSS } from '../shared/iframe-edit-mode.css';
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
-import { MODEL_VAR_NAME } from './html/iframe-edit-mode.js';
 import { GOOGLE_FONTS } from './html/iframe-edit-mode.js';
 import { DotEditContentToolbarHtmlService } from './html/dot-edit-content-toolbar-html.service';
 import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
@@ -12,7 +11,6 @@ import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
 export class DotEditContentHtmlService {
     contentletEvents: BehaviorSubject<any> = new BehaviorSubject({});
     iframe: ElementRef;
-    model: BehaviorSubject<any> = new BehaviorSubject(null);
 
     private addContentContainer: string;
 
@@ -49,7 +47,6 @@ export class DotEditContentHtmlService {
 
         const iframeElement = this.getEditPageIframe();
 
-        iframeElement.contentWindow[MODEL_VAR_NAME] = this.model;
         iframeElement.contentWindow.contentletEvents = this.contentletEvents;
 
         iframeElement.addEventListener('load', () => {
@@ -61,7 +58,6 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const contenletEl = doc.querySelector(`div[data-dot-inode="${inode}"]`);
         contenletEl.remove();
-        this.model.next(this.getEditPageIframe().contentWindow.getModel());
     }
 
     renderAddedContentlet(contentlet: any): void {
@@ -83,9 +79,6 @@ export class DotEditContentHtmlService {
                 this.appendNewContentlets(contentletContentEl, contentletHtml);
 
                 this.addContentContainer = null;
-
-                // Update the model with the recently added contentlet
-                this.model.next(this.getEditPageIframe().contentWindow.getModel());
             });
     }
 

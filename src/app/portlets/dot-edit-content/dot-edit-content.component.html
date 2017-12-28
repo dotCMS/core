@@ -1,7 +1,5 @@
-<dot-edit-page-toolbar class="dot-edit__toolbar"></dot-edit-page-toolbar>
+<!-- <dot-edit-page-toolbar class="dot-edit__toolbar"></dot-edit-page-toolbar> -->
 <div class="dot-edit__page-wrapper">
-    {{dotEditContentHtmlService.model.asObservable() | async | json}}
-    <hr />
     <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe"></iframe>
 
     <p-dialog [header]="dialogTitle" [visible]="!!dialogTitle" [modal]="true" (onHide)="onHide($event)" [width]="1400" [height]="700" [modal]="true">

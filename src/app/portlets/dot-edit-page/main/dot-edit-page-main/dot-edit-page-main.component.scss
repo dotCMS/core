@@ -1,0 +1,17 @@
+@import "mixins";
+@import "variables";
+
+:host {
+    // display: flex;
+    // flex-direction: row;
+    display: flex;
+    padding-right: $basic-padding * 8;
+    min-height: 100%;
+
+    & > dot-edit-page-nav {
+        position: fixed;
+        height: 100%;
+        right: 0;
+        top: $toolbar-height;
+    }
+}

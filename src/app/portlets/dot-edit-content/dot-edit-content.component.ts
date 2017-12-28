@@ -17,7 +17,6 @@ export class DotEditContentComponent implements OnInit {
     contentletActionsUrl: SafeResourceUrl;
     contentletEvents: BehaviorSubject<any> = new BehaviorSubject({});
     dialogTitle: string;
-    model: BehaviorSubject<any> = new BehaviorSubject(null);
     source: any;
 
     constructor(
@@ -31,10 +30,6 @@ export class DotEditContentComponent implements OnInit {
     ngOnInit() {
         this.route.data.pluck('editPageHTML').subscribe((editPageHTML: string) => {
             this.dotEditContentHtmlService.initEditMode(editPageHTML, this.iframe);
-
-            this.dotEditContentHtmlService.model.filter((res) => !!res).subscribe((res) => {
-                this.ref.detectChanges();
-            });
 
             this.dotEditContentHtmlService.contentletEvents.subscribe((res) => {
                 switch (res.event) {

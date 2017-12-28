@@ -34,7 +34,7 @@ export class DotRouterService {
     }
 
     goToEditPage(url: any): void {
-        this.router.navigate(['/edit-content'], {queryParams: {url: url}});
+        this.router.navigate(['/edit-page/content'], {queryParams: {url: url}});
     }
 
     goToMain(): Promise<boolean> {

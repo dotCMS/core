@@ -34,7 +34,9 @@ export class DotEditLayoutComponent implements OnInit {
         private templateContainersCacheService: TemplateContainersCacheService,
         public messageService: MessageService,
         public router: Router
-    ) {}
+    ) {
+        console.log('layout');
+    }
 
     ngOnInit(): void {
         this.messageService
