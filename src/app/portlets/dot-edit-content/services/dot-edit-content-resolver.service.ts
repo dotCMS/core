@@ -3,6 +3,7 @@ import { Observable } from 'rxjs/Observable';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 
 import { FAKE_EDIT_PAGE_HTML } from '../fake-edit-page-html';
+import { EditPageService } from '../../../api/services/edit-page/edit-page.service';
 
 
 /**
@@ -14,9 +15,9 @@ import { FAKE_EDIT_PAGE_HTML } from '../fake-edit-page-html';
  */
 @Injectable()
 export class EditContentResolver implements Resolve<string> {
-    constructor() {}
+    constructor(private editPageService: EditPageService) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<string> {
-        return Observable.of(FAKE_EDIT_PAGE_HTML);
+        return this.editPageService.get(route.queryParams.url);
     }
 }

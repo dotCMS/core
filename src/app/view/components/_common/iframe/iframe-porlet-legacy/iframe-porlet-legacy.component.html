@@ -1,1 +1,1 @@
-<dot-iframe #iframe [src]="url | async" [isLoading]="isLoading"></dot-iframe>
+<dot-iframe #iframe [src]="url | async" [isLoading]="isLoading" (load)="onLoad($event)"></dot-iframe>

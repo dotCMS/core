@@ -1,28 +1,33 @@
-import { Component, ViewEncapsulation, OnInit, ViewChild } from '@angular/core';
-import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
+import { Component, ViewEncapsulation, OnInit, ViewChild, NgZone } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotRouterService } from '../../../../../api/services/dot-router-service';
+
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable } from 'rxjs/Observable';
+
+import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
+
 import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotRouterService } from '../../../../../api/services/dot-router-service';
+import { IframeComponent } from '../iframe-component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-iframe-porlet',
-    templateUrl: 'iframe-porlet-legacy.component.html'
+    templateUrl: 'iframe-porlet-legacy.component.html',
 })
 export class IframePortletLegacyComponent implements OnInit {
-    @ViewChild('iframe') iframe;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
 
     constructor(
         private contentletService: DotContentletService,
-        private dotcmsEventsService: DotcmsEventsService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
+        private dotcmsEventsService: DotcmsEventsService,
+        private ngZone: NgZone,
         private route: ActivatedRoute,
         public loggerService: LoggerService,
         public siteService: SiteService
@@ -40,6 +45,22 @@ export class IframePortletLegacyComponent implements OnInit {
         });
         this.setIframeSrc();
         this.bindGlobalEvents();
+    }
+
+    /**
+     * Handle the iframe load
+     *
+     * @param {any} $event
+     * @memberof IframePortletLegacyComponent
+     */
+    onLoad($event): void {
+        Observable.fromEvent($event.target.contentWindow.document, 'ng-event').subscribe((event: any) => {
+            if (event.detail.name === 'edit-page') {
+                this.ngZone.run(() => {
+                    this.dotRouterService.goToEditPage(event.detail.data.url);
+                });
+            }
+        });
     }
 
     /**
@@ -84,15 +105,15 @@ export class IframePortletLegacyComponent implements OnInit {
             'MOVE_FILE_ASSET',
             'COPY_FILE_ASSET',
             'MOVE_PAGE_ASSET',
-            'COPY_PAGE_ASSET'
+            'COPY_PAGE_ASSET',
         ];
 
-        this.dotcmsEventsService.subscribeToEvents(events).subscribe(eventTypeWrapper => {
+        this.dotcmsEventsService.subscribeToEvents(events).subscribe((eventTypeWrapper) => {
             if (this.dotRouterService.currentPortlet.id === 'site-browser') {
                 this.loggerService.debug(
                     'Capturing Site Browser event',
                     eventTypeWrapper.eventType,
-                    eventTypeWrapper.data
+                    eventTypeWrapper.data,
                 );
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
@@ -119,7 +140,7 @@ export class IframePortletLegacyComponent implements OnInit {
             .withLatestFrom(this.route.parent.url.map((urlSegment: UrlSegment[]) => urlSegment[0].path))
             .flatMap(
                 ([id, url]) =>
-                    url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id)
+                    url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id),
             )
             .subscribe((url: string) => {
                 this.setUrl(url);

@@ -5,7 +5,9 @@ import {
     OnInit,
     Input,
     ViewChild,
-    SimpleChanges
+    SimpleChanges,
+    Output,
+    EventEmitter
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
@@ -24,6 +26,7 @@ export class IframeComponent implements OnInit  {
     @ViewChild('iframeElement') iframeElement: ElementRef;
     @Input() src: string;
     @Input() isLoading = false;
+    @Output() load: EventEmitter<any> = new EventEmitter();
 
     iframeURL: SafeResourceUrl;
     showOverlay = false;
@@ -75,6 +78,14 @@ export class IframeComponent implements OnInit  {
         }
     }
 
+    onLoad($event): void {
+        this.dotLoadingIndicatorService.hide();
+
+        if (this.isIframeHaveContent()) {
+            this.load.emit($event);
+        }
+    }
+
     get location(): any {
         return this.iframeElement && this.iframeElement.nativeElement.contentWindow
             ? this.iframeElement.nativeElement.contentWindow.location
@@ -84,5 +95,9 @@ export class IframeComponent implements OnInit  {
     private getIframeHeight(height: number): string {
         // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
         return height - 64 + 'px';
+    }
+
+    private isIframeHaveContent(): boolean {
+        return this.iframeElement && this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length;
     }
 }

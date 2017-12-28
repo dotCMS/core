@@ -33,6 +33,10 @@ export class DotRouterService {
         this.portletReload$.next();
     }
 
+    goToEditPage(url: any): void {
+        this.router.navigate(['/edit-content'], {queryParams: {url: url}});
+    }
+
     goToMain(): Promise<boolean> {
         return this.router.navigate([this._previousSavedURL || '/']);
     }
