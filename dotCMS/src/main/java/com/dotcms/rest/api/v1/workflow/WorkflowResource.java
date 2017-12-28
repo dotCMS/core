@@ -194,6 +194,45 @@ public class WorkflowResource {
         return response;
     } // findSteps.
 
+    @GET
+    @Path("/contentlet/{inode}/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAvailableActions(@Context final HttpServletRequest request,
+                                               @PathParam("inode") final String inode) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowAction> actions;
+
+        try {
+
+            Logger.debug(this, "Getting the available actions for the contentlet inode: " + inode);
+            actions   = this.workflowHelper.findAvailableActions(inode,
+                            initDataObject.getUser());
+            response  =
+                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findAvailableActions, contentlet inode: " + inode +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findStepsByScheme, contentlet inode: " + inode +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAvailableActions.
+
     /**
      * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest

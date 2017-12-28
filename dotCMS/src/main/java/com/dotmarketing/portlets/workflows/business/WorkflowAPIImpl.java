@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -70,7 +71,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		actionletClasses = new ArrayList<Class>();
 
 		// Add default actionlet classes
-		actionletClasses.addAll(Arrays.asList(new Class[] {
+		actionletClasses	.addAll(Arrays.asList(new Class[] {
 				CommentOnWorkflowActionlet.class,
 				NotifyUsersActionlet.class,
 				ArchiveContentActionlet.class,
@@ -496,48 +497,82 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * is in
 	 */
 	@CloseDBIfOpened
-	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
-	DotSecurityException {
+	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user)
+			throws DotDataException, DotSecurityException {
 
-		if(contentlet == null || contentlet.getStructure() ==null){
+		if(contentlet == null || contentlet.getStructure() ==null) {
+
+			Logger.debug(this, "the Contentlet: " + contentlet + " or their structure could be null");
 			throw new DotStateException("content is null");
 		}
 
-		List<WorkflowAction> actions= new ArrayList<WorkflowAction>();
-		if("Host".equals(contentlet.getStructure().getVelocityVarName())){
-			return actions;
+		final ImmutableList.Builder<WorkflowAction> actions =
+				new ImmutableList.Builder<>();
+
+		if(Host.HOST_VELOCITY_VAR_NAME.equals(contentlet.getStructure().getVelocityVarName())) {
+
+			Logger.debug(this, "The contentlet: " +
+					contentlet.getIdentifier() + ", is a host. Returning zero available actions");
+
+			return Collections.emptyList();
 		}
 
-		boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
-		boolean canLock = false;
-		String lockedUserId =  null;
-		try{
-			canLock = APILocator.getContentletAPI().canLock(contentlet, user);
-			lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet);
-		} catch(Exception e){
+		final boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
+		boolean canLock      = false;
+		boolean isLocked     = false;
+		String lockedUserId  =  null;
+
+		try {
+
+			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
+			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
+			lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
+		} catch(Exception e) {
 
 		}
 
-		boolean hasLock = user.getUserId().equals(lockedUserId);
-		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-		List<WorkflowAction> unfilteredActions;
-		if (isNew) {
-			unfilteredActions = findActions(steps, user, contentlet.getContentType());
-		} else {
-			unfilteredActions = findActions(steps, user, contentlet);
-		}
+		final boolean hasLock          = user.getUserId().equals(lockedUserId);
+		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		final List<WorkflowAction> unfilteredActions =
+				isNew ? findActions(steps, user, contentlet.getContentType()):
+						findActions(steps, user, contentlet);
 
-		if(hasLock || isNew){
-			return unfilteredActions;
-		} else if(canLock){
-			for(WorkflowAction workflowAction : unfilteredActions){
-				if(!workflowAction.requiresCheckout()){
-					actions.add(workflowAction);
-				}
+		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
+								+ "the user hasLock: " + hasLock + ", isNew: "    + isNew
+								+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
+
+		if (hasLock || isNew) {
+
+			if (null != unfilteredActions) {
+
+				actions.addAll(unfilteredActions);
 			}
+		} else {
+
+			this.doFilterActions(actions, canLock, isLocked, unfilteredActions);
 		}
 
-		return actions;
+		return actions.build();
+	}
+
+	private void doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
+								 final boolean canLock,
+								 final boolean isLocked,
+								 final List<WorkflowAction> unfilteredActions) {
+
+		for (WorkflowAction workflowAction : unfilteredActions) {
+
+            if (!isLocked && workflowAction.shouldShowOnUnlock()) { // unlocked
+
+                actions.add(workflowAction);
+            } else {
+
+                if (canLock && isLocked && workflowAction.shouldShowOnLock()) {
+
+                    actions.add(workflowAction);
+                }
+            }
+        }
 	}
 
 	@WrapInTransaction

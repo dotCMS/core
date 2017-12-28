@@ -246,6 +246,16 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
+	 * piece of content, based on how and who has the content locked and what workflow step the content
+	 * is in
+	 * @param contentlet Contentlet
+	 * @param user       User
+	 * @return List of   WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 

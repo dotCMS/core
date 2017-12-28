@@ -229,7 +229,7 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "show-on")%>:</label>
+							<label for=""><%=LanguageUtil.get(pageContext, "show-when")%>:</label>
 						</dt>
 						<dd>
 							<select name="showOn" id="showOn"  onChange="actionAdmin.doChange()"
