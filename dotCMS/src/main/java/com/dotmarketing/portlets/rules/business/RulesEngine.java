@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveServlet;
+import com.dotcms.visitor.domain.Visitor;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
@@ -12,6 +15,7 @@ import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -19,6 +23,7 @@ import com.liferay.portal.model.User;
 
 import java.util.*;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -67,6 +72,75 @@ public final class RulesEngine {
 		}
 		fireRules(req, res, host, fireOn);
 	}
+	
+	
+	
+	
+
+    public static void fireRules(final HttpServletRequest request, final HttpServletResponse response) {
+        
+        Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+
+        boolean newVisitor = false;
+        boolean newVisit = false;
+
+        /*
+         * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659 //Set long lived cookie
+         * regardless of who this is
+         */
+        String _dotCMSID =
+                UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+
+        if (!UtilMethods.isSet(_dotCMSID)) {
+            // create unique generator engine
+            Cookie idCookie = CookieUtil.createCookie();
+            _dotCMSID = idCookie.getValue();
+            response.addCookie(idCookie);
+            newVisitor = true;
+
+            if (visitor.isPresent()) {
+                visitor.get()
+                    .setDmid(UUID.fromString(_dotCMSID));
+            }
+
+        }
+
+        String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(), WebKeys.ONCE_PER_VISIT_COOKIE);
+
+        if (!UtilMethods.isSet(_oncePerVisitCookie)) {
+            newVisit = true;
+        }
+
+        if (newVisitor) {
+            fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
+            if (response.isCommitted()) {
+                /*
+                 * Some form of redirect, error, or the request has already been fulfilled in
+                 * some fashion by one or more of the actionlets.
+                 */
+                Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
+                return;
+            }
+        }
+
+        if (newVisit) {
+            fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+            if (response.isCommitted()) {
+                /*
+                 * Some form of redirect, error, or the request has already been fulfilled in
+                 * some fashion by one or more of the actionlets.
+                 */
+                Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
+                return;
+            }
+        }
+
+        fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+
+    }
+	
+	
+	
 	
 	/**
 	 * Triggers a specific category of Rules associated to the specified parent

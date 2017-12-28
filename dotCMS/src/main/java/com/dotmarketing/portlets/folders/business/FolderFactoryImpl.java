@@ -170,7 +170,9 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
+
 			return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 		}catch(DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
@@ -225,7 +227,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
+
 				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -274,8 +278,10 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
+
 					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
 							.asList();
+
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -530,7 +536,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
             Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+            List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
             for(MultiTree m : pageContents){
             	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
             	MultiTreeFactory.saveMultiTree(mt);
@@ -1120,11 +1126,13 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
+
 			DBTransformer transformer = TransformerLocator.createDBTransformer(dc.loadObjectResults(), clazz);
 
 			if (transformer != null){
 				return transformer.asList();
 			}
+
 
 		}catch(Exception e){
         	Logger.warn(this, e.getMessage(), e);

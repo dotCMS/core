@@ -14,7 +14,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
@@ -28,7 +29,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
@@ -101,7 +102,7 @@ public class CMSFilter implements Filter {
         // Get the user language
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        iAm = this.resolveResourceType(iAm, uri, site, languageId);
+        iAm = this.urlUtil.resolveResourceType(iAm, uri, site, languageId);
 
         if (iAm == IAm.FOLDER) {
 
@@ -149,7 +150,7 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.FILE) {
+        else if (iAm == IAm.FILE) {
             Identifier ident;
             try {
                 //Serving the file through the /dotAsset servlet
@@ -172,11 +173,16 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.PAGE) {
+        else if (iAm == IAm.PAGE) {
             // Serving a page through the velocity servlet
             StringWriter forward = new StringWriter();
-            forward.append("/servlets/VelocityServlet");
-
+            if(PageMode.get(request).showLive) {
+                forward.append("/servlets/VelocityLiveServlet");
+            }
+            else {
+                forward.append("/servlets/VelocityPreviewServlet");
+            }
+            
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
                     queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
@@ -196,26 +202,12 @@ public class CMSFilter implements Filter {
             }
         }
 
-        // otherwise, pass
-        chain.doFilter(req, res);
+
+       chain.doFilter(req, res);
+        
     }
 
-    private IAm resolveResourceType(final IAm iAm,
-                                    final String uri,
-                                    final Host site,
-                                    final long languageId) {
 
-        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
-        if (this.urlUtil.isFileAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.FILE;
-        } else if (this.urlUtil.isPageAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.PAGE;
-        } else if (this.urlUtil.isFolder(uriWithoutQueryString, site)) {
-            return IAm.FOLDER;
-        }
-
-        return iAm;
-    } // resolveResourceType.
 
     @Override
     public void destroy() {
@@ -223,37 +215,23 @@ public class CMSFilter implements Filter {
     }
 
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
-
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if(mode == PageMode.LIVE) {
             NumberOfTimeVisitedCounter.maybeCount(request, response);
-
         }
     }
 
     private void countPageVisit(HttpServletRequest request) {
 
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if(mode == PageMode.LIVE) {
             Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
             if (visitor.isPresent()) {
                 visitor.get().addPagesViewed(request.getRequestURI());
             }
-
         }
+
     }
 
 

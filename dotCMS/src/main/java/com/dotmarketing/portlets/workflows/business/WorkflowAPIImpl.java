@@ -688,7 +688,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveAction(final String actionId, final String stepId, final User user) {
+	public void saveAction(final String actionId, final String stepId,
+						   final User user, final int order) {
 
 		WorkflowAction workflowAction = null;
 		WorkflowStep   workflowStep   = null;
@@ -712,7 +713,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DoesNotExistException("Workflow-does-not-exists-step");
 			}
 
-			this.workFlowFactory.saveAction(workflowAction, workflowStep);
+			this.workFlowFactory.saveAction(workflowAction, workflowStep, order);
 		} catch (DoesNotExistException  e) {
 
 			throw e;
@@ -739,6 +740,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
 		}
+	} // saveAction.
+
+	@WrapInTransaction
+	public void saveAction(final String actionId, final String stepId, final User user) {
+
+		this.saveAction(actionId, stepId, user, 0);
 	} // saveAction.
 
 	@WrapInTransaction

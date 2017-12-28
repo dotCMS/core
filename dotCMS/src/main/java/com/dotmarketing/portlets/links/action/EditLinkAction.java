@@ -1,12 +1,6 @@
 package com.dotmarketing.portlets.links.action;
 
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -14,6 +8,7 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -44,12 +39,19 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.portlets.links.struts.LinkForm;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -739,7 +741,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			if (cont.isWorking()) {
 				com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet = 
 					conAPI.convertFatContentletToContentlet(cont);
-				ContentletServices.invalidateWorking(newFormatContentlet);
+				 new ContentletLoader().invalidate(cont);
 			}
 		}
 	}

@@ -258,9 +258,14 @@ public final class WebKeys {
     public static final String ADMIN_MODE_COOKIE = "ADMIN_MODE_COOKIE";
 
     // SESSION ATTRIBUTES
+    /*
     public static final String EDIT_MODE_SESSION = "com.dotmarketing.EDIT_MODE_SESSION";
     public static final String PREVIEW_MODE_SESSION = "com.dotmarketing.PREVIEW_MODE_SESSION";
     public static final String ADMIN_MODE_SESSION = "com.dotmarketing.ADMIN_MODE_SESSION";
+    */
+    
+    public static final String API_EDIT_MODE="API_EDIT_MODE";
+    public static final String PAGE_MODE_SESSION = "com.dotmarketing.PAGE_MODE_SESSION";
     public static final String SESSION_RATING_CACHE = "com.dotmarketing.beans.Rating";
     public static final String LAST_RATED_CONTENTLET = "last.rated.contentlet";
 	public static final String CMSFILTER_REDIRECTING = "com.dotmarketing.filters.CMSFilter";

@@ -7,7 +7,7 @@ import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
+
 import redis.clients.jedis.*;
 
 import java.io.*;

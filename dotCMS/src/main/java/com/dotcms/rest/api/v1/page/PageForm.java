@@ -16,7 +16,7 @@ import com.dotmarketing.util.json.JSONObject;
  * {@link PageResource}'s form
  */
 @JsonDeserialize(builder = PageForm.Builder.class)
-public class PageForm {
+class PageForm {
 
     private String themeId;
     private String title;

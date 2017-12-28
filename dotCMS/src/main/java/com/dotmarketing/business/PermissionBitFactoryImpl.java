@@ -7,6 +7,8 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -44,7 +46,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.navigation.NavResult;
+
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
 import java.util.ArrayList;

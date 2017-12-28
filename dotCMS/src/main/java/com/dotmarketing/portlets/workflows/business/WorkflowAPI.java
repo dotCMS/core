@@ -343,6 +343,17 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user);
 
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * Will associated the action in the order desired
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 * @param order    int
+	 */
+	void saveAction(String actionId, String stepId, User user, int order);
+
 	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
@@ -458,6 +469,7 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
 
 
 }

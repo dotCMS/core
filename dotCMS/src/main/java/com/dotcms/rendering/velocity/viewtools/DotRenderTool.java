@@ -1,0 +1,12 @@
+package com.dotcms.rendering.velocity.viewtools;
+
+import org.apache.velocity.tools.view.tools.ViewRenderTool;
+
+import com.dotmarketing.util.VelocityUtil;
+
+public class DotRenderTool extends ViewRenderTool {
+	
+	public DotRenderTool() {
+		setVelocityEngine(VelocityUtil.getEngine());
+	}
+}

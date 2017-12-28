@@ -64,7 +64,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(assetType);
 
 
+
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 	}
 
@@ -154,7 +156,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 		
+
 		results = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 
 		if (results != null && !results.isEmpty()){
@@ -182,6 +186,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
 
+
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 
 	}
@@ -198,7 +203,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		List<Identifier> results = null;
 
+
 		results = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
 
 
 		return  (results != null && !results.isEmpty())?results.get(0):null;
@@ -379,7 +386,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier");
-
 
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -26,11 +27,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.liferay.portal.model.User;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
@@ -66,8 +69,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append('\'');
 		dc.setSQL(sql.toString());
 
-
 		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
 
 	}
 
@@ -90,8 +93,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		sql.append(".title");
 		dc.setSQL(sql.toString());
 
-
 		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
 
 	}
     @Override
@@ -261,6 +264,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
 				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)

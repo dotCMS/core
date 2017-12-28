@@ -6,6 +6,7 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,9 +28,7 @@ public class DefaultFrontEndLoginRequiredWebInterceptor implements WebIntercepto
         Result result = Result.NEXT;
 
         if (null != session) {
-            final boolean isAdminMode = (session.getAttribute
-                    (com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-
+            final boolean isAdminMode = PageMode.get(request).isAdmin;
 
             // if we are not logged in and you are not admin mode. go to login page
             if (session.getAttribute(WebKeys.CMS_USER) == null

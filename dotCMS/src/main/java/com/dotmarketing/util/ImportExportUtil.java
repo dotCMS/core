@@ -9,6 +9,7 @@ import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,6 +24,7 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -486,9 +488,8 @@ public class ImportExportUtil {
             		ident.setParentPath(ident.getParentPath().toLowerCase());
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
-                Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-
-                APILocator.getIdentifierAPI().save(ident);
+             Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
+             APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -1087,10 +1088,7 @@ public class ImportExportUtil {
             boolean logsMappers = false;
             boolean portletpreferences = false;
             boolean address = false;
-            boolean pollschoice = false;
-            boolean pollsdisplay = false;
-            boolean pollsquestion = false;
-            boolean pollsvote = false;
+
 
             Logger.debug(this, "**** Importing the file: " + f + " *****");
 
@@ -1114,21 +1112,13 @@ public class ImportExportUtil {
                 logsMappers = true;
             }else if(_className.equals("Portletpreferences")){
                 portletpreferences = true;
-            }else if(_className.equals("Pollschoice")){
-                pollschoice = true;
             }else if(_className.equals("Address")){
                 address = true;
-            }else if(_className.equals("Pollsdisplay")){
-                pollsdisplay = true;
-            }else if(_className.equals("Pollsquestion")){
-                pollsquestion = true;
-            }else if(_className.equals("Pollsvote")){
-                pollsvote = true;
             }else{
                 try{
                     _importClass = Class.forName(_className);
                 }catch (Exception e) {
-                    Logger.error(this, "Class not found " + _className, e);
+                    Logger.error(this, "Class not found " + _className);
                     return;
                 }
             }
@@ -1195,89 +1185,6 @@ public class ImportExportUtil {
                         dc.setSQL("insert into counter values (?,?)");
                         dc.addParam(dcResults.get("name"));
                         dc.addParam(Integer.valueOf(dcResults.get("currentid")));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollschoice){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollschoice values (?,?,?)");
-                        dc.addParam(dcResults.get("choiceid"));
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("description"));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsdisplay){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
-                        dc.addParam(dcResults.get("layoutid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("portletid"));
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsquestion){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("portletid"));
-                        if (UtilMethods.isSet(dcResults.get("groupid"))) {
-                            dc.addParam(dcResults.get("groupid"));
-                        } else {
-                            dc.addParam(-1);
-                        }
-                        dc.addParam(dcResults.get("companyid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("username"));
-                        if (UtilMethods.isSet(dcResults.get("createdate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        if (UtilMethods.isSet(dcResults.get("modifieddate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        dc.addParam(dcResults.get("title"));
-                        dc.addParam(dcResults.get("description"));
-                        if (UtilMethods.isSet(dcResults.get("expirationdate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsvote){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsvote values (?,?,?,?)");
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("choiceid"));
-                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
                         dc.getResults();
                     });
                 }
@@ -1484,6 +1391,13 @@ public class ImportExportUtil {
                                 else {
                                     Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
                                 }
+                            });
+                        } 
+                        else if(obj instanceof MultiTree){
+                            final MultiTree t = (MultiTree) obj;
+                            LocalTransaction.wrap(() -> {
+
+                                MultiTreeFactory.saveMultiTree(t);
                             });
                         } else{
                             try {

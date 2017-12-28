@@ -79,6 +79,9 @@ define("dojox/mvc/StoreRefController", [
 				_self.set(_self._refSourceModelProp, results);
 				return results;
 			});
+			if(result.then){
+				result = lang.delegate(result);
+			}
 			// For dojo/store/Observable, which adds a function to query result
 			for(var s in queryResult){
 				if(isNaN(s) && queryResult.hasOwnProperty(s) && lang.isFunction(queryResult[s])){
