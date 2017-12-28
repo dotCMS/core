@@ -213,6 +213,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$IDENTIFIER_INODE\"")
                     .append(" data-dot-type=")
                     .append("\"$CONTENT_TYPE\"")
+                    .append(" data-dot-basetype=")
+                    .append("\"$CONTENT_BASE_TYPE\"")
                     .append(" data-dot-lang=")
                     .append("\"$CONTENT_LANGUAGE\"")
                     .append(">");
@@ -225,7 +227,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             }
 
             // ### START BODY ###
-            sb.append("#if($isWidget == true)");
+            sb.append("#if($isWidget)");
                 sb.append("$widgetCode");
             sb.append("#else");
 
@@ -238,22 +240,22 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 if (csList.size() > 0) {
                     sb.append("#end");
                 }
-            // ### END BODY ###
-            sb.append("#end");
-        
-           if (mode.showLive) {
+                // ### END BODY ###
                 sb.append("#end");
-            }
- 
-
-           // end content dot-data-object
-           if (mode == PageMode.EDIT_MODE) {
-               sb.append("</div>");
-           }
-            // ##End of foreach loop
-            sb.append("#end");
             
-            // end content dot-data-object
+               if (mode.showLive) {
+                    sb.append("#end");
+                }
+     
+    
+               // end content dot-data-content
+               if (mode == PageMode.EDIT_MODE) {
+                   sb.append("</div>");
+               }
+                // ##End of foreach loop
+                sb.append("#end");
+                
+            // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
                 sb.append("</div>");
             }

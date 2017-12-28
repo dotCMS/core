@@ -109,6 +109,9 @@ public class ContentletLoader implements DotLoader {
             .append(content.getContentType().variable())
             .append("' )");
 
+        sb.append("#set($CONTENT_BASE_TYPE='")
+        .append(content.getContentType().baseType())
+        .append("' )");
         
         sb.append("#set($CONTENT_LANGUAGE='")
         .append(content.getLanguageId())
