@@ -19,6 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
@@ -131,11 +132,15 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 .append("\"" + container.getMaxContentlets() + "\"")
                 .append(" data-dot-accept-types=")
                 .append("\"");
-            for (ContainerStructure struct : csList) {
+            Iterator<ContainerStructure> it= csList.iterator();
+            while (it.hasNext()) {
+                ContainerStructure struct = it.next();
                 try {
                     ContentType t = typeAPI.find(struct.getStructureId());
-                    editWrapperDiv.append(t.variable())
-                        .append(",");
+                    editWrapperDiv.append(t.variable());
+                    if(it.hasNext()) {
+                        editWrapperDiv.append(",");
+                    }
                 } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this.getClass(), "unable to find content type:" + struct);
                 }
@@ -197,49 +202,67 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             sb.append("#contentDetail($contentletId)");
             sb.append("#end");
 
+            if (mode == PageMode.EDIT_MODE) {
 
-                // ##Checking permission to see content
-                if (mode.showLive) {
-                    sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                sb.append("<div")
+                    .append(" data-dot-object=")
+                    .append("\"contentlet\"")
+                    .append(" data-dot-inode=")
+                    .append("\"$CONTENT_INODE\"")
+                    .append(" data-dot-identifier=")
+                    .append("\"$IDENTIFIER_INODE\"")
+                    .append(" data-dot-type=")
+                    .append("\"$CONTENT_TYPE\"")
+                    .append(" data-dot-lang=")
+                    .append("\"$CONTENT_LANGUAGE\"")
+                    .append(">");
+
+
+            }
+            // ##Checking permission to see content
+            if (mode.showLive) {
+                sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+            }
+
+            // ### START BODY ###
+            sb.append("#if($isWidget == true)");
+                sb.append("$widgetCode");
+            sb.append("#else");
+
+                for (int i = 0; i < csList.size(); i++) {
+                    ContainerStructure cs = csList.get(i);
+                    String ifelse = (i == 0) ? "if" : "elseif";
+                    sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
+                    sb.append(cs.getCode());
                 }
-    
-                    // ### START BODY ###
-                    sb.append("#if($isWidget == true)");
-                        sb.append("$widgetCode");
-                    sb.append("#else");
+                if (csList.size() > 0) {
+                    sb.append("#end");
+                }
+            // ### END BODY ###
+            sb.append("#end");
         
-                        for (int i = 0; i < csList.size(); i++) {
-                            ContainerStructure cs = csList.get(i);
-                            String ifelse = (i == 0) ? "if" : "elseif";
-                            sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
-                            sb.append(cs.getCode());
-                        }
-                        if (csList.size() > 0) {
-                            sb.append("#end");
-                        }
-                    // ### END BODY ###
-                    sb.append(" #end ");
-                
-               if (mode.showLive) {
-                    sb.append("#end ");
-                }
-     
+           if (mode.showLive) {
+                sb.append("#end");
+            }
+ 
 
-
-
+           // end content dot-data-object
+           if (mode == PageMode.EDIT_MODE) {
+               sb.append("</div>");
+           }
             // ##End of foreach loop
-            sb.append("#end ");
+            sb.append("#end");
             
-
+            // end content dot-data-object
+            if (mode == PageMode.EDIT_MODE) {
+                sb.append("</div>");
+            }
 
 
             // post loop if it exists
             if (UtilMethods.isSet(container.getPostLoop())) {
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(container.getPostLoop());
-                if (mode == PageMode.EDIT_MODE) {
-                    sb.append("</div>");
-                }
                 sb.append("#end ");
             }
 
