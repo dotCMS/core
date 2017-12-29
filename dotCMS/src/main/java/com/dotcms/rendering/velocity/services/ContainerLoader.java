@@ -227,7 +227,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             }
 
             // ### START BODY ###
-            sb.append("#if($isWidget)");
+            sb.append("#if($isWidget==true)");
                 sb.append("$widgetCode");
             sb.append("#else");
 
