@@ -142,33 +142,40 @@ public class PageResourceHelper implements Serializable {
     }
 
     
-    public String getPageRendered(final HttpServletRequest request, final
-    HttpServletResponse response, final User user, final String uri, PageMode mode) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
-        
+    public String getPageRendered(final HttpServletRequest request, final HttpServletResponse response, final User user,
+                                  final String uri, PageMode mode) throws Exception {
+
+        final HTMLPageAsset page =  this.getPage(request, user, uri, mode);
+        return this.getPageRendered(page, request, response, user, mode);
+    }
+
+    public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
+                                  final HttpServletResponse response, final User user, PageMode mode) throws Exception {
+
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
+
+
+        if(mode.isAdmin ) {
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
+        }
+
+        return VelocityUtil.mergeTemplate("/" +  mode.name() + "/" + page
+                        .getIdentifier() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension,
+                velocityContext);
+    }
+
+    public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
+                                 final String uri, PageMode mode) throws DotSecurityException, DotDataException {
 
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
 
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
-        final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+        return  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
-
-        if(mode.isAdmin ) {
-            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
-        }
-        
-        
-        
-        
-        return VelocityUtil.mergeTemplate("/" +  mode.name() + "/" + page
-                .getIdentifier() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension,
-                velocityContext);
     }
 
-    
-    
     /**
      * @param request    The {@link HttpServletRequest} object.
      * @param response   The {@link HttpServletResponse} object.
@@ -279,6 +286,11 @@ public class PageResourceHelper implements Serializable {
         } catch (Exception e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    public Contentlet getPage(final User user, String pageId) throws DotSecurityException, DotDataException {
+        return this.contentletAPI.findContentletByIdentifier(pageId, false,
+                langAPI.getDefaultLanguage().getId(), user, false);
     }
 
     public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
