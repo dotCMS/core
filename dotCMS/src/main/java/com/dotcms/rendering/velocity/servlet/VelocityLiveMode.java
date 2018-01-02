@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
 
@@ -13,6 +12,8 @@ import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -23,7 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Optional;
@@ -46,6 +47,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
     private final String uri;
     private final Host host;
 
+
+    
+    
     public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
         this.request = request;
         this.response = response;
@@ -64,9 +68,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
         serve(response.getWriter());
 
     }
-
     @Override
-    public final void serve(final Writer out) throws Exception {
+    public final void serve(final Writer out) throws DotDataException, IOException, DotSecurityException {
+
         LicenseUtil.startLiveMode();
         try {
 
@@ -149,36 +153,25 @@ public class VelocityLiveMode extends VelocityModeHandler {
             PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
 
-            boolean buildCache = false;
-            String key = VelocityUtil.getPageCacheKey(request, response);
+
+            String key = VelocityUtil.getPageCacheKey(request, htmlPage);
             if (key != null) {
                 String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
-                if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
-                        || "refresh".equals(request.getAttribute("dotcache")) || (request.getSession(false) != null
-                                && "refresh".equals(request.getSession(true).getAttribute("dotcache")))) {
-                    // build cached response
-                    buildCache = true;
-                } else {
+                if (cachedPage != null ){
                     // have cached response and are not refreshing, send it
                     response.getWriter().write(cachedPage);
                     return;
                 }
             }
 
-            Writer tmpOut = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(out);
+            Writer tmpOut = (key!=null) ? new StringWriter(4096) : new VelocityFilterWriter(out);
             Context context = VelocityUtil.getWebContext(request, response);
-            request.setAttribute("velocityContext", context);
-            Logger.debug(this.getClass(), "HTMLPage Identifier:" + id.getId());
 
 
-
-            VelocityUtil.getEngine()
-                .getTemplate(mode.name() + File.separator + id.getId() + "_" + htmlPage.getLanguageId() + "."
-                        + VelocityType.HTMLPAGE.fileExtension)
-                .merge(context, tmpOut);
+            this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
 
-            if (buildCache) {
+            if (key!=null) {
                 String trimmedPage = tmpOut.toString().trim();
                 out.write(trimmedPage);
                 out.close();

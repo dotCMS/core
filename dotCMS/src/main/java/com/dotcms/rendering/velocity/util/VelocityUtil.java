@@ -1,7 +1,5 @@
 package com.dotcms.rendering.velocity.util;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
@@ -12,7 +10,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -34,7 +31,6 @@ import com.dotmarketing.util.WebKeys;
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,7 +52,9 @@ import com.liferay.util.SystemProperties;
 
 
 public class VelocityUtil {
-
+    public final static String REFRESH="refresh";
+    public final static String NO="no";
+    public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 	
@@ -282,46 +280,42 @@ public class VelocityUtil {
 	
 	   
 
+    /**
+     * This method tries to build a cache key based on information given in the request. Post
+     * requests are ignored and will not be cached.
+     *
+     * @param request - The {@link HttpServletRequest} object.
+     * @return The page cache key if the page can be cached. If it can't be cached or caching is not
+     *         available, returns <code>null</code>.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static String getPageCacheKey(final HttpServletRequest request, final IHTMLPage page)
+            throws DotDataException, DotSecurityException {
+        if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
+            return null;
+        }
+        if (page == null || page.getCacheTTL() < 1) {
+            return null;
+        }
+        // don't cache posts
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return null;
+        }
+        // nocache passed either as a session var, as a request var or as a
+        // request attribute
+        if (NO.equals(request.getParameter(DOTCACHE)) || REFRESH.equals(request.getParameter(DOTCACHE))
+                || NO.equals(request.getAttribute(DOTCACHE))
+                || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))) {
+            return null;
+        }
 
-	/**
-	 * This method tries to build a cache key based on information given in the
-	 * request. Post requests are ignored and will not be cached.
-	 *
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return The page cache key if the page can be cached. If it can't be
-	 *         cached or caching is not available, returns <code>null</code>.
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public static String getPageCacheKey(HttpServletRequest request, HttpServletResponse response) throws DotDataException, DotSecurityException {
-		if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-			return null;
-		}
-		// don't cache posts
-		if (!"GET".equalsIgnoreCase(request.getMethod())) {
-			return null;
-		}
-		// nocache passed either as a session var, as a request var or as a
-		// request attribute
-		if ("no".equals(request.getParameter("dotcache"))
-				|| "no".equals(request.getAttribute("dotcache"))
-				|| (request.getSession(false) !=null && "no".equals(request.getSession(true).getAttribute("dotcache")))) {
-			return null;
-		}
-		Identifier id = (Identifier) request.getAttribute("idInode");
 
-
-		long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-		IHTMLPage page = getPage(id, langId, false);
-		if (page == null || page.getCacheTTL() < 1) {
-			return null;
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(page.getInode());
-		sb.append("_" + page.getModDate().getTime());
-		return sb.toString();
-	}
+        StringBuilder sb = new StringBuilder();
+        sb.append(page.getInode());
+        sb.append("_" + page.getModDate().getTime());
+        return sb.toString();
+    }
 
 	/**
 	 * Retrieves the list of languages a given Content Page ({@link Contentlet})

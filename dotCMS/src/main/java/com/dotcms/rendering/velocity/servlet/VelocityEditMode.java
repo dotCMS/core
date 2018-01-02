@@ -9,11 +9,14 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Writer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,10 +48,10 @@ public class VelocityEditMode extends VelocityModeHandler {
     }
 
 
-    public void serve(Writer out) throws Exception {
+    public void serve(Writer out) throws DotDataException, IOException, DotSecurityException {
 
         // Getting the user to check the permissions
-        User user = com.liferay.portal.util.PortalUtil.getUser(request);
+        User user = WebAPILocator.getUserWebAPI().getUser(request);
 
 
         // Getting the identifier from the uri
@@ -63,17 +66,12 @@ public class VelocityEditMode extends VelocityModeHandler {
         IHTMLPage htmlPage = VelocityUtil.getPage(id, langId, mode.showLive);
         new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
 
-
-
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
-        request.setAttribute("velocityContext", context);
 
 
-        VelocityUtil.getEngine()
-            .getTemplate(mode.name() + File.separator + htmlPage.getIdentifier() + "_" + htmlPage.getLanguageId() + "."
-                    + VelocityType.HTMLPAGE.fileExtension)
-            .merge(context, out);
+
+        this.getTemplate(htmlPage, mode).merge(context, out);
 
 
     }

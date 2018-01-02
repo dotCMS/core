@@ -1,8 +1,14 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.contenttype.transform.JsonTransformer;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -15,7 +21,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -28,34 +33,25 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
-import com.dotcms.rendering.velocity.services.VelocityType;
-import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
-import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
-import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.rmi.CORBA.Util;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.business.CloseDB;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
