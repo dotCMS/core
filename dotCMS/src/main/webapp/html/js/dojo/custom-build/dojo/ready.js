@@ -45,9 +45,9 @@ define("dojo/ready", ["./_base/kernel", "./has", "require", "./domReady", "./_ba
 			}
 		};
 
-	require.on("idle", onLoad);
+	require.on && require.on("idle", onLoad);
 	requestCompleteSignal = function(){
-		if(require.idle()){
+		if(require.idle ? require.idle() : true){
 			onLoad();
 		} // else do nothing, onLoad will be called with the next idle signal
 	};

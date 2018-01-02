@@ -125,7 +125,7 @@ public class InitServlet extends HttpServlet {
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
 
-        //Used com.dotmarketing.viewtools.NavigationWebAPI
+        //Used com.dotcms.rendering.velocity.viewtools.NavigationWebAPI
         String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
         String menuVLTPath = velocityRootPath + "menus" + java.io.File.separator;
 

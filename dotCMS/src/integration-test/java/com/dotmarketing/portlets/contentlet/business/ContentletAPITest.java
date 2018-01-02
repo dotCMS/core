@@ -75,7 +75,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -674,7 +674,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -1000,7 +1000,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {
@@ -2049,8 +2049,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
-        assertTrue(compareDates(d1, ident.getSysPublishDate()));
-        assertTrue(compareDates(d2, ident.getSysExpireDate()));
+
+        assertTrue(d1
+                .equals(ident.getSysPublishDate()));
+        assertTrue(d2.equals(ident.getSysExpireDate()));
+
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2067,13 +2070,17 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
-        assertTrue(compareDates(d3, ident2.getSysPublishDate()));
-        assertTrue(compareDates(d4, ident2.getSysExpireDate()));
+
+        assertTrue(d3
+                .equals(ident2.getSysPublishDate()));
+        assertTrue(d4
+                .equals(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(compareDates(d3, c11.getDateProperty(fieldPubDate.getVelocityVarName())));
-        assertTrue(compareDates(d4, c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
+        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+
 
         Thread.sleep(2000); // wait a bit for the index
         

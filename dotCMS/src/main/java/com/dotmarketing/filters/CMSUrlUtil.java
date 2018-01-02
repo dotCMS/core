@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -83,7 +84,32 @@ public class CMSUrlUtil {
 		}
 
 	}
+	/**
+	 * Returns the IAm value for a url
+	 * @param iAm
+	 * @param uri
+	 * @param site
+	 * @param languageId
+	 * @return
+	 */
+    public IAm resolveResourceType(final IAm iAm,
+            final String uri,
+            final Host site,
+            final long languageId) {
 
+        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
+        if (isFileAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.FILE;
+        } else if (isPageAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.PAGE;
+        } else if (isFolder(uriWithoutQueryString, site)) {
+            return IAm.FOLDER;
+        }
+        else {
+            return IAm.NOTHING_IN_THE_CMS;
+        }
+
+} // resolveResourceType.
 	/**
 	 * Indicates if the uri belongs to a Page Asset
 	 *

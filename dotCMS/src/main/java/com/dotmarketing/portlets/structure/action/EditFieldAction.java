@@ -5,14 +5,16 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.commons.lang.BooleanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -34,9 +36,6 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
@@ -45,17 +44,20 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 /**
  * This Struts action will handle all the requests related to adding, updating
@@ -365,7 +367,7 @@ public class EditFieldAction extends DotPortletAction {
 
             FieldsCache.removeFields(structure);
             CacheLocator.getContentTypeCache().remove(structure);
-            StructureServices.removeStructureFile(structure);
+            new ContentTypeLoader().invalidate(structure);
             StructureFactory.saveStructure(structure);
 
             FieldsCache.addFields(structure, structure.getFields());
@@ -382,8 +384,7 @@ public class EditFieldAction extends DotPortletAction {
             }
 
             if (fAPI.isElementConstant(field)) {
-                ContentletServices.removeContentletFile(structure);
-                ContentletMapServices.removeContentletMapFile(structure);
+                new ContentletLoader().invalidate(structure);
                 conAPI.refresh(structure);
             }
 

@@ -222,6 +222,9 @@ public class ConversionUtils implements Serializable {
 	 */
 	public static boolean toBooleanFromDb(final Object objectBoolean) {
 
+		if (null == objectBoolean) {
+			return false;
+		}
 		return (objectBoolean instanceof Boolean)?
 				Boolean.class.cast(objectBoolean):
 				DbConnectionFactory.isDBTrue(objectBoolean.toString());

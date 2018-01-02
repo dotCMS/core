@@ -2,7 +2,6 @@
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
 <hibernate-mapping>
 
-
 	<class name="com.dotmarketing.beans.Inode" table="inode">
 		<id name="inode" column="inode" type="string" length="36" unsaved-value="">
 			<!-- please put both sequence and native types so the  -->
@@ -907,18 +906,6 @@
 		<property name="action" column="action" type="string"  />
 		<property name="recordsAltered" column="records_altered" type="integer" />
 		<property name="datetime" column="datetime" type="java.util.Date"  />
-	</class>
-
-	<class name="com.dotmarketing.beans.TemplateContainers" table="template_containers">
-	    <id name="id" column="id" type="string" length="36" unsaved-value="">
-		  <generator class="com.dotmarketing.util.UUIDGenerator" />
-		</id>
-		<property name="templateId" type="string">
-			<column name="template_id" length="36" not-null="true" />
-		</property>
-		<property name="containerId" type="string">
-			<column name="container_id" length="36" not-null="true"/>
-		</property>
 	</class>
 
 	<class name="com.dotmarketing.beans.ContainerStructure" table="container_structures">

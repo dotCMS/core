@@ -33,7 +33,7 @@
     #set($wfScheme = $workflowtool.findScheme($wfSteps.get(0).getSchemeId()))
 #end
 
-#set($wfActions = $workflowtool.findActions($wfSteps, $backendUser))
+#set($wfActions = $workflowtool.findActions($wfSteps, $backendUser, $dotPageContent.contentObject)))
 #set($isLocked = $contents.isLocked($dotPageContent.inode))
 #set($iCanLock = $contents.canLock($dotPageContent.inode))
 #if($UtilMethods.isSet($wfScheme))

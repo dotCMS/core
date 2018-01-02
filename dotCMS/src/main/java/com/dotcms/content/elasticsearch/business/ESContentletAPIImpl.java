@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -44,6 +45,8 @@ import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
@@ -56,6 +59,7 @@ import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -65,7 +69,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
@@ -82,6 +85,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -104,7 +108,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -129,8 +132,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ActivityLogger;
@@ -140,6 +141,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -147,6 +149,37 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -312,11 +345,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         List<Contentlet> l = new ArrayList<Contentlet>();
-        Long languageIdLong = languageId <= 0?null:new Long(languageId);
+
         for(String identifier : identifiers){
-            Contentlet con = findContentletByIdentifier(identifier.trim(), live, languageIdLong, user, respectFrontendRoles);
+            Contentlet con = findContentletByIdentifier(identifier.trim(), live, languageId, user, respectFrontendRoles);
             l.add(con);
         }
+        
         return l;
     }
 
@@ -606,8 +640,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!isNew) {
             // writes the contentlet to a live directory under velocity folder
-            ContentletServices.invalidateAll(contentlet);
 
+            new ContentletLoader().invalidate(contentlet);
             CacheLocator.getContentletCache().remove(contentlet.getInode());
 
             // Need to refresh the live pages that reference this piece of
@@ -822,7 +856,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getId());
+        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreesByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {
@@ -840,7 +874,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(null != page && page.isLive()){
                     //Rebuild the pages' files
-                    PageServices.invalidateAll(page);
+                    new PageLoader().invalidate(page);
+
                 }
             } catch(Exception e) {
                 final String htmlPageIdentifierId = null != htmlPageIdentifier ? htmlPageIdentifier.getId() : null;
@@ -1010,7 +1045,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Identifier id = APILocator.getIdentifierAPI().find(contentlet);
         if (!InodeUtils.isSet(id.getId()))
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getId());
+        List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
         for (MultiTree tree : trees) {
             IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
@@ -1115,7 +1150,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Link link = (Link) InodeFactory.getInode(linkInode, Link.class);
             Identifier identifier = APILocator.getIdentifierAPI().find(link);
             relationshipAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidateWorking(contentlet);
+            new ContentletLoader().invalidate(contentlet);
         }
     }
 
@@ -1419,14 +1454,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return true;
     }
 
-    @WrapInTransaction
-    @Override
-    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        List<Contentlet> contentletsToDelete = findContentletsByHost(host, user,
-                respectFrontendRoles);
 
-        return deleteContentlets(contentletsToDelete, user, respectFrontendRoles, true);
+
+    @Override
+    public boolean deleteByHost(final Host host, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        
+        final DotConnect db = new DotConnect();
+
+        List<String> deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
+                .addParam(host.getIdentifier())
+                .setMaxRows(200)
+                .loadObjectResults()
+                .stream()
+                .map(map->(String)map.get("working_inode"))
+                .collect(Collectors.toList());
+
+        while(deleteMe.size()>0) {
+           final List<String> ids = deleteMe;
+            LocalTransaction.wrapNoException(() ->{
+
+                try {
+                    
+                    List<Contentlet> cons = findContentlets(ids);
+                    
+                    destroy(cons, user, respectFrontendRoles);
+                    
+                } catch (DotSecurityException e1) {
+                    throw new DotStateException(e1);
+                }
+            });
+
+            deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
+                    .addParam(host.getIdentifier())
+                    .setMaxRows(200)
+                    .loadObjectResults()
+                    .stream()
+                    .map(map->(String)map.get("working_inode"))
+                    .collect(Collectors.toList());
+        }
+        return true;
+
     }
 
     @WrapInTransaction
@@ -1542,13 +1611,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
             // Remove page contents (if the content is a Content Page)
-            List<MultiTree> mts = MultiTreeFactory.getMultiTreeByChild(con.getIdentifier());
+            List<MultiTree> mts = MultiTreeFactory.getMultiTreesByChild(con.getIdentifier());
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
                     IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
                     if (page != null && UtilMethods.isSet(page.getIdentifier()))
-                        PageServices.invalidateAll(page);
+                        new PageLoader().invalidate(page);
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }
@@ -1955,8 +2024,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                     }
                 }
+                new ContentletLoader().invalidate(contentlet);
 
-                ContentletServices.invalidateAll(contentlet);
                 publishRelatedHtmlPages(contentlet);
                 contentletSystemEventUtil.pushArchiveEvent(contentlet);
             }else{
@@ -2235,7 +2304,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                 }
             }
-            ContentletServices.invalidateLive(contentlet);
+            new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
 
@@ -2325,7 +2394,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     && !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
                 indexAPI.addContentToIndex(liveContentlet);
 
-            ContentletServices.invalidateAll(contentlet);
+            new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
             contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
@@ -3286,7 +3355,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     publishAssociated(contentlet, isNewContent, createNewVersion);
                 } else {
                     if (!isNewContent) {
-                        ContentletServices.invalidateWorking(contentlet);
+                        new ContentletLoader().invalidate(contentlet);
+     
                     }
 
                     indexAPI.addContentToIndex(contentlet);
@@ -3334,19 +3404,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
                 Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
-                ContentletServices.invalidateLive(contentlet);
-                ContentletServices.invalidateWorking(contentlet);
+
+                new ContentletLoader().invalidate(contentlet);
 
 
-
-                String velocityResourcePath = "working/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
-                if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
-                    CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
-                if (isLive) {
-                    velocityResourcePath = "live/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
-                    if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
-                        CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
-                }
 
             } catch (Exception e) {
                 if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
@@ -3611,7 +3672,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Contentlet currentWorkingCon = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
         APILocator.getVersionableAPI().setWorking(contentlet);
         // Updating lucene index
-        ContentletServices.invalidateWorking(contentlet);
+        new ContentletLoader().invalidate(contentlet);
         // Updating lucene index
         indexAPI.addContentToIndex(currentWorkingCon);
         indexAPI.addContentToIndex(contentlet);

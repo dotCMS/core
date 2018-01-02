@@ -180,11 +180,7 @@ return declare("dijit.layout.ContentPane", [_Widget, _Container, _ContentPaneRes
 
 		// remove the title attribute so it doesn't show up when hovering
 		// over a node  (TODO: remove in 2.0, no longer needed after #11490)
-		this.domNode.title = "";
-
-		if(!domAttr.get(this.domNode,"role")){
-			this.domNode.setAttribute("role", "group");
-		}
+		this.domNode.removeAttribute("title");
 	},
 
 	startup: function(){

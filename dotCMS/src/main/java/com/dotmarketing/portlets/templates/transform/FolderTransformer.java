@@ -42,7 +42,7 @@ public class FolderTransformer implements DBTransformer {
         folder.setName((String) map.get("name"));
         folder.setTitle((String) map.get("title"));
         folder.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
-        folder.setSortOrder((Integer) map.getOrDefault("sort_order",0));
+        folder.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
         folder.setFilesMasks((String) map.get("files_masks"));
         folder.setIdentifier((String) map.get("identifier"));
         folder.setDefaultFileType((String) map.get("default_file_type"));

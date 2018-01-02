@@ -17,7 +17,7 @@
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.viewtools.CategoriesWebAPI"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
