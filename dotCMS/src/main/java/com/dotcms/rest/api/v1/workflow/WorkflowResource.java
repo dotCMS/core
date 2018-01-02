@@ -150,7 +150,7 @@ public class WorkflowResource {
     } // findAllSchemesAndSchemesByContentType.
 
     /**
-     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * Return Steps associated to the scheme    , 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
