@@ -117,40 +117,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
         }
 
 
-        if (mode == PageMode.EDIT_MODE) {
-            StringWriter editWrapperDiv = new StringWriter();
-            editWrapperDiv.append("<div")
-                .append(" data-dot-object=")
-                .append("\"container\"")
-                .append(" data-dot-inode=")
-                .append("\"" + container.getInode() + "\"")
-                .append(" data-dot-identifier=")
-                .append("\"" + container.getIdentifier() + "\"")
-                .append(" data-dot-uuid=")
-                .append("\"" + uuid + "\"")
-                .append(" data-max-contentlets=")
-                .append("\"" + container.getMaxContentlets() + "\"")
-                .append(" data-dot-accept-types=")
-                .append("\"");
-            Iterator<ContainerStructure> it= csList.iterator();
-            while (it.hasNext()) {
-                ContainerStructure struct = it.next();
-                try {
-                    ContentType t = typeAPI.find(struct.getStructureId());
-                    editWrapperDiv.append(t.variable());
-                    if(it.hasNext()) {
-                        editWrapperDiv.append(",");
-                    }
-                } catch (DotDataException | DotSecurityException e) {
-                    Logger.warn(this.getClass(), "unable to find content type:" + struct);
-                }
-            }
-            editWrapperDiv.append("\">");
-            sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
-            sb.append(editWrapperDiv);
-            sb.append("#end");
 
-        }
 
 
 
@@ -164,6 +131,50 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append(container.getPreLoop());
                 sb.append("#end");
             }
+            
+            
+            if (mode == PageMode.EDIT_MODE) {
+                StringWriter editWrapperDiv = new StringWriter();
+                editWrapperDiv.append("<div")
+                    .append(" data-dot-object=")
+                    .append("\"container\"")
+                    .append(" data-dot-inode=")
+                    .append("\"" + container.getInode() + "\"")
+                    .append(" data-dot-identifier=")
+                    .append("\"" + container.getIdentifier() + "\"")
+                    .append(" data-dot-uuid=")
+                    .append("\"" + uuid + "\"")
+                    .append(" data-max-contentlets=")
+                    .append("\"" + container.getMaxContentlets() + "\"")
+                    .append(" data-dot-accept-types=")
+                    .append("\"");
+                Iterator<ContainerStructure> it= csList.iterator();
+                while (it.hasNext()) {
+                    ContainerStructure struct = it.next();
+                    try {
+                        ContentType t = typeAPI.find(struct.getStructureId());
+                        editWrapperDiv.append(t.variable());
+                        if(it.hasNext()) {
+                            editWrapperDiv.append(",");
+                        }
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.warn(this.getClass(), "unable to find content type:" + struct);
+                    }
+                }
+                editWrapperDiv.append("\">");
+                sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
+                sb.append(editWrapperDiv);
+                sb.append("#end");
+
+            }
+            
+            
+            
+            
+            
+            
+            
+            
             // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
 
             // START CONTENT LOOP
