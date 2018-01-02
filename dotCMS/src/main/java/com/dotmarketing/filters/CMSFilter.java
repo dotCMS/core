@@ -54,7 +54,21 @@ public class CMSFilter implements Filter {
 
     }
 
+    
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
+        
+        try {
+            _doFilter(req,res,chain);
+        }
+        finally {
+            DbConnectionFactory.closeSilently();
+        }
+        
+    
+    }
+    
+    private void _doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
@@ -175,14 +189,8 @@ public class CMSFilter implements Filter {
 
         else if (iAm == IAm.PAGE) {
             // Serving a page through the velocity servlet
-            StringWriter forward = new StringWriter();
-            if(PageMode.get(request).showLive) {
-                forward.append("/servlets/VelocityLiveServlet");
-            }
-            else {
-                forward.append("/servlets/VelocityPreviewServlet");
-            }
-            
+            StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
+
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
                     queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
@@ -190,7 +198,6 @@ public class CMSFilter implements Filter {
                 forward.append('?');
                 forward.append(queryString);
             }
-
             request.getRequestDispatcher(forward.toString()).forward(request, response);
             return;
         }

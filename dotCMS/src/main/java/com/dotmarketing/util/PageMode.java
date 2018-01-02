@@ -67,17 +67,20 @@ public enum PageMode {
         }
         return LIVE;
     }
-    public static void setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
+    public static PageMode setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
+        
+        PageMode mode = PREVIEW_MODE;
         if (contentLocked && canLock) {
-            setPageMode(request,EDIT_MODE);
-        } else {
-            setPageMode(request,PREVIEW_MODE);
-        }
+            mode=EDIT_MODE;
+        } 
+        return setPageMode(request,mode);
+
     }
 
-    public static void setPageMode(final HttpServletRequest request, PageMode mode) {
+    public static PageMode setPageMode(final HttpServletRequest request, PageMode mode) {
         request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         request.setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
+        return mode;
     }
 
 }

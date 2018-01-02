@@ -33,6 +33,9 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -52,6 +55,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDB;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -141,7 +145,7 @@ public class PageResourceHelper implements Serializable {
         return getPageMetadata(request, response, user, uri, true, PageMode.get(request));
     }
 
-    
+    @CloseDB
     public String getPageRendered(final HttpServletRequest request, final
     HttpServletResponse response, final User user, final String uri, PageMode mode) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
         
@@ -155,16 +159,28 @@ public class PageResourceHelper implements Serializable {
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
 
+        if(null==page) {
+            response.sendError(404);
+            return null;
+        }
         if(mode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
         
+        switch (mode) {
+            case PREVIEW_MODE:
+                return new VelocityPreviewMode(request, response, pageUri, site).eval();
+
+            case EDIT_MODE:
+                return new VelocityEditMode(request, response, pageUri, site).eval();
+
+            default:
+                return new VelocityLiveMode(request, response, pageUri, site).eval();
+
+        }
         
         
-        
-        return VelocityUtil.mergeTemplate("/" +  mode.name() + "/" + page
-                .getIdentifier() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension,
-                velocityContext);
+  
     }
 
     

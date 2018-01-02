@@ -215,13 +215,10 @@
 	</servlet>
 	
 	<servlet>
-		<servlet-name>VelocityLiveServlet</servlet-name>
-		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityLiveServlet</servlet-class>
+		<servlet-name>VelocityServlet</servlet-name>
+		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
 	</servlet>
-	<servlet>
-		<servlet-name>VelocityPreviewServlet</servlet-name>
-		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityPreviewServlet</servlet-class>
-	</servlet>
+
 	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
@@ -497,12 +494,8 @@
     	<url-pattern>/servlets/ajax_file_upload</url-pattern>
     </servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>VelocityLiveServlet</servlet-name>
-		<url-pattern>/servlets/VelocityLiveServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>VelocityPreviewServlet</servlet-name>
-		<url-pattern>/servlets/VelocityPreviewServlet</url-pattern>
+		<servlet-name>VelocityServlet</servlet-name>
+		<url-pattern>/servlets/VelocityServlet</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
