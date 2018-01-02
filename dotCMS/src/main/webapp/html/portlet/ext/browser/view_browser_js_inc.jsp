@@ -369,7 +369,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             editLink(inode,referer);
         }
         if (inodes[inode].type == 'htmlpage') {
-            previewHTMLPage(e.target.dataset.url);
+            previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url);
         }
         return;
     }
@@ -896,7 +896,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
                         '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }else{
-                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
+                    var html =  '<tr data-url="' +  asset.pageURI +'"id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
