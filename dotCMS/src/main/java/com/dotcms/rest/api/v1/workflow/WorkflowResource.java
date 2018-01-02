@@ -196,9 +196,9 @@ public class WorkflowResource {
 
     /**
      * Finds the available actions for an inode
-     * @param request
-     * @param inode
-     * @return
+     * @param request HttpServletRequest
+     * @param inode String
+     * @return Response
      */
     @GET
     @Path("/contentlet/{inode}/actions")
@@ -240,7 +240,7 @@ public class WorkflowResource {
     } // findAvailableActions.
 
     /**
-     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param actionId String
      * @return Response
