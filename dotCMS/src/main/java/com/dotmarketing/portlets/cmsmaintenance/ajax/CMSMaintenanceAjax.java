@@ -9,12 +9,16 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
+
+import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -26,8 +30,9 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.DBTreeTransformer;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.fixtask.FixTasksExecutor;
-import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.plugin.model.PluginProperty;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
@@ -48,23 +53,13 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.HibernateCollectionConverter;
 import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.ImageLocalManagerUtil;
-import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -77,16 +72,28 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+
 import org.quartz.JobExecutionContext;
+
+import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.ImageLocalManagerUtil;
+import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * This class provides access to maintenance routines that dotCMS users can run
@@ -247,7 +254,7 @@ public class CMSMaintenanceAjax {
 
 		if (!contentlets.isEmpty()) {
 			for (Contentlet contentlet : contentlets) {
-				boolean delete = conAPI.delete(contentlet, user, true, true);
+				boolean delete = conAPI.destroy(contentlet, user, true);
 
 				if (!delete){
 					conditionletWithErrors.add(contentlet.getIdentifier());
@@ -348,24 +355,7 @@ public class CMSMaintenanceAjax {
 			f.mkdirs();
 			deleteTempFiles();
 			String message = "";
-			if(action.equals("createZip")) {
-				if(!dataOnly){
-					moveAssetsToBackupDir();
-				}
-				message = "Creating XML Files. ";
-				createXMLFiles();
-				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-				File zipFile = new File(backupFilePath + File.separator + "backup_" + x + "_.zip");
-				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				final BufferedOutputStream bout = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
-				Logger.info(this, "Creating zipped backup file in "+ backupFilePath + " folder. Please wait");
-				zipTempDirectoryToStream(bout);
-				message +=". Done.";
-				Logger.info(this, "Backup file was created in " +zipFile.getAbsolutePath());
 
-
-
-			}
 			return message;
 
 		}
@@ -410,315 +400,7 @@ public class CMSMaintenanceAjax {
 
 		}
 
-		/**
-		 * This method will pull a list of all tables /classed being managed by
-		 * hibernate and export them, one class per file to the backupTempFilePath
-		 * as valid XML. It uses XStream to write the xml out to the files.
-		 *
-		 * @throws ServletException
-		 * @throws IOException
-		 * @author Will
-		 * @throws DotDataException
-		 * @throws DotCacheException
-		 */
-		@SuppressWarnings("unchecked")
-		public void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
-			validateUser();
-			Logger.info(this, "Starting createXMLFiles()");
-
-			Set<Class> tablesToDump = new HashSet<Class>();
-			try {
-
-				/* get a list of all our tables */
-				final Map map = new HashMap();
-
-				//Including Identifier.class because it is not mapped with Hibernate anymore
-				map.put(Identifier.class, null);
-
-				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
-
-				Iterator it = map.entrySet().iterator();
-				while (it.hasNext()) {
-					Map.Entry pairs = (Map.Entry) it.next();
-					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x
-							.equals(ClickstreamRequest.class)
-							&& !x.equals(Plugin.class) && !x.equals(PluginProperty.class)) {
-						tablesToDump.add(x);
-					}
-
-				}
-				XStream xstream = null;
-				HibernateUtil dh = null;
-				DotConnect dc = null;
-				List list = null;
-				File writing = null;
-				BufferedOutputStream bout = null;
-
-				for (Class clazz : tablesToDump) {
-					if (clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz
-							.equals(FieldVariable.class)) {
-						continue;
-					}
-					//http://jira.dotmarketing.net/browse/DOTCMS-5031
-					if (PermissionReference.class.equals(clazz)) {
-						continue;
-					}
-
-					if (com.dotmarketing.portlets.contentlet.business.Contentlet.class
-							.equals(clazz)) {
-						Logger.debug(this,
-								"Processing contentlets. This will take a little bit longer...");
-					}
-
-					xstream = new XStream(new DomDriver());
-
-					//http://jira.dotmarketing.net/browse/DOTCMS-6059
-					if (clazz.equals(DashboardSummary404.class) || clazz
-							.equals(DashboardUserPreferences.class)) {
-						xstream.addDefaultImplementation(
-								com.dotcms.repackage.net.sf.hibernate.collection.Set.class,
-								Set.class);
-						xstream.addDefaultImplementation(
-								com.dotcms.repackage.net.sf.hibernate.collection.List.class,
-								List.class);
-						xstream.addDefaultImplementation(
-								com.dotcms.repackage.net.sf.hibernate.collection.Map.class,
-								Map.class);
-						Mapper mapper = xstream.getMapper();
-						xstream.registerConverter(new HibernateCollectionConverter(mapper));
-						xstream.registerConverter(new HibernateMapConverter(mapper));
-					}
-
-					int i = 0;
-					int step = 1000;
-					int total = 0;
-					java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
-					/* we will only export 10,000,000 items of any given type */
-					for (i = 0; i < 10000000; i = i + step) {
-
-						dh = new HibernateUtil(clazz);
-						dh.setFirstResult(i);
-						dh.setMaxResults(step);
-
-						//This line was previously like;
-						//_dh.setQuery("from " + clazz.getName() + " order by 1,2");
-						//This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
-						//by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
-						//ordering is done only on the first field for the tables, which is INODE
-						if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
-						} else if (MultiTree.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
-						} else if (TagInode.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-						} else if (TemplateVersionInfo.class.equals(clazz)) {
-							dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
-						} else if (ContainerVersionInfo.class.equals(clazz)) {
-							dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
-						} else if (LinkVersionInfo.class.equals(clazz)) {
-							dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
-						} else if (CalendarReminder.class.equals(clazz)) {
-							dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
-						} else if (Identifier.class.equals(clazz)) {
-							dc = new DotConnect();
-							dc.setSQL("select * from identifier order by parent_path, id")
-									.setStartRow(i).setMaxRows(step);
-						} else {
-							dh.setQuery("from " + clazz.getName() + " order by 1");
-						}
-
-						if(Identifier.class.equals(clazz)){
-							list = ConvertToPOJOUtil.convertDotConnectMapToIdentifier(dc.loadResults());
-						}else{
-							list = dh.list();
-						}
-
-						if (list.size() == 0) {
-							try {
-								CloseUtils.closeQuietly(bout);
-							} catch (java.lang.NullPointerException npe) {
-							}
-							bout = null;
-
-							break;
-						}
-
-						if (list != null && list.size() > 0 && list
-								.get(0) instanceof Comparable) {
-							java.util.Collections.sort(list);
-						}
-
-						writing = new File(
-								backupTempFilePath + File.separator + clazz.getName() + "_"
-										+ formatter.format(i) + ".xml");
-						bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-
-						total = total + list.size();
-
-						try {
-							Thread.sleep(10);
-						} catch (InterruptedException e) {
-							Logger.warn(this, "An error occurred trying to create XML files");
-							Logger.error(this, e.getMessage(), e);
-						}
-
-						try {
-							xstream.toXML(list, bout);
-						} finally {
-							CloseUtils.closeQuietly(bout);
-						}
-
-						bout = null;
-
-					}
-					Logger.info(this, "writing : " + total + " records for " + clazz.getName());
-				}
-
-				/* Run Liferay's Tables */
-				/* Companies */
-				list = PublicCompanyFactory.getCompanies();
-				List<Company> companies = new ArrayList<Company>(list);
-				xstream = new XStream(new DomDriver());
-				writing = new File(
-						backupTempFilePath + File.separator + Company.class.getName() + ".xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				/* Users */
-				list = APILocator.getUserAPI().findAllUsers();
-				list.add(APILocator.getUserAPI().getDefaultUser());
-				xstream = new XStream(new DomDriver());
-				writing = new File(
-						backupTempFilePath + File.separator + User.class.getName() + ".xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				dc = new DotConnect();
-
-				/* counter */
-				dc.setSQL("select * from counter");
-				list = dc.getResults();
-				xstream = new XStream(new DomDriver());
-				writing = new File(backupTempFilePath + File.separator + "Counter.xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				/* counter */
-				dc.setSQL("select * from address");
-				list = dc.getResults();
-				xstream = new XStream(new DomDriver());
-				writing = new File(backupTempFilePath + File.separator + "Address.xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-
-				/* image */
-				list = ImageLocalManagerUtil.getImages();
-
-				/*
-				 * The changes in this part were made for Oracle databases. Oracle has problems when
-				 * getString() method is called on a LONG field on an Oracle database. Because of this,
-				 * the object is loaded from liferay and DotConnect is not used
-				 * http://jira.dotmarketing.net/browse/DOTCMS-1911
-				 */
-
-				xstream = new XStream(new DomDriver());
-				writing = new File(backupTempFilePath + File.separator + "Image.xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				/* portlet */
-
-				/*
-				 * The changes in this part were made for Oracle databases. Oracle has problems when
-				 * getString() method is called on a LONG field on an Oracle database. Because of this,
-				 * the object is loaded from liferay and DotConnect is not used
-				 * http://jira.dotmarketing.net/browse/DOTCMS-1911
-				 */
-				dc.setSQL("select * from portlet");
-				list = dc.getResults();
-				xstream = new XStream(new DomDriver());
-				writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				/* portlet_preferences */
-
-				try {
-					list = PortletPreferencesLocalManagerUtil.getPreferences();
-				} catch (Exception e) {
-					Logger.error(this, "Error in retrieveing all portlet preferences");
-				}
-				xstream = new XStream(new DomDriver());
-				writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
-				bout = new BufferedOutputStream(Files.newOutputStream(writing.toPath()));
-				try {
-					xstream.toXML(list, bout);
-				} finally {
-					CloseUtils.closeQuietly(bout);
-				}
-				list = null;
-				bout = null;
-
-				//backup content types
-				File file = new File(backupTempFilePath + File.separator + "ContentTypes-"
-						+ ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
-				new ContentTypeImportExportUtil().exportContentTypes(file);
-
-				//backup workflow
-				file = new File(backupTempFilePath + File.separator
-						+ "WorkflowSchemeImportExportObject.json");
-				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
-
-				//Backup Rules.
-				file = new File(
-						backupTempFilePath + File.separator + "RuleImportExportObject.json");
-				RulesImportExportUtil.getInstance().export(file);
-
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			} finally {
-				DbConnectionFactory.closeSilently();
-			}
-
-		}
+		
 
 		/**
 		 * Will zip up all files in the tmp directory and send the result to the

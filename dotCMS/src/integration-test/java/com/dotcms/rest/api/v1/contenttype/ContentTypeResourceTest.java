@@ -32,6 +32,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.liferay.portal.model.User;
@@ -162,7 +163,7 @@ public class ContentTypeResourceTest {
 		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
 
 
-		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil);
+		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance());
 		Response response = null;
 
 		RestUtilTest.verifySuccessResponse(

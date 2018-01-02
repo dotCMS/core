@@ -92,13 +92,80 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException;
 
+	/**
+	 * Finds the Actions associated to the schema
+	 * @param scheme {@link WorkflowScheme}
+	 * @return List of WorkflowAction
+	 */
+	List<WorkflowAction> findActions(WorkflowScheme scheme) throws DotDataException;
+
 	public WorkflowAction findAction(String id) throws DotDataException;
+
+	/**
+	 * Finds an action associated to a steps
+	 * Null if does not exists.
+	 * @param actionId actionId
+	 * @param stepId   stepID
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 */
+	public WorkflowAction findAction(String actionId, String stepId) throws DotDataException;
 
 	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * Save (associated) the workflowAction to the workflow step with a specific order
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 * @param order          updates the order
+	 */
+	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep, int order)  throws DotDataException,AlreadyExistException;
+
+	/**
+	 * Update (associated) the workflowAction to the workflow step with a specific order
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 * @param order			 int
+	 */
+	void updateOrder(WorkflowAction workflowAction, WorkflowStep workflowStep, int order)  throws DotDataException,AlreadyExistException;
+	/**
+	 * Save (associated) the workflowAction to the workflow step
+	 * the order will be by default zero
+	 * pre: both should exists
+	 * @param workflowAction WorkflowAction
+	 * @param workflowStep   WorkflowStep
+	 */
+	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException;
+
+
 	public WorkflowStep findStep(String id) throws DotDataException;
 
+	/**
+	 * Deletes a single action
+	 * Pre: not any relationship must be for the action (for instance all the action references on the steps should be previously removed)
+	 * @param action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes an action from the step (the relationship)
+	 * @param action WorkflowAction
+	 * @param step   WorkflowStep
+	 */
+	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes the actions related to the step
+	 * @param step {@link WorkflowStep}
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	void deleteActions(WorkflowStep step) throws DotDataException, AlreadyExistException;
+
 
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 	
@@ -163,4 +230,7 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+
+
 }

@@ -97,7 +97,7 @@ public class TaskLocatorUtil {
 	 * @return The list of Run-Once Tasks.
 	 */
 	public static List<Class<?>> getStartupRunOnceTaskClasses() {
-		final List<Class<?>> ret = new ArrayList<Class<?>>();
+		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task00760AddContentletStructureInodeIndex.class);
 		ret.add(Task00765AddUserForeignKeys.class);
 		ret.add(Task00766AddFieldVariableTable.class);
@@ -216,6 +216,9 @@ public class TaskLocatorUtil {
 		ret.add(Task04220RemoveDeleteInactiveClusterServersJob.class);
 		ret.add(Task04230FixVanityURLInconsistencies.class);
 		ret.add(Task04300UpdateSystemFolderIdentifier.class);
+		ret.add(Task04305UpdateWorkflowActionTable.class);
+		ret.add(Task04310CreateWorkflowRoles.class);
+		ret.add(Task04315UpdateMultiTreePK.class);
 
 		return ret;
 	}

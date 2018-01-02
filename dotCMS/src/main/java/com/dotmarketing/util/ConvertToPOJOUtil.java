@@ -1,33 +1,27 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.google.common.base.CaseFormat;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
+
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Utility class used to map query results to POJO objects
+ * 
  * @author nollymar
  */
 public class ConvertToPOJOUtil {
 
-    public static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     private static final String SYSPUBLISH_DATE = "syspublish_date";
     private static final String SYSEXPIRE_DATE = "sysexpire_date";
     private static final String TITLE = "title";
@@ -47,126 +41,69 @@ public class ConvertToPOJOUtil {
     private static final String OWNER = "owner";
     private static final String IDATE = "idate";
 
-    private ConvertToPOJOUtil(){
+    private ConvertToPOJOUtil() {
 
     }
 
     /**
      * Creates new instances of T given a List<Map> of DB results
+     * 
      * @param results
      * @param classToUse
      * @param <T>
      * @return
      * @throws Exception
      */
-    public static<T> List<T> convertDotConnectMapToPOJO(List<Map<String,String>> results,
-            final Class classToUse) throws ParseException, IllegalAccessException,
-            InvocationTargetException, InstantiationException, NoSuchMethodException, NoSuchFieldException {
+    public static <T> List<T> convertDotConnectMapToPOJO(List<Map<String, Object>> results, final Class classToUse)
+            throws  IllegalAccessException,  InstantiationException,
+            NoSuchMethodException, NoSuchFieldException {
 
         List<T> ret = null;
 
-        if(results == null || results.isEmpty()){
+        if (results == null || results.isEmpty()) {
             return Collections.emptyList();
         }
 
-        if (Folder.class.equals(classToUse)){
+        if (Folder.class.equals(classToUse)) {
             ret = (List<T>) convertDotConnectMapToFolder(results);
         }
 
-        if (Container.class.equals(classToUse)){
+        if (Container.class.equals(classToUse)) {
             ret = (List<T>) convertDotConnectMapToContainer(results);
         }
 
-        if (Link.class.equals(classToUse)){
+        if (Link.class.equals(classToUse)) {
             ret = (List<T>) convertDotConnectMapToLink(results);
         }
 
-        if (Identifier.class.equals(classToUse)){
+        if (Identifier.class.equals(classToUse)) {
             ret = (List<T>) convertDotConnectMapToIdentifier(results);
         }
 
-        if (Template.class.equals(classToUse)){
+        if (Template.class.equals(classToUse)) {
             ret = (List<T>) convertDotConnectMapToTemplate(results);
         }
 
-        if (ret != null){
-            return ret;
-        }
 
-        return getMapFields(results, classToUse);
-    }
-
-    @NotNull
-    private static <T> List<T> getMapFields(List<Map<String, String>> results, Class classToUse)
-            throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-            InvocationTargetException, NoSuchFieldException, ParseException {
-        List<T> ret;
-        Map<String, String> properties;
-        ret = new ArrayList<>();
-
-        for (final Map<String, String> map : results) {
-            Constructor<?> ctor = classToUse.getConstructor();
-            final T object = (T) ctor.newInstance();
-
-            properties = map.entrySet().stream().collect(Collectors
-                    .toMap(entry -> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, entry.getKey()), entry ->map.get(entry.getKey())));
-
-            for (final Entry entry: properties.entrySet()){
-                String property = (String) entry.getKey();
-                if (properties.get(property) != null){
-                    if (isFieldPresent(classToUse, String.class, property)){
-                        PropertyUtils.setProperty(object, property, properties.get(property));
-                    }else if (isFieldPresent(classToUse, Integer.TYPE, property)){
-                        PropertyUtils.setProperty(object, property, Integer.parseInt(properties.get(property)));
-                    }else if (isFieldPresent(classToUse, Boolean.TYPE, property)){
-                        PropertyUtils.setProperty(object, property, Boolean.parseBoolean(properties.get(property)));
-                    }else if (isFieldPresent(classToUse, Date.class, property)){
-                        PropertyUtils.setProperty(object, property, df.parse(properties.get(property)));
-                    }else{
-                        Logger.warn(classToUse, "Property " + property + "not set for " + classToUse.getName());
-                    }
-                }
-            }
-
-            ret.add(object);
-        }
         return ret;
+        
+
+
     }
 
-    /**
-     * Searches a property recursively through classes and superclasses
-     * @param classToUse
-     * @param fieldType
-     * @param property
-     * @return
-     * @throws NoSuchFieldException
-     */
-    private static boolean isFieldPresent(final Class classToUse, Class fieldType, String property)
-            throws NoSuchFieldException {
 
-        try{
-            return classToUse.getDeclaredField(property).getType() == fieldType;
-        }catch(NoSuchFieldException e){
-            if (classToUse.getSuperclass()!=null) {
-                return isFieldPresent(classToUse.getSuperclass(), fieldType, property);
-            }
-            Logger.debug(e, e.getMessage());
-        }
-        return false;
-    }
 
     /**
      *
      * @param results
      * @return
      */
-    public static List<Link> convertDotConnectMapToLink(final List<Map<String,String>> results)
-            throws ParseException {
+    public static List<Link> convertDotConnectMapToLink(final List<Map<String, Object>> results)  {
 
         List<Link> ret = new ArrayList<>();
 
-        if(results != null && !results.isEmpty()){
-            for (Map<String, String> map : results) {
+        if (results != null && !results.isEmpty()) {
+            for (Map<String, Object> map : results) {
                 ret.add(getLinkFields(map));
             }
         }
@@ -175,46 +112,24 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Link getLinkFields(Map<String, String> map) throws ParseException {
+    private static Link getLinkFields(Map<String, Object> map)  {
         final Link link = new Link();
-        link.setInode(map.get(INODE));
-        link.setOwner(map.get(OWNER));
-
-        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
-            link.setIDate(map.get(IDATE));
-        }
-
-        if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()){
-            link.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
-        }
-
-        link.setTitle(map.get(TITLE));
-
-        if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
-            link.setModDate(df.parse(map.get(MOD_DATE)));
-        }
-
-        link.setModUser(map.get(MOD_USER));
-
-        if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
-            link.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
-        }
-
-        link.setFriendlyName(map.get(FRIENDLY_NAME));
-
-        link.setIdentifier(map.get(IDENTIFIER));
-
-        link.setProtocal(map.get("protocal"));
-
-        link.setUrl(map.get("url"));
-
-        link.setTarget(map.get("target"));
-
-        link.setInternalLinkIdentifier(map.get("internal_link_identifier"));
-
-        link.setLinkType(map.get("link_type"));
-
-        link.setLinkCode(map.get("link_code"));
+        link.setInode((String) map.get(INODE));
+        link.setOwner((String) map.get(OWNER));
+        link.setIDate((Date) map.get(IDATE));
+        link.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
+        link.setTitle((String) map.get(TITLE));
+        link.setModDate((Date) map.get(MOD_DATE));
+        link.setModUser((String) map.get(MOD_USER));
+        link.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
+        link.setFriendlyName((String) map.get(FRIENDLY_NAME));
+        link.setIdentifier((String) map.get(IDENTIFIER));
+        link.setProtocal((String) map.get("protocal"));
+        link.setUrl((String) map.get("url"));
+        link.setTarget((String) map.get("target"));
+        link.setInternalLinkIdentifier((String) map.get("internal_link_identifier"));
+        link.setLinkType((String) map.get("link_type"));
+        link.setLinkCode((String) map.get("link_code"));
         return link;
     }
 
@@ -223,41 +138,32 @@ public class ConvertToPOJOUtil {
      * @param results
      * @return
      */
-    public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String,String>> results)
-            throws ParseException {
+    public static List<Identifier> convertDotConnectMapToIdentifier(final List<Map<String, Object>> results) {
         final List<Identifier> ret = new ArrayList<>();
-        if(results == null || results.isEmpty()){
+        if (results == null || results.isEmpty()) {
             return ret;
         }
 
-        for (Map<String, String> map : results) {
+        for (Map<String, Object> map : results) {
             final Identifier i = new Identifier();
-            i.setAssetName(map.get("asset_name"));
-            i.setAssetType(map.get("asset_type"));
-            i.setHostId(map.get("host_inode"));
-            i.setId(map.get("id"));
-            i.setParentPath(map.get("parent_path"));
-
-            if (map.get(SYSPUBLISH_DATE) != null && !map.get(SYSPUBLISH_DATE).isEmpty()){
-                i.setSysPublishDate(df.parse(map.get(SYSPUBLISH_DATE) ));
-            }
-
-            if (map.get(SYSEXPIRE_DATE) != null && !map.get(SYSEXPIRE_DATE).isEmpty()){
-                i.setSysExpireDate(df.parse(map.get(SYSEXPIRE_DATE) ));
-            }
-
+            i.setAssetName((String) map.get("asset_name"));
+            i.setAssetType((String) map.get("asset_type"));
+            i.setHostId((String) map.get("host_inode"));
+            i.setId((String) map.get("id"));
+            i.setParentPath((String) map.get("parent_path"));
+            i.setSysPublishDate((Date) map.get(SYSPUBLISH_DATE));
+            i.setSysExpireDate((Date) map.get(SYSEXPIRE_DATE));
             ret.add(i);
         }
         return ret;
     }
 
-    public static List<Folder> convertDotConnectMapToFolder(final List<Map<String,String>> results)
-            throws ParseException {
+    public static List<Folder> convertDotConnectMapToFolder(final List<Map<String, Object>> results)  {
 
         List<Folder> ret = new ArrayList<>();
 
-        if(results != null && !results.isEmpty()){
-            for (Map<String, String> map : results) {
+        if (results != null && !results.isEmpty()) {
+            for (Map<String, Object> map : results) {
                 ret.add(getFolderFields(map));
             }
         }
@@ -265,47 +171,29 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Folder getFolderFields(Map<String, String> map) throws ParseException {
+    private static Folder getFolderFields(Map<String, Object> map)  {
         Folder folder;
         folder = new Folder();
-        folder.setInode(map.get(INODE));
-        folder.setOwner(map.get(OWNER));
-
-        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
-            folder.setIDate(map.get(IDATE));
-        }
-
-
-        folder.setName(map.get("name"));
-        folder.setTitle(map.get(TITLE));
-
-        if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
-            folder.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
-        }
-
-        if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
-            folder.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
-        }
-
-        folder.setFilesMasks(map.get("files_masks"));
-
-        folder.setIdentifier(map.get(IDENTIFIER));
-
-        folder.setDefaultFileType(map.get("default_file_type"));
-
-        if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
-            folder.setModDate(df.parse(map.get(MOD_DATE)));
-        }
+        folder.setInode((String) map.get(INODE));
+        folder.setOwner((String) map.get(OWNER));
+        folder.setIDate((Date) map.get(IDATE));
+        folder.setName((String) map.get("name"));
+        folder.setTitle((String) map.get(TITLE));
+        folder.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
+        folder.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
+        folder.setFilesMasks((String) map.get("files_masks"));
+        folder.setIdentifier((String) map.get(IDENTIFIER));
+        folder.setDefaultFileType((String) map.get("default_file_type"));
+        folder.setModDate((Date) map.get(MOD_DATE));
         return folder;
     }
 
-    public static List<Container> convertDotConnectMapToContainer(final List<Map<String,String>> results)
-            throws ParseException {
+    public static List<Container> convertDotConnectMapToContainer(final List<Map<String, Object>> results) {
 
         List<Container> ret = new ArrayList<>();
 
-        if(results != null && !results.isEmpty()){
-            for (Map<String, String> map : results) {
+        if (results != null && !results.isEmpty()) {
+            for (Map<String, Object> map : results) {
                 ret.add(getContainerFields(map));
             }
         }
@@ -313,67 +201,37 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Container getContainerFields(Map<String, String> map) throws ParseException {
+    private static Container getContainerFields(Map<String, Object> map)  {
         Container container;
         container = new Container();
-        container.setInode(map.get(INODE));
-        container.setOwner(map.get(OWNER));
-
-        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
-            container.setIDate(map.get(IDATE));
-        }
-
-
-        container.setCode(map.get("code"));
-        container.setPreLoop(map.get("pre_loop"));
-        container.setPostLoop(map.get("post_loop"));
-        if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
-            container.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
-        }
-
-        container.setTitle(map.get(TITLE));
-
-        if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
-            container.setModDate(df.parse(map.get(MOD_DATE)));
-        }
-
-        container.setModUser(map.get(MOD_USER));
-
-        if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
-            container.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
-        }
-
-        container.setFriendlyName(map.get(FRIENDLY_NAME));
-
-        if (map.get(MAX_CONTENTLETS) != null && !map.get(MAX_CONTENTLETS).isEmpty()){
-            container.setMaxContentlets(Integer.parseInt(map.get(MAX_CONTENTLETS)));
-        }
-
-        if (map.get(USE_DIV) != null && !map.get(USE_DIV).isEmpty()) {
-            container.setUseDiv(Boolean.parseBoolean(map.get(USE_DIV)));
-        }
-
-        if (map.get(STATICIFY) != null && !map.get(STATICIFY).isEmpty()) {
-            container.setStaticify(Boolean.parseBoolean(map.get(STATICIFY)));
-        }
-
-        container.setSortContentletsBy(map.get("sort_contentlets_by"));
-
-        container.setLuceneQuery(map.get("lucene_query"));
-
-        container.setNotes(map.get("notes"));
-
-        container.setIdentifier(map.get(IDENTIFIER));
+        container.setInode((String) map.get(INODE));
+        container.setOwner((String) map.get(OWNER));
+        container.setIDate((Date) map.get(IDATE));
+        container.setCode((String) map.get("code"));
+        container.setPreLoop((String) map.get("pre_loop"));
+        container.setPostLoop((String) map.get("post_loop"));
+        container.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
+        container.setTitle((String) map.get(TITLE));
+        container.setModDate((Date) map.get(MOD_DATE));
+        container.setModUser((String) map.get(MOD_USER));
+        container.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
+        container.setFriendlyName((String) map.get(FRIENDLY_NAME));
+        container.setMaxContentlets((Integer) map.getOrDefault(MAX_CONTENTLETS,0));
+        container.setUseDiv((Boolean) map.getOrDefault(USE_DIV,false));
+        container.setStaticify((Boolean) map.getOrDefault(STATICIFY,false));
+        container.setSortContentletsBy((String) map.get("sort_contentlets_by"));
+        container.setLuceneQuery((String) map.get("lucene_query"));
+        container.setNotes((String) map.get("notes"));
+        container.setIdentifier((String) map.get(IDENTIFIER));
         return container;
     }
 
-    public static List<Template> convertDotConnectMapToTemplate(final List<Map<String,String>> results)
-            throws ParseException {
+    public static List<Template> convertDotConnectMapToTemplate(final List<Map<String, Object>> results){
 
         List<Template> ret = new ArrayList<>();
 
-        if(results != null && !results.isEmpty()){
-            for (Map<String, String> map : results) {
+        if (results != null && !results.isEmpty()) {
+            for (Map<String, Object> map : results) {
                 ret.add(getTemplateFields(map));
             }
         }
@@ -381,57 +239,29 @@ public class ConvertToPOJOUtil {
     }
 
     @NotNull
-    private static Template getTemplateFields(Map<String, String> map) throws ParseException {
+    private static Template getTemplateFields(Map<String, Object> map) {
         Template template;
         template = new Template();
-        template.setInode(map.get(INODE));
-        template.setOwner(map.get(OWNER));
-
-        if (map.get(IDATE) != null && !map.get(IDATE).isEmpty()) {
-            template.setIDate(map.get(IDATE));
-        }
-
-        if (map.get(SHOW_ON_MENU) != null && !map.get(SHOW_ON_MENU).isEmpty()) {
-            template.setShowOnMenu(Boolean.parseBoolean(map.get(SHOW_ON_MENU)));
-        }
-
-        template.setTitle(map.get(TITLE));
-
-        if (map.get(MOD_DATE) != null && !map.get(MOD_DATE).isEmpty()){
-            template.setModDate(df.parse(map.get(MOD_DATE)));
-        }
-
-        template.setModUser(map.get(MOD_USER));
-
-        if (map.get(SORT_ORDER) != null && !map.get(SORT_ORDER).isEmpty()){
-            template.setSortOrder(Integer.parseInt(map.get(SORT_ORDER)));
-        }
-
-        template.setFriendlyName(map.get(FRIENDLY_NAME));
-
-        template.setBody(map.get("body"));
-        template.setHeader(map.get("header"));
-        template.setFooter(map.get("footer"));
-        template.setImage(map.get("image"));
-        template.setIdentifier(map.get(IDENTIFIER));
-
-        if (map.get(DRAWED) != null && !map.get(DRAWED).isEmpty()) {
-            template.setDrawed(Boolean.parseBoolean(map.get(DRAWED)));
-        }
-
-        template.setDrawedBody(map.get("drawed_body"));
-
-        if (map.get(ADD_CONTAINER_LINKS) != null && !map.get(ADD_CONTAINER_LINKS).isEmpty()){
-            template.setCountAddContainer(Integer.parseInt(map.get(ADD_CONTAINER_LINKS)));
-        }
-
-        if (map.get(CONTAINERS_ADDED) != null && !map.get(CONTAINERS_ADDED).isEmpty()){
-            template.setCountContainers(Integer.parseInt(map.get(CONTAINERS_ADDED)));
-        }
-
-        template.setHeadCode(map.get("head_code"));
-
-        template.setTheme(map.get("theme"));
+        template.setInode(String.valueOf(map.get(INODE)));
+        template.setOwner(String.valueOf(map.get(OWNER)));
+        template.setIDate((Date) map.get(IDATE));
+        template.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
+        template.setTitle(String.valueOf(map.get(TITLE)));
+        template.setModDate((Date) map.get(MOD_DATE));
+        template.setModUser(String.valueOf(map.get(MOD_USER)));
+        template.setSortOrder((Integer) map.getOrDefault(SORT_ORDER,0));
+        template.setFriendlyName(String.valueOf(map.get(FRIENDLY_NAME)));
+        template.setBody(String.valueOf(map.get("body")));
+        template.setHeader(String.valueOf(map.get("header")));
+        template.setFooter(String.valueOf(map.get("footer")));
+        template.setImage(String.valueOf(map.get("image")));
+        template.setIdentifier(String.valueOf(map.get(IDENTIFIER)));
+        template.setDrawed((Boolean) map.get(DRAWED));
+        template.setDrawedBody((String) map.get("drawed_body"));
+        template.setCountAddContainer((Integer) map.getOrDefault(ADD_CONTAINER_LINKS,0));
+        template.setCountContainers((Integer) map.getOrDefault(CONTAINERS_ADDED,0));
+        template.setHeadCode((String) map.get("head_code"));
+        template.setTheme((String) map.get("theme"));
         return template;
     }
 

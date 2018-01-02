@@ -7,7 +7,12 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -45,22 +50,22 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.TemplateServices;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import com.liferay.portal.model.User;
+import com.liferay.portal.struts.ActionException;
 
 /**
  *
@@ -681,10 +686,10 @@ public class WebAssetFactory {
 
 				if (currWebAsset instanceof Container) {
 					//remove container from the live directory
-					ContainerServices.unpublishContainerFile((Container)currWebAsset);
+				    new ContainerLoader().invalidate((Container)currWebAsset);
 				} else if (currWebAsset instanceof Template) {
 					//remove template from the live directory
-					TemplateServices.unpublishTemplateFile((Template)currWebAsset);
+					new TemplateLoader().invalidate((Template)currWebAsset);
 				} else if( currWebAsset instanceof Link ) {
 					// Removes static menues to provoke all possible dependencies be generated.
 					if( parent instanceof Folder ) {
@@ -831,8 +836,20 @@ public class WebAssetFactory {
 				dc.setMaxRows(internalLimit);
 
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				List<WebAsset> list = ConvertToPOJOUtil
-						.convertDotConnectMapToPOJO(dc.loadResults(), c);
+
+
+				DBTransformer transformer = TransformerLocator
+						.createDBTransformer(dc.loadObjectResults(), c);
+
+				List<WebAsset> list;
+
+				if (transformer != null){
+					list = (List<WebAsset>) transformer.asList();
+				}else{
+					return Collections.emptyList();
+				}
+
+
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
@@ -857,7 +874,7 @@ public class WebAssetFactory {
 			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
 		}
 
-		return new ArrayList<>();
+		return Collections.emptyList();
 
 	}
 
@@ -938,12 +955,12 @@ public class WebAssetFactory {
 			List<Versionable> webAssetList = new ArrayList<Versionable>();
 			if(currWebAsset instanceof Container)
 			{
-				ContainerServices.unpublishContainerFile((Container)currWebAsset);
+			    new ContainerLoader().invalidate((Container)currWebAsset);
 				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 			}
 			else if(currWebAsset instanceof Template)
 			{
-				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
+				new TemplateLoader().invalidate((Template)currWebAsset);
 				//webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 			}
 			else if(currWebAsset instanceof Link)
@@ -972,7 +989,7 @@ public class WebAssetFactory {
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
 			if (currWebAsset instanceof Container)
 			{
-				multiTrees = MultiTreeFactory.getMultiTree(identifier);
+				multiTrees = MultiTreeFactory.getMultiTrees(identifier);
 			}
 			if(UtilMethods.isSet(multiTrees))
 			{

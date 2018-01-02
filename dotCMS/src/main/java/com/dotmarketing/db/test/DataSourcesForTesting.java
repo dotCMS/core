@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.viewtools.XmlTool;
+import com.dotcms.rendering.velocity.viewtools.XmlTool;
 import com.liferay.util.FileUtil;
 
 public class DataSourcesForTesting {

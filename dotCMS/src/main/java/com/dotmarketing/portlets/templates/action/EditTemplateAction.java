@@ -1,30 +1,23 @@
 package com.dotmarketing.portlets.templates.action;
 
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.List;
-
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -32,12 +25,13 @@ import com.dotmarketing.portal.struts.DotPortletActionInterface;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
-import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -46,10 +40,21 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.servlet.SessionDialogMessage;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -296,12 +301,20 @@ public class EditTemplateAction extends DotPortletAction implements
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.TEMPLATE_EDIT);
 
-				StringBuilder error = new StringBuilder();
+				SessionDialogMessage error = new SessionDialogMessage(
+						LanguageUtil.get(user, "Delete-Template"),
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+						"<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
+								" +_all:" + webAsset.getIdentifier()
+						));
+
 				if (canTemplateBeDeleted(webAsset, user, error)) {
 					WebAssetFactory.deleteAsset(webAsset,user);
 					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
-					SessionMessages.add(httpReq, SessionMessages.ERROR, error.toString());
+					SessionMessages.add(httpReq, SessionMessages.DIALOG_MESSAGE, error);
 				}
 			}
 			catch(Exception ae)
@@ -319,25 +332,39 @@ public class EditTemplateAction extends DotPortletAction implements
 				String [] inodes = req.getParameterValues("publishInode");
 
 				int errorCount =0;
+				SessionDialogMessage errors = new SessionDialogMessage(
+						LanguageUtil.get(user, "Delete-Template"),
+						LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
+						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
+								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
+										"<br>+baseType:" + BaseContentType.HTMLPAGE.getType()
+								));
+
 				for(String inode  : inodes)	{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
 
-					StringBuilder errors = new StringBuilder();
 					if (canTemplateBeDeleted(webAsset, user, errors)) {
 						WebAssetFactory.deleteAsset(webAsset,user);
 					} else {
-						SessionMessages.add(httpReq,SessionMessages.ERROR + errorCount++, errors.toString());
+						if (errorCount == 0) {
+							errors.setFooter(errors.getFooter() + " +(_all:" + webAsset.getIdentifier());
+						} else {
+							errors.setFooter(errors.getFooter() + " OR _all:" + webAsset.getIdentifier());
+						}
+						errorCount++;
+						SessionMessages.add(httpReq,SessionMessages.DIALOG_MESSAGE, errors);
 					}
 				}
 
-				if(errorCount == 0)
-				{
-					SessionMessages.add(httpReq,"message","message.template.full_delete");
+				if (errorCount == 0) {
+					SessionMessages.add(httpReq, "message", "message.template.full_delete");
+				} else {
+					errors.setFooter(errors.getFooter() + ")");
 				}
 			}
 			catch(Exception ae)
 			{
-				SessionMessages.add(httpReq, SessionMessages.ERROR,"message.template.full_delete.error");
+				SessionMessages.add(httpReq, SessionMessages.ERROR, TemplateConstants.TEMPLATE_DELETE_ERROR);
 				_handleException(ae, req);
 				return;
 			}
@@ -494,16 +521,20 @@ public class EditTemplateAction extends DotPortletAction implements
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private boolean canTemplateBeDeleted (WebAsset template, User user, StringBuilder errorBuilder)
-			throws LanguageException, DotDataException, DotSecurityException {
-		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false);
+	private boolean canTemplateBeDeleted (WebAsset template, User user, SessionDialogMessage errorMessage)
+			throws DotDataException, DotSecurityException {
+		List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate((Template)template, user, false,
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
 
 		if(pages!= null && !pages.isEmpty()) {
-			errorBuilder.append(LanguageUtil.get(user, "message.template.full_delete.error")).append(" ");
-			errorBuilder.append(template.getName()).append("<br>");
 
 			for (Contentlet page : pages) {
-				errorBuilder.append("- ").append(page.getTitle()).append("<br>");
+				HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
+				Host host = APILocator.getHostAPI().find(pageAsset.getHost(), user, false);
+
+				errorMessage.addMessage(template.getName(),
+						host.getHostname() + ":" + pageAsset.getURI()
+				);
 			}
 			return false;
 		}
@@ -732,7 +763,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		APILocator.getVersionableAPI().setWorking(versionTemplate);
 
 		//Template newWorkingTemplate = (Template) super._getVersionBackWebAsset(req, res, config, form, user, Template.class, WebKeys.TEMPLATE_EDIT);
-		TemplateServices.invalidate(versionTemplate, true);
+		new TemplateLoader().invalidate(versionTemplate);
 	}
 
 //	private void updateParseContainerSyntax(Template template){

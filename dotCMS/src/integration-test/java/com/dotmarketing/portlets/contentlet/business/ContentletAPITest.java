@@ -69,11 +69,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -88,6 +87,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -667,7 +668,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -993,7 +994,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {
@@ -2042,10 +2043,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
-        assertTrue(ConvertToPOJOUtil.df.format(d1)
-                .equals(ConvertToPOJOUtil.df.format(ident.getSysPublishDate())));
-        assertTrue(ConvertToPOJOUtil.df.format(d2)
-                .equals(ConvertToPOJOUtil.df.format(ident.getSysExpireDate())));
+
+        assertTrue(d1
+                .equals(ident.getSysPublishDate()));
+        assertTrue(d2.equals(ident.getSysExpireDate()));
+
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -2062,15 +2064,17 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
-        assertTrue(ConvertToPOJOUtil.df.format(d3)
-                .equals(ConvertToPOJOUtil.df.format(ident2.getSysPublishDate())));
-        assertTrue(ConvertToPOJOUtil.df.format(d4)
-                .equals(ConvertToPOJOUtil.df.format(ident2.getSysExpireDate())));
+
+        assertTrue(d3
+                .equals(ident2.getSysPublishDate()));
+        assertTrue(d4
+                .equals(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(ConvertToPOJOUtil.df.format(d3).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
-        assertTrue(ConvertToPOJOUtil.df.format(d4).equals(ConvertToPOJOUtil.df.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
+        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
+        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+
 
         Thread.sleep(2000); // wait a bit for the index
         
@@ -2081,6 +2085,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
+    }
+
+    private boolean compareDates(Date date1, Date date2) {
+
+        DateFormat dateFormat = SimpleDateFormat
+                .getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
+        return dateFormat.format(date1).equals(dateFormat.format(date2));
     }
 
 

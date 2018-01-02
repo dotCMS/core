@@ -108,7 +108,7 @@
 			wfStep = wfSteps.get(0);
 			scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
 		}
-		wfActions = APILocator.getWorkflowAPI().findActions(wfSteps, user);
+		wfActions = APILocator.getWorkflowAPI().findActions(wfSteps, user, contentlet);
 	}
 	catch(Exception e){
 		wfActions = new ArrayList();

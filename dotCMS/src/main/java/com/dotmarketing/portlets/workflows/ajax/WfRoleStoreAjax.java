@@ -44,6 +44,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         }
 
         boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
+        boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
 
         try {
             Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
@@ -107,6 +108,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
                 roleList.add( 0, cmsAnon );
             }
 
+            if(includeWorkflowRoles){
+                roleList.addAll( APILocator.getRoleAPI().findWorkflowSpecialRoles());
+            }
             //x = x.replaceAll("identifier", "x");
             response.setContentType("application/json");
             response.getWriter().write( rolesToJson( roleList, includeFake ) );

@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,11 +20,18 @@ import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface WorkflowAPI {
+
+	public static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
 
     public void registerBundleService ();
 
@@ -176,6 +182,14 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
+	/**
+	 * Returns all the schemes associated to the content type
+	 * @param contentType ContentType
+	 * @return List
+	 * @throws DotDataException
+	 */
+	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
+
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
 	public void deleteScheme(WorkflowScheme scheme) throws DotDataException;
@@ -192,9 +206,45 @@ public interface WorkflowAPI {
 
 	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * This is a legacy method for reorder
+	 * 
+	 * @deprecated On release 4.3, replaced by {@link #reorderAction(WorkflowAction, WorkflowStep, User, int)}
+	 * @param action WorkflowAction action you want to reorder, the getStepid has to be not empty and has to have the associated step to the action
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	@Deprecated
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * This method makes the reorder for the action associated to the step, reordering the rest of the actions too.
+	 * @param action WorkflowAction action you want to reorder
+	 * @param step   WorkflowStep   step which the action are associated
+	 * @param user   User           user that is executing the aciton
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	public void reorderAction(final WorkflowAction action,
+							  final WorkflowStep step,
+							  final User user,
+							  final int order) throws DotDataException, AlreadyExistException;
+
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds an action associated to the steps.
+	 * The action will be validated against the user permissions.
+	 * @param actionId String action id
+	 * @param stepId   String step  id
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
@@ -211,6 +261,29 @@ public interface WorkflowAPI {
 			DotSecurityException;
 
 	/**
+	 * Find the list of Workflow Actions available for the current user on the specified workflow step and permissionable
+	 * @param step The current step
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @return List of WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowScheme scheme, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
 	 * Find the list of Workflow Actions available for the current user ont the list of steps
 	 * @param steps List of workflow steps
 	 * @param user The current User
@@ -222,6 +295,18 @@ public interface WorkflowAPI {
 			DotSecurityException;
 
 	/**
+	 * Find the list of Workflow Actions available for the current user ont the list of steps and permissionable
+	 * @param steps List of workflow steps
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user, Permissionable permissionable) throws DotDataException,
+			DotSecurityException;
+
+	/**
 	 * This method associate a list of Workflow Schemes to a Structure
 	 *
 	 * @param struc The Structure
@@ -230,11 +315,51 @@ public interface WorkflowAPI {
 	 */
 	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
+	/**
+	 * Saves an single action the action is associated to the schema by default
+	 * @param action WorkflowAction
+	 * @param perms List of Permission
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 */
+	void saveAction(String actionId, String stepId, User user);
+
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * Will associated the action in the order desired
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 * @param order    int
+	 */
+	void saveAction(String actionId, String stepId, User user, int order);
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
+	/**
+	 * Deletes the action associated to the scheme
+	 * @param action WorkflowAction
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Deletes the action reference to the step, but the action associated to the scheme will continue alive.
+	 * @param action WorkflowAction action to delete
+	 * @param step   WorkflowStep   from the step to delete the action
+	 */
+	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
@@ -334,4 +459,7 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+
+
 }

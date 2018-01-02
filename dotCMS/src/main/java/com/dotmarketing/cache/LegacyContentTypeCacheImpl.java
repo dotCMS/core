@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
@@ -130,6 +131,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 
 
   public void remove(Structure st) {
+      new ContentTypeLoader().invalidate(st);
     ContentType type = new StructureTransformer(st).from();
     super.remove(type);
   }

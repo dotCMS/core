@@ -1,14 +1,6 @@
 package com.dotmarketing.portlets.containers.action;
 
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -19,6 +11,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -28,6 +21,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -39,7 +34,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -47,6 +41,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -559,32 +563,15 @@ public class EditContainerAction extends DotPortletAction implements
 		identifier.setHostId(host.getIdentifier());
 		APILocator.getIdentifierAPI().save(identifier);
 
-		// saving the multiple structures
-		if(container.getMaxContentlets()>0) {
-			String structuresIdsStr = req.getParameter("structuresIds");
 
-			String[] structuresIds = structuresIdsStr.split("#");
-			List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
-
-			for (String structureId : structuresIds) {
-				String code = req.getParameter("code_"+structureId);
-				ContainerStructure cs = new ContainerStructure();
-				cs.setContainerId(container.getIdentifier());
-                cs.setContainerInode(container.getInode());
-				cs.setStructureId(structureId);
-				cs.setCode(code);
-				csList.add(cs);
-			}
-
-			APILocator.getContainerAPI().saveContainerStructures(csList);
-
-		}
+		//Save/Update/Delete the ContainerStructures associated
+		saveContainerStructures(req, currentContainer, container);
 
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");
 		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		// saves to working folder under velocity
-		ContainerServices.invalidate(container, true);
+        new ContainerLoader().invalidate(container);
 
 		// copies the information back into the form bean
 		BeanUtils.copyProperties(form, req
@@ -596,6 +583,52 @@ public class EditContainerAction extends DotPortletAction implements
 
 
 		HibernateUtil.flush();
+	}
+
+	/**
+	 * Containers are associated with multiple Structures. This method takes care of the ContainerStructure save/update/delete logic
+	 * @param req Request
+	 * @param currentContainer Container as currently exists
+	 * @param container Container with the new changes to be persisted
+	 */
+	private void saveContainerStructures (ActionRequest req, Container currentContainer, Container container)
+			throws DotDataException, DotSecurityException {
+		List<ContainerStructure> oldContainerStructures = APILocator.getContainerAPI().getContainerStructures(currentContainer);
+		List<ContainerStructure> csList = new LinkedList<>();
+
+		// saving the multiple structures
+		if(container.getMaxContentlets()>0) {
+			String structuresIdsStr = req.getParameter("structuresIds");
+
+			String[] structuresIds = structuresIdsStr.split("#");
+
+			for (String structureId : structuresIds) {
+				String code = req.getParameter("code_"+structureId);
+				ContainerStructure cs = new ContainerStructure();
+				cs.setContainerId(container.getIdentifier());
+				cs.setContainerInode(container.getInode());
+				cs.setStructureId(structureId);
+				cs.setCode(code);
+				csList.add(cs);
+			}
+
+			//Save new structures
+			APILocator.getContainerAPI().saveContainerStructures(csList);
+
+		}
+
+		//Delete MultiTree for old / unused ContainerStructures
+		for (ContainerStructure oldCS : oldContainerStructures) {
+			boolean unused = true;
+			for (ContainerStructure newCS : csList) {
+				if (newCS.getStructureId().equals(oldCS.getStructureId())) {
+					unused = false;
+					break;
+				}
+			}
+
+
+		}
 	}
 
 	public void _copyWebAsset(ActionRequest req, ActionResponse res,
@@ -626,7 +659,7 @@ public class EditContainerAction extends DotPortletAction implements
 		Container workingContainer = (Container) super._getVersionBackWebAsset(
 				req, res, config, form, user, Container.class,
 				WebKeys.CONTAINER_EDIT);
-		ContainerServices.invalidate(workingContainer, true);
+	      new ContainerLoader().invalidate(workingContainer);
 	}
 
 }

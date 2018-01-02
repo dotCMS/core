@@ -32,7 +32,7 @@
               driverClassName="org.h2.Driver"
               url="jdbc:h2:WEB-INF/H2_DATABASE/h2_dotcms_data;MVCC=TRUE;LOCK_TIMEOUT=15000"
               username="sa" password="sa" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
-              removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
+              removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="false"
               timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
 
     <!-- POSTGRESQL

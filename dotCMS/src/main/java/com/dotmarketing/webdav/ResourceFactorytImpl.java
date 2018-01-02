@@ -46,6 +46,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 		url = url.toLowerCase();
     	Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
+			dotDavHelper.stripMapping(url);//method also sets the language
 			boolean isFolder = false;
 			boolean isResource = false;
 			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -51,18 +53,21 @@ public class ContentTypeResource implements Serializable {
 	private final WebResource webResource;
 	private final ContentTypeHelper contentTypeHelper;
 	private final PaginationUtil paginationUtil;
+	private final WorkflowHelper workflowHelper;
 
 	public ContentTypeResource() {
-		this(ContentTypeHelper.getInstance(), new WebResource(), new PaginationUtil(new ContentTypesPaginator()));
+		this(ContentTypeHelper.getInstance(), new WebResource(),
+				new PaginationUtil(new ContentTypesPaginator()), WorkflowHelper.getInstance());
 	}
 
 	@VisibleForTesting
 	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource,
-							   PaginationUtil paginationUtil) {
+							   final PaginationUtil paginationUtil, final WorkflowHelper workflowHelper) {
 
-		this.webResource = webresource;
+		this.webResource       = webresource;
 		this.contentTypeHelper = contentletHelper;
-		this.paginationUtil = paginationUtil;
+		this.paginationUtil    = paginationUtil;
+		this.workflowHelper    = workflowHelper;
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -218,13 +223,17 @@ public class ContentTypeResource implements Serializable {
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
+		final Map<String, Object> resultMap = new HashMap<>();
 		try {
-			ContentType type = tapi.find(idOrVar);
-			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
+
+			final ContentType type = tapi.find(idOrVar);
+			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
+			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+
+			response = Response.ok(new ResponseEntityView(resultMap)).build();
 		} catch (NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404
 		}
-
 
 		return response;
 	}

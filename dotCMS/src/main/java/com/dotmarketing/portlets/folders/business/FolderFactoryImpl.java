@@ -5,6 +5,8 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -37,13 +39,11 @@ import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AssetsComparator;
-import com.dotmarketing.util.ConvertToPOJOUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -78,23 +78,37 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void delete(Folder f) throws DotDataException {
-		Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
-		HibernateUtil.delete(f);
-		fc.removeFolder(f, id);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
+
+           Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
+           new DotConnect()
+                .setSQL("delete from folder where folder.inode = ? ")
+                .addParam(f.getInode()).loadResult();
+        
+           new DotConnect()
+            .setSQL("delete from inode where inode = ? ")
+            .addParam(f.getInode()).loadResult();
+           fc.removeFolder(f, id);
+
+        
+	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
+
 
 	@Override
 	protected Folder find(String folderInode) throws DotDataException {
 		Folder folder = fc.getFolder(folderInode);
 		if (folder == null) {
 			try{
-				folder = (Folder) new HibernateUtil(Folder.class).load(folderInode);
+			     DotConnect dc    = new DotConnect()
+			             .setSQL("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_ where folder.inode = ? ")
+			             .addParam(folderInode);
+
+				folder = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 				fc.addFolder(folder, id);
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
@@ -170,8 +184,10 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
-			return ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
-		}catch(ParseException | DotDataException e){
+
+			return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
+		}catch(DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
 
@@ -225,7 +241,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
-				result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
+
+				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -274,7 +292,10 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
-					result = ConvertToPOJOUtil.convertDotConnectMapToFolder(dc.loadResults());
+
+					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
+							.asList();
+
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -529,7 +550,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
             Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+            List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
             for(MultiTree m : pageContents){
             	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
             	MultiTreeFactory.saveMultiTree(mt);
@@ -1119,7 +1140,14 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
-			return ConvertToPOJOUtil.convertDotConnectMapToPOJO(dc.loadResults(), clazz);
+
+			DBTransformer transformer = TransformerLocator.createDBTransformer(dc.loadObjectResults(), clazz);
+
+			if (transformer != null){
+				return transformer.asList();
+			}
+
+
 		}catch(Exception e){
         	Logger.warn(this, e.getMessage(), e);
 		}

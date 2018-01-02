@@ -17,6 +17,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -146,20 +147,15 @@ public class Category extends Inode implements Serializable {
     }
 
 
-	@SuppressWarnings("unchecked")
+
 	public boolean hasActiveChildren() {
-		HibernateUtil dh = new HibernateUtil ();
-		String query = "select count(*) from " + Category.class.getName() + " cat where cat.inode in (select tree.child from " + Tree.class.getName() + "  tree where tree.parent = " + this.inode + ") " +
-		" and cat.active = " + DbConnectionFactory.getDBTrue();
-		List results ;
-		try {
-			dh.setQuery(query);
-			results = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(Category.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-		return ((Integer)results.get(0)).intValue() > 0;
+		DotConnect db = new DotConnect ();
+		String query = "select count(*) as test_count from category cat where cat.inode in (select tree.child from tree tree where tree.parent = ? )  and cat.active = ?";
+		db.setSQL(query);
+		db.addParam(this.getInode());
+		db.addParam(true);
+		return db.getInt("test_count")>0;
+
 	}
 
 	public Map<String, Object> getMap () {

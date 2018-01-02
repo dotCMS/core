@@ -12,6 +12,8 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityType;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -45,17 +47,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.model.User;
 
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
+import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -68,6 +66,13 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.servlet.VelocityServlet;
+
+import com.liferay.portal.model.User;
 
 
 
@@ -480,10 +485,19 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
+        return findPagesByTemplate(template, user, respectFrontendRoles, -1);
+    }
+
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean, int)
+     */
+    @Override
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles, int limit)
+            throws DotDataException, DotSecurityException {
 
         return permissionAPI.filterCollection(
                     contentletAPI.search("+_all:" + template.getIdentifier() + " +baseType:"
-                                    + BaseContentType.HTMLPAGE.getType(), -1, 0, null, user,
+                                    + BaseContentType.HTMLPAGE.getType(), limit, 0, null, user,
                             respectFrontendRoles),
                     PermissionAPI.PERMISSION_READ,
                     respectFrontendRoles,
@@ -711,10 +725,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         if (!liveMode) {
-            requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
+            PageMode.setPageMode(requestProxy, PageMode.PREVIEW_MODE);
         }
         boolean signedIn = false;
 
@@ -807,9 +818,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 langStr = "_" + langId;
             }
 
-            String VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-            String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
-                    : "/working/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
+            String VELOCITY_HTMLPAGE_EXTENSION = VelocityType.HTMLPAGE.fileExtension;
+            String vTempalate = (liveMode) ? File.separator+PageMode.LIVE.name() + File.separator+ idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
+                    : File.separator+PageMode.PREVIEW_MODE.name() + File.separator  + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
 
             ve.getTemplate(vTempalate).merge(context, out);
 
@@ -817,7 +828,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             Logger.error(this, e1.getMessage(), e1);
         } finally {
             context = null;
-            VelocityServlet.velocityCtx.remove();
+
         }
 
         if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {

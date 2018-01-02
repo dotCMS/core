@@ -75,7 +75,7 @@ public class RoleResource {
 		String roleId = paramsMap.get("id");
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
+        final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
 		CacheControl cc = new CacheControl();
         cc.setNoCache( true );
 
@@ -90,14 +90,16 @@ public class RoleResource {
 			JSONArray jsonChildren = new JSONArray();
 
 			for(Role r : rootRoles) {
-				JSONObject jsonRoleChildObject = new JSONObject();
-				jsonRoleChildObject.put("id", r.getId());
-				jsonRoleChildObject.put("$ref", r.getId());
-				jsonRoleChildObject.put("name", r.getName());
-				jsonRoleChildObject.put("locked", r.isLocked());
-				jsonRoleChildObject.put("children", true);
+				if(!workflowRoles.contains(r)) {
+					JSONObject jsonRoleChildObject = new JSONObject();
+					jsonRoleChildObject.put("id", r.getId());
+					jsonRoleChildObject.put("$ref", r.getId());
+					jsonRoleChildObject.put("name", r.getName());
+					jsonRoleChildObject.put("locked", r.isLocked());
+					jsonRoleChildObject.put("children", true);
 
-				jsonChildren.add(jsonRoleChildObject);
+					jsonChildren.add(jsonRoleChildObject);
+				}
 			}
 			//In order to add a JsonArray to a JsonObject
 			//we need to specify that is an object (API bug)
@@ -120,15 +122,16 @@ public class RoleResource {
 			if(children != null) {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
+					if(!workflowRoles.contains(r)) {
+						JSONObject jsonRoleChildObject = new JSONObject();
+						jsonRoleChildObject.put("id", r.getId());
+						jsonRoleChildObject.put("$ref", r.getId());
+						jsonRoleChildObject.put("name", r.getName());
+						jsonRoleChildObject.put("locked", r.isLocked());
+						jsonRoleChildObject.put("children", true);
 
-					JSONObject jsonRoleChildObject = new JSONObject();
-					jsonRoleChildObject.put("id", r.getId());
-					jsonRoleChildObject.put("$ref", r.getId());
-					jsonRoleChildObject.put("name", r.getName());
-					jsonRoleChildObject.put("locked", r.isLocked());
-					jsonRoleChildObject.put("children", true);
-
-					jsonChildren.add(jsonRoleChildObject);
+						jsonChildren.add(jsonRoleChildObject);
+					}
 				}
 			}
 			//In order to add a JsonArray to a JsonObject
