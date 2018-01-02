@@ -56,7 +56,7 @@ public interface DotLoader {
     }
     
     default InputStream writeOutVelocity(final String filePath, final String strOut) {
-        if (true) {
+        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
             try {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
