@@ -279,6 +279,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append("#end ");
             }
 
+            // end if maxContentlets >0
         } else {
 
             sb.append(container.getCode());
