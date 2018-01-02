@@ -284,8 +284,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	     if(UtilMethods.isSet(fatty.getIdentifier())){
 	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	        Identifier identifier = identifierAPI.loadFromDb(fatty.getIdentifier());
+
+	        if(identifier==null) {
+	            throw new DotStateException("Fatty's identifier not found in db. Fatty's inode: " + fatty.getInode()
+                    + ". Fatty's identifier: " + fatty.getIdentifier());
+            }
+
 	        Folder folder = null;
-	        if(identifier!=null && !"/".equals(identifier.getParentPath())){
+	        if(!"/".equals(identifier.getParentPath())){
 	            folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
 	        }else{
 	            folder = APILocator.getFolderAPI().findSystemFolder();
