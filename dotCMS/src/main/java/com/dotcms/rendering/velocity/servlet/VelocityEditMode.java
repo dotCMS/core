@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
-import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 
@@ -15,7 +14,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -32,7 +30,7 @@ public class VelocityEditMode extends VelocityModeHandler {
 
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-    private final PageMode mode = PageMode.EDIT_MODE;
+    private static final PageMode mode = PageMode.EDIT_MODE;
     private final String uri;
     private final Host host;
 

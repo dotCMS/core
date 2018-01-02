@@ -43,7 +43,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-    private final PageMode mode = PageMode.LIVE;
+    private static final PageMode mode = PageMode.LIVE;
     private final String uri;
     private final Host host;
 
@@ -176,7 +176,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 out.write(trimmedPage);
                 out.close();
                 synchronized (key.intern()) {
-                    // CacheLocator.getHTMLPageCache().remove(page);
                     CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
                 }
             } else {

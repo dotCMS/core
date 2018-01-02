@@ -159,7 +159,7 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        else if (iAm == IAm.PAGE) {
+        if (iAm == IAm.PAGE) {
 
             countPageVisit(request);
             countSiteVisit(request, response);

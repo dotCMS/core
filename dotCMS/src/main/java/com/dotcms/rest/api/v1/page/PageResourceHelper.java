@@ -143,10 +143,8 @@ public class PageResourceHelper implements Serializable {
 
     @CloseDB
     public String getPageRendered(final HttpServletRequest request, final
-    HttpServletResponse response, final User user, final String uri, PageMode mode) throws ResourceNotFoundException, ParseErrorException, DotRuntimeException, Exception {
+    HttpServletResponse response, final User user, final String uri, PageMode mode) throws DotDataException, DotSecurityException, IOException {
         
-        final Context velocityContext = VelocityUtil.getWebContext(request, response);
-
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
@@ -156,7 +154,7 @@ public class PageResourceHelper implements Serializable {
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
 
         if(null==page) {
-            response.sendError(404);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return null;
         }
         if(mode.isAdmin ) {

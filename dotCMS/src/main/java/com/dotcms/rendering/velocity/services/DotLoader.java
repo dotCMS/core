@@ -56,12 +56,12 @@ public interface DotLoader {
     }
     
     default InputStream writeOutVelocity(final String filePath, final String strOut) {
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
+        if (true) {
             try {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
                 f.delete();
-                try (final BufferedWriter out = new java.io.BufferedWriter(new VelocityPrettyWriter(new FileOutputStream(f)))) {
+                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(new FileOutputStream(f))) {
                     out.write(strOut);
                 }
             } catch (Exception e) {
