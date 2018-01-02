@@ -34,7 +34,7 @@ public class VelocityServlet extends HttpServlet {
     static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
     String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
 
-
+    @Override
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         RequestWrapper request = new RequestWrapper(req);
@@ -43,7 +43,7 @@ public class VelocityServlet extends HttpServlet {
                 : request.getRequestURI(), "UTF-8");
 
         if (uri == null) {
-            response.sendError(500, "VelocityServlet called without running through the CMS Filter");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
             Logger.error(this.getClass(),
                     "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  "
                             + Constants.CMS_FILTER_URI_OVERRIDE);
@@ -61,17 +61,17 @@ public class VelocityServlet extends HttpServlet {
 
         } catch (ResourceNotFoundException rnfe) {
             Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
-            response.sendError(404);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         } catch (ParseErrorException pee) {
             Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
-            response.sendError(500, "Template Parse Exception");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Template Parse Exception");
         } catch (MethodInvocationException mie) {
             Logger.error(this, "MethodInvocationException" + mie.toString(), mie);
-            response.sendError(500, "MethodInvocationException Error on template");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "MethodInvocationException Error on template");
         } catch (Exception e) {
             Logger.error(this, "Exception" + e.toString(), e);
-            response.sendError(500, "Exception Error on template");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
 
         } 
 
@@ -79,7 +79,7 @@ public class VelocityServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-
+        Logger.info(this.getClass(), "Initing VelocityServlet");
 
 
     }
