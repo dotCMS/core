@@ -5,15 +5,10 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.DotAssert;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
@@ -22,26 +17,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -51,11 +27,10 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import org.osgi.framework.BundleContext;
 
-import java.sql.Savepoint;
 import java.util.*;
+
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -64,6 +39,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private static Map<String, WorkFlowActionlet> actionletMap;
 
 	private final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
+
+	private final PermissionAPI  permissionAPI    = APILocator.getPermissionAPI();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -285,11 +262,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
+	public void saveStep(final WorkflowStep step) throws DotDataException, AlreadyExistException {
 
-		if (!UtilMethods.isSet(step.getName()) || !UtilMethods.isSet(step.getSchemeId())) {
-			throw new DotStateException("Step name and Scheme are required");
-		}
+		DotAssert.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
+				()-> "Step name and Scheme are required", DotStateException.class);
+
 		workFlowFactory.saveStep(step);
 	}
 
@@ -618,9 +595,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowAction findAction(final String id, final User user) throws DotDataException, DotSecurityException {
 
 		final WorkflowAction action = workFlowFactory.findAction(id);
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true)) {
-			throw new DotSecurityException("User " + user + " cannot read action " + action.getName());
-		}
+
+		DotAssert.isTrue(
+				this.permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
+				()-> "User " + user + " cannot read action " + action.getName(), DotSecurityException.class);
+
 		return action;
 	}
 
@@ -631,10 +610,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
 		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
-		if (null != action && !APILocator.getPermissionAPI().doesUserHavePermission
-				(action, PermissionAPI.PERMISSION_USE, user, true)) {
+		if (null != action) {
 
-			throw new DotSecurityException("User " + user + " cannot read action " + action.getName());
+			DotAssert.isTrue(permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
+						()-> "User " + user + " cannot read action " + action.getName(),
+						DotSecurityException.class);
 		}
 
 		return action;
@@ -644,10 +624,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions) throws DotDataException {
 
-		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
-
-			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
-		}
+		DotAssert.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
+				()-> "Workflow-does-not-exists-scheme",
+				DoesNotExistException.class);
 
 		try {
 
@@ -751,10 +730,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 
-		if (!UtilMethods.isSet(action.getSchemeId()) || !this.existsScheme(action.getSchemeId())) {
-
-			throw new DoesNotExistException("Workflow-does-not-exists-scheme");
-		}
+		DotAssert.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
+				()-> "Workflow-does-not-exists-scheme", DoesNotExistException.class);
 
 		if (!this.isValidShowOn(action.getShowOn())) {
 
