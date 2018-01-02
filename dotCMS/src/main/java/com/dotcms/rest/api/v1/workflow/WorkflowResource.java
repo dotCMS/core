@@ -150,7 +150,7 @@ public class WorkflowResource {
     } // findAllSchemesAndSchemesByContentType.
 
     /**
-     * Return Steps associated to the scheme    , 404 if does not exists. 401 if the user does not have permission.
+     * Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -194,6 +194,12 @@ public class WorkflowResource {
         return response;
     } // findSteps.
 
+    /**
+     * Finds the available actions for an inode
+     * @param request
+     * @param inode
+     * @return
+     */
     @GET
     @Path("/contentlet/{inode}/actions")
     @JSONP
