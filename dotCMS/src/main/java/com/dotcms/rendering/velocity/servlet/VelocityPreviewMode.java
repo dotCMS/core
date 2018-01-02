@@ -8,11 +8,9 @@ import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 
 import java.io.File;
@@ -25,18 +23,13 @@ import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
 
-public class VelocityPreviewMode implements VelocityModeHandler {
+public class VelocityPreviewMode extends VelocityModeHandler {
 
 
-    private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-
-    private String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
 
     private final HttpServletRequest request;
     private final HttpServletResponse response;
     private final PageMode mode = PageMode.PREVIEW_MODE;
-
-
     private final String uri;
     private final Host host;
 
@@ -80,8 +73,8 @@ public class VelocityPreviewMode implements VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 
-        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE);
-        builder.addAll(context);
+        new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
+        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);
 

@@ -8,11 +8,9 @@ import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 
 import java.io.File;
@@ -25,15 +23,13 @@ import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
 
-public class VelocityEditMode implements VelocityModeHandler {
+public class VelocityEditMode extends VelocityModeHandler {
 
 
-    private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-
     private final PageMode mode = PageMode.EDIT_MODE;
-    private String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
     private final String uri;
     private final Host host;
 
@@ -65,8 +61,7 @@ public class VelocityEditMode implements VelocityModeHandler {
         Context context = VelocityUtil.getWebContext(request, response);
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = VelocityUtil.getPage(id, langId, mode.showLive);
-        PageContextBuilder builder = new PageContextBuilder(htmlPage, user, PageMode.EDIT_MODE);
-        builder.addAll(context);
+        new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
 
 
 

@@ -57,19 +57,7 @@ public class VelocityServlet extends HttpServlet {
 
 
         try {
-            switch (mode) {
-                case PREVIEW_MODE:
-                    new VelocityPreviewMode(request, response).serve();
-                    break;
-                case EDIT_MODE:
-                    new VelocityEditMode(request, response).serve();
-                    break;
-                default:
-                    new VelocityLiveMode(request, response).serve();
-                    break;
-            }
-
-
+            VelocityModeHandler.modeHandler(mode, request, response).serve();
 
         } catch (ResourceNotFoundException rnfe) {
             Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);

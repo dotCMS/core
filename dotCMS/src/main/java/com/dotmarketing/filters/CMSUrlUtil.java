@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
@@ -435,50 +436,42 @@ public class CMSUrlUtil {
 	 * just for logging purposes, is not used to calculate anything.
 	 * @param user Current user
 	 */
-	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
-			final String requestedURIForLogging, final User user,
-			final HttpServletRequest request, final HttpServletResponse response)
-			throws IOException, DotDataException {
+    public boolean isUnauthorizedAndHandleError(final Permissionable permissionable, final String requestedURIForLogging,
+            final User user, final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException, DotDataException {
 
-		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-		// Check if the page is visible by a CMS Anonymous role
-		if (!permissionAPI
-				.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+        PageMode mode = PageMode.get(request);
+        // Check if the page is visible by a CMS Anonymous role
+        if (!permissionAPI.doesUserHavePermission(permissionable, PERMISSION_READ, user, mode.respectAnonPerms)) {
 
-			if (null == user) {//Not logged in user
+            if (null == user) {// Not logged in user
 
-				Logger.debug(this.getClass(),
-						"CHECKING PERMISSION: Page doesn't have anonymous access ["
-								+ requestedURIForLogging + "]");
-				Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
-				Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
+                Logger.debug(this.getClass(),
+                        "CHECKING PERMISSION: Page doesn't have anonymous access [" + requestedURIForLogging + "]");
+                Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
+                Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
 
-				request.getSession().setAttribute(
-						com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
-				response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-						"The requested page/file is unauthorized");
-				return true;
-			} else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
-					.contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
-				// User is logged in need to check user permissions
-				if (!permissionAPI
-						.doesUserHavePermission(permissionable, PERMISSION_READ, user,
-								true)) {
-					// the user doesn't have permissions to see this page
-					// go to unauthorized page
-					Logger.warn(this.getClass(),
-							"CHECKING PERMISSION: Page doesn't have any access for this user ["
-									+ requestedURIForLogging + "]");
-					response.sendError(HttpServletResponse.SC_FORBIDDEN,
-							"The requested page/file is forbidden");
-					return true;
-				}
-			}
-		}
+                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "The requested page/file is unauthorized");
+                return true;
+            } else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
+                .contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+                // User is logged in need to check user permissions
+                if (!permissionAPI.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+                    // the user doesn't have permissions to see this page
+                    // go to unauthorized page
+                    Logger.warn(this.getClass(),
+                            "CHECKING PERMISSION: Page doesn't have any access for this user [" + requestedURIForLogging + "]");
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "The requested page/file is forbidden");
+                    return true;
+                }
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
 
 	/**

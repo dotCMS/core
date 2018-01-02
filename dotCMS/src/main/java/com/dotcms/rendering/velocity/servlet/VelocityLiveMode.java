@@ -3,7 +3,6 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 
 import com.dotmarketing.beans.Host;
@@ -13,7 +12,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
@@ -38,12 +36,10 @@ import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
 
-public class VelocityLiveMode implements VelocityModeHandler {
+public class VelocityLiveMode extends VelocityModeHandler {
 
 
-    private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-    private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    private String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
+
     private final HttpServletRequest request;
     private final HttpServletResponse response;
     private final PageMode mode = PageMode.LIVE;
