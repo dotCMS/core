@@ -2612,44 +2612,57 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions, user, respectFrontendRoles);
+    public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException {
+        return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions, user,
+            respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException {
         return checkin(contentlet, (ContentletRelationships) null, null, permissions, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats, User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,
+                              List<Category> cats, User user, boolean respectFrontendRoles)
+        throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException,DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
         return checkin(contentlet, contentRelationships, null, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles)
-            throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException {
+            throws IllegalArgumentException,DotDataException, DotSecurityException {
         return checkin(contentlet, (ContentletRelationships) null, null, null, user,
             respectFrontendRoles, false);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)
+        throws IllegalArgumentException, DotDataException,DotSecurityException {
         return checkin(contentlet, null, cats, user, respectFrontendRoles);
     }
 
     @Override
-    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats , List<Permission> permissions, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
+                              List<Category> cats , List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
     }
 
@@ -2679,7 +2692,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
+                              List<Permission> permissions, User user,boolean respectFrontendRoles)
+        throws DotDataException,DotSecurityException, DotContentletStateException {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, false);
     }
 
@@ -2729,8 +2744,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     private Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
                                User user, boolean respectFrontendRoles, boolean createNewVersion,
-                               boolean generateSystemEvent) throws DotDataException, DotSecurityException,
-        DotContentletStateException {
+                               boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
 
