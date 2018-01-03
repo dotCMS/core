@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -27,6 +28,8 @@ import java.util.List;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -227,11 +230,10 @@ public class CMSUrlUtil {
 					Contentlet c = APILocator.getContentletAPI()
 							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
-					return (c.getStructure().getStructureType()
-							== Structure.STRUCTURE_TYPE_FILEASSET);
+					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
-			} catch (Exception e) {
-				Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 				return false;
 			}
 		}
