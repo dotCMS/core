@@ -80,9 +80,17 @@ public interface WorkFlowFactory {
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
-	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException;
+	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException;
 
-	public void saveSchemeIdsForContentType(String struc, List<String> schemesIds) throws DotDataException;
+	/**
+	 * Link the workflows with the {@link com.dotcms.contenttype.model.type.ContentType}, before remove all the
+	 * workflow linked previously with this {@link com.dotcms.contenttype.model.type.ContentType}
+	 *
+	 * @param contentTypeInode
+	 * @param schemesIds
+	 * @throws DotDataException
+	 */
+	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
