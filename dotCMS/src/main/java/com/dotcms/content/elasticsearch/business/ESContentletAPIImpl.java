@@ -29,6 +29,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
@@ -2442,7 +2443,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!rels.contains(relationship)){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
         }
-        List<Contentlet> cons = getRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles);
+        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
@@ -2611,217 +2612,58 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
-
-        Map<Relationship, List<Contentlet>> contentRelationships = null;
-        Contentlet workingCon = null;
-
-        //If the contentlet has identifier does not mean is already in DB
-        //It has to check if there is a working contentlet.
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
-
-            workingCon = findWorkingContentlet(contentlet);
-            if (workingCon != null){//If contentlet is not new.
-                if(cats==null) {
-                    cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                }
-                contentRelationships = findContentRelationships(workingCon);
-
-            } else { //If contentlet is new.
-                contentRelationships = findContentRelationships(contentlet);
-            }
-        } else{
-            contentRelationships = findContentRelationships(contentlet);
-        }
-
-        if(permissions == null)
-            permissions = new ArrayList<Permission>();
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
-
+    public Contentlet checkin(Contentlet contentlet, List<Category> cats, List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException {
+        return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions, user,
+            respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
-
-        List<Category> cats = null;
-        Map<Relationship, List<Contentlet>> contentRelationships = null;
-        Contentlet workingCon = null;
-
-        //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-            if(workingCon != null){
-                cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                contentRelationships = findContentRelationshipsFromIndex(workingCon);
-            } else {
-                contentRelationships = findContentRelationshipsFromIndex(contentlet);
-            }
-        } else {
-            contentRelationships = findContentRelationshipsFromIndex(contentlet);
-        }
-
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+    public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException {
+        return checkin(contentlet, (ContentletRelationships) null, null, permissions, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats, User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
-
-        List<Permission> permissions = null;
-        Contentlet workingCon = null;
-
-        //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-            if(workingCon != null){
-                if(cats==null) {
-                    cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                }
-                if(contentRelationships==null) {
-                    contentRelationships = findContentRelationships(workingCon);
-                }
-                permissions = permissionAPI.getPermissions(workingCon);
-            }
-        }
-
-        if(permissions == null)
-            permissions = new ArrayList<Permission>();
-
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,
+                              List<Category> cats, User user, boolean respectFrontendRoles)
+        throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException {
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException,DotContentletValidationException {
-
-        List<Permission> permissions = null;
-        List<Category> cats = null;
-        Contentlet workingCon = null;
-
-        //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-
-            if(workingCon != null){
-                permissions = permissionAPI.getPermissions(workingCon);
-                cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-
-                if(contentRelationships==null) {
-                    contentRelationships = findContentRelationships(workingCon);
-                }
-            }
-        }
-
-        if(permissions == null)
-            permissions = new ArrayList<Permission>();
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+    public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user,
+                              boolean respectFrontendRoles)
+        throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
+        return checkin(contentlet, contentRelationships, null, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
-
-        List<Permission> permissions = null;
-        List<Category> cats = null;
-        Map<Relationship, List<Contentlet>> contentRelationships = null;
-        Contentlet workingCon = null;
-
-        Identifier ident=null;
-        if(InodeUtils.isSet(contentlet.getIdentifier()))
-            ident = APILocator.getIdentifierAPI().find(contentlet);
-
-        //If contentlet is not new
-        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
-            workingCon = findWorkingContentlet(contentlet);
-            if(workingCon != null) {
-
-                permissions = permissionAPI.getPermissions(workingCon);
-                cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                contentRelationships = findContentRelationshipsFromIndex(workingCon);
-            } else {
-                contentRelationships = findContentRelationshipsFromIndex(contentlet);
-            }
-        }
-        else
-        {
-            contentRelationships = findContentRelationshipsFromIndex(contentlet);
-        }
-
-        if(permissions == null)
-            permissions = new ArrayList<Permission>();
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, false);
+    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles)
+            throws IllegalArgumentException,DotDataException, DotSecurityException {
+        return checkin(contentlet, (ContentletRelationships) null, null, null, user,
+            respectFrontendRoles, false);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,DotContentletValidationException {
-
-        List<Permission> permissions = null;
-        Map<Relationship, List<Contentlet>> contentRelationships = null;
-        Contentlet workingCon = null;
-
-        //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-            if(workingCon != null){
-                if(cats==null) {
-                    cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                }
-                permissions = permissionAPI.getPermissions(workingCon, false, true);
-                contentRelationships = findContentRelationships(workingCon);
-            } else {
-                contentRelationships = findContentRelationships(contentlet);
-            }
-        } else {
-            contentRelationships = findContentRelationships(contentlet);
-        }
-
-        if(permissions == null)
-            permissions = new ArrayList<Permission>();
-        if(cats == null)
-            cats = new ArrayList<Category>();
-        if(contentRelationships == null)
-            contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(workingCon == null)
-            workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+    public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)
+        throws IllegalArgumentException, DotDataException,DotSecurityException {
+        return checkin(contentlet, null, cats, user, respectFrontendRoles);
     }
 
     @Override
-    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats , List<Permission> permissions, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, false);
+    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
+                              List<Category> cats , List<Permission> permissions, User user,
+                              boolean respectFrontendRoles)
+        throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
     }
 
     /**
@@ -2829,7 +2671,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      * @param contentRelationships
      * @param cats
-     * @param permissions
      * @param user
      * @param respectFrontendRoles
      * @param generateSystemEvent
@@ -2841,45 +2682,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @CloseDBIfOpened
     private Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
-                               List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles,
+                               List<Category> cats, User user, boolean respectFrontendRoles,
                                boolean generateSystemEvent)
-            throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet, contentRelationships);
+
+        return checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, true, generateSystemEvent);
+    }
+
+    @Override
+    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
+                              List<Permission> permissions, User user,boolean respectFrontendRoles)
+        throws DotDataException,DotSecurityException, DotContentletStateException {
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, false);
+    }
+
+    private ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet,
+                                                                      Map<Relationship, List<Contentlet>> contentRelationships) {
+
+        if(contentRelationships == null) {
+            return null;
+        }
 
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
+        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
             boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
+            ContentletRelationshipRecords
+                records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
-
-        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles, true, generateSystemEvent);
-    }
-
-    @Override
-    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, true, false);
+        return relationshipsData;
     }
 
     @CloseDBIfOpened
     @Override
     public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
-        relationshipsData.setRelationshipsRecords(relationshipsRecords);
-        for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-            records.setRecords(relEntry.getValue());
-            relationshipsRecords.add(records);
-        }
-        return checkin(contentlet, relationshipsData, cats , permissions, user, respectFrontendRoles, false, false);
+        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet, contentRelationships);
+        return checkin(contentlet, relationshipsData, cats , user, respectFrontendRoles, false, false);
     }
 
     /**
@@ -2887,7 +2732,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      * @param contentRelationships
      * @param cats
-     * @param permissions
      * @param user
      * @param respectFrontendRoles
      * @param createNewVersion
@@ -2898,9 +2742,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletValidationException
      */
     @WrapInTransaction
-    private Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats, List<Permission> permissions,
-                               User user, boolean respectFrontendRoles, boolean createNewVersion, boolean generateSystemEvent) throws DotDataException, DotSecurityException, DotContentletStateException,
-            DotContentletValidationException {
+    private Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
+                               User user, boolean respectFrontendRoles, boolean createNewVersion,
+                               boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
 
@@ -2923,6 +2767,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
+
+            if(contentRelationships==null) {
+                contentRelationships = getExistingContentRelationships(contentlet);
+            }
+
+            if(cats==null) {
+                cats = getExistingContentCategories(contentlet);
+            }
 
             boolean saveWithExistingID=false;
             String existingInode=null, existingIdentifier=null;
@@ -2988,9 +2840,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         this.throwSecurityException(contentlet, user);
                     }
                 }
-                if (createNewVersion && (contentRelationships == null || cats == null || permissions == null))
+                if (createNewVersion && (contentRelationships == null || cats == null))
                     throw new IllegalArgumentException(
-                            "The categories, permissions and content relationships cannot be null when trying to checkin. The method was called improperly");
+                            "The categories, and content relationships cannot be null when trying to checkin. The method was called improperly");
                 try {
                     validateContentlet(contentlet, contentRelationships, cats);
 
@@ -3205,7 +3057,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
-                    moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+                    moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
                 }
 
                 // Refreshing permissions
@@ -3610,6 +3462,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    private List<Category> getExistingContentCategories(Contentlet contentlet)
+        throws DotSecurityException, DotDataException {
+        List<Category> cats = new ArrayList<>();
+        Contentlet workingCon = findWorkingContentlet(contentlet);
+
+        if(workingCon!=null) {
+            cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+        }
+        return cats;
+    }
+
+    private ContentletRelationships getExistingContentRelationships(Contentlet contentlet)
+        throws DotDataException, DotSecurityException {
+        Map<Relationship, List<Contentlet>> contentRelationships;
+
+        Identifier ident=null;
+        if(InodeUtils.isSet(contentlet.getIdentifier()))
+            ident = APILocator.getIdentifierAPI().find(contentlet);
+
+        //If contentlet is not new
+        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
+            Contentlet workingCon = findWorkingContentlet(contentlet);
+            if(workingCon != null) {
+                contentRelationships = findContentRelationships(workingCon);
+            } else {
+                contentRelationships = findContentRelationships(contentlet);
+            }
+        } else {
+            contentRelationships = findContentRelationships(contentlet);
+        }
+
+        return getContentletRelationshipsFromMap(contentlet, contentRelationships);
+
+    }
+
     private void throwSecurityException(final Contentlet contentlet,
                                               final User user) throws DotSecurityException {
 
@@ -3676,13 +3563,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param toContentlet
      * @param contentRelationships
      * @param categories
-     * @param permissions
      * @param user
      * @param respect
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private void moveContentDependencies(Contentlet fromContentlet, Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories ,List<Permission> permissions, User user,boolean respect) throws DotDataException, DotSecurityException{
+    private void moveContentDependencies(Contentlet fromContentlet, Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, User user,boolean respect) throws DotDataException, DotSecurityException{
 
         //Handles Categories
         List<Category> categoriesUserCannotRemove = new ArrayList<Category>();
@@ -3700,8 +3586,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
-        if(!categories.isEmpty())
-            categoryAPI.setParents(toContentlet, categories, user, respect);
+
+        categoryAPI.setParents(toContentlet, categories, user, respect);
 
 
         //Handle Relationships
@@ -4811,30 +4697,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentRelationships;
     }
-
-
-    private Map<Relationship, List<Contentlet>> findContentRelationshipsFromIndex(Contentlet contentlet)
-            throws DotDataException, DotSecurityException{
-        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(contentlet == null) {
-            return contentRelationships;
-        }
-
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
-        for (Relationship r : rels) {
-            if(!contentRelationships.containsKey(r)){
-                contentRelationships.put(r, new ArrayList<Contentlet>());
-            }
-            List<Contentlet> cons = getRelatedContentFromIndex(contentlet, r, APILocator.getUserAPI().getSystemUser(),
-                    true);
-            for (Contentlet c : cons) {
-                List<Contentlet> l = contentRelationships.get(r);
-                l.add(c);
-            }
-        }
-        return contentRelationships;
-    }
-
 
     @WrapInTransaction
     @Override
@@ -5960,7 +5822,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                               List<Category> cats, List<Permission> selectedPermissions, User user,
                               boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, selectedPermissions, user, respectFrontendRoles, true, generateSystemEvent);
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
     }
 
     /**
