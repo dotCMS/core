@@ -63,7 +63,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         PageMode mode = PageMode.get(request);
 
         String pageHostId = request.getParameter("host_id");
-        if (pageHostId != null && !mode.showLive) {
+        if (pageHostId != null && mode.isAdmin) {
             host = find(pageHostId, systemUser, respectFrontendRoles);
         } else {
             if (session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
