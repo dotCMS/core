@@ -34,19 +34,14 @@ import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
 
-    private final HttpServletRequestThreadLocal requestThreadLocal =
-            HttpServletRequestThreadLocal.INSTANCE;
+    private final HttpServletRequestThreadLocal requestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI()
-            .getRelativeAssetsRootPath();
+    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 
     public enum IAm {
-        PAGE,
-        FOLDER,
-        FILE,
-        NOTHING_IN_THE_CMS
+        PAGE, FOLDER, FILE, NOTHING_IN_THE_CMS
     }
 
     @Override
@@ -54,8 +49,19 @@ public class CMSFilter implements Filter {
 
     }
 
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
+
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+
+        try {
+            doFilterInternal(req, res, chain);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+
+
+    }
+
+    private void doFilterInternal(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
@@ -65,12 +71,12 @@ public class CMSFilter implements Filter {
         // Set the request in the thread local.
         this.requestThreadLocal.setRequest(request);
 
-        //Get the URI and query string from the request
+        // Get the URI and query string from the request
         String uri = urlUtil.getURIFromRequest(request);
-        final Boolean overriddenURI = urlUtil.wasURIOverridden(request);
+        final boolean overriddenURI = urlUtil.wasURIOverridden(request);
         String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
-        //Check for possible XSS hacks
+        // Check for possible XSS hacks
         String xssRedirect = urlUtil.xssCheck(uri, queryString);
         if (xssRedirect != null) {
             response.sendRedirect(xssRedirect);
@@ -79,21 +85,19 @@ public class CMSFilter implements Filter {
 
         LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 
-        //Getting Site object from the request
+        // Getting Site object from the request
         Object siteObject = request.getAttribute("host");
         Host site = null;
         if (null != siteObject) {
             site = (Host) request.getAttribute("host");
         } else {
-            Logger.error(this,
-                    String.format("Unable to retrieve current Site from request for URI [%s]",
-                            uri));
+            Logger.error(this, String.format("Unable to retrieve current Site from request for URI [%s]", uri));
         }
 
-		/*
-         * If someone is trying to go right to an asset without going through
-		 * the cms, give them a 404
-		 */
+        /*
+         * If someone is trying to go right to an asset without going through the cms, give them a
+         * 404
+         */
         if (UtilMethods.isSet(RELATIVE_ASSET_PATH) && uri.startsWith(RELATIVE_ASSET_PATH)) {
             response.sendError(403, "Forbidden");
             return;
@@ -117,8 +121,8 @@ public class CMSFilter implements Filter {
                 }
 
                 /*
-                At this point if the URI was overridden is probably because a VanityURL set
-                 it, and in that case we need to respect the status code set by the VanityURL.
+                 * At this point if the URI was overridden is probably because a VanityURL set it,
+                 * and in that case we need to respect the status code set by the VanityURL.
                  */
                 if (!overriddenURI) {
                     response.setStatus(301);
@@ -133,36 +137,18 @@ public class CMSFilter implements Filter {
             }
         }
 
-        if (iAm == IAm.PAGE) {
-            countPageVisit(request);
-            countSiteVisit(request, response);
-            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
-                    this.urlUtil.getUriWithoutQueryString(uri));
-            queryString = (null == queryString)?
-                    this.urlUtil.getQueryStringFromUri (uri):queryString;
-        }
-
-        // run rules engine for all requests
-        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-
-        //if we have committed the response, die
-        if (response.isCommitted()) {
-            return;
-        }
-
         else if (iAm == IAm.FILE) {
             Identifier ident;
             try {
-                //Serving the file through the /dotAsset servlet
+                // Serving the file through the /dotAsset servlet
                 StringWriter forward = new StringWriter();
                 forward.append("/dotAsset/");
 
                 ident = APILocator.getIdentifierAPI().find(site, uri);
                 request.setAttribute(Constants.CMS_FILTER_IDENTITY, ident);
 
-                //If language is in session, set as query string
-                forward.append('?').append(WebKeys.HTMLPAGE_LANGUAGE + "=")
-                        .append(String.valueOf(languageId));
+                // If language is in session, set as query string
+                forward.append('?').append(WebKeys.HTMLPAGE_LANGUAGE + "=").append(String.valueOf(languageId));
 
                 request.getRequestDispatcher(forward.toString()).forward(request, response);
 
@@ -173,16 +159,23 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        else if (iAm == IAm.PAGE) {
+        if (iAm == IAm.PAGE) {
+
+            countPageVisit(request);
+            countSiteVisit(request, response);
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, this.urlUtil.getUriWithoutQueryString(uri));
+
+            // run rules engine for all requests
+            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+
+            // if we have committed the response, die
+            if (response.isCommitted()) {
+                return;
+            }
+
             // Serving a page through the velocity servlet
-            StringWriter forward = new StringWriter();
-            if(PageMode.get(request).showLive) {
-                forward.append("/servlets/VelocityLiveServlet");
-            }
-            else {
-                forward.append("/servlets/VelocityPreviewServlet");
-            }
-            
+            StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
+
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
                     queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
@@ -190,21 +183,23 @@ public class CMSFilter implements Filter {
                 forward.append('?');
                 forward.append(queryString);
             }
-
             request.getRequestDispatcher(forward.toString()).forward(request, response);
             return;
         }
 
         if (uri.startsWith("/contentAsset/")) {
             if (response.isCommitted()) {
-				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                /*
+                 * Some form of redirect, error, or the request has already been fulfilled in some
+                 * fashion by one or more of the actionlets.
+                 */
                 return;
             }
         }
 
 
-       chain.doFilter(req, res);
-        
+        chain.doFilter(req, res);
+
     }
 
 
@@ -216,7 +211,7 @@ public class CMSFilter implements Filter {
 
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
         PageMode mode = PageMode.get(request);
-        if(mode == PageMode.LIVE) {
+        if (mode == PageMode.LIVE) {
             NumberOfTimeVisitedCounter.maybeCount(request, response);
         }
     }
@@ -224,7 +219,7 @@ public class CMSFilter implements Filter {
     private void countPageVisit(HttpServletRequest request) {
 
         PageMode mode = PageMode.get(request);
-        if(mode == PageMode.LIVE) {
+        if (mode == PageMode.LIVE) {
             Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
             if (visitor.isPresent()) {

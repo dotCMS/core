@@ -88,28 +88,20 @@ public class DotResourceCache implements ResourceCache, Cachable {
      * 
      * @see org.apache.velocity.runtime.resource.ResourceCache#get(java.lang.Object)
      */
-    public Resource get(Object resourceKey) {
+    @Override
+    public Resource get(final Object resourceKey) {
 
-        String cleanedResourceKey = cleanKey(resourceKey.toString());
-        String group = primaryGroup;
+        final String key = cleanKey(resourceKey.toString());
 
-        Resource resource = null;
-        String key = group + cleanedResourceKey;
         try {
-            resource = (Resource) cache.get(key, group);
+            return (Resource) cache.get(key, primaryGroup);
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
-        return resource != null ? resource : null;
+        return null;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.velocity.runtime.resource.ResourceCache#initialize(org.apache.velocity.runtime.
-     * RuntimeServices)
-     */
+    @Override
     public void initialize(RuntimeServices rs) {
         cache = CacheLocator.getCacheAdministrator();
     }
@@ -122,45 +114,28 @@ public class DotResourceCache implements ResourceCache, Cachable {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.velocity.runtime.resource.ResourceCache#put(java.lang.Object,
-     * org.apache.velocity.runtime.resource.Resource)
-     */
-    public Resource put(Object resourceKey, Resource resource) {
+    @Override
+    public Resource put(final Object resourceKey, final Resource resource) {
         if (resource != null && ignoreGlobalVM.contains(resource.getName())) {
             return resource;
         }
 
-        String cleanedResourceKey = cleanKey(resourceKey.toString());
-        String group = primaryGroup;
+        String key = cleanKey(resourceKey.toString());
 
-
-
-        String key = group + cleanedResourceKey;
         // Add the key to the cache
-        cache.put(key, resource, group);
+        cache.put(key, resource, primaryGroup);
 
         return resource;
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.velocity.runtime.resource.ResourceCache#remove(java.lang.Object)
-     */
-    public Resource remove(Object resourceKey) {
+    @Override
+    public Resource remove(final Object resourceKey) {
 
-        String cleanedResourceKey = cleanKey(resourceKey.toString());
-        String group = primaryGroup;
-
-
-        String key = group + cleanedResourceKey;
+        final String key = cleanKey(resourceKey.toString());
 
         try {
-            cache.remove(key, group);
+            cache.remove(key, primaryGroup);
         } catch (Exception e) {
             Logger.debug(this, e.getMessage(), e);
         }
@@ -174,10 +149,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
 
     }
 
-    @Deprecated
-    public void clearMenuCache() {
 
-    }
 
     public String[] getGroups() {
         return groupNames;
@@ -201,10 +173,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
         return key;
     }
 
-    @Deprecated
-    public String getMenuGroup() {
-        return primaryGroup;
-    }
+
 
     public void removeContentTypeFile(ContentType contentType) {
         String folderPath = "working/";

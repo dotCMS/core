@@ -46,7 +46,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -226,127 +225,119 @@ public class ContentletLoader implements DotLoader {
             if (field instanceof ImageField || field instanceof FileField) {
                 String identifierValue = content.getStringProperty(field.variable());
                 if (InodeUtils.isSet(identifierValue)) {
-                    if (PageMode.EDIT_MODE == mode) {
+                    sb.append("#set($")
+                        .append(field.variable())
+                        .append("Object= $filetool.getFile('")
+                        .append(identifierValue)
+                        .append("'," + mode.showLive + ",")
+                        .append(content.getLanguageId())
+                        .append(" ))");
+    
+                    if (field instanceof ImageField) {
                         sb.append("#set($")
                             .append(field.variable())
-                            .append("Object= $filetool.getFile('")
-                            .append(identifierValue)
-                            .append("',false,")
+                            .append("ImageInode=$!{")
+                            .append(field.variable())
+                            .append("Object.getInode()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageIdentifier=$!{")
+                            .append(field.variable())
+                            .append("Object.getIdentifier()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageWidth=$!{")
+                            .append(field.variable())
+                            .append("Object.getWidth()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageHeight=$!{")
+                            .append(field.variable())
+                            .append("Object.getHeight()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageExtension=$!{")
+                            .append(field.variable())
+                            .append("Object.getExtension()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageURI=$filetool.getURI($!{")
+                            .append(field.variable())
+                            .append("Object}, ")
                             .append(content.getLanguageId())
                             .append(" ))");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageTitle=$UtilMethods.espaceForVelocity($!{")
+                            .append(field.variable())
+                            .append("Object.getTitle()}) )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageFriendlyName=$UtilMethods.espaceForVelocity($!{")
+                            .append(field.variable())
+                            .append("Object.getFriendlyName()}) )");
+    
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImagePath=$!{")
+                            .append(field.variable())
+                            .append("Object.getPath()})");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("ImageName=$!{")
+                            .append(field.variable())
+                            .append("Object.getFileName()})");
+    
                     } else {
                         sb.append("#set($")
                             .append(field.variable())
-                            .append("Object= $filetool.getFile('")
-                            .append(identifierValue)
-                            .append("',true,")
+                            .append("FileInode=$!{")
+                            .append(field.variable())
+                            .append("Object.getInode()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileIdentifier=$!{")
+                            .append(field.variable())
+                            .append("Object.getIdentifier()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileExtension=$!{")
+                            .append(field.variable())
+                            .append("Object.getExtension()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileURI=$filetool.getURI($!{")
+                            .append(field.variable())
+                            .append("Object}, ")
                             .append(content.getLanguageId())
                             .append(" ))");
-                    }
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileTitle=$!{")
+                            .append(field.variable())
+                            .append("Object.getTitle()} )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileFriendlyName=$UtilMethods.espaceForVelocity($!{")
+                            .append(field.variable())
+                            .append("Object.getFriendlyName()} ))");
+    
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FilePath=$UtilMethods.espaceForVelocity($!{")
+                            .append(field.variable())
+                            .append("Object.getPath()}) )");
+                        sb.append("#set($")
+                            .append(field.variable())
+                            .append("FileName=$UtilMethods.espaceForVelocity($!{")
+                            .append(field.variable())
+                            .append("Object.getFileName()} ))");
+                        }
+
                 } else {
                     sb.append("#set($")
                         .append(field.variable())
                         .append("Object= $filetool.getNewFile())");
-                }
-                if (field instanceof ImageField) {
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageInode=$!{")
-                        .append(field.variable())
-                        .append("Object.getInode()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageIdentifier=$!{")
-                        .append(field.variable())
-                        .append("Object.getIdentifier()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageWidth=$!{")
-                        .append(field.variable())
-                        .append("Object.getWidth()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageHeight=$!{")
-                        .append(field.variable())
-                        .append("Object.getHeight()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageExtension=$!{")
-                        .append(field.variable())
-                        .append("Object.getExtension()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageURI=$filetool.getURI($!{")
-                        .append(field.variable())
-                        .append("Object}, ")
-                        .append(content.getLanguageId())
-                        .append(" ))");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageTitle=$UtilMethods.espaceForVelocity($!{")
-                        .append(field.variable())
-                        .append("Object.getTitle()}) )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageFriendlyName=$UtilMethods.espaceForVelocity($!{")
-                        .append(field.variable())
-                        .append("Object.getFriendlyName()}) )");
-
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImagePath=$!{")
-                        .append(field.variable())
-                        .append("Object.getPath()})");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("ImageName=$!{")
-                        .append(field.variable())
-                        .append("Object.getFileName()})");
-
-                } else {
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileInode=$!{")
-                        .append(field.variable())
-                        .append("Object.getInode()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileIdentifier=$!{")
-                        .append(field.variable())
-                        .append("Object.getIdentifier()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileExtension=$!{")
-                        .append(field.variable())
-                        .append("Object.getExtension()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileURI=$filetool.getURI($!{")
-                        .append(field.variable())
-                        .append("Object}, ")
-                        .append(content.getLanguageId())
-                        .append(" ))");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileTitle=$!{")
-                        .append(field.variable())
-                        .append("Object.getTitle()} )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileFriendlyName=$UtilMethods.espaceForVelocity($!{")
-                        .append(field.variable())
-                        .append("Object.getFriendlyName()} ))");
-
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FilePath=$UtilMethods.espaceForVelocity($!{")
-                        .append(field.variable())
-                        .append("Object.getPath()}) )");
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("FileName=$UtilMethods.espaceForVelocity($!{")
-                        .append(field.variable())
-                        .append("Object.getFileName()} ))");
                 }
             } // http://jira.dotmarketing.net/browse/DOTCMS-2178
             else if (field instanceof BinaryField) {

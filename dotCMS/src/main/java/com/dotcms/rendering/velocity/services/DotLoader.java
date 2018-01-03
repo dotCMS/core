@@ -61,7 +61,7 @@ public interface DotLoader {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
                 f.delete();
-                try (final BufferedWriter out = new java.io.BufferedWriter(new VelocityPrettyWriter(new FileOutputStream(f)))) {
+                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(new FileOutputStream(f))) {
                     out.write(strOut);
                 }
             } catch (Exception e) {
