@@ -269,7 +269,7 @@ public class CMSUrlUtil {
 				return true;
 			}
 		} catch (Exception e) {
-			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
+			Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 		}
 
 		return false;

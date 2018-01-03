@@ -85,14 +85,8 @@ public class CMSFilter implements Filter {
 
         LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 
-        // Getting Site object from the request
-        Object siteObject = request.getAttribute("host");
-        Host site = null;
-        if (null != siteObject) {
-            site = (Host) request.getAttribute("host");
-        } else {
-            Logger.error(this, String.format("Unable to retrieve current Site from request for URI [%s]", uri));
-        }
+
+        Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
         /*
          * If someone is trying to go right to an asset without going through the cms, give them a

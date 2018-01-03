@@ -51,38 +51,39 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	}
 	
 	
-	@CloseDBIfOpened
-	public Host getCurrentHost(HttpServletRequest request) throws DotDataException, DotSecurityException, PortalException, SystemException {
-		Host host = null;
-		HttpSession session = request.getSession(false);
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		User systemUser = userWebAPI.getSystemUser();
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+    @CloseDBIfOpened
+    public Host getCurrentHost(HttpServletRequest request)
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+        Host host = null;
+        HttpSession session = request.getSession(false);
+        UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+        User systemUser = userWebAPI.getSystemUser();
+        boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
-		PageMode mode = PageMode.get(request);
+        PageMode mode = PageMode.get(request);
 
         String pageHostId = request.getParameter("host_id");
-        if(pageHostId != null && !mode.showLive) {
+        if (pageHostId != null && !mode.showLive) {
             host = find(pageHostId, systemUser, respectFrontendRoles);
         } else {
-            if(session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
-            	host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
-            } else if(request.getAttribute(WebKeys.CURRENT_HOST) != null) {
-        		host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
-        	} else {
-				String serverName = request.getServerName();
-				if (UtilMethods.isSet(serverName)) {
-					host = resolveHostName(serverName, systemUser, respectFrontendRoles);
-				}
-        	}
+            if (session != null && mode.isAdmin && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
+                host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
+            } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
+                host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
+            } else {
+                String serverName = request.getServerName();
+                if (UtilMethods.isSet(serverName)) {
+                    host = resolveHostName(serverName, systemUser, respectFrontendRoles);
+                }
+            }
         }
-        
+
         request.setAttribute(WebKeys.CURRENT_HOST, host);
-        if(session != null && mode.isAdmin) {
+        if (session != null && mode.isAdmin) {
             session.setAttribute(WebKeys.CURRENT_HOST, host);
         }
         return host;
-	}
+    }
 
 	@Override
     public Host getCurrentHostNoThrow(HttpServletRequest request) {
