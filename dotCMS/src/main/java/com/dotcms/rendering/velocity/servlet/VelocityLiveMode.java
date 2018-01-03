@@ -63,7 +63,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
     @Override
-    public final void serve() throws Exception {
+    public final void serve() throws DotDataException, IOException, DotSecurityException {
 
         serve(response.getWriter());
 

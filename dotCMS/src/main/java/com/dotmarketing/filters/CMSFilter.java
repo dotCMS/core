@@ -53,7 +53,7 @@ public class CMSFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
         try {
-            _doFilter(req, res, chain);
+            doFilterInternal(req, res, chain);
         } finally {
             DbConnectionFactory.closeSilently();
         }
@@ -61,7 +61,7 @@ public class CMSFilter implements Filter {
 
     }
 
-    private void _doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+    private void doFilterInternal(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;

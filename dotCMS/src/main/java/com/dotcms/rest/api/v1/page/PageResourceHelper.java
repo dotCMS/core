@@ -294,6 +294,7 @@ public class PageResourceHelper implements Serializable {
     public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
+        
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);

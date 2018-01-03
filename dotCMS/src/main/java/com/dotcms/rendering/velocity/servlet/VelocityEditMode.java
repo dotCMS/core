@@ -26,8 +26,6 @@ import com.liferay.portal.model.User;
 
 public class VelocityEditMode extends VelocityModeHandler {
 
-
-
     private final HttpServletRequest request;
     private final HttpServletResponse response;
     private static final PageMode mode = PageMode.EDIT_MODE;
@@ -68,14 +66,13 @@ public class VelocityEditMode extends VelocityModeHandler {
 
 
 
-
         this.getTemplate(htmlPage, mode).merge(context, out);
 
 
     }
 
     @Override
-    public void serve() throws Exception {
+    public void serve() throws DotDataException, IOException, DotSecurityException {
         serve(response.getWriter());
 
 

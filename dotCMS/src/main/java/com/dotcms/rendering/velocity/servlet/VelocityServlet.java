@@ -2,13 +2,8 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
-import com.dotcms.visitor.business.VisitorAPI;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.Constants;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 
@@ -30,9 +25,7 @@ public class VelocityServlet extends HttpServlet {
      * 
      */
     private static final long serialVersionUID = 1L;
-    static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-    static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
+
 
     @Override
     @CloseDB

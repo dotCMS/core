@@ -25,29 +25,31 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.Template;
 
 public abstract class VelocityModeHandler {
-    
-    protected String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
-    protected static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-    protected static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    
-    
-    
-    abstract void serve() throws Exception;
+
+    protected static final String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
+    protected static final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+    protected static final VisitorAPI visitorAPI = APILocator.getVisitorAPI();
+
+
+
+    abstract void serve() throws DotDataException, IOException, DotSecurityException;
 
     abstract void serve(Writer out) throws DotDataException, IOException, DotSecurityException;
 
 
     public final String eval() {
         StringWriter out = new StringWriter(4096);
+
         try {
             serve(out);
-        } catch (Exception e) {
+        } catch (DotDataException | IOException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
+
         return out.toString();
     }
 
-    public final static VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response) {
+    public static final VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response) {
         switch (mode) {
             case PREVIEW_MODE:
                 return new VelocityPreviewMode(request, response);
@@ -58,13 +60,12 @@ public abstract class VelocityModeHandler {
 
         }
     }
-    
+
     public final Template getTemplate(IHTMLPage page, PageMode mode) {
 
-        return VelocityUtil.getEngine()
-            .getTemplate(mode.name() + File.separator + page.getIdentifier() + "_" + page.getLanguageId() + "."
-                    + VelocityType.HTMLPAGE.fileExtension);
+        return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
+                + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
     }
-    
-    
+
+
 }

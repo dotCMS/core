@@ -48,7 +48,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
 
 
     @Override
-    public void serve() throws Exception {
+    public void serve() throws DotDataException, IOException, DotSecurityException {
 
         serve(response.getWriter());
 
