@@ -238,11 +238,16 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
 					IHTMLPage page = null;
+					List<Contentlet> results = APILocator.getContentletAPI()
+							.search("+identifier:" + st.getPagedetail() + " +live:true", 0, 0,
+									"moddate", systemUser, false);
+					if (results != null && !results.isEmpty()) {
 						//First lets asume it is a HTMLPageAsset
-						Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier:" + st.getPagedetail() + " +live:true", 0, 0, "moddate", systemUser, false ).get( 0 );
-						if ( contentlet != null ) {
-							page = APILocator.getHTMLPageAssetAPI().fromContentlet( contentlet );
+						Contentlet contentlet = results.get(0);
+						if (contentlet != null) {
+							page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 						}
+					}
 
 					if ( !UtilMethods.isSet( page ) || !UtilMethods.isSet( page.getIdentifier() ) ) {
 						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );
