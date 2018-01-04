@@ -1620,7 +1620,7 @@ public class BrowserAjax {
 	public Map<String, Object> validateRelatedContentType(String inode)
 			throws DotDataException, LanguageException, DotSecurityException {
 
-		Map<String, Object> result = new HashMap<String, Object>();
+		Map<String, Object> result = new HashMap<>();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = getUser(req);
 		StringBuilder relatedPagesMessage = new StringBuilder();

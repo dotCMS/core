@@ -1,50 +1,15 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import java.util.stream.Collectors;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.BeanUtils;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -64,7 +29,6 @@ import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -154,7 +118,13 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -178,18 +148,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1834,7 +1798,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (relatedContentTypes != null && !relatedContentTypes.isEmpty()){
 
             //Unlinking url map and detail page
-            relatedContentTypes.forEach(contentType -> {
+            relatedContentTypes.forEach((ContentType contentType) -> {
                 try {
                     contentTypeAPI.unlinkPageFromContentType(contentType);
                 } catch (DotSecurityException | DotDataException e) {
@@ -1851,7 +1815,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             relatedPagesMessage.append(relatedContentTypes.stream()
-                    .map(t -> t.name() + " - Detail Page: " + uri)
+                    .map((ContentType t)  -> t.name() + " - Detail Page: " + uri)
                     .collect(Collectors.joining("<br/>")));
 
 

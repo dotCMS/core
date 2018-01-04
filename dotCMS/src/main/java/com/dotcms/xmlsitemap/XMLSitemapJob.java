@@ -238,7 +238,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
 					IHTMLPage page = null;
-					List<Contentlet> results = APILocator.getContentletAPI()
+					final List<Contentlet> results = APILocator.getContentletAPI()
 							.search("+identifier:" + st.getPagedetail() + " +live:true", 0, 0,
 									"moddate", systemUser, false);
 					if (results != null && !results.isEmpty()) {
