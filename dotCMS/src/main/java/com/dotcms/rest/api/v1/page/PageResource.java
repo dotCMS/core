@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -13,8 +14,19 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -22,10 +34,14 @@ import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -192,8 +208,10 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-            final String html = this.pageResourceHelper.getPageRendered(request, response, user, uri, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html));
+            HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+            final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
+            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
+                    page.getIdentifier(), "inode", page.getInode()));
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
@@ -315,4 +333,79 @@ public class PageResource {
         return res;
     }
 
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("{pageId}/add/container/{containerId}/content/{contentletId}/uid/{uid}/order/{order}")
+    public final Response addContentToContainer(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
+                                                @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
+                                                @PathParam("order") final int order, @PathParam("uid") final String uid,
+                                                @PathParam("pageId") final String pageId) throws DotDataException,
+            DotSecurityException, ParseErrorException, MethodInvocationException, ResourceNotFoundException, IOException,
+            IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        final PageMode mode = PageMode.get(req);
+        final Language id = WebAPILocator.getLanguageWebAPI()
+                .getLanguage(req);
+
+        final Contentlet contentlet = pageResourceHelper.getContentlet(user, mode, id, contentletId);
+        Container container = pageResourceHelper.getContainer(containerId, user, mode);
+        Contentlet page = pageResourceHelper.getPage(user, pageId);
+
+        if (page == null || contentlet == null || container == null) {
+            return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+        }
+
+        pageResourceHelper.checkPagePermission(user, page);
+        pageResourceHelper.checkPermission(user, contentlet, container);
+
+        MultiTree mt = new MultiTree().setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid)
+                .setTreeOrder(order)
+                .setHtmlPage(page.getIdentifier());
+
+        MultiTreeFactory.saveMultiTree(mt);
+
+
+        return Response.ok("ok")
+                .build();
+    }
+
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("{pageId}/content")
+    public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
+                                     PageContainerForm pageContainerForm) {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        Response res = null;
+
+        try {
+            Contentlet page = pageResourceHelper.getPage(user, pageId);
+            if (page == null) {
+                return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+            }
+
+            pageResourceHelper.checkPagePermission(user, page);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+            res = Response.ok("ok").build();
+        } catch (DotSecurityException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        } catch (DotDataException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        }
+
+        return res;
+    }
 }

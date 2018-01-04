@@ -9,6 +9,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
  * Multi-Tree represents the relationship between a Legacy or Content Page, a container, and a
@@ -44,6 +47,7 @@ public class MultiTreeFactory {
 
 
     final static String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    final static String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
     final static String SELECT_SQL =
             "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
@@ -260,7 +264,29 @@ public class MultiTreeFactory {
 
     }
 
+    @WrapInTransaction
+    public static void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty())
+            throw new DotDataException("empty list passed in");
 
+        DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
+                .addParam(pageId);
+        db.loadResult();
+
+        final List<Params> params = list();
+        int i = 0;
+        for (MultiTree tree : mTrees) {
+            params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+            i++;
+        }
+
+        db.executeBatch(INSERT_SQL, params);
+
+        MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
+
+    }
 
     private static void _dbUpsert(final MultiTree mtree) throws DotDataException {
 

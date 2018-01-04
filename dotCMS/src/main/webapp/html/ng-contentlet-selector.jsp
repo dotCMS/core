@@ -1,3 +1,11 @@
+
+<%@page import="com.liferay.portal.model.User"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.liferay.portal.util.PortalUtil"%>
+<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="java.util.List"%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,50 +70,38 @@
     <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
 
+    <%
+        String containerIdentifier = (String) request.getParameter("container_id");
+        User user = PortalUtil.getUser(request);
+        Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
+    %>
+
     <script type="text/javascript">
         dojo.require("dotcms.dijit.form.ContentSelector");
 
         dojo.addOnLoad(function () {
             contentSelector.show();
             contentSelector.containerStructures = [
+                <%
+                    for (Structure structure: structuresInContainer) {
+                %>
                 {
-                    "inode":"d2a77f80-2628-4819-bfe9-e9916eb6ba70",
-                    "name":"Location"
+                    "inode": '<%=structure.id()%>',
+                    "name": '<%=structure.getName()%>'
                 },
-                {
-                    "inode":"d8262b9f-84ea-46f9-88c4-0c8959271d67",
-                    "name":"Document"
-                },
-                {
-                    "inode":"9ea36ae1-7775-48ae-99fe-f4ebca03a3de",
-                    "name":"Products"
-                },
-                {
-                    "inode":"f6259cc9-5d78-453e-8167-efd7b72b2e96",
-                    "name":"Event"
-                },
-                {
-                    "inode":"2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
-                    "name":"Content (Generic)"
-                },
-                {
-                    "inode":"28039964-5615-4ccf-bb96-ded62adbcc6a",
-                    "name":"News"
-                },
-                {
-                    "inode":"799f176a-d32e-4844-a07c-1b5fcd107578",
-                    "name":"Blog"
-                },
-                {
-                    "inode":"2182e848-0240-4931-b63d-824962b66007",
-                    "name":"Media"
-                }
+                <%
+                    }
+                %>
             ];
+
             contentSelector._fillStructures();
         })
+
+
     </script>
 </head>
 <body>
-    <div jsId="contentSelector" onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
+<div jsId="contentSelector" onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
 </body>
 </html>
