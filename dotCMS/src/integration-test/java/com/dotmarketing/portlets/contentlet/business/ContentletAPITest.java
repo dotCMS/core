@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -2344,8 +2345,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     	// languages
     	int english = 1;
     	int spanish = 2;
-        //Using System User.
-        User user = APILocator.getUserAPI().getSystemUser();
+
         // new template
         Template template = new TemplateDataGen().nextPersisted();
         // new test folder
@@ -3038,6 +3038,59 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         }finally{
             if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test
+    public void testDeletePageDefinedAsDetailPage() throws DotSecurityException, DotDataException {
+
+        long time              = System.currentTimeMillis();
+        ContentType type       = null;
+        Folder testFolder      = null;
+        HTMLPageAsset htmlPage = null;
+        Template template      = null;
+
+        try{
+            // new template
+            template = new TemplateDataGen().nextPersisted();
+
+            // new test folder
+            testFolder = new FolderDataGen().nextPersisted();
+
+            //new html page
+            htmlPage = new HTMLPageDataGen(testFolder, template)
+                    .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            //new content type with detail page
+            type = ContentTypeBuilder
+                    .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+                    .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
+                    .host(Host.SYSTEM_HOST)
+                    .name("ContentTypeWithDetailPage" + time).owner("owner")
+                    .variable("velocityVarNameTesting" + time)
+                    .detailPage(htmlPage.getIdentifier()).urlMapPattern("mapPatternForTesting")
+                    .build();
+            type = contentTypeAPI.save(type, null, null);
+
+            //html page is removed
+            contentletAPI.delete(htmlPage, user, false);
+
+            //verify that the content type was unlinked from the deleted page
+            type = contentTypeAPI.find(type.id());
+            assertNull(type.detailPage());
+            assertNull(type.urlMapPattern());
+        } finally {
+            if (type != null){
+                contentTypeAPI.delete(type);
+            }
+
+            if (testFolder != null){
+                FolderDataGen.remove(testFolder);
+            }
+
+            if (template != null){
+                TemplateDataGen.remove(template);
+            }
         }
     }
 
