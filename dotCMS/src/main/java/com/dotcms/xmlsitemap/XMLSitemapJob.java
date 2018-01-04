@@ -243,7 +243,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 									"moddate", systemUser, false);
 					if (results != null && !results.isEmpty()) {
 						//First lets asume it is a HTMLPageAsset
-						Contentlet contentlet = results.get(0);
+						final Contentlet contentlet = results.get(0);
 						if (contentlet != null) {
 							page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 						}
