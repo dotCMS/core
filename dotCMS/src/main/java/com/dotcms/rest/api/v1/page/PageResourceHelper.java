@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
 import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
 import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 
@@ -21,7 +22,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -34,7 +35,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -46,12 +46,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.management.relation.RelationType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -82,6 +80,7 @@ public class PageResourceHelper implements Serializable {
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
 
     private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
 
@@ -112,7 +111,22 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        MultiTreeFactory.saveMultiTrees(pageId, multiTres);
+        multiTreeAPI.saveMultiTrees(pageId, multiTres);
+    }
+
+    public void saveMultiTree(@PathParam("containerId") String containerId,
+                               @PathParam("contentletId") String contentletId,
+                               @PathParam("order") int order,
+                               @PathParam("uid") String uid,
+                               Contentlet page) throws DotDataException {
+
+        MultiTree mt = new MultiTree().setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid)
+                .setTreeOrder(order)
+                .setHtmlPage(page.getIdentifier());
+
+        multiTreeAPI.saveMultiTree(mt);
     }
 
     /**

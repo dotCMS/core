@@ -23,8 +23,9 @@ import java.util.Map;
 public class PageContainerForm {
 
     private List<ContainerEntry> entries;
+    private String requestJson;
 
-    public PageContainerForm(List<ContainerEntry> entries) {
+    public PageContainerForm(List<ContainerEntry> entries, String s) {
         this.entries = entries;
     }
 
@@ -32,11 +33,15 @@ public class PageContainerForm {
         return entries;
     }
 
+    public String getRequestJson() {
+        return requestJson;
+    }
+
     static final class ContainerDeserialize extends JsonDeserializer<PageContainerForm> {
 
         @Override
         public PageContainerForm deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-                throws IOException, JsonProcessingException {
+                throws IOException {
 
             JsonNode jsonNode = jsonParser.readValueAsTree();
             List<ContainerEntry> entries = new ArrayList<>();
@@ -53,7 +58,7 @@ public class PageContainerForm {
                 entries.add(containerEntry);
             }
 
-            return new PageContainerForm(entries);
+            return new PageContainerForm(entries, jsonParser.readValueAsTree().toString());
         }
     }
 

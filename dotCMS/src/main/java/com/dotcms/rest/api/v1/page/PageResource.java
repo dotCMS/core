@@ -14,11 +14,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.uuid.shorty.ShortType;
-import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -333,6 +329,28 @@ public class PageResource {
         return res;
     }
 
+    /**
+     * Add a content to a specific container into the page
+     *
+     * @param req
+     * @param res
+     * @param containerId container's id
+     * @param contentletId content's id
+     * @param order order to add the content
+     * @param uid {@link MultiTree} relationship type
+     * @param pageId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws ParseErrorException
+     * @throws MethodInvocationException
+     * @throws ResourceNotFoundException
+     * @throws IOException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     */
     @POST
     @JSONP
     @NoCache
@@ -340,12 +358,13 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("{pageId}/add/container/{containerId}/content/{contentletId}/uid/{uid}/order/{order}")
     public final Response addContentToContainer(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-                                                @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
+                                                @PathParam("containerId") final String containerId,
+                                                @PathParam("contentletId") final String contentletId,
                                                 @PathParam("order") final int order, @PathParam("uid") final String uid,
-                                                @PathParam("pageId") final String pageId) throws DotDataException,
-            DotSecurityException, ParseErrorException, MethodInvocationException, ResourceNotFoundException, IOException,
-            IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
-
+                                                @PathParam("pageId") final String pageId)
+            throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
+            ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
+            InvocationTargetException, NoSuchMethodException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
@@ -363,20 +382,32 @@ public class PageResource {
 
         pageResourceHelper.checkPagePermission(user, page);
         pageResourceHelper.checkPermission(user, contentlet, container);
-
-        MultiTree mt = new MultiTree().setContainer(containerId)
-                .setContentlet(contentletId)
-                .setRelationType(uid)
-                .setTreeOrder(order)
-                .setHtmlPage(page.getIdentifier());
-
-        MultiTreeFactory.saveMultiTree(mt);
-
+        pageResourceHelper.saveMultiTree(containerId, contentletId, order, uid, page);
 
         return Response.ok("ok")
                 .build();
     }
 
+    /**
+     * Update all the content's page receive a json object with the follow format:
+     *
+     * {
+     *     container_1_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     *     container_2_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     *     ...
+     *     container_n_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     * }
+     *
+     * where:
+     *
+     * - container_1_id, container_2_id,..., container_n_id: Each container's identifier
+     * - contentlet_1_id, contentlet_2_id,...,contentlet_n_id: each contentlet identifier
+     *
+     * @param req
+     * @param pageId
+     * @param pageContainerForm
+     * @return
+     */
     @POST
     @JSONP
     @NoCache
@@ -385,6 +416,8 @@ public class PageResource {
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
                                      PageContainerForm pageContainerForm) {
+
+        Logger.debug(this, String.format("Saving page's content", pageContainerForm.getRequestJson()));
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
@@ -402,8 +435,10 @@ public class PageResource {
             res = Response.ok("ok").build();
         } catch (DotSecurityException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            Logger.error(this, e.getMessage(), e);
         } catch (DotDataException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            Logger.error(this, e.getMessage(), e);
         }
 
         return res;

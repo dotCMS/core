@@ -264,20 +264,28 @@ public class MultiTreeFactory {
 
     }
 
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the {@link MultiTree} linked
+     * previously with the page.
+     *
+     * @param pageId Page's identifier
+     * @param mTrees
+     * @throws DotDataException
+     */
     @WrapInTransaction
     public static void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty())
             throw new DotDataException("empty list passed in");
+
+        Logger.debug(MultiTreeFactory.class, String.format("Saving page's content", mTrees));
 
         DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
                 .addParam(pageId);
         db.loadResult();
 
         final List<Params> params = list();
-        int i = 0;
         for (MultiTree tree : mTrees) {
             params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
-            i++;
         }
 
         db.executeBatch(INSERT_SQL, params);
