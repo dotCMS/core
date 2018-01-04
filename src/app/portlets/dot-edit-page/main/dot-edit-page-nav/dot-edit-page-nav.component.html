@@ -2,13 +2,13 @@
     <li>
         <a class="edit-page-nav__item" routerLinkActive="edit-page-nav__item--active" [routerLink]="['./content']" [queryParams]="route.queryParams | async">
             <i class="fa fa-file-text"></i>
-            <span class="edit-page-nav__item-text">Content</span>
+            <span class="edit-page-nav__item-text">{{messageService.get('editpage.toolbar.nav.content')}}</span>
         </a>
     </li>
     <li>
         <a class="edit-page-nav__item" routerLinkActive="edit-page-nav__item--active" [routerLink]="['./layout']" [queryParams]="route.queryParams | async">
             <i class="fa fa-th-large"></i>
-            <span class="edit-page-nav__item-text">Layout</span>        
+            <span class="edit-page-nav__item-text">{{messageService.get('editpage.toolbar.nav.layout')}}</span>        
         </a>
     </li>
 </ul>

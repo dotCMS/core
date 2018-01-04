@@ -6,16 +6,24 @@ import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { MockMessageService } from '../../../../test/message-service.mock';
+import { MessageService } from '../../../../api/services/messages-service';
 
 describe('DotEditPageMainComponent', () => {
     let component: DotEditPageMainComponent;
     let fixture: ComponentFixture<DotEditPageMainComponent>;
 
+    const messageServiceMock = new MockMessageService({
+        'editpage.toolbar.nav.content': 'Content',
+        'editpage.toolbar.nav.layout': 'Layout'
+    });
+
     beforeEach(
         async(() => {
             TestBed.configureTestingModule({
-                declarations: [DotEditPageMainComponent],
                 imports: [RouterTestingModule, DotEditPageNavModule],
+                declarations: [DotEditPageMainComponent],
+                providers: [{provide: MessageService, useValue: messageServiceMock}]
             }).compileComponents();
         }),
     );
