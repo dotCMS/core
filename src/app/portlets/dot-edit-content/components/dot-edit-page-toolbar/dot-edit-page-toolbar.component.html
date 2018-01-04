@@ -4,7 +4,7 @@
     </div>
 
     <div class="ui-toolbar-group-right">
-        <button pButton flat class="edit-page-toolbar__secondary-action" [label]="messageService.get('editpage.toolbar.secondary.action')" (click)="cancel.emit($event)"></button>
-        <button pButton flat class="edit-page-toolbar__primary-action" [label]="messageService.get('editpage.toolbar.primary.action')" (click)="save.emit($event)"></button>
+        <button pButton flat class="edit-page-toolbar__secondary-action" [label]="dotMessageService.get('editpage.toolbar.secondary.action')" (click)="cancel.emit($event)"></button>
+        <button pButton flat class="edit-page-toolbar__primary-action" [label]="dotMessageService.get('editpage.toolbar.primary.action')" (click)="save.emit($event)"></button>
     </div>
 </p-toolbar>

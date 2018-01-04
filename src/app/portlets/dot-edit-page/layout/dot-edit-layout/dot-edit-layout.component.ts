@@ -29,12 +29,12 @@ export class DotEditLayoutComponent implements OnInit {
         private pageViewService: PageViewService,
         private route: ActivatedRoute,
         private templateContainersCacheService: TemplateContainersCacheService,
-        public messageService: DotMessageService,
+        public dotMessageService: DotMessageService,
         public router: Router
     ) {}
 
     ngOnInit(): void {
-        this.messageService
+        this.dotMessageService
             .getMessages([
                 'editpage.layout.toolbar.action.save',
                 'editpage.layout.toolbar.action.cancel',

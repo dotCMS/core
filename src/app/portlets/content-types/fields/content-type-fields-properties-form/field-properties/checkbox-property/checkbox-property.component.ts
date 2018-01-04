@@ -20,7 +20,7 @@ export class CheckboxPropertyComponent extends BaseComponent {
         unique: 'contenttypes.field.properties.unique.label',
     };
 
-    constructor(public messageService: DotMessageService) {
+    constructor(public dotMessageService: DotMessageService) {
         super(
             [
                 'contenttypes.field.properties.required.label',
@@ -29,7 +29,7 @@ export class CheckboxPropertyComponent extends BaseComponent {
                 'contenttypes.field.properties.listed.label',
                 'contenttypes.field.properties.unique.label'
             ],
-            messageService
+            dotMessageService
         );
     }
 

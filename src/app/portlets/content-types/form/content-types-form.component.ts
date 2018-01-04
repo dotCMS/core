@@ -90,7 +90,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
         private contentTypesInfoService: ContentTypesInfoService,
-        public messageService: DotMessageService,
+        public dotMessageService: DotMessageService,
         private hotkeysService: HotkeysService,
         private workflowService: WorkflowService
     ) {
@@ -124,7 +124,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
                 'contenttypes.content.key_value',
                 'contenttypes.content.vanity_url'
             ],
-            messageService
+            dotMessageService
         );
     }
 
@@ -208,7 +208,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
      * @memberof ContentTypesFormComponent
      */
     setTemplateInfo(): void {
-        this.messageService.messageMap$.subscribe(() => {
+        this.dotMessageService.messageMap$.subscribe(() => {
             const type = this.data.baseType.toLowerCase();
 
             this.templateInfo = {

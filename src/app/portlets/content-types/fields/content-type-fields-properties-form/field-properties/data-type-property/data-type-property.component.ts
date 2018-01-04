@@ -14,7 +14,7 @@ export class DataTypePropertyComponent extends BaseComponent implements OnInit {
     group: FormGroup;
     radioInputs: object;
 
-    constructor(public messageService: DotMessageService) {
+    constructor(public dotMessageService: DotMessageService) {
         super(
             [
                 'contenttypes.field.properties.data_type.label',
@@ -27,7 +27,7 @@ export class DataTypePropertyComponent extends BaseComponent implements OnInit {
                 'contenttypes.field.properties.data_type.values.large_text',
                 'contenttypes.field.properties.data_type.values.system'
             ],
-            messageService
+            dotMessageService
         );
     }
 

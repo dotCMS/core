@@ -16,7 +16,7 @@ export class RegexCheckPropertyComponent extends BaseComponent {
     property: FieldProperty;
     group: FormGroup;
 
-    constructor(public messageService: DotMessageService) {
+    constructor(public dotMessageService: DotMessageService) {
         super(
             [
                 'contenttypes.field.properties.validation_regex.label',
@@ -29,7 +29,7 @@ export class RegexCheckPropertyComponent extends BaseComponent {
                 'contenttypes.field.properties.validation_regex.values.us_phone',
                 'contenttypes.field.properties.validation_regex.values.url_pattern',
                 'contenttypes.field.properties.validation_regex.values.no_html'
-            ], messageService);
+            ], dotMessageService);
     }
 
     templateSelect(event): void {

@@ -11,7 +11,7 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
     @Input() templateId: string;
     items: MenuItem[];
 
-    constructor(private messageService: DotMessageService) {
+    constructor(private dotMessageService: DotMessageService) {
 
     }
 
@@ -22,7 +22,7 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
             'template.action.additional.properties'
         ];
 
-        this.messageService.getMessages(keys).subscribe(messages => {
+        this.dotMessageService.getMessages(keys).subscribe(messages => {
             this.items = [
                 {
                     label: messages['template.action.additional.properties'],

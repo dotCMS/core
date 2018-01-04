@@ -22,7 +22,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     private form: FormGroup;
 
     constructor(
-        messageService: DotMessageService,
+        dotMessageService: DotMessageService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
@@ -30,7 +30,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     ) {
         super(
             ['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'],
-            messageService
+            dotMessageService
         );
     }
 

@@ -24,8 +24,8 @@ export class NotificationsItem extends BaseComponent {
     private showLinkAction = false;
     private showTitleLinked = false;
 
-    constructor(messageService: DotMessageService) {
-        super(['notifications_dismiss'], messageService);
+    constructor(dotMessageService: DotMessageService) {
+        super(['notifications_dismiss'], dotMessageService);
     }
 
     ngOnInit(): void {

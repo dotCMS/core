@@ -19,10 +19,10 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     @ViewChild('propertyItemRight') propertyItemRight: DotLayoutPropertiesItemComponent;
     value: string;
 
-    constructor(public messageService: DotMessageService) {}
+    constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.messageService.getMessages([
+        this.dotMessageService.getMessages([
             'editpage.layout.properties.sidebar.left',
             'editpage.layout.properties.sidebar.right',
         ]).subscribe();

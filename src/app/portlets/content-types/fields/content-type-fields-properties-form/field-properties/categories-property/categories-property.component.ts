@@ -26,11 +26,11 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
     property: FieldProperty;
     group: FormGroup;
 
-    constructor(public messageService: DotMessageService, private paginationService: PaginatorService) {
+    constructor(public dotMessageService: DotMessageService, private paginationService: PaginatorService) {
         super([
             'contenttypes.field.properties.category.label',
             'contenttypes.field.properties.category.error.required'
-        ], messageService);
+        ], dotMessageService);
     }
 
     ngOnInit(): void {

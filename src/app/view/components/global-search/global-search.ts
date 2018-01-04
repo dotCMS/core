@@ -9,7 +9,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
     templateUrl: 'global-search.html'
 })
 export class GlobalSearch extends BaseComponent {
-    constructor(messageService: DotMessageService) {
-        super(['search'], messageService);
+    constructor(dotMessageService: DotMessageService) {
+        super(['search'], dotMessageService);
     }
 }

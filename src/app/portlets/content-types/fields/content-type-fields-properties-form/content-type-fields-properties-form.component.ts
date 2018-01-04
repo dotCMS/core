@@ -37,7 +37,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
     constructor(private fb: FormBuilder, private componentFactoryResolver: ComponentFactoryResolver,
-        public messageService: DotMessageService, private fieldPropertyService: FieldPropertyService) {
+        public dotMessageService: DotMessageService, private fieldPropertyService: FieldPropertyService) {
 
         super(
             [
@@ -74,7 +74,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
                 'contenttypes.field.properties.validation_regex.values.alphanumeric',
                 'contenttypes.field.properties.validation_regex.values.url_pattern',
             ],
-            messageService
+            dotMessageService
         );
     }
 

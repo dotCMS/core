@@ -20,8 +20,8 @@ export class ContentTypesFieldDragabbleItemComponent extends BaseComponent {
     @Output() remove: EventEmitter<Field> = new EventEmitter();
     @Output() edit: EventEmitter<Field> = new EventEmitter();
 
-    constructor(messageService: DotMessageService, public fieldService: FieldService) {
-        super(['contenttypes.action.edit', 'contenttypes.action.delete'], messageService);
+    constructor(dotMessageService: DotMessageService, public fieldService: FieldService) {
+        super(['contenttypes.action.edit', 'contenttypes.action.delete'], dotMessageService);
     }
 
     @HostListener('click', ['$event'])

@@ -60,8 +60,8 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     value: any = {};
     valueString = '';
 
-    constructor(messageService: DotMessageService) {
-        super(['search'], messageService);
+    constructor(dotMessageService: DotMessageService) {
+        super(['search'], dotMessageService);
     }
 
     propagateChange = (_: any) => {};

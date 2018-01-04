@@ -34,7 +34,7 @@ export class MyAccountComponent extends BaseComponent {
     constructor(
         private loginService: LoginService,
         private accountService: AccountService,
-        messageService: DotMessageService,
+        dotMessageService: DotMessageService,
         private stringFormat: StringFormat,
         private dotcmsConfig: DotcmsConfig
     ) {
@@ -56,7 +56,7 @@ export class MyAccountComponent extends BaseComponent {
                 'change-password',
                 'current-password'
             ],
-            messageService
+            dotMessageService
         );
 
         this.passwordMatch = false;

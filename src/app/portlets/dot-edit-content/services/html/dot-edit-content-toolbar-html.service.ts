@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 /**
  * Service to generate the markup related with the Toolbars and sub-menu for containers.
  */
 @Injectable()
 export class DotEditContentToolbarHtmlService {
-    constructor(private messageService: MessageService) {}
+    constructor(private dotMessageService: DotMessageService) {}
 
     addContainerToolbar(doc: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.messageService.getMessages([
+            this.dotMessageService.getMessages([
                 'editpage.content.container.action.add',
                 'editpage.content.container.menu.content',
                 'editpage.content.container.menu.widget',
@@ -64,7 +64,7 @@ export class DotEditContentToolbarHtmlService {
 
     addContentletMarkup(doc: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.messageService.getMessages([
+            this.dotMessageService.getMessages([
                 'editpage.content.contentlet.menu.drag',
                 'editpage.content.contentlet.menu.edit',
                 'editpage.content.contentlet.menu.remove'

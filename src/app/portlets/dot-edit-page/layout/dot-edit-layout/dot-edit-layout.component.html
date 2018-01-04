@@ -2,11 +2,11 @@
     <div class="dot-edit-layout__toolbar">
         <dot-action-button (onClick)="addGridBox()" class="dot-edit-layout__toolbar-add"></dot-action-button>
         <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
-        <input #templateName pInputText type="text" placeholder="{{messageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate" formControlName="title">
+        <input #templateName pInputText type="text" placeholder="{{dotMessageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate" formControlName="title">
         <div class="dot-edit-layout__toolbar-actions">
-            <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{messageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
-            <button pButton flat type="button" label="{{messageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
-            <button pButton flat type="submit"  label="{{messageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
+            <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{dotMessageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
+            <button pButton flat type="button" label="{{dotMessageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
+            <button pButton flat type="submit"  label="{{dotMessageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
             <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
             <dot-template-addtional-actions-menu [templateId]="pageView.template.inode"></dot-template-addtional-actions-menu>
         </div>
@@ -28,4 +28,4 @@
         <div class="dot-edit-layout__template-footer" *ngIf="form.value.layout.footer">FOOTER</div>
     </div>
 
-</form>    
+</form>

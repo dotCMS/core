@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 import { ActivatedRoute } from '@angular/router';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 @Component({
     selector: 'dot-edit-page-nav',
@@ -9,10 +8,10 @@ import { MessageService } from '../../../../api/services/messages-service';
     styleUrls: ['./dot-edit-page-nav.component.scss'],
 })
 export class DotEditPageNavComponent implements OnInit {
-    constructor(public route: ActivatedRoute, public messageService: MessageService) {}
+    constructor(public route: ActivatedRoute, public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.messageService
+        this.dotMessageService
             .getMessages([
                 'editpage.toolbar.nav.content',
                 'editpage.toolbar.nav.layout'

@@ -58,7 +58,7 @@ export class ContentTypesPortletComponent implements OnInit {
     ];
 
     constructor(
-        public messageService: DotMessageService,
+        public dotMessageService: DotMessageService,
         private router: Router,
         private route: ActivatedRoute,
         private contentTypesInfoService: ContentTypesInfoService,
@@ -69,7 +69,7 @@ export class ContentTypesPortletComponent implements OnInit {
 
     ngOnInit() {
         Observable.forkJoin(
-            this.messageService.getMessages(this.i18nKeys),
+            this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes()
         ).subscribe(res => {
             const baseTypes: StructureTypeView[] = res[1];
@@ -102,7 +102,7 @@ export class ContentTypesPortletComponent implements OnInit {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(structureTypeView.name),
-                label: this.messageService.get('contenttypes.content.' + structureTypeView.name.toLocaleLowerCase())
+                label: this.dotMessageService.get('contenttypes.content.' + structureTypeView.name.toLocaleLowerCase())
             };
         });
     }
@@ -111,23 +111,23 @@ export class ContentTypesPortletComponent implements OnInit {
         return [
             {
                 fieldName: 'name',
-                header: this.messageService.get('contenttypes.fieldname.structure.name'),
+                header: this.dotMessageService.get('contenttypes.fieldname.structure.name'),
                 icon: (item: any): string => this.contentTypesInfoService.getIcon(item.baseType),
                 sortable: true
             },
             {
                 fieldName: 'variable',
-                header: this.messageService.get('contenttypes.content.variable'),
+                header: this.dotMessageService.get('contenttypes.content.variable'),
                 sortable: true
             },
             {
                 fieldName: 'description',
-                header: this.messageService.get('contenttypes.form.label.description'),
+                header: this.dotMessageService.get('contenttypes.form.label.description'),
                 sortable: true
             },
             {
                 fieldName: 'nEntries',
-                header: this.messageService.get('contenttypes.fieldname.entries'),
+                header: this.dotMessageService.get('contenttypes.fieldname.entries'),
                 width: '7%'
             },
             {
@@ -155,15 +155,15 @@ export class ContentTypesPortletComponent implements OnInit {
             accept: () => {
                 this.removeContentType(item);
             },
-            header: this.messageService.get('message.structure.cantdelete'),
-            message: `${this.messageService.get('contenttypes.confirm.message.delete')} ${this.messageService.get(
+            header: this.dotMessageService.get('message.structure.cantdelete'),
+            message: `${this.dotMessageService.get('contenttypes.confirm.message.delete')} ${this.dotMessageService.get(
                 'Content-Type'
             )}
-                        ${this.messageService.get('contenttypes.confirm.message.delete.content')}
-                        <span>${this.messageService.get('contenttypes.confirm.message.delete.warning')}</span>`,
+                        ${this.dotMessageService.get('contenttypes.confirm.message.delete.content')}
+                        <span>${this.dotMessageService.get('contenttypes.confirm.message.delete.warning')}</span>`,
             footerLabel: {
-                acceptLabel: this.messageService.get('contenttypes.action.delete'),
-                rejectLabel: this.messageService.get('contenttypes.action.cancel')
+                acceptLabel: this.dotMessageService.get('contenttypes.action.delete'),
+                rejectLabel: this.dotMessageService.get('contenttypes.action.cancel')
             }
         });
     }

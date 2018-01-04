@@ -31,7 +31,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer') colContainerElem: ElementRef;
 
-    constructor(private hotkeysService: HotkeysService , public messageService: DotMessageService) {
+    constructor(private hotkeysService: HotkeysService , public dotMessageService: DotMessageService) {
     }
 
     ngOnInit(): void {
@@ -148,7 +148,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
             'contenttypes.dropzone.rows.add'
         ];
 
-        this.messageService.getMessages(i18nKeys).subscribe(res => {
+        this.dotMessageService.getMessages(i18nKeys).subscribe(res => {
             this.i18nMessages = res;
         });
     }

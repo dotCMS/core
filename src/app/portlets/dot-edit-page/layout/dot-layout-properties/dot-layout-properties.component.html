@@ -1,11 +1,11 @@
 <p-overlayPanel #op>
     <div [formGroup]="group">
-        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.header')" 
+        <dot-layout-properties-item [label]="dotMessageService.get('editpage.layout.properties.header')"
                                     class="property-item__header"
                                     formControlName="header">
         </dot-layout-properties-item>
-        
-        <dot-layout-properties-item [label]="messageService.get('editpage.layout.properties.footer')" 
+
+        <dot-layout-properties-item [label]="dotMessageService.get('editpage.layout.properties.footer')"
                                     class="property-item__footer"
                                     formControlName="footer">
         </dot-layout-properties-item>

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
-import { MessageService } from '../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 
 describe('DotEditContentToolbarHtmlService', () => {
     let dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService;
@@ -16,7 +16,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                                     </div>`;
     htmlElement.appendChild(dummyContainer);
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'editpage.content.contentlet.menu.drag': 'Drag',
         'editpage.content.contentlet.menu.edit': 'Edit',
         'editpage.content.contentlet.menu.remove': 'Remove',
@@ -30,7 +30,7 @@ describe('DotEditContentToolbarHtmlService', () => {
         TestBed.configureTestingModule({
             providers: [
                 DotEditContentToolbarHtmlService,
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
         dotEditContentToolbarHtmlService = TestBed.get(DotEditContentToolbarHtmlService);

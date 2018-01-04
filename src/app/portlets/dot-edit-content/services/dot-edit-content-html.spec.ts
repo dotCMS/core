@@ -4,8 +4,8 @@ import { DotEditContentToolbarHtmlService } from './html/dot-edit-content-toolba
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
 import { Config } from 'dotcms-js/core/config.service';
 import { Logger } from 'angular2-logger/core';
@@ -32,7 +32,7 @@ describe('DotEditContentHtmlService', () => {
                                     </div>`;
     htmlElement.appendChild(dummyContainer);
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'editpage.content.contentlet.menu.drag': 'Drag',
         'editpage.content.contentlet.menu.edit': 'Edit',
         'editpage.content.contentlet.menu.remove': 'Remove',
@@ -53,7 +53,7 @@ describe('DotEditContentHtmlService', () => {
             Config,
             Logger,
             StringUtils,
-            { provide: MessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock }
         ]);
         this.dotEditContentHtmlService = this.injector.get(DotEditContentHtmlService);
         this.dotEditContentToolbarHtmlService = this.injector.get(DotEditContentToolbarHtmlService);

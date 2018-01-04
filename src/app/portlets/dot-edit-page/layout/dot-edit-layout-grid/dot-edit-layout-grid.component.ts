@@ -73,12 +73,12 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     constructor(
         private dotConfirmationService: DotConfirmationService,
         private dotEditLayoutService: DotEditLayoutService,
-        public messageService: DotMessageService,
+        public dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService
     ) {}
 
     ngOnInit() {
-        this.messageService.getMessages(this.i18nKeys).subscribe();
+        this.dotMessageService.getMessages(this.i18nKeys).subscribe();
         this.dotEventsService.listen('dot-side-nav-toggle').subscribe((event: DotEvent) => {
             // setTimeout is need it because the side nav animation time.
             setTimeout(() => {
@@ -135,13 +135,13 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
             accept: () => {
                 this.removeContainer(index);
             },
-            header: this.messageService.get('editpage.confirm.header'),
-            message: `${this.messageService.get('editpage.confirm.message.delete')} <span>${this.messageService.get(
+            header: this.dotMessageService.get('editpage.confirm.header'),
+            message: `${this.dotMessageService.get('editpage.confirm.message.delete')} <span>${this.dotMessageService.get(
                 'editpage.confirm.message.delete.warning'
             )}</span>`,
             footerLabel: {
-                acceptLabel: this.messageService.get('editpage.action.delete'),
-                rejectLabel: this.messageService.get('editpage.action.cancel')
+                acceptLabel: this.dotMessageService.get('editpage.action.delete'),
+                rejectLabel: this.dotMessageService.get('editpage.action.cancel')
             }
         });
     }

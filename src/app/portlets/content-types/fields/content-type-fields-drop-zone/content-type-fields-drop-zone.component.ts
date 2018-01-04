@@ -32,7 +32,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     @Output() removeFields = new EventEmitter<Field[]>();
 
     constructor(
-        messageService: DotMessageService,
+        dotMessageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService
     ) {
@@ -44,7 +44,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
                 'contenttypes.dropzone.action.create.field',
                 'contenttypes.dropzone.empty.message'
             ],
-            messageService
+            dotMessageService
         );
     }
 

@@ -19,7 +19,7 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
     relationshipURL: string;
 
     constructor(
-        messageService: DotMessageService,
+        dotMessageService: DotMessageService,
         private dotMenuService: DotMenuService,
         private fieldDragDropService: FieldDragDropService
     ) {
@@ -32,7 +32,7 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
                 'contenttypes.tab.publisher.push.history.header',
                 'contenttypes.tab.relationship.header'
             ],
-            messageService
+            dotMessageService
         );
     }
 

@@ -12,7 +12,7 @@ export class HintPropertyComponent extends BaseComponent {
     property: FieldProperty;
     group: FormGroup;
 
-    constructor(public messageService: DotMessageService) {
-        super(['contenttypes.field.properties.hint.label'], messageService);
+    constructor(public dotMessageService: DotMessageService) {
+        super(['contenttypes.field.properties.hint.label'], dotMessageService);
     }
 }
