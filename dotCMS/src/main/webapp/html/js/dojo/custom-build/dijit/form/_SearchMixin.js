@@ -100,7 +100,7 @@ define("dijit/form/_SearchMixin", [
 			var key = evt.charOrCode;
 
 			// except for cutting/pasting case - ctrl + x/v
-			if(evt.altKey || ((evt.ctrlKey || evt.metaKey) && (key != 'x' && key != 'v')) || key == keys.SHIFT){
+			if("type" in evt && evt.type.substring(0,3) == "key" && (evt.altKey || ((evt.ctrlKey || evt.metaKey) && (key != 'x' && key != 'v')) || key == keys.SHIFT)){
 				return; // throw out weird key combinations and spurious events
 			}
 
@@ -150,7 +150,7 @@ define("dijit/form/_SearchMixin", [
 		},
 
 		_startSearchFromInput: function(){
-			this._startSearch(this.focusNode.value.replace(/([\\\*\?])/g, "\\$1"));
+			this._startSearch(this.focusNode.value);
 		},
 
 		_startSearch: function(/*String*/ text){
@@ -173,7 +173,7 @@ define("dijit/form/_SearchMixin", [
 						deep: true
 					}
 				},
-				qs = string.substitute(this.queryExpr, [text]),
+				qs = string.substitute(this.queryExpr, [text.replace(/([\\\*\?])/g, "\\$1")]),
 				q,
 				startQuery = function(){
 					var resPromise = _this._fetchHandle = _this.store.query(query, options);

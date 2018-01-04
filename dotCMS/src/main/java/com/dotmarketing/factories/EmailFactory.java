@@ -24,6 +24,7 @@ import com.dotmarketing.util.FormSpamFilter;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -226,7 +227,7 @@ public class EmailFactory {
 		try {
 			String message = "";
 			try {
-				Template t = UtilMethods.getVelocityTemplate("live/"+ idInode+ languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+				Template t = UtilMethods.getVelocityTemplate( PageMode.LIVE.name() +"/"+ idInode+ languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
 				t.merge(context, writer);
 				Logger
 				.debug(EmailFactory.class, "writer:"
@@ -587,7 +588,7 @@ public class EmailFactory {
 
 			try {
 				if(InodeUtils.isSet(idInode)) {
-					t = UtilMethods.getVelocityTemplate("live/"+ idInode + languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+					t = UtilMethods.getVelocityTemplate(PageMode.LIVE.name() +File.separator+ idInode + languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
 				} else {
 					t = UtilMethods.getVelocityTemplate(templatePath); 
 				}

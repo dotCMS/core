@@ -12,7 +12,7 @@ public interface FieldFactory {
         return new FieldFactoryImpl();
     }
 
-
+    public final static String GENERIC_FIELD_VAR="field";
     Field byId(String id) throws DotDataException;
 
     List<Field> byContentType(ContentType type) throws DotDataException;

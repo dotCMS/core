@@ -66,7 +66,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-import com.dotmarketing.viewtools.content.util.ContentUtils;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
 import static com.dotmarketing.util.NumberUtil.*;
@@ -891,7 +891,7 @@ public class ContentResource {
         try {
 
             // preparing categories
-            List<Category> cats = new ArrayList<Category>();
+            List<Category> cats = new ArrayList<>();
             List<Field> fields = new LegacyFieldTransformer(
                     APILocator.getContentTypeAPI(APILocator.systemUser()).
                             find(contentlet.getContentType().inode()).fields()).asOldFieldList();
@@ -968,9 +968,10 @@ public class ContentResource {
             boolean allowFrontEndSaving = Config
                     .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 
+            cats = UtilMethods.isSet(cats)?cats:null;
+
             contentlet = APILocator.getContentletAPI()
-                    .checkin(contentlet, relationships, cats, new ArrayList<Permission>(),
-                            init.getUser(), allowFrontEndSaving);
+                    .checkin(contentlet, relationships, cats, init.getUser(), allowFrontEndSaving);
 
             if (live) {
                 APILocator.getContentletAPI()
@@ -1206,7 +1207,7 @@ public class ContentResource {
                 }
 
                 // look for relationships
-                Map<Relationship, List<Contentlet>> relationships = new HashMap<Relationship, List<Contentlet>>();
+                Map<Relationship, List<Contentlet>> relationships = null;
                 for (Relationship rel : FactoryLocator.getRelationshipFactory()
                         .byContentType(type)) {
                     String relname = rel.getRelationTypeValue();
@@ -1217,6 +1218,9 @@ public class ContentResource {
                                     query, 0, 0, null, APILocator.getUserAPI().getSystemUser(),
                                     false);
                             if (cons.size() > 0) {
+                                if(relationships==null) {
+                                    relationships = new HashMap<>();
+                                }
                                 relationships.put(rel, cons);
                             }
                             Logger.info(this, "got " + cons.size() + " related contents");

@@ -44,6 +44,7 @@ var _FontDropDown = declare("dijit._editor.plugins._FontDropDown",
 			"<label class='dijitLeft dijitInline' for='${selectId}'>${label}</label>" +
 			"<input data-dojo-type='dijit.form.FilteringSelect' required='false' " +
 			        "data-dojo-props='labelType:\"html\", labelAttr:\"label\", searchAttr:\"name\"' " +
+				"class='${comboClass}' " +
 					"tabIndex='-1' id='${selectId}' data-dojo-attach-point='select' value=''/>" +
 		"</span>",
 
@@ -148,6 +149,8 @@ var _FontNameDropDown = declare("dijit._editor.plugins._FontNameDropDown", _Font
 	//		The editor 'command' implemented by this plugin.
 	command: "fontName",
 
+		comboClass: "dijitFontNameCombo",
+
 	postMixInProperties: function(){
 		// summary:
 		//		Over-ride for the default posr mixin control
@@ -210,6 +213,8 @@ var _FontSizeDropDown = declare("dijit._editor.plugins._FontSizeDropDown", _Font
 	//		The editor 'command' implemented by this plugin.
 	command: "fontSize",
 
+		comboClass: "dijitFontSizeCombo",
+
 	// values: [public] Number[]
 	//		The HTML font size values supported by this plugin
 	values: [1,2,3,4,5,6,7], // sizes according to the old HTML FONT SIZE
@@ -254,6 +259,8 @@ var _FormatBlockDropDown = declare("dijit._editor.plugins._FormatBlockDropDown",
 	// command: [public] String
 	//		The editor 'command' implemented by this plugin.
 	command: "formatBlock",
+
+		comboClass: "dijitFormatBlockCombo",
 
 	// values: [public] Array
 	//		The HTML format tags supported by this plugin
@@ -474,7 +481,11 @@ var FontChoice = declare("dijit._editor.plugins.FontChoice", _Plugin,{
 		this.connect(this.button.select, "onChange", function(choice){
 			// User invoked change, since all internal updates set priorityChange to false and will
 			// not trigger an onChange event.
-			this.editor.focus();
+
+			if(this.editor.focused){
+				// put focus back in the iframe, unless focus has somehow been shifted out of the editor completely
+				this.editor.focus();
+			}
 
 			if(this.command == "fontName" && choice.indexOf(" ") != -1){ choice = "'" + choice + "'"; }
 

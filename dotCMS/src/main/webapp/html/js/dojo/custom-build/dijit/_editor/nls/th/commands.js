@@ -44,7 +44,7 @@ define(
 	"print": "พิมพ์",
 	"newPage": "หน้าใหม่",
 	/* Error messages */
-	'systemShortcut': 'การดำเนินการ"${0}" ใช้งานได้เฉพาะกับเบราว์เซอร์ของคุณโดยใช้แป้นพิมพ์ลัด ใช้ ${1}',
+	'systemShortcut': 'แอ็กชัน "${0}" ใช้งานได้เฉพาะกับเบราว์เซอร์ของคุณโดยใช้แป้นพิมพ์ลัด ใช้ ${1}',
 	'ctrlKey':'ctrl+${0}',
 	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })

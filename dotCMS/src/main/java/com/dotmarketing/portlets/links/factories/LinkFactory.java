@@ -129,7 +129,9 @@ public class LinkFactory {
             dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
             dc.addParam(o.getIdentifier());
 
+
             return TransformerLocator.createLinkTransformer(dc.loadObjectResults()).asList();
+
         } catch (Exception e) {
 			Logger.error(LinkFactory.class, "getLinkChildrenByCondition failed:" + e, e);
         }

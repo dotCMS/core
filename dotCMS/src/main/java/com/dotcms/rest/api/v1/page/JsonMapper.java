@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @version 4.2
  * @since Oct 9, 2017
  */
-public class JsonMapper {
+class JsonMapper {
 
     private JsonMapper() {
 

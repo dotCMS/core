@@ -1,21 +1,17 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
+import java.util.List;
+import java.util.Map;
 import com.liferay.portal.model.User;
 
 public interface TemplateFactory {
+
 
 	List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived) throws DotDataException;
 		
@@ -44,11 +40,8 @@ public interface TemplateFactory {
 	
 	List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
-	void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException;
-
 	Template find(String inode) throws DotStateException, DotDataException;
 	
-
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;

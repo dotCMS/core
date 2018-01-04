@@ -369,7 +369,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             editLink(inode,referer);
         }
         if (inodes[inode].type == 'htmlpage') {
-            previewHTMLPage(inode,referer);
+            previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url);
         }
         return;
     }
@@ -896,11 +896,11 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
                         '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }else{
-                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
+                    var html =  '<tr data-url="' +  asset.pageURI +'"id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
+                        '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -1581,14 +1581,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         });
     }
 
-    function previewHTMLPage (objId, referer) {
-        var y = Math.floor(Math.random()*1123213213);
-        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+    function previewHTMLPage(url) {
+        // We can't new CustomEvent becuase it's not supported by IE11
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-page",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
     }
 
     function editHTMLPage (objId, referer) {

@@ -24,7 +24,7 @@ import java.util.Map;
  * @version 4.2
  * @since Oct 6, 2017
  */
-public class PageView implements Serializable {
+class PageView implements Serializable {
 
     private static final long serialVersionUID = 1642131505258302751L;
 

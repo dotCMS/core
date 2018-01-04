@@ -184,9 +184,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-
+			PageMode mode = PageMode.get(req);
 			//If session is in Admin Mode (Edit Mode) we should respect front end roles also.
-			if(session != null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null){
+			if(mode.isAdmin){
 				respectFrontendRoles = true;
 			}
 
@@ -204,23 +204,10 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
-				    boolean PREVIEW_MODE = false;
-					boolean EDIT_MODE = false;
 
-					if(session != null) {
-						PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
-						try {
-							EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
-						} catch (Exception e) {
-							Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
-						}
-					}
 					//GIT-4506
 					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-						if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
-							live = true;
-						else
-							live = false;
+					    live = mode.showLive;
 					}
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
@@ -381,16 +368,10 @@ public class BinaryExporterServlet extends HttpServlet {
 			
 			} else {
 
-				boolean _adminMode = false;
-				try {
-				    _adminMode = (session!=null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-				}catch(Exception e){
-				    Logger.warn(this, "An unexpected problem happened when trying to retrieve the backend session");
-				    Logger.debug(this, "Something happened!", e);
-				}
+
 
 			    // Set the expiration time
-				if (!_adminMode) {
+				if (!mode.isAdmin) {
 
 				    int _daysCache = 365;
 				    GregorianCalendar expiration = new GregorianCalendar();

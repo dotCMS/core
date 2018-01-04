@@ -4,12 +4,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
@@ -25,6 +28,8 @@ import java.util.List;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -83,7 +88,32 @@ public class CMSUrlUtil {
 		}
 
 	}
+	/**
+	 * Returns the IAm value for a url
+	 * @param iAm
+	 * @param uri
+	 * @param site
+	 * @param languageId
+	 * @return
+	 */
+    public IAm resolveResourceType(final IAm iAm,
+            final String uri,
+            final Host site,
+            final long languageId) {
 
+        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
+        if (isFileAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.FILE;
+        } else if (isPageAsset(uriWithoutQueryString, site, languageId)) {
+            return IAm.PAGE;
+        } else if (isFolder(uriWithoutQueryString, site)) {
+            return IAm.FOLDER;
+        }
+        else {
+            return IAm.NOTHING_IN_THE_CMS;
+        }
+
+} // resolveResourceType.
 	/**
 	 * Indicates if the uri belongs to a Page Asset
 	 *
@@ -200,11 +230,10 @@ public class CMSUrlUtil {
 					Contentlet c = APILocator.getContentletAPI()
 							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
-					return (c.getStructure().getStructureType()
-							== Structure.STRUCTURE_TYPE_FILEASSET);
+					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
-			} catch (Exception e) {
-				Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 				return false;
 			}
 		}
@@ -240,7 +269,7 @@ public class CMSUrlUtil {
 				return true;
 			}
 		} catch (Exception e) {
-			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
+			Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 		}
 
 		return false;
@@ -409,50 +438,42 @@ public class CMSUrlUtil {
 	 * just for logging purposes, is not used to calculate anything.
 	 * @param user Current user
 	 */
-	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
-			final String requestedURIForLogging, final User user,
-			final HttpServletRequest request, final HttpServletResponse response)
-			throws IOException, DotDataException {
+    public boolean isUnauthorizedAndHandleError(final Permissionable permissionable, final String requestedURIForLogging,
+            final User user, final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException, DotDataException {
 
-		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-		// Check if the page is visible by a CMS Anonymous role
-		if (!permissionAPI
-				.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+        PageMode mode = PageMode.get(request);
+        // Check if the page is visible by a CMS Anonymous role
+        if (!permissionAPI.doesUserHavePermission(permissionable, PERMISSION_READ, user, mode.respectAnonPerms)) {
 
-			if (null == user) {//Not logged in user
+            if (null == user) {// Not logged in user
 
-				Logger.debug(this.getClass(),
-						"CHECKING PERMISSION: Page doesn't have anonymous access ["
-								+ requestedURIForLogging + "]");
-				Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
-				Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
+                Logger.debug(this.getClass(),
+                        "CHECKING PERMISSION: Page doesn't have anonymous access [" + requestedURIForLogging + "]");
+                Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
+                Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
 
-				request.getSession().setAttribute(
-						com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
-				response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-						"The requested page/file is unauthorized");
-				return true;
-			} else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
-					.contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
-				// User is logged in need to check user permissions
-				if (!permissionAPI
-						.doesUserHavePermission(permissionable, PERMISSION_READ, user,
-								true)) {
-					// the user doesn't have permissions to see this page
-					// go to unauthorized page
-					Logger.warn(this.getClass(),
-							"CHECKING PERMISSION: Page doesn't have any access for this user ["
-									+ requestedURIForLogging + "]");
-					response.sendError(HttpServletResponse.SC_FORBIDDEN,
-							"The requested page/file is forbidden");
-					return true;
-				}
-			}
-		}
+                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "The requested page/file is unauthorized");
+                return true;
+            } else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
+                .contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+                // User is logged in need to check user permissions
+                if (!permissionAPI.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+                    // the user doesn't have permissions to see this page
+                    // go to unauthorized page
+                    Logger.warn(this.getClass(),
+                            "CHECKING PERMISSION: Page doesn't have any access for this user [" + requestedURIForLogging + "]");
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "The requested page/file is forbidden");
+                    return true;
+                }
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
 
 	/**

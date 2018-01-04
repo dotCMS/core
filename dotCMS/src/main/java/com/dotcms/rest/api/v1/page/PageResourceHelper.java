@@ -1,11 +1,18 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.contenttype.transform.JsonTransformer;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -14,7 +21,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -24,27 +30,28 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.viewtools.DotTemplateTool;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
 
-import javax.rmi.CORBA.Util;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -70,7 +77,6 @@ public class PageResourceHelper implements Serializable {
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
 
     private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
-    private static final boolean RESPECT_ANON_PERMISSIONS = Boolean.TRUE;
 
     /**
      * Private constructor
@@ -111,7 +117,8 @@ public class PageResourceHelper implements Serializable {
     public PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
             response, final User user, final String uri, boolean live) throws DotSecurityException,
             DotDataException {
-        return getPageMetadata(request, response, user, uri, false, live);
+        
+        return getPageMetadata(request, response, user, uri, false, PageMode.get(request));
     }
 
     /**
@@ -131,9 +138,47 @@ public class PageResourceHelper implements Serializable {
     public PageView getPageMetadataRendered(final HttpServletRequest request, final
     HttpServletResponse response, final User user, final String uri, boolean live) throws DotSecurityException,
             DotDataException {
-        return getPageMetadata(request, response, user, uri, true, live);
+        return getPageMetadata(request, response, user, uri, true, PageMode.get(request));
     }
 
+    @CloseDB
+    public String getPageRendered(final HttpServletRequest request, final
+    HttpServletResponse response, final User user, final String uri, PageMode mode) throws DotDataException, DotSecurityException, IOException {
+        
+        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+
+        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+                site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
+
+        if(null==page) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return null;
+        }
+        if(mode.isAdmin ) {
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
+        }
+        
+        switch (mode) {
+            case PREVIEW_MODE:
+                return new VelocityPreviewMode(request, response, pageUri, site).eval();
+
+            case EDIT_MODE:
+                return new VelocityEditMode(request, response, pageUri, site).eval();
+
+            default:
+                return new VelocityLiveMode(request, response, pageUri, site).eval();
+
+        }
+        
+        
+  
+    }
+
+    
+    
     /**
      * @param request    The {@link HttpServletRequest} object.
      * @param response   The {@link HttpServletResponse} object.
@@ -147,7 +192,7 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException     An error occurred when accessing the data source.
      */
     private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
-            response, final User user, final String uri, final boolean isRendered, boolean live) throws
+            response, final User user, final String uri, final boolean isRendered, PageMode mode) throws
             DotSecurityException, DotDataException {
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
@@ -155,25 +200,32 @@ public class PageResourceHelper implements Serializable {
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
 
-        final String pageUri = ('/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
-                site, this.languageAPI.getDefaultLanguage().getId(), false);
+                site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
+
+
+        
         if (isRendered) {
             try {
-                page.setProperty("rendered", VelocityUtil.mergeTemplate("/live/" + page
-                        .getIdentifier() + "_" + page.getLanguageId() + ".dotpage",
-                        velocityContext));
+                page.setProperty("rendered", getPageRendered(request, response, user, uri, mode));
             } catch (Exception e) {
                 throw new DotDataException(String.format("Page '%s' could not be rendered via " +
                         "Velocity.", pageUri), e);
             }
         }
 
-        Template template = live ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, RESPECT_ANON_PERMISSIONS) :
-                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, RESPECT_ANON_PERMISSIONS);
+        Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
+                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
                 (template, user, RESPECT_FE_ROLES);
+        
+        templateContainers.addAll(APILocator.getContainerAPI().getContainersOnPage(page));
+
+        
+
+        
         final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
         for (final Container container : templateContainers) {
             final List<ContainerStructure> containerStructures = this.containerAPI
@@ -242,6 +294,7 @@ public class PageResourceHelper implements Serializable {
     public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
+        
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);

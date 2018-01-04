@@ -12,9 +12,10 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -27,9 +28,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.ClickstreamFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -41,22 +40,14 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.model.User;
 
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -68,6 +59,10 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import com.liferay.portal.model.User;
 
 
 
@@ -686,27 +681,26 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             ).request();
         HttpServletResponse responseProxy = new BaseResponse().response();
 
-        StringWriter out = new StringWriter();
-        Context context = null;
 
+        Identifier ident = identifierAPI.find(host, uri);
+        if (ident==null || !UtilMethods.isSet(ident.getId()) ) {
+            throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
+        }
 
-
-        // Map with all identifier inodes for a given uri.
-        String idInode = identifierAPI.find(host, uri).getId();
         
 
-        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, langId );
+        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), langId );
         if(cinfo==null && langId!=APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(idInode) || cinfo.getLiveInode() == null) {
+        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 
         responseProxy.setContentType("text/html");
         requestProxy.setAttribute("User-Agent", userAgent);
-        requestProxy.setAttribute("idInode", String.valueOf(idInode));
+        requestProxy.setAttribute("idInode", ident.getId());
 
         /* Set long lived cookie regardless of who this is */
         String _dotCMSID = UtilMethods.getCookieValue(requestProxy.getCookies(),
@@ -719,18 +713,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
 
 
-        if (!liveMode) {
-            requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-            requestProxy.getSession().setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-        }
-        boolean signedIn = false;
+        PageMode mode =  (liveMode) ?PageMode.setPageMode(requestProxy, PageMode.LIVE) : PageMode.setPageMode(requestProxy, PageMode.PREVIEW_MODE);
+            
+        
+        boolean signedIn = (user != null);
 
-        if (user != null) {
-            signedIn = true;
-        }
-        Identifier ident = identifierAPI.find(host, uri);
 
         Logger.debug(HTMLPageAssetAPIImpl.class, "Page Permissions for URI=" + uri);
 
@@ -792,66 +779,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-            context = VelocityUtil.getWebContext(requestProxy, responseProxy);
-
-            if (langId != null && langId > 0) {
-                context.put("language", Long.toString(langId));
-            }
-
-            if (!liveMode) {
-                context.put("PREVIEW_MODE", new Boolean(true));
-            } else {
-                context.put("PREVIEW_MODE", new Boolean(false));
-            }
-
-            context.put("host", host);
-            VelocityEngine ve = VelocityUtil.getEngine();
-
-            Logger.debug(HTMLPageAssetAPIImpl.class, "Got the template!!!!" + idInode);
-
-            requestProxy.setAttribute("velocityContext", context);
-
-            String langStr = "";
-            if (langId != null && langId > 0) {
-                langStr = "_" + langId;
-            }
-
-            String VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-            String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
-                    : "/working/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
-
-            ve.getTemplate(vTempalate).merge(context, out);
+            return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
 
         } catch (Exception e1) {
             Logger.error(this, e1.getMessage(), e1);
-        } finally {
-            context = null;
-            VelocityServlet.velocityCtx.remove();
-        }
+            return null;
+        } 
 
-        if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-            Logger.debug(HTMLPageAssetAPIImpl.class, "Into the ClickstreamFilter");
-            // Ensure that clickstream is recorded only once per request.
-            if (requestProxy.getAttribute(ClickstreamFilter.FILTER_APPLIED) == null) {
-                requestProxy.setAttribute(ClickstreamFilter.FILTER_APPLIED, Boolean.TRUE);
-
-                if (user != null) {
-                    UserProxy userProxy = null;
-                    try {
-                        userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
-                                userAPI.getSystemUser(), false);
-                    } catch (DotRuntimeException e) {
-                        e.printStackTrace();
-                    } catch (DotSecurityException e) {
-                        e.printStackTrace();
-                    } catch (DotDataException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-        }
-
-        return out.toString();
     }
 }

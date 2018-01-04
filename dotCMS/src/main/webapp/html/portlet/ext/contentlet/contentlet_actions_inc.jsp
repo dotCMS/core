@@ -25,7 +25,7 @@ List<WorkflowAction> wfActions = null;
 List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
-	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user); 
+	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);

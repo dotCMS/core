@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.templates.business;
 
+import com.dotcms.rendering.velocity.services.TemplateLoader;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -15,7 +17,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -25,25 +26,25 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
-import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.DotTemplateTool;
-import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.liferay.portal.model.User;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 	static TemplateCache templateCache = CacheLocator.getTemplateCache();
@@ -93,6 +94,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 
+
 	}
 
 
@@ -113,7 +115,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 		HibernateUtil.save(template);
 		
-		TemplateServices.invalidate(template, true);
+		new TemplateLoader().invalidate(template);
 
 	}
 	
@@ -123,7 +125,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
         }
         HibernateUtil.saveWithPrimaryKey(template, existingId);
         templateCache.add(template.getInode(), template);
-        TemplateServices.invalidate(template, true);
+        new TemplateLoader().invalidate(template);
 
     }
 
@@ -276,7 +278,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			while(!done) {
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
+
 				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
@@ -325,24 +329,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
-	@Override
-	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
-		try{
 
-			HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
-			for(Container container:containerIdentifiers){
-				TemplateContainers templateContainer = new  TemplateContainers();
-				templateContainer.setTemplateId(template.getIdentifier());
-				templateContainer.setContainerId(container.getIdentifier());
-				HibernateUtil.save(templateContainer);
-			}
-			
-
-		}catch(DotHibernateException e){
-
-			throw new DotWorkflowException(e.getMessage());
-		}
-	}
 	
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -401,26 +388,18 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-	    List<String> ids = new LinkedList<String>();
+	    Set<String> ids = new HashSet<String>();
 	    if(!UtilMethods.isSet(templateBody)){
-	        return ids;
+	        return new ArrayList<>(ids);
 	    }
-		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
+
 		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
-		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		
+		Matcher matcher = newContainerReferencesRegex.matcher(templateBody);
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
 			ids.add(containerId);
 		}
-		matcher = newContainerReferencesRegex.matcher(templateBody);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
-			ids.add(containerId);
-		}
-		return ids;
+        return new ArrayList<>(ids);
 	}
 	
 	
@@ -491,7 +470,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	   templateToUpdate.setTheme(theme);
        HibernateUtil.saveOrUpdate(templateToUpdate);
        templateCache.add(templateToUpdate.getInode(), templateToUpdate);
-       TemplateServices.invalidate(templateToUpdate, true);
+       new TemplateLoader().invalidate(templateToUpdate);
    };
 
    /**
@@ -525,7 +504,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
               String inode = ident.get("inode");
               Template template = find(inode);
               deleteFromCache(template);
-              TemplateServices.invalidate(template, true);
+              new TemplateLoader().invalidate(template);
           }
        } catch (DotDataException e) {
            Logger.error(TemplateFactory.class,e.getMessage(),e);

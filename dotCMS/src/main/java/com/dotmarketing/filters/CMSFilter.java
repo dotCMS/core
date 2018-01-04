@@ -14,7 +14,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
@@ -28,24 +29,19 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
 
-    private final HttpServletRequestThreadLocal requestThreadLocal =
-            HttpServletRequestThreadLocal.INSTANCE;
+    private final HttpServletRequestThreadLocal requestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI()
-            .getRelativeAssetsRootPath();
+    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 
     public enum IAm {
-        PAGE,
-        FOLDER,
-        FILE,
-        NOTHING_IN_THE_CMS
+        PAGE, FOLDER, FILE, NOTHING_IN_THE_CMS
     }
 
     @Override
@@ -53,8 +49,19 @@ public class CMSFilter implements Filter {
 
     }
 
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
+
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+
+        try {
+            doFilterInternal(req, res, chain);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+
+
+    }
+
+    private void doFilterInternal(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
@@ -64,12 +71,12 @@ public class CMSFilter implements Filter {
         // Set the request in the thread local.
         this.requestThreadLocal.setRequest(request);
 
-        //Get the URI and query string from the request
+        // Get the URI and query string from the request
         String uri = urlUtil.getURIFromRequest(request);
-        final Boolean overriddenURI = urlUtil.wasURIOverridden(request);
+        final boolean overriddenURI = urlUtil.wasURIOverridden(request);
         String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
-        //Check for possible XSS hacks
+        // Check for possible XSS hacks
         String xssRedirect = urlUtil.xssCheck(uri, queryString);
         if (xssRedirect != null) {
             response.sendRedirect(xssRedirect);
@@ -78,21 +85,13 @@ public class CMSFilter implements Filter {
 
         LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 
-        //Getting Site object from the request
-        Object siteObject = request.getAttribute("host");
-        Host site = null;
-        if (null != siteObject) {
-            site = (Host) request.getAttribute("host");
-        } else {
-            Logger.error(this,
-                    String.format("Unable to retrieve current Site from request for URI [%s]",
-                            uri));
-        }
 
-		/*
-         * If someone is trying to go right to an asset without going through
-		 * the cms, give them a 404
-		 */
+        Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+        /*
+         * If someone is trying to go right to an asset without going through the cms, give them a
+         * 404
+         */
         if (UtilMethods.isSet(RELATIVE_ASSET_PATH) && uri.startsWith(RELATIVE_ASSET_PATH)) {
             response.sendError(403, "Forbidden");
             return;
@@ -101,7 +100,7 @@ public class CMSFilter implements Filter {
         // Get the user language
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        iAm = this.resolveResourceType(iAm, uri, site, languageId);
+        iAm = this.urlUtil.resolveResourceType(iAm, uri, site, languageId);
 
         if (iAm == IAm.FOLDER) {
 
@@ -116,8 +115,8 @@ public class CMSFilter implements Filter {
                 }
 
                 /*
-                At this point if the URI was overridden is probably because a VanityURL set
-                 it, and in that case we need to respect the status code set by the VanityURL.
+                 * At this point if the URI was overridden is probably because a VanityURL set it,
+                 * and in that case we need to respect the status code set by the VanityURL.
                  */
                 if (!overriddenURI) {
                     response.setStatus(301);
@@ -132,36 +131,18 @@ public class CMSFilter implements Filter {
             }
         }
 
-        if (iAm == IAm.PAGE) {
-            countPageVisit(request);
-            countSiteVisit(request, response);
-            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
-                    this.urlUtil.getUriWithoutQueryString(uri));
-            queryString = (null == queryString)?
-                    this.urlUtil.getQueryStringFromUri (uri):queryString;
-        }
-
-        // run rules engine for all requests
-        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-
-        //if we have committed the response, die
-        if (response.isCommitted()) {
-            return;
-        }
-
-        if (iAm == IAm.FILE) {
+        else if (iAm == IAm.FILE) {
             Identifier ident;
             try {
-                //Serving the file through the /dotAsset servlet
+                // Serving the file through the /dotAsset servlet
                 StringWriter forward = new StringWriter();
                 forward.append("/dotAsset/");
 
                 ident = APILocator.getIdentifierAPI().find(site, uri);
                 request.setAttribute(Constants.CMS_FILTER_IDENTITY, ident);
 
-                //If language is in session, set as query string
-                forward.append('?').append(WebKeys.HTMLPAGE_LANGUAGE + "=")
-                        .append(String.valueOf(languageId));
+                // If language is in session, set as query string
+                forward.append('?').append(WebKeys.HTMLPAGE_LANGUAGE + "=").append(String.valueOf(languageId));
 
                 request.getRequestDispatcher(forward.toString()).forward(request, response);
 
@@ -173,9 +154,21 @@ public class CMSFilter implements Filter {
         }
 
         if (iAm == IAm.PAGE) {
+
+            countPageVisit(request);
+            countSiteVisit(request, response);
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, this.urlUtil.getUriWithoutQueryString(uri));
+
+            // run rules engine for all requests
+            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+
+            // if we have committed the response, die
+            if (response.isCommitted()) {
+                return;
+            }
+
             // Serving a page through the velocity servlet
-            StringWriter forward = new StringWriter();
-            forward.append("/servlets/VelocityServlet");
+            StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
@@ -184,38 +177,26 @@ public class CMSFilter implements Filter {
                 forward.append('?');
                 forward.append(queryString);
             }
-
             request.getRequestDispatcher(forward.toString()).forward(request, response);
             return;
         }
 
         if (uri.startsWith("/contentAsset/")) {
             if (response.isCommitted()) {
-				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                /*
+                 * Some form of redirect, error, or the request has already been fulfilled in some
+                 * fashion by one or more of the actionlets.
+                 */
                 return;
             }
         }
 
-        // otherwise, pass
+
         chain.doFilter(req, res);
+
     }
 
-    private IAm resolveResourceType(final IAm iAm,
-                                    final String uri,
-                                    final Host site,
-                                    final long languageId) {
 
-        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
-        if (this.urlUtil.isFileAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.FILE;
-        } else if (this.urlUtil.isPageAsset(uriWithoutQueryString, site, languageId)) {
-            return IAm.PAGE;
-        } else if (this.urlUtil.isFolder(uriWithoutQueryString, site)) {
-            return IAm.FOLDER;
-        }
-
-        return iAm;
-    } // resolveResourceType.
 
     @Override
     public void destroy() {
@@ -223,37 +204,23 @@ public class CMSFilter implements Filter {
     }
 
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
-
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if (mode == PageMode.LIVE) {
             NumberOfTimeVisitedCounter.maybeCount(request, response);
-
         }
     }
 
     private void countPageVisit(HttpServletRequest request) {
 
-        HttpSession session = request.getSession(false);
-        boolean PAGE_MODE = true;
-
-        if (session != null) {
-            PAGE_MODE = PageRequestModeUtil.isPageMode(session);
-        }
-
-        if (PAGE_MODE) {
+        PageMode mode = PageMode.get(request);
+        if (mode == PageMode.LIVE) {
             Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
             if (visitor.isPresent()) {
                 visitor.get().addPagesViewed(request.getRequestURI());
             }
-
         }
+
     }
 
 

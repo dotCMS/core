@@ -44,6 +44,9 @@ define("dojox/charting/Element", ["dojo/_base/lang", "dojo/_base/array", "dojo/d
 				for(var i = 0; i < children.length;++i){
 					shape.dispose(children[i], true);
 				}
+				if(this.group.rawNode){
+					domConstruct.empty(this.group.rawNode);
+				}
 				this.group.clear();
 				shape.dispose(this.group, true);
 				this.group = null;
@@ -67,11 +70,19 @@ define("dojox/charting/Element", ["dojo/_base/lang", "dojo/_base/array", "dojo/d
 			this.destroyHtmlElements();
 			if(!creator){ creator = this.chart.surface; }
 			if(this.group){
+				var bgnode;
 				var children = this.group.children;
 				for(var i = 0; i < children.length;++i){
 					shape.dispose(children[i], true);
 				}
+				if(this.group.rawNode){
+					bgnode = this.group.bgNode;
+					domConstruct.empty(this.group.rawNode);
+				}
 				this.group.clear();
+				if(bgnode){
+					this.group.rawNode.appendChild(bgnode);
+				}
 			}else{
 				this.group = creator.createGroup();
 			}

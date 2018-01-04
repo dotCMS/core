@@ -1,5 +1,29 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -47,29 +71,6 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
-import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
@@ -3501,50 +3502,31 @@ public class UtilMethods {
     }
 
     public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
-        HttpSession session = request.getSession(false);
 
         // set the preview mode
-        boolean adminMode = false;
+        boolean adminMode =   PageMode.get(request).isAdmin;
 
-        if (session != null) {
+        if (adminMode) {
+            HttpSession session = request.getSession();
+
             // struts crappy messages have to be retrived from session
-            if (session.getAttribute(Globals.ERROR_KEY) != null) {
-                request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-                session.removeAttribute(Globals.ERROR_KEY);
-            }
-            if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-                request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-                session.removeAttribute(Globals.MESSAGE_KEY);
-            }
-            // set the preview mode
-            adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+
+            request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
+            session.removeAttribute(Globals.ERROR_KEY);
+            request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
+            session.removeAttribute(Globals.MESSAGE_KEY);
+
 
             if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
+                PageMode.setPageMode(request, PageMode.LIVE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.EDIT_MODE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
             }
         }
         return adminMode;

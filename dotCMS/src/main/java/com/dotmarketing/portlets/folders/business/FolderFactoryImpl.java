@@ -78,23 +78,37 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void delete(Folder f) throws DotDataException {
-		Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
-		HibernateUtil.delete(f);
-		fc.removeFolder(f, id);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
+
+           Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
+           new DotConnect()
+                .setSQL("delete from folder where folder.inode = ? ")
+                .addParam(f.getInode()).loadResult();
+        
+           new DotConnect()
+            .setSQL("delete from inode where inode = ? ")
+            .addParam(f.getInode()).loadResult();
+           fc.removeFolder(f, id);
+
+        
+	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
+
 
 	@Override
 	protected Folder find(String folderInode) throws DotDataException {
 		Folder folder = fc.getFolder(folderInode);
 		if (folder == null) {
 			try{
-				folder = (Folder) new HibernateUtil(Folder.class).load(folderInode);
+			     DotConnect dc    = new DotConnect()
+			             .setSQL("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_ where folder.inode = ? ")
+			             .addParam(folderInode);
+
+				folder = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 				fc.addFolder(folder, id);
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
@@ -170,7 +184,9 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.addParam(hostId);
 
 		try{
+
 			return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 		}catch(DotDataException e){
 			Logger.error(this, e.getMessage(), e);
 		}
@@ -225,7 +241,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(parentPath.toLowerCase());
 				dc.addParam(hostId);
 
+
 				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
 
 				if (result != null && !result.isEmpty()){
 					folder = result.get(0);
@@ -274,8 +292,10 @@ public class FolderFactoryImpl extends FolderFactory {
 					dc.addParam(parentPath.toLowerCase());
 					dc.addParam(hostId);
 
+
 					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
 							.asList();
+
 
 					if (result != null && !result.isEmpty()){
 						folder = result.get(0);
@@ -530,7 +550,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
             Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+            List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
             for(MultiTree m : pageContents){
             	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
             	MultiTreeFactory.saveMultiTree(mt);
@@ -1120,11 +1140,13 @@ public class FolderFactoryImpl extends FolderFactory {
         }
 
         try {
+
 			DBTransformer transformer = TransformerLocator.createDBTransformer(dc.loadObjectResults(), clazz);
 
 			if (transformer != null){
 				return transformer.asList();
 			}
+
 
 		}catch(Exception e){
         	Logger.warn(this, e.getMessage(), e);
