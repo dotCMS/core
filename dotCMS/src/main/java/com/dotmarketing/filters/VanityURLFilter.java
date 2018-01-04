@@ -8,6 +8,7 @@ import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -71,7 +72,7 @@ public class VanityURLFilter implements Filter {
         final String uri         = this.urlUtil.getURIFromRequest(request);
         final boolean isFiltered = this.urlUtil.isVanityUrlFiltered (uri);
         //Getting the site form the request
-        final Host site          = this.getHost(request, uri); // note: this should be call here to include the host in the request
+        final Host site          = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
         if (!isFiltered) {
 
@@ -110,20 +111,6 @@ public class VanityURLFilter implements Filter {
         filterChain.doFilter(request, response);
     } // doFilter.
 
-    private Host getHost(final HttpServletRequest request, final String uri) throws ServletException {
-
-        Host site;
-        try {
-            site = this.hostWebAPI.getCurrentHost(request);
-            request.setAttribute("host", site);
-        } catch (Exception e) {
-            Logger.error(this,
-                    String.format("Unable to retrieve current Site from request for URI [%s]",
-                            uri));
-            throw new ServletException(e.getMessage(), e);
-        }
-        return site;
-    }
 
     public void destroy() {
     }

@@ -43,9 +43,14 @@ public class TemplateLoader implements DotLoader {
         StringBuilder templateBody = new StringBuilder();
 
 
-        templateBody.append(Constants.TEMPLATE_PREPROCESS);
+
         templateBody.append(template.getBody());
-        templateBody.append(Constants.TEMPLATE_POSTPROCESS);
+        if (mode == PageMode.EDIT_MODE) {
+            templateBody.append("<script>").append("console.log(\"testinf:\" +  top.location.href);").append("</script>");
+
+        }
+
+        
 
 
 

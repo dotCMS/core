@@ -353,41 +353,16 @@ public class PageResource {
         final Language id = WebAPILocator.getLanguageWebAPI()
                 .getLanguage(req);
 
-        ShortyId contentShorty = APILocator.getShortyAPI()
-                .getShorty(contentletId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-                });
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
-                .find(contentShorty.longId, user, !mode.showLive)
-                : APILocator.getContentletAPI()
-                .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
-
-
-
-        ShortyId containerShorty = APILocator.getShortyAPI()
-                .getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
-                });
-        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
-                .find(containerId, user, mode.isAdmin)
-                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
-                : (Container) APILocator.getVersionableAPI()
-                .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
-
-
-        APILocator.getPermissionAPI()
-                .checkPermission(contentlet, PermissionLevel.READ, user);
-        APILocator.getPermissionAPI()
-                .checkPermission(container, PermissionLevel.EDIT, user);
-
+        final Contentlet contentlet = pageResourceHelper.getContentlet(user, mode, id, contentletId);
+        Container container = pageResourceHelper.getContainer(containerId, user, mode);
         Contentlet page = pageResourceHelper.getPage(user, pageId);
 
-        if (page == null) {
+        if (page == null || contentlet == null || container == null) {
             return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
         }
+
+        pageResourceHelper.checkPagePermission(user, page);
+        pageResourceHelper.checkPermission(user, contentlet, container);
 
         MultiTree mt = new MultiTree().setContainer(containerId)
                 .setContentlet(contentletId)
@@ -400,5 +375,37 @@ public class PageResource {
 
         return Response.ok("ok")
                 .build();
+    }
+
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("{pageId}/content")
+    public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
+                                     PageContainerForm pageContainerForm) {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        Response res = null;
+
+        try {
+            Contentlet page = pageResourceHelper.getPage(user, pageId);
+            if (page == null) {
+                return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+            }
+
+            pageResourceHelper.checkPagePermission(user, page);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+            res = Response.ok("ok").build();
+        } catch (DotSecurityException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        } catch (DotDataException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        }
+
+        return res;
     }
 }

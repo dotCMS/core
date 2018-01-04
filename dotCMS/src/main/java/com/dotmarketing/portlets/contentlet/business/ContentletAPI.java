@@ -922,7 +922,7 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/**
+	/** 
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.

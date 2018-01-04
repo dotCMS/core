@@ -97,10 +97,10 @@ public class PageLoader implements DotLoader {
     public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, PageMode mode, final String filePath)
             throws DotDataException, DotSecurityException {
         String folderPath = mode.name() + File.separator;
-        InputStream result;
+
         StringBuilder sb = new StringBuilder();
 
-        ContentletAPI conAPI = APILocator.getContentletAPI();
+
         Template cmsTemplate = APILocator.getHTMLPageAssetAPI()
             .getTemplate(htmlPage, mode.showLive);
 
@@ -146,9 +146,9 @@ public class PageLoader implements DotLoader {
             .append("')")
             .append("#end");
 
-
-        sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
-
+        if(mode == PageMode.LIVE) {
+            sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
+        }
 
         // Now we need to use the found tags in order to accrue them each time this page is visited
         if (!pageFoundTags.isEmpty()) {

@@ -21,6 +21,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
@@ -564,14 +565,30 @@ public class HostAPIImpl implements HostAPI {
         delete(host,user,respectFrontendRoles,false);
     }
 
-    public void delete(final Host host, final User user, final boolean respectFrontendRoles, boolean runAsSepareThread) {
+    public void delete(final Host host, final User deletingUser, final boolean respectFrontendRoles, boolean runAsSepareThread) {
 
-
+        try {
+            APILocator.getPermissionAPI().checkPermission(host, PermissionLevel.PUBLISH, deletingUser);
+        } catch (DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+        final User user = APILocator.systemUser();
         class DeleteHostThread extends Thread {
 
             public void run() {
                 try {
                     deleteHost();
+    
+                    APILocator.getNotificationAPI().generateNotification(
+                            new I18NMessage("message.host.delete"), // title = Host Notification
+                            new I18NMessage("message.host.delete", "deleted:" + host.getHostname()),
+                            null, // no actions
+                            NotificationLevel.INFO,
+                            NotificationType.GENERIC,
+                            user.getUserId(),
+                            user.getLocale()
+                    );
+                    
                 } catch (Exception e) {
                     // send notification
                     try {
@@ -595,17 +612,12 @@ public class HostAPIImpl implements HostAPI {
                     Logger.error(HostAPIImpl.class, e.getMessage(), e);
                     throw new DotRuntimeException(e.getMessage(), e);
                 }
+                finally {
+                    DbConnectionFactory.closeSilently();
+                }
             }
             
-            /**
-             * Gradually deletes a whole site (host) by removing each piece of
-             * content in it (e.g., removes old files, HTML and Content pages,
-             * links, contentlets, and so on).
-             * 
-             * @throws Exception
-             *             An error occurred when executing a delete method.
-             */
-            @WrapInTransaction
+
             public void deleteHost() throws Exception {
                 if(host != null){
                     hostCache.remove(host);
@@ -622,7 +634,7 @@ public class HostAPIImpl implements HostAPI {
 
                 // Remove Contentlet
                 ContentletAPI contentAPI = APILocator.getContentletAPI();
-                contentAPI.deleteByHost(host, user, respectFrontendRoles);
+                contentAPI.deleteByHost(host, APILocator.systemUser(), respectFrontendRoles);
 
                 // Remove Folders
                 FolderAPI folderAPI = APILocator.getFolderAPI();

@@ -1,10 +1,18 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.contenttype.transform.JsonTransformer;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
+
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
@@ -13,45 +21,44 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
-import com.dotcms.rendering.velocity.services.VelocityType;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.management.relation.RelationType;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.rmi.CORBA.Util;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -83,6 +90,29 @@ public class PageResourceHelper implements Serializable {
      */
     private PageResourceHelper() {
 
+    }
+
+    public void saveContent(String pageId, List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+        List<MultiTree> multiTres = new ArrayList<>();
+
+        for (PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+            int i = 0;
+            List<String> contentIds = containerEntry.getContentIds();
+
+            for (String contentletId : contentIds) {
+                MultiTree mt = new MultiTree().setContainer(containerEntry.getContainerId())
+                        .setContentlet(contentletId)
+                        .setRelationType("LEGACY_RELATION_TYPE")
+                        .setTreeOrder(i)
+                        .setHtmlPage(pageId);
+
+                multiTres.add(mt);
+
+                i++;
+            }
+        }
+
+        MultiTreeFactory.saveMultiTrees(pageId, multiTres);
     }
 
     /**
@@ -141,7 +171,6 @@ public class PageResourceHelper implements Serializable {
         return getPageMetadata(request, response, user, uri, true, PageMode.get(request));
     }
 
-    
     public String getPageRendered(final HttpServletRequest request, final HttpServletResponse response, final User user,
                                   final String uri, PageMode mode) throws Exception {
 
@@ -149,19 +178,33 @@ public class PageResourceHelper implements Serializable {
         return this.getPageRendered(page, request, response, user, mode);
     }
 
+    @CloseDB
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
                                   final HttpServletResponse response, final User user, PageMode mode) throws Exception {
 
-        final Context velocityContext = VelocityUtil.getWebContext(request, response);
+        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
 
-
+        if(null==page) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return null;
+        }
         if(mode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
 
-        return VelocityUtil.mergeTemplate("/" +  mode.name() + "/" + page
-                        .getIdentifier() + "_" + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension,
-                velocityContext);
+        switch (mode) {
+            case PREVIEW_MODE:
+                return new VelocityPreviewMode(request, response, page.getURI(), site).eval();
+
+            case EDIT_MODE:
+                return new VelocityEditMode(request, response, page.getURI(), site).eval();
+
+            default:
+                return new VelocityLiveMode(request, response, page.getURI(), site).eval();
+
+        }
     }
 
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
@@ -296,6 +339,7 @@ public class PageResourceHelper implements Serializable {
     public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
+        
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);
@@ -340,5 +384,42 @@ public class PageResourceHelper implements Serializable {
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    public Contentlet getContentlet(User user, PageMode mode, Language id, String contentletId) throws DotDataException, DotSecurityException {
+        ShortyId contentShorty = APILocator.getShortyAPI()
+                .getShorty(contentletId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+                });
+
+        return APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
+    }
+
+    public Container getContainer(String containerId, User user, PageMode mode) throws DotDataException, DotSecurityException {
+        ShortyId containerShorty = APILocator.getShortyAPI()
+                .getShorty(containerId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
+                });
+        return (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
+                : (Container) APILocator.getVersionableAPI()
+                .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
+    }
+
+    public void checkPermission(User user, Contentlet contentlet, Container container) throws DotSecurityException {
+        APILocator.getPermissionAPI()
+                .checkPermission(contentlet, PermissionLevel.READ, user);
+        APILocator.getPermissionAPI()
+                .checkPermission(container, PermissionLevel.EDIT, user);
+    }
+
+    public void checkPagePermission(User user, Contentlet htmlPageAsset) throws DotSecurityException {
+        APILocator.getPermissionAPI()
+                .checkPermission(htmlPageAsset, PermissionLevel.READ, user);
+        APILocator.getPermissionAPI()
+                .checkPermission(htmlPageAsset, PermissionLevel.EDIT, user);
     }
 }

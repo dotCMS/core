@@ -3,6 +3,7 @@ package com.dotmarketing.db;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 
 public class LocalTransaction {
 
@@ -147,7 +148,16 @@ public class LocalTransaction {
             }
         }
     } // wrap.
-
+    
+    static public void wrapNoException(final VoidDelegate delegate)  {
+        try {
+            wrap(delegate);
+        }
+        catch(Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    } // wrapNoException.
+    
     private static void handleException(final boolean isLocalTransaction,
                                         final Throwable  e) throws Exception {
         if(isLocalTransaction){

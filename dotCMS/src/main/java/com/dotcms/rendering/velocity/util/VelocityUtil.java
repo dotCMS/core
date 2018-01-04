@@ -1,7 +1,5 @@
 package com.dotcms.rendering.velocity.util;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
@@ -12,7 +10,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -34,7 +31,6 @@ import com.dotmarketing.util.WebKeys;
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,7 +52,9 @@ import com.liferay.util.SystemProperties;
 
 
 public class VelocityUtil {
-
+    public final static String REFRESH="refresh";
+    public final static String NO="no";
+    public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 	
@@ -279,203 +277,45 @@ public class VelocityUtil {
 	}
 	
 
-	   public static void makeBackendContext(Context context, IHTMLPage htmlPage, String cmsTemplateInode, String idURI, HttpServletRequest request,
-	           PageMode mode, Host host) throws DotDataException {
-	
-	       context.put("context", context);
-
-	        // stick some useful variables in the context
-	        if (htmlPage != null) {
-	            context.put("HTMLPAGE_INODE", String.valueOf(htmlPage.getInode()));
-	            context.put("HTMLPAGE_IDENTIFIER", String.valueOf(htmlPage.getIdentifier()));
-	            context.put("HTMLPAGE_TITLE", htmlPage.getTitle());
-	            context.put("HTMLPAGE_META", htmlPage.getMetadata());
-	            //http://jira.dotmarketing.net/browse/DOTCMS-6427
-	            context.put("HTMLPAGE_DESCRIPTION", htmlPage.getSeoDescription());
-	            context.put("HTMLPAGE_KEYWORDS", htmlPage.getSeoKeywords());
-	            context.put("HTMLPAGE_SECURE", String.valueOf(htmlPage.isHttpsRequired()));
-	            context.put("HTMLPAGE_REDIRECT", htmlPage.getRedirect());
-	            context.put("friendlyName", htmlPage.getFriendlyName());
-	            context.put("pageTitle", htmlPage.getTitle());
-                context.put("dotPageMode", mode);
-	            Date moddate = htmlPage.getModDate();
-
-	            moddate = new Date(moddate.getTime());
-
-	            context.put("HTML_PAGE_LAST_MOD_DATE", moddate);
-
-	            try {
-	                context.put("htmlPageInode", htmlPage.getInode());
-
-	                // for browsing the tree
-	                String view = java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue()
-	                        + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse() + "and language_id = "
-	                        + (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE) + ")", "UTF-8");
-	                context.put("view", view);
-	            } catch (Exception e) {
-	                Logger.warn(VelocityUtil.class, e.toString(), e);
-	            }
-	        }
-
-	        context.put("HTMLPAGE_SERVER_NAME", request.getServerName());
-	        context.put("VTLSERVLET_URI", UtilMethods.encodeURIComponent(idURI));
-	        if (request.getQueryString() != null && request.getQueryString().length() > 0) {
-	            context.put("queryString", request.getQueryString());
-	        } else {
-	            context.put("queryString", "");
-	        }
-	        context.put("TEMPLATE_INODE", String.valueOf(cmsTemplateInode));
-
-	        context.put("mainFrame", request.getParameter("mainFrame"));
-	        context.put("previewFrame", request.getParameter("previewFrame"));
-	        context.put(mode.name(), true);
-	        if (mode == PageMode.EDIT_MODE) {
-	            // gets user id from request for mod user
-	            com.liferay.portal.model.User backendUser = null;
-
-	            try {
-	                backendUser = com.liferay.portal.util.PortalUtil.getUser(request);
-	                // Skin skin = backendUser.getSkin();
-	                // context.put("USER_SKIN", skin.getSkinId());
-	            } catch (Exception nsue) {
-	                Logger.warn(VelocityUtil.class, "Exception trying yo getUser: " + nsue.getMessage(), nsue);
-	            }
-
-	            // to check user has permission to publish this page
-	            boolean permission = APILocator.getPermissionAPI().doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
-	            context.put("permission", new Boolean(permission));
-
-	            // Check if the user is a CMS Administrator
-	            boolean adminUser = false;
-	            try {
-
-
-	                String adminRoleKey = "";
-	                try {
-	                    Role adminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE", "CMS Administrator"));
-	                    adminRoleKey = adminRole.getRoleKey();
-	                } catch (Exception e) {
-	                }
-
-	                Role[] userRoles = (Role[]) APILocator.getRoleAPI().loadRolesForUser(backendUser.getUserId()).toArray(new Role[0]);
-	                for (int i = 0; i < userRoles.length; i++) {
-	                    Role userRole = (Role) userRoles[i];
-	                    if (userRole.getRoleKey().equals(adminRoleKey)) {
-	                        adminUser = true;
-	                    }
-	                }
-	            } catch (Exception e) {
-	            }
-	            context.put("cmsAdminUser", new Boolean(adminUser));
-
-	        }
-
-	        // gets pageChannel for this path
-	        String pageChannel = UtilMethods.getPageChannel(idURI);
-	        context.put("pageChannel", pageChannel);
-	        context.put("PREVIEW_MODE", new Boolean(mode == PageMode.PREVIEW_MODE));
-	        context.put("EDIT_MODE", new Boolean(mode == PageMode.EDIT_MODE));
-	        context.put("ADMIN_MODE", new Boolean(mode.isAdmin));
-
-	        // for publish button on admin control
-	        // I HAVE TO FIX THIS!!!!! FOR THE NEW ONE
-	        context.put("TEMPLATE_LIVE_CONTENT", new Boolean(false));
-	        context.put("CONTAINER_LIVE_CONTENT", new Boolean(false));
-	        context.put("CONTENTLET_LIVE_CONTENT", new Boolean(false));
-
-
-	
-
-	        context.put("livePage", mode.showLive);
-
-	        context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-
-	        if (mode.isAdmin) {
-
-	            // Making sure you are viewing the latest list of languages on any
-	            // admin mode
-	            languages = APILocator.getLanguageAPI().getLanguages();
-	            context.put("languages", languages);
-
-	            // gets user id from request for mod user
-	            com.liferay.portal.model.User backendUser = null;
-
-	            try {
-	                backendUser = com.liferay.portal.util.PortalUtil.getUser(request);
-	                // Skin skin = backendUser.getSkin();
-	                // context.put("USER_SKIN", skin.getSkinId());
-	                context.put("backendUser", backendUser);
-	            } catch (Exception nsue) {
-	                Logger.warn(VelocityUtil.class, "Exception trying yo getUser: " + nsue.getMessage(), nsue);
-	            }
-
-	            HttpSession session = request.getSession();
-	            context.put("directorURL", session.getAttribute(com.dotmarketing.util.WebKeys.DIRECTOR_URL));
-	            context.put("viewFoldersURL", session.getAttribute(com.dotmarketing.util.WebKeys.VIEW_FOLDERS_URL));
-	            context.put("previewPageURL", session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_PAGE_URL));
-	            context.put("viewContentsURL", session.getAttribute(com.dotmarketing.util.WebKeys.VIEW_CONTENTS_URL));
-	            context.put("viewBrowserURL", session.getAttribute(com.dotmarketing.util.WebKeys.VIEW_BROWSER_URL));
-
-
-
-	        }
-
-	        context.put("host", host);
-
-	   }
 	
 	   
 
+    /**
+     * This method tries to build a cache key based on information given in the request. Post
+     * requests are ignored and will not be cached.
+     *
+     * @param request - The {@link HttpServletRequest} object.
+     * @return The page cache key if the page can be cached. If it can't be cached or caching is not
+     *         available, returns <code>null</code>.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static String getPageCacheKey(final HttpServletRequest request, final IHTMLPage page)
+            throws DotDataException, DotSecurityException {
+        if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
+            return null;
+        }
+        if (page == null || page.getCacheTTL() < 1) {
+            return null;
+        }
+        // don't cache posts
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return null;
+        }
+        // nocache passed either as a session var, as a request var or as a
+        // request attribute
+        if (NO.equals(request.getParameter(DOTCACHE)) || REFRESH.equals(request.getParameter(DOTCACHE))
+                || NO.equals(request.getAttribute(DOTCACHE))
+                || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))) {
+            return null;
+        }
 
-	/**
-	 * This method tries to build a cache key based on information given in the
-	 * request. Post requests are ignored and will not be cached.
-	 *
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return The page cache key if the page can be cached. If it can't be
-	 *         cached or caching is not available, returns <code>null</code>.
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public static String getPageCacheKey(HttpServletRequest request, HttpServletResponse response) throws DotDataException, DotSecurityException {
-		if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-			return null;
-		}
-		// don't cache posts
-		if (!"GET".equalsIgnoreCase(request.getMethod())) {
-			return null;
-		}
-		// nocache passed either as a session var, as a request var or as a
-		// request attribute
-		if ("no".equals(request.getParameter("dotcache"))
-				|| "no".equals(request.getAttribute("dotcache"))
-				|| (request.getSession(false) !=null && "no".equals(request.getSession(true).getAttribute("dotcache")))) {
-			return null;
-		}
-		String idInode = (String) request.getAttribute("idInode");
-		Identifier id;
 
-		try {
-			id=APILocator.getIdentifierAPI().find(idInode);
-		} catch (DotDataException e1) {
-			Logger.warn(VelocityUtil.class, "can't load page identifier",e1);
-			return null;
-		}
-
-		IHTMLPage page = getPage(id, request, false, null);
-		if (page == null || page.getCacheTTL() < 1) {
-			return null;
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(page.getInode());
-		sb.append("_" + page.getModDate().getTime());
-		return sb.toString();
-	}
-
-	public static long getLanguageId(HttpServletRequest request) {
-		return WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-	}
+        StringBuilder sb = new StringBuilder();
+        sb.append(page.getInode());
+        sb.append("_" + page.getModDate().getTime());
+        return sb.toString();
+    }
 
 	/**
 	 * Retrieves the list of languages a given Content Page ({@link Contentlet})
@@ -533,54 +373,45 @@ public class VelocityUtil {
 		return languages;
 	}
 
-	/**
-	 * This returns the proper ihtml page based on id, state and language
-	 * @param id
-	 * @param request
-	 * @param live
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public static IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live, Context context) throws DotDataException, DotSecurityException{
-
-		long langId = getLanguageId(request);
-		request.setAttribute("idInode", String.valueOf(id.getId()));
-
-		IHTMLPage htmlPage;
+    /**
+     * This returns the proper ihtml page based on id, state and language
+     * 
+     * @param id
+     * @param request
+     * @param live
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static IHTMLPage getPage(Identifier id, long tryLang, boolean live)
+            throws DotDataException, DotSecurityException {
 
 
-			Contentlet contentlet;
+        IHTMLPage htmlPage;
 
-			try{
-				contentlet = APILocator.getContentletAPI()
-								.findContentletByIdentifier(id.getId(),
-										live,
-										langId,
-										APILocator.getUserAPI().getSystemUser(), false);
-				htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-			} catch(DotStateException dse){
-				if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && langId!= APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-					contentlet = APILocator.getContentletAPI()
-									.findContentletByIdentifier(id.getId(),
-											live,
-											APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-											APILocator.getUserAPI().getSystemUser(), false);
-					htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-				} else{
-					throw new DotDataException("Can't find content. Identifier: " + id.getId() + ", Live: " +live+ ", Lang: " + langId, dse);
-				}
+        Contentlet contentlet;
 
-			}
+        try {
+            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, tryLang,
+                    APILocator.getUserAPI().getSystemUser(), false);
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-			if(UtilMethods.isSet(context)){
-				context.put("availablePageLangs", getAvailableContentPageLanguages(contentlet));
-			}
-		 
+        } catch (DotStateException dse) {
+            if (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+            } else {
+                throw new DotDataException(
+                        "Can't find content. Identifier: " + id.getId() + ", Live: " + live + ", Lang: " + tryLang, dse);
+            }
 
-		return htmlPage;
-	}
+        }
+
+
+        return htmlPage;
+    }
 
 	/**
 	 * Gets the Velocity Root Path. Looks for it on the Config, if not found the it get defaulted to /WEB-INF/velocity

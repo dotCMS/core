@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.rendering.velocity.servlet.VelocityLiveServlet;
 import com.dotcms.visitor.domain.Visitor;
 
 import com.dotmarketing.beans.Host;
@@ -118,7 +117,7 @@ public final class RulesEngine {
                  * Some form of redirect, error, or the request has already been fulfilled in
                  * some fashion by one or more of the actionlets.
                  */
-                Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
+                Logger.debug(RulesEngine.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
                 return;
             }
         }
@@ -130,7 +129,7 @@ public final class RulesEngine {
                  * Some form of redirect, error, or the request has already been fulfilled in
                  * some fashion by one or more of the actionlets.
                  */
-                Logger.debug(VelocityLiveServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
+                Logger.debug(RulesEngine.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
                 return;
             }
         }

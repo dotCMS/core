@@ -6,7 +6,7 @@ import static org.mockito.Matchers.startsWith;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.rendering.velocity.servlet.VelocityLiveServlet;
+import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 
@@ -376,7 +376,7 @@ public class FiltersTest {
                     public void forward(ServletRequest arg0, ServletResponse arg1)
                             throws ServletException, IOException {
 
-                        VelocityLiveServlet servlet = new VelocityLiveServlet();
+                        VelocityServlet servlet = new VelocityServlet();
                         servlet.init(null);
                         servlet.service(arg0, arg1);
                     }

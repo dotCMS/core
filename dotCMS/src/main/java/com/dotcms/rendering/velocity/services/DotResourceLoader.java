@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -20,12 +21,12 @@ public class DotResourceLoader extends ResourceLoader {
 
     private static DotResourceLoader instance;
 
-
+    private static boolean useCache = Config.getBooleanProperty("VELOCITY_CACHING_ON", true);
     public DotResourceLoader() {
         super();
     }
 
-    
+
     @Override
     public InputStream getResourceStream(final String filePath) throws ResourceNotFoundException {
         if (!UtilMethods.isSet(filePath)) {
@@ -44,9 +45,7 @@ public class DotResourceLoader extends ResourceLoader {
             final PageMode mode = PageMode.get(path[0]);
             final String id1 = path[1].indexOf("_") > -1 ? path[1].substring(0, path[1].indexOf("_")) : path[1];
             final String language = path[1].indexOf("_") > -1 ? path[1].substring(path[1].indexOf("_") + 1, path[1].length())
-                    : String.valueOf(APILocator.getLanguageAPI()
-                        .getDefaultLanguage()
-                        .getId());
+                    : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
             final String id2 = path.length > 3 ? path[2] : null;
 
@@ -56,17 +55,14 @@ public class DotResourceLoader extends ResourceLoader {
             try {
                 switch (type) {
                     case NOT_VELOCITY: {
-                        CacheLocator.getVeloctyResourceCache()
-                        .addMiss(path);
-                    throw new ResourceNotFoundException("Cannot find velocity file : " + path);
+                        CacheLocator.getVeloctyResourceCache().addMiss(path);
+                        throw new ResourceNotFoundException("Cannot find velocity file : " + path);
                     }
                     case CONTAINER: {
                         return new ContainerLoader().writeObject(id1, id2, mode, language, filePath);
                     }
                     case TEMPLATE: {
-
                         return new TemplateLoader().writeObject(id1, id2, mode, language, filePath);
-
                     }
                     case CONTENT: {
                         return new ContentletLoader().writeObject(id1, id2, mode, language, filePath);
@@ -79,27 +75,21 @@ public class DotResourceLoader extends ResourceLoader {
                     }
                     case SITE: {
                         return new SiteLoader().writeObject(id1, id2, mode, language, filePath);
-
                     }
                     case HTMLPAGE: {
                         return new PageLoader().writeObject(id1, id2, mode, language, filePath);
-
                     }
                     case VELOCITY_MACROS: {
-                        return VTLLoader.instance()
-                            .writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
                     }
                     case VTL: {
-                        return VTLLoader.instance()
-                            .writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
                     }
                     case VELOCITY_LEGACY_VL: {
-                        return VTLLoader.instance()
-                            .writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
                     }
                     default: {
-                        CacheLocator.getVeloctyResourceCache()
-                            .addMiss(path);
+                        CacheLocator.getVeloctyResourceCache().addMiss(path);
                         throw new ResourceNotFoundException("Cannot find velocity file : " + path);
                     }
                 }
@@ -151,6 +141,12 @@ public class DotResourceLoader extends ResourceLoader {
     public void init(ExtendedProperties configuration) {
         // TODO Auto-generated method stub
 
+    }
+
+
+    @Override
+    public boolean isCachingOn() {
+        return useCache;
     }
 
 

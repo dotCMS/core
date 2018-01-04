@@ -355,8 +355,4 @@ public class ContainerResource implements Serializable {
         return responseBuilder.build();
 
     }
-
-
-
 }
-
