@@ -1,6 +1,6 @@
-<!-- <dot-edit-page-toolbar class="dot-edit__toolbar"></dot-edit-page-toolbar> -->
 <div class="dot-edit__page-wrapper">
-    <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe"></iframe>
+    <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
+    <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe" (load)="onLoad($event)"></iframe>
 
     <p-dialog [header]="dialogTitle" [visible]="!!dialogTitle" [modal]="true" (onHide)="onHide($event)" [width]="1400" [height]="700" [modal]="true">
         <iframe *ngIf="contentletActionsUrl" #contentletActionsIframe [src]="contentletActionsUrl" height="606" width="100%" frameborder="0"></iframe>

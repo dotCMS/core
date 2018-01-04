@@ -13,6 +13,7 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { EditContentResolver } from './services/dot-edit-content-resolver.service';
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
+import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 
 const routes: Routes = [
     {
@@ -26,7 +27,13 @@ const routes: Routes = [
 
 @NgModule({
     declarations: [DotEditContentComponent],
-    imports: [CommonModule, DialogModule, RouterModule.forChild(routes), DotEditPageToolbarModule],
+    imports: [
+        CommonModule,
+        DialogModule,
+        RouterModule.forChild(routes),
+        DotEditPageToolbarModule,
+        DotLoadingIndicatorModule
+    ],
     exports: [DotEditContentComponent],
     providers: [
         DotContainerContentletService,
