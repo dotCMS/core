@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs/Observable';
 
 /**
- * Mock of MessageService.
+ * Mock of DotMessageService.
  * How to use:
  * <code>
- *      let messageServiceMock = new MockMessageService({
+ *      let messageServiceMock = new MockDotMessageService({
  *           'Description': 'Description',
  *           'Entries': 'Entries',
  *           'Structure-Name': 'Content Type Name',
@@ -18,9 +18,9 @@ import { Observable } from 'rxjs/Observable';
  *      'Structure-Name': 'Content Type Name',
  * }
  * @export
- * @class MockMessageService
+ * @class MockDotMessageService
  */
-export class MockMessageService {
+export class MockDotMessageService {
     constructor(private messages: MessageConfig) {}
 
     public getMessages(keys: string[]): Observable<any> {

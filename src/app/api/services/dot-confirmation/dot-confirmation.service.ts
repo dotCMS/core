@@ -1,8 +1,8 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { FooterLabels } from './../../../shared/models/dot-confirmation/footer-labels.model';
 import { DotConfirmation } from './../../../shared/models/dot-confirmation/dot-confirmation.model';
 import { BehaviorSubject } from 'rxjs';
-import { MessageService } from './../messages-service';
+import { DotMessageService } from '../dot-messages-service';
 import { ConfirmationService } from 'primeng/primeng';
 
 /**
@@ -29,8 +29,8 @@ export class DotConfirmationService {
      * @param {DotConfirmation} confirmation
      * @memberof DotConfirmationService
      */
-    // TODO: Import MessageService - Add message keys
-    // (Not working right now since inyecting MessageService produces errors)
+    // TODO: Import DotMessageService - Add message keys
+    // (Not working right now since inyecting DotMessageService produces errors)
     confirm(confirmation: DotConfirmation): void {
         this.labels.next({
             acceptLabel: confirmation.footerLabel.acceptLabel || 'Yes',

@@ -1,7 +1,7 @@
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit } from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -22,7 +22,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     private form: FormGroup;
 
     constructor(
-        messageService: MessageService,
+        messageService: DotMessageService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,

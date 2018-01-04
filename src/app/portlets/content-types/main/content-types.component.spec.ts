@@ -12,8 +12,8 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { ContentTypesPortletComponent } from './content-types.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FormatDateService } from '../../../api/services/format-date-service';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
@@ -32,7 +32,7 @@ describe('ContentTypesPortletComponent', () => {
     let dotContentletService: DotContentletService;
 
     beforeEach(() => {
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             'contenttypes.form.label.description': 'Description',
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
@@ -48,7 +48,7 @@ describe('ContentTypesPortletComponent', () => {
                 ListingDataTableModule
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 CrudService,
                 FormatDateService,
                 ContentTypesInfoService,

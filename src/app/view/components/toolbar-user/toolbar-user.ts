@@ -1,10 +1,9 @@
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
-import { DotRouterService } from '../../../api/services/dot-router-service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { LoginService, Auth, LoggerService } from 'dotcms-js/dotcms-js';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 
 @Component({
     selector: 'toolbar-user',
@@ -19,7 +18,7 @@ export class ToolbarUserComponent extends BaseComponent implements OnInit {
     private showMyAccount = false;
 
     constructor(
-        messageService: MessageService,
+        messageService: DotMessageService,
         private loggerService: LoggerService,
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService

@@ -2,10 +2,10 @@
 import { DataTypePropertyComponent } from './';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -14,7 +14,7 @@ describe('DataTypePropertyComponent', () => {
     let fixture: ComponentFixture<DataTypePropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.data_type.label': 'Data-Type',
         'contenttypes.field.properties.data_type.values.binary': 'Binary',
         'contenttypes.field.properties.data_type.values.text': 'Text',
@@ -34,7 +34,7 @@ describe('DataTypePropertyComponent', () => {
             imports: [
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

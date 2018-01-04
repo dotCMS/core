@@ -10,8 +10,8 @@ import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.serv
 import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { FormControl, FormGroup } from '@angular/forms';
-import { MessageService } from './../../../../api/services/messages-service';
-import { MockMessageService } from './../../../../test/message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { NgGridModule } from 'angular2-grid';
 import { PaginatorService } from './../../../../api/services/paginator/paginator.service';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
@@ -54,7 +54,7 @@ describe('DotEditLayoutGridComponent', () => {
             ]
         };
 
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             cancel: 'Cancel'
         });
 
@@ -66,7 +66,7 @@ describe('DotEditLayoutGridComponent', () => {
                 DotEditLayoutService,
                 TemplateContainersCacheService,
                 PaginatorService,
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 

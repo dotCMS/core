@@ -10,7 +10,7 @@ import { FormatDateService } from './api/services/format-date-service';
 import { GravatarService } from './api/services/gravatar-service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 import { Logger } from 'angular2-logger/core';
-import { MessageService } from './api/services/messages-service';
+import { DotMessageService } from './api/services/dot-messages-service';
 import { NotLicensedService } from './api/services/not-licensed-service';
 import { NotificationsService } from './api/services/notifications-service';
 import { PaginatorService } from './api/services/paginator';
@@ -34,7 +34,7 @@ const PROVIDERS: any[] = [
     GravatarService,
     IframeOverlayService,
     Logger,
-    MessageService,
+    DotMessageService,
     NotLicensedService,
     DotConfirmationService,
     NotificationsService,

@@ -7,13 +7,13 @@ import { Field, FieldRow } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
 import { FormatDateService } from '../../../../api/services/format-date-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Subject } from 'rxjs/Subject';
 import { FieldDragDropService } from '../service/index';
@@ -78,7 +78,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
         'contenttypes.dropzone.action.cancel': 'Cancel',
         'contenttypes.dropzone.action.edit': 'Edit',
@@ -112,7 +112,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 FormatDateService,
                 FieldPropertyService,
                 FieldService,
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: Router, useValue: mockRouter }
             ]
         });

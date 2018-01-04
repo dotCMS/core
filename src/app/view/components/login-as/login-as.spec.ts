@@ -3,13 +3,13 @@ import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { LoginAsComponent } from './login-as';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import {
     SEARCHABLE_NGFACES_MODULES,
     SearchableDropDownModule
 } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../api/services/paginator';
 import { ActivatedRoute } from '@angular/router';
@@ -28,7 +28,7 @@ describe('LoginAsComponent', () => {
 
     beforeEach(
         async(() => {
-            const messageServiceMock = new MockMessageService({
+            const messageServiceMock = new MockDotMessageService({
                 Change: 'Change',
                 cancel: 'cancel',
                 'login-as': 'login-as',
@@ -46,7 +46,7 @@ describe('LoginAsComponent', () => {
                     SearchableDropDownModule
                 ],
                 providers: [
-                    { provide: MessageService, useValue: messageServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: LoginService, useValue: {} },
                     { provide: DotRouterService, useValue: {} },
                     {

@@ -1,6 +1,6 @@
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
-import { Component, ViewEncapsulation, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties',
@@ -10,7 +10,7 @@ import { Component, ViewEncapsulation, Input, OnInit } from '@angular/core';
 export class DotLayoutPropertiesComponent implements OnInit {
     @Input() group: FormGroup;
 
-    constructor(public messageService: MessageService) {}
+    constructor(public messageService: DotMessageService) {}
 
     ngOnInit() {
         this.messageService.getMessages([

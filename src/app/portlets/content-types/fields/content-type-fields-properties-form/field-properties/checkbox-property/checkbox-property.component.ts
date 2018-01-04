@@ -1,6 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
 import { FormGroup } from '@angular/forms';
 
@@ -20,7 +20,7 @@ export class CheckboxPropertyComponent extends BaseComponent {
         unique: 'contenttypes.field.properties.unique.label',
     };
 
-    constructor(public messageService: MessageService) {
+    constructor(public messageService: DotMessageService) {
         super(
             [
                 'contenttypes.field.properties.required.label',

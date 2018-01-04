@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -11,7 +11,7 @@ export class DotEditPageToolbarComponent implements OnInit {
     @Output() save = new EventEmitter<MouseEvent>();
     @Output() cancel = new EventEmitter<MouseEvent>();
 
-    constructor(public messageService: MessageService) {}
+    constructor(public messageService: DotMessageService) {}
 
     ngOnInit() {
         this.messageService.getMessages([

@@ -1,8 +1,6 @@
 import { DotContainer } from '../../../shared/models/container/dot-container.model';
-import { MessageService } from './../../../api/services/messages-service';
-import { Site } from 'dotcms-js/dotcms-js';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from './../../../api/services/paginator/paginator.service';
-import { Observable } from 'rxjs/Observable';
 import { Component, OnInit, Output, EventEmitter, Input, ViewEncapsulation } from '@angular/core';
 
 @Component({
@@ -20,7 +18,7 @@ export class DotContainerSelectorComponent implements OnInit {
     currentContainers: DotContainer[] = [];
 
 
-    constructor(public paginationService: PaginatorService, public messageService: MessageService) { }
+    constructor(public paginationService: PaginatorService, public messageService: DotMessageService) { }
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';

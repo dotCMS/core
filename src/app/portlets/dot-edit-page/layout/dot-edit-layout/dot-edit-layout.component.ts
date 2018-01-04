@@ -4,7 +4,7 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotEditLayoutGridComponent } from '../dot-edit-layout-grid/dot-edit-layout-grid.component';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotLayout } from '../../shared/models/dot-layout.model';
 import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
@@ -29,7 +29,7 @@ export class DotEditLayoutComponent implements OnInit {
         private pageViewService: PageViewService,
         private route: ActivatedRoute,
         private templateContainersCacheService: TemplateContainersCacheService,
-        public messageService: MessageService,
+        public messageService: DotMessageService,
         public router: Router
     ) {}
 

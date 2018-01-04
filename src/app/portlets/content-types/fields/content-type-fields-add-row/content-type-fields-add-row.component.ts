@@ -1,7 +1,7 @@
 import { Component, OnDestroy, Input, Output, EventEmitter, OnInit,
          ViewChild, ElementRef } from '@angular/core';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
-import { MessageService } from './../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 /**
  * Display select columns row
@@ -31,7 +31,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer') colContainerElem: ElementRef;
 
-    constructor(private hotkeysService: HotkeysService , public messageService: MessageService) {
+    constructor(private hotkeysService: HotkeysService , public messageService: DotMessageService) {
     }
 
     ngOnInit(): void {

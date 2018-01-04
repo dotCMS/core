@@ -1,13 +1,12 @@
 import { DebugElement, ComponentFactoryResolver, SimpleChange, Directive, Input, Injectable } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FormBuilder, FormGroup, ValidationErrors, Validators, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { Field } from '../index';
-import { fakeAsync, tick } from '@angular/core/testing';
 
 @Directive({
     selector: '[dynamicFieldProperty]',
@@ -50,7 +49,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsPropertiesFormComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'name': 'name',
         'Label': 'Label',
         'message.field.fieldType': 'message.field.fieldType',
@@ -88,7 +87,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 ComponentFactoryResolver,
                 FieldPropertyService,
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

@@ -5,7 +5,7 @@ import { DotcmsConfig, LoggerService } from 'dotcms-js/dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { NgModule } from '@angular/core';
 import { DataTableModule, InputTextModule } from 'primeng/primeng';
 import { ActionMenuButtonModule } from './../_common/action-menu-button/action-menu-button.module';
@@ -30,7 +30,7 @@ import { ActionMenuButtonModule } from './../_common/action-menu-button/action-m
         FormatDateService,
         DotcmsConfig,
         LoggerService,
-        MessageService,
+        DotMessageService,
     ]
 })
 export class ListingDataTableModule {}

@@ -10,8 +10,8 @@ import { DataTableModule, SharedModule, MenuModule, MenuItem } from 'primeng/pri
 import { DebugElement, SimpleChange } from '@angular/core';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
 import { PaginatorService } from '../../../api/services/paginator';
@@ -25,7 +25,7 @@ describe('ListingDataTableComponent', () => {
     let el: HTMLElement;
 
     beforeEach(() => {
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             'global-search': 'Global Serach'
         });
 
@@ -44,7 +44,7 @@ describe('ListingDataTableComponent', () => {
                 MenuModule
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 CrudService,
                 FormatDateService,
                 PaginatorService,

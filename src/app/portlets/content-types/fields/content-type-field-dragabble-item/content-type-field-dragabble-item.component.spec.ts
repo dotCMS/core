@@ -5,8 +5,8 @@ import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dr
 import { By } from '@angular/platform-browser';
 import { Field } from '../';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
-import { MockMessageService } from '../../../../test/message-service.mock';
-import { MessageService } from '../../../../api/services/messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
@@ -15,7 +15,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.action.edit': 'Edit',
         'contenttypes.action.delete': 'Delete'
     });
@@ -26,7 +26,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 declarations: [ContentTypesFieldDragabbleItemComponent],
                 imports: [IconButtonTooltipModule],
                 providers: [
-                    { provide: MessageService, useValue: messageServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock },
                     FieldService
                 ]
             });

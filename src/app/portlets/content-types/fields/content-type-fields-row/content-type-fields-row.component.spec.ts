@@ -6,11 +6,10 @@ import { By } from '@angular/platform-browser';
 import { FieldDragDropService  } from '../service';
 import { Field, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
-import { Observable } from 'rxjs/Observable';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { ConfirmDialogModule } from 'primeng/primeng';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 
 @Component({
@@ -29,7 +28,7 @@ describe('ContentTypeFieldsRowComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.rows.empty.message': 'Add fields here',
         'contenttypes.action.delete': 'Delete',
         'message.structure.delete.structure': 'Are you sure you want to delete this',
@@ -54,7 +53,7 @@ describe('ContentTypeFieldsRowComponent', () => {
             providers: [
                 FieldDragDropService,
                 DotConfirmationService,
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ],
         });
 

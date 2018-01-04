@@ -5,8 +5,8 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { MessageService } from '../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -16,7 +16,7 @@ describe('ActionHeaderComponent', () => {
     let de: DebugElement;
 
     beforeEach(async(() => {
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             'selected': 'selected'
         });
 
@@ -33,7 +33,7 @@ describe('ActionHeaderComponent', () => {
                 }])
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 DotConfirmationService
             ]
         });

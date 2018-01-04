@@ -10,7 +10,7 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { MenuItem } from 'primeng/primeng';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StructureTypeView } from '../../../shared/models/contentlet';
 import { ToolbarAddContenletService } from './toolbar-add-contentlet.service';
@@ -37,7 +37,7 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
     private currentPage: number = -1;
 
     constructor(
-        messageService: MessageService,
+        messageService: DotMessageService,
         private toolbarAddContenletService: ToolbarAddContenletService,
         public contentTypesInfoService: ContentTypesInfoService,
         public iframeOverlayService: IframeOverlayService

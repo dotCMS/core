@@ -9,8 +9,8 @@ import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { DotEditLayoutGridModule } from '../dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { FormatDateService } from '../../../../api/services/format-date-service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
-import { MessageService } from '../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { Observable } from 'rxjs/Observable';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { PaginatorService } from '../../../../api/services/paginator';
@@ -87,7 +87,7 @@ describe('DotEditLayoutComponent', () => {
         }
     };
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'editpage.layout.toolbar.action.save': 'Save',
         'editpage.layout.toolbar.action.cancel': 'Cancel',
         'editpage.layout.toolbar.template.name': 'Name of the template',
@@ -119,7 +119,7 @@ describe('DotEditLayoutComponent', () => {
                         data: Observable.of(fakePageView)
                     }
                 },
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 

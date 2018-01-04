@@ -1,5 +1,5 @@
 import {Directive, ElementRef, OnDestroy, OnInit} from '@angular/core';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 
 @Directive({
     host: {},
@@ -9,7 +9,7 @@ export class MessageKeyDirective implements OnInit, OnDestroy{
     private key: string;
     private messageMapSubscription;
 
-    constructor(private el: ElementRef, private messageService: MessageService) {}
+    constructor(private el: ElementRef, private messageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.key = this.el.nativeElement.innerText;

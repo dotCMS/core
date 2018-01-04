@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 import { Field, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 
 /**
@@ -23,7 +23,7 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Output() removeField: EventEmitter<Field> = new EventEmitter();
     @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
 
-    constructor(messageService: MessageService, private dotConfirmationService: DotConfirmationService) {
+    constructor(messageService: DotMessageService, private dotConfirmationService: DotConfirmationService) {
         super(
             [
                 'contenttypes.dropzone.rows.empty.message',

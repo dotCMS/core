@@ -2,8 +2,7 @@ import { Component, Input, Output, EventEmitter, HostListener } from '@angular/c
 
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Field } from '../shared';
-import { MessageService } from '../../../../api/services/messages-service';
-import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-icon-map';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldService } from '../service';
 
 /**
@@ -21,7 +20,7 @@ export class ContentTypesFieldDragabbleItemComponent extends BaseComponent {
     @Output() remove: EventEmitter<Field> = new EventEmitter();
     @Output() edit: EventEmitter<Field> = new EventEmitter();
 
-    constructor(messageService: MessageService, public fieldService: FieldService) {
+    constructor(messageService: DotMessageService, public fieldService: FieldService) {
         super(['contenttypes.action.edit', 'contenttypes.action.delete'], messageService);
     }
 

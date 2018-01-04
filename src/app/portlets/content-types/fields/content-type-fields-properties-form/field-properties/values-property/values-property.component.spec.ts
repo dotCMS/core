@@ -2,9 +2,9 @@
 import { ValuesPropertyComponent } from './index';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotTextareaContentModule } from '../../../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -23,7 +23,7 @@ describe('ValuesPropertyComponent', () => {
     let fixture: ComponentFixture<ValuesPropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'Validation-RegEx': 'Validation-RegEx'
     });
 
@@ -37,7 +37,7 @@ describe('ValuesPropertyComponent', () => {
                 DotTextareaContentModule
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

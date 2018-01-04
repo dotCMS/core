@@ -3,15 +3,15 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MessageService } from '../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 
 describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;
     let fixture: ComponentFixture<DotEditPageToolbarComponent>;
     let de: DebugElement;
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.primary.action': 'Hello',
         'editpage.toolbar.secondary.action': 'World'
     });
@@ -21,7 +21,7 @@ describe('DotEditPageToolbarComponent', () => {
             TestBed.configureTestingModule({
                 imports: [DotEditPageToolbarModule],
                 providers: [
-                    {provide: MessageService, useValue: messageServiceMock}
+                    {provide: DotMessageService, useValue: messageServiceMock}
                 ]
             }).compileComponents();
         })

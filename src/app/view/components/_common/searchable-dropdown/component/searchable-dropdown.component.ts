@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MessageService } from '../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Rx';
 import { OverlayPanel } from 'primeng/primeng';
 
@@ -60,7 +60,7 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     value: any = {};
     valueString = '';
 
-    constructor(messageService: MessageService) {
+    constructor(messageService: DotMessageService) {
         super(['search'], messageService);
     }
 

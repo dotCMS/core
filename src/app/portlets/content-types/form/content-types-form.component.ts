@@ -19,7 +19,7 @@ import { SelectItem } from 'primeng/primeng';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 
@@ -90,7 +90,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
         private contentTypesInfoService: ContentTypesInfoService,
-        public messageService: MessageService,
+        public messageService: DotMessageService,
         private hotkeysService: HotkeysService,
         private workflowService: WorkflowService
     ) {

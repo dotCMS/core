@@ -2,8 +2,8 @@ import { DotContainer } from '../../../shared/models/container/dot-container.mod
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from './../../../api/services/paginator/paginator.service';
 import { IframeOverlayService } from './../_common/iframe/service/iframe-overlay.service';
-import { MockMessageService } from './../../../test/message-service.mock';
-import { MessageService } from './../../../api/services/messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SearchableDropDownModule } from './../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from './../../../test/dot-test-bed';
 import { Observable } from 'rxjs/Observable';
@@ -21,7 +21,7 @@ describe('ContainerSelectorComponent', () => {
     let containers: DotContainer[];
 
     beforeEach(async(() => {
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             addcontainer: 'Add a Container'
         });
 
@@ -29,7 +29,7 @@ describe('ContainerSelectorComponent', () => {
             declarations: [DotContainerSelectorComponent],
             imports: [ SearchableDropDownModule, BrowserAnimationsModule],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 IframeOverlayService,
                 PaginatorService
             ]

@@ -2,7 +2,7 @@ import { DotConfirmationService } from './../../../../api/services/dot-confirmat
 import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
 
 import { BaseComponent } from '../../_common/_base/base-component';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { ActionHeaderOptions, ButtonAction } from '../../../../shared/models/action-header';
 
 @Component({
@@ -17,7 +17,7 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    constructor(messageService: MessageService, private dotConfirmationService: DotConfirmationService) {
+    constructor(messageService: DotMessageService, private dotConfirmationService: DotConfirmationService) {
         super(
             [
                 'selected',

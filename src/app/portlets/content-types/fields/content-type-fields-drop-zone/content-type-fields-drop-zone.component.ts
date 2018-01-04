@@ -4,7 +4,7 @@ import { Component, SimpleChanges, Input, Output, EventEmitter, OnInit, OnChange
 import { FieldDragDropService } from '../service';
 import { FieldRow, Field, FieldType } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
 
@@ -32,7 +32,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     @Output() removeFields = new EventEmitter<Field[]>();
 
     constructor(
-        messageService: MessageService,
+        messageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService
     ) {

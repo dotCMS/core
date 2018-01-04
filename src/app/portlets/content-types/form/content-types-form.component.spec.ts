@@ -3,7 +3,6 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { Observable } from 'rxjs/Observable';
 
@@ -13,8 +12,8 @@ import { DotcmsConfig, LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { LoginServiceMock } from '../../../test/login-service.mock';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { HotkeysService } from 'angular2-hotkeys';
 import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
@@ -37,7 +36,7 @@ describe('ContentTypesFormComponent', () => {
 
     beforeEach(
         async(() => {
-            const messageServiceMock = new MockMessageService({
+            const messageServiceMock = new MockDotMessageService({
                 'contenttypes.form.field.detail.page': 'Detail Page',
                 'contenttypes.form.field.expire.date.field': 'Expire Date Field',
                 'contenttypes.form.field.host_folder.label': 'Host or Folder',
@@ -71,7 +70,7 @@ describe('ContentTypesFormComponent', () => {
                 ],
                 providers: [
                     { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: MessageService, useValue: messageServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: HotkeysService, useClass: HotkeysServiceMock },
                     { provide: SiteService, useValue: siteServiceMock },
                     DotcmsConfig,

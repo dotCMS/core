@@ -1,12 +1,8 @@
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { IFrameModule } from '../../../../../view/components/_common/iframe/iframe.module';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
 import { Component, Input } from '@angular/core';
-import { MockMessageService } from '../../../../../test/message-service.mock';
-import { MessageService } from '../../../../../api/services/messages-service';
+import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { By } from '@angular/platform-browser';
 import { MenuItem } from 'primeng/components/common/menuitem';
 import { DotTemplateAdditionalActionsMenuComponent } from './dot-template-additional-actions-menu.component';
@@ -27,7 +23,7 @@ describe('DotLegacyAdditionalActionsMenuComponent', () => {
 
     beforeEach(() => {
 
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             'template.action.additional.permissions': 'permissions',
             'template.action.additional.history': 'history',
             'template.action.additional.properties': 'properties'
@@ -39,7 +35,7 @@ describe('DotLegacyAdditionalActionsMenuComponent', () => {
                 MockPrimeNGMenuComponent
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 

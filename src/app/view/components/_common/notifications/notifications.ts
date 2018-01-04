@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angul
 
 import { BaseComponent } from '../_base/base-component';
 import { INotification } from '../../../../shared/models/notifications';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -24,7 +24,7 @@ export class NotificationsItem extends BaseComponent {
     private showLinkAction = false;
     private showTitleLinked = false;
 
-    constructor(messageService: MessageService) {
+    constructor(messageService: DotMessageService) {
         super(['notifications_dismiss'], messageService);
     }
 

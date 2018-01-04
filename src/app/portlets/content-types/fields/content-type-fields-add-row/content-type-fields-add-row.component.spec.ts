@@ -1,16 +1,14 @@
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
-import { MessageService } from './../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/primeng';
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { Field } from '../';
-import { Observable } from 'rxjs/Observable';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { TestHotkeysMock } from './../../../../test/hotkeys-service.mock';
-import { MockMessageService } from './../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 
 describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;
@@ -20,7 +18,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     let testHotKeysMock: TestHotkeysMock;
     let toolTips: string[];
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.content.add_rows': 'Add Rows',
         'contenttypes.content.one_column': 'One column',
         'contenttypes.content.two_columns': 'Second column',
@@ -38,7 +36,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
             imports: [TooltipModule, BrowserAnimationsModule],
             providers: [
                 { provide: HotkeysService, useValue: testHotKeysMock },
-                { provide: MessageService, useValue: messageServiceMock}
+                { provide: DotMessageService, useValue: messageServiceMock}
             ]
         });
 

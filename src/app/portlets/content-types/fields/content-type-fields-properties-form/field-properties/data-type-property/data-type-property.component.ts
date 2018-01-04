@@ -1,8 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Field } from '../../../index';
+import { Component, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
 
@@ -15,7 +14,7 @@ export class DataTypePropertyComponent extends BaseComponent implements OnInit {
     group: FormGroup;
     radioInputs: object;
 
-    constructor(public messageService: MessageService) {
+    constructor(public messageService: DotMessageService) {
         super(
             [
                 'contenttypes.field.properties.data_type.label',

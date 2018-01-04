@@ -1,12 +1,10 @@
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../../test/message-service.mock';
-import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
-import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
-import { OverlayPanelModule, ButtonModule } from 'primeng/primeng';
+import { FormGroup, FormControl } from '@angular/forms';
 import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
@@ -33,7 +31,7 @@ describe('DotLayoutSidebarComponent', () => {
     let de: DebugElement;
     let hostComponentfixture: ComponentFixture<TestHostComponent>;
 
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'editpage.layout.properties.sidebar.left': 'Sidebar left',
         'editpage.layout.properties.sidebar.right': 'Sidebar right'
     });
@@ -43,7 +41,7 @@ describe('DotLayoutSidebarComponent', () => {
             declarations: [DotLayoutSidebarComponent, TestHostComponent],
             imports: [DotLayoutPropertiesItemModule],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 

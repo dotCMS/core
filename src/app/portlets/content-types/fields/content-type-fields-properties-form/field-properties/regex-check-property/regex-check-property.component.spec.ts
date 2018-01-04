@@ -3,18 +3,18 @@ import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RegexCheckPropertyComponent } from './index';
-import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
+import { ComponentFixture, async } from '@angular/core/testing';
+import { DebugElement } from '@angular/core';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
     let fixture: ComponentFixture<RegexCheckPropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.validation_regex.label': 'Validation-RegEx',
         'contenttypes.field.properties.validation_regex.values.select': 'Select',
         'contenttypes.field.properties.validation_regex.values.email': 'Email',
@@ -36,7 +36,7 @@ describe('RegexCheckPropertyComponent', () => {
                 NoopAnimationsModule
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

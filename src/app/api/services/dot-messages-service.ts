@@ -7,7 +7,7 @@ import { RequestMethod } from '@angular/http';
 import { Subject } from 'rxjs/Subject';
 
 @Injectable()
-export class MessageService {
+export class DotMessageService {
     private _messageMap$: Subject<any> = new Subject<any>();
     private doMessageLoad;
     private i18nUrl: string;

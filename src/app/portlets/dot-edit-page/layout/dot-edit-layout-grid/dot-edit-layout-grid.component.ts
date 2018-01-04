@@ -2,14 +2,13 @@ import { Component, OnInit, Input, forwardRef, ViewChild } from '@angular/core';
 import { NgGrid, NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation/dot-confirmation.service';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model';
 import {
     DOT_LAYOUT_GRID_MAX_COLUMNS,
     DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE,
     DOT_LAYOUT_DEFAULT_GRID
 } from '../../shared/models/dot-layout.const';
-import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -74,7 +73,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     constructor(
         private dotConfirmationService: DotConfirmationService,
         private dotEditLayoutService: DotEditLayoutService,
-        public messageService: MessageService,
+        public messageService: DotMessageService,
         private dotEventsService: DotEventsService
     ) {}
 

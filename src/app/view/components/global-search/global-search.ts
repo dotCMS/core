@@ -1,6 +1,6 @@
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, ViewEncapsulation } from '@angular/core';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -9,7 +9,7 @@ import { MessageService } from '../../../api/services/messages-service';
     templateUrl: 'global-search.html'
 })
 export class GlobalSearch extends BaseComponent {
-    constructor(messageService: MessageService) {
+    constructor(messageService: DotMessageService) {
         super(['search'], messageService);
     }
 }

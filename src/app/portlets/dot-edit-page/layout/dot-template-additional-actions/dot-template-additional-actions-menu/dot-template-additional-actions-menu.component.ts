@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
-import { MessageService } from '../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 
 
 @Component({
@@ -11,7 +11,7 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
     @Input() templateId: string;
     items: MenuItem[];
 
-    constructor(private messageService: MessageService) {
+    constructor(private messageService: DotMessageService) {
 
     }
 

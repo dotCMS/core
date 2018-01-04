@@ -1,14 +1,12 @@
 import { CategoriesPropertyComponent } from './categories-property.component';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Injectable, Input, Output, EventEmitter, Component } from '@angular/core';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { PaginatorService } from '../../../../../../api/services/paginator';
-import { MessageService } from '../../../../../../api/services/messages-service';
-import { SearchableDropdownComponent, PaginationEvent } from '../../../../../../view/components/_common/searchable-dropdown/component';
-import {
-    FieldValidationMessageComponent
-} from '../../../../../../view/components/_common/field-validation-message/field-validation-message';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
+import { PaginationEvent } from '../../../../../../view/components/_common/searchable-dropdown/component';
+
 import { NgControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -48,7 +46,7 @@ describe('CategoriesPropertyComponent', () => {
     let fixture: ComponentFixture<CategoriesPropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.categories.label': 'contenttypes.field.properties.categories.label',
         'search': 'search'
     });
@@ -64,7 +62,7 @@ describe('CategoriesPropertyComponent', () => {
             ],
             providers: [
                 { provide: PaginatorService, useClass: TestPaginatorService },
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

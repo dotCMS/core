@@ -8,7 +8,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActionHeaderOptions } from '../../../shared/models/action-header';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DataTableColumn } from '../../../shared/models/data-table';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
 import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
@@ -58,7 +58,7 @@ export class ContentTypesPortletComponent implements OnInit {
     ];
 
     constructor(
-        public messageService: MessageService,
+        public messageService: DotMessageService,
         private router: Router,
         private route: ActivatedRoute,
         private contentTypesInfoService: ContentTypesInfoService,

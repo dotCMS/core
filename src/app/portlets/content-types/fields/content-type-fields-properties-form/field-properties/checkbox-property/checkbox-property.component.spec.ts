@@ -3,10 +3,9 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { By } from '@angular/platform-browser';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
-import { FieldProperty } from '../field-properties.model';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { FormGroup, FormControl } from '@angular/forms';
 
 describe('CheckboxPropertyComponent', () => {
@@ -14,7 +13,7 @@ describe('CheckboxPropertyComponent', () => {
     let fixture: ComponentFixture<CheckboxPropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.required.label': 'required',
         'contenttypes.field.properties.user_searchable.label': 'user searchable.',
         'contenttypes.field.properties.system_indexed.label': 'system indexed',
@@ -30,7 +29,7 @@ describe('CheckboxPropertyComponent', () => {
             imports: [
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

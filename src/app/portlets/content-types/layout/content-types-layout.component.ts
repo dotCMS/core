@@ -1,6 +1,6 @@
 import { Component, Input, ViewEncapsulation, OnChanges, OnInit } from '@angular/core';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { MessageService } from '../../../api/services/messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { DragulaService } from 'ng2-dragula';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
@@ -19,7 +19,7 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
     relationshipURL: string;
 
     constructor(
-        messageService: MessageService,
+        messageService: DotMessageService,
         private dotMenuService: DotMenuService,
         private fieldDragDropService: FieldDragDropService
     ) {

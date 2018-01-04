@@ -1,9 +1,9 @@
 import { DefaultValuePropertyComponent } from './index';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
-import { MockMessageService } from '../../../../../../test/message-service.mock';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -21,7 +21,7 @@ describe('DefaultValuePropertyComponent', () => {
     let fixture: ComponentFixture<DefaultValuePropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    const messageServiceMock = new MockMessageService({
+    const messageServiceMock = new MockDotMessageService({
         'Default-Value': 'Default-Value'
     });
 
@@ -34,7 +34,7 @@ describe('DefaultValuePropertyComponent', () => {
             imports: [
             ],
             providers: [
-                { provide: MessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
             ]
         });
 

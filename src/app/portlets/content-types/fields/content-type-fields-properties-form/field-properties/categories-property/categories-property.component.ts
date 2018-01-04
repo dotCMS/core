@@ -1,15 +1,14 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
-import { MessageService } from '../../../../../../api/services/messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
-import { Observable } from 'rxjs/Rx';
 import { PaginatorService } from '../../../../../../api/services/paginator';
 import { FormGroup } from '@angular/forms';
 import { Category } from '../../../shared';
 
 /**
  * List all the categories and allow select one.
- * 
+ *
  * @export
  * @class CategoriesPropertyComponent
  * @extends {BaseComponent}
@@ -27,7 +26,7 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
     property: FieldProperty;
     group: FormGroup;
 
-    constructor(public messageService: MessageService, private paginationService: PaginatorService) {
+    constructor(public messageService: DotMessageService, private paginationService: PaginatorService) {
         super([
             'contenttypes.field.properties.category.label',
             'contenttypes.field.properties.category.error.required'
