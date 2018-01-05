@@ -310,4 +310,29 @@ public class SQLUtil {
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
 
+	private final static String POSTGRES_UPSERT_QUERY =
+			"INSERT INTO %s (%s) "
+			+ "VALUES (%s) ON CONFLICT (%s) "
+			+ "DO UPDATE SET %s";
+
+	public static String generateUpsertSQL (String table, String conditionalColumn, String conditionalValue, String[] columns, String[] values) {
+		String query = null;
+
+		if (DbConnectionFactory.isPostgres()) {
+			StringBuffer buffer = new StringBuffer();
+			for (int i = 0; i < columns.length; i++) {
+				buffer.append(columns[i] + " = " + values[i]);
+				if (i < (columns.length -1)) {
+					buffer.append(", ");
+				}
+			}
+			query = String.format(POSTGRES_UPSERT_QUERY, table,
+					StringUtil.merge(columns),
+					StringUtil.merge(values),
+					conditionalColumn, buffer.toString());
+		}
+
+		return query;
+	}
+
 } // E:O:F:SQLUtil.

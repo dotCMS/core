@@ -17,6 +17,7 @@ import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -2290,7 +2291,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-                dc1.executeUpdate(INSERT_PERMISSION_REFERENCE_SQL, permissionId, newReference.getPermissionId(), type);
+                String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", "?",
+						new String[]{"id","asset_id","reference_id","permission_type"},
+						new String[]{"nextval('permission_reference_seq')","?", "?", "?"});
+                dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type, permissionId, newReference.getPermissionId(), type);
             }
 
         } catch(Exception exception){
