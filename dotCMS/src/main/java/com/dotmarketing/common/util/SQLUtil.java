@@ -321,7 +321,7 @@ public class SQLUtil {
 			+ "VALUES (%s) ON DUPLICATE KEY "
 			+ "UPDATE %s";
 	private final static String MSSQL_UPSERT_QUERY =
-			"MERGE %s AS [Target] USING "
+			"MERGE %s WITH (HOLDLOCK) AS [Target] USING "
 			+ "(SELECT %s AS %s) AS [Source] ON [Target].%s = [Source].%s "
 			+ "WHEN MATCHED THEN "
 			+ "  UPDATE SET %s "
