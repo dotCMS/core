@@ -1740,7 +1740,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else {
 
                 if (con.isHTMLPage()){
-                    validateRelatedContentType(user, con);
+                    unlinkRelatedContentType(user, con);
                 }
 
                 //If we are not deleting a site, the course of action will depend
@@ -1788,7 +1788,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws LanguageException
      */
-    private void validateRelatedContentType(User user, Contentlet c)
+    private void unlinkRelatedContentType(User user, Contentlet c)
             throws DotDataException{
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         List<ContentType> relatedContentTypes = contentTypeAPI.search("page_detail='" + c.getIdentifier() + "'");
