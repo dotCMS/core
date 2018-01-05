@@ -1,12 +1,14 @@
 package com.liferay.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.enterprise.cmis.query.CMISQueryProcessor;
 import org.junit.Test;
 
 import static com.liferay.util.StringUtil.replaceAll;
 import static com.liferay.util.StringUtil.replaceAllGroups;
 import static com.liferay.util.StringUtil.replaceOnce;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class StringUtilTest  extends UnitTestBase {
 
@@ -27,6 +29,8 @@ public class StringUtilTest  extends UnitTestBase {
         replaceOnce(null, "$1", "this");
 
         assertEquals( "somethingtochange$1", builder.toString() );
+
+        assertTrue(new CMISQueryProcessor().canSeeIt());
     }
 
     @Test
