@@ -1,41 +1,32 @@
-package com.dotmarketing.factories;
+package com.dotmarketing.beans.transform;
 
+import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Tree;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
-
-
-public class DBTreeTransformer{
+public class TreeTransformer implements DBTransformer<Tree> {
     
     private final List<Tree> trees;
     
-    public DBTreeTransformer (List<Map<String, Object>>list ){
+    public TreeTransformer(final List<Map<String, Object>>list ){
         this.trees =  list
         .stream()
-        .map(row -> toTree(row))
+        .map(this::toTree)
         .collect(Collectors.toList());
+    }
 
+    @Override
+    public List<Tree> asList() {
+        return new ArrayList<>(trees);
     }
-    
-    public Tree tree() {
-        return trees.stream().findFirst().orElse(null);
-       
-    }
-    public List<Tree> trees() {
-        return trees;
-        
-    }
-    
-    
-    
-    public DBTreeTransformer (Map<String, Object> map){
-        this.trees = Lists.newArrayList(toTree(map));
-        
-        
+
+    @Override
+    public Tree findFirst() {
+        return this.asList().stream().findFirst().orElse(new Tree());
     }
     
     private Tree toTree (Map<String, Object> map){
