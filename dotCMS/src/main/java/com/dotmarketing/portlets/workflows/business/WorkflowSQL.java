@@ -67,7 +67,7 @@ abstract class WorkflowSQL {
 
 	protected static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
 	protected static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";
-	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, step_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
+	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
 	//protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,requires_checkout_option=? where id=?";
 	protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,show_on=? where id=?";
 	protected static String DELETE_ACTION= "delete from workflow_action where id = ? ";

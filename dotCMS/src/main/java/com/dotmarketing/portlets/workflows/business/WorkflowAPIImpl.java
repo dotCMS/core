@@ -540,6 +540,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return actions;
 	}
 
+	@Deprecated
 	@WrapInTransaction
 	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
 

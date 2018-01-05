@@ -1980,7 +1980,7 @@ create table workflow_action(
 	step_id varchar(36),
 	name varchar(255) not null,
 	condition_to_progress text,
-	next_step_id varchar(36) not null references workflow_step(id),
+	next_step_id varchar(36),
 	next_assign varchar(36) not null references cms_role(id),
 	my_order int default 0,
 	assignable boolean default false,
