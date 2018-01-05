@@ -255,7 +255,7 @@ public class DesignTemplateUtil {
 
 	private static String getPageWithValue(Document templateDrawedBody){
 	    Elements globalContainers = templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE);
-        if(null!=globalContainers && globalContainers.size()>0){
+        if(null!=globalContainers && !globalContainers.isEmpty()){
 	        Element globalContainer = globalContainers.get(0);
 	        return globalContainer.attr(ID_ATTRIBUTE);
 	    }
@@ -263,13 +263,11 @@ public class DesignTemplateUtil {
             return "100%";
                     
         }
-
-		
 	}
 
 	private static String getLayout(Document templateDrawedBody){
 		Elements layouts = templateDrawedBody.getElementsByAttributeValue(ID_ATTRIBUTE, SIDEBAR_ID);
-		if(null!=layouts && layouts.size()>0){
+		if(null!=layouts && !layouts.isEmpty()){
 			Element layout = layouts.get(0);
 			if(null!=layout)
 				return templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE).get(0).attr(CLASS_ATTRIBUTE);
