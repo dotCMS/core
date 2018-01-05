@@ -18,7 +18,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -193,18 +192,20 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
-    public Response renderHTMLOnly(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("mode") @DefaultValue("LIVE_ADMIN") String modeStr) {
+    public Response renderHTMLOnly(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   @PathParam("uri") final String uri,
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
 
-        PageMode mode = PageMode.get(modeStr);
+        final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
         try {
 
-            HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+            final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
                     page.getIdentifier(), "inode", page.getInode()));
@@ -373,8 +374,8 @@ public class PageResource {
                 .getLanguage(req);
 
         final Contentlet contentlet = pageResourceHelper.getContentlet(user, mode, id, contentletId);
-        Container container = pageResourceHelper.getContainer(containerId, user, mode);
-        Contentlet page = pageResourceHelper.getPage(user, pageId);
+        final Container container = pageResourceHelper.getContainer(containerId, user, mode);
+        final Contentlet page = pageResourceHelper.getPage(user, pageId);
 
         if (page == null || contentlet == null || container == null) {
             return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);

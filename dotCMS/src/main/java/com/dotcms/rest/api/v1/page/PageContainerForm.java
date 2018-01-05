@@ -1,11 +1,9 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParser;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContext;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,7 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+
 
 /**
  * {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String)}'s form
@@ -22,11 +20,12 @@ import java.util.Map;
 @JsonDeserialize(using = PageContainerForm.ContainerDeserialize.class)
 public class PageContainerForm {
 
-    private List<ContainerEntry> entries;
-    private String requestJson;
+    private final List<ContainerEntry> entries;
+    private final String requestJson;
 
-    public PageContainerForm(List<ContainerEntry> entries, String s) {
+    public PageContainerForm(final List<ContainerEntry> entries, final String requestJson) {
         this.entries = entries;
+        this.requestJson = requestJson;
     }
 
     public List<ContainerEntry> getContainerEntries() {
@@ -40,19 +39,20 @@ public class PageContainerForm {
     static final class ContainerDeserialize extends JsonDeserializer<PageContainerForm> {
 
         @Override
-        public PageContainerForm deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+        public PageContainerForm deserialize(final JsonParser jsonParser,
+                                             final DeserializationContext deserializationContext)
                 throws IOException {
 
-            JsonNode jsonNode = jsonParser.readValueAsTree();
-            List<ContainerEntry> entries = new ArrayList<>();
+            final JsonNode jsonNode = jsonParser.readValueAsTree();
+            final List<ContainerEntry> entries = new ArrayList<>();
 
-            Iterator<String> containerIds = jsonNode.fieldNames();
+            final Iterator<String> containerIds = jsonNode.fieldNames();
 
             while (containerIds.hasNext()) {
-                String containerId = containerIds.next();
-                ContainerEntry containerEntry = new ContainerEntry(containerId);
+                final String containerId = containerIds.next();
+                final ContainerEntry containerEntry = new ContainerEntry(containerId);
 
-                JsonNode containerNode = jsonNode.get(containerId);
+                final JsonNode containerNode = jsonNode.get(containerId);
 
                 containerNode.forEach(contentId -> containerEntry.addContentId(contentId.textValue()));
                 entries.add(containerEntry);
@@ -63,10 +63,10 @@ public class PageContainerForm {
     }
 
     static final class ContainerEntry {
-        private String containerId;
-        private List<String> contentIds = new ArrayList<>();
+        private final String containerId;
+        private final List<String> contentIds = new ArrayList<>();
 
-        public ContainerEntry(String containerId) {
+        public ContainerEntry(final String containerId) {
             this.containerId = containerId;
         }
 
@@ -78,7 +78,7 @@ public class PageContainerForm {
             return contentIds;
         }
 
-        public void addContentId(String contentId) {
+        public void addContentId(final String contentId) {
             this.contentIds.add(contentId);
         }
     }

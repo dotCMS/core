@@ -91,15 +91,15 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    public void saveContent(String pageId, List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
-        List<MultiTree> multiTres = new ArrayList<>();
+    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+        final List<MultiTree> multiTres = new ArrayList<>();
 
-        for (PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
-            List<String> contentIds = containerEntry.getContentIds();
+            final  List<String> contentIds = containerEntry.getContentIds();
 
             for (String contentletId : contentIds) {
-                MultiTree mt = new MultiTree().setContainer(containerEntry.getContainerId())
+                final MultiTree mt = new MultiTree().setContainer(containerEntry.getContainerId())
                         .setContentlet(contentletId)
                         .setRelationType("LEGACY_RELATION_TYPE")
                         .setTreeOrder(i)
@@ -120,7 +120,7 @@ public class PageResourceHelper implements Serializable {
                                @PathParam("uid") String uid,
                                Contentlet page) throws DotDataException {
 
-        MultiTree mt = new MultiTree().setContainer(containerId)
+        final MultiTree mt = new MultiTree().setContainer(containerId)
                 .setContentlet(contentletId)
                 .setRelationType(uid)
                 .setTreeOrder(order)
@@ -222,7 +222,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
-                                 final String uri, PageMode mode) throws DotSecurityException, DotDataException {
+                                 final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
 
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
@@ -318,7 +318,7 @@ public class PageResourceHelper implements Serializable {
         return objectWriter.writeValueAsString(pageView);
     }
 
-    public Template saveTemplate(final User user, String pageId, final PageForm pageForm)
+    public Template saveTemplate(final User user, final String pageId, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
@@ -345,7 +345,7 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    public Contentlet getPage(final User user, String pageId) throws DotSecurityException, DotDataException {
+    public Contentlet getPage(final User user, final String pageId) throws DotSecurityException, DotDataException {
         return this.contentletAPI.findContentletByIdentifier(pageId, false,
                 langAPI.getDefaultLanguage().getId(), user, false);
     }
@@ -391,7 +391,7 @@ public class PageResourceHelper implements Serializable {
         return result;
     }
 
-    private Host getHost(final String hostId, User user) {
+    private Host getHost(final String hostId, final User user) {
         try {
             return UtilMethods.isSet(hostId) ? hostAPI.find(hostId, user, false) :
                         hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
@@ -400,8 +400,10 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    public Contentlet getContentlet(User user, PageMode mode, Language id, String contentletId) throws DotDataException, DotSecurityException {
-        ShortyId contentShorty = APILocator.getShortyAPI()
+    public Contentlet getContentlet(final User user, final PageMode mode, final Language id, final String contentletId)
+            throws DotDataException, DotSecurityException {
+
+        final ShortyId contentShorty = APILocator.getShortyAPI()
                 .getShorty(contentletId)
                 .orElseGet(() -> {
                     throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
@@ -411,8 +413,10 @@ public class PageResourceHelper implements Serializable {
                 .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
     }
 
-    public Container getContainer(String containerId, User user, PageMode mode) throws DotDataException, DotSecurityException {
-        ShortyId containerShorty = APILocator.getShortyAPI()
+    public Container getContainer(final String containerId, final User user, final PageMode mode)
+            throws DotDataException, DotSecurityException {
+
+        final ShortyId containerShorty = APILocator.getShortyAPI()
                 .getShorty(containerId)
                 .orElseGet(() -> {
                     throw new ResourceNotFoundException("Can't find Container:" + containerId);
@@ -423,14 +427,14 @@ public class PageResourceHelper implements Serializable {
                 .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
     }
 
-    public void checkPermission(User user, Contentlet contentlet, Container container) throws DotSecurityException {
+    public void checkPermission(final User user, final Contentlet contentlet, final Container container) throws DotSecurityException {
         APILocator.getPermissionAPI()
                 .checkPermission(contentlet, PermissionLevel.READ, user);
         APILocator.getPermissionAPI()
                 .checkPermission(container, PermissionLevel.EDIT, user);
     }
 
-    public void checkPagePermission(User user, Contentlet htmlPageAsset) throws DotSecurityException {
+    public void checkPagePermission(final User user, final Contentlet htmlPageAsset) throws DotSecurityException {
         APILocator.getPermissionAPI()
                 .checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         APILocator.getPermissionAPI()

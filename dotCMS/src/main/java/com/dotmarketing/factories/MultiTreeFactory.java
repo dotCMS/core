@@ -46,19 +46,19 @@ public class MultiTreeFactory {
 
 
 
-    final static String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
-    final static String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
-    final static String SELECT_SQL =
+    static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
+    static final String SELECT_SQL =
             "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
-    final static String INSERT_SQL =
+    static final String INSERT_SQL =
             "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
-    final static String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
-    final static String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
-    final static String SELECT_ALL = "select * from multi_tree  ";
-    final static String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
-    final static String SELECT_BY_PARENTS_AND_RELATIONS =
+    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
+    static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
+    static final String SELECT_ALL = "select * from multi_tree  ";
+    static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
+    static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
 
@@ -250,7 +250,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException
      */
     @WrapInTransaction
-    public static void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException {
+    public static void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty())
             throw new DotDataException("empty list passed in");
         int i = 0;
@@ -258,7 +258,7 @@ public class MultiTreeFactory {
             _dbUpsert(tree.setTreeOrder(i++));
         }
 
-        MultiTree mTree = mTrees.get(0);
+        final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
 
@@ -274,8 +274,9 @@ public class MultiTreeFactory {
      */
     @WrapInTransaction
     public static void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException {
-        if (mTrees == null || mTrees.isEmpty())
+        if (mTrees == null || mTrees.isEmpty()) {
             throw new DotDataException("empty list passed in");
+        }
 
         Logger.debug(MultiTreeFactory.class, String.format("Saving page's content", mTrees));
 
