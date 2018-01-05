@@ -1795,7 +1795,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
         String uri = htmlPageAssetAPI.fromContentlet(c).getURI();
         //Verifies if the page is related to any content type
-        if (relatedContentTypes != null && !relatedContentTypes.isEmpty()){
+        if (UtilMethods.isSet(relatedContentTypes)){
 
             //Unlinking url map and detail page
             relatedContentTypes.forEach((ContentType contentType) -> {
