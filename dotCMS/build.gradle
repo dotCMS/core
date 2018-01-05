@@ -148,7 +148,7 @@ dependencies {
     functionalTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.integrationTest.output
 
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
         configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
     }
 }
@@ -242,7 +242,8 @@ war {
         main {
             java {
                 //We only want to compile using the submodules code when using the deployWarTomcatDev task
-                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')
+                        || project.gradle.startParameter.taskNames.contains('testDev')) {
                     if (enterpriseSrcFolder.exists()) {
                         srcDirs = ["src/main/java", "$generatedSourceFolder", "$enterpriseProjectHome/src/main/java"]
                     } else {
@@ -286,6 +287,9 @@ war {
     }
 }
 war.finalizedBy 'undeployPlugins'
+
+task testDev(type: Test) {
+}
 
 integrationTest{
     doFirst
