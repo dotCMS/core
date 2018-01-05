@@ -2,10 +2,6 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -39,7 +35,6 @@ import com.dotmarketing.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +44,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import com.liferay.util.StringUtil;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -61,12 +54,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	static HostAPI hostAPI = APILocator.getHostAPI();
 	static UserAPI userAPI = APILocator.getUserAPI();
-
-	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
-		protected Perl5Matcher initialValue() {
-			return new Perl5Matcher();
-		}
-	};
 
 
 
@@ -288,7 +275,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
             Set<String> containerId =
                     MultiTreeFactory.getMultiTrees(page.getIdentifier())
                     .stream()
-                    .map(mtree -> mtree.getContainer())
+                    .map(MultiTree::getContainer)
                     .collect(Collectors.toSet());
 
             for (String cont : containerId) {

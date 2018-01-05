@@ -258,8 +258,7 @@ public class DesignTemplateUtil {
         if(null!=globalContainers && !globalContainers.isEmpty()){
 	        Element globalContainer = globalContainers.get(0);
 	        return globalContainer.attr(ID_ATTRIBUTE);
-	    }
-        else {
+	    } else {
             return "100%";
                     
         }
