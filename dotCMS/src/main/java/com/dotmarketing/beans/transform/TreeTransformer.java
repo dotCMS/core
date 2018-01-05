@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
-
-
 public class TreeTransformer implements DBTransformer<Tree> {
     
     private final List<Tree> trees;
