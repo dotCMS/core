@@ -15,6 +15,8 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -233,7 +235,9 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, @PathParam("pageId") final String pageId,
+    public Response saveLayout(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("pageId") final String pageId,
                                final PageForm form) {
 
         final InitDataObject auth = webResource.init(false, request, true);
@@ -242,9 +246,14 @@ public class PageResource {
         Response res = null;
 
         try {
+            HTMLPageAsset page = this.pageResourceHelper.getPage(user, pageId);
+            this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final Template templateSaved = this.pageResourceHelper.saveTemplate(user, pageId, form);
-            res = Response.ok(new ResponseEntityView(templateSaved)).build();
+            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request, response, user,
+                    page.getURI(), false);
+            final String json = this.pageResourceHelper.asJson(pageView);
+
+            res = Response.ok(new ResponseEntityView(json)).build();
 
         } catch (DotSecurityException e) {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
