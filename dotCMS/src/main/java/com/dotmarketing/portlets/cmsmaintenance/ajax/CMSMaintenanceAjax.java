@@ -3,97 +3,55 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
-import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
-
-import com.dotcms.util.transform.TransformerLocator;
-
-import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.PermissionReference;
-import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.DBTreeTransformer;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.fixtask.FixTasksExecutor;
-import com.dotmarketing.plugin.model.PluginProperty;
-import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
 import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread.BasicProcessStatus;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
-import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
-import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.HibernateCollectionConverter;
-import com.dotmarketing.util.HibernateMapConverter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
-
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import org.quartz.JobExecutionContext;
-
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.ImageLocalManagerUtil;
-import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import org.quartz.JobExecutionContext;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipOutputStream;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class provides access to maintenance routines that dotCMS users can run

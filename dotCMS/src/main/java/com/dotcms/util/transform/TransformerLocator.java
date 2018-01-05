@@ -1,7 +1,9 @@
 package com.dotcms.util.transform;
 
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
+import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -40,6 +42,7 @@ public class TransformerLocator {
         transformerMapping.put (Container.class, TransformerLocator::createContainerTransformer);
         transformerMapping.put (Link.class, TransformerLocator::createLinkTransformer);
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
+        transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -120,5 +123,16 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new IdentifierTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Tree objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static TreeTransformer createTreeTransformer(
+        List<Map<String, Object>> initList) {
+
+        return new TreeTransformer(initList);
     }
 }
