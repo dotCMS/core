@@ -2309,7 +2309,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", "?",
 							new String[]{"asset_id", "reference_id", "permission_type"},
 							new String[]{"?", "?", "?"});
-					dc1.executeUpdate(query, permissionId, permissionId,
+					dc1.executeUpdate(query, permissionId,
 							permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}

@@ -321,8 +321,8 @@ public class SQLUtil {
 			+ "VALUES (%s) ON DUPLICATE KEY "
 			+ "UPDATE %s";
 	private final static String MSSQL_UPSERT_QUERY =
-			"MERGE INTO %s USING "
-			+ "(SELECT %s [conditional]) AS dummy([conditional]) ON %s = %s "
+			"MERGE %s AS [Target] USING "
+			+ "(SELECT %s AS %s) AS [Source] ON [Target].%s = [Source].%s "
 			+ "WHEN MATCHED THEN "
 			+ "  UPDATE SET %s "
 			+ "WHEN NOT MATCHED THEN "
@@ -358,7 +358,8 @@ public class SQLUtil {
 			query = String.format(MSSQL_UPSERT_QUERY, table,
 					conditionalValue,
 					conditionalColumn,
-					conditionalValue,
+					conditionalColumn,
+					conditionalColumn,
 					buffer.toString(),
 					StringUtil.merge(columns),
 					StringUtil.merge(values));
