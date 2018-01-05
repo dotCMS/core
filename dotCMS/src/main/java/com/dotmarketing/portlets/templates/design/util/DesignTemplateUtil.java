@@ -254,8 +254,17 @@ public class DesignTemplateUtil {
 	}
 
 	private static String getPageWithValue(Document templateDrawedBody){
-		Element globalContainer = templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE).get(0);
-		return globalContainer.attr(ID_ATTRIBUTE);
+	    Elements globalContainers = templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE);
+        if(null!=globalContainers && globalContainers.size()>0){
+	        Element globalContainer = globalContainers.get(0);
+	        return globalContainer.attr(ID_ATTRIBUTE);
+	    }
+        else {
+            return "100%";
+                    
+        }
+
+		
 	}
 
 	private static String getLayout(Document templateDrawedBody){
