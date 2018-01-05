@@ -158,8 +158,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
-    public Template getTemplate(IHTMLPage page, boolean preview) throws DotDataException, DotSecurityException {
-        if (preview) 
+    public Template getTemplate(IHTMLPage page, boolean working) throws DotDataException, DotSecurityException {
+        if (working) 
             return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
         else
             return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);

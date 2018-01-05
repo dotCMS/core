@@ -102,7 +102,7 @@ public class PageLoader implements DotLoader {
 
 
         Template cmsTemplate = APILocator.getHTMLPageAssetAPI()
-            .getTemplate(htmlPage, mode.showLive);
+            .getTemplate(htmlPage, !mode.showLive);
 
 
         User sys = APILocator.systemUser();

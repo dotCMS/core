@@ -298,7 +298,7 @@ public class PageResourceHelper implements Serializable {
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);
-
+            template.setDrawed(true);
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
