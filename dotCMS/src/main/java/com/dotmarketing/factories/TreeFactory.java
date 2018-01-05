@@ -1,8 +1,10 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -11,6 +13,7 @@ import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 
@@ -21,7 +24,6 @@ public class TreeFactory {
 
 
     public static Tree getTree(final Inode parent, final Inode child) {
-
         return getTree(parent.getInode(), child.getInode());
     }
 
@@ -43,9 +45,7 @@ public class TreeFactory {
             if (relationType != null)
                 dc.addParam(relationType);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).tree();
-
-
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).findFirst();
         } catch (DotDataException e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
@@ -62,10 +62,7 @@ public class TreeFactory {
         DotConnect dc = new DotConnect().setSQL("select * from tree order by parent,child,relation_type ").setMaxRows(limit)
                 .setStartRow(offset);
 
-        return new DBTreeTransformer(dc.loadObjectResults()).trees();
-
-
-
+        return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
     }
 
 
@@ -92,7 +89,7 @@ public class TreeFactory {
             dc.addParam(parent);
             dc.addParam(relationType);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).trees();
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
@@ -109,7 +106,7 @@ public class TreeFactory {
             dc.addParam(child);
             dc.addParam(relationType);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).trees();
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
@@ -133,7 +130,7 @@ public class TreeFactory {
             dc.setSQL("select * from tree where  relation_type = ?");
             dc.addParam(relationType);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).trees();
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
@@ -153,7 +150,7 @@ public class TreeFactory {
             dc.setSQL("select * from tree where  parent = ?");
             dc.addParam(inode);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).trees();
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
@@ -172,7 +169,7 @@ public class TreeFactory {
             dc.setSQL("select * from tree where  child = ?");
             dc.addParam(inode);
 
-            return new DBTreeTransformer(dc.loadObjectResults()).trees();
+            return TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
