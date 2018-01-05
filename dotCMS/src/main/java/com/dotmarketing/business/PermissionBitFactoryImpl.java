@@ -2305,6 +2305,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
+				if (DbConnectionFactory.isMsSql()) {
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", "?",
+							new String[]{"asset_id", "reference_id", "permission_type"},
+							new String[]{"?", "?", "?"});
+					dc1.executeUpdate(query, permissionId, permissionId,
+							permissionId, newReference.getPermissionId(), type,
+							permissionId, newReference.getPermissionId(), type);
+				}
             }
 
         } catch(Exception exception){

@@ -24,6 +24,7 @@ import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
+import org.quartz.utils.DBConnectionManager;
 
 /**
  * Util class for sanitize, tokenize, etc
@@ -319,6 +320,14 @@ public class SQLUtil {
 			"INSERT INTO %s (%s) "
 			+ "VALUES (%s) ON DUPLICATE KEY "
 			+ "UPDATE %s";
+	private final static String MSSQL_UPSERT_QUERY =
+			"MERGE INTO %s USING "
+			+ "(SELECT %s [conditional]) AS dummy([conditional]) ON %s = %s "
+			+ "WHEN MATCHED THEN "
+			+ "  UPDATE SET %s "
+			+ "WHEN NOT MATCHED THEN "
+			+ "  INSERT (%s) "
+			+ "  VALUES (%s);";
 
 	public static String generateUpsertSQL (String table, String conditionalColumn, String conditionalValue, String[] columns, String[] values) {
 		String query = null;
@@ -344,6 +353,15 @@ public class SQLUtil {
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
 					buffer.toString());
+		}
+		if (DbConnectionFactory.isMsSql()) {
+			query = String.format(MSSQL_UPSERT_QUERY, table,
+					conditionalValue,
+					conditionalColumn,
+					conditionalValue,
+					buffer.toString(),
+					StringUtil.merge(columns),
+					StringUtil.merge(values));
 		}
 
 		return query;
