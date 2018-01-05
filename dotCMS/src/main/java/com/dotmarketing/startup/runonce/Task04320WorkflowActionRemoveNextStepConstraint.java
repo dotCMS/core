@@ -1,23 +1,16 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.ForeignKey;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This task removes the next_step_id, constraint:

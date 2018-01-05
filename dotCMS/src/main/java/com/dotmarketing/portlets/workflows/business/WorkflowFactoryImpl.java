@@ -50,7 +50,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private WorkflowAction convertAction(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowAction action = new WorkflowAction();
-		row.put("stepId", row.get("step_id")); // todo: remove this unused field
 		row.put("schemeId", row.get("scheme_id"));
 		row.put("condition", row.get("condition_to_progress"));
 		row.put("nextStep", row.get("next_step_id"));
@@ -935,8 +934,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
 			db.addParam(action.getSchemeId());
-			// we are not longer using the stepId, the relationship now is with schemeId, however it needs a step id to work
-			//db.addParam(UtilMethods.isSet(action.getStepId())?action.getStepId():nextStep);
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
 			db.addParam(nextStep);

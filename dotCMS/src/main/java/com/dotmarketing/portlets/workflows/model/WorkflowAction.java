@@ -239,8 +239,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 */
 	public boolean isNextStepCurrentStep() {
 
-		return null == this.getNextStep() ||
-				CURRENT_STEP.equalsIgnoreCase(this.getNextStep());
+		return CURRENT_STEP.equalsIgnoreCase(this.getNextStep());
 	}
 
 	public String getNextStep() {
