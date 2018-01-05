@@ -315,21 +315,35 @@ public class SQLUtil {
 			+ "VALUES (%s) ON CONFLICT (%s) "
 			+ "DO UPDATE SET %s";
 
+	private final static String MYSQL_UPSERT_QUERY =
+			"INSERT INTO %s (%s) "
+			+ "VALUES (%s) ON DUPLICATE KEY "
+			+ "UPDATE %s";
+
 	public static String generateUpsertSQL (String table, String conditionalColumn, String conditionalValue, String[] columns, String[] values) {
 		String query = null;
 
-		if (DbConnectionFactory.isPostgres()) {
-			StringBuffer buffer = new StringBuffer();
-			for (int i = 0; i < columns.length; i++) {
-				buffer.append(columns[i] + " = " + values[i]);
-				if (i < (columns.length -1)) {
-					buffer.append(", ");
-				}
+		//Generate column = value pairs, used for the Update part
+		StringBuffer buffer = new StringBuffer();
+		for (int i = 0; i < columns.length; i++) {
+			buffer.append(columns[i] + " = " + values[i]);
+			if (i < (columns.length -1)) {
+				buffer.append(", ");
 			}
+		}
+
+		if (DbConnectionFactory.isPostgres()) {
 			query = String.format(POSTGRES_UPSERT_QUERY, table,
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
-					conditionalColumn, buffer.toString());
+					conditionalColumn,
+					buffer.toString());
+		}
+		if (DbConnectionFactory.isMySql()) {
+			query = String.format(MYSQL_UPSERT_QUERY, table,
+					StringUtil.merge(columns),
+					StringUtil.merge(values),
+					buffer.toString());
 		}
 
 		return query;

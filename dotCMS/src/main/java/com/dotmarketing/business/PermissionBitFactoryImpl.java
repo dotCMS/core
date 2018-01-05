@@ -2291,10 +2291,20 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-                String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", "?",
-						new String[]{"id","asset_id","reference_id","permission_type"},
-						new String[]{"nextval('permission_reference_seq')","?", "?", "?"});
-                dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type, permissionId, newReference.getPermissionId(), type);
+                if (DbConnectionFactory.isPostgres()) {
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", null,
+									new String[]{"id", "asset_id", "reference_id", "permission_type"},
+									new String[]{"nextval('permission_reference_seq')", "?", "?", "?"});
+					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
+							permissionId, newReference.getPermissionId(), type);
+				}
+				if (DbConnectionFactory.isMySql()) {
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", null,
+									new String[]{"asset_id", "reference_id", "permission_type"},
+									new String[]{"?", "?", "?"});
+					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
+							permissionId, newReference.getPermissionId(), type);
+				}
             }
 
         } catch(Exception exception){
