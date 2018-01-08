@@ -112,23 +112,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private static final String LOAD_PERMISSION_REFERENCES_BY_REFERENCEID_HSQL = "from " + PermissionReference.class.getCanonicalName() +
 		" permission_reference where reference_id = ?";
 
-	/*
-	 * To insert a single permission reference for an asset
-	 * Parameters
-	 * 1. Asset id
-	 * 2. Reference id
-	 * 3. Type
-	 */
-
-	private static final String INSERT_PERMISSION_REFERENCE_SQL =
-		DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-		"insert into permission_reference (asset_id, reference_id, permission_type) " +
-		"	values (?, ?, ?)":
-		DbConnectionFactory.isOracle() ?
-		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"	values (permission_reference_seq.NEXTVAL, ?, ?, ?)":
-		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"	values (nextval('permission_reference_seq'), ?, ?, ?)";
 
 	/*
 	 * To update a permission reference by who it is currently pointing to

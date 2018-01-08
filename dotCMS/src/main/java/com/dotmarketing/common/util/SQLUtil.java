@@ -379,15 +379,15 @@ public class SQLUtil {
 		String query = null;
 
 		//Update Parameters: Generate column = value pairs, used for the Update part
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < columns.length; i++) {
 			if (DbConnectionFactory.isOracle() && columns[i].equals(conditionalColumn)) {
 				//In Oracle, the conditionalColumn cannot be part of the update
 				continue;
 			}
-			buffer.append(columns[i] + " = " + values[i]);
+			builder.append(columns[i] + " = " + values[i]);
 			if (i < (columns.length -1)) {
-				buffer.append(", ");
+				builder.append(", ");
 			}
 		}
 
@@ -404,14 +404,14 @@ public class SQLUtil {
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
 					conditionalColumn,
-					buffer.toString());
+					builder.toString());
 		}
 		if (DbConnectionFactory.isMySql()) {
 			query = String.format(MYSQL_UPSERT_QUERY,
 					table,
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
-					buffer.toString());
+					builder.toString());
 		}
 		if (DbConnectionFactory.isMsSql()) {
 			query = String.format(MSSQL_UPSERT_QUERY,
@@ -420,7 +420,7 @@ public class SQLUtil {
 					conditionalColumn,
 					conditionalColumn,
 					conditionalColumn,
-					buffer.toString(),
+					builder.toString(),
 					StringUtil.merge(columns),
 					StringUtil.merge(values));
 		}
@@ -431,7 +431,7 @@ public class SQLUtil {
 					conditionalColumn,
 					conditionalColumn,
 					conditionalColumn,
-					buffer.toString(),
+					builder.toString(),
 					StringUtil.merge(columns),
 					StringUtil.merge(values));
 		}
