@@ -37,90 +37,102 @@ class MockDotLayoutPropertiesComponent {
     @Input() group: FormGroup;
 }
 
-describe('DotEditLayoutComponent', () => {
-    let component: DotEditLayoutComponent;
-    let fixture: ComponentFixture<DotEditLayoutComponent>;
+const messageServiceMock = new MockDotMessageService({
+    'editpage.layout.toolbar.action.save': 'Save',
+    'editpage.layout.toolbar.action.cancel': 'Cancel',
+    'editpage.layout.toolbar.template.name': 'Name of the template',
+    'editpage.layout.toolbar.save.template': 'Save as template',
+    'editpage.layout.dialog.edit.page': 'Edit Page',
+    'editpage.layout.dialog.edit.template': 'Edit Template',
+    'editpage.layout.dialog.info': 'This is the message',
+    'editpage.layout.dialog.header': 'Edit some'
+});
 
-    const fakePageView = {
-        pageView: {
-            containers: {
-                '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
-                    container: {
-                        type: 'containers',
-                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
-                        name: 'Medium Column (md-1)',
-                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
-                    }
-                },
-                '56bd55ea-b04b-480d-9e37-5d6f9217dcc3': {
-                    container: {
-                        type: 'containers',
-                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
-                        name: 'Large Column (lg-1)',
-                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
-                    }
+let component: DotEditLayoutComponent;
+let fixture: ComponentFixture<DotEditLayoutComponent>;
+
+const fakePageView = {
+    pageView: {
+        containers: {
+            '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
+                container: {
+                    type: 'containers',
+                    identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                    name: 'Medium Column (md-1)',
+                    categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
                 }
             },
-            page: {
-                identifier: '123',
-                title: 'Hello World'
-            },
-            layout: {
-                header: false,
-                footer: false,
-                sidebar: {
-                    location: '',
-                    containers: [],
-                    width: '',
-                    widthPercent: '',
-                    preview: false
-                },
-                body: {
-                    rows: []
+            '56bd55ea-b04b-480d-9e37-5d6f9217dcc3': {
+                container: {
+                    type: 'containers',
+                    identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                    name: 'Large Column (lg-1)',
+                    categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
                 }
-            },
-            template: {
-                title: 'anonymous_layout_1511798005268',
-                inode: '123',
-                anonymous: true
             }
+        },
+        page: {
+            identifier: '123',
+            title: 'Hello World'
+        },
+        layout: {
+            header: false,
+            footer: false,
+            sidebar: {
+                location: '',
+                containers: [],
+                width: '',
+                widthPercent: '',
+                preview: false
+            },
+            body: {
+                rows: []
+            }
+        },
+        template: {
+            title: 'anonymous_layout_1511798005268',
+            inode: '123',
+            anonymous: true
         }
-    };
+    }
+};
 
-    const messageServiceMock = new MockDotMessageService({
-        'editpage.layout.toolbar.action.save': 'Save',
-        'editpage.layout.toolbar.action.cancel': 'Cancel',
-        'editpage.layout.toolbar.template.name': 'Name of the template',
-        'editpage.layout.toolbar.save.template': 'Save as template'
-    });
+const testConfigObject = {
+    declarations: [DotEditLayoutComponent, MockAdditionalOptionsComponent, MockDotLayoutPropertiesComponent],
+    imports: [
+        DotEditLayoutGridModule,
+        RouterTestingModule,
+        BrowserAnimationsModule,
+        DotActionButtonModule,
+        FormsModule
+    ],
+    providers: [
+        DotConfirmationService,
+        FormatDateService,
+        LoginService,
+        PageViewService,
+        PaginatorService,
+        SocketFactory,
+        DotEditLayoutService,
+        TemplateContainersCacheService,
+        { provide: DotMessageService, useValue: messageServiceMock }
+    ]
+};
 
+const layoutRouteData = [
+    {
+        provide: ActivatedRoute,
+        useValue: {
+            data: Observable.of(fakePageView)
+        }
+    }
+];
+
+describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditLayoutComponent, MockAdditionalOptionsComponent, MockDotLayoutPropertiesComponent],
-            imports: [
-                DotEditLayoutGridModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                DotActionButtonModule,
-                FormsModule
-            ],
-            providers: [
-                DotConfirmationService,
-                FormatDateService,
-                LoginService,
-                PageViewService,
-                PaginatorService,
-                SocketFactory,
-                DotEditLayoutService,
-                TemplateContainersCacheService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        data: Observable.of(fakePageView)
-                    }
-                },
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            ...testConfigObject,
+            providers: [...testConfigObject.providers, ...layoutRouteData]
         });
 
         fixture = DOTTestBed.createComponent(DotEditLayoutComponent);
@@ -245,7 +257,7 @@ describe('DotEditLayoutComponent', () => {
         expect(templateNameInput.attributes.formControlName).toEqual('title');
     });
 
-    it('layput body should has the right formControlName', () => {
+    it('layout body should has the right formControlName', () => {
         fixture.detectChanges();
 
         const dotEditLayoutGrid: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-grid'));
@@ -262,7 +274,78 @@ describe('DotEditLayoutComponent', () => {
 
         spyOn(templateContainersCacheService, 'set');
         fixture.detectChanges();
-
         expect(templateContainersCacheService.set).toHaveBeenCalledWith(fakePageView.pageView.containers);
+    });
+});
+
+const templateRouteData = [
+    {
+        provide: ActivatedRoute,
+        useValue: {
+            // New object of fakePageView with anonymous: false
+            data: Observable.of({
+                ...fakePageView,
+                pageView: {
+                    ...fakePageView.pageView,
+                    template: {
+                        ...fakePageView.pageView.template,
+                        anonymous: false,
+                        title: 'Hello Template Name'
+                    }
+                }
+            })
+        }
+    }
+];
+
+describe('DotEditLayoutComponent - Template (anonymous = false)', () => {
+    beforeEach(() => {
+        DOTTestBed.configureTestingModule({
+            ...testConfigObject,
+            providers: [...testConfigObject.providers, ...templateRouteData]
+        });
+
+        fixture = DOTTestBed.createComponent(DotEditLayoutComponent);
+        component = fixture.componentInstance;
+    });
+
+    it('should show select edit layout/template dialog', () => {
+        fixture.detectChanges();
+        const dialog: DebugElement = fixture.debugElement.query(By.css('p-dialog .ui-dialog'));
+        expect(dialog.styles.display).toEqual('block');
+    });
+
+    it('should set edit layout mode', () => {
+        spyOn(component, 'setEditLayoutMode').and.callThrough();
+
+        fixture.detectChanges();
+        const editLayoutButton: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__dialog-edit-layout')
+        );
+        editLayoutButton.nativeElement.click();
+        fixture.detectChanges();
+        expect(component.setEditLayoutMode).toHaveBeenCalledTimes(1);
+        expect(component.showTemplateLayoutSelectionDialog).toEqual(false, 'hide the dialog');
+        expect(component.form.get('title').value).toBeNull('form title null');
+    });
+
+    it('should set edit template mode', () => {
+        spyOn(component, 'setEditLayoutMode').and.callThrough();
+
+        fixture.detectChanges();
+        const editLayoutButton: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__dialog-edit-template')
+        );
+        editLayoutButton.nativeElement.click();
+        fixture.detectChanges();
+
+        const checkboxSave: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__toolbar-save-template')
+        );
+
+        expect(component.setEditLayoutMode).not.toHaveBeenCalled();
+        expect(component.showTemplateLayoutSelectionDialog).toEqual(false, 'hide the dialog');
+        expect(component.form.get('title').value).toEqual('Hello Template Name');
+        expect(checkboxSave).toBeNull('checkbox not showing');
     });
 });

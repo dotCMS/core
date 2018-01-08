@@ -1,7 +1,7 @@
 <router-outlet></router-outlet>
 <p-confirmDialog width="400" #cd>
     <p-footer>
-        <button type="button" pButton flat [label]="(dotConfirmationService.labels | async)?.rejectLabel" (click)="cd.reject()"></button>
-        <button type="button" pButton flat [label]="(dotConfirmationService.labels | async)?.acceptLabel" (click)="cd.accept()"></button>
+        <button type="button" pButton [label]="(dotConfirmationService.labels | async)?.rejectLabel" (click)="cd.reject()"></button>
+        <button type="button" pButton [label]="(dotConfirmationService.labels | async)?.acceptLabel" (click)="cd.accept()"></button>
     </p-footer> 
 </p-confirmDialog>

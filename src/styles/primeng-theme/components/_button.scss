@@ -27,6 +27,10 @@
     @each $label, $props in $button-flat {
         @include button-properties($label, $props);
     }
+
+    &.ui-button-text-only .ui-button-text {
+        padding: 0 $basic-padding !important;
+    }
 }
 
 #button-flat-disabled {
@@ -103,9 +107,5 @@
 
     .ui-button-text-icon-right & {
         padding: 0 $basic-padding * 3.5 0 $button-padding;
-    }
-
-    [flat].ui-button-text-only & {
-        padding: 0 $basic-padding;
     }
 }

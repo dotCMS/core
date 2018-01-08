@@ -77,14 +77,7 @@
         "typeof-compare": true,
         "unified-signatures": true,
         "variable-name": false,
-        "whitespace": [
-            true,
-            "check-branch",
-            "check-decl",
-            "check-operator",
-            "check-separator",
-            "check-type"
-        ],
+        "whitespace": [true, "check-branch", "check-decl", "check-operator", "check-separator", "check-type"],
         "directive-selector": [true, "attribute", "dot", "camelCase"],
         "component-selector": [true, "element", "dot", "kebab-case"],
         "use-input-property-decorator": true,
@@ -98,6 +91,18 @@
         "directive-class-suffix": true,
         "no-access-missing-member": true,
         "templates-use-public": true,
-        "invoke-injectable": true
+        "invoke-injectable": true,
+        "trailing-comma": [
+            true,
+            {
+                "multiline": {
+                    "objects": "never",
+                    "arrays": "never",
+                    "functions": "never",
+                    "typeLiterals": "ignore"
+                },
+                "esSpecCompliant": true
+            }
+        ]
     }
 }

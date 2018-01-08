@@ -4,7 +4,7 @@
         <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{pageView.page.title}}</h3>
         <input #templateName pInputText type="text" placeholder="{{dotMessageService.get('editpage.layout.toolbar.template.name')}}" class="dot-edit-layout__toolbar-template-name" *ngIf="saveAsTemplate" formControlName="title">
         <div class="dot-edit-layout__toolbar-actions">
-            <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{dotMessageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout()" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
+            <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{dotMessageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout() || form.get('title').value === null" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
             <button pButton flat type="button" label="{{dotMessageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
             <button pButton flat type="submit"  label="{{dotMessageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
             <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
@@ -29,3 +29,11 @@
     </div>
 
 </form>
+
+<p-dialog header="{{dotMessageService.get('editpage.layout.dialog.header')}}" [(visible)]="showTemplateLayoutSelectionDialog" modal="modal" width="400" [responsive]="true" [closeOnEscape]="false" [closable]="false">
+    <span [innerHTML]="dotMessageService.get('editpage.layout.dialog.info', pageView.template.name)"></span>
+    <p-footer>
+        <button type="button" pButton (click)="setEditLayoutMode($event)" class="dot-edit-layout__dialog-edit-layout" label="{{dotMessageService.get('editpage.layout.dialog.edit.page')}}"></button>
+        <button type="button" pButton (click)="showTemplateLayoutSelectionDialog=false" class="dot-edit-layout__dialog-edit-template" label="{{dotMessageService.get('editpage.layout.dialog.edit.template')}}"></button>
+    </p-footer>
+</p-dialog>

@@ -26,7 +26,7 @@ describe('DotEditContentComponent', () => {
     let de: DebugElement;
 
     beforeEach(() => {
-        const messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockDotMessageService({
             'editpage.toolbar.primary.action': 'Save',
             'editpage.toolbar.secondary.action': 'Cancel'
         });
@@ -48,7 +48,7 @@ describe('DotEditContentComponent', () => {
                     useClass: LoginServiceMock
                 },
                 {
-                    provide: MessageService,
+                    provide: DotMessageService,
                     useValue: messageServiceMock
                 },
                 {

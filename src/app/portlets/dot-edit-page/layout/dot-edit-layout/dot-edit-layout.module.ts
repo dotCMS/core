@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { DotEditLayoutGridModule } from '../dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
-import { CheckboxModule, ButtonModule, InputTextModule } from 'primeng/primeng';
+import { CheckboxModule, ButtonModule, InputTextModule, DialogModule } from 'primeng/primeng';
 import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { DotTemplateAdditionalActionsModule } from '../dot-template-additional-actions/dot-template-additional-actions.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -34,7 +34,8 @@ const routes: Routes = [
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
-        DotLayoutPropertiesModule
+        DotLayoutPropertiesModule,
+        DialogModule
     ],
     exports: [DotEditLayoutComponent],
     providers: [DotEditLayoutService]

@@ -1,14 +1,8 @@
-/*
- * jQuery UI Dialog 1.8.16
- *
- * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
- * Dual licensed under the MIT or GPL Version 2 licenses.
- * http://jquery.org/license
- *
- * http://docs.jquery.com/UI/Dialog#theming
- */
+#warn {
+    color: $dialog-message-warning-color;
+}
 
- .ui-dialog {
+.ui-dialog {
     overflow: inherit;
 
     &.ui-shadow {
@@ -20,6 +14,14 @@
         margin: 0;
         padding: 0;
         text-align: right;
+
+        .ui-button {
+            @extend #button-flat;
+
+            &[disabled] {
+                @extend #button-flat-disabled;
+            }
+        }
     }
 
     .ui-dialog-footer {
@@ -40,11 +42,15 @@
             display: none;
         }
 
+        .warn {
+            @extend #warn;
+        }
+
         .ui-confirmdialog-message {
             line-height: $dialog-message-line-height;
 
-            span{
-                color: $dialog-message-warning-color;
+            span {
+                @extend #warn;
             }
         }
     }
