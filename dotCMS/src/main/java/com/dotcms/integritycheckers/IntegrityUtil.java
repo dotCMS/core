@@ -342,6 +342,9 @@ public class IntegrityUtil {
                         dc.executeStatement("drop table " + tempTableName);
                     }else if (DbConnectionFactory.isMySql()){
                         dc.executeStatement("drop table if exists " + tempTableName);
+                    } else if (DbConnectionFactory.isMsSql()){
+                        dc.executeStatement("IF OBJECT_ID('tempdb.dbo." + tempTableName + "', 'U') IS NOT NULL"
+                                + "  DROP TABLE " + tempTableName);
                     }
             	}
             }
