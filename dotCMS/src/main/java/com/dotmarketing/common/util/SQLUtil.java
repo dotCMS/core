@@ -26,7 +26,6 @@ import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
-import org.quartz.utils.DBConnectionManager;
 
 /**
  * Util class for sanitize, tokenize, etc
@@ -319,13 +318,13 @@ public class SQLUtil {
 
 	//H2 Upsert Example:
 	//MERGE INTO table (columns) KEY (conditionalColumn) VALUES (values)
-	private final static String H2_UPSERT_QUERY =
+	private static final String H2_UPSERT_QUERY =
 			"MERGE INTO %s (%s) KEY (%s) VALUES (%s) ";
 
 	// Postgres Upsert Example:
 	// INSERT INTO table (columns) VALUES (values)
 	// ON CONFLICT (conditionalColumn) DO UPDATE SET column1=value1, column2=value2, etc...
-	private final static String POSTGRES_UPSERT_QUERY =
+	private static final String POSTGRES_UPSERT_QUERY =
 			"INSERT INTO %s (%s) "
 			+ "VALUES (%s) ON CONFLICT (%s) "
 			+ "DO UPDATE SET %s";
@@ -333,7 +332,7 @@ public class SQLUtil {
 	// MySQL Upsert Example:
 	// INSERT INTO table (columns) VALUES (values)
 	// ON DUPLICATE KEY UPDATE column1=value1, column2=value2, etc...
-	private final static String MYSQL_UPSERT_QUERY =
+	private static final String MYSQL_UPSERT_QUERY =
 			"INSERT INTO %s (%s) "
 			+ "VALUES (%s) ON DUPLICATE KEY "
 			+ "UPDATE %s";
@@ -343,7 +342,7 @@ public class SQLUtil {
 	// (SELECT conditionalValue AS conditionalColumn) AS [Source] ON [Target].conditionalColumn = [Source].conditionalColumn
 	// WHEN MATCHED THEN UPDATE SET column1=value1, column2=value2, etc...
 	// WHEN NOT MATCHED THEN INSERT (columns) VALUES (values);
-	private final static String MSSQL_UPSERT_QUERY =
+	private static final String MSSQL_UPSERT_QUERY =
 			"MERGE %s WITH (HOLDLOCK) AS [Target] USING "
 			+ "(SELECT %s AS %s) AS [Source] ON [Target].%s = [Source].%s "
 			+ "WHEN MATCHED THEN "
@@ -357,7 +356,7 @@ public class SQLUtil {
 	// (SELECT conditionalValue conditionalColumn FROM dual) Source ON (Target.conditionalColumn = Source.conditionalColumn)
 	// WHEN MATCHED THEN UPDATE SET column1=value1, column2=value2, etc...
 	// WHEN NOT MATCHED THEN INSERT (columns) VALUES (values)
-	private final static String ORACLE_UPSERT_QUERY =
+	private static final String ORACLE_UPSERT_QUERY =
 			"MERGE INTO %s Target USING "
 			+ "(SELECT %s %s FROM DUAL) Source ON (Target.%s = Source.%s) "
 			+ "WHEN MATCHED THEN "
@@ -370,7 +369,8 @@ public class SQLUtil {
 	 * This method generates an Upsert SQL query (Insert/Update)
 	 * Note: Oracle Upsert is not thread safe and when executed can throw SQLException: Unique constraint violation
 	 * @param table name
-	 * @param conditionalColumn The unique column to verify if the record exists or not. A parameter (?) will be added to the SQL Query for the conditionalValue, required in MSSQL and Oracle only.
+	 * @param conditionalColumn The unique column to verify if the record exists or not.
+	 * 			A parameter (?) will be added to the SQL Query for the conditionalValue, required in MSSQL and Oracle only.
 	 * @param columns to be inserted/updated
 	 * @param values to be inserted/updated... You can use SQLUtil.Parameter to specify a ? for a value
 	 * @return String with the SQL query
