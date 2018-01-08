@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.*;
@@ -1096,11 +1097,25 @@ public class DotConnect {
      * Executes an update operation for a preparedStatement, returns the number of affected rows.
      * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
      * @param preparedStatement String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
      * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
      * @return int rows affected
      * @throws DotDataException
      */
     public int executeUpdate (final String preparedStatement,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(preparedStatement, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement, returns the number of affected rows.
+     * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
+     * @param preparedStatement String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final String preparedStatement, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
         final boolean isNewTransaction = DbConnectionFactory.startTransactionIfNeeded();
@@ -1111,7 +1126,7 @@ public class DotConnect {
 
             connection   =  DbConnectionFactory.getConnection();
             rowsAffected =  this.executeUpdate(connection,
-                    preparedStatement, parameters);
+                    preparedStatement, logException, parameters);
 
             if (isNewTransaction) {
                 connection.commit();
@@ -1124,7 +1139,9 @@ public class DotConnect {
            throw e;
         } catch (Exception e) {
 
-            Logger.error(DotConnect.class, e.getMessage(), e);
+            if (logException) {
+                Logger.error(DotConnect.class, e.getMessage(), e);
+            }
             throw new DotDataException(e.getMessage(), e);
         } finally {
 
@@ -1157,6 +1174,20 @@ public class DotConnect {
      * @throws DotDataException
      */
     public int executeUpdate (final Connection connection, final String preparedStatementString,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(connection, preparedStatementString, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement
+     * @param connection {@link Connection}
+     * @param preparedStatementString String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final Connection connection, final String preparedStatementString, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
 
@@ -1169,8 +1200,9 @@ public class DotConnect {
             this.setParams(preparedStatement, parameters);
             rowsAffected = preparedStatement.executeUpdate();
         } catch (SQLException e) {
-
-            Logger.error(DotConnect.class, e.getMessage(), e);
+            if (logException) {
+                Logger.error(DotConnect.class, e.getMessage(), e);
+            }
             throw new DotDataException(e.getMessage(), e);
         } finally {
 

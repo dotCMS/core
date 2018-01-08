@@ -7,12 +7,14 @@ import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +40,9 @@ public class SQLUtil {
 	public static final String DESC  = "desc";
 	public static final String _ASC  = " " + ASC ;
 	public static final String _DESC  = " " + DESC;
+	public static final String PARAMETER = "?";
+
+	private static final String SQL_STATE_UNIQUE_CONSTRAINT = "23000";
 
     private static final Set<String> EVIL_SQL_CONDITION_WORDS =  ImmutableSet.of( "insert", "delete", "update",
             "replace", "create", "drop", "alter", "truncate", "declare", "exec", "--", "procedure", "pg_", "lock",
@@ -311,15 +316,27 @@ public class SQLUtil {
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
 
+	// Postgres Upsert Example:
+	// INSERT INTO table (columns) VALUES (values)
+	// ON CONFLICT (conditionalColumn) DO UPDATE SET column1=value1, column2=value2, etc...
 	private final static String POSTGRES_UPSERT_QUERY =
 			"INSERT INTO %s (%s) "
 			+ "VALUES (%s) ON CONFLICT (%s) "
 			+ "DO UPDATE SET %s";
 
+	// MySQL Upsert Example:
+	// INSERT INTO table (columns) VALUES (values)
+	// ON DUPLICATE KEY UPDATE column1=value1, column2=value2, etc...
 	private final static String MYSQL_UPSERT_QUERY =
 			"INSERT INTO %s (%s) "
 			+ "VALUES (%s) ON DUPLICATE KEY "
 			+ "UPDATE %s";
+
+	// MSSQL Server Upsert Example:
+	// MERGE table WITH (HOLDLOCK) AS [Target] USING
+	// (SELECT conditionalValue AS conditionalColumn) AS [Source] ON [Target].conditionalColumn = [Source].conditionalColumn
+	// WHEN MATCHED THEN UPDATE SET column1=value1, column2=value2, etc...
+	// WHEN NOT MATCHED THEN INSERT (columns) VALUES (values);
 	private final static String MSSQL_UPSERT_QUERY =
 			"MERGE %s WITH (HOLDLOCK) AS [Target] USING "
 			+ "(SELECT %s AS %s) AS [Source] ON [Target].%s = [Source].%s "
@@ -329,12 +346,30 @@ public class SQLUtil {
 			+ "  INSERT (%s) "
 			+ "  VALUES (%s);";
 
-	public static String generateUpsertSQL (String table, String conditionalColumn, String conditionalValue, String[] columns, String[] values) {
+	// Oracle Upsert Example:
+	// INSERT INTO table Target USING
+	// (SELECT conditionalValue conditionalColumn FROM dual) Source ON (Target.conditionalColumn = Source.conditionalColumn)
+	// WHEN MATCHED THEN UPDATE SET column1=value1, column2=value2, etc...
+	// WHEN NOT MATCHED THEN INSERT (columns) VALUES (values)
+	private final static String ORACLE_UPSERT_QUERY =
+			"MERGE INTO %s Target USING "
+			+ "(SELECT %s %s FROM DUAL) Source ON (Target.%s = Source.%s) "
+			+ "WHEN MATCHED THEN "
+			+ "  UPDATE SET %s "
+			+ "WHEN NOT MATCHED THEN "
+			+ "  INSERT (%s) "
+			+ "  VALUES (%s)";
+
+	public static String generateUpsertSQL (String table, String conditionalColumn, String[] columns, String[] values) {
 		String query = null;
 
-		//Generate column = value pairs, used for the Update part
+		//Update Parameters: Generate column = value pairs, used for the Update part
 		StringBuffer buffer = new StringBuffer();
 		for (int i = 0; i < columns.length; i++) {
+			if (DbConnectionFactory.isOracle() && columns[i].equals(conditionalColumn)) {
+				//In Oracle, the conditionalColumn cannot be part of the update
+				continue;
+			}
 			buffer.append(columns[i] + " = " + values[i]);
 			if (i < (columns.length -1)) {
 				buffer.append(", ");
@@ -342,21 +377,35 @@ public class SQLUtil {
 		}
 
 		if (DbConnectionFactory.isPostgres()) {
-			query = String.format(POSTGRES_UPSERT_QUERY, table,
+			query = String.format(POSTGRES_UPSERT_QUERY,
+					table,
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
 					conditionalColumn,
 					buffer.toString());
 		}
 		if (DbConnectionFactory.isMySql()) {
-			query = String.format(MYSQL_UPSERT_QUERY, table,
+			query = String.format(MYSQL_UPSERT_QUERY,
+					table,
 					StringUtil.merge(columns),
 					StringUtil.merge(values),
 					buffer.toString());
 		}
 		if (DbConnectionFactory.isMsSql()) {
-			query = String.format(MSSQL_UPSERT_QUERY, table,
-					conditionalValue,
+			query = String.format(MSSQL_UPSERT_QUERY,
+					table,
+					PARAMETER,
+					conditionalColumn,
+					conditionalColumn,
+					conditionalColumn,
+					buffer.toString(),
+					StringUtil.merge(columns),
+					StringUtil.merge(values));
+		}
+		if (DbConnectionFactory.isOracle()) {
+			query = String.format(ORACLE_UPSERT_QUERY,
+					table,
+					PARAMETER,
 					conditionalColumn,
 					conditionalColumn,
 					conditionalColumn,
@@ -366,6 +415,13 @@ public class SQLUtil {
 		}
 
 		return query;
+	}
+
+	public static boolean isUniqueConstraintException (DotDataException ex) {
+		if (ex != null && ex.getCause() instanceof SQLException) {
+			return ((SQLException) ex.getCause()).getSQLState().equals(SQL_STATE_UNIQUE_CONSTRAINT);
+		}
+		return false;
 	}
 
 } // E:O:F:SQLUtil.

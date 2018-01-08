@@ -50,6 +50,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2292,26 +2293,46 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
                 if (DbConnectionFactory.isPostgres()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", null,
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
 									new String[]{"id", "asset_id", "reference_id", "permission_type"},
-									new String[]{"nextval('permission_reference_seq')", "?", "?", "?"});
+									new String[]{"nextval('permission_reference_seq')", SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
 				if (DbConnectionFactory.isMySql()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", null,
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
 									new String[]{"asset_id", "reference_id", "permission_type"},
-									new String[]{"?", "?", "?"});
+									new String[]{SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
 				if (DbConnectionFactory.isMsSql()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id", "?",
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
 							new String[]{"asset_id", "reference_id", "permission_type"},
-							new String[]{"?", "?", "?"});
+							new String[]{SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId,
 							permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
+				}
+				if (DbConnectionFactory.isOracle()) {
+					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
+							new String[]{"id", "asset_id", "reference_id", "permission_type"},
+							new String[]{"permission_reference_seq.NEXTVAL", SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
+                	try {
+                		//In Oracle the Upsert (Merge) is not thread safe. Attempt to insert first:
+						dc1.executeUpdate(query, false,
+								permissionId, newReference.getPermissionId(), type,
+								permissionId, newReference.getPermissionId(), type);
+					} catch (DotDataException ex) {
+                		if (SQLUtil.isUniqueConstraintException(ex)) {
+                			//On Unique constraint exception, attempt to update:
+							dc1.executeUpdate(query, permissionId,
+									newReference.getPermissionId(), type,
+									permissionId, newReference.getPermissionId(), type);
+						} else {
+                			throw ex;
+						}
+					}
 				}
             }
 
