@@ -316,6 +316,12 @@ public class SQLUtil {
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
 
+
+	//H2 Upsert Example:
+	//MERGE INTO table (columns) KEY (conditionalColumn) VALUES (values)
+	private final static String H2_UPSERT_QUERY =
+			"MERGE INTO %s (%s) KEY (%s) VALUES (%s) ";
+
 	// Postgres Upsert Example:
 	// INSERT INTO table (columns) VALUES (values)
 	// ON CONFLICT (conditionalColumn) DO UPDATE SET column1=value1, column2=value2, etc...
@@ -385,6 +391,13 @@ public class SQLUtil {
 			}
 		}
 
+		if (DbConnectionFactory.isH2()) {
+			query = String.format(H2_UPSERT_QUERY,
+					table,
+					StringUtil.merge(columns),
+					conditionalColumn,
+					StringUtil.merge(values));
+		}
 		if (DbConnectionFactory.isPostgres()) {
 			query = String.format(POSTGRES_UPSERT_QUERY,
 					table,
