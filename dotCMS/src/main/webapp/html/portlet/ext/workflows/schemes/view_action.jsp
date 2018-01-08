@@ -270,7 +270,14 @@
 						<dd>
 							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
 								dojoType="dijit.form.FilteringSelect">
+
+								<option value="<%=WorkflowAction.CURRENT_STEP %>"
+										<%=(action != null && action.isNextStepCurrentStep()) ? "selected='true'" : "" %>>
+									<%=LanguageUtil.get(pageContext, "Current-Step")%>
+								</option>
+
 									<%if(steps !=null){
+
 										for(WorkflowStep s : steps){ %>
 										<option value="<%=s.getId() %>"
 											<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>

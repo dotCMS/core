@@ -142,8 +142,9 @@ public class WorkflowProcessor {
 				workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
 			}
 
-			nextStep = getWorkflowAPI().findStep(action.getNextStep());
-			step = getWorkflowAPI().findStep(action.getStepId());
+			nextStep      = (action.isNextStepCurrentStep())?
+					contentStep:getWorkflowAPI().findStep(action.getNextStep());
+			step          = contentStep;
 			actionClasses = getWorkflowAPI().findActionClasses(action);
 			if(null == scheme) {
                 scheme = getWorkflowAPI().findScheme(step.getSchemeId());

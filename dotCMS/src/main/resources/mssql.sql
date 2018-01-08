@@ -2359,7 +2359,7 @@ create table workflow_action(
     step_id NVARCHAR(36),
     name NVARCHAR(255) not null,
     condition_to_progress NVARCHAR(MAX),
-    next_step_id NVARCHAR(36) not null references workflow_step(id),
+    next_step_id NVARCHAR(36),
     next_assign NVARCHAR(36) not null references cms_role(id),
     my_order int default 0,
     assignable tinyint default 0,

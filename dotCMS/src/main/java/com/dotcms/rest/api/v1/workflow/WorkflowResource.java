@@ -12,7 +12,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.PaginationUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -30,7 +29,6 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -66,8 +64,9 @@ public class WorkflowResource {
     }
 
     /**
-     * Returns all schemes non-archived. 401 if the user does not have permission.
+     * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
      * @param request  HttpServletRequest
+     * @param contentTypeId String content type id to get the schemes associated to it.
      * @return Response
      */
     @GET

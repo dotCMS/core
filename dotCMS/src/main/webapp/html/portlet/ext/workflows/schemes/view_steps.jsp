@@ -190,7 +190,7 @@
 				<td onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" class="showPointer">
 					<span class="<%=action.getIcon()%>"></span>
 					<%=action.getName() %>
-					<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>
+					<span style="color:#a6a6a6">&#8227; <%=!action.isNextStepCurrentStep()?wapi.findStep(action.getNextStep()).getName():LanguageUtil.get(pageContext, "Current-Step") %></span>
 					<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.45;"><span class="saveIcon"></span></div><%} %>
 				</td>
 			</tr>
@@ -229,7 +229,7 @@
 							<td onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" class="showPointer">
 								<span class="<%=action.getIcon()%>"></span>
 								<%=action.getName() %> 
-								<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>
+								<span style="color:#a6a6a6">&#8227; <%=!action.isNextStepCurrentStep()?wapi.findStep(action.getNextStep()).getName():LanguageUtil.get(pageContext, "Current-Step") %></span>
 								<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.45;"><span class="saveIcon"></span></div><%} %>
 							</td>
 						</tr>

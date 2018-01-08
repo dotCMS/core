@@ -50,7 +50,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private WorkflowAction convertAction(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowAction action = new WorkflowAction();
-		row.put("stepId", row.get("step_id"));
 		row.put("schemeId", row.get("scheme_id"));
 		row.put("condition", row.get("condition_to_progress"));
 		row.put("nextStep", row.get("next_step_id"));
@@ -316,8 +315,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		// update scheme mod date
 		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 
 	}
@@ -914,6 +912,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	} // updateOrder.
 
+	private String getNextStep (final WorkflowAction workflowAction) {
+
+		return (!UtilMethods.isSet(workflowAction.getNextStep()))?
+				WorkflowAction.CURRENT_STEP: workflowAction.getNextStep();
+	}
+
 	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
@@ -924,16 +928,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			action.setId(UUIDGenerator.generateUuid());
 		}
 
-		final DotConnect db = new DotConnect();
+		final String     nextStep = this.getNextStep(action);
+		final DotConnect db       = new DotConnect();
 		if (isNew) {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
 			db.addParam(action.getSchemeId());
-			// we are not longer using the stepId, the relationship now is with schemeId, however it needs a step id to work
-			db.addParam(UtilMethods.isSet(action.getStepId())?action.getStepId():action.getNextStep());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
-			db.addParam(action.getNextStep());
+			db.addParam(nextStep);
 			db.addParam(action.getNextAssign());
 			db.addParam(action.getOrder());
 			db.addParam(action.isAssignable());
@@ -948,7 +951,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getSchemeId());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
-			db.addParam(action.getNextStep());
+			db.addParam(nextStep);
 			db.addParam(action.getNextAssign());
 			db.addParam(action.getOrder());
 			db.addParam(action.isAssignable());
@@ -1441,8 +1444,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		WorkflowActionClass clazz = findActionClass(param.getActionClassId());
 		WorkflowAction action = findAction(clazz.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 
