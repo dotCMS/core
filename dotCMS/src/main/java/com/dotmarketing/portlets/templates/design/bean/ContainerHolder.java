@@ -12,14 +12,14 @@ import java.util.List;
 public class ContainerHolder {
 
     private boolean preview;
-    private List<String> containers;
+    private List<ContainerUUID> containers;
 
     @JsonCreator
-    public ContainerHolder(@JsonProperty("containers")  final List<String> containers) {
+    public ContainerHolder(@JsonProperty("containers")  final List<ContainerUUID> containers) {
         this.containers = containers;
     }
 
-    public List<String> getContainers() {
+    public List<ContainerUUID> getContainers() {
         return containers;
     }
 
@@ -36,12 +36,12 @@ public class ContainerHolder {
         final StringBuilder sb = new StringBuilder();
 
         if ( this.containers != null ) {
-            for ( final String container: this.containers ) {
+            for ( final ContainerUUID container: this.containers ) {
 
                 if ( this.preview ) {
                     sb.append( PreviewTemplateUtil.getMockBodyContent() );
                 } else {
-                    sb.append( "#parseContainer('" ).append( container ).append( "')" );
+                    sb.append( "#parseContainer('" ).append( container.getIdentifier() ).append( "')" );
                 }
             }
         }
@@ -49,3 +49,5 @@ public class ContainerHolder {
         return sb.toString();
     }
 }
+
+
