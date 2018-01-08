@@ -131,10 +131,19 @@ public class CMSFilter implements Filter {
             }
         }
 
+        if (iAm == IAm.PAGE) {
+            countPageVisit(request);
+            countSiteVisit(request, response);
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
+                    this.urlUtil.getUriWithoutQueryString(uri));
+            queryString = (null == queryString)?
+                    this.urlUtil.getQueryStringFromUri (uri):queryString;
+        }
+
         // run rules engine for all requests
         RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 
-        // if we have committed the response, die
+        //if we have committed the response, die
         if (response.isCommitted()) {
             return;
         }
@@ -162,10 +171,6 @@ public class CMSFilter implements Filter {
         }
 
         if (iAm == IAm.PAGE) {
-
-            countPageVisit(request);
-            countSiteVisit(request, response);
-            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, this.urlUtil.getUriWithoutQueryString(uri));
 
             // Serving a page through the velocity servlet
             StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
