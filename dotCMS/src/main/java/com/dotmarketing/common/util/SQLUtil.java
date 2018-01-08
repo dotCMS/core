@@ -360,6 +360,15 @@ public class SQLUtil {
 			+ "  INSERT (%s) "
 			+ "  VALUES (%s)";
 
+	/**
+	 * This method generates an Upsert SQL query (Insert/Update)
+	 * Note: Oracle Upsert is not thread safe and when executed can throw SQLException: Unique constraint violation
+	 * @param table name
+	 * @param conditionalColumn The unique column to verify if the record exists or not. A parameter (?) will be added to the SQL Query for the conditionalValue, required in MSSQL and Oracle only.
+	 * @param columns to be inserted/updated
+	 * @param values to be inserted/updated... You can use SQLUtil.Parameter to specify a ? for a value
+	 * @return String with the SQL query
+	 */
 	public static String generateUpsertSQL (String table, String conditionalColumn, String[] columns, String[] values) {
 		String query = null;
 

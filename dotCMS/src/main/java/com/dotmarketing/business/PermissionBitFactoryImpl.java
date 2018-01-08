@@ -50,7 +50,6 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +80,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		: DbConnectionFactory.isPostgres() ? new PostgresAssetPermissionReferencesSQLProvider()
 		: null
 	;
+
+    private static final String PERMISSION_REFERENCE = "permission_reference";
+    private static final String ASSET_ID = "asset_id";
+    private static final String REFERENCE_ID = "reference_id";
+    private static final String PERMISSION_TYPE = "permission_type";
+    private static final String ID = "id";
 
 	//SQL Queries used to maintain permissions
 
@@ -2270,6 +2275,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
+
     @WrapInTransaction
 	private void deleteInsertPermission(Permissionable permissionable, String type,
             Permissionable newReference) throws DotDataException {
@@ -2293,30 +2299,30 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
                 if (DbConnectionFactory.isPostgres()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
-									new String[]{"id", "asset_id", "reference_id", "permission_type"},
+					String query = SQLUtil.generateUpsertSQL(PERMISSION_REFERENCE, ASSET_ID,
+									new String[]{ID, ASSET_ID, REFERENCE_ID, PERMISSION_TYPE},
 									new String[]{"nextval('permission_reference_seq')", SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
 				if (DbConnectionFactory.isMySql()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
-									new String[]{"asset_id", "reference_id", "permission_type"},
+					String query = SQLUtil.generateUpsertSQL(PERMISSION_REFERENCE, ASSET_ID,
+									new String[]{ASSET_ID, REFERENCE_ID, PERMISSION_TYPE},
 									new String[]{SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
 				if (DbConnectionFactory.isMsSql()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
-							new String[]{"asset_id", "reference_id", "permission_type"},
+					String query = SQLUtil.generateUpsertSQL(PERMISSION_REFERENCE, ASSET_ID,
+							new String[]{ASSET_ID, REFERENCE_ID, PERMISSION_TYPE},
 							new String[]{SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
 					dc1.executeUpdate(query, permissionId,
 							permissionId, newReference.getPermissionId(), type,
 							permissionId, newReference.getPermissionId(), type);
 				}
 				if (DbConnectionFactory.isOracle()) {
-					String query = SQLUtil.generateUpsertSQL("permission_reference", "asset_id",
-							new String[]{"id", "asset_id", "reference_id", "permission_type"},
+					String query = SQLUtil.generateUpsertSQL(PERMISSION_REFERENCE, ASSET_ID,
+							new String[]{ID, ASSET_ID, REFERENCE_ID, PERMISSION_TYPE},
 							new String[]{"permission_reference_seq.NEXTVAL", SQLUtil.PARAMETER, SQLUtil.PARAMETER, SQLUtil.PARAMETER});
                 	try {
                 		//In Oracle the Upsert (Merge) is not thread safe. Attempt to insert first:
