@@ -5,14 +5,14 @@ import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../api/services/dot-router-service';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Subject } from 'rxjs/Subject';
 import { DotcmsEventsService } from 'dotcms-js/core/dotcms-events.service';
 import { Auth } from 'dotcms-js/core/login.service';
 import { Router, NavigationEnd } from '@angular/router';
 
 @Injectable()
 export class DotNavigationService {
-    items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
+    items$: Subject<DotMenu[]> = new Subject();
 
     constructor(
         private dotMenuService: DotMenuService,

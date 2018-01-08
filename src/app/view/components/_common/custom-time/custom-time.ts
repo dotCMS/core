@@ -1,6 +1,6 @@
-import {Component, ViewEncapsulation, Input} from '@angular/core';
-import {FormatDateService} from '../../../../api/services/format-date-service';
-import {Subject, BehaviorSubject} from 'rxjs';
+import { Component, ViewEncapsulation, Input, OnInit, AfterViewChecked } from '@angular/core';
+import { FormatDateService } from '../../../../api/services/format-date-service';
+import { Subject } from 'rxjs/Subject';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -9,10 +9,10 @@ import {Subject, BehaviorSubject} from 'rxjs';
     templateUrl: 'custom-time.html',
 
 })
-export class CustomTimeComponent {
+export class CustomTimeComponent implements OnInit, AfterViewChecked {
     @Input() time;
 
-    private formattedTime: Subject<string> = new BehaviorSubject('');
+    private formattedTime: Subject<string> = new Subject();
 
     constructor(private formatDateService: FormatDateService) {
 

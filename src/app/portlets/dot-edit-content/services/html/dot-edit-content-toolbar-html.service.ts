@@ -104,6 +104,7 @@ export class DotEditContentToolbarHtmlService {
                         contentlet.insertAdjacentElement('afterbegin', contentletContent);
                         contentlet.insertAdjacentElement('afterbegin', contentletToolbar);
                     });
+                    resolve();
                 } catch (error) {
                     reject(error);
                 }

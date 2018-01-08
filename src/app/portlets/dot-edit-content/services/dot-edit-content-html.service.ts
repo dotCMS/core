@@ -1,16 +1,16 @@
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { Injectable, ElementRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { EDIT_PAGE_CSS } from '../shared/iframe-edit-mode.css';
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
 import { GOOGLE_FONTS } from './html/iframe-edit-mode.js';
 import { DotEditContentToolbarHtmlService } from './html/dot-edit-content-toolbar-html.service';
 import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
+import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class DotEditContentHtmlService {
-    contentletEvents: BehaviorSubject<any> = new BehaviorSubject({});
+    contentletEvents: Subject<any> = new Subject();
     iframe: ElementRef;
 
     private addContentContainer: string;

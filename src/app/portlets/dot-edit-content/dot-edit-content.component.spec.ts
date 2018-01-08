@@ -24,6 +24,7 @@ describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
     let fixture: ComponentFixture<DotEditContentComponent>;
     let de: DebugElement;
+    let dotConfirmationService: DotConfirmationService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -68,6 +69,7 @@ describe('DotEditContentComponent', () => {
         fixture = DOTTestBed.createComponent(DotEditContentComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
+        dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
     });
 
     it('should be created', () => {
@@ -90,5 +92,29 @@ describe('DotEditContentComponent', () => {
 
         expect(loadingIndicatorElem).not.toBeNull();
         expect(spyLoadingIndicator).toHaveBeenCalled();
+    });
+
+    it('should display confirmation dialog and remove contentlet when user accepts', () => {
+        component.ngOnInit();
+        const mockResEvent = {
+            contentletEvents: {},
+            dataset: {
+                dotIdentifier: '2sfasfk-sd2d-4dxc-sdfnsdkjnajd0',
+                dotInode: '26ad1jbj-23xd-4cx3-9cf2-432scc413cc2'
+            },
+            event: 'remove'
+        };
+        const dotEditContentHtmlService = fixture.debugElement.injector.get(DotEditContentHtmlService);
+
+        spyOn(dotEditContentHtmlService, 'contentletEvents').and.returnValue(Observable.of(mockResEvent));
+        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(res => {});
+
+        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+            conf.accept();
+        });
+
+        component['removeContentlet'](mockResEvent);
+
+        expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(mockResEvent.dataset.dotInode);
     });
 });

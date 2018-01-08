@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { FooterLabels } from './../../../shared/models/dot-confirmation/footer-labels.model';
 import { DotConfirmation } from './../../../shared/models/dot-confirmation/dot-confirmation.model';
-import { BehaviorSubject } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
 import { DotMessageService } from '../dot-messages-service';
 import { ConfirmationService } from 'primeng/primeng';
 
@@ -13,7 +13,7 @@ import { ConfirmationService } from 'primeng/primeng';
 
 @Injectable()
 export class DotConfirmationService {
-    labels: BehaviorSubject<FooterLabels> = new BehaviorSubject({});
+    labels: Subject<FooterLabels> = new Subject();
     public i18nMessages = {};
     public i18nKeys: string[] = [
         'contenttypes.action.yes',

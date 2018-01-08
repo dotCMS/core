@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Subject } from 'rxjs/Subject';
 import { StructureTypeView } from '../../../shared/models/contentlet';
 import { DotcmsEventsService } from 'dotcms-js/dotcms-js';
 
 @Injectable()
 export class ToolbarAddContenletService {
-    main$: BehaviorSubject<StructureTypeView[]> = new BehaviorSubject([]);
-    more$: BehaviorSubject<StructureTypeView[]> = new BehaviorSubject([]);
-    recent$: BehaviorSubject<StructureTypeView[]> = new BehaviorSubject([]);
+    main$: Subject<StructureTypeView[]> = new Subject();
+    more$: Subject<StructureTypeView[]> = new Subject();
+    recent$: Subject<StructureTypeView[]> = new Subject();
 
     constructor(
         private contentletService: DotContentletService,
