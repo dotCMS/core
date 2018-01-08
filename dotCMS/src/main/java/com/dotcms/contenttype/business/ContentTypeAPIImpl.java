@@ -553,4 +553,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public boolean updateModDate(Field field) throws DotDataException {
     return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );
   }
+
+  @WrapInTransaction
+  @Override
+  public void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException {
+    ContentTypeBuilder builder =
+            ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
+    save(builder.build());
+  }
 }

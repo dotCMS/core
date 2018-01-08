@@ -2129,7 +2129,17 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     {
         if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-html-page-this-cannot-be-undone")) %>"))
         {
-            BrowserAjax.deleteHTMLPageAsset(objId, deleteHTMLPageCallback);
+            BrowserAjax.validateRelatedContentType(objId, validateRelatedContentTypeCallback);
+        }
+    }
+
+    function validateRelatedContentTypeCallback(response){
+        if (response.message != ""){
+            if(confirm(response.message)){
+                BrowserAjax.deleteHTMLPageAsset(response.inode, deleteHTMLPageCallback);
+            }
+        }else{
+            BrowserAjax.deleteHTMLPageAsset(response.inode, deleteHTMLPageCallback);
         }
     }
 
