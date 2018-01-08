@@ -131,7 +131,15 @@ public class CMSFilter implements Filter {
             }
         }
 
-        else if (iAm == IAm.FILE) {
+        // run rules engine for all requests
+        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+
+        // if we have committed the response, die
+        if (response.isCommitted()) {
+            return;
+        }
+
+        if (iAm == IAm.FILE) {
             Identifier ident;
             try {
                 // Serving the file through the /dotAsset servlet
@@ -158,14 +166,6 @@ public class CMSFilter implements Filter {
             countPageVisit(request);
             countSiteVisit(request, response);
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, this.urlUtil.getUriWithoutQueryString(uri));
-
-            // run rules engine for all requests
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-
-            // if we have committed the response, die
-            if (response.isCommitted()) {
-                return;
-            }
 
             // Serving a page through the velocity servlet
             StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
