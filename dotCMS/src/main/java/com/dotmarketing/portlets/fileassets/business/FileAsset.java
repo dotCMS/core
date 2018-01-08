@@ -166,7 +166,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public boolean isShowOnMenu() {
-		String isShowOnMenu = super.getStringProperty("showOnMenu");//DOTCMS-6968
+		String isShowOnMenu = super.getStringProperty(FileAssetAPI.SHOW_ON_MENU);//DOTCMS-6968
 		if(UtilMethods.isSet(isShowOnMenu) && isShowOnMenu.contains("true")){
 			return true;
 		}else{
@@ -175,7 +175,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public void setShowOnMenu(boolean showOnMenu) {
-		super.setStringProperty("showOnMenu", Boolean.toString(showOnMenu));
+		super.setStringProperty(FileAssetAPI.SHOW_ON_MENU, Boolean.toString(showOnMenu));
 
 	}
 
@@ -184,13 +184,13 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
-	public void setTitle(String title) {
-		super.setStringProperty(title, title);
+	public void setTitle(final String title) {
+		super.setStringProperty(FileAssetAPI.TITLE_FIELD, title);
 
 	}
 
 	public String getFriendlyName() {
-		return super.getStringProperty("title");
+		return super.getStringProperty(FileAssetAPI.TITLE_FIELD);
 	}
 
 	public void setFriendlyName(String friendlyName) {
@@ -263,7 +263,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		User modUser = null;
 		try {
 			modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-		} catch (NoSuchUserException e) {
+		} catch (NoSuchUserException | DotDataException e) {
 			Logger.debug(this, e.getMessage());
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
