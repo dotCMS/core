@@ -19,4 +19,6 @@ public interface ShortyIdAPI {
 
     String shortify(String shorty);
 
+    String randomShorty();
+
 }
