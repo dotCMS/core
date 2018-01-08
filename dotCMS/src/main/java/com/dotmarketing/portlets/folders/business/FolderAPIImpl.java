@@ -457,7 +457,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 			for (Contentlet c : conList) {
 				// Find all multi-language contentlets and archive them
+
 				Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+
 	            List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
 	            for (Contentlet cv : otherLanguageCons) {
 					if(cv.isLive()){

@@ -3,6 +3,7 @@ package com.dotmarketing.webdav;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
+import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
@@ -14,6 +15,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -47,13 +49,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.FileUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,7 +67,15 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
+
+import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.auth.Authenticator;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.FileUtil;
 
 public class DotWebdavHelper {
 

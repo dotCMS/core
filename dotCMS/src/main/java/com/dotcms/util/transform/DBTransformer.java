@@ -13,4 +13,8 @@ public interface DBTransformer<T> {
      * @return List of converted objects
      */
     List<T> asList();
+
+    default T findFirst() {
+        return this.asList().stream().findFirst().orElse(null);
+    }
 }

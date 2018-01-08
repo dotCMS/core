@@ -217,6 +217,10 @@ public class TaskLocatorUtil {
 		ret.add(Task04230FixVanityURLInconsistencies.class);
 		ret.add(Task04300UpdateSystemFolderIdentifier.class);
 		ret.add(Task04305UpdateWorkflowActionTable.class);
+		ret.add(Task04310CreateWorkflowRoles.class);
+		ret.add(Task04315UpdateMultiTreePK.class);
+		ret.add(Task04320WorkflowActionRemoveNextStepConstraint.class);
+
 		return ret;
 	}
 

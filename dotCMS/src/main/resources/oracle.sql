@@ -2217,7 +2217,7 @@ create table workflow_action(
 	step_id varchar2(36),
 	name varchar2(255) not null,
 	condition_to_progress nclob,
-	next_step_id varchar2(36) not null references workflow_step(id),
+	next_step_id varchar2(36),
 	next_assign varchar2(36) not null references cms_role(id),
 	my_order number(10,0) default 0,
 	assignable number(1,0) default 0,

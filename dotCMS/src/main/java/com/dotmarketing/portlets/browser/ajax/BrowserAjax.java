@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.*;
@@ -36,9 +38,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-import com.dotmarketing.viewtools.BrowserAPI;
+
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
@@ -67,6 +70,7 @@ public class BrowserAjax {
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
 	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
+	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
 	String activeHostId = "";
     String activeFolderInode = "";
@@ -1106,7 +1110,7 @@ public class BrowserAjax {
                 	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
                 }
                 /*copy page associated contentlets*/
-                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+                List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
                 for(MultiTree m : pageContents){
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
                    	MultiTreeFactory.saveMultiTree(mt);
@@ -1581,7 +1585,7 @@ public class BrowserAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
-        Identifier id = APILocator.getIdentifierAPI().findFromInode(inode);
+        Identifier id = identifierAPI.findFromInode(inode);
         if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user)) {
             result.put("status", "error");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
@@ -1590,10 +1594,10 @@ public class BrowserAjax {
         }
 
         if (id != null && id.getAssetType().equals("contentlet")) {
-            Contentlet cont = APILocator.getContentletAPI().find(inode, user, false);
+			Contentlet cont = contAPI.find(inode, user, false);
 
             // If delete has errors send a message
-            if (!APILocator.getContentletAPI().delete(cont, user, false)) {
+            if (!contAPI.delete(cont, user, false)) {
                 result.put("status", "error");
                 result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
                         "HTML-Page-deleted-error")));
@@ -1607,7 +1611,38 @@ public class BrowserAjax {
         return result;
     }
 
-    public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
+	/**
+	 * Verifies if a page is being used as a detail page for any content type
+	 * @return
+	 * @throws DotDataException
+	 * @throws LanguageException
+	 */
+	public Map<String, Object> validateRelatedContentType(String inode)
+			throws DotDataException, LanguageException, DotSecurityException {
+
+		Map<String, Object> result = new HashMap<>();
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = getUser(req);
+		StringBuilder relatedPagesMessage = new StringBuilder();
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		Contentlet cont = contAPI.find(inode, user, false);
+		int relatedContentTypes = contentTypeAPI.count("page_detail='" + cont.getIdentifier() + "'");
+
+		//Verifies if the page is related to any content type
+		if (relatedContentTypes > 0){
+
+            relatedPagesMessage.append(UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
+                    "HTML-Page-related-content-type-delete-confirm")));
+        }
+
+        result.put("message", relatedPagesMessage.toString());
+		result.put("inode", inode);
+		return result;
+	}
+
+
+
+	public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {

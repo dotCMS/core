@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
@@ -45,6 +47,9 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     public String get(final String key, final long languageId,
                       final User user, final boolean respectFrontendRoles) {
 
+        if(!UtilMethods.isSet(key)) {
+            return null;
+        }
         String languageValue = null;
 
         try {

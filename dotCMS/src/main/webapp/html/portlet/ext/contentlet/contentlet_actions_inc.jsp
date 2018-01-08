@@ -1,11 +1,10 @@
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="java.util.List"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.*"%>
+<%@page import="com.dotmarketing.util.DateUtil"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.List"%>
 <%
 
 if(user == null){
@@ -25,7 +24,7 @@ List<WorkflowAction> wfActions = null;
 List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
-	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user); 
+	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
@@ -127,8 +126,8 @@ catch(Exception e){
 <% } %>
 
 <%--Start workflow tasks --%>
-<%for(WorkflowAction a : wfActions){ %>
-	<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
+<%for(WorkflowAction action : wfActions){ %>
+	<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 	<% boolean hasPushPublishActionlet = false; %>
 	<% for(WorkflowActionClass actionlet : actionlets){ %>
 		<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
@@ -136,25 +135,25 @@ catch(Exception e){
 		<% } %>
 	<% } %>
 	
-	<%if(a.requiresCheckout() && ! contentEditable) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
-		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
-                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+	<%if(action.requiresCheckout() && ! contentEditable) {%>
+		<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+		<span class="<%=action.getIcon()%>"></span>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
                     +" )</small>"%>
 		</a>
-	<%} else if(!a.requiresCheckout() && ! contentEditable && InodeUtils.isSet(contentlet.getInode())) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
-		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
-                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+	<%} else if(!action.requiresCheckout() && ! contentEditable && InodeUtils.isSet(contentlet.getInode())) {%>
+		<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+		<span class="<%=action.getIcon()%>"></span>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
                     +" )</small>"%>
 		</a>
-	<%} else if(a.requiresCheckout() &&  contentEditable ) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
-		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) +"<br/><small>( "+
-                    APILocator.getWorkflowAPI().findScheme(APILocator.getWorkflowAPI().findStep(a.getStepId()).getSchemeId()).getName()
+	<%} else if(action.requiresCheckout() &&  contentEditable ) {%>
+		<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+		<span class="<%=action.getIcon()%>"></span>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
+                    APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
                     +" )</small>"%>
 		</a>
 	<%} %>

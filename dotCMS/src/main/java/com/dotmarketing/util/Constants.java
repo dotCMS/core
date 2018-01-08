@@ -62,9 +62,7 @@ public final class Constants {
 	
     public static final String TEMPLATE_ADD_CONTAINER = "add_container";
     public static final String TEMPLATE_ADD_FILE = "add_file";
-    public static final String TEMPLATE_PREPROCESS = "#parse (\"preprocess.vl\")";
-    public static final String TEMPLATE_POSTPROCESS = "#parse (\"postprocess.vl\")";
-    
+
     public static final String CONTAINER_ADD_VARIABLE = "add_variable";
     
     public static final String HTML_PAGE_TMP_DIR = "/tmp_jsps";

@@ -43,7 +43,7 @@ public class LinkTransformer implements DBTransformer {
         link.setTitle((String) map.get("title"));
         link.setModDate((Date) map.get("mod_date"));
         link.setModUser((String) map.get("mod_user"));
-        link.setSortOrder((Integer) map.getOrDefault("sort_order",0));
+        link.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
         link.setFriendlyName((String) map.get("friendly_name"));
         link.setIdentifier((String) map.get("identifier"));
         link.setProtocal((String) map.get("protocal"));

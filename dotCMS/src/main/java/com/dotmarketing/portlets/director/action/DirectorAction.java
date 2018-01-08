@@ -500,7 +500,7 @@ public class DirectorAction extends DotPortletAction {
 	
 	                if (InodeUtils.isSet(identifier.getInode()) && InodeUtils.isSet(htmlPageIdentifier.getInode()) && InodeUtils.isSet(containerIdentifier.getInode())) {
 	                    MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(),containerIdentifier.getInode(),identifier.getInode());
-	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTree(htmlPage, container);
+	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
 	                    for (int i = 0; i < treeList.size(); i++) {
 	                    	if(treeList.get(i).getChild().equals(identifier.getInode())){
 	                    	duplicateContentCheck = true;
@@ -594,7 +594,7 @@ public class DirectorAction extends DotPortletAction {
 	
 					Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(htmlPage);
 					Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
-					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier);
+					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier, MultiTree.LEGACY_RELATION_TYPE);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
 					MultiTreeFactory.deleteMultiTree(multiTree);
 				} catch (DotRuntimeException e) {
@@ -688,7 +688,7 @@ public class DirectorAction extends DotPortletAction {
 	
 						if( newPosition == x ) {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
+							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
 							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
@@ -696,7 +696,7 @@ public class DirectorAction extends DotPortletAction {
 	
 						if (!c.getInode().equalsIgnoreCase(contentlet.getInode())) {
 							iden = APILocator.getIdentifierAPI().find(c);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
+							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
 							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
@@ -757,7 +757,7 @@ public class DirectorAction extends DotPortletAction {
 	
 						if (!c.getInode().equalsIgnoreCase(contentlet.getInode())) {
 							iden = APILocator.getIdentifierAPI().find(c);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
+							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
 							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
@@ -765,7 +765,7 @@ public class DirectorAction extends DotPortletAction {
  
 						if( newPosition == x ) {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
+							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
 							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;

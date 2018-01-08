@@ -116,7 +116,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   @CloseDBIfOpened
   public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
-
+    if(!UtilMethods.isSet(inodeOrVar)) {
+        return null;
+    }
     final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
     if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
@@ -550,5 +552,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public boolean updateModDate(Field field) throws DotDataException {
     return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );
+  }
+
+  @WrapInTransaction
+  @Override
+  public void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException {
+    ContentTypeBuilder builder =
+            ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
+    save(builder.build());
   }
 }

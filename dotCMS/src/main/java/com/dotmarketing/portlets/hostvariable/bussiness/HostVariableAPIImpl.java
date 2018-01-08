@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.hostvariable.bussiness;
 
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.SiteLoader;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -13,7 +12,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
-import com.dotmarketing.services.HostServices;
+
+import java.util.Date;
+import java.util.List;
+
 import com.liferay.portal.model.User;
 
 public class HostVariableAPIImpl implements HostVariableAPI {
@@ -35,7 +37,7 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 			throw new DotSecurityException("User doesn't have permission to edit the host variable= " + object.getId());
 		
 		hostVariableFactory.delete(object);
-		HostServices.invalidate(host);
+        new SiteLoader().invalidate(host);
 		
 	}
 
@@ -83,7 +85,8 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 			throw new DotSecurityException("User doesn't have permission to edit the host = " + object.getId());
 		
 		hostVariableFactory.save(object);
-		HostServices.invalidate(host);
+		new SiteLoader().invalidate(host);
+
 		
 	}
 

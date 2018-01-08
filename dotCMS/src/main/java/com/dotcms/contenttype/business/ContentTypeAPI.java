@@ -289,4 +289,12 @@ public interface ContentTypeAPI {
 
   boolean updateModDate(Field field) throws DotDataException;
 
+  /**
+   * Remove url mapping and detail page from a specific content type
+   * @param contentType Content Type that is going to be modified
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
+  void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException;
 }

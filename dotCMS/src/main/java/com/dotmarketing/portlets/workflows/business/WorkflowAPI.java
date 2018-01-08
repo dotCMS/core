@@ -1,13 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -16,8 +12,22 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface WorkflowAPI {
 
@@ -236,6 +246,16 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
+	 * piece of content, based on how and who has the content locked and what workflow step the content
+	 * is in
+	 * @param contentlet Contentlet
+	 * @param user       User
+	 * @return List of   WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
 
@@ -248,6 +268,18 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * Find the list of Workflow Actions available for the current user on the specified workflow step and permissionable
+	 * @param step The current step
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
 	/**
@@ -270,6 +302,18 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+			DotSecurityException;
+
+	/**
+	 * Find the list of Workflow Actions available for the current user ont the list of steps and permissionable
+	 * @param steps List of workflow steps
+	 * @param user The current User
+	 * @param permissionable The Contentlet or Content Type to validate special workflow roles
+	 * @return List of workflow actions that the user have access
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
 	/**
@@ -300,6 +344,17 @@ public interface WorkflowAPI {
 	 * @param user     User
 	 */
 	void saveAction(String actionId, String stepId, User user);
+
+	/**
+	 * Save (associated) the action into the step
+	 * If any of them does not exists (action or step) throws DoesNotExistException
+	 * Will associated the action in the order desired
+	 * @param actionId String
+	 * @param stepId   String
+	 * @param user     User
+	 * @param order    int
+	 */
+	void saveAction(String actionId, String stepId, User user, int order);
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
@@ -416,6 +471,7 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
 
 
 }

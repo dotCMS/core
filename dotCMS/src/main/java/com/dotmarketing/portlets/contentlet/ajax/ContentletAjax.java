@@ -71,7 +71,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.PageMode;
+
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -90,6 +91,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -1004,54 +1006,8 @@ public class ContentletAjax {
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions
-
-				List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
-
-				try {
-					wfActions = APILocator.getWorkflowAPI().findAvailableActions(con, currentUser);
-				} catch (Exception e) {
-					Logger.error(this, "Could not load workflow actions : ", e);
-				}
-
-				JSONArray wfActionMapList = new JSONArray();
-
-				for (WorkflowAction action : wfActions) {
-					boolean hasPushPublishActionlet = false;
-					if (action.requiresCheckout())
-						continue;
-
-					JSONObject wfActionMap = new JSONObject();
-					try {
-						wfActionMap.put("name", action.getName());
-						wfActionMap.put("id", action.getId());
-						wfActionMap.put("icon", action.getIcon());
-						wfActionMap.put("assignable", action.isAssignable());
-						wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
-						wfActionMap.put("requiresCheckout", action.requiresCheckout());
-
-						List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-						for (WorkflowActionClass actionlet : actionlets) {
-							if (actionlet.getActionlet() != null
-									&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())) {
-								hasPushPublishActionlet = true;
-							}
-						}
-						wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
-						try {
-							wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()));
-						} catch (LanguageException e) {
-							Logger.error(this, "Could not load language key : " + action.getName());
-						}
-						wfActionMapList.add(wfActionMap);
-
-					} catch (JSONException e1) {
-						Logger.error(this, "Could not put property in JSONObject");
-					}
-				}
-
-
+				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsJson(currentUser, con);
 				searchResult.put("wfActionMapList", wfActionMapList.toString());
-
 				// End Workflow Actions
 
 				//searchResult.put("structureName", st.getVelocityVarName());
@@ -1124,6 +1080,66 @@ public class ContentletAjax {
 		return results;
 	}
 
+	@NotNull
+	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
+													  final Contentlet contentlet) throws DotDataException {
+
+		final List<WorkflowAction> workflowActions = new ArrayList<>();
+
+		try {
+            workflowActions.addAll(APILocator.getWorkflowAPI()
+					.findAvailableActions(contentlet, currentUser)) ;
+        } catch (Exception e) {
+            Logger.error(this, "Could not load workflow actions : ", e);
+        }
+
+		final JSONArray wfActionMapList = new JSONArray();
+
+		for (WorkflowAction action : workflowActions) {
+
+            boolean hasPushPublishActionlet = false;
+            if (action.requiresCheckout()) {
+				continue;
+			}
+
+            final JSONObject wfActionMap = new JSONObject();
+            try {
+
+                wfActionMap.put("name", action.getName());
+                wfActionMap.put("id", action.getId());
+                wfActionMap.put("icon", action.getIcon());
+                wfActionMap.put("assignable", action.isAssignable());
+                wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
+                wfActionMap.put("requiresCheckout", action.requiresCheckout());
+
+                final List<WorkflowActionClass> actionlets =
+						APILocator.getWorkflowAPI().findActionClasses(action);
+                for (WorkflowActionClass actionlet : actionlets) {
+                    if (actionlet.getActionlet() != null
+                            && actionlet.getActionlet().getClass().getCanonicalName()
+								.equals(PushPublishActionlet.class.getCanonicalName())) {
+
+                        hasPushPublishActionlet = true;
+                    }
+                }
+
+                wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
+
+                try {
+
+                    wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()));
+                } catch (LanguageException e) {
+                    Logger.error(this, "Could not load language key : " + action.getName());
+                }
+
+                wfActionMapList.add(wfActionMap);
+            } catch (JSONException e1) {
+                Logger.error(this, "Could not put property in JSONObject");
+            }
+        }
+
+		return wfActionMapList;
+	}
 
 
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
@@ -1426,8 +1442,8 @@ public class ContentletAjax {
                         iCanLock=false;
                         contentLocked = false;
                      }
-                     
-                    PageRequestModeUtil.setBackEndModeInSession(req, contentLocked, iCanLock);
+                    PageMode.setPageMode(req, contentLocked, iCanLock);
+
                 }
 
 			}
