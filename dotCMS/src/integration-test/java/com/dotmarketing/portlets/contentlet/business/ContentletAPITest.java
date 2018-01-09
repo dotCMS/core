@@ -31,6 +31,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotmarketing.beans.Host;
@@ -72,8 +73,8 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -2159,7 +2160,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         /*
          * For every language we should get the same content and contentMap template code
          */
-        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION", "content");
         VelocityEngine engine = VelocityUtil.getEngine();
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
@@ -2168,8 +2168,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
 
-        org.apache.velocity.Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        org.apache.velocity.Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng1 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                        + VelocityType.CONTENT.fileExtension);
+        org.apache.velocity.Template tesp1 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                        + VelocityType.CONTENT.fileExtension);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         StringWriter writer=new StringWriter();
@@ -2189,8 +2193,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(w2.getInode(),true);
 
         // now if everything have been cleared correctly those should match again
-        org.apache.velocity.Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        org.apache.velocity.Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng3 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                        + VelocityType.CONTENT.fileExtension);
+        org.apache.velocity.Template tesp3 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                        + VelocityType.CONTENT.fileExtension);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();
         teng3.merge(ctx, writer);
