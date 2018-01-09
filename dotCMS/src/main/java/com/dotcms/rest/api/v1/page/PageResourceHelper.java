@@ -101,7 +101,7 @@ public class PageResourceHelper implements Serializable {
             for (String contentletId : contentIds) {
                 final MultiTree mt = new MultiTree().setContainer(containerEntry.getContainerId())
                         .setContentlet(contentletId)
-                        .setRelationType("LEGACY_RELATION_TYPE")
+                        .setRelationType(containerEntry.getContainerUUID())
                         .setTreeOrder(i)
                         .setHtmlPage(pageId);
 

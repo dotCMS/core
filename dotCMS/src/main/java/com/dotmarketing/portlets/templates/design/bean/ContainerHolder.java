@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,6 +12,7 @@ import java.util.List;
  */
 public class ContainerHolder {
 
+    private static final String PARSE_CONTAINER_STATEMENT =  "#parseContainer('%s', '%s')";
     private boolean preview;
     private List<ContainerUUID> containers;
 
@@ -41,7 +43,8 @@ public class ContainerHolder {
                 if ( this.preview ) {
                     sb.append( PreviewTemplateUtil.getMockBodyContent() );
                 } else {
-                    sb.append( "#parseContainer('" ).append( container.getIdentifier() ).append( "')" );
+                    String uuid = container.getUUID() != null ? container.getUUID() : ParseContainer.DEFAULT_UUID_VALUE;
+                    sb.append( String.format(PARSE_CONTAINER_STATEMENT, container.getIdentifier(), uuid) );
                 }
             }
         }

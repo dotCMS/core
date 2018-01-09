@@ -38,6 +38,10 @@ public class PageContainerForm {
 
     static final class ContainerDeserialize extends JsonDeserializer<PageContainerForm> {
 
+        private static final String CONTAINER_ID_ATTRIBUTE_NAME = "id";
+        private static final String CONTAINER_UUID_ATTRIBUTE_NAME = "uuid";
+        private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentletsId";
+
         @Override
         public PageContainerForm deserialize(final JsonParser jsonParser,
                                              final DeserializationContext deserializationContext)
@@ -46,32 +50,33 @@ public class PageContainerForm {
             final JsonNode jsonNode = jsonParser.readValueAsTree();
             final List<ContainerEntry> entries = new ArrayList<>();
 
-            final Iterator<String> containerIds = jsonNode.fieldNames();
+            for (JsonNode jsonElement : jsonNode) {
+                final String containerId = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME).asText();
+                final String containerUUID = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME).asText();
+                final ContainerEntry containerEntry = new ContainerEntry(containerId, containerUUID);
 
-            while (containerIds.hasNext()) {
-                final String containerId = containerIds.next();
-                final ContainerEntry containerEntry = new ContainerEntry(containerId);
-
-                final JsonNode containerNode = jsonNode.get(containerId);
+                final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);
 
                 containerNode.forEach(contentId -> containerEntry.addContentId(contentId.textValue()));
                 entries.add(containerEntry);
             }
 
-            return new PageContainerForm(entries, jsonParser.readValueAsTree().toString());
+            return new PageContainerForm(entries, jsonNode.toString());
         }
     }
 
     static final class ContainerEntry {
-        private final String containerId;
+        private final String id;
+        private final String uuid;
         private final List<String> contentIds = new ArrayList<>();
 
-        public ContainerEntry(final String containerId) {
-            this.containerId = containerId;
+        public ContainerEntry(final String id, String uuid) {
+            this.id = id;
+            this.uuid = uuid;
         }
 
         public String getContainerId() {
-            return containerId;
+            return id;
         }
 
         public List<String> getContentIds() {
@@ -80,6 +85,10 @@ public class PageContainerForm {
 
         public void addContentId(final String contentId) {
             this.contentIds.add(contentId);
+        }
+
+        public String getContainerUUID() {
+            return uuid;
         }
     }
 }

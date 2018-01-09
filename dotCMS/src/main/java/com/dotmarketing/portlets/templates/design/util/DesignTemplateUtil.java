@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.templates.design.util;
 
+import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
@@ -301,7 +304,7 @@ public class DesignTemplateUtil {
             Element sidebar = splitSideBar.get( 0 );
 
             //Getting the containers for this html fragment
-            List<String> containers = getColumnContainers( sidebar );
+            List<ContainerUUID> containers = getColumnContainers( sidebar );
             //Adding the sidebar to the layout
             layout.setContainers( containers, isPreview );
         }
@@ -331,7 +334,7 @@ public class DesignTemplateUtil {
                 //We found multiple columns...
                 for ( Element columnElement : columns ) {
                     //Find the containers for this column
-                    List<String> containers = getColumnContainers( columnElement );
+                    List<ContainerUUID> containers = getColumnContainers( columnElement );
                     //Adding the containers for this column
                     rowLayout.addColumnContainers( containers, isPreview );
                 }
@@ -341,7 +344,7 @@ public class DesignTemplateUtil {
             } else { //It means we just have one column
 
                 //Find the containers for this column
-                List<String> containers = getColumnContainers( splitBody );
+                List<ContainerUUID> containers = getColumnContainers( splitBody );
                 rowLayout.addColumnContainers( containers, isPreview );
                 //Add the created row
                 splitBodiesList.add( rowLayout );
@@ -358,17 +361,24 @@ public class DesignTemplateUtil {
      * @param splitBody
      * @return
      */
-    private static List<String> getColumnContainers ( Element splitBody ) {
+    private static List<ContainerUUID> getColumnContainers (Element splitBody ) {
 
         //parseContainer regex
         Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
 
         //Getting the containers for this html fragment
-        List<String> containers = new ArrayList<String>();
+        List<ContainerUUID> containers = new ArrayList<>();
         Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
         while ( matcher.find() ) {
-            String container = matcher.group();
-            containers.add( container );
+            String parseContainerArguments = matcher.group();
+
+            if (parseContainerArguments != null) {
+				String[] splitArguments = parseContainerArguments.split(",");
+				String id = splitArguments[0];
+				String uuid = splitArguments.length > 1 ? splitArguments[1] : ParseContainer.DEFAULT_UUID_VALUE;
+
+				containers.add(new ContainerUUID(id, uuid));
+			}
         }
 
         return containers;

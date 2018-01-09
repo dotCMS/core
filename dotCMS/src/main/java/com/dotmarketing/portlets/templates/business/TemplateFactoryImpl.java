@@ -20,11 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.design.bean.Body;
-import com.dotmarketing.portlets.templates.design.bean.Sidebar;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -43,6 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
 
@@ -363,7 +360,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		Sidebar sidebar = templateLayout.getSidebar();
 
 		if (sidebar != null && sidebar.getContainers() != null) {
-			result.addAll(sidebar.getContainers());
+			result.addAll(sidebar.getContainers().stream()
+					.map(containerUUID -> containerUUID.getIdentifier())
+					.collect(Collectors.toList()));
 		}
 
 		return result;
@@ -379,7 +378,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			List<TemplateLayoutColumn> columns = row.getColumns();
 
 			for (TemplateLayoutColumn column : columns) {
-				List<String> columnContainers = column.getContainers();
+				List<String> columnContainers = column.getContainers().stream()
+						.map(containerUUID -> containerUUID.getIdentifier())
+						.collect(Collectors.toList());
 				result.addAll(columnContainers);
 			}
 		}

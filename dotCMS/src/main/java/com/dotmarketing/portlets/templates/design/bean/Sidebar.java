@@ -18,7 +18,7 @@ public class Sidebar extends ContainerHolder {
     private Integer width;
 
     @JsonCreator
-    public Sidebar(@JsonProperty("containers") List<String> containers,
+    public Sidebar(@JsonProperty("containers") List<ContainerUUID> containers,
                    @JsonProperty("location") final String location,
                    @JsonProperty("width") final int width,
                    @JsonProperty("widthPercent") final int widthPercent) {

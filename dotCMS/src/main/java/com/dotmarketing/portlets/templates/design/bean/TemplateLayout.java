@@ -119,7 +119,7 @@ public class TemplateLayout {
         this.sidebar = sidebar;
     }
 
-    public void setContainers ( final List<String> containers, final Boolean isPreview ) {
+    public void setContainers ( final List<ContainerUUID> containers, final Boolean isPreview ) {
         String location = null;
         int widthPercent  = 0;
 
