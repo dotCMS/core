@@ -1,4 +1,4 @@
-<div [ngGrid]="gridConfig" (onDragStop)="onDragStop()">
+<div [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
     <dot-container-selector *ngFor="let gridBox of grid; let i = index"
         (change)="updateContainers($event)"
         (remove)="onRemoveContainer(i)"

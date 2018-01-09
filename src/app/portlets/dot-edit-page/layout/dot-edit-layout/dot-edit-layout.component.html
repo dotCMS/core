@@ -6,7 +6,7 @@
         <div class="dot-edit-layout__toolbar-actions">
             <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{dotMessageService.get('editpage.layout.toolbar.save.template')}}" *ngIf="isLayout() || form.get('title').value === null" binary="true" (onChange)="saveAsTemplateHandleChange($event)"></p-checkbox>
             <button pButton flat type="button" label="{{dotMessageService.get('editpage.layout.toolbar.action.cancel')}}" class="dot-edit-layout__toolbar-action-cancel"></button>
-            <button pButton flat type="submit"  label="{{dotMessageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
+            <button pButton flat type="submit" [disabled]="!isModelUpdated"  label="{{dotMessageService.get('editpage.layout.toolbar.action.save')}}" class="dot-edit-layout__toolbar-action-save"></button>
             <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
             <dot-template-addtional-actions-menu [templateId]="pageView.template.inode"></dot-template-addtional-actions-menu>
         </div>

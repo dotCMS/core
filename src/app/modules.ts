@@ -29,6 +29,7 @@ import {
     MultiSelectModule
 } from 'primeng/primeng';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotGlobalMessageModule } from './view/components/_common/dot-global-message/dot-global-message.module';
 
 export const CUSTOM_MODULES = [
     DotActionButtonModule,
@@ -38,7 +39,8 @@ export const CUSTOM_MODULES = [
     ListingDataTableModule,
     SearchableDropDownModule,
     SiteSelectorModule,
-    ToolbarAddContenletModule
+    ToolbarAddContenletModule,
+    DotGlobalMessageModule
 ];
 
 export const NGFACES_MODULES = [

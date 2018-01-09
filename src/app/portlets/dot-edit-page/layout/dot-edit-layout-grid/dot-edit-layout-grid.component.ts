@@ -115,11 +115,11 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     }
 
     /**
-     * Event fired when the drag of a container ends, remove empty rows if any.
+     * Event fired when the drag or resize of a container ends, remove empty rows if any.
      *
      * @memberof DotEditLayoutGridComponent
      */
-    onDragStop(): void {
+    updateModel(): void {
         this.deleteEmptyRows();
         this.propagateChange(this.getModel());
     }

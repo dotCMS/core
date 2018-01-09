@@ -20,6 +20,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
+import { DotGlobalMessageService } from '../view/components/_common/dot-global-message/dot-global-message.service';
 
 @Component({
     selector: 'p-confirmDialog',
@@ -46,7 +47,8 @@ export class DOTTestBed {
             LoggerService,
             StringUtils,
             UserModel,
-            DotEventsService
+            DotEventsService,
+            DotGlobalMessageService
         ]
     };
 

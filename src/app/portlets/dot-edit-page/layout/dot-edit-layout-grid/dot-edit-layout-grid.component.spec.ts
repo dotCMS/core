@@ -155,7 +155,7 @@ describe('DotEditLayoutGridComponent', () => {
             component.grid[1].config.row = 2;
             component.grid[2].config.row = 4;
             component.grid[2].config.sizex = 1;
-            component.onDragStop();
+            component.updateModel();
             tick();
             expect(component.grid[0].config.sizex).toEqual(3);
             expect(component.grid[1].config.sizex).toEqual(1);
@@ -176,7 +176,7 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should Propagate Change after a grid box is moved', () => {
         spyOn(component, 'propagateChange');
-        component.onDragStop();
+        component.updateModel();
         expect(component.propagateChange).toHaveBeenCalledWith(fakeValue);
     });
 

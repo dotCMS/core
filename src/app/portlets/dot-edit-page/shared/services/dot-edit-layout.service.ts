@@ -30,7 +30,9 @@ export class DotEditLayoutService {
         dotLayoutBody.rows.forEach((row, rowIndex) => {
             row.columns.forEach(column => {
                 grid.push({
-                    containers: column.containers.map(containerId => this.templateContainersCacheService.get(containerId)),
+                    containers: column.containers.map(containerId =>
+                        this.templateContainersCacheService.get(containerId)
+                    ),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
                         sizex: column.width,
                         col: column.leftOffset,
@@ -59,6 +61,15 @@ export class DotEditLayoutService {
                 .map(this.getLayoutRowFromLayoutGridBoxes)
                 .value()
         };
+    }
+
+    /**
+     * Remove the extra attributes that come from the server and are not longer needed in DotLayoutBody.
+     * @param {DotLayoutBody} grid
+     * @returns {DotLayoutBody}
+     */
+    cleanupDotLayoutBody(grid: DotLayoutBody): DotLayoutBody {
+        return this.getDotLayoutBody(this.getDotLayoutGridBox(grid));
     }
 
     private getLayoutRowFromLayoutGridBoxes(gridBoxes: DotLayoutGridBox[]): DotLayoutRow {
