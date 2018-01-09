@@ -71,3 +71,7 @@ $sidebar-width: 190px;
         width: 0;
     }
 }
+
+.layout__toolbar {
+    flex-shrink: 0;
+}
