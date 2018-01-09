@@ -95,8 +95,7 @@ public class ContentTypeResourceTest {
 			assertResponse_BAD_REQUEST(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							JSON_CONTENT_TYPE_CREATE
-							JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID"),
+							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
 							getHttpRequest()
 					)
 			);
