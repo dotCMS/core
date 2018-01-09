@@ -56,14 +56,16 @@ public class ContentTypeResourceTest {
 		Response response = null;
 		Map<String, Object> fieldMap = null;
 
+		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+
 		// Test INVALID Content Type Creation
 		assertResponse_BAD_REQUEST(
-				response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID"))
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
 		);
 
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_CREATE)
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
 		);
 
 		try {
@@ -93,6 +95,7 @@ public class ContentTypeResourceTest {
 			assertResponse_BAD_REQUEST(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
+							JSON_CONTENT_TYPE_CREATE
 							JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID"),
 							getHttpRequest()
 					)
@@ -102,7 +105,7 @@ public class ContentTypeResourceTest {
 			RestUtilTest.verifySuccessResponse(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id")),
+							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
 							getHttpRequest()
 					)
 			);

@@ -23,6 +23,7 @@ import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
@@ -1142,8 +1143,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
-
+	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
@@ -1151,33 +1151,41 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.DELETE_SCHEME_FOR_STRUCT);
-			db.addParam(struc);
+			db.addParam(contentTypeInode);
 			db.loadResult();
 
-            for(WorkflowScheme scheme : schemes) {
+			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
-				db.addParam(scheme.getId());
-				db.addParam(struc);
+				db.addParam(id);
+				db.addParam(contentTypeInode);
 				db.loadResult();
 			}
 			// update all tasks for the content type and reset their step to
 			// null
 			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT);
 			db.addParam((Object) null);
-			db.addParam(struc);
+			db.addParam(contentTypeInode);
 			db.loadResult();
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
 
-			cache.removeStructure(struc);
+			cache.removeStructure(contentTypeInode);
 
 			cache.clearStepsCache();
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage());
 		}
+	}
+
+	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException {
+		List<String> ids = schemes.stream()
+				.map(scheme -> scheme.getId())
+				.collect(Collectors.toList());
+
+		this.saveSchemeIdsForContentType(contentTypeInode, ids);
 	}
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
