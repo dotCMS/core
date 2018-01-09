@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -87,7 +86,7 @@ public class DwrUtil {
             userId = loggedInUser.getUserId();
         }
         if (loggedInUser == null) {
-            SecurityLogger.logInfo(UserAjax.class,
+            SecurityLogger.logInfo(DwrUtil.class,
                     "unauthorized attempt to call getUserById by user " + userId + " from "
                             + remoteIp);
             throw new DotSecurityException("not authorized");
