@@ -21,6 +21,9 @@
     var isContentSaving = false;
     var doesUserCancelledEdit = false;
 
+    // We define this variable when we load this page from an iframe in the ng edit page
+    var ngEditContentletEvents;
+
     var tabsArray=new Array();
 
     dojo.require("dijit.Dialog");
@@ -548,7 +551,6 @@
 
 
     function saveContentCallback(data){
-        console.log('saveContentCallback', data["saveContentErrors"]);
         isContentAutoSaving = false;
         dojo.byId("subcmd").value="";
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
@@ -559,7 +561,7 @@
 
 
         // Show DotContentletValidationExceptions.
-        if(data["saveContentErrors"][0] != null ){
+        if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
             var exceptionData = data["saveContentErrors"];
             var errorList = "";
