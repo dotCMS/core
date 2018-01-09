@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.user.ajax;
 
-import static com.liferay.portlet.PortletUtil.getLoggedInUser;
-import static com.liferay.portlet.PortletUtil.validateUsersPortletPermissions;
+import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
+import static com.dotmarketing.business.ajax.DwrUtil.validateUsersPortletPermissions;
 
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
