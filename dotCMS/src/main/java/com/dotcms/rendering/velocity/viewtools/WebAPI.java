@@ -1,4 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -14,7 +15,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -49,7 +49,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.PortalException;
@@ -290,7 +289,7 @@ public class WebAPI implements ViewTool {
 	public String getContentInode(String parsePath) {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		String id = "";
-		if(parsePath.indexOf(Config.getStringProperty("VELOCITY_CONTENT_EXTENSION")) == -1 || parsePath.indexOf(Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION")) == -1){
+		if(parsePath.indexOf(VelocityType.CONTENT.fileExtension) == -1 || parsePath.indexOf(VelocityType.CONTENT_MAP.fileExtension) == -1){
 			id = parsePath;
 		}else{
 			id = getContentIdentifier(parsePath);
@@ -317,7 +316,7 @@ public class WebAPI implements ViewTool {
 
 	public String getContentPermissions(String parsePath) {
 		String id = "";
-		if(parsePath.indexOf(Config.getStringProperty("VELOCITY_CONTENT_EXTENSION")) == -1){
+		if(parsePath.indexOf(VelocityType.CONTENT.fileExtension) == -1){
 			id = parsePath;
 		}else{
 			id = getContentIdentifier(parsePath);
