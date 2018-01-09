@@ -1,7 +1,7 @@
 package com.dotmarketing.business.ajax;
 
-import static com.liferay.portlet.PortletUtil.getLoggedInUser;
-import static com.liferay.portlet.PortletUtil.validateRolesPortletPermissions;
+import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
+import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;

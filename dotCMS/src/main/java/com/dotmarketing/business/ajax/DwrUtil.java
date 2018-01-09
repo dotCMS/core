@@ -1,4 +1,4 @@
-package com.liferay.portlet;
+package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -16,9 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Jonathan Gamba 11/29/17
  */
-public class PortletUtil {
+public class DwrUtil {
 
-    private PortletUtil() {
+    private DwrUtil() {
         throw new IllegalStateException("Utility class");
     }
 
@@ -64,7 +64,7 @@ public class PortletUtil {
                     "User [%s] does not have access to the [%s] Portlet",
                     loggedInUser.getEmailAddress(), portletId);
 
-            SecurityLogger.logInfo(PortletUtil.class, errorMessage);
+            SecurityLogger.logInfo(DwrUtil.class, errorMessage);
             throw new DotSecurityException(errorMessage);
         }
     }
