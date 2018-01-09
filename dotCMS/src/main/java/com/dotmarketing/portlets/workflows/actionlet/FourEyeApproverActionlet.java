@@ -1,34 +1,36 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getApproversFromHistory;
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getUsersFromIds;
+
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.liferay.util.Validator;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
- * Sometimes, customers would like content to be published if at least 2 people (4 eyes) approve
- * their content. They are not particular as to which users, they just need 2 people to approve it
- * before the content goes live. This actionlet enforces this principle.
- * <br>
- * This actionlet allows a user to optionally specify particular users, and also select users with
- * the "4 Eye" publishing permissions. Then,
- * all it would take is 2 of those users to approve. This way, the content would be published.
+ * Sometimes, customers would like content to be published if a specific number of people approve
+ * their content. They are not particular as to which users, they just need a specific number of
+ * users to approve it before the content goes live. This actionlet enforces what is called the
+ * '4-Eyes' principle.
+ * <p>
+ * This workflow actionlet allows a user to specify the user IDs, email addresses, or role keys
+ * (i.e., all the users assigned to those roles) which will be in charge of approving the new
+ * content. If the users that approve the content are greater or equal to the specified number of
+ * minimum approvers, then the content will move on to the next actionlet in the workflow.
+ * Otherwise, an email will be sent to all users that haven't approved the content yet.
  *
  * @author Jose Castro
  * @version 4.3.0
@@ -40,38 +42,42 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
 
     private static final String ACTIONLET_NAME = "'4 Eye' Approval";
     private static final String HOW_TO =
-            "This actionlet implements the '4 Eyes' principle when verifying content that will be published, and also a comma-separated list of user IDs or user email addresses. "
-                    + "This means that a least two people which have the '4 Eye' publishing permission (or the explicitly specified users) need to approve a given content before it can be published.";
+            "This actionlet implements the '4 Eyes' principle for verifying new content. It takes a comma-separated list of user IDs, email addresses, or role keys "
+                    + "(i.e., the users assigned to those roles) which will be in charge of reviewing the content, and a minimum number of approvers. "
+                    + "If the number of approvers is greater or equal than the specified value, the next sub-action will be executed.";
     private static final String USER_ID_DELIMITER = ",";
-    private static final String FOUR_EYES_ROLE_KEY = "four-eyes-approval";
+    private static final String PARAM_CONTENT_APPROVERS = "approvers";
+    private static final String PARAM_MINIMUM_CONTENT_APPROVERS = "minimumApprovers";
+    private static final String PARAM_EMAIL_SUBJECT = "emailSubject";
+    private static final String PARAM_EMAIL_BODY = "emailBody";
+    private static final String PARAM_IS_HTML = "isHtml";
+
+    private static final int DEFAULT_MINIMUM_CONTENT_APPROVERS = 2;
 
     private boolean shouldStop = false;
 
-    private static final Object LOCK = new Object();
     private static ArrayList<WorkflowActionletParameter> ACTIONLET_PARAMETERS = null;
 
     @Override
-    public List<WorkflowActionletParameter> getParameters() {
+    public synchronized List<WorkflowActionletParameter> getParameters() {
         if (null == ACTIONLET_PARAMETERS) {
-            synchronized (LOCK) {
-                if (null == ACTIONLET_PARAMETERS) {
-                    ACTIONLET_PARAMETERS = new ArrayList<>();
-                    ACTIONLET_PARAMETERS
-                            .add(new MultiEmailParameter("approvers",
-                                    "User IDs, Emails, or Role Keys", null,
-                                    true));
-                    ACTIONLET_PARAMETERS
-                            .add(new WorkflowActionletParameter("minimumApprovers",
-                                    "Number of Approvers",
-                                    "2", true));
-                    ACTIONLET_PARAMETERS
-                            .add(new WorkflowActionletParameter("emailSubject", "Email Subject",
-                                    "'4 Eye' Approval Required", false));
-                    ACTIONLET_PARAMETERS
-                            .add(new WorkflowActionletParameter("emailBody", "Email Message", null,
-                                    false));
-                }
-            }
+            ACTIONLET_PARAMETERS = new ArrayList<>();
+            ACTIONLET_PARAMETERS
+                    .add(new MultiEmailParameter(PARAM_CONTENT_APPROVERS,
+                            "User IDs, Emails, or Role Keys", null,
+                            true));
+            ACTIONLET_PARAMETERS
+                    .add(new WorkflowActionletParameter(PARAM_MINIMUM_CONTENT_APPROVERS,
+                            "Number of Approvers",
+                            String.valueOf(DEFAULT_MINIMUM_CONTENT_APPROVERS), true));
+            ACTIONLET_PARAMETERS
+                    .add(new WorkflowActionletParameter(PARAM_EMAIL_SUBJECT,
+                            "Email Subject",
+                            "'4 Eye' Approval Required", true));
+            ACTIONLET_PARAMETERS
+                    .add(new WorkflowActionletParameter(PARAM_EMAIL_BODY, "Email Message",
+                            null,
+                            false));
         }
         return ACTIONLET_PARAMETERS;
     }
@@ -92,107 +98,64 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (null != obj && obj instanceof WorkFlowActionlet) {
+            return getClass().equals(obj.getClass());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return (shouldStop ? 1 : 0);
+    }
+
+    @Override
     public void executeAction(final WorkflowProcessor processor,
-            final Map<String, WorkflowActionClassParameter> params)
-            throws WorkflowActionFailureException {
-        final String userIds =
-                (null == params.get("approvers")) ? "" : params.get("approvers").getValue();
-        final int minimumApprovers = Integer.parseInt(params.get("minimumApprovers").getValue());
-        final String emailSubject =
-                (null == params.get("emailSubject")) ? "" : params.get("emailSubject").getValue();
-        final String emailBody =
-                (null == params.get("emailBody")) ? "" : params.get("emailBody").getValue();
-        boolean isHtml = false;
-        if (null != params.get("isHtml")) {
-            try {
-                isHtml = new Boolean(params.get("isHtml").getValue());
-            } catch (Exception e) {
-                // Boolean casting failed. Just use default value
-            }
-        }
-
-        final Set<User> requiredUserApprovers = new HashSet<>();
-        final Set<User> hasApproved = new HashSet<>();
-        final StringTokenizer tokenizer = new StringTokenizer(userIds, USER_ID_DELIMITER);
-        while (tokenizer.hasMoreTokens()) {
-            final String token = tokenizer.nextToken().trim();
-            if (Validator.isEmailAddress(token)) {
-                try {
-                    User user = APILocator.getUserAPI()
-                            .loadByUserByEmail(token, APILocator.getUserAPI().getSystemUser(),
-                                    false);
-                    requiredUserApprovers.add(user);
-                } catch (Exception e) {
-                    Logger.warn(this.getClass(), "Unable to find user with email: " + token);
-                }
-            } else {
-                try {
-                    User user = APILocator.getUserAPI()
-                            .loadUserById(token, APILocator.getUserAPI().getSystemUser(), false);
-                    requiredUserApprovers.add(user);
-                    continue;
-                } catch (Exception e) {
-                    Logger.warn(this.getClass(), "Unable to find user with userID: " + token);
-                }
-                try {
-                    final Role role = APILocator.getRoleAPI().loadRoleByKey(token);
-                    try {
-                        final List<User> approvingUsersInRole = APILocator.getRoleAPI().findUsersForRole(role);
-                        requiredUserApprovers.addAll(approvingUsersInRole);
-                    } catch (DotSecurityException e) {
-                        Logger.warn(this.getClass(), "Unable to find role with key: " + token);
-                    }
-                } catch (DotDataException e) {
-                    // The specified role could not be found
-                    Logger.warn(this.getClass(), "Unable to find role with key: " + token);
-                }
-            }
-        }
-
-        List<WorkflowHistory> historyList = processor.getHistory();
-        // add this approval to the history
+            final Map<String, WorkflowActionClassParameter> params) {
+        final String userIds = getParameterValue(params.get(PARAM_CONTENT_APPROVERS));
+        final int minimumContentApprovers = ConversionUtils
+                .toInt(getParameterValue(params.get(PARAM_MINIMUM_CONTENT_APPROVERS)),
+                        DEFAULT_MINIMUM_CONTENT_APPROVERS);
+        final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
+        final String emailBody = getParameterValue(params.get(PARAM_EMAIL_BODY));
+        final boolean isHtml = getParameterValue(params.get(PARAM_IS_HTML), false);
+        final Set<User> requiredContentApprovers = getUsersFromIds(userIds, USER_ID_DELIMITER);
+        // Add this approval to the history
         final WorkflowHistory history = new WorkflowHistory();
         history.setActionId(processor.getAction().getId());
         history.setMadeBy(processor.getUser().getUserId());
+        List<WorkflowHistory> historyList = processor.getHistory();
         if (null == historyList) {
             historyList = new ArrayList<>();
         }
         historyList.add(history);
-        for (final User user : requiredUserApprovers) {
-            for (final WorkflowHistory historyItem : historyList) {
-                if (historyItem.getActionId().equals(processor.getAction().getId())) {
-                    if (user.getUserId().equals(historyItem.getMadeBy())) {
-                        hasApproved.add(user);
-                    }
-                }
-            }
-        }
-
-        if (hasApproved.size() < minimumApprovers) {
+        final Set<User> hasApproved = getApproversFromHistory(historyList, requiredContentApprovers,
+                processor.getAction().getId(), minimumContentApprovers);
+        if (hasApproved.size() < minimumContentApprovers) {
             this.shouldStop = true;
-            // keep the workflow process on the same step
+            // Keep the workflow process on the same step
             processor.setNextStep(processor.getStep());
-
-            // only send emails to users who have not approved
+            // Send email to users who have NOT approved only
             final List<String> emails = new ArrayList<>();
-            for (final User user : requiredUserApprovers) {
+            for (final User user : requiredContentApprovers) {
                 if (!hasApproved.contains(user)) {
                     emails.add(user.getEmailAddress());
                 }
             }
-
-            // to assign it for next assignee
-            for (final User user : requiredUserApprovers) {
+            // Assign the workflow step for next assignee
+            for (final User user : requiredContentApprovers) {
                 if (!hasApproved.contains(user)) {
                     try {
                         processor.setNextAssign(APILocator.getRoleAPI().getUserRole(user));
                         break;
                     } catch (DotDataException e) {
-                        Logger.error(this, e.getMessage(), e);
+                        Logger.error(this,
+                                "An error occurred when reassigning workflow step to user '" + user
+                                        .getUserId() + "': " + e.getMessage(), e);
                     }
                 }
             }
-
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
             WorkflowEmailUtil

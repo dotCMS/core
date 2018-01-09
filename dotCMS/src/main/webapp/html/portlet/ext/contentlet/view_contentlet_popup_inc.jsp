@@ -215,7 +215,6 @@ if(!hasPermissions) {
 					</td>
 				</tr>
 				<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET || structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE ){ %>
-				<% // session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true"); %>
 				<tr class="tRow">
 					<td class="fColumn">
 						<%= LanguageUtil.get(pageContext, "url") %>
@@ -264,7 +263,6 @@ if(!hasPermissions) {
 			
 
 			<% if(urlMap!=null){%>
-				<%session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true"); %>			
 				<tr class="tRow">
 					<td class="fColumn">
 						Preview <br>
