@@ -114,13 +114,6 @@ public interface TemplateAPI {
 
 
 	/**
-	 * Update template body code to use the new parse container syntax
-	 *
-	 * @param template
-	 */
-	void updateParseContainerSyntax(Template template);
-
-	/**
 	 * Retrieves the template associated to a host
 	 * @param template
 	 * @return
