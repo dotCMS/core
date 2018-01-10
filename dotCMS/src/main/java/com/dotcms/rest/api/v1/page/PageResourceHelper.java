@@ -94,7 +94,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
-        final List<MultiTree> multiTres = ImmutableList.of();
+        final List<MultiTree> multiTres = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;

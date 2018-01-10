@@ -426,7 +426,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
                                      final PageContainerForm pageContainerForm) {

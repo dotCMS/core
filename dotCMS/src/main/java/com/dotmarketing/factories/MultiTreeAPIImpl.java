@@ -27,7 +27,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
     public void saveMultiTrees(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
-        Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", multiTrees));
+        Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, multiTrees));
         MultiTreeFactory.saveMultiTrees(pageId, multiTrees);
     }
 

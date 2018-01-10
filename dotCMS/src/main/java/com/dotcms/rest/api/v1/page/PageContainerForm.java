@@ -40,7 +40,7 @@ public class PageContainerForm {
 
         private static final String CONTAINER_ID_ATTRIBUTE_NAME = "id";
         private static final String CONTAINER_UUID_ATTRIBUTE_NAME = "uuid";
-        private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentletsId";
+        private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentlets";
 
         @Override
         public PageContainerForm deserialize(final JsonParser jsonParser,
@@ -48,7 +48,7 @@ public class PageContainerForm {
                 throws IOException {
 
             final JsonNode jsonNode = jsonParser.readValueAsTree();
-            final List<ContainerEntry> entries = ImmutableList.of();
+            final List<ContainerEntry> entries = new ArrayList<>();
 
             for (final JsonNode jsonElement : jsonNode) {
                 final String containerId = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME).asText();
