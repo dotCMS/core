@@ -446,7 +446,7 @@ public class PageResource {
             pageResourceHelper.checkPagePermission(user, page);
             pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
 
-            res = Response.ok("ok").build();
+            res = Response.ok(new ResponseEntityView("ok")).build();
         } catch (DotSecurityException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
             Logger.error(this, e.getMessage(), e);

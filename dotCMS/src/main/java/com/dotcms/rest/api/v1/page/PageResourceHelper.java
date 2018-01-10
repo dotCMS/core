@@ -248,8 +248,6 @@ public class PageResourceHelper implements Serializable {
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
-
-        
         if (isRendered) {
             try {
                 page.setProperty("rendered", getPageRendered(request, response, user, uri, mode));
@@ -264,12 +262,9 @@ public class PageResourceHelper implements Serializable {
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
                 (template, user, RESPECT_FE_ROLES);
-        
+
         templateContainers.addAll(APILocator.getContainerAPI().getContainersOnPage(page));
 
-        
-
-        
         final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
         for (final Container container : templateContainers) {
             final List<ContainerStructure> containerStructures = this.containerAPI
@@ -425,8 +420,6 @@ public class PageResourceHelper implements Serializable {
     }
 
     public void checkPagePermission(final User user, final Contentlet htmlPageAsset) throws DotSecurityException {
-        APILocator.getPermissionAPI()
-                .checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         APILocator.getPermissionAPI()
                 .checkPermission(htmlPageAsset, PermissionLevel.EDIT, user);
     }
