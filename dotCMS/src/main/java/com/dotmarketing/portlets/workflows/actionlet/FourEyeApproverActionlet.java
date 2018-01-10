@@ -7,7 +7,7 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.get
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
+import com.dotmarketing.portlets.workflows.model.MultiUserReferenceParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -63,7 +63,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         if (null == ACTIONLET_PARAMETERS) {
             ACTIONLET_PARAMETERS = new ArrayList<>();
             ACTIONLET_PARAMETERS
-                    .add(new MultiEmailParameter(PARAM_CONTENT_APPROVERS,
+                    .add(new MultiUserReferenceParameter(PARAM_CONTENT_APPROVERS,
                             "User IDs, Emails, or Role Keys", null,
                             true));
             ACTIONLET_PARAMETERS
