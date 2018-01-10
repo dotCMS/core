@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -3411,25 +3412,26 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
+
             blogContent = getBlogContent();
 
             final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+            final List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             final List<Category> categories = getACoupleOfCategories();
 
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
 
+            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+
+            assertTrue(relatedContentFromDB.containsAll(relatedContent));
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false);
-
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
-
-            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
-
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
             List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
 
@@ -3706,7 +3708,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
-    private ContentletRelationships   getACoupleOfRelationships(Contentlet contentlet)
+    private ContentletRelationships getACoupleOfRelationships(Contentlet contentlet)
         throws DotDataException, DotSecurityException {
         ContentletRelationships relationships = new ContentletRelationships(contentlet);
         final Relationship blogComments = APILocator.getRelationshipAPI().byInode("631a07ea-c840-402d-a330-37ed2826ba30");
@@ -3722,7 +3724,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment1.setStringProperty("email", "email");
         comment1.setStringProperty("comment", "comment");
 
-        comment1 = contentletAPI.checkin(comment1, user, false);
+        comment1 = contentletAPI.checkin(comment1, new HashMap<>(), user, false);
 
         Contentlet comment2 = new Contentlet();
         comment2.setContentTypeId(commentsType.id());
@@ -3730,7 +3732,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment2.setStringProperty("email", "email");
         comment2.setStringProperty("comment", "comment");
 
-        comment2 = contentletAPI.checkin(comment2, user, false);
+        comment2 = contentletAPI.checkin(comment2, new HashMap<>(), user, false);
 
         records.setRecords(Arrays.asList(comment1, comment2));
         relationships.setRelationshipsRecords(Collections.singletonList(records));
