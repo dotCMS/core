@@ -2555,10 +2555,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Tree treeToUpdate = TreeFactory.getTree(newTree);
                     treeToUpdate.setTreeOrder(newTreePosistion);
 
-                    if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
+                    if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())) {
                         TreeFactory.saveTree(treeToUpdate);
-                    else
+                    } else {
                         TreeFactory.saveTree(newTree);
+                    }
 
                     treePosition++;
                 }
@@ -3606,7 +3607,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         categoryAPI.setParents(toContentlet, categories, user, respect);
 
-
         //Handle Relationships
 
         if(contentRelationships == null){
@@ -3650,7 +3650,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                cons = getRelatedContent(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
+                cons = getRelatedContentFromIndex(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
                 for (Contentlet contentlet : cons) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
@@ -3682,6 +3682,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
+
         for (ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
             relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
         }
@@ -4697,16 +4698,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException, DotSecurityException{
-        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
         List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
-                contentRelationships.put(r, new ArrayList<Contentlet>());
+                contentRelationships.put(r, new ArrayList<>());
             }
-            List<Contentlet> cons = getRelatedContent(contentlet, r, APILocator.getUserAPI().getSystemUser(), true);
+            List<Contentlet> cons = relationshipAPI.dbRelatedContent(r, contentlet);
+
             for (Contentlet c : cons) {
                 List<Contentlet> l = contentRelationships.get(r);
                 l.add(c);
