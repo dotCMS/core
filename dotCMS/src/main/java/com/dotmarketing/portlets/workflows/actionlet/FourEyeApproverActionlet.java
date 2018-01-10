@@ -99,7 +99,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
 
     @Override
     public boolean equals(Object obj) {
-        if (null != obj && obj instanceof WorkFlowActionlet) {
+        if (obj instanceof WorkFlowActionlet) {
             return getClass().equals(obj.getClass());
         }
         return false;

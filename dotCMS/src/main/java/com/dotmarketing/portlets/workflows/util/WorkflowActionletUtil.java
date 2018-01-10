@@ -51,7 +51,7 @@ public class WorkflowActionletUtil {
             final String token = tokenizer.nextToken().trim();
             if (Validator.isEmailAddress(token)) {
                 try {
-                    User user = APILocator.getUserAPI()
+                    final User user = APILocator.getUserAPI()
                             .loadByUserByEmail(token, APILocator.getUserAPI().getSystemUser(),
                                     false);
                     userSet.add(user);
@@ -62,7 +62,7 @@ public class WorkflowActionletUtil {
                 }
             } else {
                 try {
-                    User user = APILocator.getUserAPI()
+                    final User user = APILocator.getUserAPI()
                             .loadUserById(token, APILocator.getUserAPI().getSystemUser(), false);
                     userSet.add(user);
                     continue;

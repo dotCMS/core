@@ -23,6 +23,8 @@ import java.util.StringTokenizer;
  */
 public class MultiUserReferenceParameter extends WorkflowActionletParameter {
 
+    private static final long serialVersionUID = -6495451917397202347L;
+
     /**
      * Creates a new instance of this class.
      *
@@ -32,14 +34,14 @@ public class MultiUserReferenceParameter extends WorkflowActionletParameter {
      * @param isRequired   If {@code true}, the value of this parameter is required. Otherwise, set
      *                     to {@code false}.
      */
-    public MultiUserReferenceParameter(String key, String displayName,
-            String defaultValue, boolean isRequired) {
+    public MultiUserReferenceParameter(final String key, final String displayName,
+            final String defaultValue, final boolean isRequired) {
         super(key, displayName, defaultValue, isRequired);
     }
 
     @Override
     public String hasError(final String stringToValidate) {
-        final StringBuffer errorMsg = new StringBuffer();
+        final StringBuilder errorMsg = new StringBuilder();
         if (UtilMethods.isSet(stringToValidate)) {
             final StringTokenizer tokenizer = new StringTokenizer(stringToValidate, ",");
             while (tokenizer.hasMoreTokens()) {
