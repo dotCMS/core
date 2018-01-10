@@ -5,7 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.util.DotAssert;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -67,7 +67,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 EmailActionlet.class,
                 SetValueActionlet.class,
                 PushNowActionlet.class,
-				TranslationActionlet.class
+				TranslationActionlet.class,
+				SaveContentActionlet.class,
+				SaveContentAsDraftActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
@@ -264,7 +266,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void saveStep(final WorkflowStep step) throws DotDataException, AlreadyExistException {
 
-		DotAssert.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
+		DotPreconditions.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
 				()-> "Step name and Scheme are required", DotStateException.class);
 
 		workFlowFactory.saveStep(step);
@@ -497,42 +499,29 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
 		boolean canLock      = false;
 		boolean isLocked     = false;
-		String lockedUserId  =  null;
 
 		try {
 
 			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
 			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
-			lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
 		} catch(Exception e) {
 
 		}
 
-		final boolean hasLock          = user.getUserId().equals(lockedUserId);
 		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
 		final List<WorkflowAction> unfilteredActions =
 				isNew ? findActions(steps, user, contentlet.getContentType()):
 						findActions(steps, user, contentlet);
 
 		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
-								+ "the user hasLock: " + hasLock + ", isNew: "    + isNew
+								+ ", isNew: "    + isNew
 								+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
 
-		if (hasLock || isNew) {
 
-			if (null != unfilteredActions) {
-
-				actions.addAll(unfilteredActions);
-			}
-		} else {
-
-			this.doFilterActions(actions, canLock, isLocked, unfilteredActions);
-		}
-
-		return actions.build();
+		return this.doFilterActions(actions, canLock, isLocked, unfilteredActions);
 	}
 
-	private void doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
+	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
 								 final boolean canLock,
 								 final boolean isLocked,
 								 final List<WorkflowAction> unfilteredActions) {
@@ -550,6 +539,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 }
             }
         }
+
+        return actions.build();
 	}
 
 	/**
@@ -606,7 +597,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowAction action = workFlowFactory.findAction(id);
 
-		DotAssert.isTrue(
+		DotPreconditions.isTrue(
 				this.permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
 				()-> "User " + user + " cannot read action " + action.getName(), DotSecurityException.class);
 
@@ -622,7 +613,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
 		if (null != action) {
 
-			DotAssert.isTrue(permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
+			DotPreconditions.isTrue(permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
 						()-> "User " + user + " cannot read action " + action.getName(),
 						DotSecurityException.class);
 		}
@@ -634,7 +625,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions) throws DotDataException {
 
-		DotAssert.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
+		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme",
 				DoesNotExistException.class);
 
@@ -740,7 +731,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 
-		DotAssert.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
+		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme", DoesNotExistException.class);
 
 		if (!this.isValidShowOn(action.getShowOn())) {
