@@ -197,6 +197,9 @@ public class PageResource {
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
                                    @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
+
+        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
+
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -362,6 +365,10 @@ public class PageResource {
                                                 @PathParam("contentletId") final String contentletId,
                                                 @PathParam("order") final int order, @PathParam("uid") final String uid,
                                                 @PathParam("pageId") final String pageId) {
+
+        Logger.debug(this, String.format(
+                "Adding content to container: containerId -> %s contentletId-> %s uid -> %s pageId -> %s order -> %s",
+                containerId, contentletId, uid, pageId, order));
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();

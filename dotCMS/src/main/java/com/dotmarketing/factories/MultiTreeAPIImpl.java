@@ -26,11 +26,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     final User systemUser = APILocator.systemUser();
 
 
-    public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
-        MultiTreeFactory.saveMultiTrees(pageId, mTrees);
+    public void saveMultiTrees(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
+        Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", multiTrees));
+        MultiTreeFactory.saveMultiTrees(pageId, multiTrees);
     }
 
     public void saveMultiTree(final MultiTree multiTree) throws DotDataException {
+        Logger.info(this, String.format("Saving MutiTree: %s", multiTree));
         MultiTreeFactory.saveMultiTree(multiTree);
     }
 
