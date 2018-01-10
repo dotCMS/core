@@ -54,7 +54,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
 
     private static final int DEFAULT_MINIMUM_CONTENT_APPROVERS = 2;
 
-    private boolean shouldStop = false;
+    private boolean shouldStop = Boolean.FALSE;
 
     private static ArrayList<WorkflowActionletParameter> ACTIONLET_PARAMETERS = null;
 
@@ -98,7 +98,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj instanceof WorkFlowActionlet) {
             return getClass().equals(obj.getClass());
         }
@@ -133,22 +133,21 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         final Set<User> hasApproved = getApproversFromHistory(historyList, requiredContentApprovers,
                 processor.getAction().getId(), minimumContentApprovers);
         if (hasApproved.size() < minimumContentApprovers) {
-            this.shouldStop = true;
+            this.shouldStop = Boolean.TRUE;
             // Keep the workflow process on the same step
             processor.setNextStep(processor.getStep());
-            // Send email to users who have NOT approved only
+            // Assign the workflow step for next assignee and send an
+            // email ONLY to the users who have NOT approved
             final List<String> emails = new ArrayList<>();
+            boolean setNextAssign = Boolean.TRUE;
             for (final User user : requiredContentApprovers) {
                 if (!hasApproved.contains(user)) {
                     emails.add(user.getEmailAddress());
                 }
-            }
-            // Assign the workflow step for next assignee
-            for (final User user : requiredContentApprovers) {
-                if (!hasApproved.contains(user)) {
+                if (setNextAssign && !hasApproved.contains(user)) {
                     try {
                         processor.setNextAssign(APILocator.getRoleAPI().getUserRole(user));
-                        break;
+                        setNextAssign = Boolean.FALSE;
                     } catch (DotDataException e) {
                         Logger.error(this,
                                 "An error occurred when reassigning workflow step to user '" + user

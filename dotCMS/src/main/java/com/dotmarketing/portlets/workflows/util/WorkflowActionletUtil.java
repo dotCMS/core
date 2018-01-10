@@ -123,7 +123,9 @@ public class WorkflowActionletUtil {
         try {
             paramValue = (T) parameter.getValue();
         } catch (Exception e) {
-            // Parameter value could not be accessed
+            Logger.debug(WorkflowActionletUtil.class,
+                    "Value of parameter '" + parameter.getId()
+                            + "' could not be returned.", e);
         }
         return paramValue;
     }
