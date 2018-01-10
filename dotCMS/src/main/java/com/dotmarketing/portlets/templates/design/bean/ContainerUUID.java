@@ -7,12 +7,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ContainerUUID {
 
-    private String identifier;
-    private String uuid;
+    private final String identifier;
+    private final String uuid;
 
 
-    public ContainerUUID(@JsonProperty("identifier") String containerIdentifier,
-                         @JsonProperty("uuid") String containerUUID) {
+    public ContainerUUID(final @JsonProperty("identifier") String containerIdentifier,
+                         final @JsonProperty("uuid") String containerUUID) {
 
         this.identifier = containerIdentifier;
         this.uuid = containerUUID;

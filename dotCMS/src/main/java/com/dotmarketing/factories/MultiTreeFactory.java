@@ -273,25 +273,25 @@ public class MultiTreeFactory {
      * @throws DotDataException
      */
     @WrapInTransaction
-    public static void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException {
+    public static void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty()) {
             throw new DotDataException("empty list passed in");
         }
 
-        Logger.debug(MultiTreeFactory.class, String.format("Saving page's content", mTrees));
+        Logger.debug(MultiTreeFactory.class, String.format("Saving page's content: %s", mTrees));
 
-        DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
+        final DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
                 .addParam(pageId);
         db.loadResult();
 
         final List<Params> params = list();
-        for (MultiTree tree : mTrees) {
+        for (final MultiTree tree : mTrees) {
             params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
         }
 
         db.executeBatch(INSERT_SQL, params);
 
-        MultiTree mTree = mTrees.get(0);
+        final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
 

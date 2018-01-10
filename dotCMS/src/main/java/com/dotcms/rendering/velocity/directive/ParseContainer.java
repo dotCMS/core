@@ -20,7 +20,6 @@ public class ParseContainer extends DotDirective {
 
 	@Override
 	public final String getName() {
-
 		return "parseContainer";
 	}
 
@@ -33,9 +32,8 @@ public class ParseContainer extends DotDirective {
 	String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,
 			final String[] arguments) {
 	    final String id = arguments[0];
-        final String uid = (arguments.length>1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  DEFAULT_UUID_VALUE;
+        final String uid = (arguments.length > 1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  DEFAULT_UUID_VALUE;
 
-        
 		return "/" +params.mode.name() + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;
 		             
 	}

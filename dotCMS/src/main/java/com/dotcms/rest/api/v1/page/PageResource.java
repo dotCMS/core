@@ -88,8 +88,9 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
-    public Response loadJson(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
+    public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                             @PathParam("uri") final String uri,
+                             @QueryParam("live") @DefaultValue("true")  final boolean live) {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -349,8 +350,6 @@ public class PageResource {
      * @throws IOException
      * @throws IllegalAccessException
      * @throws InstantiationException
-     * @throws InvocationTargetException
-     * @throws NoSuchMethodException
      */
     @POST
     @JSONP
@@ -358,35 +357,42 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("{pageId}/add/container/{containerId}/content/{contentletId}/uid/{uid}/order/{order}")
-    public final Response addContentToContainer(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
+    public final Response addContentToContainer(@Context final HttpServletRequest req,
                                                 @PathParam("containerId") final String containerId,
                                                 @PathParam("contentletId") final String contentletId,
                                                 @PathParam("order") final int order, @PathParam("uid") final String uid,
-                                                @PathParam("pageId") final String pageId)
-            throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
-            ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
-            InvocationTargetException, NoSuchMethodException {
+                                                @PathParam("pageId") final String pageId) {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
         final Language id = WebAPILocator.getLanguageWebAPI()
                 .getLanguage(req);
+        Response res = null;
 
-        final Contentlet contentlet = pageResourceHelper.getContentlet(user, mode, id, contentletId);
-        final Container container = pageResourceHelper.getContainer(containerId, user, mode);
-        final Contentlet page = pageResourceHelper.getPage(user, pageId);
+        try {
+            final Contentlet contentlet = pageResourceHelper.getContentlet(user, mode, id, contentletId);
+            final Container container = pageResourceHelper.getContainer(containerId, user, mode);
+            final Contentlet page = pageResourceHelper.getPage(user, pageId);
 
-        if (page == null || contentlet == null || container == null) {
-            return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+            if (page == null || contentlet == null || container == null) {
+                return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+            }
+
+            pageResourceHelper.checkPagePermission(user, page);
+            pageResourceHelper.checkPermission(user, contentlet, container);
+            pageResourceHelper.saveMultiTree(containerId, contentletId, order, uid, page);
+
+            res = Response.ok("ok").build();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        } catch (DotSecurityException e) {
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
         }
 
-        pageResourceHelper.checkPagePermission(user, page);
-        pageResourceHelper.checkPermission(user, contentlet, container);
-        pageResourceHelper.saveMultiTree(containerId, contentletId, order, uid, page);
-
-        return Response.ok("ok")
-                .build();
+        return res;
     }
 
     /**
@@ -416,16 +422,16 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
-                                     PageContainerForm pageContainerForm) {
+                                     final PageContainerForm pageContainerForm) {
 
-        Logger.debug(this, String.format("Saving page's content", pageContainerForm.getRequestJson()));
+        Logger.debug(this, String.format("Saving page's content: %s", pageContainerForm.getRequestJson()));
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         Response res = null;
 
         try {
-            Contentlet page = pageResourceHelper.getPage(user, pageId);
+            final Contentlet page = pageResourceHelper.getPage(user, pageId);
             if (page == null) {
                 return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
             }

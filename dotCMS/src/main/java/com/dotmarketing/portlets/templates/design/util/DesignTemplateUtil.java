@@ -27,7 +27,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  * @date	Apr 19, 2012
  */
 public class DesignTemplateUtil {
-
+	private static final Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
 
 	/**
 	 * Returns the body of the drawed template, including all the main HTML tags for the preview functionality
@@ -362,9 +362,6 @@ public class DesignTemplateUtil {
      * @return
      */
     private static List<ContainerUUID> getColumnContainers (Element splitBody ) {
-
-        //parseContainer regex
-        Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
 
         //Getting the containers for this html fragment
         List<ContainerUUID> containers = new ArrayList<>();

@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
 import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
 import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -92,41 +94,39 @@ public class PageResourceHelper implements Serializable {
     }
 
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
-        final List<MultiTree> multiTres = new ArrayList<>();
+        final List<MultiTree> multiTres = ImmutableList.of();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final  List<String> contentIds = containerEntry.getContentIds();
 
-            for (String contentletId : contentIds) {
-                final MultiTree mt = new MultiTree().setContainer(containerEntry.getContainerId())
+            for (final String contentletId : contentIds) {
+                final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                         .setContentlet(contentletId)
                         .setRelationType(containerEntry.getContainerUUID())
-                        .setTreeOrder(i)
+                        .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
-                multiTres.add(mt);
-
-                i++;
+                multiTres.add(multiTree);
             }
         }
 
         multiTreeAPI.saveMultiTrees(pageId, multiTres);
     }
 
-    public void saveMultiTree(@PathParam("containerId") String containerId,
-                               @PathParam("contentletId") String contentletId,
-                               @PathParam("order") int order,
-                               @PathParam("uid") String uid,
-                               Contentlet page) throws DotDataException {
+    public void saveMultiTree(final String containerId,
+                              final String contentletId,
+                              final int order,
+                              final String uid,
+                              final Contentlet page) throws DotDataException {
 
-        final MultiTree mt = new MultiTree().setContainer(containerId)
+        final MultiTree multiTree = new MultiTree().setContainer(containerId)
                 .setContentlet(contentletId)
                 .setRelationType(uid)
                 .setTreeOrder(order)
                 .setHtmlPage(page.getIdentifier());
 
-        multiTreeAPI.saveMultiTree(mt);
+        multiTreeAPI.saveMultiTree(multiTree);
     }
 
     /**
@@ -186,7 +186,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     public String getPageRendered(final HttpServletRequest request, final HttpServletResponse response, final User user,
-                                  final String uri, PageMode mode) throws Exception {
+                                  final String uri, final PageMode mode) throws Exception {
 
         final HTMLPageAsset page =  this.getPage(request, user, uri, mode);
         return this.getPageRendered(page, request, response, user, mode);
@@ -194,7 +194,7 @@ public class PageResourceHelper implements Serializable {
 
     @CloseDB
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
-                                  final HttpServletResponse response, final User user, PageMode mode) throws Exception {
+                                  final HttpServletResponse response, final User user, final PageMode mode) throws Exception {
 
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
@@ -208,17 +208,7 @@ public class PageResourceHelper implements Serializable {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
 
-        switch (mode) {
-            case PREVIEW_MODE:
-                return new VelocityPreviewMode(request, response, page.getURI(), site).eval();
-
-            case EDIT_MODE:
-                return new VelocityEditMode(request, response, page.getURI(), site).eval();
-
-            default:
-                return new VelocityLiveMode(request, response, page.getURI(), site).eval();
-
-        }
+        return VelocityUtil.eval(mode, request, response, page.getURI(), site);
     }
 
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
@@ -228,7 +218,7 @@ public class PageResourceHelper implements Serializable {
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
 
-        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final String pageUri = URLUtils.addSlashIfNeeded(uri);
         return  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
     }

@@ -2,6 +2,10 @@ package com.dotcms.rendering.velocity.util;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.visitor.domain.Visitor;
@@ -32,6 +36,9 @@ import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,7 +56,7 @@ import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
-
+import java.util.Map;
 
 public class VelocityUtil {
     public final static String REFRESH="refresh";
@@ -57,7 +64,21 @@ public class VelocityUtil {
     public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
-	
+
+	private static final Map<PageMode, Function> pageModeVelocityMap = new ConcurrentHashMap<>();
+
+	static {
+		pageModeVelocityMap.put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new);
+		pageModeVelocityMap.put(PageMode.EDIT_MODE, VelocityEditMode::new);
+		pageModeVelocityMap.put(PageMode.LIVE, VelocityLiveMode::new);
+		pageModeVelocityMap.put(PageMode.ADMIN_MODE, VelocityLiveMode::new);
+	}
+
+	@FunctionalInterface
+	private interface Function {
+		VelocityModeHandler apply(HttpServletRequest request, HttpServletResponse response, String uri, Host host);
+	}
+
 	private synchronized static void init(){
 		if(ve != null)
 			return;
@@ -435,4 +456,18 @@ public class VelocityUtil {
 		return velocityRootPath;
 	}
 
+	/**
+	 * Render a page in the specific {@link PageMode}
+	 *
+	 * @param pageMode
+	 * @param request
+	 * @param response
+	 * @param uri
+	 * @param host
+	 * @return
+	 */
+	public static String eval(PageMode pageMode, HttpServletRequest request, HttpServletResponse response, String uri,
+							  Host host) {
+		return pageModeVelocityMap.get(pageMode).apply(request, response, uri, host).eval();
+	}
 }

@@ -361,7 +361,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		if (sidebar != null && sidebar.getContainers() != null) {
 			result.addAll(sidebar.getContainers().stream()
-					.map(containerUUID -> containerUUID.getIdentifier())
+					.map(ContainerUUID::getIdentifier)
 					.collect(Collectors.toList()));
 		}
 
@@ -379,7 +379,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			for (TemplateLayoutColumn column : columns) {
 				List<String> columnContainers = column.getContainers().stream()
-						.map(containerUUID -> containerUUID.getIdentifier())
+						.map(ContainerUUID::getIdentifier)
 						.collect(Collectors.toList());
 				result.addAll(columnContainers);
 			}

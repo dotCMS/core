@@ -5,12 +5,12 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContex
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -24,7 +24,7 @@ public class PageContainerForm {
     private final String requestJson;
 
     public PageContainerForm(final List<ContainerEntry> entries, final String requestJson) {
-        this.entries = entries;
+        this.entries = ImmutableList.copyOf(entries);
         this.requestJson = requestJson;
     }
 
@@ -48,16 +48,16 @@ public class PageContainerForm {
                 throws IOException {
 
             final JsonNode jsonNode = jsonParser.readValueAsTree();
-            final List<ContainerEntry> entries = new ArrayList<>();
+            final List<ContainerEntry> entries = ImmutableList.of();
 
-            for (JsonNode jsonElement : jsonNode) {
+            for (final JsonNode jsonElement : jsonNode) {
                 final String containerId = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME).asText();
                 final String containerUUID = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME).asText();
                 final ContainerEntry containerEntry = new ContainerEntry(containerId, containerUUID);
 
                 final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);
 
-                containerNode.forEach(contentId -> containerEntry.addContentId(contentId.textValue()));
+                containerNode.forEach((JsonNode contentId) -> containerEntry.addContentId(contentId.textValue()));
                 entries.add(containerEntry);
             }
 
@@ -68,11 +68,12 @@ public class PageContainerForm {
     static final class ContainerEntry {
         private final String id;
         private final String uuid;
-        private final List<String> contentIds = new ArrayList<>();
+        private final List<String> contentIds;
 
-        public ContainerEntry(final String id, String uuid) {
+        public ContainerEntry(final String id, final String uuid) {
             this.id = id;
             this.uuid = uuid;
+            contentIds = new ArrayList<>();
         }
 
         public String getContainerId() {

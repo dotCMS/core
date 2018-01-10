@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
@@ -186,6 +187,8 @@ public class StringUtils {
 
         return interpolateMatches;
     }
-    
-    
+
+    public static <T> T getOrDefault (final T value, final Supplier<T> defaultSupplier) {
+        return value != null ? value : defaultSupplier.get();
+    }
 }
