@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,13 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 	public SaveContentActionlet () {
 
-		this.contentletAPI = APILocator.getContentletAPI();
+		this(APILocator.getContentletAPI());
+	}
+
+	@VisibleForTesting
+	protected SaveContentActionlet (final ContentletAPI contentletAPI) {
+
+		this.contentletAPI = contentletAPI;
 	}
 
 	/**
@@ -48,7 +55,6 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 			Logger.debug(this,
 					"Saving the content of the contentlet: " + contentlet.getIdentifier());
-
 
 			final Contentlet checkoutContentlet = this.contentletAPI.checkout
 					(contentlet.getInode(), processor.getUser(), false);
