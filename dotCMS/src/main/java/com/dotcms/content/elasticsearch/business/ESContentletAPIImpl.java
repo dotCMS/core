@@ -2555,11 +2555,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Tree treeToUpdate = TreeFactory.getTree(newTree);
                     treeToUpdate.setTreeOrder(newTreePosistion);
 
-                    if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())) {
-                        TreeFactory.saveTree(treeToUpdate);
-                    } else {
-                        TreeFactory.saveTree(newTree);
-                    }
+                    TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())?treeToUpdate:newTree);
 
                     treePosition++;
                 }
