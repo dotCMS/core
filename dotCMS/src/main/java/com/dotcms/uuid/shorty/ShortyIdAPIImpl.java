@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 
 public class ShortyIdAPIImpl implements ShortyIdAPI {
@@ -50,7 +51,12 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS,
         ShortType.CACHE_MISS);
   }
-
+  
+  @Override
+  public String randomShorty() {
+      return shortify(UUIDGenerator.generateUuid());
+  }
+  
   @Override
   public String shortify(final String shortStr) {
     try {
@@ -129,6 +135,11 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   }
 
+  
+  
+  
+  
+  
   private ShortyId transformMap(final String shorty, final List<Map<String, Object>> results) {
     if (results == null || results.size() < 1) {
       return noShorty(shorty);

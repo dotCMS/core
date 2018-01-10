@@ -1,4 +1,4 @@
-package com.liferay.portlet;
+package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -16,9 +15,9 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Jonathan Gamba 11/29/17
  */
-public class PortletUtil {
+public class DwrUtil {
 
-    private PortletUtil() {
+    private DwrUtil() {
         throw new IllegalStateException("Utility class");
     }
 
@@ -64,7 +63,7 @@ public class PortletUtil {
                     "User [%s] does not have access to the [%s] Portlet",
                     loggedInUser.getEmailAddress(), portletId);
 
-            SecurityLogger.logInfo(PortletUtil.class, errorMessage);
+            SecurityLogger.logInfo(DwrUtil.class, errorMessage);
             throw new DotSecurityException(errorMessage);
         }
     }
@@ -87,7 +86,7 @@ public class PortletUtil {
             userId = loggedInUser.getUserId();
         }
         if (loggedInUser == null) {
-            SecurityLogger.logInfo(UserAjax.class,
+            SecurityLogger.logInfo(DwrUtil.class,
                     "unauthorized attempt to call getUserById by user " + userId + " from "
                             + remoteIp);
             throw new DotSecurityException("not authorized");

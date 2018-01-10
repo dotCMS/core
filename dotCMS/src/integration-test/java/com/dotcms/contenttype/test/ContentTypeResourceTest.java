@@ -9,6 +9,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
 import com.dotcms.util.ConfigTestHelper;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -66,9 +67,11 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 			}
 		}
 
-		ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeResource resource = new ContentTypeResource();
 
-		Response response = resource.createType(getHttpRequest(), json);
+		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+		ContentTypeForm contentTypeForm = contentTypeFormDeserialize.buildForm(json);
+		Response response = resource.createType(getHttpRequest(), contentTypeForm);
 
 		int x = response.getStatus();
 		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);

@@ -23,6 +23,7 @@ import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
@@ -50,7 +51,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private WorkflowAction convertAction(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowAction action = new WorkflowAction();
-		row.put("stepId", row.get("step_id"));
 		row.put("schemeId", row.get("scheme_id"));
 		row.put("condition", row.get("condition_to_progress"));
 		row.put("nextStep", row.get("next_step_id"));
@@ -316,8 +316,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		// update scheme mod date
 		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 
 	}
@@ -914,6 +913,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	} // updateOrder.
 
+	private String getNextStep (final WorkflowAction workflowAction) {
+
+		return (!UtilMethods.isSet(workflowAction.getNextStep()))?
+				WorkflowAction.CURRENT_STEP: workflowAction.getNextStep();
+	}
+
 	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
@@ -924,16 +929,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			action.setId(UUIDGenerator.generateUuid());
 		}
 
-		final DotConnect db = new DotConnect();
+		final String     nextStep = this.getNextStep(action);
+		final DotConnect db       = new DotConnect();
 		if (isNew) {
 			db.setSQL(sql.INSERT_ACTION);
 			db.addParam(action.getId());
 			db.addParam(action.getSchemeId());
-			// we are not longer using the stepId, the relationship now is with schemeId, however it needs a step id to work
-			db.addParam(UtilMethods.isSet(action.getStepId())?action.getStepId():action.getNextStep());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
-			db.addParam(action.getNextStep());
+			db.addParam(nextStep);
 			db.addParam(action.getNextAssign());
 			db.addParam(action.getOrder());
 			db.addParam(action.isAssignable());
@@ -948,7 +952,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getSchemeId());
 			db.addParam(action.getName());
 			db.addParam(action.getCondition());
-			db.addParam(action.getNextStep());
+			db.addParam(nextStep);
 			db.addParam(action.getNextAssign());
 			db.addParam(action.getOrder());
 			db.addParam(action.isAssignable());
@@ -1139,8 +1143,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveSchemesForStruct(String struc, List<WorkflowScheme> schemes) throws DotDataException {
-
+	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
 		}
@@ -1148,33 +1151,41 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.DELETE_SCHEME_FOR_STRUCT);
-			db.addParam(struc);
+			db.addParam(contentTypeInode);
 			db.loadResult();
 
-            for(WorkflowScheme scheme : schemes) {
+			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
-				db.addParam(scheme.getId());
-				db.addParam(struc);
+				db.addParam(id);
+				db.addParam(contentTypeInode);
 				db.loadResult();
 			}
 			// update all tasks for the content type and reset their step to
 			// null
 			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT);
 			db.addParam((Object) null);
-			db.addParam(struc);
+			db.addParam(contentTypeInode);
 			db.loadResult();
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
 
-			cache.removeStructure(struc);
+			cache.removeStructure(contentTypeInode);
 
 			cache.clearStepsCache();
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage());
 		}
+	}
+
+	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException {
+		List<String> ids = schemes.stream()
+				.map(scheme -> scheme.getId())
+				.collect(Collectors.toList());
+
+		this.saveSchemeIdsForContentType(contentTypeInode, ids);
 	}
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
@@ -1441,8 +1452,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		WorkflowActionClass clazz = findActionClass(param.getActionClassId());
 		WorkflowAction action = findAction(clazz.getActionId());
-		WorkflowStep step = findStep(action.getStepId());
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
 	}
 

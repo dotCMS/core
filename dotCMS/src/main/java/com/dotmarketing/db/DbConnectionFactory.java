@@ -637,7 +637,8 @@ public class DbConnectionFactory {
 
             isConstraintViolationException =
                     (throwable instanceof SQLIntegrityConstraintViolationException ||
-                            throwable.getClass().getName().contains("IntegrityConstraint"));
+                            throwable.getClass().getName().contains("IntegrityConstraint")   ||
+                            throwable.getMessage().toLowerCase().contains("duplicate"));
         }
 
         return isConstraintViolationException;

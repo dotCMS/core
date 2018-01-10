@@ -12,7 +12,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.PaginationUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -30,7 +29,6 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -66,8 +64,9 @@ public class WorkflowResource {
     }
 
     /**
-     * Returns all schemes non-archived. 401 if the user does not have permission.
+     * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
      * @param request  HttpServletRequest
+     * @param contentTypeId String content type id to get the schemes associated to it.
      * @return Response
      */
     @GET
@@ -150,7 +149,7 @@ public class WorkflowResource {
     } // findAllSchemesAndSchemesByContentType.
 
     /**
-     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -195,7 +194,52 @@ public class WorkflowResource {
     } // findSteps.
 
     /**
-     * Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.
+     * Finds the available actions for an inode
+     * @param request HttpServletRequest
+     * @param inode String
+     * @return Response
+     */
+    @GET
+    @Path("/contentlet/{inode}/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAvailableActions(@Context final HttpServletRequest request,
+                                               @PathParam("inode") final String inode) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowAction> actions;
+
+        try {
+
+            Logger.debug(this, "Getting the available actions for the contentlet inode: " + inode);
+            actions   = this.workflowHelper.findAvailableActions(inode,
+                            initDataObject.getUser());
+            response  =
+                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findAvailableActions, contentlet inode: " + inode +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findStepsByScheme, contentlet inode: " + inode +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAvailableActions.
+
+    /**
+     * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param actionId String
      * @return Response

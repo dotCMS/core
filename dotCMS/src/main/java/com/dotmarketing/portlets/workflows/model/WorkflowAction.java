@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -29,6 +26,10 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 
 	private static final long serialVersionUID = 1L;
+	/**
+	 * Key to store when the next step is current step.
+	 */
+	public  static final String CURRENT_STEP = "currentstep";
 
 	private String id;
 	private String name;
@@ -230,6 +231,15 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setCondition(String condition) {
 		this.condition = condition;
+	}
+
+	/**
+	 * Return true if the next step is the current step
+	 * @return boolean
+	 */
+	public boolean isNextStepCurrentStep() {
+
+		return CURRENT_STEP.equalsIgnoreCase(this.getNextStep());
 	}
 
 	public String getNextStep() {

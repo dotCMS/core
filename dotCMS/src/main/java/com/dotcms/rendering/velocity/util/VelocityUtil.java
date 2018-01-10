@@ -398,7 +398,7 @@ public class VelocityUtil {
      * This returns the proper ihtml page based on id, state and language
      * 
      * @param id
-     * @param request
+     * @param tryLang
      * @param live
      * @return
      * @throws DotDataException
@@ -424,7 +424,7 @@ public class VelocityUtil {
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } else {
-                throw new DotDataException(
+                throw new ResourceNotFoundException(
                         "Can't find content. Identifier: " + id.getId() + ", Live: " + live + ", Lang: " + tryLang, dse);
             }
 

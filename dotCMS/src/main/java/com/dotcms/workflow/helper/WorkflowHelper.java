@@ -1,10 +1,10 @@
 package com.dotcms.workflow.helper;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
@@ -17,16 +17,23 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
@@ -36,8 +43,9 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
-    private final WorkflowAPI workflowAPI;
-    private final RoleAPI     roleAPI;
+    private final WorkflowAPI   workflowAPI;
+    private final RoleAPI       roleAPI;
+    private final ContentletAPI contentletAPI;
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -49,18 +57,52 @@ public class WorkflowHelper {
 
     private WorkflowHelper() {
         this( APILocator.getWorkflowAPI(),
-                APILocator.getRoleAPI());
+                APILocator.getRoleAPI(),
+                APILocator.getContentletAPI());
     }
 
 
     @VisibleForTesting
     protected WorkflowHelper(final WorkflowAPI workflowAPI,
-                             final RoleAPI     roleAPI) {
+                             final RoleAPI     roleAPI,
+                             final ContentletAPI contentletAPI) {
 
-        this.workflowAPI = workflowAPI;
-        this.roleAPI     = roleAPI;
+        this.workflowAPI   = workflowAPI;
+        this.roleAPI       = roleAPI;
+        this.contentletAPI = contentletAPI;
     }
 
+    /**
+     * Finds the available actions for an inode and user.
+     * @param inode String
+     * @param user  User
+     * @return List of WorkflowAction
+     */
+    @CloseDBIfOpened
+    public List<WorkflowAction> findAvailableActions(final String inode, final User user) {
+
+        Contentlet contentlet        = null;
+        List<WorkflowAction> actions = Collections.emptyList();
+
+        try {
+
+            Logger.debug(this, "Asking for the available actions for the inode: " + inode);
+            contentlet =
+                    this.contentletAPI.find(inode, user, true);
+
+            if (null != contentlet) {
+
+                actions = this.workflowAPI.findAvailableActions(contentlet, user);
+            }
+        } catch (DotDataException  | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return actions;
+    } // findAvailableActions.
 
     /**
      * Reorder the action associated to the scheme.
@@ -259,6 +301,25 @@ public class WorkflowHelper {
 
         return schemes;
     } // findSchemesByContentType.
+
+    public void saveSchemesByContentType(final String contentTypeId, final User user, final List<String> workflowIds) {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        try {
+
+            Logger.debug(this, String.format("Saving the schemes: %s by content type: %s",
+                    String.join(",", workflowIds), contentTypeId));
+
+            this.workflowAPI.saveSchemeIdsForContentType(contentTypeAPI.find(contentTypeId), workflowIds);
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+    }
 
     /**
      * Finds the non-archived schemes
