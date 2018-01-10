@@ -36,7 +36,6 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,

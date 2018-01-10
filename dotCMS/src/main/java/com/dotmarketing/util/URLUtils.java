@@ -126,7 +126,7 @@ public class URLUtils {
 		return parsedUrl;
 	}
 
-	public static String addSlashIfNeeded (String uri) {
+	public static String addSlashIfNeeded (final String uri) {
 		return (uri.length() > 0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
 	}
 }

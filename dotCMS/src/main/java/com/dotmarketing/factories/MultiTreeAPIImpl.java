@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
@@ -54,21 +55,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             try {
                 contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode, -1,
                         systemUser, false);
-            }catch(Exception e){
+            }catch(DotDataException | DotSecurityException | DotContentletStateException e){
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
-            if(contentlet==null ) {
-                 continue;
+            if(contentlet!=null ) {
+                final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
+                        ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
+                        : new LinkedHashSet<>();
+                if(container != null && myContents.size() < container.getMaxContentlets()) {
+                    myContents.add(multiTree.getContentlet());
+                }
+
+                pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
              };
-
-            final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
-                    ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
-                    : new LinkedHashSet<>();
-                    if(container != null && myContents.size() < container.getMaxContentlets()) {
-                        myContents.add(multiTree.getContentlet());
-                    }
-
-            pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
 
         }
         

@@ -2,12 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
-import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
-import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
-import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 

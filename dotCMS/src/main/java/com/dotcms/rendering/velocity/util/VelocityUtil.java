@@ -37,9 +37,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -466,8 +463,9 @@ public class VelocityUtil {
 	 * @param host
 	 * @return
 	 */
-	public static String eval(PageMode pageMode, HttpServletRequest request, HttpServletResponse response, String uri,
-							  Host host) {
+	public static String eval(final PageMode pageMode, final HttpServletRequest request,
+							  final HttpServletResponse response, final String uri,
+							  final Host host) {
 		return pageModeVelocityMap.get(pageMode).apply(request, response, uri, host).eval();
 	}
 }

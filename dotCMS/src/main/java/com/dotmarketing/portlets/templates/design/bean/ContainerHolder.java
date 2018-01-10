@@ -44,7 +44,7 @@ public class ContainerHolder {
                 if ( this.preview ) {
                     sb.append( PreviewTemplateUtil.getMockBodyContent() );
                 } else {
-                    String uuid = StringUtils.getOrDefault(container.getUUID(), () -> ParseContainer.DEFAULT_UUID_VALUE);
+                    final String uuid = StringUtils.getOrDefault(container.getUUID(), () -> ParseContainer.DEFAULT_UUID_VALUE);
                     sb.append( String.format(PARSE_CONTAINER_STATEMENT, container.getIdentifier(), uuid) );
                 }
             }
