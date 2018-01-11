@@ -6,14 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.transform.JsonTransformer;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -40,15 +33,14 @@ import com.liferay.portal.model.User;
  */
 public class DotTemplateTool  {
 
-    //private static HttpServletRequest request;
-    //Context ctx;
-    //private static User sysUser = null;
     private static Cache<String, Map<String, Object>> cache = CacheBuilder.<String, Map<String, Object>>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
         .build(); 
     private static Cache<String, TemplateLayout> layoutCache = CacheBuilder.<String,TemplateLayout>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
         .build();
+
+    private DotTemplateTool(){}
 
     /**
      * Given a theme id we will parse it and return the Layout for the given template

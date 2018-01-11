@@ -14,8 +14,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 /**
