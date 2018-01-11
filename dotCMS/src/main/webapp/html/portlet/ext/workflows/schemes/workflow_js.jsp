@@ -1198,7 +1198,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 			href 		: "/html/portlet/ext/workflows/schemes/view_action_class_params.jsp?actionClassId=" + actionClassId
 		});
 
-
+		dojo.body().appendChild(dia.domNode);
 
 
 		dia.show();

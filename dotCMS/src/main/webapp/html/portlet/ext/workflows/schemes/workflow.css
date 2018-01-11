@@ -135,9 +135,10 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	float:right;
 }
 #actionClassParamsDia{
-	width:600px;
-	min-height:250px;
-	max-height:600px;
+	min-width:600px;
+	max-width:70%;
+	min-height:400px;
+	max-height:90%;
 	overflow:auto;
 }
 .wfnoSubActions{
@@ -145,8 +146,10 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	padding:10px;	
 }
 .wfParamTextArea{
-	min-height:40px;
-	max-height:120px;	
+	min-height:75px;
+	max-height:200px;	
+	width:300px;
+
 }
 
 #stepEditDia .escalation-row {
