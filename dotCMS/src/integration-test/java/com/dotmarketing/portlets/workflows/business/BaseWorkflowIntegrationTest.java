@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.repackage.ucar.units.Base;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -29,7 +30,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws AlreadyExistException
      * @throws DotDataException
      */
-    protected CreateSchemeStepActionResult createSchemeStepActionActionlet (final String schemeName,
+    protected static CreateSchemeStepActionResult createSchemeStepActionActionlet (final String schemeName,
                                                                             final String stepName,
                                                                             final String actionName,
                                                                             final Class  actionClass) throws AlreadyExistException, DotDataException {
@@ -55,7 +56,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         workflowAPI.saveStep(step);
 
         final CreateSchemeStepActionResult result =
-                this.createActionActionlet(scheme.getId(), step.getId(), actionName, actionClass);
+                createActionActionlet(scheme.getId(), step.getId(), actionName, actionClass);
 
         return new CreateSchemeStepActionResult(scheme, step, result.action, result.actionClass);
     }
@@ -70,7 +71,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws AlreadyExistException
      * @throws DotDataException
      */
-    protected CreateSchemeStepActionResult createActionActionlet (final String schemeId,
+    protected static CreateSchemeStepActionResult createActionActionlet (final String schemeId,
                                                                             final String stepId,
                                                                             final String actionName,
                                                                             final Class  actionClass) throws AlreadyExistException, DotDataException {
@@ -98,8 +99,8 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             workflowActionClass.setOrder(0);
             workflowAPI.saveActionClass(workflowActionClass);
         } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
+            Logger.error(BaseWorkflowIntegrationTest.class, e.getMessage());
+            Logger.debug(BaseWorkflowIntegrationTest.class, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
         }
 
@@ -113,7 +114,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws AlreadyExistException
      */
-    protected void cleanScheme (final WorkflowScheme scheme) throws DotSecurityException, DotDataException, AlreadyExistException {
+    protected static void cleanScheme (final WorkflowScheme scheme) throws DotSecurityException, DotDataException, AlreadyExistException {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final List<WorkflowAction> schemeActions = workflowAPI.findActions(scheme, APILocator.systemUser());
