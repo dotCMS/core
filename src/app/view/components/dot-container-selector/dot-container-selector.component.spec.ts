@@ -122,7 +122,10 @@ describe('ContainerSelectorComponent', () => {
 
         searchableDropdownComponent.change.emit(containers[0]);
 
-        expect(comp.selectedContainersList).toContain(containers[0]);
+        expect(comp.selectedContainersList[0].container).toEqual
+
+        (containers[0]);
+        expect(comp.selectedContainersList[0].uuid).not.toBeNull();
         expect(comp.selectedContainersList.length).toEqual(1);
     });
 
@@ -137,8 +140,6 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         bodySelectorListItems[0].children[0].click();
-
-        expect(comp.selectedContainersList).not.toContain(containers[0]);
         expect(comp.selectedContainersList.length).toEqual(0);
     });
 

@@ -1,15 +1,20 @@
+
+import * as _ from 'lodash';
 import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject } from 'rxjs/Subject';
 import { ActivatedRoute } from '@angular/router';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
 import { DotConfirmationService } from '../../api/services/dot-confirmation';
+import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotLoadingIndicatorService } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotMessageService } from '../../api/services/dot-messages-service';
+import { DotRenderedPage } from '../dot-edit-page/shared/models/dot-rendered-page.model';
+import { DotGlobalMessageService } from '../../view/components/_common/dot-global-message/dot-global-message.service';
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
-    styleUrls: ['./dot-edit-content.component.scss'],
+    styleUrls: ['./dot-edit-content.component.scss']
 })
 export class DotEditContentComponent implements OnInit {
     @ViewChild('contentletActionsIframe') contentletActionsIframe: ElementRef;
@@ -18,49 +23,66 @@ export class DotEditContentComponent implements OnInit {
     contentletActionsUrl: SafeResourceUrl;
     dialogTitle: string;
     source: any;
+    pageIdentifier: string;
+
+    isModelUpdated = false;
+
+    private originalValue: any;
 
     constructor(
         private dotConfirmationService: DotConfirmationService,
-        private ref: ChangeDetectorRef,
         private route: ActivatedRoute,
         private sanitizer: DomSanitizer,
         private ngZone: NgZone,
         public dotEditContentHtmlService: DotEditContentHtmlService,
+        private dotContainerContentletService: DotContainerContentletService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotGlobalMessageService: DotGlobalMessageService
     ) {}
+
+
 
     ngOnInit() {
         this.dotLoadingIndicatorService.show();
-        this.route.data.pluck('editPageHTML').subscribe((editPageHTML: string) => {
-            this.dotEditContentHtmlService.initEditMode(editPageHTML, this.iframe);
+
+        this.route.data.pluck('editPageHTML').subscribe((editPageHTML: DotRenderedPage) => {
+            this.pageIdentifier = editPageHTML.identifier;
+            this.dotEditContentHtmlService.initEditMode(editPageHTML.render, this.iframe);
 
             this.dotEditContentHtmlService.contentletEvents.subscribe((res) => {
-                switch (res.event) {
-                    case 'edit':
-                        this.editContentlet(res);
-                        break;
-                    case 'add':
-                        this.addContentlet(res);
-                        break;
-                    case 'remove':
-                        this.ngZone.run(() => {
+                this.ngZone.run(() => {
+                    switch (res.event) {
+                        case 'edit':
+                            this.editContentlet(res);
+                            break;
+                        case 'add':
+                            this.addContentlet(res);
+                            break;
+                        case 'remove':
                             this.removeContentlet(res);
-                        });
-                        break;
-                    case 'cancel':
-                        this.closeDialog();
-                        break;
-                    case 'save':
-                        this.closeDialog();
-                        break;
-                    case 'select':
-                        this.closeDialog();
-                        break;
-                    default:
-                        break;
-                }
+                            break;
+                        case 'cancel':
+                        case 'save':
+                        case 'select':
+                            this.closeDialog();
+                            break;
+                        default:
+                            break;
+                    }
+                });
             });
+
+            this.dotEditContentHtmlService.pageModelChange
+                .subscribe(model =>  {
+                    if (this.originalValue) {
+                        this.ngZone.run(() => {
+                            this.isModelUpdated = !_.isEqual(model, this.originalValue);
+                        });
+                    } else {
+                        this.setOriginalValue(model);
+                    }
+                });
         });
 
         this.dotMessageService
@@ -68,7 +90,9 @@ export class DotEditContentComponent implements OnInit {
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.accept',
-                'editpage.content.contentlet.remove.confirmation_message.reject'
+                'editpage.content.contentlet.remove.confirmation_message.reject',
+                'dot.common.message.saving',
+                'dot.common.message.saved'
             ])
             .subscribe();
     }
@@ -76,6 +100,18 @@ export class DotEditContentComponent implements OnInit {
     onHide(): void {
         this.dialogTitle = null;
         this.contentletActionsUrl = null;
+    }
+
+    /**
+     * Save the page's content
+     */
+    saveContent(): void {
+        this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
+        this.dotContainerContentletService.saveContentlet(this.pageIdentifier, this.dotEditContentHtmlService.getContentModel())
+            .subscribe(() => {
+                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+                this.setOriginalValue();
+            });
     }
 
     /**
@@ -87,24 +123,23 @@ export class DotEditContentComponent implements OnInit {
         this.dotLoadingIndicatorService.hide();
     }
 
+    private setOriginalValue(model?: any): void {
+        this.originalValue = model || this.dotEditContentHtmlService.getContentModel();
+        this.isModelUpdated = false;
+    }
+
     private addContentlet($event: any): void {
         this.dotEditContentHtmlService.setContainterToAppendContentlet($event.dataset.dotIdentifier);
         this.loadDialogEditor(
             $event.dataset.dotIdentifier,
-            '/html/ng-contentlet-selector.html?ng=true',
-            $event.contentletEvents,
+            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}`,
+            $event.contentletEvents
         );
     }
 
     private closeDialog(): void {
         this.dialogTitle = null;
         this.contentletActionsUrl = null;
-
-        /*
-            I think because we are triggering the .next() from the jsp the Angular detect changes it's not
-            happenning automatically, so I have to triggered manually so the changes propagates to the template
-        */
-        this.ref.detectChanges();
     }
 
     private editContentlet($event: any): void {
@@ -118,11 +153,6 @@ export class DotEditContentComponent implements OnInit {
     private loadDialogEditor(containerId: string, url: string, contentletEvents: Subject<any>): void {
         this.dialogTitle = containerId;
         this.contentletActionsUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-
-        /*
-            Again, because the click event it's comming form the iframe, we need to trigger the detect changes manually.
-        */
-        this.ref.detectChanges();
 
         /*
             We have an ngIf in the <iframe> to prevent the jsp to load before the dialog shows, so we need to wait that
@@ -149,8 +179,8 @@ export class DotEditContentComponent implements OnInit {
             message: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.message'),
             footerLabel: {
                 acceptLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.accept'),
-                rejectLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.reject'),
-            },
+                rejectLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.reject')
+            }
         });
     }
 }

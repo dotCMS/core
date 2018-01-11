@@ -1,5 +1,7 @@
+import { DotPageContainer } from './dot-page-container.model';
+
 export interface DotLayoutColumn {
-    containers: string[];
+    containers: DotPageContainer[];
     leftOffset: number;
     width: number;
 }

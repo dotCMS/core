@@ -1,3 +1,6 @@
+<dot-edit-page-toolbar class="dot-edit__toolbar" [canSave]="isModelUpdated" (save)="saveContent()">
+</dot-edit-page-toolbar>
+
 <div class="dot-edit__page-wrapper">
     <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
     <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe" (load)="onLoad($event)"></iframe>

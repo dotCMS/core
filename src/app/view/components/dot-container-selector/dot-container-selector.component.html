@@ -15,9 +15,9 @@
         <button class="container-selector__header-remove" pButton icon="fa-close" (click)="remove.emit($event)"></button>
     </div>
     <ul class="container-selector__list">
-        <li *ngFor="let container of selectedContainersList; let i = index" class="container-selector__list-item">
+        <li *ngFor="let dotContainerColumnBox of selectedContainersList; let i = index" class="container-selector__list-item">
             <button pButton icon="fa-trash" (click)="removeContainerItem(i)"></button>
-            {{ container?.name }}
+            {{ dotContainerColumnBox.container?.name }}
         </li>
     </ul>
 </div>

@@ -67,12 +67,22 @@ describe('DotEditLayoutService', () => {
                 {
                     columns: [
                         {
-                            containers: ['56bd55ea-b04b-480d-9e37-5d6f9217dcc3'],
+                            containers: [
+                                {
+                                    identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                                    uuid: '1'
+                                }
+                            ],
                             leftOffset: 1,
                             width: 8
                         },
                         {
-                            containers: ['5363c6c6-5ba0-4946-b7af-cf875188ac2e'],
+                            containers: [
+                                {
+                                    identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                                    uuid: '2'
+                                }
+                            ],
                             leftOffset: 9,
                             width: 4
                         }
@@ -82,14 +92,25 @@ describe('DotEditLayoutService', () => {
                     columns: [
                         {
                             containers: [
-                                'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
-                                'a6e9652b-8183-4c09-b775-26196b09a300'
+                                {
+                                    identifier: 'd71d56b4-0a8b-4bb2-be15-ffa5a23366ea',
+                                    uuid: '3'
+                                },
+                                {
+                                    identifier: 'a6e9652b-8183-4c09-b775-26196b09a300',
+                                    uuid: '4'
+                                }
                             ],
                             leftOffset: 1,
                             width: 3
                         },
                         {
-                            containers: ['6a12bbda-0ae2-4121-a98b-ad8069eaff3a'],
+                            containers: [
+                                {
+                                    identifier: '6a12bbda-0ae2-4121-a98b-ad8069eaff3a',
+                                    uuid: '5'
+                                }
+                            ],
                             leftOffset: 4,
                             width: 3
                         }
@@ -117,10 +138,13 @@ describe('DotEditLayoutService', () => {
             {
                 containers: [
                     {
-                        type: 'containers',
-                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
-                        name: 'Large Column (lg-1)',
-                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+                        container: {
+                            type: 'containers',
+                            identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                            name: 'Large Column (lg-1)',
+                            categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+                        },
+                        uuid: '2'
                     }
                 ],
                 config: {
@@ -141,16 +165,22 @@ describe('DotEditLayoutService', () => {
             {
                 containers: [
                     {
-                        type: 'containers',
-                        identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
-                        name: 'Medium Column (md-1)',
-                        categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
+                        container: {
+                            type: 'containers',
+                            identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                            name: 'Medium Column (md-1)',
+                            categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
+                        },
+                        uuid: '1'
                     },
                     {
-                        type: 'containers',
-                        identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
-                        name: 'Large Column (lg-1)',
-                        categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+                        container: {
+                            type: 'containers',
+                            identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                            name: 'Large Column (lg-1)',
+                            categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+                        },
+                        uuid: '2'
                     }
                 ],
                 config: {

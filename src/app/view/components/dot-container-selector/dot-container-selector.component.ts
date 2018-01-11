@@ -2,6 +2,7 @@ import { DotContainer } from '../../../shared/models/container/dot-container.mod
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from './../../../api/services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input, ViewEncapsulation } from '@angular/core';
+import { DotContainerColumnBox } from '../../../portlets/dot-edit-page/shared/models/dot-container-column-box.model';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -10,8 +11,8 @@ import { Component, OnInit, Output, EventEmitter, Input, ViewEncapsulation } fro
     styleUrls: ['./dot-container-selector.component.scss']
 })
 export class DotContainerSelectorComponent implements OnInit {
-    @Input() selectedContainersList: DotContainer[] = [];
-    @Output() change: EventEmitter<DotContainer[]> = new EventEmitter();
+    @Input() selectedContainersList: DotContainerColumnBox[] = [];
+    @Output() change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
     @Output() remove: EventEmitter<any> = new EventEmitter();
 
     totalRecords: number;
@@ -35,7 +36,10 @@ export class DotContainerSelectorComponent implements OnInit {
      */
     containerChange(container: DotContainer): void {
         if (!this.isContainerSelected(container)) {
-            this.selectedContainersList.push(container);
+            this.selectedContainersList.push({
+                container: container,
+                uuid: (new Date().getTime()).toString()
+            });
             this.change.emit(this.selectedContainersList);
         }
     }
@@ -76,8 +80,8 @@ export class DotContainerSelectorComponent implements OnInit {
      * @returns {boolean}
      * @memberof DotContainerSelectorComponent
      */
-    isContainerSelected(container: DotContainer): boolean {
-        return this.selectedContainersList.some(containerItem => containerItem.identifier === container.identifier);
+    isContainerSelected(dotContainer: DotContainer): boolean {
+        return this.selectedContainersList.some(containerItem => containerItem.container.identifier === dotContainer.identifier);
     }
 
     private getContainersList(filter = '', offset = 0): void {

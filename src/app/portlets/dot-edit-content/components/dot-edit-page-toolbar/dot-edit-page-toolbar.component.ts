@@ -8,15 +8,15 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 })
 export class DotEditPageToolbarComponent implements OnInit {
     @Input() pageTitle: string;
+    @Input() canSave: boolean;
+
     @Output() save = new EventEmitter<MouseEvent>();
-    @Output() cancel = new EventEmitter<MouseEvent>();
 
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.dotMessageService.getMessages([
-            'editpage.toolbar.primary.action',
-            'editpage.toolbar.secondary.action',
+            'editpage.toolbar.primary.action'
         ]).subscribe();
     }
 }

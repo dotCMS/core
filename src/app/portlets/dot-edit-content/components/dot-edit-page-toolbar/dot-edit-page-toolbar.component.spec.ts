@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 import { DebugElement } from '@angular/core';
@@ -13,7 +13,6 @@ describe('DotEditPageToolbarComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.primary.action': 'Hello',
-        'editpage.toolbar.secondary.action': 'World'
     });
 
     beforeEach(
@@ -58,37 +57,37 @@ describe('DotEditPageToolbarComponent', () => {
         expect(primaryActionEl.textContent).toEqual('Hello');
     });
 
-    it('should have a primary secondary button', () => {
-        const secondaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__secondary-action'));
-        expect(secondaryAction).toBeTruthy();
-
-        const secondaryActionEl: HTMLElement = secondaryAction.nativeElement;
-        expect(secondaryActionEl.textContent).toEqual('World');
-    });
-
     it('should emit save event on primary action button click', () => {
+        component.canSave = true;
+
+        fixture.detectChanges();
+
         const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__primary-action'));
 
         let res;
         component.save.subscribe(event => {
             res = event;
         });
-
         primaryAction.nativeElement.click();
 
         expect(res).toBeDefined();
     });
 
-    it('should emit cancel event on secondary action button click', () => {
-        const secondaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__secondary-action'));
+    it('should disabled save button', () => {
+        component.canSave = false;
 
-        let res;
-        component.cancel.subscribe(event => {
-            res = event;
-        });
+        fixture.detectChanges();
 
-        secondaryAction.nativeElement.click();
+        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__primary-action'));
+        expect(primaryAction.nativeElement.disabled).toBeTruthy('the save button have to be disabled');
+    });
 
-        expect(res).toBeDefined();
+    it('should enabled save button', () => {
+        component.canSave = true;
+
+        fixture.detectChanges();
+
+        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__primary-action'));
+        expect(primaryAction.nativeElement.disabled).toBeFalsy('the save button have to be enable');
     });
 });

@@ -16,9 +16,10 @@ import { MockDotMessageService } from '../../test/dot-message-service.mock';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { DebugElement } from '@angular/core';
+import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+
 
 describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
@@ -74,6 +75,12 @@ describe('DotEditContentComponent', () => {
 
     it('should be created', () => {
         expect(component).toBeTruthy();
+    });
+
+
+    it('should has a toolbar', () => {
+        const toolbarElement: DebugElement = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
+        expect(toolbarElement).not.toBeNull();
     });
 
     it('should show dotLoadingIndicatorService on init', () => {
