@@ -837,7 +837,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_showMatchingResults: function (num) {
-        console.log(this.matchingResultsDiv);
 		var div = this.matchingResultsDiv;
 		div.style.display = "";
 		div.innerHTML = "<b> " + this.matchResultsTextValue + " (" + num + ")</b>";

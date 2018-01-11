@@ -4,6 +4,19 @@
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="java.util.*" %>
+
+<%
+    java.util.Map params = new java.util.HashMap();
+    params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
+    String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
+    String containerIdentifier = (String) request.getParameter("container_id");
+    String dataAdd = (String) request.getParameter("add");
+    User user = PortalUtil.getUser(request);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+    List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
+%>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +53,19 @@
 
     <script type="text/javascript">
         function addNewContentlet() {
-            console.log('addNewContentlet');
+            var href;
+            var structureInode = dijit.byId('structuresSelect+1').value;
+
+            // TODO: We have to add a condition for when is an Event
+            var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
+            href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
+            href += "<portlet:param name='cmd' value='new' />";
+            href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
+            href += "<portlet:param name='inode' value='' />";
+            href += "</portlet:actionURL>";
+            href += "&selectedStructure=" + structureInode ;
+            href += "&lang=" + getSelectedLanguageId();
+            window.location = href;
         }
 
         function contentSelected(content) {
@@ -58,7 +83,12 @@
 
         function displayStructure(structureInode) {
 		    contentSelector.displayStructureFields(structureInode);
-	    }
+        }
+        
+        function getSelectedLanguageId () {
+            var obj = dijit.byId("langcombo+1");
+            return obj && obj.value;
+        }
 
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
@@ -86,35 +116,46 @@
     <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
 
-    <%
-        String containerIdentifier = (String) request.getParameter("container_id");
-        User user = PortalUtil.getUser(request);
-        Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
-        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
-    %>
-
     <script type="text/javascript">
         dojo.require("dotcms.dijit.form.ContentSelector");
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-            contentSelector.containerStructures = [
-                <%
-                    for (Structure structure: structuresInContainer) {
-                %>
-                {
-                    "inode": '<%=structure.id()%>',
-                    "name": '<%=structure.getName()%>'
-                },
-                <%
+            var baseTypeToAdd = "<%= dataAdd %>";
+
+            if (baseTypeToAdd === "content") {
+                contentSelector.containerStructures = [
+                    <%
+                        for (Structure structure: structuresInContainer) {
+                    %>
+                    {
+                        "inode": "<%=structure.id()%>",
+                        "name": "<%=structure.getName()%>"
+                    },
+                    <%
+                        }
+                    %>
+                ];
+
+                contentSelector._fillStructures();
+            } else if (baseTypeToAdd === "form") {
+                contentSelector.displayStructureFields("4d21b6d8-1711-4ae6-9419-89e2b1ae5a06");
+            } else if (baseTypeToAdd === "widget") {
+                    // TODO: we need to get all the widgets and build the object
+                    contentSelector.containerStructures = [
+                    {
+                        "inode": "4316185e-a95c-4464-8884-3b6523f694e9",
+                        "name": "Document Listing"
+                    },
+                    {
+                        "inode": "33f08cca-b1d0-4b77-a3e4-1a2c475fadc2",
+                        "name": "Photo Carousel"
                     }
-                %>
-            ];
+                ];
 
-            contentSelector._fillStructures();
+                contentSelector._fillStructures();
+            }
         })
-
-
     </script>
 </head>
 <body>
