@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
 
@@ -33,7 +34,12 @@ class ContainerView implements Serializable {
      */
     public ContainerView(final Container container, final List<ContainerStructure> containerStructures) {
         this.container = container;
-        this.containerStructures = containerStructures;
+
+        if (containerStructures != null) {
+            this.containerStructures = ImmutableList.copyOf(containerStructures);
+        } else {
+            this.containerStructures = ImmutableList.of();
+        }
     }
 
     /**
