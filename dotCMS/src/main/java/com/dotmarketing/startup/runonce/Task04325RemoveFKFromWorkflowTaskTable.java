@@ -42,7 +42,7 @@ public class Task04325RemoveFKFromWorkflowTaskTable extends AbstractJDBCStartupT
 
         try{
 
-            //Check if FK: folder_identifier_fk exists
+            //Check if FK: fk_workflow_task_asset exists
             boolean foundFK = false;
             final List<ForeignKey> listForeignKeys = this.getForeingKeys(DbConnectionFactory.getConnection(),
                 Arrays.asList("workflow_task"), false);
