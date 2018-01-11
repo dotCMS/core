@@ -23,7 +23,7 @@ public enum DbType {
     }
 
     public static DbType getDbType(final String dbType) {
-        DbType type = null;
+        DbType type;
         switch (dbType) {
             case "PostgreSQL":
                 type = DbType.POSTGRESQL;
@@ -37,7 +37,7 @@ public enum DbType {
             case "Oracle":
                 type = DbType.ORACLE;
                 break;
-            case "H2":
+            default:
                 type = DbType.H2;
                 break;
         }
