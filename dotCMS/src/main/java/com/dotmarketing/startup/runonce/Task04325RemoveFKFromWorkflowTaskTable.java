@@ -26,7 +26,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task04325RemoveFKFromWorkflowTaskTable extends AbstractJDBCStartupTask {
 
-    public static final String DROP_ORPHAN_WF_TASKS ="DELETE FROM workflow_task WHERE NOT EXISTS (SELECT * FROM identifier)";
+    public static final String DROP_ORPHAN_WF_TASKS = "DELETE FROM workflow_task WHERE NOT EXISTS (SELECT * FROM identifier)";
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE workflow_task DROP CONSTRAINT FK_workflow_task_asset";
     public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE workflow_task DROP FOREIGN KEY FK_workflow_task_asset";
 
