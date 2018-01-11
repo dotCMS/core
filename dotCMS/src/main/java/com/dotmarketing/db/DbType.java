@@ -12,29 +12,31 @@ public enum DbType {
     MSSQL("Microsoft SQL Server"),
     H2("H2");
 
-    private String dbType;
+    private String type;
 
-    DbType(final String dbType) {
-        this.dbType = dbType;
+    DbType(final String type) {
+        this.type = type;
     }
 
     public String getDbType() {
-        return dbType;
+        return type;
     }
 
-    public static DbType getDbType(final String type) {
-        switch (type) {
+    public static DbType getDbType(final String dbType) {
+        DbType type = null;
+        switch (dbType) {
             case "PostgreSQL":
-                return DbType.POSTGRESQL;
+                type = DbType.POSTGRESQL;
             case "MySQL":
-                return DbType.MYSQL;
+                type = DbType.MYSQL;
             case "Microsoft SQL Server":
-                return DbType.MSSQL;
+                type = DbType.MSSQL;
             case "Oracle":
-                return DbType.ORACLE;
-            default:
-                return DbType.H2;
+                type = DbType.ORACLE;
+            case "H2":
+                type = DbType.H2;
         }
+        return type;
     }
 
     @Override

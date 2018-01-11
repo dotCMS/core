@@ -1,6 +1,5 @@
 package com.dotmarketing.db.commands;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -67,11 +66,10 @@ public abstract class UpsertCommand implements DatabaseCommand {
             builder.append(replacements.getAttribute(QueryReplacements.ID_VALUE).toString());
             builder.append(",");
         }
-        if (replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN) != null) {
-            if (!(this instanceof OracleUpsertCommand)) { //Oracle does not allow to Update the Conditional Column
-                builder.append(replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN).toString());
-                builder.append("=?,");
-            }
+        if (replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN) != null
+                && !(this instanceof OracleUpsertCommand)) { //Oracle does not allow to Update the Conditional Column
+            builder.append(replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN).toString());
+            builder.append("=?,");
         }
         if (replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS) != null) {
             String[] extraColumns = replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS);
