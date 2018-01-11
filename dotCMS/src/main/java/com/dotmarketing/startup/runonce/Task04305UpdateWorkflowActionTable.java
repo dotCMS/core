@@ -205,12 +205,12 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     }
 
     private void executeDropWorkflowActionStepIdNotNullConstrain(DotConnect dc) throws DotDataException {
-        Logger.info(this, "Removing 'workflow_idx_action_step' index in 'workflow_action' table.");
+        Logger.info(this, "Removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.");
         try {
             dc.executeStatement(dropWorkflowActionStepIdNotNullConstrainQuery());
         } catch (SQLException e) {
             throw new DotRuntimeException(
-                    "An error occurred when removing 'workflow_idx_action_step' index in 'workflow_action' table.",
+                    "An error occurred when removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.",
                     e);
         }
     }
