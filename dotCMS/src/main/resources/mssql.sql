@@ -2370,7 +2370,6 @@ create table workflow_action(
     use_role_hierarchy_assign tinyint default 0,
     scheme_id NVARCHAR(36) NOT NULL
 );
-create index workflow_idx_action_step on workflow_action(step_id);
 
 CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL, action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) );
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
