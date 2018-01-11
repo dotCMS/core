@@ -27,7 +27,7 @@ public class UpsertCommandFactory {
     //Hide the constructor
     private UpsertCommandFactory() { }
 
-    public static UpsertCommand getInstance() {
+    public static UpsertCommand getUpsertCommand() {
         return commandMap.get(DbType.getDbType(DbConnectionFactory.getDBType()));
     }
 }

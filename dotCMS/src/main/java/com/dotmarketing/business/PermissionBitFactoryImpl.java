@@ -2314,7 +2314,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
     private void upsertPermission(DotConnect dc, String permissionId, Permissionable newReference, String type)
 									throws DotDataException {
-		UpsertCommand upsertCommand = UpsertCommandFactory.getInstance();
+		UpsertCommand upsertCommand = UpsertCommandFactory.getUpsertCommand();
 
 		SimpleMapAppContext replacements = new SimpleMapAppContext();
 		replacements.setAttribute(QueryReplacements.TABLE, PERMISSION_REFERENCE);
