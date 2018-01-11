@@ -20,23 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class UpsertCommand implements DatabaseCommand {
 
     /**
-     * Map that contains Upsert Command implementations
-     */
-    private static Map<DbType, UpsertCommand> commandMap = new ConcurrentHashMap<>();
-
-    static {
-        commandMap.put(DbType.H2, new H2UpsertCommand());
-        commandMap.put(DbType.POSTGRESQL, new PostgreUpsertCommand());
-        commandMap.put(DbType.MYSQL, new MySQLUpsertCommand());
-        commandMap.put(DbType.MSSQL, new MSSQLUpsertCommand());
-        commandMap.put(DbType.ORACLE, new OracleUpsertCommand());
-    }
-
-    public static UpsertCommand getInstance() {
-        return commandMap.get(DbType.getDbType(DbConnectionFactory.getDBType()));
-    }
-
-    /**
      * Method to execute The Upsert Query... This method works for most DBTypes,
      * and its overriden for DBTypes with particularities
      * @param dotConnect Connection

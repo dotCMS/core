@@ -22,6 +22,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import com.dotmarketing.db.commands.UpsertCommand;
+import com.dotmarketing.db.commands.UpsertCommandFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -2283,25 +2284,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-				UpsertCommand upsertCommand = UpsertCommand.getInstance();
-
-				SimpleMapAppContext replacements = new SimpleMapAppContext();
-				replacements.setAttribute(QueryReplacements.TABLE, PERMISSION_REFERENCE);
-				replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, ASSET_ID);
-				replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, permissionId);
-				replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, new String[]{REFERENCE_ID, PERMISSION_TYPE});
-
-				if (DbConnectionFactory.isPostgres()) {
-					replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
-					replacements.setAttribute(QueryReplacements.ID_VALUE, "nextval('permission_reference_seq')");
-				}
-				if (DbConnectionFactory.isOracle()) {
-					replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
-					replacements.setAttribute(QueryReplacements.ID_VALUE, "permission_reference_seq.NEXTVAL");
-				}
-
-				String query = upsertCommand.generateSQLQuery(replacements);
-				upsertCommand.execute(dc1, query, permissionId, newReference.getPermissionId(), type);
+				upsertPermission(dc1, permissionId, newReference, type);
             }
 
         } catch(Exception exception){
@@ -2320,6 +2303,37 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     + " - ended");
         }
     }
+
+	/**
+	 * Method to Insert or Update a Permission Reference
+	 * @param dc DotConnect
+	 * @param permissionId the asset id to be inserted in the permission reference
+	 * @param newReference the reference
+	 * @param type the asset type
+	 * @throws DotDataException
+	 */
+    private void upsertPermission(DotConnect dc, String permissionId, Permissionable newReference, String type)
+									throws DotDataException {
+		UpsertCommand upsertCommand = UpsertCommandFactory.getInstance();
+
+		SimpleMapAppContext replacements = new SimpleMapAppContext();
+		replacements.setAttribute(QueryReplacements.TABLE, PERMISSION_REFERENCE);
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, ASSET_ID);
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, permissionId);
+		replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, new String[]{REFERENCE_ID, PERMISSION_TYPE});
+
+		if (DbConnectionFactory.isPostgres()) {
+			replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+			replacements.setAttribute(QueryReplacements.ID_VALUE, "nextval('permission_reference_seq')");
+		}
+		if (DbConnectionFactory.isOracle()) {
+			replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+			replacements.setAttribute(QueryReplacements.ID_VALUE, "permission_reference_seq.NEXTVAL");
+		}
+
+		String query = upsertCommand.generateSQLQuery(replacements);
+		upsertCommand.execute(dc, query, permissionId, newReference.getPermissionId(), type);
+	}
 
     private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
 		List<Permission> filteredList = new ArrayList<Permission>();
