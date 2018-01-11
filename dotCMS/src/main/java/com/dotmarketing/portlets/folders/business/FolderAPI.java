@@ -235,13 +235,10 @@ import com.liferay.portal.model.User;
 	/**
 	 * Gets a list of  'working'  Contentlet under given folder
 	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
+	 * @deprecated use {@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletsByFolder(Folder,
+	 * User, boolean)} instead
 	 */
+	@Deprecated
 	public abstract List<Contentlet> getContent(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException;
 

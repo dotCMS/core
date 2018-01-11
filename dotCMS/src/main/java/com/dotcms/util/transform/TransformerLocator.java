@@ -6,6 +6,8 @@ import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.transform.TemplateTransformer;
 import com.dotmarketing.portlets.links.model.Link;
@@ -43,6 +45,7 @@ public class TransformerLocator {
         transformerMapping.put (Link.class, TransformerLocator::createLinkTransformer);
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
         transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
+        transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -102,6 +105,17 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new ContainerTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Contentlet objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static ContentletTransformer createContentletTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new ContentletTransformer(initList);
     }
 
     /**
