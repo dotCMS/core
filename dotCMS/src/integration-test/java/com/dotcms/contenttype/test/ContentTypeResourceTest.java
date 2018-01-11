@@ -2,6 +2,7 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -12,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
 import com.dotcms.util.ConfigTestHelper;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -56,12 +56,16 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		List<ContentType> delTypes = new JsonContentTypeTransformer(json).asList();
 		for(ContentType delType:delTypes){
 			try {
-				contentTypeApi.delete(contentTypeApi.find(delType.id()));
+				if (UtilMethods.isSet(delType.id())){
+					contentTypeApi.delete(contentTypeApi.find(delType.id()));
+				}
 			} catch (NotFoundInDbException e) {
 
 			}
 			try {
-				contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+				if (UtilMethods.isSet(delType.variable())){
+					contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+				}
 			} catch (NotFoundInDbException ee) {
 
 			}
