@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -44,16 +46,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	static TemplateFactory templateFactory = FactoryLocator.getTemplateFactory();
-	static String containerTag = "#parseContainer('";
 	static ContainerAPI containerAPI = APILocator.getContainerAPI();
-	static HostAPI hostAPI = APILocator.getHostAPI();
-	static UserAPI userAPI = APILocator.getUserAPI();
 
 
 
@@ -262,36 +262,28 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
+	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        // 100 pages should be more than enough to get all the containers on a given template
-        // Trying to avoid the case where 10000 pages might use the same template
-        List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles, 100);
+		TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+		List<String> containersId = layout.getContainersId();
 
-        List<Container> containers = new ArrayList<>();
+		List<Container> containers = new ArrayList<>();
 
-        for (Contentlet page : pages) {
-            Set<String> containerId =
-                    MultiTreeFactory.getMultiTrees(page.getIdentifier())
-                    .stream()
-                    .map(MultiTree::getContainer)
-                    .collect(Collectors.toSet());
+		for (String cont : containersId) {
+			Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
 
-            for (String cont : containerId) {
-                Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
-                if(container==null) {
-                    continue;
-                }
-                containers.add(container);
-            }
-        }
+			if(container==null) {
+				continue;
+			}
+
+			containers.add(container);
+		}
+
         return containers;
 
 
     }
-
-
 
 	private String replaceWithNewContainerIds(String body, List<ContainerRemapTuple> containerMappings) {
 		if(body ==null) return body;

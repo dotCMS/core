@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 /**
@@ -252,6 +253,7 @@ public interface ContainerAPI {
     
 	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	@Deprecated
 	public List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
 
 }

@@ -52,6 +52,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -203,8 +204,6 @@ public class PageResourceHelper implements Serializable {
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
-
-
         
         if (isRendered) {
             try {
@@ -218,38 +217,47 @@ public class PageResourceHelper implements Serializable {
         Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
                 (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
-        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
-                (template, user, RESPECT_FE_ROLES);
-        
-        templateContainers.addAll(APILocator.getContainerAPI().getContainersOnPage(page));
+        TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
 
-        
+        final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
 
-        
-        final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
-        for (final Container container : templateContainers) {
-            final List<ContainerStructure> containerStructures = this.containerAPI
-                    .getContainerStructures(container);
-            String rendered = null;
-            if (isRendered) {
-                try {
-                    rendered = VelocityUtil.mergeTemplate("/live/" + container.getIdentifier() +
-                            ".container", velocityContext);
-                } catch (Exception e) {
-                    throw new DotDataException(String.format("Container '%s' could not be " +
-                            "rendered via " + "Velocity.", container.getIdentifier()), e);
-                }
-            }
-            mappedContainers.put(container.getIdentifier(), new ContainerView(container,
-                    containerStructures, rendered));
+        if (isRendered) {
+            renderContainer(mappedContainers, velocityContext);
         }
-        TemplateLayout layout = null;
-
-        final DotTemplateTool dotTemplateTool = new DotTemplateTool();
-        dotTemplateTool.init(velocityContext);
-        layout = DotTemplateTool.themeLayout(template.getInode());
 
         return new PageView(site, template, mappedContainers, page, layout);
+    }
+
+    private void renderContainer(Map<String, ContainerView> containers, Context velocityContext )
+            throws DotSecurityException, DotDataException {
+
+        for (ContainerView containerView : containers.values()) {
+            Container container = containerView.getContainer();
+
+            try {
+                String rendered = VelocityUtil.mergeTemplate("/live/" + container.getIdentifier() +
+                        ".container", velocityContext);
+                containerView.setRendered(rendered);
+            } catch (Exception e) {
+                throw new DotDataException(String.format("Container '%s' could not be " +
+                        "rendered via " + "Velocity.", container.getIdentifier()), e);
+            }
+        }
+
+    }
+
+    private Map<String, ContainerView> getMappedContainers(Template template, User user)
+            throws DotSecurityException, DotDataException {
+
+        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, user, false);
+
+        final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
+        for (final Container container : templateContainers) {
+            final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
+            mappedContainers.put(container.getIdentifier(), new ContainerView(container, containerStructures));
+        }
+
+        return mappedContainers;
     }
 
     /**

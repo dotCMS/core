@@ -22,21 +22,18 @@ class ContainerView implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private final String rendered;
+    private String rendered;
 
     /**
      * Creates a new instance of the ContainerView.
      *
      * @param container           The {@link Container} in the HTML Page.
      * @param containerStructures The list of {@link ContainerStructure} relationships.
-     * @param rendered            The container and its contents as HTML code, i.e., as seen in
      *                           the browser.
      */
-    public ContainerView(final Container container, final List<ContainerStructure>
-            containerStructures, final String rendered) {
+    public ContainerView(final Container container, final List<ContainerStructure> containerStructures) {
         this.container = container;
         this.containerStructures = containerStructures;
-        this.rendered = rendered;
     }
 
     /**
@@ -73,4 +70,12 @@ class ContainerView implements Serializable {
                 containerStructures + ", rendered='" + rendered + '\'' + '}';
     }
 
+    /**
+     * Set the container and its contents as HTML code, i.e., as seen in
+     *
+     * @param rendered
+     */
+    public void setRendered(String rendered) {
+        this.rendered = rendered;
+    }
 }
