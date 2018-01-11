@@ -193,7 +193,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void executeDropWorkflowActionStepIdIndex(DotConnect dc) throws DotDataException {
+    private void executeDropWorkflowActionStepIdIndex(DotConnect dc) {
         Logger.info(this, "Removing 'workflow_idx_action_step' index in 'workflow_action' table.");
         try {
             dc.executeStatement(dropWorkflowActionStepIdIndexQuery());
@@ -204,7 +204,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void executeDropWorkflowActionStepIdNotNullConstrain(DotConnect dc) throws DotDataException {
+    private void executeDropWorkflowActionStepIdNotNullConstrain(DotConnect dc) {
         Logger.info(this, "Removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.");
         try {
             dc.executeStatement(dropWorkflowActionStepIdNotNullConstrainQuery());
@@ -215,7 +215,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void addNotNullConstraintShowOnColumn(final DotConnect dc) throws DotHibernateException {
+    private void addNotNullConstraintShowOnColumn(final DotConnect dc) {
 
         Logger.info(this, "Adding new 'scheme_id' constraints");
 
