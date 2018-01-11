@@ -44,7 +44,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
         IntegrationTestInitService.getInstance().init();
         SaveContentActionletTest.workflowAPI              = APILocator.getWorkflowAPI();
-        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentTypeAPI contentTypeAPI               = APILocator.getContentTypeAPI(APILocator.systemUser());
         SaveContentActionletTest.contentletAPI            = APILocator.getContentletAPI();
 
         // creates the scheme and actions
@@ -60,7 +60,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     }
 
-    private static void createTestType(ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+    private static void createTestType(final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
         SaveContentActionletTest.type = contentTypeAPI.save(
                 ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())

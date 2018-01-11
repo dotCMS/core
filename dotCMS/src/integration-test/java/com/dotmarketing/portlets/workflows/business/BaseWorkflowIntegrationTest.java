@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.ucar.units.Base;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -91,7 +90,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         workflowAPI.saveAction(action.getId(),
                 stepId, APILocator.systemUser());
 
-        WorkflowActionClass workflowActionClass = new WorkflowActionClass();
+        final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
         workflowActionClass.setActionId(action.getId());
         workflowActionClass.setClazz(actionClass.getName());
         try {
@@ -119,13 +118,13 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final List<WorkflowAction> schemeActions = workflowAPI.findActions(scheme, APILocator.systemUser());
 
-        for (WorkflowAction action: schemeActions) {
+        for (final WorkflowAction action: schemeActions) {
 
             workflowAPI.deleteAction(action);
         }
 
         final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(scheme);
-        for (WorkflowStep step: workflowSteps) {
+        for (final WorkflowStep step: workflowSteps) {
 
             workflowAPI.deleteStep(step);
         }
@@ -141,7 +140,8 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         private final WorkflowActionClass    actionClass;
 
 
-        public CreateSchemeStepActionResult(WorkflowScheme scheme, WorkflowStep step, WorkflowAction action, WorkflowActionClass actionClass) {
+        public CreateSchemeStepActionResult(
+                final WorkflowScheme scheme, final WorkflowStep step, final WorkflowAction action, final WorkflowActionClass actionClass) {
             this.scheme = scheme;
             this.step = step;
             this.action = action;
