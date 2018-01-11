@@ -1,6 +1,14 @@
 @import "variables";
 
+:host ::ng-deep {
+    .ui-datatable-data > tr > .listing-datatable__action-column {
+        padding-bottom: 0;
+        padding-top: 0;
+    }
+}
+
 action-header {
     display: block;
     margin-top: $basic-padding * 2;
 }
+

@@ -2,12 +2,7 @@ import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'icon-button-tooltip',
-    styles: [':host { cursor: pointer; }'],
-    template: `
-        <span pTooltip="{{tooltipText}}" tooltipPosition="bottom">
-            <i class="fa {{icon}}"></i>
-        </span>
-    `,
+    template: `<button pButton [icon]="icon" pTooltip="{{tooltipText}}" tooltipPosition="bottom"></button>`
 })
 export class IconButtonTooltipComponent {
     @Input() icon: string;

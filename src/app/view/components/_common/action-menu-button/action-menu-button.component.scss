@@ -4,21 +4,9 @@
 :host {
     position: relative;
     display: block;
+}
 
-    .listing-datatable__icon {
-        text-align: center;
-        width: 16px;
-    }
-   
-    .ui-button {
-        box-shadow: none;
-        border-radius: 50%;
-        height: $field-height;
-        width: $field-height;
-
-        &:hover {
-            background: rgba($black, 0.1);
-            box-shadow: none;
-        }
-    }
+.listing-datatable__icon {
+    text-align: center;
+    width: 16px;
 }

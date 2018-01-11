@@ -2,9 +2,11 @@
     padding: 0;
 
     .ui-paginator-element {
-        min-width: $paginator-page-size;
+        align-items: center;
+        display: inline-flex;
         height: $paginator-page-size;
-        padding-top: 3px;
+        justify-content: center;
+        min-width: $paginator-page-size;
     }
 
     .ui-paginator-page.ui-state-active {

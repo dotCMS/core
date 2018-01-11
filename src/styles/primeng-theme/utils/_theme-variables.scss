@@ -170,7 +170,7 @@ $radio-hover-bgcolor: $white;
 $radio-hover-border: $check-checked-border;
 
 // DATATABLE
-$datatable-cell-padding: 11px $basic-padding * 2; // We need to have 40px min height in the cell
+$datatable-cell-padding: 10px $basic-padding * 2; // We need to have 40px min height in the cell
 $datatable-cell-border: 1px solid $gray-lighter;
 $datatable-highlight-row-bgcolor: $gray-lightest;
 $datatable-row-color: $black;

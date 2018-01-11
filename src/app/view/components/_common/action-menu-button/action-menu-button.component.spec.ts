@@ -78,7 +78,7 @@ describe('ActionMenuButtonComponent', () => {
         expect(actionButtonMenu).toBeNull();
     });
 
-    it('should handle action and send command', () => {
+    it('should call menu action with item passed', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
@@ -105,12 +105,13 @@ describe('ActionMenuButtonComponent', () => {
         comp.item = mockContentType;
         fixture.detectChanges();
 
-        const actionButtonTooltip = de.query(By.css('icon-button-tooltip'));
-        const spyHandleAction = spyOn(comp, 'handleActionCommand');
+        spyOn(fakeActions[0].menuItem, 'command');
 
+        const actionButtonTooltip = de.query(By.css('icon-button-tooltip'));
         actionButtonTooltip.nativeElement.click();
 
-        expect(spyHandleAction).toHaveBeenCalledWith(mockContentType, new MouseEvent(''));
+        expect(fakeActions[0].menuItem.command).toHaveBeenCalledTimes(1);
+        expect(fakeActions[0].menuItem.command).toHaveBeenCalledWith(mockContentType);
     });
 
     it('should filter actions based on shouldShow field', () => {
@@ -145,5 +146,89 @@ describe('ActionMenuButtonComponent', () => {
         comp.ngOnInit();
 
         expect(comp.filteredActions.length).toEqual(1);
+    });
+
+    it('should render button with submenu', () => {
+        const fakeActions: DotDataTableAction[] = [
+            {
+                menuItem: {
+                    icon: 'fa-trash',
+                    label: 'Remove',
+                    command: () => {}
+                }
+            },
+            {
+                menuItem: {
+                    icon: 'fa-check',
+                    label: 'Test',
+                    command: () => {}
+                }
+            }
+        ];
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+
+        comp.actions = fakeActions;
+        comp.item = mockContentType;
+        fixture.detectChanges();
+
+        expect(de.query(By.css('icon-button-tooltip')) === null).toEqual(true, 'tooltip button hide');
+        expect(de.query(By.css('p-menu')) === null).toEqual(false, 'menu options show');
+        expect(de.query(By.css('button')) === null).toEqual(false, 'button to show/hide menu show');
+    });
+
+    it('should call menu option actions with item passed', () => {
+        const fakeCommand = jasmine.createSpy('fakeCommand');
+
+        const fakeActions: DotDataTableAction[] = [
+            {
+                menuItem: {
+                    icon: 'fa-trash',
+                    label: 'Remove',
+                    command: () => {}
+                }
+            },
+            {
+                menuItem: {
+                    icon: 'fa-check',
+                    label: 'Test',
+                    command: (item) => {
+                        fakeCommand(item);
+                    }
+                }
+            }
+        ];
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+
+        comp.actions = fakeActions;
+        comp.item = mockContentType;
+        fixture.detectChanges();
+
+        const menuItemsLink = de.queryAll(By.css('.ui-menu-list a'));
+        menuItemsLink[1].nativeElement.click();
+
+        expect(fakeCommand).toHaveBeenCalledTimes(1);
+        expect(fakeCommand).toHaveBeenCalledWith(mockContentType);
     });
 });
