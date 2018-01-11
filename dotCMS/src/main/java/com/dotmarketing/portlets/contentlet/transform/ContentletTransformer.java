@@ -17,10 +17,10 @@ public class ContentletTransformer implements DBTransformer {
     final List<Contentlet> list;
 
 
-    public ContentletTransformer(List<Map<String, Object>> initList){
-        List<Contentlet> newList = new ArrayList<>();
+    public ContentletTransformer(final List<Map<String, Object>> initList){
+        final List<Contentlet> newList = new ArrayList<>();
         if (initList != null){
-            for(Map<String, Object> map : initList){
+            for(final Map<String, Object> map : initList){
                 newList.add(transform(map));
             }
         }
@@ -34,7 +34,7 @@ public class ContentletTransformer implements DBTransformer {
     }
 
     @NotNull
-    private static Contentlet transform(Map<String, Object> map)  {
+    private static Contentlet transform(final Map<String, Object> map)  {
         final Contentlet contentlet;
         contentlet = new Contentlet();
         contentlet.setInode((String) map.get("inode"));
@@ -46,7 +46,7 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setNextReview((Date) map.get("next_review"));
         contentlet.setReviewInterval((String) map.get("review_interval"));
 
-        List disabledWysiwyg = new ArrayList();
+        final List disabledWysiwyg = new ArrayList();
         disabledWysiwyg.add(map.get("disabled_wysiwyg"));
         contentlet.setDisabledWysiwyg(disabledWysiwyg);
         contentlet.setIdentifier((String) map.get("identifier"));
