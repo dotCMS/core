@@ -1992,8 +1992,6 @@ create table workflow_action(
   requires_checkout_option VARCHAR(16)  default 'both',
   scheme_id VARCHAR(36) NOT NULL
 );
-create index workflow_idx_action_step on workflow_action(step_id);
-
 
 CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id);

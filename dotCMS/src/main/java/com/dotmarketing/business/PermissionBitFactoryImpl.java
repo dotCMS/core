@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -19,6 +20,9 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
+import com.dotmarketing.db.commands.UpsertCommand;
+import com.dotmarketing.db.commands.UpsertCommandFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -105,23 +109,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private static final String LOAD_PERMISSION_REFERENCES_BY_REFERENCEID_HSQL = "from " + PermissionReference.class.getCanonicalName() +
 		" permission_reference where reference_id = ?";
 
-	/*
-	 * To insert a single permission reference for an asset
-	 * Parameters
-	 * 1. Asset id
-	 * 2. Reference id
-	 * 3. Type
-	 */
-
-	private static final String INSERT_PERMISSION_REFERENCE_SQL =
-		DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-		"insert into permission_reference (asset_id, reference_id, permission_type) " +
-		"	values (?, ?, ?)":
-		DbConnectionFactory.isOracle() ?
-		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"	values (permission_reference_seq.NEXTVAL, ?, ?, ?)":
-		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"	values (nextval('permission_reference_seq'), ?, ?, ?)";
 
 	/*
 	 * To update a permission reference by who it is currently pointing to
@@ -2268,6 +2255,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
+
+	protected static final String PERMISSION_REFERENCE = "permission_reference";
+	protected static final String ASSET_ID = "asset_id";
+	protected static final String REFERENCE_ID = "reference_id";
+	protected static final String PERMISSION_TYPE = "permission_type";
+	protected static final String ID = "id";
+
     @WrapInTransaction
 	private void deleteInsertPermission(Permissionable permissionable, String type,
             Permissionable newReference) throws DotDataException {
@@ -2290,7 +2284,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-                dc1.executeUpdate(INSERT_PERMISSION_REFERENCE_SQL, permissionId, newReference.getPermissionId(), type);
+				upsertPermission(dc1, permissionId, newReference, type);
             }
 
         } catch(Exception exception){
@@ -2309,6 +2303,37 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     + " - ended");
         }
     }
+
+	/**
+	 * Method to Insert or Update a Permission Reference
+	 * @param dc DotConnect
+	 * @param permissionId the asset id to be inserted in the permission reference
+	 * @param newReference the reference
+	 * @param type the asset type
+	 * @throws DotDataException
+	 */
+    private void upsertPermission(DotConnect dc, String permissionId, Permissionable newReference, String type)
+									throws DotDataException {
+		UpsertCommand upsertCommand = UpsertCommandFactory.getUpsertCommand();
+
+		SimpleMapAppContext replacements = new SimpleMapAppContext();
+		replacements.setAttribute(QueryReplacements.TABLE, PERMISSION_REFERENCE);
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, ASSET_ID);
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, permissionId);
+		replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, new String[]{REFERENCE_ID, PERMISSION_TYPE});
+
+		if (DbConnectionFactory.isPostgres()) {
+			replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+			replacements.setAttribute(QueryReplacements.ID_VALUE, "nextval('permission_reference_seq')");
+		}
+		if (DbConnectionFactory.isOracle()) {
+			replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+			replacements.setAttribute(QueryReplacements.ID_VALUE, "permission_reference_seq.NEXTVAL");
+		}
+
+		String query = upsertCommand.generateSQLQuery(replacements);
+		upsertCommand.execute(dc, query, permissionId, newReference.getPermissionId(), type);
+	}
 
     private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {
 		List<Permission> filteredList = new ArrayList<Permission>();
