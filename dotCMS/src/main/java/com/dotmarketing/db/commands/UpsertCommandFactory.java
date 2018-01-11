@@ -24,6 +24,9 @@ public class UpsertCommandFactory {
         commandMap.put(DbType.ORACLE, new OracleUpsertCommand());
     }
 
+    //Hide the constructor
+    private UpsertCommandFactory() { }
+
     public static UpsertCommand getInstance() {
         return commandMap.get(DbType.getDbType(DbConnectionFactory.getDBType()));
     }

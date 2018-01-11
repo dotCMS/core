@@ -3,15 +3,11 @@ package com.dotmarketing.db.commands;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DbType;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic UpsertCommand that can be used to Generate and execute Native SQL Upsert Queries
