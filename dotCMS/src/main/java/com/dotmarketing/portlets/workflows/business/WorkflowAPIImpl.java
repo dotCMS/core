@@ -698,18 +698,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 
 			Logger.debug(this, "Saving (doing the relationship) the actionId: " + actionId + ", stepId: " + stepId);
+
+			workflowAction = this.findAction(actionId, user);
 			workflowStep   = this.findStep  (stepId);
-			
-			workflowAction = this.findAction(actionId,stepId, user);
-			
-            if(workflowAction!=null) {
-                this.reorderAction(workflowAction, workflowStep, user, order);
-            }
-			
-			if(workflowAction==null) {
-			    workflowAction = this.findAction(actionId, user);
-			}
-			
 
 			if (null == workflowAction) {
 
