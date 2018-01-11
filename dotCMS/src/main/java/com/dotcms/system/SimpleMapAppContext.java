@@ -22,4 +22,14 @@ public class SimpleMapAppContext implements AppContext {
 
         this.context.put(attributeName, attributeValue);
     }
+
+    public <T> T getAttribute(Enum attribute) {
+        return (T)this.context.get(attribute.toString());
+    }
+
+    public <T> void setAttribute(Enum attribute, T attributeValue) {
+
+        this.context.put(attribute.toString(), attributeValue);
+    }
+
 } // E:O:F:SimpleMapAppContext.
