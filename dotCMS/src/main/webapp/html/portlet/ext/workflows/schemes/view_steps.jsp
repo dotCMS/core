@@ -89,7 +89,7 @@
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		<div>
-			<h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%> &nbps; &nbps; <span class="editIcon" style="float: right;"></span></h2>
+			<h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%> &nbsp; &nbsp; <span class="editIcon" style="float: right;"></span></h2>
 			<p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
 		</div>
 	</div>
@@ -98,29 +98,12 @@
 
 	<div class="portlet-toolbar__actions-secondary">
 		<!-- ADD STEP -->
-			<form id="fm" method="post">
-				<div id="dropdownButtonContainer"></div>
-				<script>
-					dojo.addOnLoad(function() {
 
-						stepAdmin.schemeId="<%=schemeId%>";
-						var button = new dijit.form.Button({
-							label: "<%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%>",
-							iconClass:"addIcon",
-							onClick:function(){
-								stepAdmin.schemeId="<%=schemeId%>";
-								stepAdmin.showAddNewStep();
-							},
-						});
-						dojo.byId("dropdownButtonContainer").appendChild(button.domNode);
-					});
-				</script>
-			</form>
 	   <!-- ADD STEP -->
 	</div>
 </div>
 
-<h1>Steps</h1>
+
 
 <!-- Workflow Steps -->
 <div class="board-wrapper">
@@ -147,18 +130,12 @@
 											<div class="handles"></div>
 											<div class="wf-action showPointer">
 												<div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this)"><span class="deleteIcon"></span></div>
-												<span class="<%=action.getIcon()%>"></span>
 												<div  class="pull-left showPointer" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');">
 													<%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
 												</div>
 											</div>
 										</div>
 									<%} %>
-								<script>
-
-								  
-								  
-								</script>
 							</div>
 
 							<div class="btn-flat-wrapper">
@@ -170,6 +147,21 @@
 						</div>
 					</div>
 				<%}%>
+				<div class="list-wrapper showPointer ghostAddDiv" onclick="stepAdmin.schemeId='<%=schemeId%>';stepAdmin.showAddNewStep();" >	
+					<div class="list-item">
+						<div class="wfStepTitle">
+							<div class="wfStepTitleDivs">
+								<span style="border-bottom:dotted 0px #fff;"><%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%></span>
+							</div>
+							<div class="clear"></div>
+						</div>
+						<div class="wfActionList">
+						
+						</div>
+					</div>
+				</div>
+				
+				
 			</div>
 		</div>
 	</div>

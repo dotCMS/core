@@ -316,3 +316,24 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 .btn-primary {
 	color: #0F75C4;
 }
+
+.box-wrapper:hover .ghost-box {
+  opacity: 1
+}
+.box-wrapper:hover .title {
+  opacity: 0
+}
+
+.ghostAddDiv {
+    opacity: .3;
+    -webkit-transition: opacity .5s;
+    -moz-transition: opacity .5s;
+    transition: opacity .5s;
+}
+
+.ghostAddDiv:hover  {
+    opacity: 1;
+    	cursor: pointer;
+}
+
+
