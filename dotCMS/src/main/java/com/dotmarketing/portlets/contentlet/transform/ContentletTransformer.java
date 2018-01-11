@@ -47,18 +47,27 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setReviewInterval((String) map.get("review_interval"));
 
         List disabledWysiwyg = new ArrayList();
-        disabledWysiwyg.add(map.get("review_interval"));
+        disabledWysiwyg.add(map.get("disabled_wysiwyg"));
         contentlet.setDisabledWysiwyg(disabledWysiwyg);
         contentlet.setIdentifier((String) map.get("identifier"));
         contentlet.setLanguageId((Long) map.get("language_id"));
 
         String key;
+        List<String> ignoredFields = new ArrayList<>();
+        ignoredFields.add("inode");
+        ignoredFields.add("mod_date");
+        ignoredFields.add("mod_user");
+        ignoredFields.add("sort_order");
+        ignoredFields.add("structure_inode");
+        ignoredFields.add("last_review");
+        ignoredFields.add("next_review");
+        ignoredFields.add("review_interval");
+        ignoredFields.add("disabled_wysiwyg");
+
         for (Entry<String, Object> property: map.entrySet()){
 
             key = property.getKey();
-            if (!key.equals("inode") && !key.equals("mod_date") && !key.equals("mod_user") && !key
-                    .equals("sort_order") && !key.equals("structure_inode") && !key
-                    .equals("last_review") && !key.equals("next_review") && !key.equals("review_interval")) {
+            if (!ignoredFields.contains(key)) {
                 contentlet.setProperty(property.getKey(), property.getValue());
             }
 

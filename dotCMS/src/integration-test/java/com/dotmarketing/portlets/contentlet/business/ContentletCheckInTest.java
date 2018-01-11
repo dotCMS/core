@@ -65,8 +65,6 @@ public class ContentletCheckInTest {
   public void checkinInvalidFileContent () throws Exception {
 
       Folder folder1  = null;
-      Contentlet con2 = null;
-
 
       boolean respectFrontendRoles=false;
       String fileTypeId=APILocator.getContentTypeAPI(APILocator.systemUser()).find("fileAsset").id();
@@ -99,7 +97,7 @@ public class ContentletCheckInTest {
           asset.setFolder(folder1.getIdentifier());
           Contentlet con = contentletAPI.checkin(asset, user, true);
 
-          con2 = contentletAPI.find(con.getInode(), user, true);
+          Contentlet con2 = contentletAPI.find(con.getInode(), user, true);
 
           assert (con.equals(con2));
 
@@ -114,10 +112,6 @@ public class ContentletCheckInTest {
       }finally{
           if (folder1 != null) {
               folderAPI.delete(folder1, user, false);
-          }
-
-          if (con2 != null && con2.getInode() != null) {
-              contentletAPI.delete(con2, user, false);
           }
       }
   }
