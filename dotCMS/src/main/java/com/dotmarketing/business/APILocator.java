@@ -61,6 +61,8 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
@@ -754,6 +756,10 @@ public class APILocator extends Locator<APIIndex>{
     	return getAPILocatorInstance().getContentTypeAPIImpl(user, respectFrontendRoles);
 	}
 
+    public static MultiTreeAPI getMultiTreeAPI() {
+        return (MultiTreeAPI) getInstance( APIIndex.MULTI_TREE_API );
+    }
+
     @VisibleForTesting
     protected ContentTypeAPI getContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     	return new ContentTypeAPIImpl(user, respectFrontendRoles);
@@ -989,7 +995,8 @@ enum APIIndex
 	KEY_VALUE_API,
 	LOCAL_SYSTEM_EVENTS_API,
 	LANGUAGE_VARIABLE_API,
-	VANITY_URLS_API;
+	VANITY_URLS_API,
+	MULTI_TREE_API;
 
 	Object create() {
 		switch(this) {
@@ -1057,6 +1064,7 @@ enum APIIndex
 			case KEY_VALUE_API: return new KeyValueAPIImpl();
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
+			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
