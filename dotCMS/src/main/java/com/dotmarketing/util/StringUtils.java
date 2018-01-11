@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.List;
@@ -195,6 +196,10 @@ public class StringUtils {
         return interpolateMatches;
     }
 
+    public static <T> T getOrDefault (final T value, final Supplier<T> defaultSupplier) {
+        return value != null ? value : defaultSupplier.get();
+    }
+
     /**
      * Returns true if the pattern match on the string
      * @param string  String string to search
@@ -209,6 +214,4 @@ public class StringUtils {
 
         return patternCacheMap.get(pattern).matcher(string).matches();
     }
-    
-    
 }
