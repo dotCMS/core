@@ -107,12 +107,15 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
     private static final String ORACLE_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "DROP INDEX WK_IDX_SCHEME_STR_2";
 
-    private static final String MYSQL_DROP_WORKFLOW_ACTION__STEP_FK = "alter table workflow_action drop foreign key fooconstraint     DROP INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure";
-    private static final String POSTGRES_DROP_WORKFLOW_ACTION__STEP_FK = "DROP INDEX IF EXISTS workflow_idx_scheme_structure_2 CASCADE";
-    private static final String MSSQL_DROP_WORKFLOW_ACTION__STEP_FK = MYSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
-    private static final String ORACLE_DROP_WORKFLOW_ACTION__STEP_FK = "DROP INDEX WK_IDX_SCHEME_STR_2";
+    private static final String MYSQL_DROP_WORKFLOW_ACTION_STEP_INDEX = "DROP INDEX workflow_idx_action_step ON workflow_action";
+    private static final String POSTGRES_DROP_WORKFLOW_ACTION_STEP_INDEX = "DROP INDEX IF EXISTS workflow_idx_action_step CASCADE";
+    private static final String MSSQL_DROP_WORKFLOW_ACTION_STEP_INDEX = MYSQL_DROP_WORKFLOW_ACTION_STEP_INDEX;
+    private static final String ORACLE_DROP_WORKFLOW_ACTION_STEP_INDEX = "DROP INDEX wk_idx_act_step";
 
-
+    private static final String MYSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action MODIFY step_id varchar(36) NULL";
+    private static final String POSTGRES_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN scheme_id DROP NOT NULL";
+    private static final String MSSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN scheme_id NVARCHAR(36) NULL";
+    private static final String ORACLE_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action MODIFY (scheme_id null)";
 
     private static final String POSTGRES_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure(structure_id)";
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
@@ -151,18 +154,20 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
 
         // SCHEMA CHANGES
-        this.createWorkflowActionStepTable           (dc);
+        this.createWorkflowActionStepTable                      (dc);
         final boolean schemeIdColumnCreated =
-                this.addSchemeIdColumn               (dc);
-        this.addShowOnColumn                         (dc);
-        this.removeWorkflowActionStepIdWorkflowStepFK();
+                this.addSchemeIdColumn                          (dc);
+        this.addShowOnColumn                                    (dc);
+        this.removeWorkflowActionStepIdWorkflowStepFK             ();
+        this.executeDropWorkflowActionStepIdIndex               (dc);
+        this.executeDropWorkflowActionStepIdNotNullConstrain    (dc);
         // DATA CHANGES
-        this.addWorkflowActionStepData               (dc);
-        this.updateWorkflowActionData                (dc);
-        this.updateWorkflowSchemeXStructureData      (dc);
+        this.addWorkflowActionStepData                          (dc);
+        this.updateWorkflowActionData                           (dc);
+        this.updateWorkflowSchemeXStructureData                 (dc);
 
         if (schemeIdColumnCreated) {
-            this.addNotNullConstraintShowOnColumn    (dc);
+            this.addNotNullConstraintShowOnColumn               (dc);
         }
 
 
@@ -188,7 +193,29 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void addNotNullConstraintShowOnColumn(final DotConnect dc) throws DotHibernateException {
+    private void executeDropWorkflowActionStepIdIndex(DotConnect dc) {
+        Logger.info(this, "Removing 'workflow_idx_action_step' index in 'workflow_action' table.");
+        try {
+            dc.executeStatement(dropWorkflowActionStepIdIndexQuery());
+        } catch (SQLException e) {
+            throw new DotRuntimeException(
+                    "An error occurred when removing 'workflow_idx_action_step' index in 'workflow_action' table.",
+                    e);
+        }
+    }
+
+    private void executeDropWorkflowActionStepIdNotNullConstrain(DotConnect dc) {
+        Logger.info(this, "Removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.");
+        try {
+            dc.executeStatement(dropWorkflowActionStepIdNotNullConstrainQuery());
+        } catch (SQLException e) {
+            throw new DotRuntimeException(
+                    "An error occurred when removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.",
+                    e);
+        }
+    }
+
+    private void addNotNullConstraintShowOnColumn(final DotConnect dc) {
 
         Logger.info(this, "Adding new 'scheme_id' constraints");
 
@@ -479,6 +506,46 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
             sql =  MSSQL_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
         } else if (DbConnectionFactory.isOracle()) {
             sql =  ORACLE_DROP_WORKFLOW_SCHEME_X_STRUCTURE_INDEX;
+        }
+
+        return sql;
+    }
+
+    /**
+     * Query to drop the workflow_idx_action_step index.
+     */
+    private String dropWorkflowActionStepIdIndexQuery() {
+
+        String sql = null;
+
+        if (DbConnectionFactory.isMySql()) {
+            sql = MYSQL_DROP_WORKFLOW_ACTION_STEP_INDEX;
+        } else if (DbConnectionFactory.isPostgres()) {
+            sql = POSTGRES_DROP_WORKFLOW_ACTION_STEP_INDEX;
+        } else if (DbConnectionFactory.isMsSql()) {
+            sql = MSSQL_DROP_WORKFLOW_ACTION_STEP_INDEX;
+        } else if (DbConnectionFactory.isOracle()) {
+            sql = ORACLE_DROP_WORKFLOW_ACTION_STEP_INDEX;
+        }
+
+        return sql;
+    }
+
+    /**
+     * Query to remove the step_id NOT NULL constrain from the workflow_action table
+     */
+    private String dropWorkflowActionStepIdNotNullConstrainQuery() {
+
+        String sql = null;
+
+        if (DbConnectionFactory.isMySql()) {
+            sql = MYSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL;
+        } else if (DbConnectionFactory.isPostgres()) {
+            sql = POSTGRES_DROP_WORKFLOW_ACTION_STEP_NOT_NULL;
+        } else if (DbConnectionFactory.isMsSql()) {
+            sql = MSSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL;
+        } else if (DbConnectionFactory.isOracle()) {
+            sql = ORACLE_DROP_WORKFLOW_ACTION_STEP_NOT_NULL;
         }
 
         return sql;
