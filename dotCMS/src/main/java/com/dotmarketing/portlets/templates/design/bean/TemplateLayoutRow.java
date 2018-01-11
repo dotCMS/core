@@ -98,7 +98,7 @@ public class TemplateLayoutRow {
      * @param containers
      * @param isPreview
      */
-    public void addColumnContainers ( List<String> containers, Boolean isPreview ) {
+    public void addColumnContainers ( List<ContainerUUID> containers, Boolean isPreview ) {
 
         if ( columns == null ) {
             columns = new ArrayList<TemplateLayoutColumn>();

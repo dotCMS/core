@@ -9,6 +9,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
  * Multi-Tree represents the relationship between a Legacy or Content Page, a container, and a
@@ -43,18 +46,19 @@ public class MultiTreeFactory {
 
 
 
-    final static String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
-    final static String SELECT_SQL =
+    static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
+    static final String SELECT_SQL =
             "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
-    final static String INSERT_SQL =
+    static final String INSERT_SQL =
             "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
-    final static String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
-    final static String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
-    final static String SELECT_ALL = "select * from multi_tree  ";
-    final static String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
-    final static String SELECT_BY_PARENTS_AND_RELATIONS =
+    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
+    static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
+    static final String SELECT_ALL = "select * from multi_tree  ";
+    static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
+    static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
 
@@ -246,7 +250,7 @@ public class MultiTreeFactory {
      * @throws DotSecurityException
      */
     @WrapInTransaction
-    public static void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException {
+    public static void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty())
             throw new DotDataException("empty list passed in");
         int i = 0;
@@ -254,13 +258,44 @@ public class MultiTreeFactory {
             _dbUpsert(tree.setTreeOrder(i++));
         }
 
-        MultiTree mTree = mTrees.get(0);
+        final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
 
     }
 
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the {@link MultiTree} linked
+     * previously with the page.
+     *
+     * @param pageId Page's identifier
+     * @param mTrees
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    public static void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty()) {
+            throw new DotDataException("empty list passed in");
+        }
 
+        Logger.debug(MultiTreeFactory.class, String.format("Saving page's content: %s", mTrees));
+
+        final DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
+                .addParam(pageId);
+        db.loadResult();
+
+        final List<Params> params = list();
+        for (final MultiTree tree : mTrees) {
+            params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+        }
+
+        db.executeBatch(INSERT_SQL, params);
+
+        final MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
+
+    }
 
     private static void _dbUpsert(final MultiTree mtree) throws DotDataException {
 
