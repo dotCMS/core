@@ -27,14 +27,19 @@ public enum DbType {
         switch (dbType) {
             case "PostgreSQL":
                 type = DbType.POSTGRESQL;
+                break;
             case "MySQL":
                 type = DbType.MYSQL;
+                break;
             case "Microsoft SQL Server":
                 type = DbType.MSSQL;
+                break;
             case "Oracle":
                 type = DbType.ORACLE;
+                break;
             case "H2":
                 type = DbType.H2;
+                break;
         }
         return type;
     }
