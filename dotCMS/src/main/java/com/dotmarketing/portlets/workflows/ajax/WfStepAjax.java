@@ -114,17 +114,21 @@ public class WfStepAjax extends WfBaseAction {
 
 		final String stepId   = request.getParameter("stepId");
 		final String actionId = request.getParameter("actionId");
-
+        final int order= (request.getParameter("order")!=null) ? Integer.valueOf(request.getParameter("order")): 0;
 		try {
 
 			final User user   = this.userWebAPI.getUser(request);
 
 			Logger.debug(this, "Adding the action: " + actionId +
 							", to the step: " + stepId);
+			
+			
+			
 			this.workflowHelper.saveActionToStep (
 					new WorkflowActionStepBean.Builder()
 							.stepId(stepId)
 							.actionId(actionId)
+							.order(order)
 							.build(), user);
 
 			writeSuccess(response, stepId );

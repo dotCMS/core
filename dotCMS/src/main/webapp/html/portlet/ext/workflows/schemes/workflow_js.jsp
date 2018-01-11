@@ -323,6 +323,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 	},
 	alreadyDone : "",
 	addStep : function (){
+
 		var stepName = encodeURIComponent(dijit.byId("stepName").getValue());
 
 
@@ -351,12 +352,39 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		dojo.xhrPost(xhrArgs);
 
 		return;
-
-
 	},
+	
+	showAddNewStep : function (){
+		var dia = dijit.byId("addNewStepDia");
+		if(dia){
+			dia.destroyRecursive();
+		}
+		
+		dia = new dijit.Dialog({
+				content: '<div class="inline-form"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
+				id			:	"addNewStepDia",
+				title		: 	"<%=LanguageUtil.get(pageContext, "Add-Step")%>",
+				onKeyPress:function(e){
+				if(e.keyCode==13){
+					stepAdmin.addStep();
+				}
+				}
+			});
+
+		dia.show();
+	
+	
+	},
+	
+	
+	
 	addSuccess : function (data){
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("Added");
+		var dia = dijit.byId("addNewStepDia");
+				if(dia){
+			dia.destroyRecursive();
+		}
 	},
 
 	deleteStep : function (stepId){
@@ -389,10 +417,34 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		dojo.xhrPut(xhrArgs);
 
 		return;
+	},
+	reorderStep : function (stepId, order){
 
 
 
+		var xhrArgs = {
+			url: "/api/v1/workflow/reorder/step/" + stepId+ "/order/" + order,
+			async:true,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-reorder-Step")%>", true);
+						return false;
+					} else {
+						console.log("worked");
+						return false;
+					}
+				} else {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-reorder-Step")%>", true);
+					return false;
 
+
+				}
+			}
+		};
+		dojo.xhrPut(xhrArgs);
+
+		return;
 	},
 	deleteSuccess : function (data){
 		mainAdmin.refresh();
@@ -585,9 +637,6 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		var actionId = movedId.split("_")[1];
 		var i=0;
 		dojo.query("#jsNode" + stepId + " tr").forEach(function(node){
-
-
-
 			if(node.id == movedId ){
 				var xhrArgs = {
 					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i + "&stepId=" + stepId,
@@ -613,37 +662,84 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		})
 	},
 
-	deleteAction : function (actionId){
-		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
-			return;
-		}
-		var xhrArgs = {
-			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=delete&actionId=" + actionId ,
-			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-
-
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						showDotCMSSystemMessage(dataOrError, true);
-					} else {
-						mainAdmin.refresh();
-					}
-				} else {
-					this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-scheme")%>");
-				}
+	findStepDiv : function (ele){
+		var parent = ele;
+		while (true) {
+			if(parent.dataset.wfstepId){
+				return parent;
 			}
-		};
-		dojo.xhrPut(xhrArgs);
-
-		return;
+			parent = parent.parentNode;
+			if(parent == document.body){
+				return;
+			}
+		}
+		return ;
 	},
+	
+	findStepId : function (ele){
+		var parent = ele;
+		while (true) {
+			if(parent.dataset.wfstepId){
+				return parent.dataset.wfstepId;
+			}
+			parent = parent.parentNode;
+			if(parent == document.body){
+				return;
+			}
+		}
+		return ;
+	},
+	
+	findActionId : function (ele){
+		var parent = ele;
+		while (true) {
+			if(parent.dataset.wfactionId){
+				return parent.dataset.wfactionId;
+			}
+			parent = parent.parentNode;
+			if(parent == document.body){
+				return;
+			}
+		}
+		return ;
+	},
+	findActionDiv : function (ele){
+		var parent = ele;
+		while (true) {
+			if(parent.classList.contains("wf-action-wrapper")){
+				return parent;
+			}
+			parent = parent.parentNode;
+			if(parent == document.body){
+				return;
+			}
+		}
+		return ;
+	},
+	
+	deleteActionForStep : function (ele){
 
-	deleteActionForStep : function (actionId, stepId){
-		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
-			return;
+		var stepId = this.findStepId(ele);
+		var actionId = this.findActionId(ele);
+
+
+		
+		let matches = document.querySelectorAll('.x' + actionId );
+
+		// we only confirm if this is the last instance of the action
+		
+		
+		var deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ;
+		if(matches.length ==1){
+			if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
+				return;
+			}
+			else{
+				deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=delete&actionId=" + actionId + "&stepId=" + stepId ;
+			}
 		}
 		var xhrArgs = {
-			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ,
+			 url: deleteUrl ,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 
@@ -653,6 +749,10 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 
 					} else {
+						var die  =actionAdmin.findActionDiv(ele);
+						
+						die.parentNode.removeChild(die);
+						
 						actionAdmin.deleteSuccess(dataOrError);
 					}
 				} else {
@@ -668,17 +768,14 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 
 	deleteSuccess : function(message) {
-		console.log(message);
-		console.log(message.split(":")[1]);
-		stepAdmin.showViewSteps(message.split(":")[1]);
+
 
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Deleted")%>");
 	},
 
 	deleteSuccess : function(message) {
-		console.log(message);
-		console.log(message.split(":")[1]);
-		stepAdmin.showViewSteps(message.split(":")[1]);
+
+
 
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Deleted")%>");
 
@@ -692,7 +789,12 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
     addOrAssociatedAction : function(schemeId, stepId, actionsDropDownOptionsId) {
 
 		let actionsDropDownOptions = document.getElementById (actionsDropDownOptionsId);
-		let actionId               = actionsDropDownOptions.options[actionsDropDownOptions.selectedIndex].value;
+		let actionId               = "new";
+
+		if(actionsDropDownOptions !=null   ){
+			actionId               = actionsDropDownOptions.options[actionsDropDownOptions.selectedIndex].value;
+		}
+
 		if ('new' === actionId) {
 			mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId +  "&stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
 		} else {
@@ -718,7 +820,48 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		}
 	},
+	copyOrReorderAction : function(ele) {
+	
+		let stepId = this.findStepId(ele);
+		let stepDiv = this.findStepDiv(ele);
+		let actionDiv = this.findActionDiv(ele);
+		let actionId = this.findActionId(ele);
+		let order=0;
+		let actions = stepDiv.querySelectorAll(".wf-action-wrapper");
 
+		for(i=0;i<actions.length;i++){
+			if(actions[i] == actionDiv && order==0){
+				order = i;
+			}
+			if(actions[i] != actionDiv && actions[i].dataset.wfactionId == ele .dataset.wfactionId){
+				actions[i].parentNode.removeChild(actions[i]);
+			}
+		}
+		console.log(actionDiv);
+		console.log(actionId);
+		
+		
+
+		var xhrArgs = {
+		url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=addActionToStep&stepId=" + stepId + "&actionId=" + actionId + "&order=" + order,
+		handle : function(dataOrError, ioArgs) {
+			if (dojo.isString(dataOrError)) {
+
+				if (dataOrError.indexOf("FAILURE") == 0) {
+					showDotCMSSystemMessage(dataOrError, true);
+				} else {
+					//mainAdmin.refresh();
+				}
+			} else {
+				this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+
+			}
+		}
+	};
+
+	dojo.xhrPost(xhrArgs);
+	
+	},
 	saveAction : function(schemeId) {
 
 		var myForm = dijit.byId("addEditAction");

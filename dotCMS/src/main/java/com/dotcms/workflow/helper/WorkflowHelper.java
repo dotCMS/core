@@ -593,10 +593,23 @@ public class WorkflowHelper {
     } // save.
 
     @WrapInTransaction
-    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) {
+    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
 
+        WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
+        if(action!=null) {
+            WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
+            .actionId(workflowActionStepForm.getActionId()).stepId(workflowActionStepForm.getStepId())
+            .order(workflowActionStepForm.getOrder()).build();
+
+            this.reorderAction(bean, user);
+            
+        }else {
+        
+        
+        
         this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
-                workflowActionStepForm.getStepId(), user);
+                workflowActionStepForm.getStepId(), user, workflowActionStepForm.getOrder());
+        }
     } // addActionToStep.
 
 
