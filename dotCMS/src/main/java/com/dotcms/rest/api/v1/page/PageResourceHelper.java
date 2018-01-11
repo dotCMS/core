@@ -214,10 +214,10 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
+        final Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
                 (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
-        TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+        final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
 
         final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
 
@@ -228,14 +228,14 @@ public class PageResourceHelper implements Serializable {
         return new PageView(site, template, mappedContainers, page, layout);
     }
 
-    private void renderContainer(Map<String, ContainerView> containers, Context velocityContext )
+    private void renderContainer(final Map<String, ContainerView> containers, final Context velocityContext )
             throws DotSecurityException, DotDataException {
 
-        for (ContainerView containerView : containers.values()) {
-            Container container = containerView.getContainer();
+        for (final ContainerView containerView : containers.values()) {
+            final Container container = containerView.getContainer();
 
             try {
-                String rendered = VelocityUtil.mergeTemplate("/live/" + container.getIdentifier() +
+                final String rendered = VelocityUtil.mergeTemplate("/live/" + container.getIdentifier() +
                         ".container", velocityContext);
                 containerView.setRendered(rendered);
             } catch (Exception e) {
@@ -246,7 +246,7 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    private Map<String, ContainerView> getMappedContainers(Template template, User user)
+    private Map<String, ContainerView> getMappedContainers(final Template template, final User user)
             throws DotSecurityException, DotDataException {
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, user, false);

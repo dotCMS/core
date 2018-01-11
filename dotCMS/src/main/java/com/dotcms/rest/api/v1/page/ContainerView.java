@@ -75,7 +75,7 @@ class ContainerView implements Serializable {
      *
      * @param rendered
      */
-    public void setRendered(String rendered) {
+    public void setRendered(final String rendered) {
         this.rendered = rendered;
     }
 }

@@ -253,7 +253,6 @@ public interface ContainerAPI {
     
 	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	@Deprecated
 	public List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
 
 }

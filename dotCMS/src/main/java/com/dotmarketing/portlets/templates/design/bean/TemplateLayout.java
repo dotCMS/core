@@ -150,14 +150,14 @@ public class TemplateLayout {
     }
 
     public List<String> getContainersId() {
-        List<String> containerIdentifiers = new ArrayList<>();
-        List<TemplateLayoutRow> rows = this.body.getRows();
+        final List<String> containerIdentifiers = new ArrayList<>();
+        final List<TemplateLayoutRow> rows = this.body.getRows();
 
-        for (TemplateLayoutRow row : rows) {
-            List<TemplateLayoutColumn> columns = row.getColumns();
+        for (final TemplateLayoutRow row : rows) {
+            final List<TemplateLayoutColumn> columns = row.getColumns();
 
-            for (TemplateLayoutColumn column : columns) {
-                List<String> columnContainers = column.getContainers();
+            for (final TemplateLayoutColumn column : columns) {
+                final List<String> columnContainers = column.getContainers();
                 containerIdentifiers.addAll(columnContainers);
             }
         }

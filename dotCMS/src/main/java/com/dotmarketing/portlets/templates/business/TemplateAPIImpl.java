@@ -6,7 +6,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -16,15 +15,12 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -40,13 +36,10 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
-import org.apache.velocity.tools.view.context.ViewContext;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -262,16 +255,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     @CloseDBIfOpened
     @Override
-	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
+	public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-		TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
-		List<String> containersId = layout.getContainersId();
+		final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+		final List<String> containersId = layout.getContainersId();
 
-		List<Container> containers = new ArrayList<>();
+		final List<Container> containers = new ArrayList<>();
 
-		for (String cont : containersId) {
-			Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+		for (final String cont : containersId) {
+			final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
 
 			if(container==null) {
 				continue;
