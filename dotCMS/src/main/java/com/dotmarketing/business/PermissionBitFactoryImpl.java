@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -19,7 +20,8 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.business.commands.UpsertPermissionCommand;
+import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
+import com.dotmarketing.db.commands.UpsertCommand;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -2253,6 +2255,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 
+	protected static final String PERMISSION_REFERENCE = "permission_reference";
+	protected static final String ASSET_ID = "asset_id";
+	protected static final String REFERENCE_ID = "reference_id";
+	protected static final String PERMISSION_TYPE = "permission_type";
+	protected static final String ID = "id";
+
     @WrapInTransaction
 	private void deleteInsertPermission(Permissionable permissionable, String type,
             Permissionable newReference) throws DotDataException {
@@ -2275,8 +2283,25 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
                 dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
 
-				UpsertPermissionCommand command = UpsertPermissionCommand.createUpsertPermissionCommand(dc1, permissionId, newReference, type);
-				command.execute();
+				UpsertCommand upsertCommand = UpsertCommand.getInstance();
+
+				SimpleMapAppContext replacements = new SimpleMapAppContext();
+				replacements.setAttribute(QueryReplacements.TABLE, PERMISSION_REFERENCE);
+				replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, ASSET_ID);
+				replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, permissionId);
+				replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, new String[]{REFERENCE_ID, PERMISSION_TYPE});
+
+				if (DbConnectionFactory.isPostgres()) {
+					replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+					replacements.setAttribute(QueryReplacements.ID_VALUE, "nextval('permission_reference_seq')");
+				}
+				if (DbConnectionFactory.isOracle()) {
+					replacements.setAttribute(QueryReplacements.ID_COLUMN, ID);
+					replacements.setAttribute(QueryReplacements.ID_VALUE, "permission_reference_seq.NEXTVAL");
+				}
+
+				String query = upsertCommand.generateSQLQuery(replacements);
+				upsertCommand.execute(dc1, query, permissionId, newReference.getPermissionId(), type);
             }
 
         } catch(Exception exception){
