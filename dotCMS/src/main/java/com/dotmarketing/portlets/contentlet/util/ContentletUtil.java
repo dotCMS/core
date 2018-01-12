@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -26,6 +27,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ContentletUtil {
+
+	private static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[",
+			"]", "^", "\"", "?", ":", "\\" };
 	
 	//http://jira.dotmarketing.net/browse/DOTCMS-3393
 	public static Map<String, Object> getHostFolderInfo(String hostFolderId, User user) throws DotDataException, DotSecurityException {
@@ -141,6 +145,19 @@ public class ContentletUtil {
 		}
 
 		return m;
+	}
+
+	/**
+	 * Allows the user to escape special characters on a Lucene Query
+	 * @param text A regular Lucene Query that may contain special characters
+	 * @return an escaped text string
+	 */
+	public static String escape(String text) {
+		for (int i = SPECIAL_CHARS.length - 1; i >= 0; i--) {
+			text = StringUtils.replace(text, SPECIAL_CHARS[i], "\\" + SPECIAL_CHARS[i]);
+		}
+
+		return text;
 	}
 	
 }
