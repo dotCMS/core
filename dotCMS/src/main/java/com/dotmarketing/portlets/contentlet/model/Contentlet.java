@@ -72,6 +72,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
+	/**
+	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
+	 */
+	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
+
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
     public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
@@ -947,6 +952,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         return getStructure().getInode().equals(hostStructure.getInode());
     }
+
+	/**
+	 * If the inode is set, means it has at least one version
+	 * @return boolean true if has a version
+	 */
+	public boolean hasVersion () {
+
+		return InodeUtils.isSet(this.getInode());
+	}
+
+	/**
+	 * If does not has a version, means is new.
+	 * @return boolean true if it is new
+	 */
+	public boolean isNew () {
+
+		return !this.hasVersion();
+	}
 
     /**
      * 

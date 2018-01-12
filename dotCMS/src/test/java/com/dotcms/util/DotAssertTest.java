@@ -25,29 +25,29 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.isTrue(false, "Uppss");
+            DotPreconditions.isTrue(false, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.isTrue(true, "Right");
+        DotPreconditions.isTrue(true, "Right");
 
         //
         try {
 
-            DotAssert.isTrue(false, () -> "Uppss");
+            DotPreconditions.isTrue(false, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.isTrue(true, () -> "Right");
+        DotPreconditions.isTrue(true, () -> "Right");
 
         //
         try {
 
-            DotAssert.isTrue(false, () -> "Uppss", TestException.class);
+            DotPreconditions.isTrue(false, () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -58,7 +58,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.isTrue(true, () -> "Right", TestException.class);
+            DotPreconditions.isTrue(true, () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -66,7 +66,7 @@ public class DotAssertTest extends UnitTestBase {
         //
         try {
 
-            DotAssert.isTrue(false, TestException.class, () -> "Uppss");
+            DotPreconditions.isTrue(false, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -75,7 +75,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.isTrue(true, TestException.class, () -> "Right");
+        DotPreconditions.isTrue(true, TestException.class, () -> "Right");
     }
 
     @Test
@@ -83,29 +83,29 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.isNull("Not null", "Uppss");
+            DotPreconditions.isNull("Not null", "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.isNull(null, "Right");
+        DotPreconditions.isNull(null, "Right");
 
         //
         try {
 
-            DotAssert.isNull("Not null", () -> "Uppss");
+            DotPreconditions.isNull("Not null", () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.isNull(null, () -> "Right");
+        DotPreconditions.isNull(null, () -> "Right");
 
         //
         try {
 
-            DotAssert.isNull("Not null", () -> "Uppss", TestException.class);
+            DotPreconditions.isNull("Not null", () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -116,7 +116,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.isNull(null, () -> "Right", TestException.class);
+            DotPreconditions.isNull(null, () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -124,7 +124,7 @@ public class DotAssertTest extends UnitTestBase {
         //
         try {
 
-            DotAssert.isNull("Not null", TestException.class, () -> "Uppss");
+            DotPreconditions.isNull("Not null", TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -133,7 +133,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.isNull(null, TestException.class, () -> "Right");
+        DotPreconditions.isNull(null, TestException.class, () -> "Right");
     }
 
     /// Not Null
@@ -142,29 +142,29 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notNull(null, "Uppss");
+            DotPreconditions.notNull(null, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.notNull("not null", "Right");
+        DotPreconditions.notNull("not null", "Right");
 
         //
         try {
 
-            DotAssert.notNull(null, () -> "Uppss");
+            DotPreconditions.notNull(null, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.notNull(" not null", () -> "Right");
+        DotPreconditions.notNull(" not null", () -> "Right");
 
         //
         try {
 
-            DotAssert.notNull(null, () -> "Uppss", TestException.class);
+            DotPreconditions.notNull(null, () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -175,7 +175,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notNull("not null", () -> "Right", TestException.class);
+            DotPreconditions.notNull("not null", () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -183,7 +183,7 @@ public class DotAssertTest extends UnitTestBase {
         //
         try {
 
-            DotAssert.notNull(null, TestException.class, () -> "Uppss");
+            DotPreconditions.notNull(null, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -192,7 +192,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.notNull("not null", TestException.class, () -> "Right");
+        DotPreconditions.notNull("not null", TestException.class, () -> "Right");
     }
 
     /// Not Empty
@@ -202,7 +202,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Object [] nullArray = null;
-            DotAssert.notEmpty(nullArray, "Uppss");
+            DotPreconditions.notEmpty(nullArray, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -210,37 +210,37 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new Object[] {}, "Uppss");
+            DotPreconditions.notEmpty(new Object[] {}, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.notEmpty(new Object[] {"not null"}, "Right");
-
-        try {
-
-            Object [] nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss");
-            Assert.fail("It must throws an IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-
-            DotAssert.notEmpty(new Object[] {}, () -> "Uppss");
-            Assert.fail("It must throws an IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        DotAssert.notEmpty(new Object[] {"not null"}, () -> "Right");
+        DotPreconditions.notEmpty(new Object[] {"not null"}, "Right");
 
         try {
 
             Object [] nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss", TestException.class);
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss");
+            Assert.fail("It must throws an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+
+            DotPreconditions.notEmpty(new Object[] {}, () -> "Uppss");
+            Assert.fail("It must throws an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        DotPreconditions.notEmpty(new Object[] {"not null"}, () -> "Right");
+
+        try {
+
+            Object [] nullArray = null;
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -251,7 +251,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new Object[] {"not null"}, () -> "Right", TestException.class);
+            DotPreconditions.notEmpty(new Object[] {"not null"}, () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -260,7 +260,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Object [] nullArray = null;
-            DotAssert.notEmpty(nullArray, TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(nullArray, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -271,7 +271,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new Object[] {}, TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(new Object[] {}, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -280,7 +280,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.notEmpty(new Object[] {"not null"}, TestException.class, () -> "Right");
+        DotPreconditions.notEmpty(new Object[] {"not null"}, TestException.class, () -> "Right");
     }
 
     /// Not Empty
@@ -290,7 +290,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Collection nullArray = null;
-            DotAssert.notEmpty(nullArray, "Uppss");
+            DotPreconditions.notEmpty(nullArray, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -298,37 +298,37 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(Arrays.asList(new Object[] {}), "Uppss");
+            DotPreconditions.notEmpty(Arrays.asList(new Object[] {}), "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.notEmpty(Arrays.asList(new Object[] {"not null"}), "Right");
-
-        try {
-
-            Collection nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss");
-            Assert.fail("It must throws an IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-
-            DotAssert.notEmpty(Arrays.asList(new Object[] {}), () -> "Uppss");
-            Assert.fail("It must throws an IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        DotAssert.notEmpty(Arrays.asList(new Object[] {"not null"}), () -> "Right");
+        DotPreconditions.notEmpty(Arrays.asList(new Object[] {"not null"}), "Right");
 
         try {
 
             Collection nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss", TestException.class);
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss");
+            Assert.fail("It must throws an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+
+            DotPreconditions.notEmpty(Arrays.asList(new Object[] {}), () -> "Uppss");
+            Assert.fail("It must throws an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        DotPreconditions.notEmpty(Arrays.asList(new Object[] {"not null"}), () -> "Right");
+
+        try {
+
+            Collection nullArray = null;
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -339,7 +339,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(Arrays.asList(new Object[] {"not null"}), () -> "Right", TestException.class);
+            DotPreconditions.notEmpty(Arrays.asList(new Object[] {"not null"}), () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -348,7 +348,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Object [] nullArray = null;
-            DotAssert.notEmpty(nullArray, TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(nullArray, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -359,7 +359,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(Arrays.asList(new Object[] {}), TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(Arrays.asList(new Object[] {}), TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -368,7 +368,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.notEmpty(Arrays.asList(new Object[] {"not null"}), TestException.class, () -> "Right");
+        DotPreconditions.notEmpty(Arrays.asList(new Object[] {"not null"}), TestException.class, () -> "Right");
     }
 
     /// Not Empty
@@ -378,7 +378,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Map nullArray = null;
-            DotAssert.notEmpty(nullArray, "Uppss");
+            DotPreconditions.notEmpty(nullArray, "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -386,7 +386,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new HashMap(), "Uppss");
+            DotPreconditions.notEmpty(new HashMap(), "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -394,12 +394,12 @@ public class DotAssertTest extends UnitTestBase {
 
         Map map = new HashMap();
         map.put("not null", "not null");
-        DotAssert.notEmpty(map, "Right");
+        DotPreconditions.notEmpty(map, "Right");
 
         try {
 
             Map nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss");
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -407,18 +407,18 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new HashMap(), () -> "Uppss");
+            DotPreconditions.notEmpty(new HashMap(), () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
         }
 
-        DotAssert.notEmpty(map, () -> "Right");
+        DotPreconditions.notEmpty(map, () -> "Right");
 
         try {
 
             Map nullArray = null;
-            DotAssert.notEmpty(nullArray, () -> "Uppss", TestException.class);
+            DotPreconditions.notEmpty(nullArray, () -> "Uppss", TestException.class);
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -429,7 +429,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(map, () -> "Right", TestException.class);
+            DotPreconditions.notEmpty(map, () -> "Right", TestException.class);
         } catch (Throwable throwable) {
             Assert.fail("It must not throws an Throwable");
         }
@@ -438,7 +438,7 @@ public class DotAssertTest extends UnitTestBase {
         try {
 
             Map nullArray = null;
-            DotAssert.notEmpty(nullArray, TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(nullArray, TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -449,7 +449,7 @@ public class DotAssertTest extends UnitTestBase {
 
         try {
 
-            DotAssert.notEmpty(new HashMap(), TestException.class, () -> "Uppss");
+            DotPreconditions.notEmpty(new HashMap(), TestException.class, () -> "Uppss");
             Assert.fail("It must throws an IllegalArgumentException");
         } catch (IllegalArgumentException e) {
 
@@ -458,7 +458,7 @@ public class DotAssertTest extends UnitTestBase {
 
         }
 
-        DotAssert.notEmpty(map, TestException.class, () -> "Right");
+        DotPreconditions.notEmpty(map, TestException.class, () -> "Right");
     }
 
     public static class TestException extends RuntimeException {
