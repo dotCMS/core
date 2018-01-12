@@ -40,8 +40,6 @@ public class DotTemplateTool  {
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
         .build();
 
-    private DotTemplateTool(){}
-
     /**
      * Given a theme id we will parse it and return the Layout for the given template
      *
