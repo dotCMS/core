@@ -58,12 +58,16 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 			final Contentlet checkoutContentlet = this.contentletAPI.checkout
 					(contentlet.getInode(), processor.getUser(), false);
+			final String     inode              = checkoutContentlet.getInode();
 
+			this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+			checkoutContentlet.setInode(inode);
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
-			// caerle encima con lo que tenga el processor
 
-			this.contentletAPI.checkin(
+			final Contentlet contentletNew = this.contentletAPI.checkin(
 					checkoutContentlet, processor.getUser(), false);
+
+			processor.setContentlet(contentletNew);
 
 			Logger.debug(this,
 					"content version already saved for the contentlet: " + contentlet.getIdentifier());

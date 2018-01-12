@@ -167,7 +167,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
                 (SaveContentDraftActionletTest.contentlet.getIdentifier(),
                         false, languageId, user, false);
 
-        // the contentlet save by the action must be not null, should has a new version.
+        // the contentlet save by the action must be not null, should has the same version.
         Assert.assertNotNull(contentlet5);
         Assert.assertNotNull(contentlet5.getInode());
         Assert.assertTrue(contentlet5.getInode().equals(contentlet3.getInode()));

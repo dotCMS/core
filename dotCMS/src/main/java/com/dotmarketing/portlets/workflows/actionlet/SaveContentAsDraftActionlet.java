@@ -74,9 +74,10 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			this.buildRelationships(processor.getUser(), contentRelationships, contentlet);
 
-			this.contentletAPI.saveDraft(
-					processor.getContentlet(), contentRelationships, categories, permissions, user, true);
+			final Contentlet contentletNew = this.contentletAPI.saveDraft(
+					contentlet, contentRelationships, categories, permissions, user, true);
 
+			processor.setContentlet(contentletNew);
 			Logger.debug(this,
 					"content draft already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (Exception e) {

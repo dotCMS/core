@@ -65,9 +65,9 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         SaveContentActionletTest.type = contentTypeAPI.save(
                 ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
                 .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                .description("SaveContentActionletTest...")
-                .name("SaveContentActionletTest").owner(APILocator.systemUser().toString())
-                .variable("SaveContentActionletTest").build());
+                .description("DotSaveContentActionletTest...")
+                .name("DotSaveContentActionletTest").owner(APILocator.systemUser().toString())
+                .variable("DotSaveContentActionletTest").build());
 
         final List<Field> fields = new ArrayList<>(SaveContentActionletTest.type.fields());
 
@@ -133,13 +133,15 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         // triggering the save content action
         contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
                 this.schemeStepActionResult.getAction().getId());
-        contentlet1.setStringProperty("title", "Test Save");
-        contentlet1.setStringProperty("txt",   "Test Save Text");
+        contentlet1.setStringProperty("title", "Test Save 2");
+        contentlet1.setStringProperty("txt",   "Test Save Text 2");
 
         final WorkflowProcessor processor  =
                 SaveContentActionletTest.workflowAPI.fireWorkflowPreCheckin(contentlet1, user);
 
         SaveContentActionletTest.workflowAPI.fireWorkflowPostCheckin(processor);
+
+        contentletAPI.isInodeIndexed(processor.getContentlet().getInode());
 
         final Contentlet contentlet2  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
                 (SaveContentActionletTest.contentlet.getIdentifier(),
@@ -149,8 +151,8 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotNull(contentlet2);
         Assert.assertNotNull(contentlet2.getInode());
         Assert.assertFalse  (contentlet2.getInode().equals(firstInode));
-        Assert.assertEquals ("Test Save",      contentlet2.getStringProperty("title"));
-        Assert.assertEquals ("Test Save Text", contentlet2.getStringProperty("txt"));
+        Assert.assertEquals ("Test Save 2",      contentlet2.getStringProperty("title"));
+        Assert.assertEquals ("Test Save Text 2", contentlet2.getStringProperty("txt"));
 
     }
 }
