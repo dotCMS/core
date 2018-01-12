@@ -109,8 +109,8 @@ public class PageLoader implements DotLoader {
 
 
         if (cmsTemplate == null || !InodeUtils.isSet(cmsTemplate.getInode())) {
-            Logger.error(This.class, "PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id "
-                    + htmlPage.getIdentifier() + ":" + identifier.getURI());
+            throw new DotStateException("PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id "
+                    + htmlPage.getIdentifier() + " template id" + htmlPage.getTemplateId());
         }
 
 

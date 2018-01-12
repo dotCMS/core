@@ -79,7 +79,7 @@ public class PageResourceHelper implements Serializable {
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
 
-    private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
+
 
     /**
      * Private constructor
@@ -191,9 +191,8 @@ public class PageResourceHelper implements Serializable {
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
                                   final HttpServletResponse response, final User user, final PageMode mode) throws Exception {
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+
+        final Host site =resolveSite(request, user);
 
         if(null==page) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -209,10 +208,7 @@ public class PageResourceHelper implements Serializable {
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
                                  final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
-
+        final Host site =resolveSite(request, user);
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
         return  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
@@ -235,9 +231,10 @@ public class PageResourceHelper implements Serializable {
             DotSecurityException, DotDataException {
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+        final Host site =resolveSite(request, user);
+        
+                
+
 
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
         final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
@@ -256,7 +253,7 @@ public class PageResourceHelper implements Serializable {
                 (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate
-                (template, user, RESPECT_FE_ROLES);
+                (template, user, mode.respectAnonPerms);
 
         templateContainers.addAll(APILocator.getContainerAPI().getContainersOnPage(page));
 
@@ -418,4 +415,21 @@ public class PageResourceHelper implements Serializable {
         APILocator.getPermissionAPI()
                 .checkPermission(htmlPageAsset, PermissionLevel.EDIT, user);
     }
+    
+    
+    private Host resolveSite(HttpServletRequest request, User user) throws DotDataException, DotSecurityException {
+        PageMode mode = PageMode.get(request);
+        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+        Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
+
+        if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
+            site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
+        }
+        return site;
+        
+    }
+    
+    
+    
 }

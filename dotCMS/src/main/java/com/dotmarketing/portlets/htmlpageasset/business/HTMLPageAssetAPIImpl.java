@@ -370,7 +370,20 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
     }
 
-    
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean)
+     */
+    @Override
+    public IHTMLPage findPage(final String inode, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        Contentlet cpage = contentletAPI.find(inode, user, respectFrontendRoles);
+        if(cpage!=null) {
+            return this.fromContentlet(cpage);
+        }
+        return null;
+
+    }
 
     
     @Override
