@@ -26,7 +26,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.velocity.DotResourceLoader;
+
 
 /**
  * This class represent a general text resource that may have been
@@ -66,7 +66,7 @@ public class ContentResource extends Resource
             StringWriter sw = new StringWriter();
 
             reader = new BufferedReader(
-                new InputStreamReader(DotResourceLoader.getInstance().getResourceStream(name),
+                new InputStreamReader(com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().getResourceStream(name),
                                       encoding));
 
             char buf[] = new char[1024];

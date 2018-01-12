@@ -1,599 +1,413 @@
 package com.dotmarketing.factories;
 
-import java.sql.SQLException;
-import java.util.Date;
+
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.PageLoader;
 
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
+
+import static com.dotcms.util.CollectionsUtils.list;
+
 /**
- * This class provides utility routines to interact with the Multi-Tree
- * structures in the system. A Multi-Tree represents the relationship between a
- * Legacy or Content Page, a container, and a contentlet.
+ * This class provides utility routines to interact with the Multi-Tree structures in the system. A
+ * Multi-Tree represents the relationship between a Legacy or Content Page, a container, and a
+ * contentlet.
  * <p>
- * Therefore, the content of a page can be described as the sum of several
- * Multi-Tree records which represent each piece of information contained in it.
+ * Therefore, the content of a page can be described as the sum of several Multi-Tree records which
+ * represent each piece of information contained in it.
  * </p>
  * 
  * @author will
  */
 public class MultiTreeFactory {
 
-	public static void deleteMultiTree(Object o1, Object o2, Object o3) {
-		Inode inode1 = (Inode) o1;
-		Inode inode2 = (Inode) o2;
-		Inode inode3 = (Inode) o3;
-
-		try {
 
 
-			DotConnect db = new DotConnect();
-			db.setSQL("delete from multi_tree where parent1 =? and parent2 = ? and child = ? ");
-			db.addParam(inode1.getInode());
-			db.addParam(inode2.getInode());
-			db.addParam(inode3.getInode());
-			db.getResult();
-		}
-		catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage());
-		}
+    static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
+    static final String SELECT_SQL =
+            "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
-	}
+    static final String INSERT_SQL =
+            "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
+    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
+    static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
+    static final String SELECT_ALL = "select * from multi_tree  ";
+    static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
+    static final String SELECT_BY_PARENTS_AND_RELATIONS =
+            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
+
+
+    public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
+        _dbDelete(mTree);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
+    }
+    public static void deleteMultiTree(final List<MultiTree> mTree) throws DotDataException {
+        for(MultiTree tree : mTree) {
+            deleteMultiTree(tree);
+        }
+    }
+    
+    public static void deleteMultiTreeByParent(String pageOrContainer) throws DotDataException {
+        deleteMultiTree(getMultiTrees(pageOrContainer));
+    }
+    
+    public static void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException {
+        deleteMultiTree(getMultiTreesByChild(contentIdentifier));
+    }
     /**
-     * Just invoking deleteMultiTreeByParent1 with null language.
+     * Deletes multi-tree relationship given a MultiTree object. It also updates the version_ts of
+     * all versions of the htmlpage passed in (multiTree.parent1)
+     *
+     * @param multiTree
+     * @throws DotDataException
+     * @throws DotSecurityException
      * 
-     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
-     *      languageId)
      */
-    public static void deleteMultiTreeByParent1(Contentlet contentlet) throws DotDataException {
-        Identifier identifier = new Identifier();
-        identifier.setId(contentlet.getIdentifier());
+    private static void _dbDelete(final MultiTree mTree) throws DotDataException {
 
-        deleteMultiTreeByParent1(identifier, null);
+        DotConnect db = new DotConnect().setSQL(DELETE_SQL)
+            .addParam(mTree.getHtmlPage())
+            .addParam(mTree.getContainer())
+            .addParam(mTree.getContentlet())
+            .addParam(mTree.getRelationType());
+        db.loadResult();
+
     }
 
-    /**
-     * Just invoking deleteMultiTreeByParent1 with null language.
-     * 
-     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
-     *      languageId)
-     */
-    public static void deleteMultiTreeByParent1(Identifier parent) throws DotDataException {
-        deleteMultiTreeByParent1(parent, null);
-    }
 
-    /**
-     * Just invoking deleteMultiTreeByParent1 and create an identifier method
-     * with the contentlet identifier id
-     * 
-     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
-     *      languageId)
-     */
-    public static void deleteMultiTreeByParent1(Contentlet contentlet, Long languageId)
+
+    public static MultiTree getMultiTree(Identifier htmlPage, Identifier container, Identifier childContent, String relationType)
             throws DotDataException {
-        Identifier identifier = new Identifier();
-        identifier.setId(contentlet.getIdentifier());
-
-        deleteMultiTreeByParent1(identifier, languageId);
+        return getMultiTree(htmlPage.getId(), container.getId(), childContent.getId(), relationType);
     }
 
+
+    public static MultiTree getMultiTree(String htmlPage, String container, String childContent, String relationType)
+            throws DotDataException {
+
+        DotConnect db = new DotConnect().setSQL(SELECT_SQL)
+            .addParam(htmlPage)
+            .addParam(container)
+            .addParam(childContent)
+            .addParam(relationType);
+        db.loadResult();
+
+        return dbToMultiTree(db.loadObjectResults()).stream()
+            .findFirst()
+            .orElse(null);
+
+    }
     /**
-     * Deletes multi-tree relationships by identifier and language.
-     * <p>
-     * This method it will remove all rows where parent1 equals to identifier
-     * parameter where the identifier has same language as languageId parameter.
-     * </p>
-     * <p>
-     * NOTE: This delete assumes that we are only using identifiers in
-     * multi-tree table
-     * </p>
-     * 
-     * @param parent
-     *            identifier
-     * @param languageId
-     *            (optional parameter) if null it will delete all rows where
-     *            parent1 equals identifier same as
-     *            {@link #deleteMultiTreeFromContentletPage(String)}; otherwise
-     *            it will search for those identifiers that match with the
-     *            language and delete them from multi-tree table
+     * Use {@link #getMultiTree(String, String, String, String)} This method does not use the unique id specified 
+     * in the #parseContainer code
+     * @param htmlPage
+     * @param container
+     * @param childContent
      * @throws DotDataException
      */
-    public static void deleteMultiTreeByParent1(Identifier parent, Long languageId)
+    @Deprecated
+    public static MultiTree getMultiTree(String htmlPage, String container, String childContent)
             throws DotDataException {
-        DotConnect db = new DotConnect();
 
+        DotConnect db = new DotConnect().setSQL(SELECT_SQL)
+            .addParam(htmlPage)
+            .addParam(container)
+            .addParam(childContent)
+            .addParam(Container.LEGACY_RELATION_TYPE);
+        db.loadResult();
+
+        return dbToMultiTree(db.loadObjectResults()).stream()
+            .findFirst()
+            .orElse(null);
+
+    }
+    public static java.util.List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException {
+        return getMultiTrees(parent.getId());
+    }
+
+    public static java.util.List<MultiTree> getMultiTrees(Identifier htmlPage, Identifier container) throws DotDataException {
+        return getMultiTrees(htmlPage.getId(), container.getId());
+    }
+
+    public static java.util.List<MultiTree> getMultiTrees(String parentInode) throws DotDataException {
+
+        DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
+            .addParam(parentInode)
+            .addParam(parentInode);
+
+        return dbToMultiTree(db.loadObjectResults());
+
+    }
+
+    public static java.util.List<MultiTree> getAllMultiTrees() {
         try {
-            if (languageId == null) {
-                db.executeStatement("DELETE FROM multi_tree WHERE parent1 = '" + parent.getId()
-                        + "';");
-                return;
-            }
+            DotConnect db = new DotConnect().setSQL(SELECT_ALL);
 
-            // -- Query example --
-            // DELETE FROM multi_tree m
-            // WHERE m.parent1 = '6c2a7d84-a16d-4c12-8830-9d203c3dcc4c' AND
-            // m.child IN (SELECT c.identifier FROM multi_tree AS m1
-            // INNER JOIN contentlet_version_info AS c
-            // ON m1.child = c.identifier
-            // WHERE m1.parent1 = '6c2a7d84-a16d-4c12-8830-9d203c3dcc4c' AND
-            // c.lang = 2);
-            // -- End of query example --
-            StringBuilder query = new StringBuilder("DELETE FROM multi_tree m WHERE ")
-                    .append("m.parent1 = '").append(parent.getId()).append("' ")
-                    .append("AND m.child IN (SELECT c.identifier FROM multi_tree AS m1 ")
-                    .append("INNER JOIN contentlet_version_info AS c ON m1.child = c.identifier ")
-                    .append("WHERE m1.parent1 = '").append(parent.getId()).append("' ")
-                    .append("AND c.lang = ").append(languageId).append(");");
+            return dbToMultiTree(db.loadObjectResults());
 
-            db.executeStatement(query.toString());
-        } catch (SQLException e) {
-            throw new DotDataException("Error deleting tree and multi-tree dependencies.", e);
+        } catch (Exception e) {
+            Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
+            throw new DotRuntimeException(e.toString());
         }
     }
 
-	public static boolean existsMultiTree(Object o1, Object o2, Object o3) {
-		Inode inode1 = (Inode) o1;
-		Inode inode2 = (Inode) o2;
-		Inode inode3 = (Inode) o3;
+    public static java.util.List<MultiTree> getMultiTrees(String htmlPage, String container, String relationType) {
+        try {
 
-		try {
-
-			DotConnect db = new DotConnect();
-			db.setSQL("select count(*) mycount from multi_tree where parent1 =? and parent2 = ? and child = ? ");
-			db.addParam(inode1.getInode());
-			db.addParam(inode2.getInode());
-			db.addParam(inode3.getInode());
-			
-			int count = db.getInt("mycount");
-			
-			return (count > 0);
-		}
-		catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage());
-		}
-	}
-
-	public static void deleteMultiTree(MultiTree multiTree) {
-		try {
-			HibernateUtil.delete(multiTree);
-		} catch (DotHibernateException e) {
-		    Logger.error(MultiTreeFactory.class,"deleteMultiTree failed:"+e,e);
-			throw new DotRuntimeException(e.getMessage());
-		}
-	}
-
-	public static MultiTree getMultiTree(Identifier parent1, Identifier parent2, Identifier child) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? and parent2 = ? and child = ?");
-			dh.setParam(parent1.getInode());
-			dh.setParam(parent2.getInode());
-			dh.setParam(child.getInode());
-
-			return (MultiTree) dh.load();
-		} catch (Exception e) {
-            Logger.warn(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-		}
-		return new MultiTree();
-	}
-    
-	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getMultiTree(Inode parent) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? or parent2 = ? ");
-			dh.setParam(parent.getInode());
-			dh.setParam(parent.getInode());
-
-			return dh.list();
-            
-		} catch (Exception e) {
+            DotConnect db = new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS)
+                .addParam(htmlPage)
+                .addParam(container)
+                .addParam(relationType);
+            return dbToMultiTree(db.loadObjectResults());
+        } catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	
-	public static java.util.List<MultiTree> getMultiTree(Identifier parent) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? or parent2 = ? ");
-			dh.setParam(parent.getInode());
-			dh.setParam(parent.getInode());
+            throw new DotRuntimeException(e.toString());
+        }
+    }
 
-			return dh.list();
-            
-		} catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
+    public static java.util.List<MultiTree> getMultiTrees(IHTMLPage htmlPage, Container container) throws DotDataException {
+        return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
+    }
 
-	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getMultiTree(String parentInode) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? or parent2 = ? ");
-			dh.setParam(parentInode);
-			dh.setParam(parentInode);
 
-			return dh.list();
-            
-		} catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getMultiTree(IHTMLPage htmlPage, Container container) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? and parent2 = ? ");
-			dh.setParam(htmlPage.getIdentifier());
-			dh.setParam(container.getIdentifier());
+    public static java.util.List<MultiTree> getMultiTrees(String htmlPage, String container) throws DotDataException {
 
-			return dh.list();
-            
-		} catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	/**
-	 * Get the multi_tree by both parents given a containerId
-	 * 
-	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
-	 *
-	 * Jun 26, 2013 - 12:34:29 PM
-	 */
-	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getContainerMultiTree(String containerIdentifier) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? or parent2 = ? or child = ?");
-			dh.setParam(containerIdentifier);
-			dh.setParam(containerIdentifier);
-			dh.setParam(containerIdentifier);
+        DotConnect db = new DotConnect().setSQL(SELECT_BY_TWO_PARENTS)
+            .addParam(htmlPage)
+            .addParam(container);
+        return dbToMultiTree(db.loadObjectResults());
 
-			return dh.list();
-            
-		} catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getContainerMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where child = ? ");
-			dh.setParam(contentIdentifier);
+    }
 
-			return dh.list();
-            
-		} catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getMultiTreeByChild failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
+    public static java.util.List<MultiTree> getMultiTrees(IHTMLPage htmlPage, Container container, String relationType) {
+        return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier(), relationType);
+    }
 
-	/**
-	 * Saves a multi-tree construct using the default language in the system. A
-	 * muti-tree is usually composed of the following five parts:
-	 * <ol>
-	 * <li>The identifier of the Content Page or Legacy Page.</li>
-	 * <li>The identifier of the container in the page.</li>
-	 * <li>The identifier of the contentlet itself.</li>
-	 * <li>The type of content relation.</li>
-	 * <li>The order in which this construct is added to the database.</li>
-	 * </ol>
-	 * 
-	 * @param o
-	 *            - The multi-tree structure.
-	 */
-	public static void saveMultiTree(MultiTree o) {
-		saveMultiTree(o, APILocator.getLanguageAPI().getDefaultLanguage()
-				.getId());
-	}
 
-	/**
-	 * Saves a Multi-Tree construct using the default language in the system. A
-	 * Muti-Tree is usually composed of the following five parts:
-	 * <ol>
-	 * <li>The identifier of the Content Page or Legacy Page.</li>
-	 * <li>The identifier of the container in the page.</li>
-	 * <li>The identifier of the contentlet itself.</li>
-	 * <li>The type of content relation.</li>
-	 * <li>The order in which this construct is added to the database.</li>
-	 * </ol>
-	 * 
-	 * @param o
-	 *            - The Multi-Tree structure.
-	 * @param languageId
-	 *            - The language ID of the content page this contentlet will be
-	 *            associated to.
-	 */
-	public static void saveMultiTree(MultiTree o, long languageId) {
-	    if(!InodeUtils.isSet(o.getChild()) | !InodeUtils.isSet(o.getParent1()) || !InodeUtils.isSet(o.getParent2())) throw new DotRuntimeException("Make sure your Multitree is set!");
-		try {
-			HibernateUtil.saveOrUpdate(o);
-			
-			Identifier ident=APILocator.getIdentifierAPI().find(o.getParent1());
-			if(ident.getAssetType().equals("contentlet")) {
-			    ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), languageId);
-			    vi.setVersionTs(new Date());
-			    APILocator.getVersionableAPI().saveContentletVersionInfo(vi);
-			}
-			else {
-    			VersionInfo htmlVI = APILocator.getVersionableAPI().getVersionInfo(o.getParent1());
-    			htmlVI.setVersionTs(new Date());
-    			APILocator.getVersionableAPI().saveVersionInfo(htmlVI);
-			}
-		} catch (DotHibernateException e) {
-			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.getMessage());
-		} catch (DotStateException e) {
-			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.getMessage());
-		} catch (DotDataException e) {
-			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
-			throw new DotRuntimeException(e.getMessage());
-		}
-	}
+    public static java.util.List<MultiTree> getContainerMultiTrees(String containerIdentifier) throws DotDataException {
+        return getMultiTrees(containerIdentifier);
+    }
 
-	public static java.util.List getChildrenClass(Inode p1, Inode p2, Class c) {
 
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
-            Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+    public static java.util.List<MultiTree> getMultiTreesByChild(String contentIdentifier) throws DotDataException {
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	
-	public static java.util.List getChildrenClass(Identifier p1, Identifier p2, Class c) {
+        DotConnect db = new DotConnect().setSQL(SELECT_BY_CHILD)
+            .addParam(contentIdentifier);
 
-		try {
-			String tableName = "";
-			String sql = "";
-			if(c.getName().contains("Identifier")){
-			  tableName = "identifier"; 
-			}else{
-			  tableName = ((Inode) c.newInstance()).getType();
-			}
-			HibernateUtil dh = new HibernateUtil(c);
-			if(tableName.equalsIgnoreCase("identifier")){
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree "
-				+ " where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".id and " 
-				+ " order by multi_tree.tree_order";
-			}else {
-				sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "
-				+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " 
-				+ tableName + "_1_.inode = " + tableName + ".inode order by multi_tree.tree_order";
-			}
-            
-			Logger.debug(MultiTreeFactory.class, "getChildrenClass\n " + sql+ "\n");
-			
-			dh.setSQLQuery(sql);
-            
-			Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+        return dbToMultiTree(db.loadObjectResults());
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	
-	public static java.util.List getChildrenClass(Inode p1, Inode p2, Class c, String orderBy) {
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ?  and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode order by " + orderBy;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClass\n " + sql+ "\n");
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
+    }
 
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
 
-	public static java.util.List getChildrenClassByCondition(Inode p1, Inode p2, Class c, String condition) {
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and " + condition;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClassByCondition\n " + sql);
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+    @WrapInTransaction
+    public static void saveMultiTree(MultiTree mTree) throws DotDataException {
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClassByCondition failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
+        _reorder(mTree);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
 
-		//return new java.util.ArrayList();
-	}
+    }
 
-	public static java.util.List getChildrenClassByCondition(String p1, String p2, Class c, String condition) {
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and " + condition;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClassByCondition\n " + sql);
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1 + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2 + "\n");
-			
-			dh.setParam(p1);
-			dh.setParam(p2);
+    /**
+     * Saves a multi-tree 
+     * <ol>
+     * <li>The identifier of the Content Page.</li>
+     * <li>The identifier of the container in the page.</li>
+     * <li>The identifier of the contentlet itself.</li>
+     * <li>The type of content relation.</li>
+     * <li>The order in which this construct is added to the database.</li>
+     * </ol>
+     * 
+     * @param o - The multi-tree structure.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @WrapInTransaction
+    public static void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty())
+            throw new DotDataException("empty list passed in");
+        int i = 0;
+        for (MultiTree tree : mTrees) {
+            _dbUpsert(tree.setTreeOrder(i++));
+        }
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClassByCondition failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
+        final MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
 
-	public static java.util.List getChildrenClassByConditionAndOrderBy(Inode p1, Inode p2, Class c, String condition, String orderby) {
-		try {
+    }
 
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and " + condition + " order by " + orderby;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClassByConditionAndOrderBy\n " + sql+ "\n");
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the {@link MultiTree} linked
+     * previously with the page.
+     *
+     * @param pageId Page's identifier
+     * @param mTrees
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    public static void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty()) {
+            throw new DotDataException("empty list passed in");
+        }
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClassByConditionAndOrderBy failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
+        Logger.debug(MultiTreeFactory.class, String.format("Saving page's content: %s", mTrees));
 
-		//return new java.util.ArrayList();
-	}
-	
-	public static java.util.List getChildrenClassByConditionAndOrderBy(String p1, String p2, Class c, String condition, String orderby) {
-		try {
+        final DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
+                .addParam(pageId);
+        db.loadResult();
 
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and " + condition + " order by " + orderby;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClassByConditionAndOrderBy\n " + sql+ "\n");
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1 + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2 + "\n");
-			
-			dh.setParam(p1);
-			dh.setParam(p2);
+        final List<Params> params = list();
+        for (final MultiTree tree : mTrees) {
+            params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+        }
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClassByConditionAndOrderBy failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
+        db.executeBatch(INSERT_SQL, params);
 
-	public static java.util.List getChildrenClassByOrder(Inode p1, Inode p2, Class c, String order) {
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = " + tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode order by  " + order;
-			
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getChildrenClassByOrder\n " + sql);
-			dh.setSQLQuery(sql);
-            Logger.debug(MultiTreeFactory.class, "inode p1:  " + p1.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "inode p2:  " + p2.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "order:  " + order + "\n");
-			
-			dh.setParam(p1.getInode());
-			dh.setParam(p2.getInode());
+        final MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getChildrenClassByOrder failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
+    }
+
+    private static void _dbUpsert(final MultiTree mtree) throws DotDataException {
+
+        _dbDelete(mtree);
+        _dbInsert(mtree);
+
+    }
+
+    private static void _reorder(final MultiTree tree) throws DotDataException {
+
+        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainer(), tree.getRelationType());
+        trees = trees.stream()
+            .filter(rowTree -> !rowTree.equals(tree))
+            .collect(Collectors.toList());
+        int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
+        trees.add(maxOrder, tree);
+
+        saveMultiTrees(trees);
+
+    }
+
+
+
+    private static void _dbInsert(final MultiTree o) throws DotDataException {
+        new DotConnect().setSQL(INSERT_SQL)
+            .addParam(o.getHtmlPage())
+            .addParam(o.getContainer())
+            .addParam(o.getContentlet())
+            .addParam(o.getRelationType())
+            .addParam(o.getTreeOrder())
+            .loadResult();
+    }
+
+
+
+
+    /**
+     * Update the version_ts of all versions of the HTML Page with the given id. If a MultiTree
+     * Object has been added or deleted from this page, its version_ts value needs to be updated so
+     * it can be included in future Push Publishing tasks
+     * 
+     * @param id The HTMLPage Identifier to pass in
+     * @throws DotContentletStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * 
+     */
+    private static void updateHTMLPageVersionTS(final String id) throws DotDataException {
+        List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
+            .findContentletVersionInfos(id);
+        for (ContentletVersionInfo versionInfo : infos) {
+            if (versionInfo != null) {
+                versionInfo.setVersionTs(new Date());
+                APILocator.getVersionableAPI()
+                    .saveContentletVersionInfo(versionInfo);
+            }
+        }
+    }
+
 	
 
-	public static java.util.List getParentsOfClassByCondition(Inode p, Class c, String condition) {
-		try {
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.child = ? and (multi_tree.parent1 = " + tableName + ".inode or multi_tree.parent2 = " + tableName + ".inode) and " + tableName + "_1_.inode = " + tableName + ".inode and " + condition;
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getParentsOfClassByCondition\n " + sql);
-            Logger.debug(MultiTreeFactory.class, "inode:  " + p.getInode() + "\n");
-            Logger.debug(MultiTreeFactory.class, "condition:  " + condition + "\n");
-			dh.setSQLQuery(sql);
-			dh.setParam(p.getInode());
+    private static void refreshPageInCache(final String pageIdentifier) throws DotDataException {
+        Set<String> inodes = new HashSet<String>();
+        List<ContentletVersionInfo> infos = APILocator.getVersionableAPI()
+            .findContentletVersionInfos(pageIdentifier);
+        for (ContentletVersionInfo versionInfo : infos) {
+            inodes.add(versionInfo.getWorkingInode());
+            if (versionInfo.getLiveInode() != null) {
+                inodes.add(versionInfo.getLiveInode());
+            }
+        }
+        try {
+            List<Contentlet> contentlets = APILocator.getContentletAPIImpl()
+                .findContentlets(Lists.newArrayList(inodes));
+            for (Contentlet pageContent : contentlets) {
+                IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(pageContent);
+               new PageLoader().invalidate(htmlPage);
+            }
+        } catch (DotStateException | DotSecurityException e) {
+            Logger.warn(MultiTreeFactory.class, "unable to refresh page cache:" + e.getMessage());
+        }
+    }
 
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getParentsOfClassByCondition failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}
-	
-	public static java.util.List getParentsOfClass(Inode p, Class c) {
-		try {
 
-			String tableName =  ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {"  + tableName + ".*} from " + tableName + " " + tableName + ", multi_tree multi_tree, inode "+ tableName +"_1_ where multi_tree.child = ? and (multi_tree.parent1 = " + tableName + ".inode or multi_tree.parent2 = " + tableName + ".inode) and " + tableName + "_1_.inode = " + tableName + ".inode ";
-            Logger.debug(MultiTreeFactory.class, "hibernateUtilSQL:getParentOfClass:\n " + sql+ "\n");
-			dh.setSQLQuery(sql);
-			dh.setParam(p.getInode());
-            Logger.debug(MultiTreeFactory.class, "inode:  " + p.getInode() + "\n");
-			return dh.list();
-		}
-		catch (Exception e) {
-            Logger.error(MultiTreeFactory.class, "getParentsOfClass failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
-	}	
+    private static MultiTree dbToMultiTree(Map<String, Object> row) {
+        final String relationType = (String) row.getOrDefault("relation_type", null);
+        final String parent1 = (String) row.getOrDefault("parent1", null);
+        final String parent2 = (String) row.getOrDefault("parent2", null);
+        final String child = (String) row.getOrDefault("child", null);
+        final int order = Integer.valueOf((Integer) row.getOrDefault("tree_order", 0));
+        return new MultiTree(parent1, parent2, child, relationType, order);
+    }
+
+    public static List<MultiTree> dbToMultiTree(List<Map<String, Object>> dbRows) {
+        return (List<MultiTree>) dbRows.stream()
+            .map(row -> dbToMultiTree(row))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * {link {@link #saveMultiTree(MultiTree)} The multitree does not respect language
+     * @deprecated
+     * @param multiTreeEN
+     * @param english
+     * @throws DotDataException
+     */
+    @Deprecated
+    public static void saveMultiTree(MultiTree multiTree, long lang) throws DotDataException {
+        saveMultiTree(multiTree);
+    }
+
+
+
 }

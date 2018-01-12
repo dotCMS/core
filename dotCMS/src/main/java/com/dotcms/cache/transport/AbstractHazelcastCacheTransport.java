@@ -3,6 +3,7 @@ package com.dotcms.cache.transport;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -46,6 +47,9 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     
     @Override
     public void init(Server localServer) throws CacheTransportException {
+    	if(!LicenseManager.getInstance().isEnterprise()){
+    		return;
+    	}
         Logger.info(this,"Starting Hazelcast Cache Transport");
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
 

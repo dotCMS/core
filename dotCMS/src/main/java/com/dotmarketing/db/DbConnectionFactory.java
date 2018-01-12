@@ -15,6 +15,7 @@ import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -422,20 +423,50 @@ public class DbConnectionFactory {
 
     }
 
+    /**
+     * Return true if the String represent one of the true
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB true value
+     */
     public static boolean isDBTrue(String value) {
         String x = getDBType();
 
-        if (MYSQL.equals(x)) {
-            return value.trim().equals("1") || value.trim().equals("true");
+        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
+            return "1".equals(value.trim()) || "true".equals(value.trim());
         } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
-            return value.trim().equals("t") || value.trim().equals("true");
-        } else if (MSSQL.equals(x)) {
-            return value.trim().equals("1");
-        } else if (ORACLE.equals(x)) {
-            return value.trim().equals("1");
+            return "t".equals(value.trim()) || "true".equals(value.trim());
         }
         return false;
 
+    }
+
+    /**
+     * Return true if the String represent one on the false
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false value
+     */
+    public static boolean isDBFalse(final String value) {
+        String x = getDBType();
+
+        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
+            return "0".equals(value.trim()) || "false".equals(value.trim());
+        } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
+            return "f".equals(value.trim()) || "false".equals(value.trim());
+        }
+        return false;
+
+    }
+
+    /**
+     * Return true if the String represent one on the true or false
+     * values accepted by the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false or true value
+     */
+    public static boolean isDBBoolean(final String value) {
+        return isDBTrue(value) || isDBFalse(value);
     }
 
     public static boolean isOracle() {
@@ -529,7 +560,6 @@ public class DbConnectionFactory {
      */
     public static boolean startTransactionIfNeeded() throws DotDataException {
         boolean startTransaction = !inTransaction();
-        ;
 
         try {
             if (startTransaction) {
@@ -594,5 +624,24 @@ public class DbConnectionFactory {
         return defaultInteger;
     }
 
+    /**
+     * Returns true if the throwable is a constraint violation
+     * @param throwable Throwable
+     * @return boolean
+     */
+    public static boolean isConstraintViolationException(final Throwable throwable) {
+
+        boolean isConstraintViolationException = false;
+
+        if (null != throwable && throwable instanceof SQLException) {
+
+            isConstraintViolationException =
+                    (throwable instanceof SQLIntegrityConstraintViolationException ||
+                            throwable.getClass().getName().contains("IntegrityConstraint")   ||
+                            throwable.getMessage().toLowerCase().contains("duplicate"));
+        }
+
+        return isConstraintViolationException;
+    } // isConstraintViolationException.
 
 }

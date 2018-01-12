@@ -16,16 +16,18 @@ public class ContentTypeView implements Serializable {
     private final String name;
     private final String inode;
     private final String action;
+    private String variable;
 
-    public ContentTypeView(String type, String name, String inode, String action) {
+    public ContentTypeView(String type, String name, String inode, String action, String variable) {
         this.type   = type;
         this.name   = name;
         this.inode  = inode;
         this.action = action;
+        this.variable = variable;
     }
 
     public ContentTypeView (ContentType type, String actionUrl){
-        this(type.baseType().toString(),type.name(), type.id(), actionUrl);
+        this(type.baseType().toString(),type.name(), type.id(), actionUrl, type.variable());
     }
 
     public String getType() {
@@ -44,6 +46,10 @@ public class ContentTypeView implements Serializable {
         return action;
     }
 
+    public String getVariable() {
+        return variable;
+    }
+
     @Override
     public String toString() {
         return "ContentTypeView{" +
@@ -51,6 +57,7 @@ public class ContentTypeView implements Serializable {
                 ", name='" + name + '\'' +
                 ", inode='" + inode + '\'' +
                 ", action='" + action + '\'' +
+                ", variable='" + variable + '\'' +
                 '}';
     }
 } // E:O:F:ContentTypeView.

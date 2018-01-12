@@ -177,9 +177,12 @@ public class StructureAjax {
 		}
 
 		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
-			if(scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())){
-				allowImport = false;
+			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(struct);
+			for(WorkflowScheme scheme : schemes) {
+				if (scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())) {
+					allowImport = false;
+					break;
+				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
@@ -559,7 +562,7 @@ public class StructureAjax {
 		List<Map<String,String>> containersList = new ArrayList<Map<String,String>>();
 		
 		// checking if there are containers using this structure
-		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode);
+		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode, true);
 		Map<String, Container> containersInUse = new HashMap<String, Container>();		
 		
 		for(Container c : containers) {

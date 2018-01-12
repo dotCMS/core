@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -433,7 +432,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			Logger.error(this, e.getMessage());
 			e.printStackTrace();
 		}
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	public boolean forceRun() {

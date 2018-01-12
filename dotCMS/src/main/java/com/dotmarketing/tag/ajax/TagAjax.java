@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
+import com.dotmarketing.tag.business.GenericTagException;
 import com.dotmarketing.tag.business.InvalidTagNameLengthException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAlreadyExistsException;
@@ -389,6 +390,7 @@ public class TagAjax {
 	public static Map<String,Object> importTags(byte[] uploadFile) {
 
 		Map<String,Object> callbackData = new HashMap<String,Object>();
+		int counterFailedTags = 0;
 		try {
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
@@ -403,17 +405,29 @@ public class TagAjax {
 			String str;
 		    while ((str = br.readLine()) != null) {
 		    	String[] tokens = str.split(",");
-		    	if(tokens.length>2) {
+		    	if(tokens.length!=2 || tokens[0].isEmpty()) {
+		    		counterFailedTags++;
+		    		Logger.error(TagAjax.class, "Tag can not be imported because the tag_name or the host_id is empty, trying with the next Tag");
 		    		continue;
 		    	}
-		    	String tagName = UtilMethods.isSet(tokens[0])?tokens[0]:null;
-		    	String hostId = UtilMethods.isSet(tokens[1])?tokens[1]:null;
+		    	String tagName = tokens[0];
+		    	String hostId = tokens[1];
 		    	if(!tagName.toLowerCase().contains("tag name") && !hostId.toLowerCase().contains("host id")){
 		    		tagName = tagName.replaceAll("\'|\"", "");
 		    		hostId = hostId.replaceAll("\'|\"", "");
-					APILocator.getTagAPI().getTagAndCreate(tagName, "", hostId);
+		    		try {
+					    APILocator.getTagAPI().getTagAndCreate(tagName, "", hostId);
+					}catch(GenericTagException e){
+						counterFailedTags++;
+						Logger.error(TagAjax.class,
+								"Tag (name:"+tagName+" - host ID:"+hostId+") can not be imported because "+e.getMessage()+ ", trying with the next Tag");
+					}
 				}
 		    }
+
+		    if(counterFailedTags>0){
+		    	callbackData.put("importSomeTagsFailed",counterFailedTags);
+			}
 
 			br.close();
 

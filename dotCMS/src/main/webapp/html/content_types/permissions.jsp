@@ -9,6 +9,7 @@
 
 <%@ include file="/html/common/init.jsp" %>
 <%@ include file="/html/common/top_inc.jsp" %>
+<%@ include file="/html/common/messages_inc.jsp" %>
 
 <%
     final HttpServletRequest httpServletRequest = ((HttpServletRequest) request);

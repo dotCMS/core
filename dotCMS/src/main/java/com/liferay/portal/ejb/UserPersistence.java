@@ -22,6 +22,10 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.util.user.LiferayUserTransformer;
+import com.dotcms.util.user.UserTransformer;
+import com.dotmarketing.common.db.DotConnect;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +44,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
+import java.util.Map;
 
 /**
  * <a href="UserPersistence.java.html"><b><i>View Source</i></b></a>
@@ -49,30 +54,34 @@ import com.liferay.util.dao.hibernate.OrderByComparator;
  *
  */
 public class UserPersistence extends BasePersistence {
+
+	private static final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
+	private static final UserTransformer userTransformer = new LiferayUserTransformer();
+
 	protected com.liferay.portal.model.User create(String userId) {
 		return new com.liferay.portal.model.User(userId);
 	}
 
 	protected com.liferay.portal.model.User remove(String userId)
-		throws NoSuchUserException, SystemException {
+			throws NoSuchUserException, SystemException {
 		Session session = null;
-	
+
 		try {
 			session = openSession();
 
-	        User systemUser = null;
-	        try {
-	             systemUser = APILocator.getUserAPI().getSystemUser();
-	        } catch (DotDataException e) {
-	            // TODO Auto-generated catch block
-	            throw new SystemException("Cannot find System User");
-	        }
-	        if(systemUser.getUserId().equals(userId)){
-	            throw new NoSuchUserException(userId.toString());
-	        }
-			
-			
-			
+			User systemUser = null;
+			try {
+				systemUser = APILocator.getUserAPI().getSystemUser();
+			} catch (DotDataException e) {
+				// TODO Auto-generated catch block
+				throw new SystemException("Cannot find System User");
+			}
+			if(systemUser.getUserId().equals(userId)){
+				throw new NoSuchUserException(userId.toString());
+			}
+
+
+
 			UserHBM userHBM = (UserHBM)session.load(UserHBM.class, userId);
 			com.liferay.portal.model.User user = UserHBMUtil.model(userHBM);
 			session.delete(userHBM);
@@ -95,7 +104,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User update(
-		com.liferay.portal.model.User user) throws SystemException {
+			com.liferay.portal.model.User user) throws SystemException {
 		Session session = null;
 
 		try {
@@ -128,7 +137,7 @@ public class UserPersistence extends BasePersistence {
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
 
-                    userHBM.setModDate(user.getModificationDate());
+					userHBM.setModDate(user.getModificationDate());
 					session.save(userHBM);
 					session.flush();
 				}
@@ -231,31 +240,29 @@ public class UserPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.User findByPrimaryKey(String userId)
-		throws NoSuchUserException, SystemException {
+			throws NoSuchUserException {
 		com.liferay.portal.model.User user = UserPool.get(userId);
-		Session session = null;
 
 		try {
 			if (user == null) {
-				session = openSession();
-
-				UserHBM userHBM = (UserHBM)session.load(UserHBM.class, userId);
-				user = UserHBMUtil.model(userHBM);
+				DotConnect dc = new DotConnect();
+				dc.setSQL(SEARCH_USER_BY_ID);
+				dc.addParam(userId);
+				List<Map<String, Object>> list = dc.loadObjectResults();
+				if(list.isEmpty()) {
+					throw new NoSuchUserException(userId);
+				}else{
+					user = userTransformer.fromMap(list.get(0));
+					UserPool.put(user.getPrimaryKey(), user);
+				}
 			}
 
 			return user;
 		}
-		catch (HibernateException he) {
-			if (he instanceof ObjectNotFoundException) {
-				throw new NoSuchUserException(userId.toString());
-			}
-			else {
-				throw new SystemException(he);
-			}
-		}
-		finally {
-			HibernateUtil.closeSession(session);
+		catch(DotDataException e){
+			throw new NoSuchUserException(userId);
 		}
 	}
 
@@ -267,7 +274,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
 			query.append(" AND delete_in_progress = ");
@@ -301,12 +308,12 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
-		throws SystemException {
+			throws SystemException {
 		return findByCompanyId(companyId, begin, end, null);
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end,
-		OrderByComparator obc) throws SystemException {
+			OrderByComparator obc) throws SystemException {
 		Session session = null;
 
 		try {
@@ -314,7 +321,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
 			query.append(" AND delete_in_progress = ");
@@ -373,8 +380,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByCompanyId_First(
-		String companyId, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String companyId, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		List list = findByCompanyId(companyId, 0, 1, obc);
 
 		if (list.size() == 0) {
@@ -386,8 +393,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByCompanyId_Last(
-		String companyId, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String companyId, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		int count = countByCompanyId(companyId);
 		List list = findByCompanyId(companyId, count - 1, count, obc);
 
@@ -400,8 +407,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User[] findByCompanyId_PrevAndNext(
-		String userId, String companyId, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String userId, String companyId, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		com.liferay.portal.model.User user = findByPrimaryKey(userId);
 		int count = countByCompanyId(companyId);
 		Session session = null;
@@ -411,7 +418,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
 			query.append(" AND delete_in_progress = ");
@@ -495,7 +502,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByC_U(String companyId,
-		String userId) throws NoSuchUserException, SystemException {
+			String userId) throws NoSuchUserException, SystemException {
 		Session session = null;
 
 		User u = UserPool.get(userId);
@@ -507,7 +514,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
@@ -549,7 +556,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected List findByC_P(String companyId, String password)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 
 		try {
@@ -557,7 +564,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append(getPasswordCriteria());
@@ -592,12 +599,12 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected List findByC_P(String companyId, String password, int begin,
-		int end) throws SystemException {
+			int end) throws SystemException {
 		return findByC_P(companyId, password, begin, end, null);
 	}
 
 	protected List findByC_P(String companyId, String password, int begin,
-		int end, OrderByComparator obc) throws SystemException {
+			int end, OrderByComparator obc) throws SystemException {
 		Session session = null;
 
 		try {
@@ -605,7 +612,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append(getPasswordCriteria());
@@ -667,8 +674,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByC_P_First(String companyId,
-		String password, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String password, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		List list = findByC_P(companyId, password, 0, 1, obc);
 
 		if (list.size() == 0) {
@@ -680,8 +687,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByC_P_Last(String companyId,
-		String password, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String password, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		int count = countByC_P(companyId, password);
 		List list = findByC_P(companyId, password, count - 1, count, obc);
 
@@ -694,8 +701,8 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User[] findByC_P_PrevAndNext(
-		String userId, String companyId, String password, OrderByComparator obc)
-		throws NoSuchUserException, SystemException {
+			String userId, String companyId, String password, OrderByComparator obc)
+			throws NoSuchUserException, SystemException {
 		com.liferay.portal.model.User user = findByPrimaryKey(userId);
 		int count = countByC_P(companyId, password);
 		Session session = null;
@@ -705,7 +712,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append(getPasswordCriteria());
@@ -791,7 +798,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected com.liferay.portal.model.User findByC_EA(String companyId,
-		String emailAddress) throws NoSuchUserException, SystemException {
+			String emailAddress) throws NoSuchUserException, SystemException {
 		Session session = null;
 
 		try {
@@ -799,7 +806,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
@@ -873,7 +880,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected void removeByCompanyId(String companyId)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 
 		try {
@@ -881,7 +888,7 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
@@ -913,26 +920,26 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected void removeByC_U(String companyId, String userId)
-		throws NoSuchUserException, SystemException {
+			throws NoSuchUserException, SystemException {
 		Session session = null;
-        User systemUser = null;
-        try {
-            systemUser = APILocator.getUserAPI().getSystemUser();
-       } catch (DotDataException e) {
-           // TODO Auto-generated catch block
-           throw new SystemException("Cannot find System User");
-       }
+		User systemUser = null;
+		try {
+			systemUser = APILocator.getUserAPI().getSystemUser();
+		} catch (DotDataException e) {
+			// TODO Auto-generated catch block
+			throw new SystemException("Cannot find System User");
+		}
 		try {
 			session = openSession();
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
-            query.append(" AND ");
-            query.append(" userId <> ?");
+			query.append(" AND ");
+			query.append(" userId <> ?");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -944,7 +951,7 @@ public class UserPersistence extends BasePersistence {
 			int queryPos = 0;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, userId);
-            q.setString(queryPos++, systemUser.getUserId());
+			q.setString(queryPos++, systemUser.getUserId());
 			Iterator itr = q.list().iterator();
 
 			while (itr.hasNext()) {
@@ -969,26 +976,26 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected void removeByC_P(String companyId, String password)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 		User systemUser = null;
-        try {
-            systemUser = APILocator.getUserAPI().getSystemUser();
-       } catch (DotDataException e) {
-           // TODO Auto-generated catch block
-           throw new SystemException("Cannot find System User");
-       }
+		try {
+			systemUser = APILocator.getUserAPI().getSystemUser();
+		} catch (DotDataException e) {
+			// TODO Auto-generated catch block
+			throw new SystemException("Cannot find System User");
+		}
 		try {
 			session = openSession();
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append(getPasswordCriteria());
-            query.append(" AND ");
-            query.append("userId <> ?");
+			query.append(" AND ");
+			query.append("userId <> ?");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -1000,8 +1007,8 @@ public class UserPersistence extends BasePersistence {
 			int queryPos = 0;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
-            q.setString(queryPos++, systemUser.getUserId());
-            
+			q.setString(queryPos++, systemUser.getUserId());
+
 			Iterator itr = q.list().iterator();
 
 			while (itr.hasNext()) {
@@ -1021,26 +1028,26 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected void removeByC_EA(String companyId, String emailAddress)
-		throws NoSuchUserException, SystemException {
+			throws NoSuchUserException, SystemException {
 		Session session = null;
 		User systemUser = null;
 		try {
-             systemUser = APILocator.getUserAPI().getSystemUser();
-        } catch (DotDataException e) {
-            // TODO Auto-generated catch block
-            throw new SystemException("Cannot find System User");
-        }
+			systemUser = APILocator.getUserAPI().getSystemUser();
+		} catch (DotDataException e) {
+			// TODO Auto-generated catch block
+			throw new SystemException("Cannot find System User");
+		}
 		try {
 			session = openSession();
 
 			StringBuffer query = new StringBuffer();
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
-            query.append(" AND ");
-            query.append("userId <> ?");
+			query.append(" AND ");
+			query.append("userId <> ?");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -1051,8 +1058,8 @@ public class UserPersistence extends BasePersistence {
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
 			q.setString(queryPos++, companyId);
-            q.setString(queryPos++, emailAddress);
-            q.setString(queryPos++, systemUser.getUserId());
+			q.setString(queryPos++, emailAddress);
+			q.setString(queryPos++, systemUser.getUserId());
 
 
 			Iterator itr = q.list().iterator();
@@ -1087,7 +1094,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT COUNT(*) ");
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
@@ -1117,7 +1124,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected int countByC_U(String companyId, String userId)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 
 		try {
@@ -1126,7 +1133,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT COUNT(*) ");
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
@@ -1159,7 +1166,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected int countByC_P(String companyId, String password)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 
 		try {
@@ -1168,7 +1175,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT COUNT(*) ");
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 
@@ -1203,7 +1210,7 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	protected int countByC_EA(String companyId, String emailAddress)
-		throws SystemException {
+			throws SystemException {
 		Session session = null;
 
 		try {
@@ -1212,7 +1219,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT COUNT(*) ");
 			query.append(
-				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
+					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");

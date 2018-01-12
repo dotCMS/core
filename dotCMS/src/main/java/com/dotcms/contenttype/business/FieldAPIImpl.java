@@ -4,26 +4,58 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.PermissionTabField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.business.*;
+
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 import java.util.List;
+
+import com.liferay.portal.model.User;
 
 
 public class FieldAPIImpl implements FieldAPI {
@@ -74,16 +106,16 @@ public class FieldAPIImpl implements FieldAPI {
 
 	    		if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
-                        fieldFactory.moveSortOrderForward(field.sortOrder(), oldField.sortOrder());
+                        fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
                     } else {
-                        fieldFactory.moveSortOrderBackward(oldField.sortOrder(), field.sortOrder());
+                        fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder(), field.sortOrder());
                     }
                 }
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }else {
-            fieldFactory.moveSortOrderForward(field.sortOrder());
+            fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
 		Field result = fieldFactory.save(field);
@@ -93,18 +125,25 @@ public class FieldAPIImpl implements FieldAPI {
 		Structure structure = new StructureTransformer(type).asStructure();
 
         CacheLocator.getContentTypeCache().remove(structure);
-        StructureServices.removeStructureFile(structure);
+        new ContentTypeLoader().invalidate(structure);
 
       if(oldField!=null){
           if(oldField.indexed() != field.indexed()){
               contentletAPI.refresh(structure);
           } else if (field instanceof ConstantField) {
               if(!StringUtils.equals(oldField.values(), field.values()) ){
-                  ContentletServices.removeContentletFile(structure);
-                  ContentletMapServices.removeContentletMapFile(structure);
+                  new ContentletLoader().invalidate(structure);
                   contentletAPI.refresh(structure);
               }
           }
+
+          ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action",
+                  String.format("User %s/%s modified field %s to %s Structure.", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getName()));
+      } else {
+          ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
+                  String.format("User %s/%s added field %s to %s Structure.", user.getUserId(), user.getFirstName(), field.name(),
+                          structure.getName()));
       }
 
       return result;
@@ -167,13 +206,18 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
 	      }
 
-          fieldFactory.moveSortOrderBackward(oldField.sortOrder());
+          fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
           fieldFactory.delete(field);
+
+          ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
+                  String.format("User %s/%s eleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
+                          field.name(), structure.getName()));
+
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);
 
 	      CacheLocator.getContentTypeCache().remove(structure);
-	      StructureServices.removeStructureFile(structure);
+
 
 	      //Refreshing permissions
 	      if (field instanceof HostFolderField) {
@@ -189,8 +233,7 @@ public class FieldAPIImpl implements FieldAPI {
 	        contentletAPI.reindex(structure);
 	      }
 	      // remove the file from the cache
-	      ContentletServices.removeContentletFile(structure);
-	      ContentletMapServices.removeContentletMapFile(structure);
+          new ContentletLoader().invalidate(structure);
   }
 
 

@@ -119,7 +119,7 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							}
 						}
 					});
-					if(has("ie") >= 9){
+					if(has("ie") >= 9 && has("ie") <= 10){
 						this.connect(editor.document, "onpaste", function(e){
 							setTimeout(dojo.hitch(this, function(){
 								// Use the old range/selection code to kick IE 9 into updating

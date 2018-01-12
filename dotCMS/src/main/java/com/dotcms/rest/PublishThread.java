@@ -36,6 +36,7 @@ public class PublishThread implements Runnable {
 		pconf.setId(bundleName);
 		pconf.setEndpoint(endpointId);
 		pconf.setGroupId(groupId);
+		pconf.setPublishAuditStatus(status);
 		try {
 			bundlePublisher.init(pconf);
 			bundlePublisher.process(null);

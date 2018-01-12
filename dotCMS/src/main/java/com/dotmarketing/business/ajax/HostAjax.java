@@ -281,7 +281,7 @@ public class HostAjax {
 			Logger.error(this, e.getMessage(), e);
 		}
 		try{
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}

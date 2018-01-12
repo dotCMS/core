@@ -26,6 +26,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 
 public class ThreadNameFilter implements Filter {
 	FastDateFormat df = FastDateFormat.getInstance("MM-dd-yyyy hh:mm:ss z");
@@ -59,8 +60,7 @@ public class ThreadNameFilter implements Filter {
 			long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 	
 			String queryString = request.getQueryString();
-			boolean adminMode = (request.getSession(false) != null && request.getSession().getAttribute(
-					com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean adminMode =   PageMode.get(request) .isAdmin;
 			String referer = request.getHeader("Referer");
 			StringWriter sw = new StringWriter();
 			sw.append("url:");

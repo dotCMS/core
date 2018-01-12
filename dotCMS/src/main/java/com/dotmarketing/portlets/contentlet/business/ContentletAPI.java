@@ -618,7 +618,10 @@ public interface ContentletAPI {
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
-	 * This method completely deletes the given contentlet from the system
+	 * Deletes the specified list of {@link Contentlet} objects ONLY in the
+	 * specified language. If any of the specified contentlets is not archived,
+	 * an exception will be thrown. If there's only one language for a given
+	 * contentlet, the object will be destroyed.
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
@@ -919,7 +922,7 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/**
+	/** 
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.

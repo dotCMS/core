@@ -87,7 +87,15 @@ public class ContentUtils {
                 value);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
+        contentletAPI.isInodeIndexed(contentlet.getInode());
         contentletAPI.isInodeIndexed(contentlet.getInode(), true);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
+
         return contentlet;
     }
 

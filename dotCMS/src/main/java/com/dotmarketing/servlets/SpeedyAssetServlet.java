@@ -23,6 +23,7 @@ import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -85,18 +86,13 @@ public class SpeedyAssetServlet extends HttpServlet {
         }
 
 
-		boolean PREVIEW_MODE = false;
-		boolean EDIT_MODE = false;
+        PageMode mode = PageMode.get(request);
 		HttpSession session = request.getSession(false);
 
 
-		if(session != null) {
-			PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
-			EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
-		}
 		//GIT-4506
 
-		boolean serveWorkingVersion = (EDIT_MODE || PREVIEW_MODE);
+		boolean serveWorkingVersion = !mode.showLive;
 
         User user = null;
         try {

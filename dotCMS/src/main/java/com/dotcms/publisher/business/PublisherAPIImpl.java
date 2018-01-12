@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AddedToQueueEvent;
-import org.mapdb.DB;
+import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
@@ -281,7 +280,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                   }
 
                   if(localTransaction) {
-                      HibernateUtil.commitTransaction();
+                      HibernateUtil.closeAndCommitTransaction();
                   }
               } catch ( Exception e ) {
                   if(localTransaction) {
@@ -310,7 +309,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
 
 		  //Triggering event listener
-		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent());
+		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent(getQueueElementsByBundleId(bundleId)));
 		  return resultMap;
     }
 
@@ -606,7 +605,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"left join publishing_queue_audit a "+
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
-			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) and p.publish_date is not null "+
+			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) "+
+			"and p.publish_date is not null and p.publish_date <= ? "+
 			"order by publish_date ASC,operation ASC";
 
 	@Override
@@ -617,6 +617,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
 			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
+			dc.addParam(new Date());
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
@@ -704,7 +705,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction){
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -758,7 +759,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 			if(localTransaction) {
@@ -799,7 +800,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -836,7 +837,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {

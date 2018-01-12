@@ -2206,28 +2206,32 @@ create table workflow_step(
 	my_order number(10,0) default 0,
 	resolved number(1,0) default 0,
 	escalation_enable number(1,0) default 0,
-    escalation_action varchar(36),
-    escalation_time number(10,0) default 0
+  escalation_action varchar(36),
+  escalation_time number(10,0) default 0
 );
 create index wk_idx_step_scheme on workflow_step(scheme_id);
 
 -- Permissionable ---
 create table workflow_action(
 	id varchar2(36) primary key,
-	step_id varchar2(36) not null  references workflow_step(id),
+	step_id varchar2(36),
 	name varchar2(255) not null,
 	condition_to_progress nclob,
-	next_step_id varchar2(36) not null references workflow_step(id),
+	next_step_id varchar2(36),
 	next_assign varchar2(36) not null references cms_role(id),
 	my_order number(10,0) default 0,
 	assignable number(1,0) default 0,
 	commentable number(1,0) default 0,
 	requires_checkout number(1,0) default 0,
 	icon varchar2(255) default 'defaultWfIcon',
-	use_role_hierarchy_assign number(1,0) default 0
+  show_on varchar2(255) default 'LOCKED,UNLOCKED',
+	use_role_hierarchy_assign number(1,0) default 0,
+  scheme_id VARCHAR(36) NOT NULL
 );
-create index wk_idx_act_step on workflow_action(step_id);
 
+CREATE TABLE workflow_action_step ( action_id varchar2(36) NOT NULL, step_id varchar2(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) );
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 
 create table workflow_action_class(
 	id varchar2(36) primary key,
@@ -2254,8 +2258,6 @@ create table workflow_scheme_x_structure(
 	structure_id varchar2(36) not null references structure(inode)
 );
 
-create unique index wk_idx_scheme_str_2 on
-	workflow_scheme_x_structure(structure_id);
 
 
 

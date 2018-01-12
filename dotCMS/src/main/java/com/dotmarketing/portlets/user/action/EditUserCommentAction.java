@@ -65,7 +65,7 @@ public class EditUserCommentAction extends DotPortletAction {
 			{
 				_saveWebAsset(req,res,config,userCommentForm,user);
 			}
-			new HibernateUtil().commitTransaction();
+			new HibernateUtil().closeAndCommitTransaction();
 		}
 		catch(Exception ex)
 		{

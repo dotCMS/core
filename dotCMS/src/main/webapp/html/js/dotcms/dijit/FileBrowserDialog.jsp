@@ -61,7 +61,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div dojoAttachPoint="tablesSummary" style="display:none" class="portlet-pagination">
+                        <div dojoAttachPoint="tablesSummary" style="display:none" class="file-selector-tree__pagination portlet-pagination">
                             <button dojoType="dijit.form.Button" dojoAttachPoint="previousButton" dojoAttachEvent="onClick:_previousButtonClick"><%= LanguageUtil.get(pageContext, "Previous")%></button>
                             <div class="portlet-pagination__results" dojoAttachPoint="resultsSummary"><%= LanguageUtil.get(pageContext, "Viewing-Results-1-of-10")%></div>
                             <button dojoType="dijit.form.Button" dojoAttachPoint="nextButton" dojoAttachEvent="onClick:_nextButtonClick"><%= LanguageUtil.get(pageContext, "Next")%></button>

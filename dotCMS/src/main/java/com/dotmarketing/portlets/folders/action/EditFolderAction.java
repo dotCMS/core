@@ -37,7 +37,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -122,7 +121,7 @@ public class EditFolderAction extends DotPortletAction {
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
 			try {
 				if (_updateFolder(req, res, config, form)) {
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 					_sendToReferral(req, res, referer);
 					return;
 				}
@@ -193,7 +192,7 @@ public class EditFolderAction extends DotPortletAction {
 		}
 
 		BeanUtils.copyProperties(form, req.getAttribute(WebKeys.FOLDER_EDIT));
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		setForward(req, forward);
 	}
 
@@ -415,7 +414,7 @@ public class EditFolderAction extends DotPortletAction {
 				SessionMessages.add(req, "message", "message.folder.save");
 				return true;
 			}
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}catch(AddContentToFolderPermissionException e){
 			HibernateUtil.rollbackTransaction();
 			String message = LanguageUtil.format(user.getLocale(),

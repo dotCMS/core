@@ -722,7 +722,8 @@
 			viewPermissionCheckbox: viewPermissionCheckbox,
 			addChildrenPermissionCheckbox: addChildrenPermissionCheckbox,
 			editPermissionCheckbox: editPermissionCheckbox,
-			publishPermissionCheckbox: publishPermissionCheckbox
+			publishPermissionCheckbox: publishPermissionCheckbox,
+            editPermissionsPermissionCheckbox: editPermissionsPermissionCheckbox
 		};
 
 	}

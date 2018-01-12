@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.dotmarketing.quartz.job;
 
 import java.util.ArrayList;
@@ -23,6 +20,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -39,31 +37,41 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
+ * This job is called when the permissions on a given {@link Permissionable} have changed. A
+ * Permissionable is basically a dotCMS domain object that can be permissioned to be accessed or
+ * modified by specific roles or users only.
+ * 
  * @author David H Torres
  */
 public class ResetPermissionsJob implements Job {
 	
-	/* (non-Javadoc)
-	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
-	 */
-	
-	public static void triggerJobImmediately (Permissionable perm) {
-		String randomID = UUID.randomUUID().toString();
-		JobDataMap dataMap = new JobDataMap();
+    /**
+     * Triggers the execution of this permission rest job on the specified {@link Permissionable}.
+     * 
+     * @param perm - The {@link Permissionable} object, i.e., a Contentlet, a Content Type, an HTML
+     *        Page, etc.
+     */
+	public static void triggerJobImmediately (final Permissionable perm) {
+		final String randomID = UUID.randomUUID().toString();
+		final JobDataMap dataMap = new JobDataMap();
 		
 		dataMap.put("permissionableId", perm.getPermissionId());
 		
-		JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
+		final JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
 		jd.setJobDataMap(dataMap);
 		jd.setDurability(false);
 		jd.setVolatility(false);
 		jd.setRequestsRecovery(true);
 		
-		long startTime = System.currentTimeMillis();
-		SimpleTrigger trigger = new SimpleTrigger("permissionsResetTrigger-"+randomID, "dotcms_triggers",  new Date(startTime));
+		final long startTime = System.currentTimeMillis();
+		final SimpleTrigger trigger = new SimpleTrigger("permissionsResetTrigger-"+randomID, "dotcms_triggers",  new Date(startTime));
 		
 		try {
-			Scheduler sched = QuartzUtils.getSequentialScheduler();
+		    // First, make sure the Reindex Thread is up and running
+            if (!ReindexThread.getInstance().isWorking()) {
+                ReindexThread.getInstance().unpause();
+            }
+			final Scheduler sched = QuartzUtils.getSequentialScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(ResetPermissionsJob.class, "Error scheduling the reset of permissions", e);
@@ -75,7 +83,13 @@ public class ResetPermissionsJob implements Job {
 	public ResetPermissionsJob() {
 		
 	}
-	
+
+	/**
+     * Triggers the permission reset operation on a given Permissionable object.
+     * 
+     * @param jobContext - The {@link JobExecutionContext} containing details and execution
+     *        parameters of the job.
+     */
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
@@ -87,7 +101,7 @@ public class ResetPermissionsJob implements Job {
 			HibernateUtil.startTransaction();
 			Permissionable permissionable = (Permissionable) retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			try {
@@ -109,7 +123,6 @@ public class ResetPermissionsJob implements Job {
 		
 	}
 	
-	@SuppressWarnings("unchecked")
 	private Permissionable retrievePermissionable (String assetId) throws DotDataException, DotSecurityException {
 		
 		UserAPI userAPI = APILocator.getUserAPI();

@@ -124,8 +124,11 @@ var ViewSource = declare("dijit._editor.plugins.ViewSource",_Plugin, {
 
 			// Call the focus shift outside of the handler.
 			setTimeout(lang.hitch(this, function(){
-				// We over-ride focus, so we just need to call.
-				this.editor.focus();
+				// Focus the textarea... unless focus has moved outside of the editor completely during the timeout.
+				// Since we override focus, so we just need to call it.
+				if(this.editor.focused){
+					this.editor.focus();
+				}
 			}), 100);
 		}));
 	},
@@ -374,6 +377,8 @@ var ViewSource = declare("dijit._editor.plugins.ViewSource",_Plugin, {
 			borderWidth: "0px",
 			borderStyle: "none"
 		});
+		domAttr.set(this.sourceArea, "aria-label", this.editor.id);
+		
 		domConstruct.place(this.sourceArea, ed.iframe, "before");
 
 		if(has("ie") && ed.iframe.parentNode.lastChild !== ed.iframe){

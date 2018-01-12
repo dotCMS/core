@@ -19,16 +19,15 @@ package org.apache.velocity.texen.ant;
  * under the License.    
  */
 
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
-
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
@@ -321,7 +320,7 @@ public class TexenTask
                 // absolute path untouched.
                 File fullPath = project.resolveFile(sources[i]);
                 log("Using contextProperties file: " + fullPath);
-                source.load(new FileInputStream(fullPath));
+                source.load(Files.newInputStream(fullPath.toPath()));
             }
             catch (IOException e)
             {

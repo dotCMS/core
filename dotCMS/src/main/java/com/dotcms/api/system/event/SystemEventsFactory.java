@@ -143,7 +143,7 @@ public class SystemEventsFactory implements Serializable {
 
 				//Everything ok..., committing the transaction
 				if ( localTransaction ) {
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 				}
 			} catch (Exception e) {
 

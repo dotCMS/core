@@ -43,9 +43,11 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceLoader;
+
+
 
 /**
  * This class is used for controlling all template
@@ -110,7 +112,7 @@ public class Template extends Resource
          */
         try
         {
-            is = DotResourceLoader.getInstance().getResourceStream(name);
+            is = com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().getResourceStream(name);
         }
         catch( ResourceNotFoundException rnfe )
         {

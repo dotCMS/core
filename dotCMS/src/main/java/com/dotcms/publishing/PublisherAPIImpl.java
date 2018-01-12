@@ -6,6 +6,8 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
+import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
@@ -31,7 +33,8 @@ public class PublisherAPIImpl implements PublisherAPI {
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
         //Triggering event listener when the publishing process starts
-        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent());
+        localSystemEventsAPI.asyncNotify(new PushPublishStartEvent(config.getAssets()));
+        localSystemEventsAPI.asyncNotify(new StaticPublishStartEvent(config.getAssets()));
 
         try {
 
@@ -127,7 +130,9 @@ public class PublisherAPIImpl implements PublisherAPI {
             config.setBundlers( confBundlers );
 
             //Triggering event listener when the publishing process ends
-            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent());
+            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent(config.getAssets()));
+            localSystemEventsAPI.asyncNotify(new StaticPublishEndEvent(config.getAssets()));
+
             PushPublishLogger.log( this.getClass(), "Completed Publishing Task", config.getId() );
         } catch ( Exception e ) {
             Logger.error( PublisherAPIImpl.class, e.getMessage(), e );

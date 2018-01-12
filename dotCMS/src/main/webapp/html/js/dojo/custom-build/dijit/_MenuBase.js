@@ -294,8 +294,12 @@ return declare("dijit._MenuBase",
 			});
 
 			this.currentPopup = popup;
+
 			// detect mouseovers to handle lazy mouse movements that temporarily focus other menu items
-			popup.connect(popup.domNode, "onmouseenter", lang.hitch(self, "_onPopupHover")); // cleaned up when the popped-up widget is destroyed on close
+			if(this.popupHoverHandle){
+				this.popupHoverHandle.remove();
+			}
+			this.own(this.popupHoverHandle = on.once(popup.domNode, "mouseover", lang.hitch(self, "_onPopupHover")));
 		}
 
 		if(focus && popup.focus){

@@ -1,13 +1,5 @@
 package com.dotmarketing.webdav;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.Map;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FileItem;
@@ -28,6 +20,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * 
@@ -82,13 +82,14 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 
 
 	public void sendContent(OutputStream out, Range range, Map<String, String> params, String arg3) throws IOException {
-		FileInputStream fis = new FileInputStream(file);
-		BufferedInputStream bin = new BufferedInputStream(fis);
-		final byte[] buffer = new byte[ 1024 ];
-		int n = 0;
-		while( -1 != (n = bin.read( buffer )) ) {
-			out.write( buffer, 0, n );
-		}		
+		try (InputStream fis = Files.newInputStream(file.toPath())){
+			BufferedInputStream bin = new BufferedInputStream(fis);
+			final byte[] buffer = new byte[ 1024 ];
+			int n = 0;
+			while( -1 != (n = bin.read( buffer )) ) {
+				out.write( buffer, 0, n );
+			}
+		}
 	}
 
 

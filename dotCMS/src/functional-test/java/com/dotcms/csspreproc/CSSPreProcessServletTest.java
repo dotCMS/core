@@ -1,5 +1,6 @@
 package com.dotcms.csspreproc;
 
+import com.dotmarketing.util.Config;
 import java.io.File;
 import java.net.URL;
 
@@ -27,6 +28,7 @@ public class CSSPreProcessServletTest {
 	@Before
     public void prepare() throws Exception {
         LicenseTestUtil.getLicense();
+        Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
     }
 
 	@Ignore

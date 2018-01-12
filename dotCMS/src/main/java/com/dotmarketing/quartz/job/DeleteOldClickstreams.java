@@ -37,7 +37,7 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 			HibernateUtil.delete("from clickstream_request in class com.dotmarketing.beans.ClickstreamRequest where timestampper < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream in class com.dotmarketing.beans.Clickstream where start_date < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream_404 in class com.dotmarketing.beans.Clickstream404 where timestampper < '"+sdate+"'");
-			HibernateUtil.commitTransaction();	
+			HibernateUtil.closeAndCommitTransaction();
 			
 		} catch (Exception e) {
 			try {

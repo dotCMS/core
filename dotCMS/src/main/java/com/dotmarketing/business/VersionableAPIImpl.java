@@ -588,7 +588,16 @@ public class VersionableAPIImpl implements VersionableAPI {
                                                           final long lang) throws DotDataException, DotStateException {
 	    return versionableFactory.getContentletVersionInfo(identifier, lang);
 	}
+	
+	@Override
+	@CloseDBIfOpened
+	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {
+	  return versionableFactory.findAllContentletVersionInfos(identifier);
+	}
 
+
+	
+	
 	@WrapInTransaction
 	@Override
 	public void saveVersionInfo(final VersionInfo vInfo) throws DotDataException, DotStateException {

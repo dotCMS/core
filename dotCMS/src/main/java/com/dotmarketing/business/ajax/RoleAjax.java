@@ -1,5 +1,8 @@
 package com.dotmarketing.business.ajax;
 
+import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
+import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -62,6 +65,7 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -95,9 +99,12 @@ public class RoleAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		List<Role> rootRoles = roleAPI.findRootRoles();
 
-		String[] excludeRolesArray = null;
+		List<String> excludeRolesArray = null;
 		if(UtilMethods.isSet(excludeRoles)){
-			excludeRolesArray = excludeRoles.split(",");
+			excludeRoles = excludeRoles +","+getWorkflowRolesId();
+			excludeRolesArray = Arrays.asList(excludeRoles.split(","));
+		} else {
+			excludeRolesArray = Arrays.asList(getWorkflowRolesId().split(","));
 		}
 
 		for(Role r : rootRoles) {
@@ -125,7 +132,7 @@ public class RoleAjax {
 
 	}
 
-	private Map<String, Object> constructRoleMap(Role role, String[] excludeRoles, boolean onlyUserAssignableRoles) throws DotDataException {
+	private Map<String, Object> constructRoleMap(Role role, List<String> excludeRoles, boolean onlyUserAssignableRoles) throws DotDataException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Map<String, Object> roleMap = new HashMap<String, Object>();
@@ -151,10 +158,8 @@ public class RoleAjax {
 				}
 
 				// Exclude roles in the excludeRoles list
-				for(String roleTo: excludeRoles) {
-					if(roleTo.equals(id)) {
-						continue;
-					}
+				if(excludeRoles.contains(id)) {
+					continue;
 				}
 
 				Map<String, Object> childMap = constructRoleMap(childRole, excludeRoles, onlyUserAssignableRoles);
@@ -219,6 +224,10 @@ public class RoleAjax {
 	 *             action.
 	 */
 	public void removeUsersFromRole(String[] userIds, String roleId) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -243,6 +252,10 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> addUserToRole(String userId, String roleId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -499,6 +512,9 @@ public class RoleAjax {
 
 	public void saveRoleLayouts(String roleId, String[] layoutIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
@@ -596,6 +612,10 @@ public class RoleAjax {
 
 
 	public void updateLayout(String layoutId, String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
@@ -613,6 +633,10 @@ public class RoleAjax {
 	}
 	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
@@ -811,7 +835,7 @@ public class RoleAjax {
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
 			
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 
 		} catch (Exception e) {
 			Logger.error(this, "Error saving permissions for role " + roleId + " and folder/host id:" + folderHostId, e);
@@ -961,5 +985,30 @@ public class RoleAjax {
 		return ret;
 
 	}
-	
+
+	/**
+	 * Get a string comma separated with the workflow special roles. These Workflow roles should not
+	 * be displayed in the permission tabs
+	 *
+	 * @return String of comma separated ID's of the workflow roles
+	 */
+	private String getWorkflowRolesId() throws DotDataException {
+
+		StringBuilder workflowRolesIds = new StringBuilder();
+		try {
+			for (Role role : APILocator.getRoleAPI().findWorkflowSpecialRoles()) {
+				if (workflowRolesIds.length() > 0) {
+					workflowRolesIds.append(",").append(role.getId());
+				} else {
+					workflowRolesIds.append(role.getId());
+				}
+			}
+
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Error getting workflow roles.", e);
+
+		}
+		return workflowRolesIds.toString();
+	}
+
 }

@@ -19,7 +19,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -53,7 +52,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.CommentsWebAPI;
+import com.dotcms.rendering.velocity.viewtools.CommentsWebAPI;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Html;
@@ -330,7 +329,7 @@ public class CommentsAction extends SecureAction {
 			String userName = commentsForm.getName();
 			String userEmail = commentsForm.getEmail();
 			String userComment = commentsForm.getComment();
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 			if(!conAPI.isInodeIndexed(contentletComment.getInode())){
 				Logger.error(this, "Problem indexing comment content");
 			}

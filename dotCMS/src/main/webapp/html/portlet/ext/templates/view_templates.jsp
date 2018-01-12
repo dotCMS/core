@@ -132,45 +132,34 @@ function editTemplate(inode){
 	}
 }
 
-function delTemplate(inode, referer) {
+function delTemplate(inode, referer, identifier) {
 
 	var callMetaData = {
 			  callback:handleDepResponse,
-			  arg: inode + '|' + referer, // specify an argument to pass to the callback and exceptionHandler
+			  arg: inode + '|' + referer + '|' + identifier, // specify an argument to pass to the callback and exceptionHandler
 			};
+
+    TemplateAjax.checkDependencies(inode, callMetaData);
 }
 
 function handleDepResponse(data, arg1) {
 	var params = arg1.split('|');
 	var inode = params[0];
 	var referer = params[1];
+	var identifier = params[2];
 	
 	if(data!=null) {
-		if(data.split("HTMLPAGE_NON_WORKING_VERSIONS").length < 2){
-			var res = data.split(",");
-		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
-			for (i = 0; i < res.length; i++) { 
-					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
-			}
-				resultTableStr = resultTableStr + '</tbody></table>';
-			
-			dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
-			dijit.byId("dependenciesDialog").show();
-		
-		}else{
-			data = data.substring(0,data.lastIndexOf(","));
-			var res = data.split(",");
-		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
-			for (i = 0; i < res.length; i++) { 
-					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
-				}
-			resultTableStr = resultTableStr + '</tbody></table><br />';
-			resultTableStr += '<div class="buttonRow"> <button dojoType="dijit.form.Button" iconClass="deleteIcon" name="filterButton" style="font-weight: bold" onClick="deleteDependentNonWorkingVersions(\'' + inode + '\',\'' + referer + '\')"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "dependencies_delete_button") %></button>';
-			resultTableStr += '<button dojoType="dijit.form.Button" iconClass="cancelIcon" name="filterButton" style="font-weight: bold" onClick="hideDependenciesDialog();"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "Cancel") %></button></div>';
-			dojo.byId("depDiv").innerHTML = resultTableStr;
-			dijit.byId("dependenciesDialog").show();
-			dojo.parser.parse("dependenciesDialog");
+		var res = data.split(",");
+		var resultTableStr = '<table class="listingTable" style=\'margin-bottom: 0px\'><thead><tr><th><%=LanguageUtil.get(pageContext, "title")%></th></tr></thead><tbody>';
+		for (i = 0; i < res.length; i++) {
+			resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
 		}
+		resultTableStr = resultTableStr + '</tbody></table>';
+
+		dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
+        dojo.byId("query").innerHTML = "<%=LanguageUtil.get(pageContext, "message.template.dependencies.top", "10")%>" + "<br>" +
+				"<%=LanguageUtil.get(pageContext,"message.template.dependencies.query", "")%>" + "<br> +baseType:5 +_all:"+ identifier;
+		dijit.byId("dependenciesDialog").show();
 	}else{
 		processDelete(inode, referer);
 	}
@@ -458,7 +447,9 @@ function processDelete(inode, referer) {
 	
 		<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.template.full_delete.error") %></span>
 	
-		<div id="depDiv" style="overflow: auto;height:auto"></div>
+		<div id="depDiv" style="overflow: auto;height:auto;margin-bottom: 20px"></div>
+
+		<span id="query" style="margin-bottom: 10px; color: #888888; font-size: smaller"></span>
 	</div>
 
 </div>

@@ -249,6 +249,13 @@ public class VelocimacroManager
         return null;
     }
 
+     public void dumpGlobalNamespace()
+     {
+
+     		globalNamespace.clear();
+     		
+     }
+     	
     /**
      * Removes the VMs and the namespace from the manager.
      * Used when a template is reloaded to avoid
@@ -259,6 +266,7 @@ public class VelocimacroManager
      */
     public boolean dumpNamespace(final String namespace)
     {
+    	
         if (usingNamespaces(namespace))
         {
             synchronized(this)

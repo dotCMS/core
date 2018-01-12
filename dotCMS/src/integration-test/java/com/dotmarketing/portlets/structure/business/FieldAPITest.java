@@ -11,8 +11,6 @@ import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -93,7 +91,7 @@ public class FieldAPITest extends IntegrationTestBase {
         	HibernateUtil.startTransaction();
         	FieldFactory.deleteField(ff);
         	StructureFactory.deleteStructure(st);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(FieldAPITest.class, e.getMessage());

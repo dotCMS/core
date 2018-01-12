@@ -4,6 +4,8 @@ import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
+import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -31,7 +33,15 @@ public class PublisherUtil {
 	 * Oct 30, 2012 - 11:21:23 AM
 	 */
 	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
-		PublishingEndPoint pep = new PublishingEndPoint();
+        //Let's no break old functionality, just in case protocol is empty (upgrades?).
+        PublishingEndPoint pep = new PushPublishingEndPoint();
+
+        //But is we DO have a protocol, let's use the factory.
+        if (row.get("protocol") != null) {
+            final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+            pep = factory.getPublishingEndPoint(row.get("protocol").toString());
+        }
+
 		pep.setId(row.get("id").toString());
 		if(row.get("group_id") != null){
 			pep.setGroupId(row.get("group_id").toString());

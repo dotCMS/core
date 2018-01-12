@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
@@ -29,7 +30,6 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -53,6 +53,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -329,6 +330,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		String path = StringUtils.EMPTY;
 
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
+
 		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
 			Logger.debug(getClass(), "Cannot delete null folder");
 			return;
@@ -400,7 +403,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			if (Logger.isDebugEnabled(getClass())) {
 				Logger.debug(getClass(), "Removing the folder references for " + path);
 			}
-			APILocator.getContentletAPIImpl().removeFolderReferences(folder);
+			contentletAPI.removeFolderReferences(folder);
+
+			contentTypeAPI.moveToSystemFolder(folder);
 
 			// delete folder itself
 			if (Logger.isDebugEnabled(getClass())) {
@@ -452,7 +457,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 			for (Contentlet c : conList) {
 				// Find all multi-language contentlets and archive them
+
 				Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+
 	            List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
 	            for (Contentlet cv : otherLanguageCons) {
 					if(cv.isLive()){
@@ -585,7 +592,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 
-	// todo: not sure if this should be a transaction
+	@WrapInTransaction
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 

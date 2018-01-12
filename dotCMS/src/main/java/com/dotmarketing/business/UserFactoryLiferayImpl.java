@@ -71,10 +71,11 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		String companyId = comp.getCompanyId();
 		boolean autoID = false;
 		User defaultUser = null;
-		if(!UtilMethods.isSet(userId)){
-			autoID = true;
-			try {
-				boolean more = false; 
+		try {
+			if(!UtilMethods.isSet(userId)){
+				autoID = true;
+
+				boolean more;
 				do {
 					userId = companyId + "." +
 					Long.toString(CounterManagerUtil.increment(User.class.getName() + "." + companyId));
@@ -84,22 +85,20 @@ public class UserFactoryLiferayImpl extends UserFactory {
 							more=true;
 						else
 							more=false;
-						
+
 					} catch (PortalException e) {
 						more=false;
 					}
-					
+
 				}while(more);
-			} catch (Exception e) {
-				throw new DotDataException("Can't get a counter");
+			}else{
+				CounterManagerUtil.increment(User.class.getName() + "." + companyId);
 			}
-		}
-		
-		try {
+
 			defaultUser = APILocator.getUserAPI().getDefaultUser();
-			CounterManagerUtil.increment(User.class.getName() + "." + companyId);
+
 		} catch (Exception e) {
-			throw new DotDataException("Can't get default user");
+			throw new DotDataException("Error creating new user", e);
 		}		
 
 		if(!UtilMethods.isSet(email)){

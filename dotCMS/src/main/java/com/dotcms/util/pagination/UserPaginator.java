@@ -7,6 +7,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,9 +39,9 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
      * Return the total of users with name equals to nameFilter.
      * @param nameFilter
      * @return
+     *
      */
-    @Override
-    public long getTotalRecords(String nameFilter) {
+    private long getTotalRecords(final String nameFilter) {
         try {
             return userAPI.getCountUsersByName(nameFilter);
         } catch (DotDataException e) {
@@ -49,8 +50,8 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
     }
 
     @Override
-    public Collection<Map<String, Object>> getItems(User user, String filter, int limit, int offset,
-                                                    String orderby, OrderDirection direction, Map<String, Object> extraParams) {
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, int limit, int offset,
+                                                    final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
 
         return getItems(user, filter, limit, offset);
     }
@@ -65,24 +66,29 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
      * @return
      */
     @Override
-    public Collection<Map<String, Object>> getItems(User user, String filter, int limit, int offset) {
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset) {
 
         try {
-            List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
-            List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
-            return users.stream()
+            final List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
+            final List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
+            final List<Map<String, Object>> usersMap = users.stream()
                     .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
+
+            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
+            result.addAll(usersMap);
+            result.setTotalResults(this.getTotalRecords(filter));
+            return result;
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
     }
 
     @Nullable
-    private Map<String, Object> getUserObjectMap(List<String> rolesId, User userItem) {
+    private Map<String, Object> getUserObjectMap(final List<String> rolesId, final User userItem) {
         try{
-            Map<String, Object> userMap = userItem.toMap();
-            String id = userItem.getUserId();
+            final Map<String, Object> userMap = userItem.toMap();
+            final String id = userItem.getUserId();
             userMap.put("requestPassword", roleAPI.doesUserHaveRoles(id, rolesId));
 
             return userMap;

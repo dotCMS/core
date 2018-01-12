@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
+import com.dotcms.rest.WorkflowResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
@@ -15,12 +16,16 @@ import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
+import com.dotcms.rest.api.v1.container.ContainerResource;
+import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
@@ -36,17 +41,19 @@ import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
  * service needs to be added to this list in order to be available for use.
  * 
- * @author Will Ezel
+ * @author Will Ezell
  * @version 2.5.3
  * @since Dec 5, 2013
  *
  */
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
+
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
 
 	@Override
@@ -114,11 +121,17 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
 					REST_CLASSES.add(EventsResource.class);
+					REST_CLASSES.add(FolderResource.class);
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
 
 					REST_CLASSES.add(CategoriesResource.class);
+					REST_CLASSES.add(PageResource.class);
+					REST_CLASSES.add(ContentRelationshipsResource.class);
+
+					REST_CLASSES.add(com.dotcms.rest.api.v1.workflow.WorkflowResource.class);
+					REST_CLASSES.add(ContainerResource.class);
 				}
 			}
 		}

@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.TagUtil;
@@ -142,12 +143,8 @@ public class URLMapFilter implements Filter {
             return;
         }
         if (RegEX.contains(url, mastRegEx)) {
-            boolean ADMIN_MODE = (optSession != null
-                    && optSession.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION)
-                    != null);
-            boolean EDIT_MODE = ((optSession != null
-                    && optSession.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION)
-                    != null) && ADMIN_MODE);
+            boolean ADMIN_MODE =   PageMode.get(request) .isAdmin;
+            boolean EDIT_MODE =   PageMode.get(request)  == PageMode.EDIT_MODE;
 
             Structure structure = null;
 

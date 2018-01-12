@@ -72,7 +72,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         try{
             HibernateUtil.startTransaction();
             host=hostAPI.save(host, systemUser, false);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
@@ -95,7 +95,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.startTransaction();
             APILocator.getHostAPI().archive(host, userAPI.getSystemUser(), false);
             APILocator.getHostAPI().delete(host, userAPI.getSystemUser(), false);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
@@ -181,7 +181,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             FieldFactory.deleteField(field1);
             FieldFactory.deleteField(field2);
             StructureFactory.deleteStructure(s.getInode());
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());

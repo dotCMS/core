@@ -73,7 +73,9 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final String DELETE_VIRTUAL_LINK_QUERY = "delete from virtual_link";
     private static final String DROP_TABLE_VIRTUAL_LINK_QUERY = "drop table virtual_link";
 
+    private static final String EXTERNAL_LINK_CONDITION = "//";
     private static final int CODE_301 = 301;
+    private static final int CODE_200 = 200;
     private static final int FOR_LIMIT_48 = 48;
     private static final int FOR_LIMIT_25 = 25;
     private static final int INT_1 = 1;
@@ -198,7 +200,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             dc.addParam(uuid); // identifier
             dc.addParam("/"); // parent_path
             dc.addParam("content." + inode); // asset_name
-            dc.addParam(Host.SYSTEM_HOST); // host_inode
+            dc.addParam(site); // host_inode
             dc.addParam("contentlet"); // asset_type
             dc.loadResult();
 
@@ -223,7 +225,14 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             dc.addParam(site); // text2(site)
             dc.addParam(uri); // text3(uri)
             dc.addParam(oldUri); // text4(forwardTo)
-            dc.addParam(CODE_301); // integer1(action)
+
+            //If the uri contains // then redirect if not do forward
+            if(oldUri.contains(EXTERNAL_LINK_CONDITION)){
+                dc.addParam(CODE_301); // integer1(action)
+            }else {
+                dc.addParam(CODE_200); // integer1(action)
+            }
+
             dc.addParam(0); // integer2(sort)
             for (int i = 0; i < FOR_LIMIT_48; i++) {
                 dc.addParam(0); // all other integer and float fields

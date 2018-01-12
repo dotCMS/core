@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.form.business;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
+
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -20,11 +19,13 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.VelocityUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.liferay.portal.model.User;
 
 /**
@@ -145,7 +146,7 @@ public class FormAPIImpl implements FormAPI {
 		/*Saving the structure in cache*/
 		CacheLocator.getContentTypeCache().remove(structure);
 		CacheLocator.getContentTypeCache().add(structure);
-		StructureServices.removeStructureFile(structure);
+		new ContentTypeLoader().invalidate(structure);
 
 		/*Adding Widget Fields*/
 		Field formIdField = new Field(FORM_WIDGET_FORM_ID_FIELD_NAME,Field.FieldType.TEXT,Field.DataType.TEXT,structure,true,true,true,1,"", "", "", true, false, true);

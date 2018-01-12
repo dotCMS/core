@@ -1,15 +1,5 @@
 package com.dotmarketing.portlets.usermanager.factories;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.NonWritableChannelException;
-import java.util.Properties;
-import java.util.StringTokenizer;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -17,11 +7,7 @@ import com.dotcms.repackage.javax.portlet.PortletRequest;
 import com.dotcms.repackage.javax.portlet.PortletResponse;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -33,6 +19,19 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.channels.Channels;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 public class UserManagerPropertiesFactory {
 
@@ -69,7 +68,7 @@ public class UserManagerPropertiesFactory {
 					if (!from.exists())
 						from.createNewFile();
 					
-					properties.store(new java.io.FileOutputStream(filePath), null);
+					properties.store(Files.newOutputStream(Paths.get(filePath)), null);
 				} catch (Exception e) {
 					Logger.error(UserManagerPropertiesFactory.class,e.getMessage(),e);
 				}
@@ -85,14 +84,11 @@ public class UserManagerPropertiesFactory {
 			}
 
 			if (copy) {
-				FileChannel srcChannel = new FileInputStream(from).getChannel();
-				// Create channel on the destination
-				FileChannel dstChannel = new FileOutputStream(to).getChannel();
-				// Copy file contents from source to destination
-				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-				// Close the channels
-				srcChannel.close();
-				dstChannel.close();
+                final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(from.toPath()));
+                final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(to.toPath()));
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                inputChannel.close();
+                outputChannel.close();
 			}
 
 		} catch (IOException e) {
@@ -118,7 +114,7 @@ public class UserManagerPropertiesFactory {
 			// Loading properties file
 
 			String filePath = UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp";
-			BufferedInputStream is = new BufferedInputStream(new FileInputStream(filePath));
+			final BufferedInputStream is = new BufferedInputStream(Files.newInputStream(Paths.get(filePath)));
 
 			if (is != null) {
 				properties.load(is);
@@ -186,17 +182,11 @@ public class UserManagerPropertiesFactory {
 			File to = new java.io.File(filePath);
 			to.createNewFile();
 
-			FileChannel srcChannel = new FileInputStream(from).getChannel();
-
-			// Create channel on the destination
-			FileChannel dstChannel = new FileOutputStream(to).getChannel();
-
-			// Copy file contents from source to destination
-			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-
-			// Close the channels
-			srcChannel.close();
-			dstChannel.close();
+            final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(from.toPath()));
+            final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(to.toPath()));
+            FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            inputChannel.close();
+            outputChannel.close();
 
 		} catch (NonWritableChannelException we) {
 
@@ -236,7 +226,7 @@ public class UserManagerPropertiesFactory {
 			}
 		}
 
-		properties.store(new java.io.FileOutputStream(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp"), null);
+		properties.store(Files.newOutputStream(Paths.get(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp")), null);
 
 		req.setAttribute(WebKeys.USERMANAGER_PROPERTIES, properties);
 	}
@@ -264,7 +254,7 @@ public class UserManagerPropertiesFactory {
 			}
 		}
 
-		properties.store(new java.io.FileOutputStream(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp"), null);
+		properties.store(Files.newOutputStream(Paths.get(UtilMethods.getTemporaryDirPath() + "user_manager_config_properties.tmp")), null);
 
 		req.setAttribute(WebKeys.USERMANAGER_PROPERTIES, properties);
 	}

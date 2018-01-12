@@ -3,25 +3,24 @@
  */
 package com.dotcms.publisher.endpoint.business;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * @author brent griffin
@@ -33,7 +32,9 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 	private static ArrayList<PublishingEndPoint> _endPoints = new ArrayList<PublishingEndPoint>();
 	
 	public static PublishingEndPoint createPublishingEndPoint(String id, String groupId, String serverName, String address, String port, String protocol, boolean enabled, String authKey, boolean sending) {
-		PublishingEndPoint retValue = new PublishingEndPoint();
+		final com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory factory =
+				new PublishingEndPointFactory();
+		PublishingEndPoint retValue = factory.getPublishingEndPoint(protocol);
 		retValue.setId(id);
 		retValue.setGroupId(groupId);
 		retValue.setServerName(new StringBuilder(serverName));
@@ -184,7 +185,7 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 			throw (e);
 		}
 		
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	@Test

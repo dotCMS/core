@@ -21,12 +21,23 @@ return declare( "dijit.form._ListMouseMixin", _ListBase, {
 	postCreate: function(){
 		this.inherited(arguments);
 
-		this.own(on(this.domNode, touch.press, function(evt){ evt.preventDefault(); })); // prevent focus shift on list scrollbar press
+		this.own(on(this.domNode, "mousedown", function(evt){ evt.preventDefault(); })); // prevent focus shift on list scrollbar press
+		this._listConnect("click", "_onClick");
+		this._listConnect("mousedown", "_onMouseDown");
+		this._listConnect("mouseup", "_onMouseUp");
+		this._listConnect("mouseover", "_onMouseOver");
+		this._listConnect("mouseout", "_onMouseOut");
+	},
 
-		this._listConnect(touch.press, "_onMouseDown");
-		this._listConnect(touch.release, "_onMouseUp");
-		this._listConnect(mouse.enter, "_onMouseOver");
-		this._listConnect(mouse.leave, "_onMouseOut");
+	_onClick: function(/*Event*/ evt, /*DomNode*/ target){
+		this._setSelectedAttr(target, false);
+		if(this._deferredClick){
+			this._deferredClick.remove();
+		}
+		this._deferredClick = this.defer(function(){
+			this._deferredClick = null;
+			this.onClick(target);
+		});
 	},
 
 	_onMouseDown: function(/*Event*/ evt, /*DomNode*/ target){
@@ -35,7 +46,7 @@ return declare( "dijit.form._ListMouseMixin", _ListBase, {
 			this._hoveredNode = null;
 		}
 		this._isDragging = true;
-		this._setSelectedAttr(target);
+		this._setSelectedAttr(target, false);
 	},
 
 	_onMouseUp: function(/*Event*/ evt, /*DomNode*/ target){
@@ -43,10 +54,9 @@ return declare( "dijit.form._ListMouseMixin", _ListBase, {
 		var selectedNode = this.selected;
 		var hoveredNode = this._hoveredNode;
 		if(selectedNode && target == selectedNode){
-			this.onClick(selectedNode);
-		}else if(hoveredNode && target == hoveredNode){ // drag to select
-			this._setSelectedAttr(hoveredNode);
-			this.onClick(hoveredNode);
+			this.defer(function(){ this._onClick(evt, selectedNode); });
+		}else if(hoveredNode){ // drag to select
+			this.defer(function(){ this._onClick(evt, hoveredNode); });
 		}
 	},
 
@@ -71,7 +81,7 @@ return declare( "dijit.form._ListMouseMixin", _ListBase, {
 		this._hoveredNode = target;
 		this.onHover(target);
 		if(this._isDragging){
-			this._setSelectedAttr(target);
+			this._setSelectedAttr(target, false);
 		}
 	}
 });

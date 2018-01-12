@@ -22,6 +22,7 @@
 
 package com.dotmarketing.cms.factories;
 
+
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -31,14 +32,13 @@ import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.ejb.ImageManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.FileUtil;
-
-import javax.servlet.ServletContext;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.ServletContext;
 
 /**
  * <a href="AddressUtil.java.html"><b><i>View Source</i></b></a>
@@ -121,8 +121,7 @@ public class PublicCompanyFactory extends CompanyUtil {
 			final File file = new File(FileUtil.getRealPath("/html/images/shim.gif"));
 
 			try {
-
-				in = new BufferedInputStream(new FileInputStream(file));
+				in = new BufferedInputStream(Files.newInputStream(file.toPath()));
 
 				byte[] buf = new byte[2048];
 				int i = 0;

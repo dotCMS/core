@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.Date;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -31,20 +30,9 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	@CloseDBIfOpened
 	@Override
 	public List<Identifier> findByURIPattern(final String assetType, final String uri,
-											 final boolean hasLive,  final boolean onlyDeleted,
 											 final boolean include,  final Host host) throws DotDataException {
 
-		return this.identifierFactory.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public List<Identifier> findByURIPattern(final String assetType, final String uri,
-											 final boolean hasLive,  final boolean onlyDeleted,
-											 final boolean include,  final Host host,
-											 final Date startDate,   final Date endDate) throws DotDataException {
-
-		return this.identifierFactory.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
+		return this.identifierFactory.findByURIPattern(assetType, uri, include, host);
 	}
 
 	@CloseDBIfOpened
@@ -180,7 +168,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	@CloseDBIfOpened
-	public List<Identifier> findByParentPath(final String hostId, final String parentPath) throws DotHibernateException {
+	public List<Identifier> findByParentPath(final String hostId, final String parentPath) throws DotDataException {
 
 	    return identifierFactory.findByParentPath(hostId, parentPath);
 	}

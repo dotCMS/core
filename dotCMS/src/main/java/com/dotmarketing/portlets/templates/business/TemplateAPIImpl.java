@@ -2,40 +2,48 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import com.liferay.util.StringUtil;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.liferay.portal.model.User;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -47,25 +55,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	static HostAPI hostAPI = APILocator.getHostAPI();
 	static UserAPI userAPI = APILocator.getUserAPI();
 
-	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
-		protected Perl5Matcher initialValue() {
-			return new Perl5Matcher();
-		}
-	};
 
-	private static com.dotcms.repackage.org.apache.oro.text.regex.Pattern parseContainerPattern;
-	private static com.dotcms.repackage.org.apache.oro.text.regex.Pattern oldContainerPattern;
-
-	static {
-		Perl5Compiler c = new Perl5Compiler();
-    	try{
-	    	parseContainerPattern = c.compile("#parse\\( \\$container.* \\)",Perl5Compiler.READ_ONLY_MASK);
-	    	oldContainerPattern = c.compile("[0-9]+",Perl5Compiler.READ_ONLY_MASK);
-    	}catch (MalformedPatternException mfe) {
-    		Logger.fatal(TemplateAPIImpl.class, "Unable to instaniate dotCMS Velocity Cache", mfe);
-			Logger.error(TemplateAPIImpl.class, mfe.getMessage(), mfe);
-		}
-	}
 
 	@CloseDBIfOpened
 	public List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException {
@@ -128,7 +118,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		newTemplate.setModUser(user.getUserId());
 
 
-		updateParseContainerSyntax(newTemplate);
 		newTemplate.setBody(replaceWithNewContainerIds(newTemplate.getBody(), containerMappings));
 		newTemplate.setDrawedBody(replaceWithNewContainerIds(newTemplate.getDrawedBody(), containerMappings));
 
@@ -141,7 +130,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			// persists the webasset
 			save(newTemplate);
 			List<Container> destinationContainers = getContainersInTemplate(newTemplate, user, respectFrontendRoles);
-			associateContainers(destinationContainers, newTemplate);
+
 
 			//Copy the host again
 			newIdentifier.setHostId(destination.getIdentifier());
@@ -234,7 +223,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
 		if (!permissionAPI.doesUserHavePermissions(PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
@@ -256,44 +245,51 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		template.setModDate(new Date());
 		template.setModUser(user.getUserId());
 
-		//we need to replace older container parse syntax with updated syntax
-		updateParseContainerSyntax(template);
+
 
 		//it saves or updates the asset
-		if(existingInode)
+		if(existingInode) {
 		    // support for existing inode
 		    save(template,template.getInode());
-		else
+		}else {
 		    save(template);
-
+		}
 		APILocator.getVersionableAPI().setWorking(template);
 
 
-		///parses the body tag to get all identifier ids and saves them as children
-		List<Container> containers = getContainersInTemplate(template, user, respectFrontendRoles);
-		associateContainers(containers, template);
-
-        //Adding the permissions for this Permissionable to cache
-        permissionAPI.addPermissionsToCache( template );
         return template;
 	}
 
-	@CloseDBIfOpened
-	@Override
-	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-	    if(template!=null && InodeUtils.isSet(template.getInode())) {
+    @CloseDBIfOpened
+    @Override
+    public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
-    		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-    			throw new DotSecurityException("You don't have permission to read the source file.");
-    		}
+        // 100 pages should be more than enough to get all the containers on a given template
+        // Trying to avoid the case where 10000 pages might use the same template
+        List<Contentlet> pages = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles, 100);
+
+        List<Container> containers = new ArrayList<>();
+
+        for (Contentlet page : pages) {
+            Set<String> containerId =
+                    MultiTreeFactory.getMultiTrees(page.getIdentifier())
+                    .stream()
+                    .map(MultiTree::getContainer)
+                    .collect(Collectors.toSet());
+
+            for (String cont : containerId) {
+                Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+                if(container==null) {
+                    continue;
+                }
+                containers.add(container);
+            }
+        }
+        return containers;
 
 
-    		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
-	    }
-	    else {
-	        return null;
-	    }
-	}
+    }
 
 
 
@@ -357,30 +353,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newBody.toString();
 	}
 
-	public void updateParseContainerSyntax(Template template) {
-	    String tb = template.getBody();
-	    if(!UtilMethods.isSet(tb)){
-	        template.setBody(StringPool.BLANK); 
-	    }else{
-	        Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-	        String oldParse;
-	        String newParse;
-	        while(matcher.contains(tb, parseContainerPattern)){
-	            MatchResult match = matcher.getMatch();
-	            int groups = match.groups();
-	            for(int g=0;g<groups;g++){
-	                oldParse = match.group(g);
-	                if(matcher.contains(oldParse, oldContainerPattern)){
-	                    MatchResult matchOld = matcher.getMatch();
-	                    newParse = matchOld.group(0).trim();
-	                    newParse = containerTag + newParse + "')";
-	                    tb = StringUtil.replace(tb,oldParse,newParse);
-	                }
-	            }
-	            template.setBody(tb);
-	        }
-	    }
-	}
 
 	@SuppressWarnings("unchecked")
 	private String getCopyTemplateName(String templateName, Host host) throws DotDataException {
@@ -461,15 +433,36 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
-	@WrapInTransaction
-	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException {
-		templateFactory.associateContainers(containerIdentifiers, template);
-	}
+
 
 
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return find(info.getLiveInode(), user, respectFrontendRoles);
+	}
+
+	@Override
+	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		String result = null;
+		Template template = find(templateInode, user, respectFrontendRoles);
+		// checking if there are pages using this template
+		List<Contentlet> pages=APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles,
+				TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT);
+
+		if(pages != null && !pages.isEmpty()) {
+			StringBuilder builder = new StringBuilder();
+			int i = 0;
+			for (Contentlet page : pages) {
+				HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
+				Host host = APILocator.getHostAPI().find(pageAsset.getHost(), user, false);
+				builder.append(host.getHostname()).append(":").append(pageAsset.getURI());
+				if(i++ != pages.size() - 1){
+					builder.append(",");
+				}
+			}
+			result = builder.toString();
+		}
+		return result;
 	}
 
     @Override

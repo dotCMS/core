@@ -4,28 +4,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * Created by freddyrodriguez on 5/2/16.
+ * 
+ * Use {link {@link PageMode}
+ * @author will
+ *
  */
+@Deprecated
 public abstract  class PageRequestModeUtil {
 
     public static boolean isAdminMode( HttpSession session ){
-       if(session==null) return false;
-        boolean timemachine = session.getAttribute("tm_date")!=null;
-        return !timemachine && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+       return PageMode.get(session).isAdmin;
     }
 
     public static boolean isPreviewMode( HttpSession session ){
-       if(session==null) return false;
-        boolean ADMIN_MODE = isAdminMode(session);
-        boolean timemachine = session.getAttribute("tm_date")!=null;
-        return !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
+        return PageMode.get(session) == PageMode.PREVIEW_MODE;
     }
 
     public static boolean isEditMode( HttpSession session ){
-       if(session==null) return false;
-        boolean ADMIN_MODE = isAdminMode(session);
-        boolean timemachine = session.getAttribute("tm_date")!=null;
-        return !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
+        return PageMode.get(session) == PageMode.EDIT_MODE;
     }
     
     public static boolean isEditMode( HttpServletRequest request ){
@@ -43,9 +39,7 @@ public abstract  class PageRequestModeUtil {
     }
     
     public static boolean isLive( HttpServletRequest request ){
-      HttpSession session = request.getSession(false);
-      if(session==null) return true;
-      return !( isAdminMode(session) && (isEditMode(session) || isPreviewMode(session)));
+      return PageMode.get(request).showLive;
     }
     
     /**
@@ -55,15 +49,11 @@ public abstract  class PageRequestModeUtil {
      * @param canLock boolean can the user loc the content
      */
     public static void setBackEndModeInSession( HttpServletRequest request, boolean contentLocked, boolean canLock ){
-        HttpSession session = request.getSession(false);
+
         if(contentLocked && canLock){
-			session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+            PageMode.setPageMode(request, PageMode.EDIT_MODE);
 		}else{
-			session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+		    PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
 		}
       }
     

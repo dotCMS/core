@@ -17,7 +17,7 @@
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.viewtools.CategoriesWebAPI"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -534,11 +534,18 @@ var editButtonRow="editContentletButtonRow";
 			</div>
 
 			<div class="content-edit-workflow">
+				<% if(null != wfSteps && wfSteps.size() ==1){
+					WorkflowStep step = wfSteps.get(0);
+				%>
 				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
 				<table>
 					<tr>
+						<th><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
+						<td><%=APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).getName() %></td>
+					</tr>
+					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-						<td><%=wfStep.getName() %></td>
+						<td><%=step.getName() %></td>
 					</tr>
 					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
@@ -555,6 +562,7 @@ var editButtonRow="editContentletButtonRow";
 						<%} %>
 					</tr>
 				</table>
+				<% } %>
 			</div>
 
 			<% } %>

@@ -21,6 +21,9 @@
     var isContentSaving = false;
     var doesUserCancelledEdit = false;
 
+    // We define this variable when we load this page from an iframe in the ng edit page
+    var ngEditContentletEvents;
+
     var tabsArray=new Array();
 
     dojo.require("dijit.Dialog");
@@ -77,14 +80,19 @@
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
     function cancelEditCallback(callbackData){
-
-        if(callbackData.indexOf("referer") != -1){
-            var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
-            sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
-            callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
-            self.location = callbackData+"&referer="+escape(sourceReferer);
-        }else{
-            self.location = callbackData;
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                event: 'cancel'
+            });
+        } else {
+            if (callbackData.indexOf("referer") != -1) {
+                var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
+                sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
+                callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
+                self.location = callbackData+"&referer="+escape(sourceReferer);
+            } else {
+                self.location = callbackData;
+            }
         }
     }
 
@@ -553,7 +561,7 @@
 
 
         // Show DotContentletValidationExceptions.
-        if(data["saveContentErrors"] != null ){
+        if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
             var exceptionData = data["saveContentErrors"];
             var errorList = "";
@@ -577,8 +585,13 @@
             return;
         }
 
-
-
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                event: 'save',
+                data: data
+            });
+            return;
+        }
 
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {

@@ -22,7 +22,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -116,9 +115,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   @CloseDBIfOpened
-  public ContentType find(final String inode) throws DotSecurityException, DotDataException {
-
-    final ContentType type = this.contentTypeFactory.find(inode);
+  public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
+    if(!UtilMethods.isSet(inodeOrVar)) {
+        return null;
+    }
+    final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
     if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
 
@@ -267,7 +268,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
 
-    List<ContentType> types = search("folder='" + folder.getIdentifier() + "'", "mod_date", -1, 0);
+    final List<ContentType> types = search("folder='" + folder.getInode() + "'", "mod_date", -1, 0);
 
     for (ContentType type : types) {
       ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
@@ -551,5 +552,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public boolean updateModDate(Field field) throws DotDataException {
     return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );
+  }
+
+  @WrapInTransaction
+  @Override
+  public void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException {
+    ContentTypeBuilder builder =
+            ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
+    save(builder.build());
   }
 }

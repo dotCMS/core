@@ -20,14 +20,23 @@ public class WorkflowSchemeImportExportObject implements Serializable {
 	List<WorkflowScheme> schemes;
 	List<WorkflowStep> steps;
 	List<WorkflowAction> actions;
+	List<Map<String, String>> actionSteps;
 	List<WorkflowActionClass> actionClasses;
 	List<WorkflowActionClassParameter> actionClassParams;
 	List<Map<String, String>> workflowStructures;
-	
-	
-	
-	
 
+
+	public List<Map<String, String>> getActionSteps() {
+		if(actionSteps != null){
+			return actionSteps;
+		}
+
+		return new ArrayList<Map<String,String>>();
+	}
+
+	public void setActionSteps(List<Map<String, String>> actionSteps) {
+		this.actionSteps = actionSteps;
+	}
 
 	public List<Map<String, String>> getWorkflowStructures() {
 		if(workflowStructures != null){

@@ -1,20 +1,5 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -44,6 +29,20 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * This action class import content from csv/text files. The csv file should
@@ -326,12 +325,12 @@ public class ImportContentletsAction extends DotPortletAction {
 
 		if (null != file && file.exists()) {
             byte[] buf = new byte[4096];
-            try (FileInputStream fis = new FileInputStream(file)){
+            try (InputStream is = Files.newInputStream(file.toPath())){
 
 
 				UniversalDetector detector = new UniversalDetector(null);
 				int nread;
-				while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
+				while ((nread = is.read(buf)) > 0 && !detector.isDone()) {
 					detector.handleData(buf, 0, nread);
 				}
 				detector.dataEnd();

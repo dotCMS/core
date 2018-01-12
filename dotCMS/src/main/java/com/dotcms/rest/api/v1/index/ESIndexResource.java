@@ -2,23 +2,6 @@ package com.dotcms.rest.api.v1.index;
 
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.enterprise.license.LicenseLevel;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.snapshots.SnapshotRestoreException;
-
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -26,9 +9,9 @@ import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.google.gson.Gson;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -64,6 +47,20 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import javax.servlet.http.HttpServletRequest;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.status.IndexStatus;
+import org.elasticsearch.snapshots.SnapshotRestoreException;
 
 /**
  * Index endpoint for REST calls version 1
@@ -302,7 +299,7 @@ public class ESIndexResource {
             }
 
             final File snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			InputStream in = new FileInputStream(snapshotFile);
+			final InputStream in = Files.newInputStream(snapshotFile.toPath());
 			StreamingOutput stream = new StreamingOutput() {
 				@Override
 				public void write(OutputStream os) throws IOException, WebApplicationException {

@@ -135,9 +135,11 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
                 readOnlyTester2.test(() -> {
 
                     Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertTrue(DbConnectionFactory.connectionExists());
                     Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
                     getCount();
                     Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertTrue(DbConnectionFactory.connectionExists());
                     Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
 
                     tx2.test(() -> {
@@ -166,6 +168,82 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
         Assert.assertFalse(DbConnectionFactory.inTransaction());
         Assert.assertFalse(DbConnectionFactory.connectionExists());
 
+    }
+
+    @Test
+    public void testSingleSelectTransaction() throws Exception {
+
+        final ReadOnlyTester readOnlyTester1 = new ReadOnlyTester();
+        final StringBuilder builder          = new StringBuilder();
+
+        DbConnectionFactory.closeSilently(); // make sure any previous conn is already closed before start
+
+        readOnlyTester1.test(() -> {
+
+            builder.append(DbConnectionFactory.getConnection().toString());
+            getCount();
+            Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+
+
+
+            Assert.assertFalse(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
+        });
+
+        Assert.assertFalse(DbConnectionFactory.inTransaction());
+        Assert.assertFalse(DbConnectionFactory.connectionExists());
+    }
+
+    @Test
+    public void testSingleSelectUpdateTransaction() throws Exception {
+
+        final ReadOnlyTester readOnlyTester1 = new ReadOnlyTester();
+        final TransactionalTester tx1        = new TransactionalTester();
+        final StringBuilder builder          = new StringBuilder();
+
+        DbConnectionFactory.closeSilently(); // make sure any previous conn is already closed before start
+
+        readOnlyTester1.test(() -> {
+
+            Assert.assertFalse(DbConnectionFactory.connectionExists());
+            builder.append(DbConnectionFactory.getConnection().toString());
+            getCount();
+            Assert.assertFalse(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
+            Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+
+            tx1.test( () -> {
+                // the con will be already created by the aspect.
+                Assert.assertTrue(DbConnectionFactory.connectionExists());
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                update();
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                final HibernateUtil hibernateUtil = new HibernateUtil(Link.class);
+                Link l = new Link();
+                String tableName = l.getType();
+
+                final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+                        + tableName + "_1_ where tree.child = " + tableName + ".inode and " + tableName
+                        + "_1_.inode = " + tableName + ".inode and " + tableName + "_1_.type ='" + tableName + "'";
+                hibernateUtil.setSQLQuery(sql);
+                try {
+                    hibernateUtil.list();
+                } catch (Exception e) {
+                    Assert.fail("Hibernate wired connection still works");
+                }
+
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertTrue(DbConnectionFactory.connectionExists());
+            });
+
+            Assert.assertFalse(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
+        });
+
+        Assert.assertFalse(DbConnectionFactory.inTransaction());
+        Assert.assertFalse(DbConnectionFactory.connectionExists());
     }
 
     private int getCount() {

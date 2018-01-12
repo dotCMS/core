@@ -45,7 +45,7 @@ public class CleanUnDeletedUsersJob implements StatefulJob {
                 user.setDeleteInProgress(false);
                 userAPI.save(user, systemUser, false);
             }
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (DotDataException | DotSecurityException e) {
             try {
                 HibernateUtil.rollbackTransaction();

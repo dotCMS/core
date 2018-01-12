@@ -14,7 +14,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -162,7 +161,7 @@ public class MyAccountAction extends SecureAction {
 			}
 		}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 
 		loadUserInfoInRequest(form, user.getUserId(), request);
 

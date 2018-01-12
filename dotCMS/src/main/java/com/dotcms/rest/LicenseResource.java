@@ -24,7 +24,6 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
-import com.dotcms.repackage.org.python.modules.newmodule;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -42,7 +41,6 @@ import com.liferay.portal.model.User;
 
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -190,7 +188,7 @@ public class LicenseResource {
                 
                 LicenseUtil.pickLicense(serial);
 
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
                 
                 AdminLogger.log(LicenseResource.class, "pickLicense", "Picked license from repo. Serial: "+serial, initData.getUser());
             }
@@ -286,7 +284,7 @@ public class LicenseResource {
             } else {
             	HibernateUtil.startTransaction();
             	LicenseUtil.freeLicenseOnRepo();
-            	HibernateUtil.commitTransaction();
+            	HibernateUtil.closeAndCommitTransaction();
             }
             
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());

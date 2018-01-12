@@ -102,7 +102,7 @@ public class OrderMenuAction extends DotPortletAction {
 				}
 				RefreshMenus.deleteMenus();
 
-				HibernateUtil.commitTransaction();
+				HibernateUtil.closeAndCommitTransaction();
 				_sendToReferral(req,res,req.getParameter("referer"));
 				
 				

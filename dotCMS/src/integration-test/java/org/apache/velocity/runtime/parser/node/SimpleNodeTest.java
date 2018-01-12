@@ -3,7 +3,7 @@ package org.apache.velocity.runtime.parser.node;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.BeforeClass;

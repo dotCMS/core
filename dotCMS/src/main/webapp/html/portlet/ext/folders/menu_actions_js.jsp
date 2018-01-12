@@ -123,6 +123,11 @@
 			self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + referer + openNodes;
 		}
 	}
+	function fullDeleteTemplate(objId,openNodes,referer) {
+        if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template")) %>')) {
+            self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=full_delete&inode=' + objId + '&referer=' + referer + openNodes;
+        }
+    }
 	function deleteHTMLPage(objId,parentId,openNodes,referer,isLegacyPage) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.delete.selected.htmlpage")) %>')) {
 			if(isLegacyPage){

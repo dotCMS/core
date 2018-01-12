@@ -7,7 +7,9 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -22,6 +24,7 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -36,16 +39,17 @@ import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -358,7 +362,7 @@ public class ImportExportUtil {
             _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
+                charStream = new InputStreamReader(Files.newInputStream(file.toPath()), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -366,6 +370,8 @@ public class ImportExportUtil {
                 roles.addAll((List<Role>) _xstream.fromXML(charStream));
             }catch(Exception e){
                 Logger.error(this, "Unable to import " + _className, e);
+            } finally {
+                CloseUtils.closeQuietly(charStream);
             }
         }
 
@@ -458,7 +464,10 @@ public class ImportExportUtil {
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
-                List<Identifier> idents=(List<Identifier>)xstream.fromXML(new FileInputStream(ff));
+                List<Identifier> idents;
+                try(final InputStream input = Files.newInputStream(ff.toPath())){
+                    idents = (List<Identifier>)xstream.fromXML(input);
+                }
                 for(Identifier ident : idents) {
                     if(ident.getAssetType().equals("folder"))
                         folderIdents.add(ident);
@@ -479,8 +488,8 @@ public class ImportExportUtil {
             		ident.setParentPath(ident.getParentPath().toLowerCase());
                 	ident.setAssetName(ident.getAssetName().toLowerCase());
             	}
-                Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
-                HibernateUtil.saveWithPrimaryKey(ident, ident.getId());
+             Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
+             APILocator.getIdentifierAPI().save(ident);
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
@@ -828,7 +837,7 @@ public class ImportExportUtil {
         deleteTempFiles();
 
         try {
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (DotHibernateException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -1079,10 +1088,7 @@ public class ImportExportUtil {
             boolean logsMappers = false;
             boolean portletpreferences = false;
             boolean address = false;
-            boolean pollschoice = false;
-            boolean pollsdisplay = false;
-            boolean pollsquestion = false;
-            boolean pollsvote = false;
+
 
             Logger.debug(this, "**** Importing the file: " + f + " *****");
 
@@ -1106,21 +1112,13 @@ public class ImportExportUtil {
                 logsMappers = true;
             }else if(_className.equals("Portletpreferences")){
                 portletpreferences = true;
-            }else if(_className.equals("Pollschoice")){
-                pollschoice = true;
             }else if(_className.equals("Address")){
                 address = true;
-            }else if(_className.equals("Pollsdisplay")){
-                pollsdisplay = true;
-            }else if(_className.equals("Pollsquestion")){
-                pollsquestion = true;
-            }else if(_className.equals("Pollsvote")){
-                pollsvote = true;
             }else{
                 try{
                     _importClass = Class.forName(_className);
                 }catch (Exception e) {
-                    Logger.error(this, "Class not found " + _className, e);
+                    Logger.error(this, "Class not found " + _className);
                     return;
                 }
             }
@@ -1129,8 +1127,8 @@ public class ImportExportUtil {
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
-            }catch (UnsupportedEncodingException uet) {
+                charStream = new InputStreamReader(Files.newInputStream(f.toPath()), CHARSET);
+            }catch (IOException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
             List l = new ArrayList();
@@ -1187,89 +1185,6 @@ public class ImportExportUtil {
                         dc.setSQL("insert into counter values (?,?)");
                         dc.addParam(dcResults.get("name"));
                         dc.addParam(Integer.valueOf(dcResults.get("currentid")));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollschoice){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollschoice values (?,?,?)");
-                        dc.addParam(dcResults.get("choiceid"));
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("description"));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsdisplay){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsdisplay values (?,?,?,?)");
-                        dc.addParam(dcResults.get("layoutid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("portletid"));
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsquestion){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsquestion values (?,?,?,?,?,?,?,?,?,?,?,?)");
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("portletid"));
-                        if (UtilMethods.isSet(dcResults.get("groupid"))) {
-                            dc.addParam(dcResults.get("groupid"));
-                        } else {
-                            dc.addParam(-1);
-                        }
-                        dc.addParam(dcResults.get("companyid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("username"));
-                        if (UtilMethods.isSet(dcResults.get("createdate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("createdate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        if (UtilMethods.isSet(dcResults.get("modifieddate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("modifieddate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        dc.addParam(dcResults.get("title"));
-                        dc.addParam(dcResults.get("description"));
-                        if (UtilMethods.isSet(dcResults.get("expirationdate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("expirationdate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
-                        dc.getResults();
-                    });
-                }
-            }else if(pollsvote){
-                for (int j = 0; j < l.size(); j++) {
-                    final HashMap<String, String> dcResults = (HashMap<String,String>)l.get(j);
-                    LocalTransaction.wrap(() -> {
-                        DotConnect dc = new DotConnect();
-                        dc.setSQL("insert into pollsvote values (?,?,?,?)");
-                        dc.addParam(dcResults.get("questionid"));
-                        dc.addParam(dcResults.get("userid"));
-                        dc.addParam(dcResults.get("choiceid"));
-                        if (UtilMethods.isSet(dcResults.get("lastvotedate"))) {
-                            dc.addParam(java.sql.Timestamp.valueOf(dcResults.get("lastvotedate")));
-                        } else {
-                            dc.addParam(new java.sql.Timestamp(0));
-                        }
                         dc.getResults();
                     });
                 }
@@ -1375,9 +1290,15 @@ public class ImportExportUtil {
                     }
                 }
             }else {
-                _dh = new HibernateUtil(_importClass);
-                String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
-                HibernateUtil.getSession().close();
+                String id;
+                if (_importClass.equals(Identifier.class)){
+                    id = "id";
+                }else{
+                    _dh = new HibernateUtil(_importClass);
+                    id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
+                    HibernateUtil.getSession().close();
+                }
+
                 boolean identityOn = false;
                 String cName = _className.substring(_className.lastIndexOf(".") + 1);
                 String tableName = "";
@@ -1396,7 +1317,6 @@ public class ImportExportUtil {
                     if (UtilMethods.isSet(id)) {
                         String prop = BeanUtils.getProperty(obj, id);
                         try {
-                            HibernateUtil.startTransaction();
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
                                 if(obj instanceof Identifier){
                                 	Identifier identifier = Identifier.class.cast(obj);
@@ -1405,33 +1325,38 @@ public class ImportExportUtil {
 	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
 	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
                                 	}
-                                    HibernateUtil.saveWithPrimaryKey(identifier, prop);
+                                    LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{
+                                    HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +
                                                 obj.getClass() + ", with the id: " + prop);
                                     Long myId = new Long(Long.parseLong(prop));
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
+                                    HibernateUtil.closeAndCommitTransaction();
                                 }
-                                HibernateUtil.commitTransaction();
-                            } else {
 
+                            } else {
+                                HibernateUtil.startTransaction();
                                 Logger.debug(this, "Saving the object: " +
                                         obj.getClass() + ", with the id: " + prop);
 
 								HibernateUtil.saveWithPrimaryKey(obj, prop);
 								
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             }
                         } catch (Exception e) {
                             try {
 
-                                Logger.debug(this, "Error on trying to save: " +
-                                        e.getMessage()
-                                        + ", trying to Save the object again: " +
-                                        obj.getClass() + ", with the id: " + prop);
+                                if (obj != null && !(obj instanceof Identifier)){
+                                    HibernateUtil.startTransaction();
+                                    Logger.debug(this, "Error on trying to save: " +
+                                            e.getMessage()
+                                            + ", trying to Save the object again: " +
+                                            obj.getClass() + ", with the id: " + prop);
 
-                                HibernateUtil.saveWithPrimaryKey(obj, prop);
-                                HibernateUtil.commitTransaction();
+                                    HibernateUtil.saveWithPrimaryKey(obj, prop);
+                                    HibernateUtil.closeAndCommitTransaction();
+                                }
                             }catch (Exception ex) {
                                 Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                 Logger.warn(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage());
@@ -1467,6 +1392,13 @@ public class ImportExportUtil {
                                     Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
                                 }
                             });
+                        } 
+                        else if(obj instanceof MultiTree){
+                            final MultiTree t = (MultiTree) obj;
+                            LocalTransaction.wrap(() -> {
+
+                                MultiTreeFactory.saveMultiTree(t);
+                            });
                         } else{
                             try {
 
@@ -1475,7 +1407,7 @@ public class ImportExportUtil {
 
                                 HibernateUtil.startTransaction();
                                 HibernateUtil.save(obj);
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                             } catch (DotHibernateException e) {
                                 Logger.error(this,e.getMessage(),e);
                                 try {
@@ -1486,7 +1418,7 @@ public class ImportExportUtil {
                                             obj.getClass() + ", with the values: " + obj);
 
                                     HibernateUtil.save(obj);
-                                    HibernateUtil.commitTransaction();
+                                    HibernateUtil.closeAndCommitTransaction();
                                 }catch (Exception ex) {
                                     Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                     Logger.info(this, "Problematic object: "+obj);
@@ -1514,8 +1446,6 @@ public class ImportExportUtil {
                     turnIdentityOffMSSQL(tableName);
                 }
             }
-        } catch (FileNotFoundException e) {
-            Logger.error(this,e.getMessage(),e);
         } catch (IllegalAccessException e) {
             Logger.error(this,e.getMessage(),e);
         } catch (InvocationTargetException e) {
@@ -1635,14 +1565,12 @@ public class ImportExportUtil {
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
-            FileChannel ic = new FileInputStream(zipFile).getChannel();
-            FileChannel oc = new FileOutputStream(tempZip).getChannel();
 
-            // to handle huge zipfiles
-            ic.transferTo(0, ic.size(), oc);
+            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(zipFile.toPath()));
+                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(tempZip.toPath()))){
 
-            ic.close();
-            oc.close();
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            }
 
             /*
              * Unzip zipped backups

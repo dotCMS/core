@@ -1,20 +1,21 @@
 package com.dotcms.cluster;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.util.Config;
 
 public class ClusterUtils {
 
 	public static boolean isTransportAutoWire(){
-		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true);
+		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true) && LicenseUtil.getLevel()> 200;
 	}
 
 	public static boolean isESAutoWire(){
-		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true);
+		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true)&& LicenseUtil.getLevel()> 200;
 	}
 
 	public static boolean isESAutoWireReplicas(){
 		return isESAutoWire()
-			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true);
+			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true)&& LicenseUtil.getLevel()> 200;
 	}
 	
 	

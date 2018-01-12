@@ -119,7 +119,7 @@ var Scrollpane = declare("dojox.layout.ScrollPane",[ContentPane, Templated],{
 	_set: function(/* Float */n){
 		// summary:
 		//		set the pane's scroll offset, and position the virtual scroll helper
-		if(!this._size){ return; }
+		if(!this._size || n === 'focused'){ return; }
 		this.wrapper[this._scroll] = Math.floor(this._line.getValue(n));
 		html.style(this.helper, this._edge, Math.floor(this._helpLine.getValue(n)) + "px");
 	},

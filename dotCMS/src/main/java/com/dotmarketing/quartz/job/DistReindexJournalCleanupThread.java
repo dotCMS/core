@@ -37,7 +37,7 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
 			Logger.debug(this, "About to delete dist_reindex_journal entries older than "+ days +" day(s)");
     		HibernateUtil.startTransaction();
     		APILocator.getDistributedJournalAPI().distReindexJournalCleanup(days, false, false, DateType.DAY);
-    		HibernateUtil.commitTransaction();
+    		HibernateUtil.closeAndCommitTransaction();
     	}
     	catch (Exception e) 
     	{

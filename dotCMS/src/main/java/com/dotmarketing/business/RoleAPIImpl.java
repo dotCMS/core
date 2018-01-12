@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.*;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
@@ -464,5 +465,32 @@ public class RoleAPIImpl implements RoleAPI {
 
         return false;
     }
+
+	@Override
+	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException {
+		ImmutableList.Builder<Role> roleList = new ImmutableList.Builder<>();
+
+		final Role anyWhoCanView = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+		if (null != anyWhoCanView) {
+			roleList.add(anyWhoCanView);
+		}
+
+		final Role anyWhoCanEdit = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+		if (null != anyWhoCanEdit) {
+			roleList.add(anyWhoCanEdit);
+		}
+
+		final Role anyWhoCanPublish = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+		if (null != anyWhoCanPublish) {
+			roleList.add(anyWhoCanPublish);
+		}
+
+		final Role anyWhoCanEditPermissions = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+		if (null != anyWhoCanEditPermissions) {
+			roleList.add(anyWhoCanEditPermissions);
+		}
+
+		return roleList.build();
+	}
 
 }

@@ -1,11 +1,7 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -19,6 +15,7 @@ import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
@@ -100,6 +97,27 @@ public class FolderResource implements Serializable {
                     )).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error handling Save Folder Post Request", e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    @GET
+    @Path ("/sitename/{siteName}/uri/{uri : .+}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response loadFolderByURI(@Context final HttpServletRequest req,
+                                          @PathParam("siteName") final String siteName,
+                                          @PathParam("uri") final String uri){
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        try{
+            Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
+            response = Response.ok( new ResponseEntityView(folder) ).build();
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            Logger.error(this, "Error gettign folder for URI", e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;

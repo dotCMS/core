@@ -253,7 +253,7 @@ public class ImportUtil {
                             }
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                                 Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
@@ -274,7 +274,7 @@ public class ImportUtil {
                         results.get("counters").add("errors="+errors);
                         results.get("counters").add("newContent="+counters.getNewContentCounter());
                         results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
                     }
 
                     results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));
@@ -1135,14 +1135,14 @@ public class ImportUtil {
 
                         if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
                             if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
+                                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
                             }
                             cont.setHost(folder.getHostId());
                             cont.setFolder(value.toString());
                         }
                         else if(host != null) {
                             if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException("User have no Add Children Permissions on selected host");
+                                throw new DotSecurityException("User has no Add Children Permissions on selected host");
                             }
                             cont.setHost(value.toString());
                             cont.setFolder(FolderAPI.SYSTEM_FOLDER);

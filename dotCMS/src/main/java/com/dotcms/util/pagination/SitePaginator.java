@@ -20,7 +20,6 @@ public class SitePaginator implements Paginator<Host> {
     public static final  String SYSTEM_PARAMETER_NAME = "system";
 
     private final HostAPI hostAPI;
-    private long totalResults;
 
     @VisibleForTesting
     public SitePaginator(HostAPI hostAPI) {
@@ -31,14 +30,9 @@ public class SitePaginator implements Paginator<Host> {
         this(APILocator.getHostAPI());
     }
 
-    @Override
-    public long getTotalRecords(String condition) {
-        return totalResults;
-    }
-
 
     @Override
-    public Collection<Host> getItems(final User user, final String filter, final int limit, final int offset,
+    public PaginatedArrayList<Host> getItems(final User user, final String filter, final int limit, final int offset,
                                      final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
 
         Boolean showArchived = null;
@@ -68,7 +62,6 @@ public class SitePaginator implements Paginator<Host> {
             hosts = this.hostAPI.search(sanitizedFilter, showSystem, limit, offset, user, false);
         }
 
-        totalResults = hosts.getTotalResults();
         return hosts;
     }
 }

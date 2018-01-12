@@ -1,17 +1,15 @@
 package com.dotcms.mock.response;
 
+import com.dotmarketing.business.DotStateException;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-
+import java.io.OutputStream;
+import java.nio.file.Files;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 
-import com.dotmarketing.business.DotStateException;
-
 /**
- * A mock Outputstream that will write the output of a servlet to a fileoutputstream
+ * A mock Outputstream that will write the output of a servlet to a outputstream
  * 
  * @author will
  *
@@ -20,37 +18,37 @@ class MockServletOutputStream extends ServletOutputStream {
 
   public MockServletOutputStream(File destPath) {
     try {
-      fos = new FileOutputStream(destPath);
-    } catch (FileNotFoundException e) {
+      os = Files.newOutputStream(destPath.toPath());
+    } catch (IOException e) {
       throw new DotStateException(e.getMessage(), e);
     }
 
   }
 
-  FileOutputStream fos = null;
+  OutputStream os = null;
 
   @Override
   public void close() throws IOException {
     super.close();
-    fos.close();
+    os.close();
 
   }
 
   @Override
   public void flush() throws IOException {
     super.flush();
-    fos.flush();
+    os.flush();
 
   }
 
   @Override
   public void write(byte[] b, int off, int len) throws IOException {
-    fos.write(b, off, len);
+    os.write(b, off, len);
   }
 
   @Override
   public void write(int b) throws IOException {
-    fos.write(b);
+    os.write(b);
   }
 
   @Override

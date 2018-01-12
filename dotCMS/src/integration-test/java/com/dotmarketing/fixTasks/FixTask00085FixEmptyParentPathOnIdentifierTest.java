@@ -134,7 +134,7 @@ public class FixTask00085FixEmptyParentPathOnIdentifierTest extends IntegrationT
             removeTrigger();
             insertRecordOnIndentifier();
             Identifier identifier = identifierAPI.find(DUMMY_IDENTIFIER);
-            Assert.assertEquals(null, identifier.getParentPath());
+            Assert.assertTrue(identifier.getParentPath() == null || identifier.getParentPath().isEmpty());
             FixTask00085FixEmptyParentPathOnIdentifier fixTask = new FixTask00085FixEmptyParentPathOnIdentifier();
             fixTask.executeFix();
             identifier = identifierAPI.find(DUMMY_IDENTIFIER);

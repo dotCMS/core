@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -17,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.*;
@@ -536,56 +539,67 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-  public String suggestVelocityVar(final String tryVar, List<Field> takenFields) throws DotDataException {
+public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws DotDataException {
 
 
     String var = StringUtils.camelCaseLower(tryVar);
-    for (Field f : takenFields) {
-      if (var.equalsIgnoreCase(f.variable())) {
-        var = null;
-        break;
-      }
+    // if we don't get a var back, we are looking at UTF-8 or worse
+    // lets just make a field up
+    if (!UtilMethods.isSet(var)) {
+        tryVar= "field";
     }
-    if (var != null)
-      return var;
-
-    for (int i = 1; i < 100000; i++) {
-      var = StringUtils.camelCaseLower(tryVar) + i;
-      for (Field f : takenFields) {
+    for (Field f : takenFields) {
         if (var.equalsIgnoreCase(f.variable())) {
-          var = null;
-          break;
+            var= null;
+            break;
         }
-      }
-      if (var != null)
+    }
+
+    if (UtilMethods.isSet(var)) {
         return var;
     }
-    throw new DotDataValidationException("Unable to suggest a variable name.  Got to:" + var,
-        "field.validation.variable.already.taken");
 
-  }
+    for (int i = 1; i < 100000; i++) {
+        var = StringUtils.camelCaseLower(tryVar) + i;
+        for (Field f : takenFields) {
+            if (var.equalsIgnoreCase(f.variable())) {
+                var = null;
+                break;
+            }
+        }
 
-  public void moveSortOrderForward(int from, int to) throws DotDataException {
+        if (UtilMethods.isSet(var)) {
+            return var;
+        }
+    }
+    throw new DotDataValidationException("Unable to suggest a variable name for " + tryVar,
+            "field.validation.variable.already.taken");
+
+}
+
+  public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.moveSorOrderForward);
+    dc.addParam(contentTypeId);
     dc.addParam(from);
     dc.addParam(to);
     dc.loadResult();
   }
 
-  public void moveSortOrderBackward(int from, int to) throws DotDataException {
+  public void moveSortOrderBackward(String contentTypeId, int from, int to) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.moveSorOrderBackward);
+    dc.addParam(contentTypeId);
     dc.addParam(from);
     dc.addParam(to);
     dc.loadResult();
   }
 
-  public void moveSortOrderForward(int from) throws DotDataException {
-     moveSortOrderForward(from, Integer.MAX_VALUE);
+  public void moveSortOrderForward(String contentTypeId, int from) throws DotDataException {
+     moveSortOrderForward(contentTypeId, from, Integer.MAX_VALUE);
   }
 
-  public void moveSortOrderBackward(int from) throws DotDataException {
-    moveSortOrderBackward(from, Integer.MAX_VALUE);
+  public void moveSortOrderBackward(String contentTypeId, int from) throws DotDataException {
+    moveSortOrderBackward(contentTypeId, from, Integer.MAX_VALUE);
   }
 }

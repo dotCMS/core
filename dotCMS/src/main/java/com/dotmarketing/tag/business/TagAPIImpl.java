@@ -181,7 +181,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return newTag;
@@ -269,7 +269,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return foundTagInStorage;
@@ -316,7 +316,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return tagInodes;
@@ -473,7 +473,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return existingTagInode;
@@ -570,7 +570,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
         } catch ( Exception e ) {
@@ -710,7 +710,7 @@ public class TagAPIImpl implements TagAPI {
 
                 //Everything ok..., committing the transaction
                 if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
+                    HibernateUtil.closeAndCommitTransaction();
                 }
             }
         } catch ( Exception e ) {
@@ -764,7 +764,7 @@ public class TagAPIImpl implements TagAPI {
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 
             return tags;

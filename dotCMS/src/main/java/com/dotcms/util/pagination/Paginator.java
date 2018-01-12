@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
 import java.util.Collection;
@@ -10,13 +11,6 @@ import java.util.Map;
  */
 public interface Paginator<T> {
 
-    /**
-     * Return the number of items
-     *
-     * @param condition
-     * @return
-     */
-    public abstract long getTotalRecords(String condition);
 
     /**
      * Return a set of items for a page
@@ -29,14 +23,14 @@ public interface Paginator<T> {
      * @param direction If the order is Asc or Desc
      * @return
      */
-    public abstract Collection<T> getItems(User user, String filter, int limit, int offset,
-                                           String orderby, OrderDirection direction, Map<String, Object> extraParams);
+    public abstract PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset,
+                                                   String orderby, OrderDirection direction, Map<String, Object> extraParams) throws PaginationException;
 
-    default Collection<T> getItems(User user, String filter, int limit, int offset){
+    default PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset){
         return getItems(user, filter,  limit,  offset, null, null);
     }
 
-    default Collection<T> getItems(User user, String filter, int limit, int offset, String orderby,
+    default PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset, String orderby,
                                    OrderDirection direction){
         return getItems(user, filter,  limit,  offset, orderby, direction, null);
     }

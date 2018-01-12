@@ -1,9 +1,16 @@
 package com.dotmarketing.portlets.rules;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.csspreproc.SassCompilerTest;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
@@ -16,21 +23,18 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Created by Oscar Arrieta on 2/24/16.
@@ -52,6 +56,22 @@ public class RulesUnderPageAssetsFTest{
         sysUser = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(sysUser, false);
 
+        if (!host.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(host, sysUser, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
+        }
+
         request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();
         int serverPort = request.getServerPort();
@@ -65,17 +85,23 @@ public class RulesUnderPageAssetsFTest{
     @Test
     public void testFireRuleUnderLivePage() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
-        final String pageName = "DummyPage";
+        final String pageName = "testFireRuleUnderLivePagePage";
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
         Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, sysUser, false);
 
         //Create Template.
-        Template template = createDummyTemplate();
+        Template template = new TemplateDataGen().nextPersisted();
 
+        APILocator.getVersionableAPI().setLive(template);
         //Create Working Page.
-        HTMLPageAsset dummyPage = HTMLPageAssetUtil.createDummyPage(pageName, pageName, pageName, template, folder, host);
+        HTMLPageAsset dummyPage = new HTMLPageDataGen(folder, template).friendlyName(pageName).pageURL(pageName)
+            .title(pageName).nextPersisted();
+
+
+        boolean isDummyPageIndexed = APILocator.getContentletAPI().isInodeIndexed(dummyPage.getInode());
+        Logger.info(this, "isDummyPageIndexed: " + isDummyPageIndexed);
 
         //Create Rule with page as Parent.
         createRuleUnderPage(dummyPage);
@@ -113,17 +139,22 @@ public class RulesUnderPageAssetsFTest{
     public void copyPageWithRules() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
         final String targetFolderPath = "/TargetPageFolder/";
-        final String pageName = "DummyPage";
+        final String pageName = "copyPageWithRulesPage";
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
         Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, sysUser, false);
 
         //Create Template.
-        Template template = createDummyTemplate();
+        Template template = new TemplateDataGen().nextPersisted();
 
+        APILocator.getVersionableAPI().setLive(template);
         //Create Working Page.
-        HTMLPageAsset dummyPage = HTMLPageAssetUtil.createDummyPage(pageName, pageName, pageName, template, folder, host);
+        HTMLPageAsset dummyPage = new HTMLPageDataGen(folder, template).friendlyName(pageName).pageURL(pageName)
+            .title(pageName).nextPersisted();
+
+        boolean isDummyPageIndexed = APILocator.getContentletAPI().isInodeIndexed(dummyPage.getInode());
+        Logger.info(this, "isDummyPageIndexed: " + isDummyPageIndexed);
 
         //Create Rule with page as Parent.
         createRuleUnderPage(dummyPage);
@@ -166,17 +197,22 @@ public class RulesUnderPageAssetsFTest{
     @Test
     public void deletePageWithRules() throws Exception {
         final String folderPath = "/DeletePageFolder/";
-        final String pageName = "PageToDelete";
+        final String pageName = "deletePageWithRulesPage";
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
         Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, sysUser, false);
 
         //Create Template.
-        Template template = createDummyTemplate();
+        Template template = new TemplateDataGen().nextPersisted();
 
+        APILocator.getVersionableAPI().setLive(template);
         //Create Working Page.
-        HTMLPageAsset dummyPage = HTMLPageAssetUtil.createDummyPage(pageName, pageName, pageName, template, folder, host);
+        HTMLPageAsset dummyPage = new HTMLPageDataGen(folder, template).friendlyName(pageName).pageURL(pageName)
+            .title(pageName).nextPersisted();
+
+        boolean isDummyPageIndexed = APILocator.getContentletAPI().isInodeIndexed(dummyPage.getInode());
+        Logger.info(this, "isDummyPageIndexed: " + isDummyPageIndexed);
 
         //Create Rule with page as Parent.
         createRuleUnderPage(dummyPage);
@@ -216,11 +252,21 @@ public class RulesUnderPageAssetsFTest{
         Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, sysUser, false);
 
         //Create Template.
-        Template template = createDummyTemplate();
+        Template template = new TemplateDataGen().nextPersisted();
 
+        APILocator.getVersionableAPI().setLive(template);
         //Create Working Page.
-        HTMLPageAsset dummyPage = HTMLPageAssetUtil.createDummyPage(pageName, pageName, pageName, template, folder, host);
-        HTMLPageAsset secondDummyPage = HTMLPageAssetUtil.createDummyPage(secondPageName, secondPageName, secondPageName, template, folder, host);
+        HTMLPageAsset dummyPage = new HTMLPageDataGen(folder, template).friendlyName(pageName).pageURL(pageName)
+            .title(pageName).nextPersisted();
+
+        HTMLPageAsset secondDummyPage = new HTMLPageDataGen(folder, template).friendlyName(secondPageName)
+            .pageURL(secondPageName).title(secondPageName).nextPersisted();
+
+        boolean isDummyPageIndexed = APILocator.getContentletAPI().isInodeIndexed(dummyPage.getInode());
+        Logger.info(this, "isDummyPageIndexed: " + isDummyPageIndexed);
+
+        boolean isSecondDummyPageIndexed = APILocator.getContentletAPI().isInodeIndexed(secondDummyPage.getInode());
+        Logger.info(this, "isSecondDummyPageIndexed: " + isSecondDummyPageIndexed);
 
         //Create Rule with page as Parent.
         createRuleUnderPage(dummyPage);

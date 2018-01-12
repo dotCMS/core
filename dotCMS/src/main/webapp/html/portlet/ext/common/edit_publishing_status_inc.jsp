@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="java.util.*" %>
 <%@page import="com.dotmarketing.beans.*" %>
@@ -15,7 +17,8 @@
 	Object assetObject = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
     String assetId = assetObject==null ? "" :  assetObject instanceof Folder ? ((Folder)assetObject).getInode() :
     					assetObject instanceof Structure ? ((Structure)assetObject).getInode() :
-                        (assetObject instanceof Inode ? ((Inode)assetObject).getIdentifier() :
+    					    assetObject instanceof ContentType ? new StructureTransformer(ContentType.class.cast(assetObject)).asStructure().getInode() :
+    					    (assetObject instanceof Inode ? ((Inode)assetObject).getIdentifier() :
                             (assetObject instanceof Contentlet ? ((Contentlet)assetObject).getIdentifier() : ""));
 
 	List<PushedAsset> pushedAssets = assetObject!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();

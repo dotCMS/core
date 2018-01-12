@@ -19,18 +19,22 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.org.jdom.Document;
+import com.dotcms.repackage.org.jdom.JDOMException;
+import com.dotcms.repackage.org.jdom.input.SAXBuilder;
+import com.dotcms.repackage.org.jdom.output.Format;
+import com.dotcms.repackage.org.xml.sax.SAXParseException;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
-
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
@@ -40,12 +44,6 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.util.StringUtils;
-
-import com.dotcms.repackage.org.jdom.Document;
-import com.dotcms.repackage.org.jdom.JDOMException;
-import com.dotcms.repackage.org.jdom.input.SAXBuilder;
-import com.dotcms.repackage.org.jdom.output.Format;
-import com.dotcms.repackage.org.xml.sax.SAXParseException;
 
 /**
  * The purpose of this Ant Task is to allow you to use
@@ -406,7 +404,7 @@ public class AnakiaTask extends MatchingTask
                  * the result as the outFile.
                  */
                 writer = new BufferedWriter(new OutputStreamWriter(
-                                            new FileOutputStream(outFile),
+                                                Files.newOutputStream(outFile.toPath()),
                                                 encoding));
 
                 /**

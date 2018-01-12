@@ -206,7 +206,7 @@ public class StartupTasksExecutor {
 					}
 					HibernateUtil.startTransaction();
 					if (task.forceRun()) {
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 						HibernateUtil.startTransaction();
 						Logger.info(this, "Running: " + name);
 						task.executeUpgrade();
@@ -216,7 +216,7 @@ public class StartupTasksExecutor {
 					} else {
 						Logger.info(this, "Not running: " + name);
 					}
-					HibernateUtil.commitTransaction();
+					HibernateUtil.closeAndCommitTransaction();
 				}
 			}
 			Logger.info(this, "Finishing startup tasks.");
@@ -258,7 +258,7 @@ public class StartupTasksExecutor {
 						//HibernateUtil.startTransaction();
 
 						if (!firstTimeStart && task.forceRun()) {
-							HibernateUtil.commitTransaction();
+							HibernateUtil.closeAndCommitTransaction();
 							HibernateUtil.startTransaction();
 							Logger.info(this, "Running: " + name);
 							if(name.equals("Task00250UpdateMysqlTablesToINNODB")){
@@ -293,7 +293,7 @@ public class StartupTasksExecutor {
 
 						Logger.info(this, "Database upgraded to version: "
 								+ taskId);
-						HibernateUtil.commitTransaction();
+						HibernateUtil.closeAndCommitTransaction();
 
 					}
 				} catch (NumberFormatException e) {

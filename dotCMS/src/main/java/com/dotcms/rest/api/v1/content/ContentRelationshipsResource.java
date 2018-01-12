@@ -1,0 +1,112 @@
+package com.dotcms.rest.api.v1.content;
+
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONException;
+import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Provides different methods to access information about content relationships in dotCMS. This
+ * resource will allow you to pull content using similar syntax as the normal content resource,
+ * but will also include the related contents in the payload.
+ *
+ * @author Jose Castro
+ * @version 4.2
+ * @since Oct 11, 2017
+ */
+@Path("/v1/contentrelationships")
+public class ContentRelationshipsResource {
+
+    private final WebResource webResource;
+    private final ContentRelationshipsHelper contentRelationshipsHelper;
+
+    /**
+     * Creates an instance of this REST end-point.
+     */
+    public ContentRelationshipsResource() {
+        this(ContentRelationshipsHelper.getInstance(), new WebResource());
+    }
+
+    @VisibleForTesting
+    protected ContentRelationshipsResource(final ContentRelationshipsHelper
+                                                       contentRelationshipsHelper, final
+    WebResource webResource) {
+        this.contentRelationshipsHelper = contentRelationshipsHelper;
+        this.webResource = webResource;
+    }
+
+    /**
+     * Retrieves content relationships based on the specified query parameters. For example, you
+     * can:
+     * <br/><br/>
+     * Pass a query:
+     * <pre>
+     * http://localhost:8080/api/contentRelationships/query/+contentType:News%20+
+     * (conhost:48190c8c-42c4-46af-8d1a-0cd5db894797%20conhost:SYSTEM_HOST)
+     * %20+deleted:false%20+working:true/limit/3/orderby/modDate%20desc
+     * </pre>
+     * An Identifier:
+     * <pre>
+     * http://localhost:8080/api/contentRelationships/id/2943b5eb-9105-4dcf-a1c7-87a9d4dc92a6
+     * </pre>
+     * Or an Inode:
+     * <pre>
+     * http://localhost:8080/api/contentRelationships/inode/aaee9776-8fb7-4501-8048-844912a20405
+     * </pre>
+     *
+     * @param request  The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param params   A Map of parameters that will define the search criteria.
+     * @return The list of associated contents.
+     */
+    @NoCache
+    @GET
+    @Path("/{params: .*}")
+    public Response getContent(@Context final HttpServletRequest request, @Context final
+    HttpServletResponse response, @PathParam("params") final String params) {
+        final InitDataObject initData = this.webResource.init(params, false, request, true, null);
+        final Map<String, String> paramsMap = initData.getParamsMap();
+        final User user = initData.getUser();
+        Response res = null;
+        try {
+            final List<Contentlet> cons = this.contentRelationshipsHelper.getRelatedContent
+                    (request, user, paramsMap);
+            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons);
+            final Response.ResponseBuilder builder = Response.ok(relatedContents, MediaType
+                    .APPLICATION_JSON);
+            builder.header("Access-Control-Expose-Headers", "Authorization");
+            builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
+                    "Content-Type, " + "Accept, Authorization");
+            res = builder.build();
+        } catch (JSONException e) {
+            final String errorMsg = "An error occurred when generating the JSON response (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        } catch (DotDataException e) {
+            final String errorMsg = "An error occurred when accessing the content information ("
+                    + e.getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        }
+        return res;
+    }
+
+}

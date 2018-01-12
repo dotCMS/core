@@ -188,7 +188,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
 
 	show : function() {
-
 		var href = this.baseJsp;
 		if (this.showArchived) {
 			href = href + "?showArchived=true";
@@ -591,7 +590,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 			if(node.id == movedId ){
 				var xhrArgs = {
-					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i,
+					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i + "&stepId=" + stepId,
 					handle : function(dataOrError, ioArgs) {
 						if (dojo.isString(dataOrError)) {
 							if (dataOrError.indexOf("FAILURE") == 0) {
@@ -626,6 +625,31 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 					if (dataOrError.indexOf("FAILURE") == 0) {
 						showDotCMSSystemMessage(dataOrError, true);
+					} else {
+						mainAdmin.refresh();
+					}
+				} else {
+					this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-scheme")%>");
+				}
+			}
+		};
+		dojo.xhrPut(xhrArgs);
+
+		return;
+	},
+
+	deleteActionForStep : function (actionId, stepId){
+		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
+			return;
+		}
+		var xhrArgs = {
+			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+
+
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						showDotCMSSystemMessage(dataOrError, true);
 
 
 					} else {
@@ -641,6 +665,16 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		return;
 	},
+
+
+	deleteSuccess : function(message) {
+		console.log(message);
+		console.log(message.split(":")[1]);
+		stepAdmin.showViewSteps(message.split(":")[1]);
+
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Deleted")%>");
+	},
+
 	deleteSuccess : function(message) {
 		console.log(message);
 		console.log(message.split(":")[1]);
@@ -650,12 +684,42 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 	},
 
-	viewAction : function(stepId, actionId) {
-		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
+	viewAction : function(schemeId, actionId) {
+		mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId + "&actionId=" + actionId + "&" + Math.random());
 
 	},
 
-	saveAction : function(stepId) {
+    addOrAssociatedAction : function(schemeId, stepId, actionsDropDownOptionsId) {
+
+		let actionsDropDownOptions = document.getElementById (actionsDropDownOptionsId);
+		let actionId               = actionsDropDownOptions.options[actionsDropDownOptions.selectedIndex].value;
+		if ('new' === actionId) {
+			mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId +  "&stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
+		} else {
+
+			var xhrArgs = {
+				url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=addActionToStep&stepId=" + stepId + "&actionId=" + actionId ,
+				handle : function(dataOrError, ioArgs) {
+					if (dojo.isString(dataOrError)) {
+
+						if (dataOrError.indexOf("FAILURE") == 0) {
+							showDotCMSSystemMessage(dataOrError, true);
+						} else {
+							mainAdmin.refresh();
+						}
+					} else {
+						this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+
+					}
+				}
+			};
+
+			dojo.xhrPost(xhrArgs);
+
+		}
+	},
+
+	saveAction : function(schemeId) {
 
 		var myForm = dijit.byId("addEditAction");
 
@@ -673,7 +737,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 							actionAdmin.saveError(dataOrError);
 						} else {
 							var actionId  = dataOrError.split(":")[1];
-							actionAdmin.viewAction(stepId, actionId);
+							actionAdmin.viewAction(schemeId, actionId);
 							showDotCMSSystemMessage("Saved");
 						}
 					} else {
@@ -1032,7 +1096,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 
 var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "actionAssignToSelect"});
-var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect"});
+var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect",includeWfRoles: "true"});
 
 var myIconStore = new dojo.data.ItemFileReadStore({data:
 	<%@ include file="/html/portlet/ext/workflows/schemes/workflow_icons.json" %>

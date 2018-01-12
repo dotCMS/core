@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
@@ -525,6 +526,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		testFields = new ArrayList<>();
 		for (String key : testingNames.keySet()) {
 			String suggest = fieldFactory.suggestVelocityVar(key, testFields);
+			
+
+			
 			testFields.add(ImmutableTextField.builder().name(key).variable(suggest)
 					.contentTypeId("fake").build());
 			assertThat("variable " + key + " "  + " returned "
@@ -541,6 +545,44 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 
 	}
+
+	
+	
+	
+    @Test
+    public void testUTF8SuggestVariable() throws Exception {
+
+        List<String> testingNames = ImmutableList.<String>builder()
+
+            .add("你好吗")
+            .add("输入法. 手写; 拼音;")
+            .add("百度贴吧")
+            .build();
+
+        List<Field> testFields = new ArrayList<>();
+        for (String key : testingNames) {
+            String suggest = fieldFactory.suggestVelocityVar(key, testFields);
+            
+            assertThat("variable " + key + " " + " returned an a generic fieldVar:" + suggest , suggest.startsWith(FieldFactory.GENERIC_FIELD_VAR));
+
+
+
+            testFields.add(ImmutableTextField.builder()
+                .name(key)
+                .variable(suggest)
+                .contentTypeId("fake")
+                .build());
+
+        }
+        Set<String> set = new HashSet();
+        for (Field field : testFields) {
+            assertThat("we have all different var names", !set.contains(field.variable()));
+            set.add(field.variable());
+        }
+
+
+
+    }
 
 	private void buildObject(List<Field> fields) throws Exception {
 

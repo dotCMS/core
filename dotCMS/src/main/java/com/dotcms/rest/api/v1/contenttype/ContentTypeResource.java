@@ -1,8 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,6 +30,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -44,25 +44,27 @@ import com.liferay.portal.model.User;
 
 import com.dotcms.repackage.javax.ws.rs.*;
 import static com.dotcms.util.CollectionsUtils.map;
-import java.util.Map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
 	private final WebResource webResource;
 	private final ContentTypeHelper contentTypeHelper;
 	private final PaginationUtil paginationUtil;
+	private final WorkflowHelper workflowHelper;
 
 	public ContentTypeResource() {
-		this(ContentTypeHelper.getInstance(), new WebResource(), new PaginationUtil(new ContentTypesPaginator()));
+		this(ContentTypeHelper.getInstance(), new WebResource(),
+				new PaginationUtil(new ContentTypesPaginator()), WorkflowHelper.getInstance());
 	}
 
 	@VisibleForTesting
 	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource,
-							   PaginationUtil paginationUtil) {
+							   final PaginationUtil paginationUtil, final WorkflowHelper workflowHelper) {
 
-		this.webResource = webresource;
+		this.webResource       = webresource;
 		this.contentTypeHelper = contentletHelper;
-		this.paginationUtil = paginationUtil;
+		this.paginationUtil    = paginationUtil;
+		this.workflowHelper    = workflowHelper;
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -73,7 +75,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response createType(@Context final HttpServletRequest req, final String json)
+	public final Response createType(@Context final HttpServletRequest req, final ContentTypeForm form)
 			throws DotDataException, DotSecurityException {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
@@ -81,25 +83,28 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+			Logger.debug(this, String.format("Saving new content type", form.getRequestJson()));
+
+			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<ContentType> retTypes = new ArrayList<>();
 
 			// Validate input
-			for (ContentType type : typesToSave) {
+			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+				final ContentType type = entry.contentType;
+				final List<String> workflowsIds = entry.workflowsIds;
+
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 				}
-				retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+				final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
+				retTypes.add(contentTypeSaved);
+				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.inode(), user, workflowsIds);
 			}
 
 
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
 
-		} catch (DotStateException e) {
-
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
-
-		} catch (DotDataException e) {
+		} catch (DotStateException | DotDataException e) {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
@@ -118,7 +123,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response updateType(@PathParam("id") final String id, final String json,
+	public Response updateType(@PathParam("id") final String id, final ContentTypeForm form,
 							   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -128,7 +133,10 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			ContentType contentType = new JsonContentTypeTransformer(json).from();
+			ContentType contentType = form.getContentType();
+
+			Logger.debug(this, String.format("Updating content type", form.getRequestJson()));
+
 			if (!UtilMethods.isSet(contentType.id())) {
 
 				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
@@ -145,18 +153,16 @@ public class ContentTypeResource implements Serializable {
 
 					contentType = capi.save(contentType);
 
+					final List<String> workflowsIds = form.getWorkflowsIds();
+					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
 					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
 				}
 			}
-		} catch (DotStateException e) {
-
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
-
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-		} catch (DotDataException e) {
+		} catch ( DotStateException | DotDataException e) {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
@@ -207,24 +213,28 @@ public class ContentTypeResource implements Serializable {
 
 
 	@GET
-	@Path("/id/{id}")
+	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getType(@PathParam("id") final String id, @Context final HttpServletRequest req)
+	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
+		final Map<String, Object> resultMap = new HashMap<>();
 		try {
-			ContentType type = tapi.find(id);
-			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
+
+			final ContentType type = tapi.find(idOrVar);
+			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
+			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+
+			response = Response.ok(new ResponseEntityView(resultMap)).build();
 		} catch (NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404
 		}
-
 
 		return response;
 	}
@@ -294,7 +304,7 @@ public class ContentTypeResource implements Serializable {
 
 		Response response = null;
 
-		final String orderBy = orderbyParam.equals("modDate") ? "mod_date" : orderbyParam;
+		final String orderBy = getOrderByRealName(orderbyParam);
 		final User user = initData.getUser();
 
 		try {
@@ -306,6 +316,16 @@ public class ContentTypeResource implements Serializable {
 		}
 
 		return response;
+	}
+
+	private String getOrderByRealName(final String orderbyParam) {
+		if ("modDate".equals(orderbyParam)){
+			return "mod_date";
+		}else if ("variable".equals(orderbyParam)) {
+			return "velocity_var_name";
+		} else {
+			return orderbyParam;
+		}
 	}
 
 }

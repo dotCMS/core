@@ -118,7 +118,7 @@ return declare("dijit.ProgressBar", [_Widget, _TemplatedMixin], {
 		}
 
 		// Even indeterminate ProgressBars should have these attributes
-		ap.setAttribute("aria-describedby", this.labelNode.id);
+		ap.setAttribute("aria-labelledby", this.labelNode.id);
 		ap.setAttribute("aria-valuemin", 0);
 		ap.setAttribute("aria-valuemax", this.maximum);
 		

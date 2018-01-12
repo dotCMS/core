@@ -12,35 +12,27 @@ import com.dotcms.IntegrationTestBase;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -48,7 +40,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAPITest extends IntegrationTestBase {
@@ -109,7 +100,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         page.setInode(newInode);
         page.setTitle("other title");
         Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page, sysuser, false);
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
         assertEquals(newInode,pageContentlet.getInode());
         assertEquals(existingIdentifier,pageContentlet.getIdentifier());
         assertEquals("other title",pageContentlet.getTitle());
@@ -171,7 +162,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         	HTMLPageDataGen.remove(page);
             APILocator.getTemplateAPI().delete(template, sysuser, false);
             APILocator.getContainerAPI().delete(container, sysuser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HTMLPageAPITest.class, e.getMessage());

@@ -361,4 +361,10 @@ public abstract class ContentletFactory {
      */
 	public abstract List<Map<String, String>> getMostViewedContent(String structureInode,Date startDate, Date endDate, User user) throws DotDataException;
 
+    protected List<Contentlet> findPageContentlets(String HTMLPageIdentifier, String containerId, String uniqueId, String orderby,
+            boolean working, long languageId) throws DotDataException, DotStateException, DotSecurityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

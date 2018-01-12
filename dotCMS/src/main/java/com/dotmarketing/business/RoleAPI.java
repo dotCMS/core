@@ -12,6 +12,10 @@ public interface RoleAPI {
 	public final String USERS_ROOT_ROLE_KEY = "cms_users";
 	public final String WORKFLOW_ADMIN_ROLE_KEY = "cms_workflow_admin";
 	public final String DEFAULT_USER_ROLE_KEY = "dotcms.org.default";
+	public final String WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY = "cms_workflow_any_who_can_view";
+	public final String WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY = "cms_workflow_any_who_can_edit";
+	public final String WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY = "cms_workflow_any_who_can_publish";
+	public final String WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY = "cms_workflow_any_who_can_edit_permissions";
 
 	/**
 	 * Will retrieve all roles.
@@ -362,5 +366,14 @@ public interface RoleAPI {
      * @return true is first parameter is parent of second.
      */
     boolean isParentRole(Role parent, Role child) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Get the list of roles exclusive for workflows
+	 * (Any who can view, Any who can Edit, Any who can Publish and Any who canEdit Permissions)
+	 * @return List of workflows
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException;
 
 }

@@ -26,7 +26,6 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -176,7 +175,7 @@ public class RuleResource {
             Rule rule = getRule(ruleId, user);
             HibernateUtil.startTransaction();
             rulesAPI.deleteRule(rule, user, false);
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());

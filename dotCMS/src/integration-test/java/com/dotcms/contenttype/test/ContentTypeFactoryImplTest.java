@@ -2,17 +2,6 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.List;
-import java.util.UUID;
-
-import org.junit.Test;
-
-import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -29,13 +18,16 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
+import java.io.File;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.util.List;
+import org.junit.Test;
 
 public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
@@ -134,14 +126,13 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		File temp2 = File.createTempFile("test2", "obj");
 		ContentType origType = contentTypeFactory.find(Constants.NEWS);
 
-		try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp))){
+		try(ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))){
 			oos.writeObject(origType);
-			oos.close();
 		}
 
 		temp.renameTo(temp2);
 		ContentType fromDisk = null;
-		try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream(temp2))){
+		try(ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(temp2.toPath()))){
 			fromDisk = (ContentType) ois.readObject();
 			ois.close();
 		}
@@ -284,7 +275,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 			int countBaseType = contentTypeFactory.searchCount(null, baseType);
 
 			for (int i = 0; i < runs; i++) {
-				insert(baseType,null);
+				insert(baseType);
 				Thread.sleep(1);
 			}
 
@@ -296,7 +287,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 
 			for (int i = 0; i < runs; i++) {
-				insert(baseType,UUID.randomUUID().toString());
+				insert(baseType);
 				Thread.sleep(1);
 			}
 			int countAll3 = contentTypeFactory.searchCount(null);
@@ -396,79 +387,6 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		}
 		assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
 	}
-
-	private void insert(BaseContentType baseType, String inode) throws DotDataException {
-
-		long i = System.currentTimeMillis();
-
-
-		ContentTypeBuilder builder =ContentTypeBuilder.builder(baseType.immutableClass())
-				.description("description" + i)
-				.expireDateVar(null)
-				.folder(FolderAPI.SYSTEM_FOLDER)
-				.host(Host.SYSTEM_HOST)
-				.name(baseType.name() + "Testing" + i)
-				.owner("owner")
-				.variable("velocityVarNameTesting" + i);
-
-
-		ContentType type = builder.build(); 
-		type = contentTypeFactory.save(type);
-
-		ContentType type2 = contentTypeFactory.find(type.id());
-		try{
-			assertThat("Type saved correctly", type2.equals(type));
-		}
-		catch(Throwable t){
-			System.out.println("Old and New Contentyypes are NOT the same");
-			System.out.println(type);
-			System.out.println(type2);
-			throw t;
-		}
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
-
-		fields = sortListByVariable(fields);
-		baseTypeFields = sortListByVariable(baseTypeFields);
-
-		try {
-			assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
-		}
-		catch(Throwable e){
-			System.out.println(e.getMessage());
-			System.out.println("Saved  db: " + fields);
-			System.out.println("not saved: " + baseTypeFields);
-			System.out.println("\n");
-			throw e;
-
-		}
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = null;
-			try{
-				baseField = baseTypeFields.get(j);
-				assertThat("field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
-				assertThat("fields variable is not correct:", field.variable().equals(baseField.variable()));
-				assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
-				assertThat("field name is  not correct:", field.name().equals(baseField.name()));
-				assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
-			} 
-			catch(Throwable e){
-				System.out.println(e.getMessage());
-				System.out.println("Saved  db: " + field);
-				System.out.println("not saved: " + baseField);
-				System.out.println("\n");
-				throw e;
-
-			}
-		}
-	}
-
-	/*
-	private static List<Structure> getCrappyStructures(){
-		return InodeFactory.getInodesOfClass(Structure.class,"name");
-	}
-	*/
 
 	private void addFields(ContentType type) throws Exception {
 

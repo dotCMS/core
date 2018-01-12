@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
  * This is Proxy for HTTPServletRequest, This extends Map to put and get objects.
  * 
  * @deprecated As of release 3.6 use {@link com.dotcms.mock.request.MockHttpRequest#request()}
- *             instead
+ *             instead. CMIS is deprecated and slated for removal.
  */
 @Deprecated
 public interface DotRequestProxy extends HttpServletRequest,Map{

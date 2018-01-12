@@ -1,6 +1,8 @@
 package com.dotcms.translate;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.rendering.velocity.viewtools.JSONTool;
+
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -12,7 +14,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.viewtools.JSONTool;
+
 import com.liferay.portal.model.User;
 
 import org.junit.Test;

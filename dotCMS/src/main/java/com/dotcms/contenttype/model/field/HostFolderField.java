@@ -45,10 +45,8 @@ public abstract class HostFolderField extends Field implements OnePerContentType
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
-				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.LISTED);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.SEARCHABLE);
 	}
 
 	@JsonIgnore

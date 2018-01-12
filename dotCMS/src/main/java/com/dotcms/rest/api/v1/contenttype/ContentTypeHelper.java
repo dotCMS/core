@@ -81,9 +81,7 @@ public class ContentTypeHelper implements Serializable {
                 .forEach(type -> {
 
                     baseContentTypesViewCollection.add(new ContentTypeView(
-                            type.baseType().toString(),
-                            type.name(),
-                            type.id(),
+                            type,
                             contentTypeUtil.getActionUrl(request, type, user)
                     ));
 

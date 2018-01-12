@@ -35,7 +35,7 @@ params.put("struts_action",	new String[] { "/ext/cmsmaintenance/view_cms_mainten
 String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.NORMAL.toString(), params), "UTF-8");
 
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
-session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true);
+
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 List<Structure> structs = StructureFactory.getStructures();
 %>

@@ -1,12 +1,6 @@
 package com.dotcms.contenttype.business;
 
 
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -14,9 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -30,6 +22,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Deprecated
 public class OldRelationshipFactory {
@@ -462,22 +457,6 @@ public class OldRelationshipFactory {
   }
 
   /**
-   * This method retrieves all the related contenlets and regardless if it has to retrieve parents,
-   * children or siblings
-   * 
-   * @param relationship
-   * @param contentlet
-   * @param orderBy
-   * @return
-   */
-  public static List<Contentlet> getRelatedContentlets(Relationship relationship, Contentlet contentlet, String orderBy,
-      String sqlCondition, boolean liveContent) {
-
-    return getRelatedContentlets(relationship, contentlet, orderBy, sqlCondition, liveContent, 0);
-
-  }
-
-  /**
    * Removes the relationships from the list of related contentlets to the passed in contentlet
    * 
    * @param contentlet
@@ -501,84 +480,4 @@ public class OldRelationshipFactory {
       }
     }
   }
-
-  /**
-   * This method retrieves all the related contenlets and regardless if it has to retrieve parents,
-   * children or siblings
-   * 
-   * @param relationship
-   * @param contentlet
-   * @param orderBy
-   * @param sqlCondition
-   * @param liveContent
-   * @param limit
-   * @return
-   */
-  @SuppressWarnings("unchecked")
-  public static List<Contentlet> getRelatedContentlets(Relationship relationship, Contentlet contentlet, String orderBy,
-      String sqlCondition, boolean liveContent, int limit) {
-
-    List<Contentlet> matches = new ArrayList<Contentlet>();
-
-    if (contentlet == null || !InodeUtils.isSet(contentlet.getInode())) {
-      return matches;
-    }
-
-    try {
-
-      Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
-      if (iden == null || !InodeUtils.isSet(iden.getInode()))
-        return matches;
-
-      HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-
-      String sql =
-          "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, tree relationshipTree, identifier iden, tree identifierTree, contentlet_version_info vi "
-              + "where (relationshipTree.child = ? or relationshipTree.parent = ?) and relationshipTree.relation_type = ? "
-              + "and (iden.id = relationshipTree.parent or iden.id = relationshipTree.child) "
-              + "and (iden.id = identifierTree.parent and identifierTree.child = contentlet_1_.inode) "
-              + "and contentlet.inode = contentlet_1_.inode and contentlet.inode <> ? ";
-      if (liveContent)
-        sql += "and contentlet.inode = vi.live_inode ";
-      else
-        sql += "and contentlet.inode = vi.working_inode ";
-
-      if (UtilMethods.isSet(sqlCondition))
-        sql += "and " + sqlCondition;
-
-      if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-        sql = sql + " order by contentlet." + orderBy;
-      } else {
-        sql = sql + " order by relationshipTree.tree_order";
-      }
-
-      Logger.debug(OldRelationshipFactory.class, "sql:  " + sql + "\n");
-
-      dh.setSQLQuery(sql);
-      dh.setParam(iden.getInode());
-      dh.setParam(iden.getInode());
-      dh.setParam(relationship.getRelationTypeValue());
-      dh.setParam(contentlet.getInode());
-
-      if (limit > 0) {
-        dh.setMaxResults(limit);
-      }
-
-      List<com.dotmarketing.portlets.contentlet.business.Contentlet> l = dh.list();
-      List<Contentlet> conResult = new ArrayList<Contentlet>();
-      ESContentFactoryImpl conFac = new ESContentFactoryImpl();
-      for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : l) {
-        conResult.add(conFac.convertFatContentletToContentlet(fatty));
-      }
-
-      return new ArrayList<Contentlet>(new LinkedHashSet<Contentlet>(conResult));
-
-    } catch (Exception e) {
-      Logger.error(OldRelationshipFactory.class, "getChildrenClass failed:" + e, e);
-      throw new DotRuntimeException(e.toString());
-    }
-
-  }
-
-
 }

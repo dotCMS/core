@@ -8,14 +8,9 @@ import com.dotcms.repackage.org.apache.logging.log4j.core.Layout;
 import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
 import com.dotcms.repackage.org.apache.logging.log4j.core.appender.ConsoleAppender;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configuration;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.ConfigurationSource;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configurator;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.LoggerConfig;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.xml.XmlConfiguration;
 import com.dotcms.repackage.org.apache.logging.log4j.core.layout.PatternLayout;
-
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
@@ -130,11 +125,6 @@ public class Log4jUtil {
                 LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
 
                 if ( !loggerContext.isInitialized() || loggerContext.isStopped() ) {
-
-                    /*ConfigurationSource source = new ConfigurationSource(new FileInputStream(log4jConfigFilePath));
-                    XmlConfiguration xmlConfig = new XmlConfiguration(source);
-
-                    loggerContext.start(xmlConfig);*/
                 	Configurator.initialize(null, log4jConfigFilePath);
                 } else {
                     loggerContext.setConfigLocation(URI.create(log4jConfigFilePath));

@@ -10,7 +10,6 @@ import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.util.Logger;
@@ -56,7 +55,7 @@ public class FixTask00085FixEmptyParentPathOnIdentifier implements FixTask {
                 audit.setRecordsAltered(total);
                 audit.setAction("Task 85: Fixed EmptyParentPathInIdentifiers");
                 HibernateUtil.save(audit);
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
                 MaintenanceUtil.flushCache();
 
                 returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());

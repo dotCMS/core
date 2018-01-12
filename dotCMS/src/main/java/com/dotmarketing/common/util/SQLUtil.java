@@ -7,12 +7,17 @@ import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -21,10 +26,6 @@ import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Util class for sanitize, tokenize, etc
@@ -38,6 +39,9 @@ public class SQLUtil {
 	public static final String DESC  = "desc";
 	public static final String _ASC  = " " + ASC ;
 	public static final String _DESC  = " " + DESC;
+	public static final String PARAMETER = "?";
+
+	private static final String SQL_STATE_UNIQUE_CONSTRAINT = "23000";
 
     private static final Set<String> EVIL_SQL_CONDITION_WORDS =  ImmutableSet.of( "insert", "delete", "update",
             "replace", "create", "drop", "alter", "truncate", "declare", "exec", "--", "procedure", "pg_", "lock",
@@ -290,9 +294,9 @@ public class SQLUtil {
                                     )
                     )) {
 
-                Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + query);
-                Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query, e);
-                securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query);
+				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				Logger.error(SQLUtil.class, message, new DotStateException(message));
+				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
 
                 return StringPool.BLANK;
             }
@@ -310,5 +314,12 @@ public class SQLUtil {
 
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
+
+	public static boolean isUniqueConstraintException (DotDataException ex) {
+		if (ex != null && ex.getCause() instanceof SQLException) {
+			return ((SQLException) ex.getCause()).getSQLState().equals(SQL_STATE_UNIQUE_CONSTRAINT);
+		}
+		return false;
+	}
 
 } // E:O:F:SQLUtil.

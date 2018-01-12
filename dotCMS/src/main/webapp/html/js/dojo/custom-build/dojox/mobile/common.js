@@ -234,72 +234,47 @@ define("dojox/mobile/common", [
 		var ios6 = has('iphone') >= 6; // Full-screen support for iOS6 or later 
 		if((has('android') || ios6) && win.global.onorientationchange !== undefined){
 			var _f = f;
-			f = function(evt){
-				var _conn = connect.connect(null, "onresize", null, function(e){
-					connect.disconnect(_conn);
-					_f(e);
-				});
-			};
-			var curSize = dm.getScreenSize();
-			var heightChangeThreshold = ios6 ? 20 : 100;
-			var lastKeyUpTime = null;
-			var isFormElement = null;
+			var curSize, curClientWidth, curClientHeight;
 			if(ios6){
-				// Surprisingly, on iOS 6, Mobile Safari fires a resize event when entering
-				// characters using the virtual keyboard. Hence, to avoid inappropriately reacting 
-				// on these resize events (see #16202), let's keep track of the time point of
-				// the keyup events (the resize event is fired after it).
-				connect.connect(null, "onkeyup", null, function(e){
-					lastKeyUpTime = (new Date()).getTime();
-				});
-				isFormElement = function(/*DOMNode*/node){ // returns true if the given node is a form control
-					if(node && node.nodeType !== 1){ node = node.parentNode; }
-					if(!node || node.nodeType !== 1){ return false; }
-					var t = node.tagName;
-					return (t === "SELECT" || t === "INPUT" || t === "TEXTAREA" || t === "BUTTON");
-				};
-			}
+				curClientWidth = win.doc.documentElement.clientWidth;
+				curClientHeight = win.doc.documentElement.clientHeight;
+			}else{ // Android
+				// Call resize for the first resize event after orientationchange
+				// because the size information may not yet be up to date when the 
+				// event orientationchange occurs.
+				f = function(evt){
+					var _conn = connect.connect(null, "onresize", null, function(e){
+						connect.disconnect(_conn);
+						_f(e);
+					});
+				}
+				curSize = dm.getScreenSize();
+			};
 			// Android: Watch for resize events when the virtual keyboard is shown/hidden.
 			// The heuristic to detect this is that the screen width does not change
 			// and the height changes by more than 100 pixels.
 			//
 			// iOS >= 6: Watch for resize events when entering or existing the new iOS6 
-			// full-screen mode. The heuristic to detect this is that the screen width does not
-			// change and the height changes by more than 20 pixels (the actual value depends on
-			// whether the address bar is hidden or shown). Note that there are 2 resize events 
-			// when entering the full-screen mode; the height is already changed when we get
-			// the first event; no further height change at the second event (that we skip 
-			// thanks to the height change test). Differently, there is only one resize event
-			// when exiting the full-screen mode. (Tested on iPhone 4S under iOS 6.0.)
+			// full-screen mode. The heuristic to detect this is that clientWidth does not
+			// change while the clientHeight does change.
 			connect.connect(null, "onresize", null, function(e){
-				var newSize = dm.getScreenSize();
-				if(newSize.w == curSize.w && Math.abs(newSize.h - curSize.h) >= heightChangeThreshold &&
-					!(ios6 && 
-						// do not react on resize events fired shortly after a keyup event (#16202)
-						((lastKeyUpTime && ((new Date()).getTime() - lastKeyUpTime) < 400) ||
-						// do not react on resize events fired while a form element is active (#16361)
-						isFormElement(win.doc.activeElement)))){
-					// keyboard has been shown/hidden (Android), or full-screen mode has
-					// been entered/exited (iOS6+).
-					if(ios6 && pageYOffset > 1){
-						// On iOS6, besides the resize events fired when entering a character using
-						// the virtual keyboard, there are sometimes resize events fired when editing 
-						// input fields even long after a key event, or without any key having been touched. 
-						// This situation sometimes occurs when repeatedly switching the focus back and forth
-						// from one input field to another (the virtual keyboard being shown). 
-						// Thus, to prevent the unexpected browser scroll due to the address bar hiding that 
-						// the "_f" function may do, we call directly "resizeAll" if the browser vertical scroll 
-						// is greater than 1, which is an indication that the virtual keyboard may be open. 
-						// In this case, we do not want to interfer with the browser scroll done for placing 
-						// the focused input field in the center of the visible area. Otherwise, we call
-						// "resizeAll" such that the address bar hiding is performed (if appropriate), 
-						// this being useful on both Android's case and for the iOS6 full-screen mode.
-						dm.resizeAll();	
-					}else{
+				if(ios6){
+					var newClientWidth = win.doc.documentElement.clientWidth,
+						newClientHeight = win.doc.documentElement.clientHeight;
+					if(newClientWidth == curClientWidth && newClientHeight != curClientHeight){
+						// full-screen mode has been entered/exited (iOS6)
 						_f(e);
 					}
+					curClientWidth = newClientWidth;
+					curClientHeight = newClientHeight;
+				}else{ // Android
+					var newSize = dm.getScreenSize();
+					if(newSize.w == curSize.w && Math.abs(newSize.h - curSize.h) >= 100){
+						// keyboard has been shown/hidden (Android)
+						_f(e);
+					}
+					curSize = newSize;
 				}
-				curSize = newSize;
 			});
 		}
 		

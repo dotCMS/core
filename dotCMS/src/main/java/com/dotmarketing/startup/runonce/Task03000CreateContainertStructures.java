@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -105,7 +104,7 @@ public class Task03000CreateContainertStructures implements StartupTask {
 		}
 		
 		try{
-			HibernateUtil.commitTransaction();
+			HibernateUtil.closeAndCommitTransaction();
 		}catch (Exception e){
 			//If for any reason the inserts fail, Throw exception and avoid next queries to drop columns from dot_containers table
 			throw new DotDataException(e.getMessage(), e);

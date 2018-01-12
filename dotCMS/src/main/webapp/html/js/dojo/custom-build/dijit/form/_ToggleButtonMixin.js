@@ -31,14 +31,23 @@ return declare("dijit.form._ToggleButtonMixin", null, {
 	_setCheckedAttr: function(/*Boolean*/ value, /*Boolean?*/ priorityChange){
 		this._set("checked", value);
 		var node = this.focusNode || this.domNode;
-		domAttr.set(node, "checked", !!value); // "mixed" -> true
-		if(value){
-			node.setAttribute("checked", "");
-		}else{
-			node.removeAttribute("checked");
+		if(this._created){ // IE is not ready to handle checked attribute (affects tab order)
+			// needlessly setting "checked" upsets IE's tab order
+			if(domAttr.get(node, "checked") != !!value){
+				domAttr.set(node, "checked", !!value); // "mixed" -> true
+			}
 		}
 		node.setAttribute(this._aria_attr, String(value)); // aria values should be strings
 		this._handleOnChange(value, priorityChange);
+	},
+
+	postCreate: function(){ // use postCreate instead of startup so users forgetting to call startup are OK
+		this.inherited(arguments);
+		var node = this.focusNode || this.domNode;
+		if(this.checked){
+			// need this here instead of on the template so IE8 tab order works
+			node.setAttribute('checked', 'checked');
+		}
 	},
 
 	reset: function(){

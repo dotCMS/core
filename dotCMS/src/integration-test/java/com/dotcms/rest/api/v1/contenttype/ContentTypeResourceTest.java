@@ -32,6 +32,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.liferay.portal.model.User;
@@ -55,14 +56,16 @@ public class ContentTypeResourceTest {
 		Response response = null;
 		Map<String, Object> fieldMap = null;
 
+		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+
 		// Test INVALID Content Type Creation
 		assertResponse_BAD_REQUEST(
-				response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID"))
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
 		);
 
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_CREATE)
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
 		);
 
 		try {
@@ -72,9 +75,14 @@ public class ContentTypeResourceTest {
 					)
 			);
 
-			// Test Content Type Retrieval
+			// Test Content Type Retrieval by ID
 			RestUtilTest.verifySuccessResponse(
 					response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
+			);
+
+			// Test Content Type Retrieval by Var
+			RestUtilTest.verifySuccessResponse(
+				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest())
 			);
 
 			assertContentTypeCreate(
@@ -87,7 +95,7 @@ public class ContentTypeResourceTest {
 			assertResponse_BAD_REQUEST(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID"),
+							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
 							getHttpRequest()
 					)
 			);
@@ -96,7 +104,7 @@ public class ContentTypeResourceTest {
 			RestUtilTest.verifySuccessResponse(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id")),
+							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
 							getHttpRequest()
 					)
 			);
@@ -157,7 +165,7 @@ public class ContentTypeResourceTest {
 		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
 
 
-		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil);
+		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance());
 		Response response = null;
 
 		RestUtilTest.verifySuccessResponse(

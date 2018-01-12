@@ -312,64 +312,6 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
     }
 
     /**
-     * Directly updates the information of a given HTML Page - i.e., the legacy
-     * {@link HTMLPage} - to resolve the conflict (two pages with same path but
-     * different identifier) found in the receiver server before a push publish
-     * is triggered.
-     * <p>
-     * This method is the same for solving both local and remote conflicts. The
-     * only difference is in what server (either the sender or the receiver)
-     * this method is called.
-     * </p>
-     *
-     * @param pageData
-     *            - A {@link Map} with the page information that was generated
-     *            when the conflict was detected.
-     * @throws DotDataException
-     *             An error occurred when interacting with the database.
-     
-    private void fixLegacyPageConflicts(Map<String, Object> pageData) throws DotDataException {
-        HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
-        DotConnect dc = new DotConnect();
-        String oldHtmlPageIdentifier = (String) pageData.get("local_identifier");
-        String newHtmlPageIdentifier = (String) pageData.get("remote_identifier");
-        String assetName = (String) pageData.get(getIntegrityType().getFirstDisplayColumnLabel());
-        String localInode = (String) pageData.get("local_working_inode");
-        // We need only the last part of the url, not the whole path.
-        String[] assetNamebits = assetName.split("/");
-        assetName = assetNamebits[assetNamebits.length - 1];
-        htmlPageCache.remove(oldHtmlPageIdentifier);
-        CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
-        // Fixing by SQL queries
-        dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
-                + "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
-                + "FROM identifier WHERE id = ?");
-        dc.addParam(newHtmlPageIdentifier);
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.loadResult();
-        dc.setSQL("UPDATE htmlpage SET identifier = ? WHERE identifier = ?");
-        dc.addParam(newHtmlPageIdentifier);
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.loadResult();
-        dc.setSQL("UPDATE htmlpage_version_info SET identifier = ? WHERE identifier = ?");
-        dc.addParam(newHtmlPageIdentifier);
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.loadResult();
-        dc.setSQL("DELETE FROM identifier WHERE id = ?");
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.loadResult();
-        dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
-        dc.addParam(assetName);
-        dc.addParam(newHtmlPageIdentifier);
-        dc.loadResult();
-        dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
-        dc.addParam(newHtmlPageIdentifier);
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.loadResult();
-    }
-    */
-
-    /**
      * Before starting to fix the reported Integrity Checker conflicts, dotCMS
      * has to make sure that the new information is unique in the system. This
      * method checks that the new values that will be set for the Identifier,

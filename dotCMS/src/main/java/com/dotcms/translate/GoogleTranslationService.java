@@ -11,7 +11,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.viewtools.JSONTool;
+import com.dotcms.rendering.velocity.viewtools.JSONTool;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

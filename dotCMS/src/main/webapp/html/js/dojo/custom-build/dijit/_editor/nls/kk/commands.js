@@ -44,7 +44,7 @@ define(
 	"print": "Басып шығару",
 	"newPage": "Жаңа бет",
 	/* Error messages */
-	'systemShortcut': '"${0}" әрекеті шолғышта тек пернелер тіркесімі арқылы қол жетімді. ${1} пайдаланыңыз.',
+	'systemShortcut': '"${0}" әрекеті шолғышта тек пернелер тіркесімі арқылы қол жетімді. Қолдану ${1}.',
 	'ctrlKey':'ctrl+${0}',
 	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })

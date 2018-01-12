@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -76,7 +77,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				dc.loadResult();
 
 				if(localt) {
-				    HibernateUtil.commitTransaction();
+				    HibernateUtil.closeAndCommitTransaction();
 				}
 			}catch(Exception e){
 			    if(localt) {
@@ -99,11 +100,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
 	private final String UPDATESQL_CREATION_DATE="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
 
+	@WrapInTransaction
     @Override
     public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history ) throws DotPublisherException {
         updatePublishAuditStatus(bundleId, newStatus, history, false );
     }
 
+	@WrapInTransaction
 	@Override
 	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException {
 	    boolean local=false;
@@ -132,7 +135,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.loadResult();
 
 			if(local) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(local) {
@@ -167,7 +170,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.loadResult();
 
 			if(local) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(local) {
@@ -306,12 +309,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLPENDING);
-			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
-			dc.addParam(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
-			dc.addParam(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
-			dc.addParam(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING.getCode());
+			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			dc.addParam(Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
+			dc.addParam(Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
+			dc.addParam(Status.RECEIVED_BUNDLE.getCode());
+			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
+			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
@@ -319,11 +322,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder ) throws DotPublisherException {
         return updateAuditTable( endpointId, groupId, bundleFolder, false );
     }
 
+	@WrapInTransaction
 	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException {
 

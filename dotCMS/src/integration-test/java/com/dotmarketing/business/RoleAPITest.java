@@ -154,7 +154,7 @@ public class RoleAPITest extends IntegrationTestBase {
         List<RoleCache.UserRoleCacheHelper> userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
 
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //Verify if we find the implicit roles
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//We know we have too 3 levels here: "Test Root Role" -> "Test Child Role 1" -> "Test Child Role 2" + User role
@@ -189,7 +189,7 @@ public class RoleAPITest extends IntegrationTestBase {
         roleAPI.delete( childRole2 );//Should clean up the cache
         Object cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -209,7 +209,7 @@ public class RoleAPITest extends IntegrationTestBase {
         roleAPI.delete( childRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -229,7 +229,7 @@ public class RoleAPITest extends IntegrationTestBase {
         roleAPI.delete( rootRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
 
         //Cache
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );

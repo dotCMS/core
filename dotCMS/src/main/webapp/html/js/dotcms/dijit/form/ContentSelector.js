@@ -53,9 +53,11 @@ dojo.require("dijit.Dialog");
 dojo.require("dijit.form.Button");
 dojo.require("dijit.layout.BorderContainer");
 
+var isNg = new URLSearchParams(document.location.search).get('ng');
+
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
-	templatePath: dojo.moduleUrl("dotcms", "dijit/form/ContentSelector.jsp"),
+	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
 	selectButtonTemplate: '<button id="{buttonInode}" class="dijitButtonFlat" dojoType="dijit.form.Button">Select</button>',
 	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
@@ -96,12 +98,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 
 		if(this.title != '')
-			this.dialog.set('title',this.title);
+			!isNg && this.dialog.set('title',this.title);
 		this.tagTextValue = this.tagText.value;
 		this.suggestedTagsTextValue = this.suggestedTagsText.value;
 		this.noResultsTextValue = this.noResultsText.value;
 		this.matchResultsTextValue = this.matchResultsText.value;
-		this.dialog.hide();
+		!isNg && this.dialog.hide();
 		dojo.parser.parse(this.search_fields_table);
 	},
 
@@ -112,16 +114,16 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	show: function () {
 		this._clearSearch();
-		this.dialog.show();
+		!isNg && this.dialog.show();
 	},
 
 	hide: function () {
 		this._clearSearch();
-		this.dialog.hide();
+		!isNg && this.dialog.hide();
 	},
 
 	_structureDetailsCallback: function (structure) {
-		this.dialog.set('title', structure["name"] ? structure["name"] : "");
+		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
 		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
 		this._structureChanged();
 	},
@@ -141,6 +143,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_fillStructures: function() {
+        console.log(JSON.stringify(this.containerStructures));
 		this.structures_select.innerHTML = "";
 		var htmlstr = "<dl class='vertical'>";
 		htmlstr += "<dt><label><b>Content Type:</b></label></dt>";
@@ -490,7 +493,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		setTimeout("ContentletAjax.getContentletsData ('" + inodes + "', "+this.relationJsName+"_addRelationshipCallback)", 50);
 
 		this._clearSearch();
-		this.dialog.hide();
+		!isNg && this.dialog.hide();
 
 	},
 
@@ -805,7 +808,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_onContentSelected: function (content) {
 		this.onContentSelected(content);
 		this._clearSearch();
-		this.dialog.hide();
+		!isNg && this.dialog.hide();
 	},
 
 	_getHeader: function (field) {

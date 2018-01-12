@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -91,11 +92,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		}
 
 	}
-
+	@WrapInTransaction
 	public void setCluster(Server localServer) throws Exception {
 			Logger.info(this, "***\t Starting Cluster Setup");
 
-			journalAPI = APILocator.getDistributedJournalAPI();
+
 			ServerAPI serverAPI = APILocator.getServerAPI();
 
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
@@ -131,13 +132,12 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 				} else {
 					bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
 				}
-
-                localServer.setCachePort(Integer.parseInt(bindPort));
-
+	            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
+   
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());
 
-                List<Server> aliveServers = serverAPI.getAliveServers(myself);
+                List<Server> aliveServers = serverAPI.getAliveServers();
                 aliveServers.add(localServer);
 
                 StringBuilder initialHosts = new StringBuilder();

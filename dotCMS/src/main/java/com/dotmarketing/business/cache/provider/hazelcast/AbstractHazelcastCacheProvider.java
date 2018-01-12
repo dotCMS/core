@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -53,6 +54,9 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public void init()  {
+    	if(!LicenseManager.getInstance().isEnterprise()){
+    		return;
+    	}
         try {Thread.sleep(1000);}catch (Exception e){}
         if(isRecovering()){
             return;

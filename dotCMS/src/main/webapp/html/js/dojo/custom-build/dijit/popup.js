@@ -9,14 +9,14 @@ define("dijit/popup", [
 	"dojo/dom-geometry", // domGeometry.isBodyLtr
 	"dojo/dom-style", // domStyle.set
 	"dojo/_base/event", // event.stop
+	"dojo/has", // has("bgIframe")
 	"dojo/keys",
 	"dojo/_base/lang", // lang.hitch
 	"dojo/on",
-	"dojo/sniff", // has("ie") has("mozilla")
 	"./place",
 	"./BackgroundIframe",
 	"./main"	// dijit (defining dijit.popup to match API doc)
-], function(array, aspect, connect, declare, dom, domAttr, domConstruct, domGeometry, domStyle, event, keys, lang, on, has,
+], function(array, aspect, connect, declare, dom, domAttr, domConstruct, domGeometry, domStyle, event, has, keys, lang, on,
 			place, BackgroundIframe, dijit){
 
 	// module:
@@ -110,7 +110,8 @@ define("dijit/popup", [
 				wrapper = domConstruct.create("div", {
 					"class":"dijitPopup",
 					style:{ display: "none"},
-					role: "presentation"
+					role: "region",
+					"aria-label": widget["aria-label"] || widget.label || widget.name || widget.id
 				}, widget.ownerDocumentBody);
 				wrapper.appendChild(node);
 
@@ -213,11 +214,9 @@ define("dijit/popup", [
 				dijitPopupParent: args.parent ? args.parent.id : ""
 			});
 
-			if(has("ie") || has("mozilla")){
-				if(!widget.bgIframe){
-					// setting widget.bgIframe triggers cleanup in _Widget.destroy()
-					widget.bgIframe = new BackgroundIframe(wrapper);
-				}
+			if(has("bgIframe") && !widget.bgIframe){
+				// setting widget.bgIframe triggers cleanup in _Widget.destroy()
+				widget.bgIframe = new BackgroundIframe(wrapper);
 			}
 
 			// position the wrapper node and make it visible

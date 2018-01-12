@@ -118,6 +118,7 @@ td {font-size: 100%;}
     var batchDeleteMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags")) %>';
     var batchDeleteErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags.error")) %>';
     var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
+    var someTagsImportFailedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported.some.failed"))%>';
     
     var currentHostId = '<%=currentHostId %>';
     var tagStoreHostIdentifier = '<%= tagStoreHostIdentifier %>';
@@ -384,6 +385,10 @@ td {font-size: 100%;}
             if(data["importTagErrors"] != null ) {
                 dojo.byId('importTagsErrorMessagesList').innerHTML = '';
                 dojo.place("<li>" + ImportTagMessageErrorMsg + "</li>", "importTagsErrorMessagesList", "last");
+            }else if(data["importSomeTagsFailed"] != null ){
+                dijit.byId('importTagsDialog').hide();
+                showDotCMSSystemMessage(data['importSomeTagsFailed'] + " " + someTagsImportFailedMsg);
+                doSearch();
             }else{
                 dijit.byId('importTagsDialog').hide();
                 showDotCMSSystemMessage(tagsImportedMsg);
