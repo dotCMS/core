@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
@@ -146,6 +148,32 @@ public class TemplateLayout {
         this.sidebar = new Sidebar(containers, location, 0, widthPercent);
         this.sidebar.setPreview( isPreview );
 
+    }
+
+    public List<String> getContainersId() {
+        final List<String> containerIdentifiers = new ArrayList<>();
+        final List<TemplateLayoutRow> rows = this.body.getRows();
+
+        for (final TemplateLayoutRow row : rows) {
+            final List<TemplateLayoutColumn> columns = row.getColumns();
+
+            for (final TemplateLayoutColumn column : columns) {
+                final List<ContainerUUID> columnContainers = column.getContainers();
+                containerIdentifiers.addAll(
+                        columnContainers.stream()
+                                .map(containerUUID -> containerUUID.getIdentifier())
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        if (this.sidebar != null && this.sidebar.getContainers() != null) {
+            containerIdentifiers.addAll(
+                    this.sidebar.getContainers().stream()
+                            .map(containerUUID -> containerUUID.getIdentifier())
+                            .collect(Collectors.toList()));
+        }
+
+        return containerIdentifiers;
     }
 
 }

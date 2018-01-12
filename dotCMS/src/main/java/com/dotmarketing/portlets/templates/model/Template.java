@@ -194,7 +194,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * @return
 	 */
 	public Boolean isDrawed() {
-		return UtilMethods.isSet(this.drawed) && ! UtilMethods.isSet(this.body);
+		return this.drawed;
 	}
 
 	/**
