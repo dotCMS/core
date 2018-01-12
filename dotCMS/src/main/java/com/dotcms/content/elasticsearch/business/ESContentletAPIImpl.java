@@ -2872,7 +2872,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 WorkflowAPI wapi  = APILocator.getWorkflowAPI();
                 WorkflowProcessor workflow=null;
 
-                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null) {
+                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
+                        ))  {
                     workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
                 }
 
