@@ -43,15 +43,12 @@ public class TemplateLoader implements DotLoader {
         StringBuilder templateBody = new StringBuilder();
 
 
-
-        templateBody.append(template.getBody());
-        if (mode == PageMode.EDIT_MODE) {
-            templateBody.append("<script>").append("console.log(\"testinf:\" +  top.location.href);").append("</script>");
-
+        if(template.isDrawed()){
+            templateBody.append(template.getDrawedBody());
         }
-
-        
-
+        else {
+            templateBody.append(template.getBody());
+        }
 
 
         return writeOutVelocity(filePath, templateBody.toString());
