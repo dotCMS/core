@@ -1020,8 +1020,7 @@ public class ImportExportUtil {
         assetDirectory.mkdirs();
         final String[] assetsFileList = assetDirectory.list();
         for (String fileName : assetsFileList) {
-        	if(fileName.equalsIgnoreCase("license")) continue;
-        	
+            if(fileName.toLowerCase().startsWith("license")) continue;
             File f = new File(assetDirectory.getPath() + File.separator + fileName);
             if(f.isDirectory()) {
                 FileUtil.deltree(f);
