@@ -51,6 +51,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -297,25 +298,20 @@ public class PageResourceHelper implements Serializable {
         return objectWriter.writeValueAsString(pageView);
     }
 
-    public Template saveTemplate(final User user, final String pageId, final PageForm pageForm)
+
+    public Template saveTemplate(final User user, HTMLPageAsset htmlPageAsset, final PageForm pageForm)
+
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
-        final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
-                langAPI.getDefaultLanguage().getId(), user, false);
-
-        if (page == null) {
-            throw new NotFoundException("An error occurred when proccessing the JSON request");
-        }
-
         try {
-            Template templateSaved = this.saveTemplate(page, user, pageForm);
+            Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
 
-            String templateId = page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            String templateId = htmlPageAsset.getTemplateId();
 
             if (!templateId.equals( templateSaved.getIdentifier() )) {
-                page.setStringProperty(Contentlet.INODE_KEY, null);
-                page.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, templateSaved.getIdentifier());
-                this.contentletAPI.checkin(page, user, false);
+                htmlPageAsset.setInode(null);
+                htmlPageAsset.setTemplateId(templateSaved.getIdentifier());
+                this.contentletAPI.checkin(htmlPageAsset, user, false);
             }
 
             return templateSaved;
@@ -324,9 +320,19 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    public Contentlet getPage(final User user, final String pageId) throws DotSecurityException, DotDataException {
-        return this.contentletAPI.findContentletByIdentifier(pageId, false,
+
+
+    @NotNull
+    public HTMLPageAsset getPage(User user, String pageId) throws DotDataException, DotSecurityException {
+        final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
                 langAPI.getDefaultLanguage().getId(), user, false);
+
+        if (page == null) {
+            throw new NotFoundException("An error occurred when proccessing the JSON request");
+        }
+
+        return this.htmlPageAssetAPI.fromContentlet(page);
+
     }
 
     public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)

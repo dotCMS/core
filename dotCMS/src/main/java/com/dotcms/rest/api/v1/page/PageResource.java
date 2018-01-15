@@ -2,7 +2,14 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -14,28 +21,26 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.web.WebAPILocator;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -209,6 +214,12 @@ public class PageResource {
         try {
 
             final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+            
+            
+            Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
+            
+            request.setAttribute(WebKeys.CURRENT_HOST, host);
+            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
                     page.getIdentifier(), "inode", page.getInode()));
@@ -251,7 +262,9 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, @PathParam("pageId") final String pageId,
+    public Response saveLayout(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("pageId") final String pageId,
                                final PageForm form) {
 
         final InitDataObject auth = webResource.init(false, request, true);
@@ -260,9 +273,14 @@ public class PageResource {
         Response res = null;
 
         try {
+            HTMLPageAsset page = this.pageResourceHelper.getPage(user, pageId);
+            this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final Template templateSaved = this.pageResourceHelper.saveTemplate(user, pageId, form);
-            res = Response.ok(new ResponseEntityView(templateSaved)).build();
+            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request, response, user,
+                    page.getURI(), false);
+            final String json = this.pageResourceHelper.asJson(pageView);
+
+            res = Response.ok(new ResponseEntityView(json)).build();
 
         } catch (DotSecurityException e) {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
