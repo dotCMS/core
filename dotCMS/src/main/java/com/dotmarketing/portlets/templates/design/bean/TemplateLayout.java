@@ -1,8 +1,12 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
@@ -12,7 +16,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  * @author Graziano Aliberti - Engineering Ingegneria Informatica
  * @date Apr 20, 2012
  */
-public class TemplateLayout {
+public class TemplateLayout implements Serializable{
 
     private String pageWidth;
     private String width;
@@ -175,5 +179,12 @@ public class TemplateLayout {
 
         return containerIdentifiers;
     }
-
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
+    }
 }

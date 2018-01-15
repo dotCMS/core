@@ -2,9 +2,14 @@ package com.dotmarketing.portlets.templates.design.bean;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
@@ -14,7 +19,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  * @author Graziano Aliberti - Engineering Ingegneria Informatica
  * @date Apr 23, 2012
  */
-public class TemplateLayoutRow {
+public class TemplateLayoutRow implements Serializable{
 
     private int identifier;
     private String value;
@@ -22,16 +27,31 @@ public class TemplateLayoutRow {
 
     private Integer[] gridWidths;
     private List<TemplateLayoutColumn> columns;
-
+    private Map<Integer,TemplateLayoutColumn> columnMap;
     @JsonCreator
     public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
         this.columns = columns;
+        columnMap = new HashMap<>();
+        for(TemplateLayoutColumn column : columns) {
+            columnMap.put(column.getLeftOffset(), column);
+        }
     }
 
     public TemplateLayoutRow() {
         this(null);
     }
 
+    public TemplateLayoutColumn getColumn(final String column) {
+        return columnMap.get(Integer.valueOf(column));
+    }
+    
+    public TemplateLayoutColumn getColumn(final int column) {
+        
+        
+        
+        return columnMap.get(column);
+    }
+    
     public int getIdentifier () {
         return identifier;
     }
@@ -118,5 +138,14 @@ public class TemplateLayoutRow {
 
         //Finally add this column to this row...
         columns.add( column );
+    }
+    
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
     }
 }
