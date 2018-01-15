@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
@@ -307,5 +308,12 @@ public class Template extends WebAsset implements Serializable, Comparable {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
+    }
 }

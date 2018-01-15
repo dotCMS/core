@@ -193,6 +193,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
 		}
+	    
+	    if(template.isDrawed() && UtilMethods.isSet(template.getDrawedBody())) {
+	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
+	        
+	    }
+	    
+	    
 
 	    if(UtilMethods.isSet(template.getInode())) {
     	    try {
