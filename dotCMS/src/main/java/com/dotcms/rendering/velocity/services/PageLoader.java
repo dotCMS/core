@@ -173,7 +173,14 @@ public class PageLoader implements DotLoader {
 
 
         sb.append("#if(!$doNotParseTemplate)");
-        if (cmsTemplate.isDrawed()) {// We have a designed template
+        if (cmsTemplate.isDrawed()) {
+            
+            if(null == cmsTemplate.getTheme()) {
+                throw new DotStateException("Drawed template has no theme.  Template id: " + cmsTemplate.getIdentifier() + " template name:" + cmsTemplate.getName());
+            }
+            
+            
+            // We have a designed template
             // Setting some theme variables
             sb.append("#set ($dotTheme = $templatetool.theme(\"")
                 .append(cmsTemplate.getTheme())
