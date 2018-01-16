@@ -5,9 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.contenttype.transform.JsonTransformer;
-
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -31,7 +32,10 @@ import com.liferay.portal.model.User;
  * Created by Jonathan Gamba
  * Date: 10/25/12
  */
-public class DotTemplateTool  {
+public class DotTemplateTool implements ViewTool {
+
+    private HttpServletRequest request;
+    private User sysUser = null;
 
     private static Cache<String, Map<String, Object>> cache = CacheBuilder.<String, Map<String, Object>>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
@@ -39,6 +43,40 @@ public class DotTemplateTool  {
     private static Cache<String, TemplateLayout> layoutCache = CacheBuilder.<String,TemplateLayout>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
         .build();
+
+    private static class DrawedBody {
+        private String title;
+        private String drawedBody;
+
+        private DrawedBody(String title, String drawedBody) {
+            this.title = title;
+            this.drawedBody = drawedBody;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDrawedBody() {
+            return drawedBody;
+        }
+    }
+
+    /**
+     * @param initData the ViewContext that is automatically passed on view tool initialization, either in the request or the application
+     * @return
+     * @see ViewTool, ViewContext
+     */
+    public void init ( Object initData ) {
+        ViewContext context = (ViewContext) initData;
+        request = context.getRequest();
+
+        try {
+            sysUser = APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            Logger.error(DotTemplateTool.class,e.getMessage(),e);
+        }
+    }
 
     /**
      * Given a theme id we will parse it and return the Layout for the given template
@@ -52,7 +90,8 @@ public class DotTemplateTool  {
      */
     public static TemplateLayout themeLayout ( String themeInode )
             throws DotDataException, DotSecurityException {
-        return themeLayout( themeInode, false );
+        User user = APILocator.getUserAPI().getSystemUser();
+        return themeLayout( themeInode, user, false );
     }
 
     /**
@@ -67,41 +106,79 @@ public class DotTemplateTool  {
      *
      */
     public static TemplateLayout themeLayout (final String themeInode,
+                                               User user,
                                               final Boolean isPreview )
             throws DotDataException, DotSecurityException {
-
+        String key = themeInode + isPreview;
         if (!UtilMethods.isSet(themeInode)) {
             throw new IllegalArgumentException("the themeInode is null");
         }
 
-        User user = null;
+        TemplateLayout layout = layoutCache.getIfPresent(key);
 
-        try {
-            user = APILocator.getUserAPI().getSystemUser();
-        } catch (DotDataException e) {
-            Logger.error(DotTemplateTool.class,e.getMessage(),e);
+        if(layout == null) {
+            layout = getLayout(themeInode, isPreview, getDrawedBody(themeInode, user));
         }
 
+        return layout;
+    }
+
+    private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
+        Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
+        Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
+
+        return new DrawedBody(template.getTitle(), template.getDrawedBody());
+    }
+
+    private DrawedBody getDrawedBody() {
+        return new DrawedBody((String) request.getAttribute("title"), (String) request.getAttribute("designedBody"));
+    }
+
+    /**
+     * Given a theme id we will parse it and return the Layout for the given template
+     *
+     * @param themeInode
+     * @param isPreview
+     * @return
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     */
+    public TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
         String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
 
         if(layout==null) {
-            Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-            Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
-            String drawedBody = template.getDrawedBody();
-            String title = template.getTitle();
 
-            //Parse and return the layout for this template
+            DrawedBody drawedBody;
 
-            try {
-                layout = getTemplateLayoutFromJSON(drawedBody);
-            } catch (IOException e) {
-                layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
+            if (UtilMethods.isSet(themeInode)) {
+                drawedBody = getDrawedBody(themeInode, sysUser);
+            } else {
+                drawedBody = getDrawedBody();
             }
 
-            layout.setTitle(title);
-            layoutCache.put(key, layout);
+            layout = getLayout(themeInode, isPreview, drawedBody);
         }
+
+        return layout;
+    }
+
+    private static TemplateLayout getLayout ( final String themeInode, final Boolean isPreview, DrawedBody drawedBody) throws DotDataException, DotSecurityException {
+        String key = themeInode + isPreview;
+
+        //Parse and return the layout for this template
+        TemplateLayout layout;
+
+        try {
+            layout = getTemplateLayoutFromJSON(drawedBody.getDrawedBody());
+        } catch (IOException e) {
+            layout = DesignTemplateUtil.getDesignParameters(drawedBody.getDrawedBody(), isPreview);
+        }
+
+        layout.setTitle(drawedBody.getTitle());
+        layoutCache.put(key, layout);
 
         return layout;
     }
@@ -235,5 +312,6 @@ public class DotTemplateTool  {
       }
         return themeMap;
     }
+
 
 }
