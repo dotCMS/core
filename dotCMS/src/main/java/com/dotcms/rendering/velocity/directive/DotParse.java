@@ -58,7 +58,7 @@ public class DotParse extends DotDirective {
 
       // if we have a host
       if (templatePath.startsWith(hostIndicator)) {
-        templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
+        templatePath = templatePath.substring(templatePath.lastIndexOf(hostIndicator) + hostIndicator.length(), templatePath.length());
         String hostName = templatePath.substring(0, templatePath.indexOf('/'));
         templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
         host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
