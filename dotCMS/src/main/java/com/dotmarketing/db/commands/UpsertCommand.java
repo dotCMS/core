@@ -3,6 +3,7 @@ package com.dotmarketing.db.commands;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.util.StringUtil;
 import java.util.ArrayList;
@@ -23,8 +24,9 @@ public abstract class UpsertCommand implements DatabaseCommand {
      * @param parameters or values
      * @throws DotDataException
      */
-    public void execute(DotConnect dotConnect, String query, Object... parameters)
+    public void execute(DotConnect dotConnect, SimpleMapAppContext queryReplacements, Object... parameters)
             throws DotDataException {
+        String query = generateSQLQuery(queryReplacements);
         DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
         ArrayList<Object> params =  new ArrayList<>();
         Collections.addAll(params, parameters); //Update parameters
@@ -129,7 +131,8 @@ final class H2UpsertCommand extends UpsertCommand {
     }
 
     @Override
-    public void execute(DotConnect dotConnect, String query, Object... parameters) throws DotDataException {
+    public void execute(DotConnect dotConnect, SimpleMapAppContext queryReplacements, Object... parameters) throws DotDataException {
+        String query = generateSQLQuery(queryReplacements);
         DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
         dc.executeUpdate(query, parameters);
     }
@@ -143,10 +146,18 @@ final class PostgreUpsertCommand extends UpsertCommand {
      * ON CONFLICT (conditionalColumn) DO UPDATE SET column1=value1, column2=value2, etc...
      */
 
+    private static final float POSTGRES_UPSERT_MINIMUM_VERSION = 9.5F;
+
     private static final String POSTGRES_UPSERT_QUERY =
         "INSERT INTO %s (%s) "
         + "VALUES (%s) ON CONFLICT (%s) "
         + "DO UPDATE SET %s";
+
+    private static final String POSTGRES_INSERT_QUERY =
+            "INSERT INTO %s (%s) VALUES (%s)";
+
+    private static final String POSTGRES_UPDATE_QUERY =
+            "UPDATE %s SET %s WHERE %s='%s'";
 
     @Override
     public String generateSQLQuery(SimpleMapAppContext replacements) {
@@ -158,6 +169,57 @@ final class PostgreUpsertCommand extends UpsertCommand {
                 replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
                 getUpdateColumnValuePairs(replacements)
             );
+    }
+
+    //If PostgreSQL gets upgraded to 9.5+ (to Support ON CONFLICT) , this override can be removed and let it use the super method execute()
+    @Override
+    public void execute(DotConnect dotConnect, SimpleMapAppContext queryReplacements,
+            Object... parameters) throws DotDataException {
+        DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
+
+        float version = DbConnectionFactory.getDbFullVersion();
+        if (version >= POSTGRES_UPSERT_MINIMUM_VERSION) {
+            this.executeUpsert(dc, queryReplacements, parameters);
+        } else {
+            this.executeUpdateInsert(dc, queryReplacements, parameters);
+        }
+    }
+
+    private void executeUpsert(DotConnect dotConnect, SimpleMapAppContext queryReplacements,
+            Object... parameters) throws DotDataException {
+        super.execute(dotConnect, queryReplacements, parameters);
+    }
+
+    private void executeUpdateInsert(DotConnect dotConnect, SimpleMapAppContext queryReplacements,
+            Object... parameters) throws DotDataException {
+        try {
+            //In Postgre 9.4- Upsert Statement is not supported. Attempt to Insert first.
+            String insertQuery =
+                    String.format(
+                            POSTGRES_INSERT_QUERY,
+                            queryReplacements.getAttribute(QueryReplacements.TABLE),
+                            getInsertColumnsString(queryReplacements),
+                            getInsertValuesString(queryReplacements)
+                    );
+            dotConnect.executeUpdate(insertQuery, false, parameters);
+
+        } catch (DotDataException ex) {
+            if (SQLUtil.isUniqueConstraintException(ex)) {
+                //On Unique Constraint exception, attempt to update:
+                DbConnectionFactory.closeAndCommit();
+                String updateQuery =
+                    String.format(
+                        POSTGRES_UPDATE_QUERY,
+                        queryReplacements.getAttribute(QueryReplacements.TABLE),
+                        getUpdateColumnValuePairs(queryReplacements),
+                        queryReplacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                        queryReplacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE)
+                    );
+                dotConnect.executeUpdate(updateQuery, parameters);
+            } else {
+                throw ex;
+            }
+        }
     }
 }
 
@@ -254,9 +316,10 @@ final class OracleUpsertCommand extends UpsertCommand {
     }
 
     @Override
-    public void execute(DotConnect dotConnect, String query, Object... parameters)
+    public void execute(DotConnect dotConnect, SimpleMapAppContext queryReplacements, Object... parameters)
             throws DotDataException {
 
+        String query = generateSQLQuery(queryReplacements);
         DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
         ArrayList<Object> params =  new ArrayList<>();
 
