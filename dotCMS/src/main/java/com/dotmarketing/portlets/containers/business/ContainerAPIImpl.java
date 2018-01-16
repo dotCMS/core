@@ -308,14 +308,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				}
 				
 				//Add the list to the cache.
-				//CacheLocator.getContainerCache().clearCache();
-				CacheLocator.getContainerCache().remove(containerIdentifier);
-				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
+                final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerIdentifier);
+				CacheLocator.getContainerCache().remove(info);
+
 			} catch(DotHibernateException e){
 				throw new DotDataException(e.getMessage());
 
 			}
 		}
+		
 	}
 
 	@CloseDBIfOpened

@@ -19,6 +19,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -381,6 +383,7 @@ public class ContentletAjax {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlet(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, int perPage, String orderBy) throws DotStateException, DotDataException, DotSecurityException {
 
@@ -397,7 +400,7 @@ public class ContentletAjax {
 
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
 	}
-
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost, page, orderBy, modDateFrom, modDateTo, true);
@@ -421,13 +424,14 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom,
 	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
 	}
-
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
@@ -461,6 +465,7 @@ public class ContentletAjax {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@CloseDB
 	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException {
 		FormAJAXProxy fp = new FormAJAXProxy();
 		return fp.searchFormWidget(formStructureInode);
@@ -505,6 +510,7 @@ public class ContentletAjax {
 	 * @throws DotStateException
 	 *             A system error has occurred.
 	 */
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	@LogTime
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
@@ -1079,7 +1085,7 @@ public class ContentletAjax {
 
 		return results;
 	}
-
+	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
 													  final Contentlet contentlet) throws DotDataException {
@@ -1141,7 +1147,7 @@ public class ContentletAjax {
 		return wfActionMapList;
 	}
 
-
+	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		ArrayList<String[]> list = new ArrayList<String[]>(15);
 
@@ -1174,6 +1180,7 @@ public class ContentletAjax {
 	 * @param languageId if set to 0 will publish for all languages
 	 * @return
 	 */
+	@CloseDB
 	public List<Map<String, Object>> publishContentlets(List<String> identifiersList, boolean isPublish, long languageId) {
 		List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1241,6 +1248,7 @@ public class ContentletAjax {
 	 * @throws LanguageException
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
+	@CloseDB
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
 	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
 	  Map<String,Object> callbackData = new HashMap<String,Object>();
@@ -1770,7 +1778,7 @@ public class ContentletAjax {
 		callbackData.put("referer", referer);
 		return callbackData;
 	}
-
+	@CloseDB
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
 
@@ -1811,7 +1819,7 @@ public class ContentletAjax {
 		return referer;
 	}
 
-
+	@CloseDB
 	public Map<String,Object> saveContentProperties(String inode, List<String> formData, boolean isAutoSave,boolean isCheckin,boolean isPublish) throws PortalException, SystemException, DotDataException, DotSecurityException{
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
@@ -2003,7 +2011,7 @@ public class ContentletAjax {
 		return callbackData;
 
 	}
-
+	@CloseDB
 	public void removeSiblingBinaryFromSession(String fieldContentlet){
 		//http://jira.dotmarketing.net/browse/DOTCMS-5802
 		if(UtilMethods.isSet(fieldContentlet)){
@@ -2011,7 +2019,7 @@ public class ContentletAjax {
 			req.getSession().removeAttribute(fieldContentlet+"-sibling");
 		}
 	}
-
+	@CloseDB
 	public String unrelateContent(String contentletIdentifier,  String identifierToUnrelate, String relationshipInode){
 
 		// User info
@@ -2056,7 +2064,7 @@ public class ContentletAjax {
 		return resultStr;
 	}
 
-
+	@CloseDB
 	public Map<String, String> lockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -2087,7 +2095,7 @@ public class ContentletAjax {
 	}
 
 
-
+	@CloseDB
 	public Map<String, String> unlockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -2103,7 +2111,7 @@ public class ContentletAjax {
 		ret.put("lockedIdent", contentletInode );
 		return ret;
 	}
-
+	@CloseDB
 	public Map<String, Object> saveBinaryFileOnContent(String fileName, String fieldInode) throws DotContentletValidationException, Exception{
 
 		Map<String,Object> callbackData = new HashMap<String,Object>();

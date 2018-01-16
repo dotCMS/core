@@ -11,6 +11,7 @@ import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -96,7 +97,13 @@ public class DotTemplateTool  {
             try {
                 layout = getTemplateLayoutFromJSON(drawedBody);
             } catch (IOException e) {
-                layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
+                try {
+                    layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
+                }
+                catch(Exception ex) {
+                    Logger.warn(DotTemplateTool.class, ex.getMessage(), ex);
+                    throw new DotStateException(ex);
+                }
             }
 
             layout.setTitle(title);

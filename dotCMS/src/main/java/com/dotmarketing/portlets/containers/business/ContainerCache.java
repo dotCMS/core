@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.containers.model.Container;
 
@@ -12,5 +13,10 @@ public abstract class ContainerCache implements Cachable {
     
 	abstract public void clearCache();
 
-	abstract public void remove(String inode);
+	abstract public void remove(Container inode);
+
+    public void remove(VersionInfo cvinfo) {
+        // TODO Auto-generated method stub
+        
+    }
 }
