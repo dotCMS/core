@@ -32,20 +32,23 @@
 
 
 <style>
-    .dijitTree {
-        width: 100% !important;
-        height: 100%;
-    }
-    .classAce{
-      display: none;
-    }
-    .lineDivider{
-        display: flex;
-    }
-    .tabDivider {
-        flex: 1;
-    }
+.dijitTree {
+    width: 100% !important;
+    height: 100%;
+}
+.classAce{
+  display: none;
+}
 </style>
+
+
+
+
+
+
+
+
+
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -192,6 +195,19 @@
 
 <script language='javascript' type='text/javascript'>
 var editButtonRow="editContentletButtonRow";
+
+
+
+dojo.addOnLoad(function () { 
+
+	dojo.query(".ui-dialog-title", window.parent.document).forEach(function(node, index, arr){
+	      node.innerHTML = "<%=UtilMethods.javaScriptify(contentlet.getTitle())%>";
+	  });
+
+});
+
+
+
 </script>
 
 
@@ -249,34 +265,25 @@ var editButtonRow="editContentletButtonRow";
                 </div>
             <% } %>
 
-			<div class="lineDivider">
-				<span class="tabDivider">
-
             <%-- Begin Looping over fields --%>
             <% boolean fieldSetOpen = false;
                 int fieldCounter =0;
- 				int i = fields.get(0).getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ? 2 : 0;
-                for (; i < fields.size(); i++) {
-					Field f = fields.get(i);
+                for (Field f : fields) {
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
                         fieldSetOpen = false;%>
                     <%}%>
-					<%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
+
+                    <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
                         tabDividerOpen = true;%>
-							</div>
-						</div>
-						<div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
-							<div class="wrapperRight">
-                    <%} else if(f.getFieldType().equals(Field.FieldType.ROW.toString())) {%>
-						</div>
-						<div class="lineDivider">
-                    <%}else if(f.getFieldType().equals(Field.FieldType.COLUMN.toString())) {;%>
-						</span>
-						<span class="tabDivider">
+                            </div>
+                        </div>
+                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+                            <div class="wrapperRight">
+
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
@@ -392,7 +399,7 @@ var editButtonRow="editContentletButtonRow";
                     <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
                 <%}%>
             <%}%>
-        </span>
+        </div>
         <!-- END START EDIT CONTENT FORM -->
 	</div>
 	<!-- END TABS -->
