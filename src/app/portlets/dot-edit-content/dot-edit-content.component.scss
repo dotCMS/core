@@ -17,9 +17,35 @@
 
 .dot-edit__iframe {
     border: solid 1px $gray-lighter;
-    flex-grow: 1;    
+    flex-grow: 1;
 }
 
 .dot-edit__toolbar {
     flex-shrink: 0;
+}
+
+.dot-edit__page-dialog ::ng-deep {
+    .ui-dialog {
+        .ui-dialog-content {
+            height: 100% !important;
+            padding: 0;
+        }
+
+        .ui-dialog-titlebar-close {
+            display: none;
+        }
+    }
+}
+
+.dot-edit__contentlet-iframe {
+    width: 100%;
+    height: calc(100% - 44px);
+}
+
+/*
+    When the primeng dialog components resize it adds .ui-unselectable-text to the <body>, we beed to disable
+    pointer events in the iframe during the resize of the dialog otherwise resize breaks.
+*/
+::ng-deep .ui-unselectable-text .dot-edit__contentlet-iframe {
+    pointer-events: none;
 }

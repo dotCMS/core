@@ -23,25 +23,28 @@ export class DotEditContentComponent implements OnInit {
     @ViewChild('iframe') iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
+    dialogSize = {
+        height: null,
+        width: null
+    };
     dialogTitle: string;
-    source: any;
-    pageIdentifier: string;
-
     isModelUpdated = false;
+    pageIdentifier: string;
+    source: any;
 
     private originalValue: any;
 
     constructor(
         private dotConfirmationService: DotConfirmationService,
         private dotMenuService: DotMenuService,
+        private dotContainerContentletService: DotContainerContentletService,
+        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotMessageService: DotMessageService,
+        private ngZone: NgZone,
         private route: ActivatedRoute,
         private sanitizer: DomSanitizer,
-        private ngZone: NgZone,
         public dotEditContentHtmlService: DotEditContentHtmlService,
-        private dotContainerContentletService: DotContainerContentletService,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService
+        public dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {}
 
     ngOnInit() {
@@ -92,15 +95,32 @@ export class DotEditContentComponent implements OnInit {
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.accept',
                 'editpage.content.contentlet.remove.confirmation_message.reject',
+                'editpage.content.contentlet.add.content',
                 'dot.common.message.saving',
                 'dot.common.message.saved'
             ])
             .subscribe();
+
+        this.setDialogAndIframeSize();
     }
 
-    onHide(): void {
+    /**
+     * Callback when dialog hide
+     *
+     * @memberof DotEditContentComponent
+     */
+    onHideDialog(): void {
         this.dialogTitle = null;
         this.contentletActionsUrl = null;
+    }
+
+    /**
+     * Callback when dialog shows
+     *
+     * @memberof DotEditContentComponent
+     */
+    onShowDialog(): void {
+        this.setDialogAndIframeSize();
     }
 
     /**
@@ -136,6 +156,8 @@ export class DotEditContentComponent implements OnInit {
             `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}`,
             $event.contentletEvents
         );
+
+        this.dialogTitle = this.dotMessageService.get('editpage.content.contentlet.add.content');
     }
 
     private closeDialog(): void {
@@ -148,12 +170,15 @@ export class DotEditContentComponent implements OnInit {
             // tslint:disable-next-line:max-line-length
             const url =
             `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
+
             this.loadDialogEditor($event.dataset.dotIdentifier, url, $event.contentletEvents);
+
+            // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
+            this.dialogTitle = 'Edit Contentlet';
         });
     }
 
     private loadDialogEditor(containerId: string, url: string, contentletEvents: Subject<any>): void {
-        this.dialogTitle = containerId;
         this.contentletActionsUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
 
         /*
@@ -184,5 +209,13 @@ export class DotEditContentComponent implements OnInit {
                 rejectLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.reject')
             }
         });
+    }
+
+    private setDialogAndIframeSize(): void {
+        this.dialogSize = {
+            width: (window.innerWidth) - 200,
+            height: (window.innerHeight) - 100
+        };
+
     }
 }

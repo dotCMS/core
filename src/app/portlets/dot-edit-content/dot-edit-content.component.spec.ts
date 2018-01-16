@@ -83,7 +83,7 @@ describe('DotEditContentComponent', () => {
     it('should show dotLoadingIndicatorService on init', () => {
         const spyLoadingIndicator = spyOn(component.dotLoadingIndicatorService, 'show');
 
-        component.ngOnInit();
+        fixture.detectChanges();
 
         expect(spyLoadingIndicator).toHaveBeenCalled();
     });
@@ -99,7 +99,7 @@ describe('DotEditContentComponent', () => {
     });
 
     it('should display confirmation dialog and remove contentlet when user accepts', () => {
-        component.ngOnInit();
+        fixture.detectChanges();
         const mockResEvent = {
             contentletEvents: {},
             dataset: {
