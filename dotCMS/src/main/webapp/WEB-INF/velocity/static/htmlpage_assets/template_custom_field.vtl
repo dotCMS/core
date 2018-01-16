@@ -55,6 +55,12 @@ dojo.ready(function(){
         value: dojo.byId("template").value,
         invalidMessage: '$text.get("Invalid-option-selected")'
     },"templateHolder");
+    
+    var val  = dojo.byId("template").value;
+    if (val != undefined && val != "0"){
+    	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
+    }
+   
 });
 </script>
 
