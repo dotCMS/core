@@ -32,8 +32,10 @@ public class TemplateLayoutRow implements Serializable{
     public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
         this.columns = columns;
         columnMap = new HashMap<>();
-        for(TemplateLayoutColumn column : columns) {
-            columnMap.put(column.getLeftOffset(), column);
+        if(null != columns) {
+            for(TemplateLayoutColumn column : columns) {
+                columnMap.put(column.getLeftOffset(), column);
+            }
         }
     }
 

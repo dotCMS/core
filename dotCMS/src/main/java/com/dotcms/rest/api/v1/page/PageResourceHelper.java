@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -44,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -201,7 +204,7 @@ public class PageResourceHelper implements Serializable {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
 
-        return VelocityUtil.eval(mode, request, response, page.getURI(), site);
+        return VelocityModeHandler.modeHandler(mode, request, response, page.getURI(), site).eval();
     }
 
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
