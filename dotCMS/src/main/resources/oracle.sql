@@ -2226,7 +2226,7 @@ create table workflow_action(
 	icon varchar2(255) default 'defaultWfIcon',
   show_on varchar2(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign number(1,0) default 0,
-  scheme_id VARCHAR(36) NOT NULL
+  scheme_id varchar2(36) NOT NULL
 );
 
 CREATE TABLE workflow_action_step ( action_id varchar2(36) NOT NULL, step_id varchar2(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) );

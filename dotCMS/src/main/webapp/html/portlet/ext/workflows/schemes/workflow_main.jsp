@@ -5,6 +5,7 @@
 
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css"; 
+	@import "/html/js/dragula-3.7.2/dragula.min.css"; 
 </style>	
 
 <div class="portlet-wrapper">

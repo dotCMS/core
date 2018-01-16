@@ -57,6 +57,8 @@
 	}
 
 %>
+
+
 <script type="text/javascript">
 
 	dojo.ready(function(){
@@ -178,7 +180,7 @@
 							<input type="text" name="actionName" id="actionName" style="width: 80%;"
 								dojoType="dijit.form.ValidationTextBox" required="true"
 								value="<%=UtilMethods.webifyString(action.getName())%>"
-								maxlength="255" onkeypress="actionAdmin.doChange()">
+								maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
 						</dd>
 					</dl>
 					<dl class="vertical">
