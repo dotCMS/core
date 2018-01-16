@@ -504,6 +504,24 @@ public class DbConnectionFactory {
     }
 
     /**
+     * Method to get the Database Full Version
+     * @return Database Version (Major.Minor)
+     */
+    public static float getDbFullVersion() {
+        try {
+            Connection con = getConnection();
+            DatabaseMetaData meta = con.getMetaData();
+            String version = "%d.%d";
+            version = String.format(version, meta.getDatabaseMajorVersion(), meta.getDatabaseMinorVersion());
+            return Float.parseFloat(version);
+        } catch (Exception e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: Error getting DB Full version " + "---------------", e);
+            throw new DotRuntimeException(e.toString());
+        }
+    }
+
+    /**
      * Returns the correct MySQL system variable used to define the database
      * Storage Engine. The old {@code storage_variable} was deprecated as of
      * version 5.5.3, and deemed completely invalid as of version 5.7.5.
