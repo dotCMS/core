@@ -68,60 +68,11 @@ public class URLMapTest {
 			HibernateUtil.startTransaction();
 
 			// CONTAINER
-			container = new Container();
+			container = APILocator.getContainerAPI().find("dde0b865-6cea-4ff0-8582-85e5974cf94f", user, false);
 
 			Structure simpleWidgetSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
 
-			container.setCode( "$!{story}" );
-			container.setFriendlyName( "newsTestContainer" );
-			container.setIDate(new Date());
-			container.setLuceneQuery("");
-			container.setMaxContentlets(1);
-			container.setModDate(new Date());
-			container.setModUser(user.getUserId());
-			container.setNotes("newsTestContainer");
-			container.setOwner(user.getUserId());
-			container.setPostLoop("");
-			container.setPreLoop("");
-			container.setShowOnMenu(true);
-			container.setSortContentletsBy("");
-			container.setSortOrder(2);
-			container.setStaticify(true);
-			container.setTitle("News Test Container");
-			container.setType(Inode.Type.CONTAINERS.getValue());
-			container.setUseDiv( true );
-
-			List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-	        ContainerStructure cs = new ContainerStructure();
-	        cs.setStructureId(simpleWidgetSt.getInode());
-	        cs.setCode("$!{story}");
-	        csList.add(cs);
-
-	        container = APILocator.getContainerAPI().save(container, csList, demoHost, user, false);
-			APILocator.getVersionableAPI().setLive( container );
-
-
-			// TEMPLATE
-			template = new Template();
-
-			String body = "#parseContainer('" + container.getIdentifier() + "')";
-			template.setBody( body );
-			template.setFooter( "" );
-			template.setFriendlyName( "newsTestTemplate" );
-			template.setHeader( "" );
-			template.setIDate( new Date() );
-			template.setImage( "" );
-			template.setModDate( new Date() );
-			template.setModUser( user.getUserId() );
-			template.setOwner( user.getUserId() );
-			template.setSelectedimage( "" );
-			template.setShowOnMenu( true );
-			template.setSortOrder( 2 );
-			template.setTitle( "News Test Template" );
-			template.setType( "template" );
-
-			template = APILocator.getTemplateAPI().saveTemplate( template, demoHost, user, false );
-			APILocator.getVersionableAPI().setLive(template);
+			template = APILocator.getTemplateAPI().find("941a3f59-0d87-4084-8d9c-aca29a26ec8c",user,false);
 
 
 			// FOLDER
@@ -327,11 +278,9 @@ public class URLMapTest {
 
 	@After
 	public void deleteAssets() throws Exception {
-        try{
+       try{
         	HibernateUtil.startTransaction();
         	if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
-        	if(template!=null) APILocator.getTemplateAPI().delete(template, user, false);
-        	if(container!=null) APILocator.getContainerAPI().delete(container, user, false);
         	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
         	if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
 
