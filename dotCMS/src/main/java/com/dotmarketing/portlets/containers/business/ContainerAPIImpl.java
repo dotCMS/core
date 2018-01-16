@@ -243,7 +243,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 	    VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getWorkingInode(), user, respectFrontendRoles);
+		return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
 
 	}
 
