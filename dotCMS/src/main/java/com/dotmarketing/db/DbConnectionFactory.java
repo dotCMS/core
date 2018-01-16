@@ -514,7 +514,7 @@ public class DbConnectionFactory {
             String version = "%d.%d";
             version = String.format(version, meta.getDatabaseMajorVersion(), meta.getDatabaseMinorVersion());
             return Float.parseFloat(version);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class,
                     "---------- DBConnectionFactory: Error getting DB Full version " + "---------------", e);
             throw new DotRuntimeException(e.toString());

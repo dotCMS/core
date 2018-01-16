@@ -5,7 +5,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
 import com.liferay.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,7 +146,7 @@ final class PostgreUpsertCommand extends UpsertCommand {
      * ON CONFLICT (conditionalColumn) DO UPDATE SET column1=value1, column2=value2, etc...
      */
 
-    private static final float POSTGRES_UPSERT_MINIMUM_VERSION = 9.5f;
+    private static final float POSTGRES_UPSERT_MINIMUM_VERSION = 9.5F;
 
     private static final String POSTGRES_UPSERT_QUERY =
         "INSERT INTO %s (%s) "
