@@ -111,7 +111,7 @@ public class WorkflowProcessor {
 				action = getWorkflowAPI().findAction(workflowActionId, user);
 			}
 			catch(Exception ex){
-				throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.invalid.action") + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY));
+				throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.invalid.action") + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY), ex);
 			}
 
 
@@ -120,7 +120,7 @@ public class WorkflowProcessor {
 					APILocator.getContentletAPI().canLock(contentlet, user);
 				}
 				catch(Exception ex){
-					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.content.requires.lock") + contentlet.getStructure().getName());
+					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.content.requires.lock") + contentlet.getStructure().getName(), ex);
 				}
 			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
@@ -155,7 +155,7 @@ public class WorkflowProcessor {
 			}
 
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(), e);
 		}
 	}
 

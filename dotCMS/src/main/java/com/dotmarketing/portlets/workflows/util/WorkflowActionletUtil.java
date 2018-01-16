@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
 import java.util.Collection;
@@ -121,7 +122,9 @@ public class WorkflowActionletUtil {
     public static <T> T getParameterValue(final WorkflowActionClassParameter parameter) {
         T paramValue = null;
         try {
-            paramValue = (T) parameter.getValue();
+            if (null != parameter && UtilMethods.isSet(parameter.getValue())) {
+                paramValue = (T) parameter.getValue();
+            }
         } catch (Exception e) {
             Logger.debug(WorkflowActionletUtil.class,
                     "Value of parameter '" + parameter.getId()

@@ -30,7 +30,8 @@ import java.util.Set;
  * (i.e., all the users assigned to those roles) which will be in charge of approving the new
  * content. If the users that approve the content are greater or equal to the specified number of
  * minimum approvers, then the content will move on to the next actionlet in the workflow.
- * Otherwise, an email will be sent to all users that haven't approved the content yet.
+ * Otherwise, an email will be sent to all users who haven't approved the content yet, and STOP all
+ * further sub-action processing.
  *
  * @author Jose Castro
  * @version 4.3.0
@@ -44,8 +45,9 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
     private static final String HOW_TO =
             "This actionlet implements the '4 Eyes' principle for verifying new content. It takes a comma-separated list of user IDs, email addresses, or role keys "
                     + "(i.e., the users assigned to those roles) which will be in charge of reviewing the content, and a minimum number of approvers. "
-                    + "If the number of approvers is greater or equal than the specified value, the next sub-action will be executed.";
-    private static final String USER_ID_DELIMITER = ",";
+                    + "If the number of approvers is greater or equal than the specified value, the next sub-action will be executed. Otherwise, an email will be sent "
+                    + "to all users who haven't approved the content yet, and STOP all further sub-action processing.";
+    private static final String ID_DELIMITER = ",";
     private static final String PARAM_CONTENT_APPROVERS = "approvers";
     private static final String PARAM_MINIMUM_CONTENT_APPROVERS = "minimumApprovers";
     private static final String PARAM_EMAIL_SUBJECT = "emailSubject";
@@ -120,7 +122,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
         final String emailBody = getParameterValue(params.get(PARAM_EMAIL_BODY));
         final boolean isHtml = getParameterValue(params.get(PARAM_IS_HTML), false);
-        final Set<User> requiredContentApprovers = getUsersFromIds(userIds, USER_ID_DELIMITER);
+        final Set<User> requiredContentApprovers = getUsersFromIds(userIds, ID_DELIMITER);
         // Add this approval to the history
         final WorkflowHistory history = new WorkflowHistory();
         history.setActionId(processor.getAction().getId());
@@ -157,8 +159,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             }
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
-            WorkflowEmailUtil
-                    .sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+            //WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
         }
     }
 
