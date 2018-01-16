@@ -230,6 +230,10 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$CONTENT_BASE_TYPE\"")
                     .append(" data-dot-lang=")
                     .append("\"$CONTENT_LANGUAGE\"")
+                    .append(" data-dot-title=")
+                    .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
+                    
+                    
                     .append(">");
 
 

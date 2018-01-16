@@ -6,8 +6,8 @@ import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
-
 import com.dotcms.uuid.shorty.ShortyId;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -43,18 +43,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.jetbrains.annotations.NotNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
+
 
 
 /**
@@ -228,9 +230,10 @@ public class PageResourceHelper implements Serializable {
      *                              this action.
      * @throws DotDataException     An error occurred when accessing the data source.
      */
-    private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
-            response, final User user, final String uri, final boolean isRendered, PageMode mode) throws
-            DotSecurityException, DotDataException {
+    private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse response,
+                                     final User user, final String uri, final boolean isRendered, PageMode mode)
+            throws DotSecurityException, DotDataException {
+
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
         final Host site =resolveSite(request, user);
@@ -250,20 +253,26 @@ public class PageResourceHelper implements Serializable {
         final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
 
         if (isRendered) {
+
             renderContainer(mappedContainers, velocityContext, mode);
+
         }
 
         return new PageView(site, template, mappedContainers, page, layout);
     }
 
+
     private void renderContainer(final Map<String, ContainerView> containers, final Context velocityContext, PageMode mode )
             throws DotSecurityException, DotDataException {
+
 
         for (final ContainerView containerView : containers.values()) {
             final Container container = containerView.getContainer();
 
             try {
+
                 final String rendered = VelocityUtil.mergeTemplate("/" + mode +"/" + container.getIdentifier() +
+
                         ".container", velocityContext);
                 containerView.setRendered(rendered);
             } catch (Exception e) {
@@ -274,9 +283,9 @@ public class PageResourceHelper implements Serializable {
     }
 
 
+
     private Map<String, ContainerView> getMappedContainers(final Template template, final User user)
             throws DotSecurityException, DotDataException {
-
 
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, user, false);
 

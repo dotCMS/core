@@ -1,5 +1,18 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_100_PERCENT;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_750;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_950;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_975;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_RESPONSIVE;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T1;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T2;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T3;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T4;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T5;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T6;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,8 +20,6 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -165,7 +176,9 @@ public class TemplateLayout implements Serializable{
                 final List<ContainerUUID> columnContainers = column.getContainers();
                 containerIdentifiers.addAll(
                         columnContainers.stream()
-                                .map(containerUUID -> containerUUID.getIdentifier())
+
+                                .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
+
                                 .collect(Collectors.toList()));
             }
         }
@@ -173,12 +186,15 @@ public class TemplateLayout implements Serializable{
         if (this.sidebar != null && this.sidebar.getContainers() != null) {
             containerIdentifiers.addAll(
                     this.sidebar.getContainers().stream()
-                            .map(containerUUID -> containerUUID.getIdentifier())
+
+                            .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
+
                             .collect(Collectors.toList()));
         }
 
         return containerIdentifiers;
     }
+
     @Override
     public String toString() {
        try {
@@ -187,4 +203,6 @@ public class TemplateLayout implements Serializable{
             return super.toString();
         }
     }
+
+
 }

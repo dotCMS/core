@@ -110,10 +110,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		newTemplate.setModDate(new Date());
 		newTemplate.setModUser(user.getUserId());
 
-
-		newTemplate.setBody(replaceWithNewContainerIds(newTemplate.getBody(), containerMappings));
-		newTemplate.setDrawedBody(replaceWithNewContainerIds(newTemplate.getDrawedBody(), containerMappings));
-
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
 			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newTemplate, destination);
@@ -194,7 +190,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
 		}
 	    
-	    if(template.isDrawed() && UtilMethods.isSet(template.getDrawedBody())) {
+	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
 	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
 	        
 	    }
@@ -282,68 +278,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
         return containers;
 
-
     }
 
-	private String replaceWithNewContainerIds(String body, List<ContainerRemapTuple> containerMappings) {
-		if(body ==null) return body;
-		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s]+)\\s*\\)");
-		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
 
-		StringBuffer newBody = new StringBuffer();
-		Matcher matcher = oldContainerReferencesRegex.matcher(body);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			for(ContainerRemapTuple tuple : containerMappings) {
-				if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-					matcher.appendReplacement(newBody, "#parseContainer('" + tuple.getDestinationContainer().getIdentifier() +"')");
-				}
-			}
-		}
-		matcher.appendTail(newBody);
-
-		body = newBody.toString();
-		newBody = new StringBuffer();
-		matcher = newContainerReferencesRegex.matcher(body);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			for(ContainerRemapTuple tuple : containerMappings) {
-				if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-					matcher.appendReplacement(newBody, "#parseContainer('" + tuple.getDestinationContainer().getIdentifier() +"')");
-					break;
-				}
-			}
-		}
-		matcher.appendTail(newBody);
-
-
-		// if we are updating container references
-		if(containerMappings != null && containerMappings.size() > 0){
-			Pattern uuid = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
-
-
-			body = newBody.toString();
-			newBody = new StringBuffer();
-			matcher = uuid.matcher(body);
-			while(matcher.find()) {
-				String containerId = matcher.group(0);
-				for(ContainerRemapTuple tuple : containerMappings) {
-					if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-						matcher.appendReplacement(newBody,  tuple.getDestinationContainer().getIdentifier() );
-						break;
-					}
-				}
-			}
-			matcher.appendTail(newBody);
-		}
-
-
-
-
-
-
-		return newBody.toString();
-	}
 
 
 	@SuppressWarnings("unchecked")

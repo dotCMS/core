@@ -58,7 +58,7 @@ public class DotParse extends DotDirective {
 
       // if we have a host
       if (templatePath.startsWith(hostIndicator)) {
-        templatePath = templatePath.substring(templatePath.lastIndexOf(hostIndicator) + hostIndicator.length(), templatePath.length());
+        templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
         String hostName = templatePath.substring(0, templatePath.indexOf('/'));
         templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
         host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
@@ -70,7 +70,7 @@ public class DotParse extends DotDirective {
       //Verify if we found a resource with the given path
       if ( null == id || !UtilMethods.isSet(id.getId()) ) {
 
-        String errorMessage = String.format("No resource found for [%s]", templatePath);
+        String errorMessage = String.format("No resource found for [%s]",  arguments[0]);
 
         /*
         In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to
