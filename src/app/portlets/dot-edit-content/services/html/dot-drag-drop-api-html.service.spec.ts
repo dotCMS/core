@@ -3,7 +3,7 @@ import { async } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { EDIT_PAGE_JS } from './iframe-edit-mode.js';
+import { EDIT_PAGE_JS, EDIT_PAGE_JS_DOJO_REQUIRE } from './iframe-edit-mode.js';
 
 const jsDragulaInlineElement = {};
 let lastAppendChildCallElementParam;
@@ -33,17 +33,20 @@ describe('DotDragDropAPIHtmlService', () => {
     const cssElement = {};
     const jsElement = {};
     let callbackFunc;
-
-    const doc = {
-        head: {
-            appendChild(element: any): any {
-                return null;
-            }
-        },
-        body: {
-            appendChild(element: any): any {
-                lastAppendChildCallElementParam = element;
-                return null;
+    const iframe: any = {
+        contentWindow: {
+            document: {
+                head: {
+                    appendChild(element: any): any {
+                        return null;
+                    }
+                },
+                body: {
+                    appendChild(element: any): any {
+                        lastAppendChildCallElementParam = element;
+                        return null;
+                    }
+                }
             }
         }
     };
@@ -53,7 +56,7 @@ describe('DotDragDropAPIHtmlService', () => {
             TestBed.configureTestingModule({
                 providers: [
                     DotDragDropAPIHtmlService,
-                    { provide: DotDOMHtmlUtilService, useClass: MockDotDOMHtmlUtilService },
+                    { provide: DotDOMHtmlUtilService, useClass: MockDotDOMHtmlUtilService }
                 ],
                 imports: []
             });
@@ -62,7 +65,7 @@ describe('DotDragDropAPIHtmlService', () => {
             dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
 
             spyOn(dotDOMHtmlUtilService, 'createLinkElement').and.returnValue(cssElement);
-            spyOn(doc.head, 'appendChild');
+            spyOn(iframe.contentWindow.document.head, 'appendChild');
 
             spyOn(dotDOMHtmlUtilService, 'creatExternalScriptElement').and.callFake((src, callback) => {
                 callbackFunc = callback;
@@ -71,23 +74,33 @@ describe('DotDragDropAPIHtmlService', () => {
     );
 
     it('should crate and set js and css draguls element', () => {
-        dotDragDropAPIHtmlService.initDragAndDropContext(doc);
+        dotDragDropAPIHtmlService.initDragAndDropContext(iframe);
 
         expect(dotDOMHtmlUtilService.createLinkElement).toHaveBeenCalledWith('/html/js/dragula-3.7.2/dragula.min.css');
-        expect(doc.head.appendChild).toHaveBeenCalledWith(cssElement);
+        expect(iframe.contentWindow.document.head.appendChild).toHaveBeenCalledWith(cssElement);
 
         expect(dotDOMHtmlUtilService.creatExternalScriptElement).toHaveBeenCalledWith(
-            '/html/js/dragula-3.7.2/dragula.min.js', jasmine.any(Function));
-            expect(doc.head.appendChild).toHaveBeenCalledWith(jsElement);
+            '/html/js/dragula-3.7.2/dragula.min.js',
+            jasmine.any(Function)
+        );
+        expect(iframe.contentWindow.document.head.appendChild).toHaveBeenCalledWith(jsElement);
     });
 
     it('should init dragula context', () => {
-        dotDragDropAPIHtmlService.initDragAndDropContext(doc);
+        dotDragDropAPIHtmlService.initDragAndDropContext(iframe);
 
         callbackFunc();
 
         expect(dotDOMHtmlUtilService.createInlineScriptElementLastCallTextParam).toEqual(EDIT_PAGE_JS);
 
+        expect(lastAppendChildCallElementParam).toEqual(jsDragulaInlineElement);
+    });
+
+    it('should init dragula context with require import', () => {
+        iframe.contentWindow.dojo = 'test';
+        dotDragDropAPIHtmlService.initDragAndDropContext(iframe);
+
+        expect(dotDOMHtmlUtilService.createInlineScriptElementLastCallTextParam).toEqual(EDIT_PAGE_JS_DOJO_REQUIRE);
         expect(lastAppendChildCallElementParam).toEqual(jsDragulaInlineElement);
     });
 });

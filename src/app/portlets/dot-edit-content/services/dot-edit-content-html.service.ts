@@ -270,7 +270,7 @@ export class DotEditContentHtmlService {
     private setEditMode(): void {
         this.addContentToolBars();
 
-        this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageDocument());
+        this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageIframe());
         this.setEditContentletStyles();
         this.bindWindowEvents();
     }
