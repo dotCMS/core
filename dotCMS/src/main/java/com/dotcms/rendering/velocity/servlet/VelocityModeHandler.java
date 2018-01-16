@@ -2,8 +2,10 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
 import com.dotcms.visitor.business.VisitorAPI;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -18,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +33,17 @@ public abstract class VelocityModeHandler {
     protected static final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
     protected static final VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
+    private static final Map<PageMode, Function> pageModeVelocityMap =ImmutableMap.<PageMode, VelocityModeHandler.Function>builder()
+            .put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new)
+            .put(PageMode.EDIT_MODE, VelocityEditMode::new)
+            .put(PageMode.LIVE, VelocityLiveMode::new)
+            .put(PageMode.ADMIN_MODE, VelocityLiveMode::new)
+            .build();
+
+    @FunctionalInterface
+    private interface Function {
+        VelocityModeHandler apply(HttpServletRequest request, HttpServletResponse response, String uri, Host host);
+    }
 
 
     abstract void serve() throws DotDataException, IOException, DotSecurityException;
@@ -38,27 +52,20 @@ public abstract class VelocityModeHandler {
 
 
     public final String eval() {
-        StringWriter out = new StringWriter(4096);
-
-        try {
+        try(StringWriter out = new StringWriter(4096)) {
             serve(out);
+            return out.toString();
         } catch (DotDataException | IOException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
-
-        return out.toString();
     }
-
+    
+    public static final VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
+        return pageModeVelocityMap.get(mode).apply(request, response, uri, host);
+    }
+    
     public static final VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response) {
-        switch (mode) {
-            case PREVIEW_MODE:
-                return new VelocityPreviewMode(request, response);
-            case EDIT_MODE:
-                return new VelocityEditMode(request, response);
-            default:
-                return new VelocityLiveMode(request, response);
-
-        }
+        return pageModeVelocityMap.get(mode).apply(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
     }
 
     public final Template getTemplate(IHTMLPage page, PageMode mode) {

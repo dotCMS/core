@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 
 import java.io.IOException;
@@ -213,7 +214,8 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-            final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+
+            final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ? (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms)  : this.pageResourceHelper.getPage(request, user, uri, mode);
             
             
             Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
