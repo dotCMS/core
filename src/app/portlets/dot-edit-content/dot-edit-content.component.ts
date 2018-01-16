@@ -11,6 +11,8 @@ import { DotLoadingIndicatorService } from '../../view/components/_common/iframe
 import { DotMessageService } from '../../api/services/dot-messages-service';
 import { DotRenderedPage } from '../dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotGlobalMessageService } from '../../view/components/_common/dot-global-message/dot-global-message.service';
+import { DotMenuService } from '../../api/services/dot-menu.service';
+
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
@@ -31,6 +33,7 @@ export class DotEditContentComponent implements OnInit {
 
     constructor(
         private dotConfirmationService: DotConfirmationService,
+        private dotMenuService: DotMenuService,
         private route: ActivatedRoute,
         private sanitizer: DomSanitizer,
         private ngZone: NgZone,
@@ -41,8 +44,6 @@ export class DotEditContentComponent implements OnInit {
         private dotGlobalMessageService: DotGlobalMessageService
     ) {}
 
-
-
     ngOnInit() {
         this.dotLoadingIndicatorService.show();
 
@@ -50,17 +51,17 @@ export class DotEditContentComponent implements OnInit {
             this.pageIdentifier = editPageHTML.identifier;
             this.dotEditContentHtmlService.initEditMode(editPageHTML.render, this.iframe);
 
-            this.dotEditContentHtmlService.contentletEvents.subscribe((res) => {
+            this.dotEditContentHtmlService.contentletEvents.subscribe((contentletEvent: any) => {
                 this.ngZone.run(() => {
-                    switch (res.event) {
+                    switch (contentletEvent.name) {
                         case 'edit':
-                            this.editContentlet(res);
+                            this.editContentlet(contentletEvent);
                             break;
                         case 'add':
-                            this.addContentlet(res);
+                            this.addContentlet(contentletEvent);
                             break;
                         case 'remove':
-                            this.removeContentlet(res);
+                            this.removeContentlet(contentletEvent);
                             break;
                         case 'cancel':
                         case 'save':
@@ -143,11 +144,12 @@ export class DotEditContentComponent implements OnInit {
     }
 
     private editContentlet($event: any): void {
-        // tslint:disable-next-line:max-line-length
-        const url =
-            '/c/portal/layout?p_l_id=71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=aaee9776-8fb7-4501-8048-844912a20405&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D71b8a1ca-37b6-4b6e-a43b-c7482f28db6c%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets';
-
-        this.loadDialogEditor($event.dataset.dotIdentifier, url, $event.contentletEvents);
+        this.dotMenuService.getDotMenuId('content').subscribe((portletId: string) => {
+            // tslint:disable-next-line:max-line-length
+            const url =
+            `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
+            this.loadDialogEditor($event.dataset.dotIdentifier, url, $event.contentletEvents);
+        });
     }
 
     private loadDialogEditor(containerId: string, url: string, contentletEvents: Subject<any>): void {

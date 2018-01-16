@@ -64,7 +64,7 @@ export const EDIT_PAGE_JS = `
     drake.on('drop', function(el, target, source, sibling) {
         if (target !== source) {
             window.contentletEvents.next({
-                event: 'relocate',
+                name: 'relocate',
                 data: {
                     container: {
                         identifier: target.dataset.dotIdentifier,

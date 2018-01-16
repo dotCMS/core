@@ -19,6 +19,7 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotMenuService } from '../../api/services/dot-menu.service';
 
 
 describe('DotEditContentComponent', () => {
@@ -63,7 +64,8 @@ describe('DotEditContentComponent', () => {
                 },
                 DotDragDropAPIHtmlService,
                 DotDOMHtmlUtilService,
-                DotEditContentToolbarHtmlService
+                DotEditContentToolbarHtmlService,
+                DotMenuService
             ]
         });
 
@@ -72,11 +74,6 @@ describe('DotEditContentComponent', () => {
         de = fixture.debugElement;
         dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
     });
-
-    it('should be created', () => {
-        expect(component).toBeTruthy();
-    });
-
 
     it('should has a toolbar', () => {
         const toolbarElement: DebugElement = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
@@ -109,7 +106,7 @@ describe('DotEditContentComponent', () => {
                 dotIdentifier: '2sfasfk-sd2d-4dxc-sdfnsdkjnajd0',
                 dotInode: '26ad1jbj-23xd-4cx3-9cf2-432scc413cc2'
             },
-            event: 'remove'
+            name: 'remove'
         };
         const dotEditContentHtmlService = fixture.debugElement.injector.get(DotEditContentHtmlService);
 

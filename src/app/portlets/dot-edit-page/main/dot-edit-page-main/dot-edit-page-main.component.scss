@@ -2,8 +2,6 @@
 @import "variables";
 
 :host {
-    // display: flex;
-    // flex-direction: row;
     display: flex;
     padding-right: $basic-padding * 8;
     min-height: 100%;
