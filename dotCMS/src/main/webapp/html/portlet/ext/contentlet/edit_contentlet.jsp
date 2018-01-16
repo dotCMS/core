@@ -263,10 +263,18 @@ var editButtonRow="editContentletButtonRow";
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
                         fieldSetOpen = false;%>
                     <%}%>
-                    <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
+					<%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
+                        <div class="lineDividerTitle"><%=f.getFieldName() %></div>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
+                        tabDividerOpen = true;%>
+							</div>
+						</div>
+						<div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+							<div class="wrapperRight">
+                    <%} else if(f.getFieldType().equals(Field.FieldType.ROW.toString())) {%>
 						</div>
 						<div class="lineDivider">
-                    <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {;%>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.COLUMN.toString())) {;%>
 						</span>
 						<span class="tabDivider">
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {

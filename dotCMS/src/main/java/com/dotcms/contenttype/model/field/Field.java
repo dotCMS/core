@@ -55,6 +55,7 @@ import com.google.common.collect.ImmutableMap;
 	@Type(value = TextField.class),
 	@Type(value = TimeField.class),
 	@Type(value = WysiwygField.class),
+    @Type(value = RowField.class),
 })
 public abstract class Field implements FieldIf, Serializable {
 

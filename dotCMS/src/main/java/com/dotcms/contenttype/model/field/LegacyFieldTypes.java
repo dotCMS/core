@@ -44,7 +44,9 @@ public enum LegacyFieldTypes {
 	BINARY("binary",com.dotcms.contenttype.model.field.BinaryField.class), 
 	CUSTOM_FIELD("custom_field",com.dotcms.contenttype.model.field.CustomField.class),
 	HOST_OR_FOLDER("host or folder",com.dotcms.contenttype.model.field.HostFolderField.class),
-	KEY_VALUE("key_value",com.dotcms.contenttype.model.field.KeyValueField.class);
+	KEY_VALUE("key_value",com.dotcms.contenttype.model.field.KeyValueField.class),
+	ROW_FIELD("row",com.dotcms.contenttype.model.field.RowField.class),
+	COLUMN_FIELD("column",com.dotcms.contenttype.model.field.ColumnField.class);
 
     final static private Map<String, String> oldFieldMap;
     static {

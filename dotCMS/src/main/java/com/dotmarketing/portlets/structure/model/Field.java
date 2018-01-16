@@ -54,7 +54,9 @@ public class Field extends Inode implements  FieldIf
     	BINARY("binary"), // http://jira.dotmarketing.net/browse/DOTCMS-1073
 		CUSTOM_FIELD("custom_field"), // http://jira.dotmarketing.net/browse/DOTCMS-2869
 		HOST_OR_FOLDER("host or folder"),// http://jira.dotmarketing.net/browse/DOTCMS-3232
-		KEY_VALUE("key_value");
+		KEY_VALUE("key_value"),
+	  	ROW("row"),
+	  	COLUMN("column");
 
 		private String value;
 
