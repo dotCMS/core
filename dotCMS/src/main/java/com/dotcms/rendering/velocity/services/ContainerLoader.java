@@ -157,11 +157,12 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                         if(it.hasNext()) {
                             editWrapperDiv.append(",");
                         }
-                        editWrapperDiv.append("WIDGET,FORM");
+                        
                     } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this.getClass(), "unable to find content type:" + struct);
                     }
                 }
+                editWrapperDiv.append("WIDGET,FORM");
                 editWrapperDiv.append("\">");
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(editWrapperDiv);
