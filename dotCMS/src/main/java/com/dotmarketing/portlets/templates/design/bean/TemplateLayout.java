@@ -161,7 +161,7 @@ public class TemplateLayout {
                 final List<ContainerUUID> columnContainers = column.getContainers();
                 containerIdentifiers.addAll(
                         columnContainers.stream()
-                                .map(containerUUID -> containerUUID.getIdentifier())
+                                .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
                                 .collect(Collectors.toList()));
             }
         }
@@ -169,7 +169,7 @@ public class TemplateLayout {
         if (this.sidebar != null && this.sidebar.getContainers() != null) {
             containerIdentifiers.addAll(
                     this.sidebar.getContainers().stream()
-                            .map(containerUUID -> containerUUID.getIdentifier())
+                            .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
                             .collect(Collectors.toList()));
         }
 

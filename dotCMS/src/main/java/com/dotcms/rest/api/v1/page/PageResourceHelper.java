@@ -228,9 +228,10 @@ public class PageResourceHelper implements Serializable {
      *                              this action.
      * @throws DotDataException     An error occurred when accessing the data source.
      */
-    private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
-            response, final User user, final String uri, final boolean isRendered, PageMode mode) throws
-            DotSecurityException, DotDataException {
+    private PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse response,
+                                     final User user, final String uri, final boolean isRendered, PageMode mode)
+            throws DotSecurityException, DotDataException {
+
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
@@ -256,7 +257,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     private void renderContainer(final Map<String, ContainerView> containers, final Context velocityContext )
-            throws DotSecurityException, DotDataException {
+            throws DotDataException {
 
         for (final ContainerView containerView : containers.values()) {
             final Container container = containerView.getContainer();

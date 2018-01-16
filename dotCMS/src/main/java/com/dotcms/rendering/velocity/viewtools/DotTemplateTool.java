@@ -88,9 +88,9 @@ public class DotTemplateTool implements ViewTool {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    public static TemplateLayout themeLayout ( String themeInode )
+    public static TemplateLayout themeLayout ( final String themeInode )
             throws DotDataException, DotSecurityException {
-        User user = APILocator.getUserAPI().getSystemUser();
+        final User user = APILocator.getUserAPI().getSystemUser();
         return themeLayout( themeInode, user, false );
     }
 
@@ -106,10 +106,10 @@ public class DotTemplateTool implements ViewTool {
      *
      */
     public static TemplateLayout themeLayout (final String themeInode,
-                                               User user,
+                                              final User user,
                                               final Boolean isPreview )
             throws DotDataException, DotSecurityException {
-        String key = themeInode + isPreview;
+        final String key = themeInode + isPreview;
         if (!UtilMethods.isSet(themeInode)) {
             throw new IllegalArgumentException("the themeInode is null");
         }
@@ -124,8 +124,8 @@ public class DotTemplateTool implements ViewTool {
     }
 
     private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
-        Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-        Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
+        final Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
+        final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
 
         return new DrawedBody(template.getTitle(), template.getDrawedBody());
     }
@@ -146,12 +146,12 @@ public class DotTemplateTool implements ViewTool {
      *
      */
     public TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
-        String key = themeInode + isPreview;
+        final String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
 
         if(layout==null) {
 
-            DrawedBody drawedBody;
+            final DrawedBody drawedBody;
 
             if (UtilMethods.isSet(themeInode)) {
                 drawedBody = getDrawedBody(themeInode, sysUser);
@@ -165,7 +165,10 @@ public class DotTemplateTool implements ViewTool {
         return layout;
     }
 
-    private static TemplateLayout getLayout ( final String themeInode, final Boolean isPreview, DrawedBody drawedBody) throws DotDataException, DotSecurityException {
+    private static TemplateLayout getLayout ( final String themeInode, final Boolean isPreview,
+                                              final DrawedBody drawedBody)
+            throws DotDataException, DotSecurityException {
+
         String key = themeInode + isPreview;
 
         //Parse and return the layout for this template
@@ -198,7 +201,8 @@ public class DotTemplateTool implements ViewTool {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static Map<String, Object> theme ( String themeFolderInode, String hostId ) throws DotDataException, DotSecurityException {
+    public static Map<String, Object> theme ( final String themeFolderInode, final String hostId )
+            throws DotDataException, DotSecurityException {
 
         //Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
