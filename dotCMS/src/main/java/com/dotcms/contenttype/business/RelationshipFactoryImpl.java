@@ -280,7 +280,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             boolean hasParent, boolean live, String orderBy) throws  DotDataException {
         List<Contentlet> matches = new ArrayList<Contentlet>();
 
-        if(contentlet == null || !InodeUtils.isSet(contentlet.getInode()))
+        if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier()))
         	return matches;
         String iden = "";
         try{

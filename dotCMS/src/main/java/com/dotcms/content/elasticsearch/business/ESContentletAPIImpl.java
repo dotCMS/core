@@ -2555,10 +2555,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Tree treeToUpdate = TreeFactory.getTree(newTree);
                     treeToUpdate.setTreeOrder(newTreePosistion);
 
-                    if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
-                        TreeFactory.saveTree(treeToUpdate);
-                    else
-                        TreeFactory.saveTree(newTree);
+                    TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())?treeToUpdate:newTree);
 
                     treePosition++;
                 }
@@ -2875,7 +2872,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 WorkflowAPI wapi  = APILocator.getWorkflowAPI();
                 WorkflowProcessor workflow=null;
 
-                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null) {
+                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
+                        ))  {
                     workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
                 }
 
@@ -2885,7 +2885,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
 
                 boolean priority = contentlet.isLowIndexPriority();
+
                 Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
+                Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
+
                 boolean isNewContent = false;
                 if(!InodeUtils.isSet(workingContentletInode)){
                     isNewContent = true;
@@ -3085,12 +3088,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // Publish once if needed and reindex once if needed. The publish
                 // method reindexes.
                 contentlet.setLowIndexPriority(priority);
-                //set again the don't validate me property if this was set
+
+                //set again the don't validate me and disable workflow properties
+                //if they were set
                 if(dontValidateMe != null){
                     contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
                 }
 
-
+                if(disableWorkflow != null){
+                    contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                }
 
                 // http://jira.dotmarketing.net/browse/DOTCMS-1073
                 // storing binary files in file system.
@@ -3606,7 +3613,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         categoryAPI.setParents(toContentlet, categories, user, respect);
 
-
         //Handle Relationships
 
         if(contentRelationships == null){
@@ -3650,7 +3656,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                cons = getRelatedContent(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
+                cons = getRelatedContentFromIndex(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
                 for (Contentlet contentlet : cons) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
@@ -3682,6 +3688,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
+
         for (ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
             relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
         }
@@ -4697,16 +4704,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException, DotSecurityException{
-        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
         List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
-                contentRelationships.put(r, new ArrayList<Contentlet>());
+                contentRelationships.put(r, new ArrayList<>());
             }
-            List<Contentlet> cons = getRelatedContent(contentlet, r, APILocator.getUserAPI().getSystemUser(), true);
+            List<Contentlet> cons = relationshipAPI.dbRelatedContent(r, contentlet);
+
             for (Contentlet c : cons) {
                 List<Contentlet> l = contentRelationships.get(r);
                 l.add(c);

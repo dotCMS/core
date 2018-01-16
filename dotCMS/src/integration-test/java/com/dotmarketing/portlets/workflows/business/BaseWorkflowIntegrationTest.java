@@ -17,6 +17,7 @@ import java.util.List;
 
 public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
 
+
     /**
      * Creates a new scheme, with a new step, with a new action and action let.
      * the new action will be associated to the step
@@ -29,9 +30,9 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      */
     protected static CreateSchemeStepActionResult createSchemeStepActionActionlet (final String schemeName,
-            final String stepName,
-            final String actionName,
-            final Class  actionClass) throws AlreadyExistException, DotDataException {
+                                                                            final String stepName,
+                                                                            final String actionName,
+                                                                            final Class  actionClass) throws AlreadyExistException, DotDataException {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
@@ -70,9 +71,9 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      */
     protected static CreateSchemeStepActionResult createActionActionlet (final String schemeId,
-            final String stepId,
-            final String actionName,
-            final Class  actionClass) throws AlreadyExistException, DotDataException {
+                                                                            final String stepId,
+                                                                            final String actionName,
+                                                                            final Class  actionClass) throws AlreadyExistException, DotDataException {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
@@ -89,7 +90,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         workflowAPI.saveAction(action.getId(),
                 stepId, APILocator.systemUser());
 
-        WorkflowActionClass workflowActionClass = new WorkflowActionClass();
+        final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
         workflowActionClass.setActionId(action.getId());
         workflowActionClass.setClazz(actionClass.getName());
         try {
@@ -117,13 +118,13 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final List<WorkflowAction> schemeActions = workflowAPI.findActions(scheme, APILocator.systemUser());
 
-        for (WorkflowAction action: schemeActions) {
+        for (final WorkflowAction action: schemeActions) {
 
             workflowAPI.deleteAction(action);
         }
 
         final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(scheme);
-        for (WorkflowStep step: workflowSteps) {
+        for (final WorkflowStep step: workflowSteps) {
 
             workflowAPI.deleteStep(step);
         }
@@ -139,7 +140,8 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         private final WorkflowActionClass    actionClass;
 
 
-        public CreateSchemeStepActionResult(WorkflowScheme scheme, WorkflowStep step, WorkflowAction action, WorkflowActionClass actionClass) {
+        public CreateSchemeStepActionResult(
+                final WorkflowScheme scheme, final WorkflowStep step, final WorkflowAction action, final WorkflowActionClass actionClass) {
             this.scheme = scheme;
             this.step = step;
             this.action = action;

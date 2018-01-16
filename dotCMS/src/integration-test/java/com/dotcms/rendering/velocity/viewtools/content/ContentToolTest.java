@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ public class ContentToolTest extends IntegrationTestBase {
     public void testPullMultiLanguage() throws Exception { // https://github.com/dotCMS/core/issues/11172
 
     	// Test uses Spanish language
-    	long LANGUAGE_ID = 2;
+    	final long languageId = 2;
 
         User user = APILocator.getUserAPI().getSystemUser();
 
@@ -45,7 +46,7 @@ public class ContentToolTest extends IntegrationTestBase {
 
 
         // Create dummy "News" content in Spanish language
-        ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode()).host(host).languageId(LANGUAGE_ID);
+        ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode()).host(host).languageId(languageId);
 
         contentletDataGen.setProperty("title", "El Titulo");
         contentletDataGen.setProperty("byline", "El Sub Titulo");
@@ -61,11 +62,14 @@ public class ContentToolTest extends IntegrationTestBase {
         ViewContext viewContext = mock(ViewContext.class);
         Context velocityContext = mock(Context.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpSession session = mock(HttpSession.class);
 
         when(viewContext.getVelocityContext()).thenReturn(velocityContext);
         when(viewContext.getRequest()).thenReturn(request);
         when(request.getParameter("host_id")).thenReturn(host.getInode());
-        when(request.getParameter("language_id")).thenReturn(String.valueOf(LANGUAGE_ID));
+        when(request.getParameter("language_id")).thenReturn(String.valueOf(languageId));
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(user);
 
         ContentTool contentTool = new ContentTool();
         contentTool.init(viewContext);
@@ -88,7 +92,7 @@ public class ContentToolTest extends IntegrationTestBase {
             // Ensure that every returned content is in Spanish Language
             Assert.assertFalse(results.isEmpty());
             for(ContentMap cm : results) {
-    	    	Assert.assertEquals(cm.getContentObject().getLanguageId(), LANGUAGE_ID);
+    	    	Assert.assertEquals(cm.getContentObject().getLanguageId(), languageId);
             }
 	    } finally {
 

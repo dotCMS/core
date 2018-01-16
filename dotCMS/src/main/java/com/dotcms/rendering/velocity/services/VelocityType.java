@@ -24,11 +24,11 @@ public enum VelocityType {
 
 
     public static VelocityType resolveVelocityType(final String path) {
-;        final String extenstion = UtilMethods.getFileExtension(path);
+;        final String extension = UtilMethods.getFileExtension(path);
 
 
         for (final VelocityType val : VelocityType.values()) {
-            if (extenstion.equals(val.fileExtension)) {
+            if (extension.equals(val.fileExtension)) {
                 return val;
             }
         }

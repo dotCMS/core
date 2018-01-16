@@ -2,6 +2,10 @@ package com.dotcms.rendering.velocity.util;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rendering.velocity.servlet.VelocityEditMode;
+import com.dotcms.rendering.velocity.servlet.VelocityLiveMode;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+import com.dotcms.rendering.velocity.servlet.VelocityPreviewMode;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.visitor.domain.Visitor;
@@ -32,7 +36,7 @@ import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -49,7 +53,7 @@ import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
-
+import java.util.Map;
 
 public class VelocityUtil {
     public final static String REFRESH="refresh";
@@ -57,7 +61,21 @@ public class VelocityUtil {
     public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
-	
+
+	private static final Map<PageMode, Function> pageModeVelocityMap = new ConcurrentHashMap<>();
+
+	static {
+		pageModeVelocityMap.put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new);
+		pageModeVelocityMap.put(PageMode.EDIT_MODE, VelocityEditMode::new);
+		pageModeVelocityMap.put(PageMode.LIVE, VelocityLiveMode::new);
+		pageModeVelocityMap.put(PageMode.ADMIN_MODE, VelocityLiveMode::new);
+	}
+
+	@FunctionalInterface
+	private interface Function {
+		VelocityModeHandler apply(HttpServletRequest request, HttpServletResponse response, String uri, Host host);
+	}
+
 	private synchronized static void init(){
 		if(ve != null)
 			return;
@@ -377,7 +395,7 @@ public class VelocityUtil {
      * This returns the proper ihtml page based on id, state and language
      * 
      * @param id
-     * @param request
+     * @param tryLang
      * @param live
      * @return
      * @throws DotDataException
@@ -403,7 +421,7 @@ public class VelocityUtil {
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } else {
-                throw new DotDataException(
+                throw new ResourceNotFoundException(
                         "Can't find content. Identifier: " + id.getId() + ", Live: " + live + ", Lang: " + tryLang, dse);
             }
 
@@ -435,4 +453,19 @@ public class VelocityUtil {
 		return velocityRootPath;
 	}
 
+	/**
+	 * Render a page in the specific {@link PageMode}
+	 *
+	 * @param pageMode
+	 * @param request
+	 * @param response
+	 * @param uri
+	 * @param host
+	 * @return
+	 */
+	public static String eval(final PageMode pageMode, final HttpServletRequest request,
+							  final HttpServletResponse response, final String uri,
+							  final Host host) {
+		return pageModeVelocityMap.get(pageMode).apply(request, response, uri, host).eval();
+	}
 }

@@ -193,11 +193,17 @@ public class PortletURLImpl implements PortletURL {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
 
-		sb.append(PortalUtil.getPortalURL(_req, _secure));
+        String ctxPath = (_portletReq != null) ?
+            ctxPath = (String)_portletReq.getPortletSession().getAttribute(
+                WebKeys.CTX_PATH, PortletSession.APPLICATION_SCOPE)
+            : (String)_req.getSession().getAttribute(WebKeys.CTX_PATH);
 
-		sb.append("/c");
+        ctxPath = (null ==ctxPath) ? "/c" : ctxPath;
+        
+        StringBuffer sb = new StringBuffer();
+        sb.append(PortalUtil.getPortalURL(_req, _secure));
+        sb.append(ctxPath);
 		sb.append("/portal");
 		sb.append(PortalUtil.getAuthorizedPath(_req));
 		sb.append("/layout?");

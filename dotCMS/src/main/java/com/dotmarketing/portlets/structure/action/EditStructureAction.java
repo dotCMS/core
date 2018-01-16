@@ -179,14 +179,15 @@ public class EditStructureAction extends DotPortletAction {
 		ContentType type;
 		Structure struc = new Structure();
 		try{
-			type= APILocator.getContentTypeAPI(user).find(inodeString);
-			struc = new StructureTransformer(type).asStructure();
-		}
-		catch(NotFoundInDbException nodb){
+			if(!UtilMethods.isSet(inodeString)) {
+				type= ContentTypeBuilder.instanceOf(SimpleContentType.class);
+			} else {
+				type = APILocator.getContentTypeAPI(user).find(inodeString);
+				struc = new StructureTransformer(type).asStructure();
+			}
+		} catch(NotFoundInDbException nodb){
 			type= ContentTypeBuilder.instanceOf(SimpleContentType.class);
-			
 		}
-		
 
 		if(!type.fixed()){//GIT-780
 			if(type.baseType() == BaseContentType.WIDGET

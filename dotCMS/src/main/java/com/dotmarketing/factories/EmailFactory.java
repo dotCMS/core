@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -227,7 +228,9 @@ public class EmailFactory {
 		try {
 			String message = "";
 			try {
-				Template t = UtilMethods.getVelocityTemplate( PageMode.LIVE.name() +"/"+ idInode+ languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+				Template t = UtilMethods.getVelocityTemplate(
+						PageMode.LIVE.name() + File.separator + idInode + languageStr + "."
+								+ VelocityType.HTMLPAGE.fileExtension);
 				t.merge(context, writer);
 				Logger
 				.debug(EmailFactory.class, "writer:"
@@ -588,7 +591,9 @@ public class EmailFactory {
 
 			try {
 				if(InodeUtils.isSet(idInode)) {
-					t = UtilMethods.getVelocityTemplate(PageMode.LIVE.name() +File.separator+ idInode + languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+					t = UtilMethods.getVelocityTemplate(
+							PageMode.LIVE.name() + File.separator + idInode + languageStr + "."
+									+ VelocityType.HTMLPAGE.fileExtension);
 				} else {
 					t = UtilMethods.getVelocityTemplate(templatePath); 
 				}
