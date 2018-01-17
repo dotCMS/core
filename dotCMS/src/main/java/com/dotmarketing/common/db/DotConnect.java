@@ -23,6 +23,9 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import static com.dotcms.util.CollectionsUtils.*;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+
 /**
  * Description of the Class
  * 
@@ -1114,42 +1117,15 @@ public class DotConnect {
      * @return int rows affected
      * @throws DotDataException
      */
+
     public int executeUpdate (final String preparedStatement, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
-        final boolean isNewTransaction = DbConnectionFactory.startTransactionIfNeeded();
-        Connection connection = null;
-        int rowsAffected = 0;
+        return  this.executeUpdate(DbConnectionFactory.getConnection(),
+                preparedStatement, logException, parameters);
 
-        try {
 
-            connection   =  DbConnectionFactory.getConnection();
-            rowsAffected =  this.executeUpdate(connection,
-                    preparedStatement, logException, parameters);
 
-            if (isNewTransaction) {
-                connection.commit();
-            }
-        } catch (DotDataException e) {
-
-            if (isNewTransaction) {
-                this.rollback(connection);
-            }
-           throw e;
-        } catch (Exception e) {
-
-            if (logException) {
-                Logger.error(DotConnect.class, e.getMessage(), e);
-            }
-            throw new DotDataException(e.getMessage(), e);
-        } finally {
-
-            if (isNewTransaction) {
-                closeQuietly(connection);
-            }
-        }
-
-        return rowsAffected;
     } // executeUpdate.
 
     protected void rollback(final Connection connection) throws DotDataException {
@@ -1186,29 +1162,24 @@ public class DotConnect {
      * @return int rows affected
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     public int executeUpdate (final Connection connection, final String preparedStatementString, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
 
-        PreparedStatement preparedStatement = null;
-        int rowsAffected = 0;
-
         try {
 
-            preparedStatement = connection.prepareStatement(preparedStatementString);
+            PreparedStatement  preparedStatement = connection.prepareStatement(preparedStatementString);
             this.setParams(preparedStatement, parameters);
-            rowsAffected = preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             if (logException) {
                 Logger.error(DotConnect.class, e.getMessage(), e);
             }
             throw new DotDataException(e.getMessage(), e);
-        } finally {
+        } 
 
-            closeQuietly(preparedStatement);
-        }
 
-        return rowsAffected;
     } // executeUpdate.
 
     private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
