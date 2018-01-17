@@ -260,20 +260,19 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     @Override
 	public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-
+        final List<Container> containers = new ArrayList<>();
 		final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
-		final List<String> containersId = layout.getContainersId();
-
-		final List<Container> containers = new ArrayList<>();
-
-		for (final String cont : containersId) {
-			final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
-
-			if(container==null) {
-				continue;
-			}
-
-			containers.add(container);
+		if(layout !=null) {
+		    final List<String> containersId = layout.getContainersId();
+        		for (final String cont : containersId) {
+        			final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+        
+        			if(container==null) {
+        				continue;
+        			}
+        
+        			containers.add(container);
+        		}
 		}
 
         return containers;

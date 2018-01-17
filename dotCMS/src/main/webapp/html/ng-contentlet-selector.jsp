@@ -1,4 +1,7 @@
 
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.BaseContentType"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
@@ -10,6 +13,11 @@
     User user = PortalUtil.getUser(request);
     Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
     List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
+    
+    List<ContentType> widgets = APILocator.getContentTypeAPI(user).findByBaseType(BaseContentType.WIDGET, "name", 15, 0);
+    structuresInContainer.addAll(new StructureTransformer(widgets).asStructureList());
+    
+    
 %>
 <!DOCTYPE html>
 <html lang="en">

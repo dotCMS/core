@@ -50,7 +50,9 @@ dojo.ready(function(){
         pageSize: 15,
         autoComplete: false,
         ignoreCase: true,
-        labelAttr: "fullTitle",
+        labelType:"html",
+        searchType:"html",
+        labelAttr: "htmlTitle",
         searchAttr: "fullTitle",
         value: dojo.byId("template").value,
         invalidMessage: '$text.get("Invalid-option-selected")'
