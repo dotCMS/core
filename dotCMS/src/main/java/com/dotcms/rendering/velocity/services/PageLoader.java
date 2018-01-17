@@ -209,15 +209,15 @@ public class PageLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, final String filePath)
-            throws DotDataException, DotSecurityException {
+
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
             .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(id1, mode.showLive, Long.parseLong(language), sysUser(), true));
+                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language), sysUser(), true));
 
 
-        return buildStream(page, mode, filePath);
+        return buildStream(page, key.mode, key.path);
 
 
     }

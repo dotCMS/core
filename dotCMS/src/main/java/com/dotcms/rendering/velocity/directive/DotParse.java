@@ -47,7 +47,7 @@ public class DotParse extends DotDirective {
   @Override
   String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,final String[] arguments) {
       
-      final String argument = arguments[0];
+    final String argument = arguments[0];
     String templatePath = argument;
     Host host = params.currentHost;
     User user = params.user;

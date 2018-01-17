@@ -37,7 +37,7 @@ public interface DotLoader {
         }
     }
 
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
+    public InputStream writeObject(VelocityResourceKey key)
             throws DotDataException, DotSecurityException;
 
     default void invalidate(Object obj) {
@@ -56,7 +56,7 @@ public interface DotLoader {
     }
     
     default InputStream writeOutVelocity(final String filePath, final String strOut) {
-        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", false)) {
+        if (Config.getBooleanProperty("SHOW_VELOCITYFILES", true)) {
             try {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();

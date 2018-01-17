@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -73,10 +74,10 @@ public class ContentletLoader implements DotLoader {
     public void setCategoryAPI(CategoryAPI categoryAPI) {
         this.categoryAPI = categoryAPI;
     }
+    private final long defualtLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 
-
-    public InputStream buildVelocity(Contentlet content, Identifier identifier, PageMode mode, String filePath)
+    public InputStream buildVelocity(Contentlet content, PageMode mode, String filePath)
             throws DotDataException, DotSecurityException {
         StringBuilder sb = new StringBuilder();
 
@@ -93,7 +94,7 @@ public class ContentletLoader implements DotLoader {
         // CONTENTLET CONTROLS BEGIN
         sb.append("#if($EDIT_MODE)");
         sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append(")");
         sb.append("#end");
 
@@ -101,7 +102,7 @@ public class ContentletLoader implements DotLoader {
             .append(content.getInode())
             .append("' )")
             .append("#set($IDENTIFIER_INODE='")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append("' )");
         
         sb.append("#set($CONTENT_TYPE='")
@@ -122,7 +123,7 @@ public class ContentletLoader implements DotLoader {
             .append(content.getInode())
             .append("' )")
             .append("#set($ContentIdentifier='")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append("' )")
             .append("#set($ContentletTitle=\"")
             .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI()
@@ -619,7 +620,7 @@ public class ContentletLoader implements DotLoader {
 
         if (PageMode.EDIT_MODE == mode) {
             sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
-                .append(identifier.getId())
+                .append(content.getIdentifier())
                 .append(" )");
         }
 
@@ -627,14 +628,14 @@ public class ContentletLoader implements DotLoader {
             .append(content.getInode())
             .append("\" )");
         sb.append("#set( $IDENTIFIER_INODE=\"")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append("\" )");
 
         sb.append("#set( $ContentInode=\"")
             .append(content.getInode())
             .append("\" )");
         sb.append("#set( $ContentIdentifier=\"")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append("\" )");
         sb.append("#set( $ContentletTitle=\"")
             .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI()
@@ -713,57 +714,28 @@ public class ContentletLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath) {
-        try {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotStateException, DotDataException, DotSecurityException {
 
-            Identifier identifier = APILocator.getIdentifierAPI()
-                .find(id1);
-            Contentlet contentlet = null;
-            if (CacheLocator.getVeloctyResourceCache()
-                .isMiss(filePath)) {
-                if (LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
-                    LanguageAPI langAPI = APILocator.getLanguageAPI();
-                    language = Long.toString(langAPI.getDefaultLanguage()
-                        .getId());
-                } else {
-                    throw new ResourceNotFoundException("Contentlet is a miss in the cache");
-                }
+            long language = new Long(key.language);
+            ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
+            if(info == null && language!= defualtLang && LanguageWebAPI.canDefaultContentToDefaultLanguage() ) {
+                info =  APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defualtLang);
             }
-
-            try {
-                contentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifier(identifier.getId(), mode.showLive, new Long(language), APILocator.getUserAPI()
-                        .getSystemUser(), true);
-            } catch (DotContentletStateException e) {
-                contentlet = null;
+            
+            if(info ==null || key.mode.showLive && info.getLiveInode()==null ) {
+                throw new ResourceNotFoundException("cannot find content for: " + key);
             }
-
-            if (contentlet == null || !InodeUtils.isSet(contentlet.getInode()) || contentlet.isArchived()) {
-
-                LanguageAPI langAPI = APILocator.getLanguageAPI();
-                long lid = langAPI.getDefaultLanguage()
-                    .getId();
-                if (lid != Long.parseLong(language)) {
-                    Contentlet cc = APILocator.getContentletAPI()
-                        .findContentletByIdentifier(identifier.getId(), mode.showLive, lid, APILocator.getUserAPI()
-                            .getSystemUser(), true);
-                    if (cc != null && UtilMethods.isSet(cc.getInode()) && !cc.isArchived()
-                            && LanguageWebAPI.canApplyToAllLanguages(cc)) {
-                        contentlet = cc;
-                    } else {
-                        CacheLocator.getVeloctyResourceCache()
-                            .addMiss(filePath);
-                        throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
-                    }
-                }
-            }
+            Contentlet contentlet = (key.mode.showLive) 
+                    ? APILocator.getContentletAPI().find(info.getLiveInode(), APILocator.systemUser(), false) 
+                     : APILocator.getContentletAPI().find(info.getWorkingInode(), APILocator.systemUser(), false);
 
             Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
-            return buildVelocity(contentlet, identifier, mode, filePath);
+            if(null==contentlet) {
+                throw new ResourceNotFoundException("cannot find content for: " + key);
+            }
+            return buildVelocity(contentlet, key.mode, key.path);
 
-        } catch (Exception e) {
-            throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
-        }
+
     }
 
 

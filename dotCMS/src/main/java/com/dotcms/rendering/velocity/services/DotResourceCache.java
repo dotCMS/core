@@ -3,27 +3,21 @@
  */
 package com.dotcms.rendering.velocity.services;
 
-import java.io.File;
-import java.util.HashSet;
-
-import java.util.Set;
-
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.resource.Resource;
-import org.apache.velocity.runtime.resource.ResourceCache;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 
-import com.liferay.util.StringUtil;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
+import org.apache.velocity.runtime.resource.Resource;
+import org.apache.velocity.runtime.resource.ResourceCache;
 
 /**
  * @author Jason Tesser
@@ -90,14 +84,15 @@ public class DotResourceCache implements ResourceCache, Cachable {
      */
     @Override
     public Resource get(final Object resourceKey) {
-
-        final String key = cleanKey(resourceKey.toString());
+/*
+        final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
 
         try {
-            return (Resource) cache.get(key, primaryGroup);
+            return (Resource) cache.get(key.cacheKey, primaryGroup);
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
+        */
         return null;
     }
 
@@ -107,7 +102,8 @@ public class DotResourceCache implements ResourceCache, Cachable {
     }
 
     public void addMiss(Object resourceKey) {
-        Logger.info(this.getClass(), "velocityMiss:" + resourceKey);
+        final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
+        Logger.info(this.getClass(), "velocityMiss:" + key);
     }
 
     public boolean isMiss(Object resourceKey) {
@@ -116,14 +112,14 @@ public class DotResourceCache implements ResourceCache, Cachable {
 
     @Override
     public Resource put(final Object resourceKey, final Resource resource) {
+        final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
         if (resource != null && ignoreGlobalVM.contains(resource.getName())) {
             return resource;
         }
 
-        String key = cleanKey(resourceKey.toString());
 
         // Add the key to the cache
-        cache.put(key, resource, primaryGroup);
+        cache.put(key.cacheKey, resource, primaryGroup);
 
         return resource;
 
@@ -132,10 +128,10 @@ public class DotResourceCache implements ResourceCache, Cachable {
     @Override
     public Resource remove(final Object resourceKey) {
 
-        final String key = cleanKey(resourceKey.toString());
+        final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
 
         try {
-            cache.remove(key, primaryGroup);
+            cache.remove(key.cacheKey, primaryGroup);
         } catch (Exception e) {
             Logger.debug(this, e.getMessage(), e);
         }
@@ -159,31 +155,6 @@ public class DotResourceCache implements ResourceCache, Cachable {
         return primaryGroup;
     }
 
-    private String cleanKey(String key) {
-        if (key.startsWith(ResourceManager.RESOURCE_TEMPLATE + ""))
-            key = key.substring((ResourceManager.RESOURCE_TEMPLATE + "").length());
 
-        if (key.startsWith(File.separatorChar + "")) {
-            key = key.substring(1);
-        }
-        if (key.startsWith("/")) {
-            key = key.substring(1);
-        }
-        key = StringUtil.replace(key, '\\', '/');
-        return key;
-    }
-
-
-
-    public void removeContentTypeFile(ContentType contentType) {
-        String folderPath = "working/";
-        String filePath = folderPath + contentType.inode() + "." + VelocityType.CONTENT_TYPE.fileExtension;
-
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        String absolutPath = velocityRootPath + File.separator + filePath;
-        java.io.File f = new java.io.File(absolutPath);
-        f.delete();
-        remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-    }
 
 }

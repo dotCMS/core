@@ -34,68 +34,58 @@ public class DotResourceLoader extends ResourceLoader {
         }
 
 
-        final VelocityType type = VelocityType.resolveVelocityType(filePath);
+
         synchronized (filePath.intern()) {
 
+            VelocityResourceKey key = new VelocityResourceKey(filePath);
 
-
-            String paths = (filePath.charAt(0) == '/') ? filePath.substring(1, filePath.length()) : filePath;
-
-            final String[] path = paths.split("[/\\.]", -1);
-            final PageMode mode = PageMode.get(path[0]);
-            final String id1 = path[1].indexOf("_") > -1 ? path[1].substring(0, path[1].indexOf("_")) : path[1];
-            final String language = path[1].indexOf("_") > -1 ? path[1].substring(path[1].indexOf("_") + 1, path[1].length())
-                    : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-
-            final String id2 = path.length > 3 ? path[2] : null;
-
-
-            Logger.debug(this, "DotResourceLoader:\tInode: " + id1);
+            System.out.println("loading:" + key);
+            Logger.debug(this, "DotResourceLoader:\tInode: " + key.id1);
 
             try {
-                switch (type) {
+                switch (key.type) {
                     case NOT_VELOCITY: {
-                        CacheLocator.getVeloctyResourceCache().addMiss(path);
-                        throw new ResourceNotFoundException("Cannot find velocity file : " + path);
+                        CacheLocator.getVeloctyResourceCache().addMiss(key.path);
+                        throw new ResourceNotFoundException("Cannot find velocity file : " + key.path);
                     }
                     case CONTAINER: {
-                        return new ContainerLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new ContainerLoader().writeObject(key);
                     }
                     case TEMPLATE: {
-                        return new TemplateLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new TemplateLoader().writeObject(key);
                     }
                     case CONTENT: {
-                        return new ContentletLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new ContentletLoader().writeObject(key);
                     }
                     case FIELD: {
-                        return new FieldLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new FieldLoader().writeObject(key);
                     }
                     case CONTENT_TYPE: {
-                        return new ContentTypeLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new ContentTypeLoader().writeObject(key);
                     }
                     case SITE: {
-                        return new SiteLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new SiteLoader().writeObject(key);
                     }
                     case HTMLPAGE: {
-                        return new PageLoader().writeObject(id1, id2, mode, language, filePath);
+                        return new PageLoader().writeObject(key);
                     }
                     case VELOCITY_MACROS: {
-                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(key);
                     }
                     case VTL: {
-                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(key);
                     }
                     case VELOCITY_LEGACY_VL: {
-                        return VTLLoader.instance().writeObject(id1, id2, mode, language, filePath);
+                        return VTLLoader.instance().writeObject(key);
                     }
                     default: {
-                        CacheLocator.getVeloctyResourceCache().addMiss(path);
-                        throw new ResourceNotFoundException("Cannot find velocity file : " + path);
+                        CacheLocator.getVeloctyResourceCache().addMiss(key.path);
+                        throw new ResourceNotFoundException("Cannot find velocity file : " + key.path);
                     }
                 }
 
             } catch (Exception e) {
-                throw new ResourceNotFoundException("Cannot parse velocity file : " + path, e);
+                throw new ResourceNotFoundException("Cannot parse velocity file : " + key.path, e);
             }
         }
 
