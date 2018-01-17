@@ -24,7 +24,7 @@ export class DotContainerContentletService {
         return this.coreWebService.requestView({
             method: RequestMethod.Post,
             body: content,
-            url: `/v1/page/${pageId}/content`
+            url: `v1/page/${pageId}/content`
         }).pluck('entity');
     }
 }
