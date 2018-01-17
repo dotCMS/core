@@ -34,11 +34,11 @@
         function contentSelected(content) {
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
-                    event: "select",
+                    name: "select",
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: "type"
+                        type: content.type
                     }
                 })
             }
@@ -69,6 +69,7 @@
     <script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
+    <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
     <%
         String containerIdentifier = (String) request.getParameter("container_id");
