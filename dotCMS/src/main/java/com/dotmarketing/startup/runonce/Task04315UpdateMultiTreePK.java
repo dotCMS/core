@@ -39,7 +39,8 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     
     final static String updateRelationTypesSQL =   "update multi_tree set relation_type='" + MultiTree.LEGACY_RELATION_TYPE + "' where relation_type is null or relation_type=''";
     
-    
+    private final static String MSSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type NVARCHAR(64) NOT NULL";
+
     final static String alterRelationTypePK =   "ALTER TABLE " + tableName + " ADD CONSTRAINT " + indexName + " PRIMARY KEY (" + columnNames + ")";
     
     final static String addIndexToMultiTree =   "CREATE INDEX  idx_multi_tree_page_relation on " + tableName + " (parent1, relation_type) ";
@@ -53,8 +54,8 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     public void executeUpgrade() throws DotDataException {
         
         try {
-            Connection conn =DbConnectionFactory.getConnection();
-            
+            Connection conn = DbConnectionFactory.getDataSource().getConnection();
+            conn.setAutoCommit(true);
             
             // Drop PK
             getPrimaryKey(conn,ImmutableList.of(tableName), true );
@@ -66,7 +67,11 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
             DotConnect db = new DotConnect();
             db.setSQL(updateRelationTypesSQL);
             db.loadResult(conn);
-            
+
+            if (DbConnectionFactory.isMsSql()) {
+                db.setSQL(MSSQL_SET_NOT_NULL_RELATION_TYPE);
+                db.loadResult(conn);
+            }
             
             db.setSQL(alterRelationTypePK);
             db.loadResult(conn);
