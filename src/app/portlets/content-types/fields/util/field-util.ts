@@ -1,11 +1,11 @@
 import { Field } from '../';
 
 const TAB_DIVIDER = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
 };
 
 const LINE_DIVIDER = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
 };
 
 export class FieldUtil {
