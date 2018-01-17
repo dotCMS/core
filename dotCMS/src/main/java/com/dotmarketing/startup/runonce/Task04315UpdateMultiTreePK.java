@@ -39,7 +39,7 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     
     final static String updateRelationTypesSQL =   "update multi_tree set relation_type='" + MultiTree.LEGACY_RELATION_TYPE + "' where relation_type is null or relation_type=''";
     
-    private final static String MSSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type NVARCHAR(64) NOT NULL";
+    private static final String MSSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type NVARCHAR(64) NOT NULL";
 
     final static String alterRelationTypePK =   "ALTER TABLE " + tableName + " ADD CONSTRAINT " + indexName + " PRIMARY KEY (" + columnNames + ")";
     
