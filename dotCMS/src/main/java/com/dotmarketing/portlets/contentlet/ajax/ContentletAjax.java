@@ -873,7 +873,7 @@ public class ContentletAjax {
 
 				searchResult = new HashMap<String, String>();
 				Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-
+				searchResult.put("typeVariable", s.getVelocityVarName());
 				for (String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {

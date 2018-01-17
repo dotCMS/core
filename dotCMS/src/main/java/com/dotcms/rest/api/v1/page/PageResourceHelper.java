@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
@@ -34,6 +35,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.URLUtils;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -240,9 +242,12 @@ public class PageResourceHelper implements Serializable {
         
                 
 
-
+        
         final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
-        final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+        
+
+        
+        final HTMLPageAsset page = (UUIDUtil.isUUID(pageUri)) ?  (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
         final Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
@@ -271,9 +276,7 @@ public class PageResourceHelper implements Serializable {
 
             try {
 
-                final String rendered = VelocityUtil.mergeTemplate("/" + mode +"/" + container.getIdentifier() +
-
-                        ".container", velocityContext);
+                final String rendered = VelocityUtil.mergeTemplate("/" + mode +"/" + container.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension, velocityContext);
                 containerView.setRendered(rendered);
             } catch (Exception e) {
                 throw new DotDataException(String.format("Container '%s' could not be " +

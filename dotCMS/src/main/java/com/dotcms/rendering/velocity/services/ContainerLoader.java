@@ -154,10 +154,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     try {
                         ContentType t = typeAPI.find(struct.getStructureId());
                         editWrapperDiv.append(t.variable());
-                        if(it.hasNext()) {
-                            editWrapperDiv.append(",");
-                        }
-                        
+                        editWrapperDiv.append(",");
                     } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this.getClass(), "unable to find content type:" + struct);
                     }

@@ -5,7 +5,12 @@
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
-
+<%
+    String containerIdentifier = (String) request.getParameter("container_id");
+    User user = PortalUtil.getUser(request);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+    List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,7 +43,7 @@
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: content.type
+                        type: content.typeVariable
                     }
                 })
             }
@@ -47,7 +52,12 @@
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
         }
-
+        
+	    	function displayStructure(structureInode) {
+	        	contentSelector.displayStructureFields(structureInode);
+		}
+	    	
+	    	
         djConfig = {
             parseOnLoad: true,
             i18n: "/html/js/dojo/custom-build/custom-build/build/",
@@ -71,12 +81,7 @@
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
-    <%
-        String containerIdentifier = (String) request.getParameter("container_id");
-        User user = PortalUtil.getUser(request);
-        Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
-        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
-    %>
+
 
     <script type="text/javascript">
         dojo.require("dotcms.dijit.form.ContentSelector");
@@ -99,7 +104,9 @@
             contentSelector._fillStructures();
         })
 
-
+	function displayStructure(structureInode) {
+        	contentSelector.displayStructureFields(structureInode);
+	}
     </script>
 </head>
 <body>
