@@ -39,8 +39,7 @@ public class DotResourceLoader extends ResourceLoader {
 
             VelocityResourceKey key = new VelocityResourceKey(filePath);
 
-            System.out.println("loading:" + key);
-            Logger.debug(this, "DotResourceLoader:\tInode: " + key.id1);
+            Logger.debug(this, "DotResourceLoader:\t: " + key);
 
             try {
                 switch (key.type) {
