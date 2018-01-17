@@ -67,7 +67,7 @@ public class WorkflowActionClass implements Serializable{
 			return APILocator.getWorkflowAPI().newActionlet(clazz);
 		} catch (Exception e) {
 			Logger.error(WorkflowActionClass.class,e.getMessage(),e);
-			throw new WorkflowActionFailureException(e.getMessage());
+			throw new WorkflowActionFailureException(e.getMessage(),e);
 		} 
 	}
 	@Override

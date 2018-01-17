@@ -771,7 +771,7 @@ public class ContentImportThread implements Job{
 
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
-			throw new DotRuntimeException(e.getMessage());
+			throw new DotRuntimeException(e.getMessage(),e);
 		}
 
 	}

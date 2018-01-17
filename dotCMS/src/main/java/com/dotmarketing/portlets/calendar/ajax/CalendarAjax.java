@@ -992,7 +992,7 @@ public class CalendarAjax {
 							autoCom =	 DbConnectionFactory.getConnection().getAutoCommit();
 						}
 						catch(Exception e){
-							throw new DotDataException(e.getMessage());
+							throw new DotDataException(e.getMessage(),e);
 						}
 						if(autoCom){
 							HibernateUtil.startTransaction();
