@@ -1864,6 +1864,30 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(final Contentlet contentletToCopy,
+									 final Host host, final Folder folder, final User user, final String copySuffix,
+									 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+
+		for (ContentletAPIPreHook pre : preHooks) {
+
+			final boolean preResult = pre.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles);
+			if(!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet copiedContentlet =
+				this.conAPI.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles);
+
+		for(ContentletAPIPostHook post : postHooks) {
+			post.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, copiedContentlet);
+		}
+
+		return copiedContentlet;
+	}
+
+	@Override
 	public boolean isInodeIndexed(String inode) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isInodeIndexed(inode);
