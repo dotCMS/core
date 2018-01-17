@@ -1167,9 +1167,10 @@ public class DotConnect {
                               final Object... parameters) throws DotDataException {
 
 
+        PreparedStatement  preparedStatement = null;
         try {
 
-            PreparedStatement  preparedStatement = connection.prepareStatement(preparedStatementString);
+            preparedStatement = connection.prepareStatement(preparedStatementString);
             this.setParams(preparedStatement, parameters);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -1177,7 +1178,15 @@ public class DotConnect {
                 Logger.error(DotConnect.class, e.getMessage(), e);
             }
             throw new DotDataException(e.getMessage(), e);
-        } 
+        } finally {
+            if(null!= preparedStatement ) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    Logger.debug(this.getClass(), e.getMessage(),e);
+                }
+            }
+        }
 
 
     } // executeUpdate.
