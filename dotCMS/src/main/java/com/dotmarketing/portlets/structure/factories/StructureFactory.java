@@ -324,7 +324,7 @@ public class StructureFactory {
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 	}
@@ -340,7 +340,7 @@ public class StructureFactory {
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 		

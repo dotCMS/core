@@ -29,7 +29,7 @@ public class TranslationUtil {
 
             } catch (Exception e) {
                 Logger.error(TranslationUtil.class, e.getMessage(), e);
-                throw new DotStateException(e.getMessage());
+                throw new DotStateException(e.getMessage(),e);
             }
         }
 

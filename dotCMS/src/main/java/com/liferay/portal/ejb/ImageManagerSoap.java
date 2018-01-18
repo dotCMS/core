@@ -38,7 +38,7 @@ public class ImageManagerSoap {
 			ImageManagerUtil.deleteImage(imageId);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -50,7 +50,7 @@ public class ImageManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -62,7 +62,7 @@ public class ImageManagerSoap {
 			return (com.liferay.portal.model.Image[])returnValue.toArray(new com.liferay.portal.model.Image[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -75,7 +75,7 @@ public class ImageManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }

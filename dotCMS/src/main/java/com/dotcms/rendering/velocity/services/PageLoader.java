@@ -89,7 +89,7 @@ public class PageLoader implements DotLoader {
             return buildStream(htmlPage, identifier, mode, filePath);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage());
+            throw new DotRuntimeException(e.getMessage(),e);
         }
     }
 
