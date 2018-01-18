@@ -24,6 +24,7 @@ package com.dotcms.util;
  * @since Jul 13, 2016
  *
  */
+@FunctionalInterface
 public interface Delegate<T> {
 
 	/**
