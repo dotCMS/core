@@ -180,13 +180,13 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 {
                     name: 'field 1',
                     id: 1,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
                 },
                 {
                     name: 'field 2',
                     id: 2,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
                 },
                 {
@@ -202,7 +202,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     sortOrder: 4
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     id: 5,
                     name: 'field 5',
                     sortOrder: 5
@@ -214,13 +214,13 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     sortOrder: 6
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     id: 7,
                     name: 'field 7',
                     sortOrder: 7
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     id: 8,
                     name: 'field 8',
                     sortOrder: 8

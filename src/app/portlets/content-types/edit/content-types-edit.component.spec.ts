@@ -217,13 +217,13 @@ describe('ContentTypesEditComponent', () => {
             {
                 name: 'field 1',
                 id: '1',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                 sortOrder: 1
             },
             {
                 name: 'field 2',
                 id: '2',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 sortOrder: 2
             }
         ];
@@ -248,19 +248,19 @@ describe('ContentTypesEditComponent', () => {
             {
                 name: 'field 1',
                 id: '1',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                 sortOrder: 1
             },
             {
                 name: 'field 2',
                 id: '2',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 sortOrder: 2
             },
             {
                 name: 'field 3',
                 id: '3',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 sortOrder: 3
             }
         ];
@@ -290,7 +290,7 @@ describe('ContentTypesEditComponent', () => {
         const fieldToRemove = {
             name: 'field 3',
             id: '3',
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
             sortOrder: 3
         };
 

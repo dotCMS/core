@@ -51,7 +51,7 @@ describe('FieldService', () => {
                     name: 'Hello World',
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                 },
             ];
 
