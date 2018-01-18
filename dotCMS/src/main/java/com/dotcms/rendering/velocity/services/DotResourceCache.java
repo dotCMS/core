@@ -84,7 +84,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
      */
     @Override
     public Resource get(final Object resourceKey) {
-/*
+
         final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
 
         try {
@@ -92,7 +92,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
-        */
+    
         return null;
     }
 

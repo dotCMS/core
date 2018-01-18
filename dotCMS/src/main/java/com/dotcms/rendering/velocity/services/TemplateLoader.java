@@ -30,14 +30,7 @@ public class TemplateLoader implements DotLoader {
 
 
 
-    public InputStream buildVelocity(Template template, PageMode mode, String filePath)
-            throws DotStateException, DotDataException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(template);
-        return buildVelocity(template, identifier, mode, filePath);
-    }
-
-    public InputStream buildVelocity(Template template, Identifier identifier, PageMode mode, String filePath) {
+    public InputStream buildVelocity(Template template, PageMode mode, String filePath) {
 
 
         StringBuilder templateBody = new StringBuilder();

@@ -1,17 +1,13 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.bsh.This;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -19,7 +15,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
 
@@ -81,20 +76,9 @@ public class PageLoader implements DotLoader {
 
 
 
+
+
     public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath)
-            throws DotStateException, DotDataException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(htmlPage);
-        try {
-            return buildStream(htmlPage, identifier, mode, filePath);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage());
-        }
-    }
-
-
-    public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, PageMode mode, final String filePath)
             throws DotDataException, DotSecurityException {
         String folderPath = mode.name() + File.separator;
 

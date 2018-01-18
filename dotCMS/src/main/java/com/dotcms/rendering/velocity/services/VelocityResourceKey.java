@@ -19,9 +19,11 @@ public class VelocityResourceKey implements Serializable {
     public final String path, language, id1, id2, cacheKey;
     public final VelocityType type;
     public final PageMode mode;
+
     public VelocityResourceKey(final Object obj) {
         this((String) obj);
     }
+
     public VelocityResourceKey(final String filePath) {
         path = cleanKey(filePath);
 
@@ -37,27 +39,28 @@ public class VelocityResourceKey implements Serializable {
     }
 
     private String cacheKey() {
-        StringWriter sw = new StringWriter();
-            sw.append(mode.name())
+
+        if (type == VelocityType.CONTAINER) {
+            return new StringWriter()
+                .append(mode.name())
                 .append('-')
-                .append(id1);
-        if(type != VelocityType.CONTAINER && id2!=null) {
-            sw.append('-');
-            sw.append(id2);
+                .append(id1)
+                .append('-')
+                .append(language)
+                .append(".")
+                .append(type.fileExtension)
+                .toString();
+        } else {
+            return path;
         }
-        sw.append('-'); 
-        sw.append(language); 
-        sw.append("."); 
-        sw.append(type.fileExtension); 
-        return sw.toString();
-       
+
 
     }
-    
+
     private String cleanKey(final String key) {
-        String newkey = (key.charAt(0) == RESOURCE_TEMPLATE ) ? key.substring(1) : key;
-        newkey = (newkey.charAt(0) != '/')  ? "/" + newkey : newkey;
-        return (newkey.contains("\\")) ?UtilMethods.replace(newkey, "\\", "/") : newkey;
+        String newkey = (key.charAt(0) == RESOURCE_TEMPLATE) ? key.substring(1) : key;
+        newkey = (newkey.charAt(0) != '/') ? "/" + newkey : newkey;
+        return (newkey.contains("\\")) ? UtilMethods.replace(newkey, "\\", "/") : newkey;
 
     }
 
@@ -67,6 +70,6 @@ public class VelocityResourceKey implements Serializable {
                 + ", mode=" + mode + "]";
     }
 
-    
+
 
 }
