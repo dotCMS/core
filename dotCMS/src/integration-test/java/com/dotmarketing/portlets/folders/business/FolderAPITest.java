@@ -914,6 +914,7 @@ public class FolderAPITest {
 			template.setTitle(templateTitle);
 			template.setBody(templateBody);
 			template.setOwner(user.getUserId());
+			template.setDrawedBody(templateBody);
 			template = templateAPI.saveTemplate(template, host, user, false);
 			PublishFactory.publishAsset(template, user, false, false);
 
