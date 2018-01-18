@@ -27,7 +27,7 @@ public class TemplateLayoutRow implements Serializable{
 
     private Integer[] gridWidths;
     private List<TemplateLayoutColumn> columns;
-    private Map<Integer,TemplateLayoutColumn> columnMap;
+    private final Map<Integer,TemplateLayoutColumn> columnMap;;
     @JsonCreator
     public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
         this.columns = columns;
@@ -40,7 +40,9 @@ public class TemplateLayoutRow implements Serializable{
     }
 
     public TemplateLayoutRow() {
+        
         this(null);
+        
     }
 
     public TemplateLayoutColumn getColumn(final String column) {
@@ -140,6 +142,7 @@ public class TemplateLayoutRow implements Serializable{
 
         //Finally add this column to this row...
         columns.add( column );
+        columnMap.put(leftIndex, column);
     }
     
     @Override
