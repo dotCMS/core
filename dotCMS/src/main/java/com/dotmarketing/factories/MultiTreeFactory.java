@@ -4,6 +4,7 @@ package com.dotmarketing.factories;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.PageLoader;
 
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -61,6 +62,8 @@ public class MultiTreeFactory {
     static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
+    static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
+            + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
 
     public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
         _dbDelete(mTree);
@@ -224,7 +227,26 @@ public class MultiTreeFactory {
 
     }
 
+    /**
+     * Get a list of MultiTree for Contentlets using a specific Structure and specific Container
+     * @param containerIdentifier
+     * @param structureIdentifier
+     * @return List of MultiTree
+     */
+    public static List<MultiTree> getContainerStructureMultiTree(String containerIdentifier, String structureInode) {
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(SELECT_BY_CONTAINER_AND_STRUCTURE);
+            dc.addParam(containerIdentifier);
+            dc.addParam(structureInode);
 
+            return TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
+
+        } catch (DotDataException e) {
+            Logger.error(MultiTreeFactory.class, "getContainerStructureMultiTree failed:" + e, e);
+            throw new DotRuntimeException(e.toString());
+        }
+    }
 
     @WrapInTransaction
     public static void saveMultiTree(MultiTree mTree) throws DotDataException {
