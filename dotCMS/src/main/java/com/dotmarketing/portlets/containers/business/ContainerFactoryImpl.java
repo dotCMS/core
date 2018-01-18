@@ -376,14 +376,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
                String identifier = ident.get("identifier");
                if (UtilMethods.isSet(identifier)) {
 
-				   final VersionInfo info =
-						   this.identifierCache.getVersionInfo(identifier);
+				   final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(identifier);
+
 				   if (null != info && UtilMethods.isSet(info.getLiveInode())) {
 
 					   CacheLocator.getContainerCache().remove(info.getLiveInode());
 				   }
 
-				   CacheLocator.getContainerCache().remove(identifier);
 			   }
            }
         } catch (DotDataException e) {

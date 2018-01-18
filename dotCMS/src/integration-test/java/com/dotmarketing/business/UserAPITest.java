@@ -286,22 +286,23 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step1
 		 */
 		WorkflowAction newAction = new WorkflowAction();
+		newAction.setSchemeId(ws.getId());
 		newAction.setName("Edit");
 		newAction.setAssignable(true);
 		newAction.setCommentable(true);
 		newAction.setIcon("workflowIcon");
 		newAction.setNextStep(workflowStep2.getId());
-		newAction.setStepId(workflowStep1.getId());
 		newAction.setCondition("");
 		newAction.setRequiresCheckout(false);
 		newAction.setRoleHierarchyForAssign(false);
 		newAction.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction = new ArrayList<>();
 		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction, permissionsNewAction);
-		
+		workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
+
 		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
 		Assert.assertTrue(actions1.size()==1);
 		WorkflowAction action1 = actions1.get(0);
@@ -310,21 +311,22 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step2
 		 */
 		WorkflowAction newAction2 = new WorkflowAction();
+		newAction2.setSchemeId(ws.getId());
 		newAction2.setName("Publish");
 		newAction2.setAssignable(true);
 		newAction2.setCommentable(true);
 		newAction2.setIcon("workflowIcon");
 		newAction2.setNextStep(workflowStep2.getId());
-		newAction2.setStepId(workflowStep2.getId());
 		newAction2.setCondition("");
 		newAction2.setRequiresCheckout(false);
 		newAction2.setRoleHierarchyForAssign(false);
 		newAction2.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction2 = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction2 = new ArrayList<>();
 		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction2, permissionsNewAction2);
+		workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
 
 		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);
 		Assert.assertTrue(actions2.size()==1);
@@ -389,6 +391,7 @@ public class UserAPITest extends IntegrationTestBase {
 		template.setTitle(templateTitle);
 		template.setBody(templateBody);
 		template.setOwner(newUser.getUserId());
+		template.setDrawedBody(templateBody);
 		template = templateAPI.saveTemplate(template, host, newUser, false);
 		PublishFactory.publishAsset(template, newUser, false, false);
 

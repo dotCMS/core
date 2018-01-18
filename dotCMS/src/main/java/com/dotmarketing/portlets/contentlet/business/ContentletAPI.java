@@ -247,7 +247,25 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 */
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
+
+	/**
+	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
+	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
+	 * And moves the the new piece of content to the given folder. CopySuffix will be to append suffix to the file name.
+	 *
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
