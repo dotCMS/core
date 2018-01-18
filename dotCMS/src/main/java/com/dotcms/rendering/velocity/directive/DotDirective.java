@@ -90,6 +90,9 @@ abstract class DotDirective extends InputBase {
 
     try{
       String templatePath = this.resolveTemplatePath(context, writer, params, arguments);
+      if(null ==templatePath) {
+          throw new ResourceNotFoundException("null template");
+      }
       Template t = loadTemplate(context, templatePath);
       return this.renderTemplate(context, writer, t, templatePath);
     }
