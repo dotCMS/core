@@ -18,8 +18,6 @@ import com.dotmarketing.util.Logger;
 
 public class Task00020LoadClusterLicenses implements StartupTask {
 
-
-
     private static final String now= new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
     private FileFilter licensePacks = new FileFilter() {
 
@@ -45,36 +43,27 @@ public class Task00020LoadClusterLicenses implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-
         
         for(File pack : licensePackFiles()){
             Logger.info(this.getClass(), "found license pack: " + pack);
             File oldPack = new File(pack.getParent() + File.separator + "imported_" + now  + "_" + pack.getName());
-            pack.renameTo(oldPack);
-            try(InputStream in = Files.newInputStream(oldPack.toPath())){
+            try(InputStream in = Files.newInputStream(pack.toPath())){
                 LicenseUtil.uploadLicenseRepoFile(in);
                 if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", true)){
-                    pack.renameTo(oldPack);
+                    boolean status = pack.renameTo(oldPack);
+                    if(status == false)
+                        Logger.warn(this.getClass(), "Unable to rename license file - consider setting ARCHIVE_IMPORTED_LICENSE_PACKS to false if you do not want license file renamed after it is loaded.");
                 }
             } catch (IOException e) {
-                Logger.info(this.getClass(), "Unable to import licenses: " + e.getMessage());
-            }
-        
+                Logger.warn(this.getClass(), "Unable to import licenses: " + e.getMessage(), e);
+            }        
         }
-        
-        
+
     }
     
     private File[] licensePackFiles(){
         
         return new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()).listFiles(licensePacks);
     }
-
-    
-    
-
-    
-    
-    
     
 }
