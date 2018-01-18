@@ -375,8 +375,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
            for(HashMap<String, String> ident:containers){
                String identifier = ident.get("identifier");
                if (UtilMethods.isSet(identifier)) {
+
         			   final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(identifier);
         			   CacheLocator.getContainerCache().remove(info);
+
 			   }
            }
         } catch (DotDataException e) {
