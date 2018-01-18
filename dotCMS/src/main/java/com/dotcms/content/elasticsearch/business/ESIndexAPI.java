@@ -235,7 +235,7 @@ public class ESIndexAPI {
 					+ " shards optimized");
 			return true;
 		} catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage(),e);
 		}
 	}
 
@@ -256,7 +256,7 @@ public class ESIndexAPI {
 
             return res.isAcknowledged();
 		} catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage(),e);
 		}
 	}
 

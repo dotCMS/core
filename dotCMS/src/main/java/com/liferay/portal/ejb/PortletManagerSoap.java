@@ -40,7 +40,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -54,7 +54,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -68,7 +68,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -82,7 +82,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -96,7 +96,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -122,7 +122,7 @@ public class PortletManagerSoap {
 			return (com.liferay.portal.model.Portlet[])returnValue.toArray(new com.liferay.portal.model.Portlet[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -132,7 +132,7 @@ public class PortletManagerSoap {
 			PortletManagerUtil.initEAR(xmls);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -146,7 +146,7 @@ public class PortletManagerSoap {
 			return (com.liferay.portal.model.Portlet[])returnValue.toArray(new com.liferay.portal.model.Portlet[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -161,7 +161,7 @@ public class PortletManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }

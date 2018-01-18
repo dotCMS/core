@@ -513,7 +513,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			
 		} catch (Exception e) {
 			Logger.error(FolderAPI.class, e.getMessage(), e);
-			throw new DotStateException(e.getMessage());
+			throw new DotStateException(e.getMessage(),e);
 
 		}
 

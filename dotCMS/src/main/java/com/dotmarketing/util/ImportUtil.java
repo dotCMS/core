@@ -1362,7 +1362,7 @@ public class ImportUtil {
             }
         } catch (Exception e) {
             Logger.error(ImportUtil.class,e.getMessage(),e);
-            throw new DotRuntimeException(e.getMessage());
+            throw new DotRuntimeException(e.getMessage(),e);
         }
     }
 

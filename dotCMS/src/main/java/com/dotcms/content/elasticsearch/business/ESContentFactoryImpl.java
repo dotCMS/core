@@ -858,7 +858,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			return null;
 		}
 		catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage(), e);
 
 		}
 	}
@@ -933,7 +933,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
 			return cons;
 		} catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage(), e);
 		}
 	}
 

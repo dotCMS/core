@@ -312,7 +312,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				CacheLocator.getContainerCache().remove(containerIdentifier);
 				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
 			} catch(DotHibernateException e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 
 			}
 		}
