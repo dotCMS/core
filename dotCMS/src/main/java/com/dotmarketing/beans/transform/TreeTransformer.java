@@ -29,7 +29,7 @@ public class TreeTransformer implements DBTransformer<Tree> {
         return this.asList().stream().findFirst().orElse(new Tree());
     }
     
-    private Tree toTree (Map<String, Object> map){
+    Tree toTree (Map<String, Object> map){
         
         Tree tree=new Tree();
         tree.setParent((String)map.getOrDefault("parent", null));
