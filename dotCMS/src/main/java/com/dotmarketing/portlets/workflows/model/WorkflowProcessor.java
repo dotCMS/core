@@ -155,7 +155,7 @@ public class WorkflowProcessor {
 			}
 
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 

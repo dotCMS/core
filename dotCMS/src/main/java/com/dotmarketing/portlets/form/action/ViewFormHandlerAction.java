@@ -136,7 +136,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 		} catch (Exception e) {
 			req.setAttribute(viewWebKey, structures);
 			Logger.error(this, "Exception e =" + e.getMessage(), e);
-			throw new Exception(e.getMessage());
+			throw new Exception(e.getMessage(),e);
 		}
 
 	}

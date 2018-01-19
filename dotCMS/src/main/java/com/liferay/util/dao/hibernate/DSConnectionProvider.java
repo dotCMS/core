@@ -48,7 +48,7 @@ public class DSConnectionProvider implements ConnectionProvider {
 			_ds = DbConnectionFactory.getDataSource();
 		}
 		catch (Exception e) {
-			throw new HibernateException(e.getMessage());
+			throw new HibernateException(e.getMessage(),e);
 		}
 	}
 
