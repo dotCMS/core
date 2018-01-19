@@ -75,21 +75,17 @@ public class TemplateLoader implements DotLoader {
         for (PageMode mode : PageMode.values()) {
             invalidate(obj, mode);
         }
-
     }
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
         Template template = (Template) obj;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
+        
+        VelocityResourceKey key = new VelocityResourceKey(template, mode);
 
-        String folderPath = mode.name() + java.io.File.separator;
-        String filePath = folderPath + template.getIdentifier() + "." + VelocityType.TEMPLATE.fileExtension;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete(); // todo: check if the file exists before remove?
+
         DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+        vc.remove(key);
 
 
     }

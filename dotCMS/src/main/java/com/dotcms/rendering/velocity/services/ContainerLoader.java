@@ -12,6 +12,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -54,14 +55,12 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
     @Override
     public void invalidate(Object obj, PageMode mode) {
         Container container = (Container) obj;
-        String folderPath = mode.name() + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-        String filePath = folderPath + container.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+
+
+          VelocityResourceKey key = new VelocityResourceKey(container, mode);
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+            vc.remove(key);
+
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {

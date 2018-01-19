@@ -1,7 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -11,6 +9,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
@@ -40,16 +39,18 @@ public class PageLoader implements DotLoader {
 
     @Override
     public void invalidate(Object obj) {
-        IHTMLPage htmlPage = (IHTMLPage) obj;
+
+        
+        
         for (PageMode mode : PageMode.values()) {
-            invalidate(htmlPage, mode);
+            invalidate(obj, mode);
         }
 
 
     }
 
     @Override
-    public void invalidate(Object obj, PageMode mode) {
+    public void invalidate(final Object obj, final PageMode mode) {
         HTMLPageAsset htmlPage =null;
         if(obj instanceof IHTMLPage) {
             htmlPage = (HTMLPageAsset) obj;
@@ -62,15 +63,11 @@ public class PageLoader implements DotLoader {
         
 
 
-        String folderPath = mode.name() + File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        String languageStr = htmlPage.getLanguageId() +"";
-        String filePath = folderPath + htmlPage.getIdentifier() + languageStr + "." + VelocityType.HTMLPAGE.fileExtension;
-        velocityRootPath += java.io.File.separator;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+            VelocityResourceKey key = new VelocityResourceKey(htmlPage, mode, lang.getId());
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+            vc.remove(key);
+        }
 
     }
 

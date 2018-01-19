@@ -3386,6 +3386,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 .removeFromCacheByIdentifier(
                                         contentlet.getIdentifier());
                     }
+                    
+                    new PageLoader().invalidate(contentlet);
+                    
+                    
+                    
                 } else {
                     isLive = contentlet.isLive();
                 }

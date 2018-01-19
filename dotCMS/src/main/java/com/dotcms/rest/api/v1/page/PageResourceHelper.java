@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -28,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -94,7 +96,8 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries, User user) throws DotDataException {
+        
         final List<MultiTree> multiTres = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -314,11 +317,13 @@ public class PageResourceHelper implements Serializable {
     }
 
 
-    public Template saveTemplate(final User user, HTMLPageAsset htmlPageAsset, final PageForm pageForm)
+    public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
 
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         try {
+            
+            
             Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
 
             String templateId = htmlPageAsset.getTemplateId();
@@ -326,7 +331,7 @@ public class PageResourceHelper implements Serializable {
             if (!templateId.equals( templateSaved.getIdentifier() )) {
                 htmlPageAsset.setInode(null);
                 htmlPageAsset.setTemplateId(templateSaved.getIdentifier());
-                this.contentletAPI.checkin(htmlPageAsset, user, false);
+                this.contentletAPI.checkin((HTMLPageAsset)htmlPageAsset, user, false);
             }
 
             return templateSaved;
@@ -338,7 +343,7 @@ public class PageResourceHelper implements Serializable {
 
 
     @NotNull
-    public HTMLPageAsset getPage(User user, String pageId) throws DotDataException, DotSecurityException {
+    public IHTMLPage getPage(User user, String pageId) throws DotDataException, DotSecurityException {
         final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
                 langAPI.getDefaultLanguage().getId(), user, false);
 
@@ -350,7 +355,7 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
+    public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         
@@ -369,26 +374,19 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(Contentlet page, User user, PageForm form) throws DotDataException, DotSecurityException {
+    private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
 
-        Template result = null;
-        String templateId = page != null ? page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD) : null;
+        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        Template saveTemplate = new Template();
 
-        if (UtilMethods.isSet(templateId)) {
-            result = this.templateAPI.findWorkingTemplate(templateId, user, false);
+        if (UtilMethods.isSet(oldTemplate) && UtilMethods.isSet(form.getTitle()) && oldTemplate.isAnonymous()) {
+            saveTemplate=oldTemplate;
+        } 
+        saveTemplate.setTitle(form.getTitle());
+        saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
+        saveTemplate.setDrawedBody(form.getLayout());
 
-            if (!UtilMethods.isSet(form.getTitle()) && !result.isAnonymous()) {
-                result = new Template();
-            }
-        } else {
-            result = new Template();
-        }
-
-        result.setTitle(form.getTitle());
-        result.setTheme(form.getThemeId());
-        result.setDrawedBody(form.getLayout());
-
-        return result;
+        return saveTemplate;
     }
 
     private Host getHost(final String hostId, final User user) {
@@ -434,11 +432,7 @@ public class PageResourceHelper implements Serializable {
                 .checkPermission(container, PermissionLevel.EDIT, user);
     }
 
-    public void checkPagePermission(final User user, final Contentlet htmlPageAsset) throws DotSecurityException {
-        APILocator.getPermissionAPI()
-                .checkPermission(htmlPageAsset, PermissionLevel.EDIT, user);
-    }
-    
+
     
     private Host resolveSite(HttpServletRequest request, User user) throws DotDataException, DotSecurityException {
         PageMode mode = PageMode.get(request);

@@ -138,8 +138,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
     }
 
-	public void deleteFromCache(Template template) throws DotDataException {
+	public void deleteFromCache(final Template template) throws DotDataException {
 		templateCache.remove(template.getInode());
+		new TemplateLoader().invalidate(template);
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
 	}
 

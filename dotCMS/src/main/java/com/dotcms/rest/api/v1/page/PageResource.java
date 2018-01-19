@@ -24,10 +24,12 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -275,7 +277,7 @@ public class PageResource {
         Response res = null;
 
         try {
-            HTMLPageAsset page = this.pageResourceHelper.getPage(user, pageId);
+            IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
             this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request, response, user,
@@ -389,13 +391,13 @@ public class PageResource {
         Response res = null;
 
         try {
-            final Contentlet page = pageResourceHelper.getPage(user, pageId);
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
             if (page == null) {
                 return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
             }
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
-            pageResourceHelper.checkPagePermission(user, page);
-            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
 
             res = Response.ok(new ResponseEntityView("ok")).build();
         } catch (DotSecurityException e) {

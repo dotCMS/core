@@ -127,8 +127,8 @@ public class DotResourceCache implements ResourceCache, Cachable {
 
     @Override
     public Resource remove(final Object resourceKey) {
-
-        final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
+        
+        final VelocityResourceKey key = (resourceKey instanceof VelocityResourceKey) ? (VelocityResourceKey)resourceKey :  new VelocityResourceKey(resourceKey);
 
         try {
             cache.remove(key.cacheKey, primaryGroup);

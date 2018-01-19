@@ -1,6 +1,13 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.contenttype.model.field.Field;
+
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
@@ -23,7 +30,27 @@ public class VelocityResourceKey implements Serializable {
     public VelocityResourceKey(final Object obj) {
         this((String) obj);
     }
-
+    
+    public VelocityResourceKey(final Field asset, Contentlet con, PageMode mode) {
+        this("/" + mode.name() + "/" + con.getIdentifier() + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
+    }
+    
+    public VelocityResourceKey(final Template asset, PageMode mode) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() +  "." + VelocityType.TEMPLATE.fileExtension);
+    }
+    public VelocityResourceKey(final Container asset, PageMode mode) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension);
+    }
+    
+    public VelocityResourceKey(final Container asset, String uuid, PageMode mode) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() +  "." + VelocityType.CONTAINER.fileExtension);
+    }
+    public VelocityResourceKey(final HTMLPageAsset asset, PageMode mode, long language) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+    }
+    public VelocityResourceKey(final Contentlet asset, PageMode mode, long language) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+    }
     public VelocityResourceKey(final String filePath) {
         path = cleanKey(filePath);
 

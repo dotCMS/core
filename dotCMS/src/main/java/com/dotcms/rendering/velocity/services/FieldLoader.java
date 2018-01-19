@@ -79,15 +79,11 @@ public class FieldLoader implements DotLoader {
     }
 
 
-    public void invalidate(Field field, Contentlet content, PageMode mode) {
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-        String folderPath = mode.name() + java.io.File.separator;
-        String filePath=folderPath + content.getInode() + "_" + field.id() + "." + VelocityType.FIELD.fileExtension;
-        java.io.File f  = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+    public void invalidate(Field field, Contentlet content) {
+        for(PageMode mode : PageMode.values()) {
+            VelocityResourceKey key = new VelocityResourceKey(field, content, mode);
+            CacheLocator.getVeloctyResourceCache().remove(key );
+        }
     }
 
     @Override

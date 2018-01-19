@@ -237,6 +237,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		Identifier identifier = null;
 		if (oldTemplate != null) {
 			templateFactory.deleteFromCache(oldTemplate);
+
 			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
 		}
 		else{

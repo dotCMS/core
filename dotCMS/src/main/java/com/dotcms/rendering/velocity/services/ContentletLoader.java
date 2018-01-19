@@ -745,39 +745,26 @@ public class ContentletLoader implements DotLoader {
     public void invalidate(Object obj, PageMode mode) {
         Contentlet asset = (Contentlet) obj;
         CacheLocator.getContentletCache()
-            .remove(asset.getInode());
+            .remove(asset);
 
-        String folderPath = mode.name() + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
 
-        Set<Long> langs = new HashSet<Long>();
-        langs.add(asset.getLanguageId());
-        if (LanguageWebAPI.canApplyToAllLanguages(asset)) {
-            for (Language ll : APILocator.getLanguageAPI()
-                .getLanguages()) {
-                langs.add(ll.getId());
-            }
-        }
-        for (Long langId : langs) {
-            String filePath = folderPath + asset.getIdentifier() + "_" + langId + "." + VelocityType.CONTENT.fileExtension;
-            java.io.File f = new java.io.File(velocityRootPath + filePath);
-            f.delete();
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-        }
         List<Field> fields;
         try {
             fields = asset.getContentType()
                 .fields();
             for (Field field : fields) {
-                new FieldLoader().invalidate(field, asset, mode);
+                new FieldLoader().invalidate(field, asset);
             }
         } catch (DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
 
 
+        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+          VelocityResourceKey key = new VelocityResourceKey(asset, mode, lang.getId());
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+            vc.remove(key);
+        }
         try {
             if (asset.getContentType()
                 .baseType() == BaseContentType.HTMLPAGE) {
