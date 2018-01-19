@@ -633,9 +633,11 @@ public class WorkflowResource {
     } // deleteAction
     
     /**
+     * Todo: change the signature to be align with the rest implementation such as: reorderAction
      * Change the order of the steps in a scheme
      * @param request                           HttpServletRequest
-     * @param workflowReorderActionStepForm     WorkflowReorderBean
+     * @param stepId                            String stepid to reorder
+     * @param order                             int    order
      * @return Response
      */
     @PUT
@@ -769,7 +771,7 @@ public class WorkflowResource {
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
-                    "The Scheme does not exist, id: " + schemeId);
+                    "The Scheme does not exist, id: " + schemeId, e);
             locale   = LocaleUtil.getLocale(request);
             response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
                     locale, initDataObject.getUser().getUserId(), "Workflow-does-not-exists-scheme-id", schemeId);
