@@ -218,7 +218,6 @@
 		<servlet-name>VelocityServlet</servlet-name>
 		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
 	</servlet>
-
 	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>

@@ -1,10 +1,36 @@
-
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="java.util.*" %>
+
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
+<%@ page import="com.dotmarketing.business.Layout" %>
+
+<%
+    String containerIdentifier = request.getParameter("container_id");
+    User user = PortalUtil.getUser(request);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+
+    List<ContentType> contentTypes = null;
+    String baseTypeToAdd = request.getParameter("add");
+
+    if (BaseContentType.WIDGET.name().equalsIgnoreCase(baseTypeToAdd)) {
+        contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.WIDGET);
+    } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
+        contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
+    } else {
+        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
+        contentTypes = new StructureTransformer(structuresInContainer).asList();
+    }
+
+    Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
+%>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,20 +54,47 @@
             width: 100%;
             height: 100%;
         }
+
+        .portlet-sidebar-wrapper {
+            width: 200px;
+            margin-right: 16px;
+        }
+
+        .portlet-toolbar__add-contentlet {
+            margin-left: auto;
+        }
     </style>
 
     <script type="text/javascript">
+        function addNewContentlet() {
+
+            var selectedStructure = document.getElementsByName('structuresSelect+1')[0].value;
+            var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
+            href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
+            href += "&selectedStructure=" + selectedStructure + "&lang=1";
+            window.location = href;
+        }
+
         function contentSelected(content) {
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
-                    name: "select",
+                    event: "select",
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: content.type
+                        type: "type"
                     }
                 })
             }
+        }
+
+        function displayStructure(structureInode) {
+            contentSelector.displayStructureFields(structureInode);
+        }
+
+        function getSelectedLanguageId () {
+            var obj = dijit.byId("langcombo+1");
+            return obj && obj.value;
         }
 
         function isInodeSet(x) {
@@ -69,27 +122,21 @@
     <script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
-    <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
-    <%
-        String containerIdentifier = (String) request.getParameter("container_id");
-        User user = PortalUtil.getUser(request);
-        Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
-        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
-    %>
 
     <script type="text/javascript">
         dojo.require("dotcms.dijit.form.ContentSelector");
 
         dojo.addOnLoad(function () {
             contentSelector.show();
+
             contentSelector.containerStructures = [
                 <%
-                    for (Structure structure: structuresInContainer) {
+                    for (ContentType contentType: contentTypes) {
                 %>
                 {
-                    "inode": '<%=structure.id()%>',
-                    "name": '<%=structure.getName()%>'
+                    "inode": "<%=contentType.id()%>",
+                    "name": "<%=contentType.name()%>"
                 },
                 <%
                     }
@@ -98,8 +145,6 @@
 
             contentSelector._fillStructures();
         })
-
-
     </script>
 </head>
 <body>
