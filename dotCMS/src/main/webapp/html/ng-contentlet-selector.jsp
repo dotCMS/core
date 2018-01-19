@@ -69,7 +69,6 @@
         function addNewContentlet() {
 
             var selectedStructure = document.getElementsByName('structuresSelect+1')[0].value;
-            // TODO: We have to add a condition for when is an Event
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
             href += "&selectedStructure=" + selectedStructure + "&lang=1";
