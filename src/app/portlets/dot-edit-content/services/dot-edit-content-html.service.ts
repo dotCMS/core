@@ -27,7 +27,7 @@ export class DotEditContentHtmlService {
     ) {
         this.contentletEvents.subscribe((contentletEvent: any) => {
             if (contentletEvent.name === 'save') {
-                this.renderEditedContentlet(contentletEvent.data);
+                this.renderAddedContentlet(contentletEvent.data);
             } else if (contentletEvent.name === 'select') {
                 this.renderAddedContentlet(contentletEvent.data);
             } else if (contentletEvent.name === 'relocate') {
@@ -80,6 +80,7 @@ export class DotEditContentHtmlService {
         const currentContentlet = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
         );
+
         contentlet.type = currentContentlet.dataset.dotType;
 
         const containerEl = currentContentlet.parentNode;

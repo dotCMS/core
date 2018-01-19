@@ -33,17 +33,17 @@ export class DotEditContentToolbarHtmlService {
                             <div class="dotedit-container__menu">
                                 <ul>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="content" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
                                             ${res['editpage.content.container.menu.content']}
                                         </a>
                                     </li>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="widget" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
                                             ${res['editpage.content.container.menu.widget']}
                                         </a>
                                     </li>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="form" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
                                             ${res['editpage.content.container.menu.form']}
                                         </a>
                                     </li>

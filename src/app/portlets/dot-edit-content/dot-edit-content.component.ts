@@ -146,7 +146,7 @@ export class DotEditContentComponent implements OnInit {
 
         this.loadDialogEditor(
             $event.dataset.dotIdentifier,
-            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}`,
+            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${$event.dataset.dotAdd}`,
             $event.contentletEvents
         );
     }
