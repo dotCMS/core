@@ -1,4 +1,3 @@
-
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
@@ -80,11 +79,11 @@
         function contentSelected(content) {
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
-                    name: "select",
+                    event: "select",
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: content.type
+                        type: "type"
                     }
                 })
             }
@@ -131,6 +130,7 @@
 
         dojo.addOnLoad(function () {
             contentSelector.show();
+
             contentSelector.containerStructures = [
                 <%
                     for (ContentType contentType: contentTypes) {
@@ -146,8 +146,6 @@
 
             contentSelector._fillStructures();
         })
-
-
     </script>
 </head>
 <body>
