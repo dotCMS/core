@@ -136,8 +136,17 @@ public class WorkflowImportExportUtil {
 	}
 
 	public WorkflowSchemeImportExportObject buildExportObject() throws DotDataException, DotSecurityException {
+
+		final WorkflowAPI workflowAPI      = APILocator.getWorkflowAPI();
+		final List<WorkflowScheme> schemes = workflowAPI.findSchemes(true);
+
+		return buildExportObject(schemes);
+	}
+
+	public WorkflowSchemeImportExportObject buildExportObject(final List<WorkflowScheme> schemes)
+			throws DotDataException, DotSecurityException {
+
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		List<WorkflowScheme> schemes = workflowAPI.findSchemes(true);
 		List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
 		List<WorkflowAction> actions = new ArrayList<WorkflowAction>();
 		List<WorkflowActionClass> actionClasses = new ArrayList<WorkflowActionClass>();
@@ -152,10 +161,10 @@ public class WorkflowImportExportUtil {
 			// steps actions
 			this.exportStepActions(workflowAPI, actionStepsListMap, steps, scheme);
 		}
-		
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select id, scheme_id, structure_id from workflow_scheme_x_structure");
-		List<Map<String, String>> workflowStructures = dc.loadResults(); 
+		List<Map<String, String>> workflowStructures = dc.loadResults();
 
 		WorkflowSchemeImportExportObject export = new WorkflowSchemeImportExportObject();
 		export.setSchemes(schemes);
@@ -167,7 +176,6 @@ public class WorkflowImportExportUtil {
 		export.setWorkflowStructures(workflowStructures);
 		export.setActionSteps(actionStepsListMap);
 		return export;
-
 	}
 
 	private void exportStepActions(final WorkflowAPI wapi,
