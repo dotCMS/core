@@ -7,11 +7,14 @@ import com.dotcms.repackage.org.apache.tika.Tika;
 import com.dotcms.repackage.org.apache.tika.io.TikaInputStream;
 import com.dotcms.repackage.org.apache.tika.metadata.Metadata;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -158,6 +161,23 @@ public class TikaUtils {
                     "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + ex.getMessage());
             }
         }
+        User systemUser = null;
+        try {
+            systemUser = APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            Logger.error(this,"Unable to get System User. ",e);
+        }
+
+        Map<String, Object> additionProps = new HashMap<>();
+        try {
+            additionProps = com.dotmarketing.portlets.contentlet.util.ContentletUtil.getContentPrintableMap(systemUser, APILocator.getContentletAPI().find(inode,systemUser,true));
+        } catch (Exception e) {
+            Logger.error(this,"Unable to add additional metadata to map",e);
+        }
+        for(Map.Entry<String, Object> entry : additionProps.entrySet()){
+            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString());
+        }
+
         return metaMap;
     }
 
