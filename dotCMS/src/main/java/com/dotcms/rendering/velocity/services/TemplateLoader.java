@@ -30,28 +30,18 @@ public class TemplateLoader implements DotLoader {
 
 
 
-    public InputStream buildVelocity(Template template, PageMode mode, String filePath)
-            throws DotStateException, DotDataException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(template);
-        return buildVelocity(template, identifier, mode, filePath);
-    }
-
-    public InputStream buildVelocity(Template template, Identifier identifier, PageMode mode, String filePath) {
+    public InputStream buildVelocity(Template template, PageMode mode, String filePath) {
 
 
         StringBuilder templateBody = new StringBuilder();
 
 
-
-        templateBody.append(template.getBody());
-        if (mode == PageMode.EDIT_MODE) {
-            templateBody.append("<script>").append("console.log(\"testinf:\" +  top.location.href);").append("</script>");
-
+        if(template.isDrawed()){
+            templateBody.append(template.getDrawedBody());
         }
-
-        
-
+        else {
+            templateBody.append(template.getBody());
+        }
 
 
         return writeOutVelocity(filePath, templateBody.toString());
@@ -60,14 +50,13 @@ public class TemplateLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
-            throws DotDataException, DotSecurityException {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         Identifier identifier = APILocator.getIdentifierAPI()
-            .find(id1);
+            .find(key.id1);
         VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         Template template = null;
-        if (mode.showLive) {
+        if (key.mode.showLive) {
             template = (Template) versionableAPI.findLiveVersion(identifier, sysUser(), true);
 
         } else {
@@ -76,7 +65,7 @@ public class TemplateLoader implements DotLoader {
 
         Logger.debug(this, "DotResourceLoader:\tWriting out Template inode = " + template.getInode());
 
-        return buildVelocity(template, mode, filePath);
+        return buildVelocity(template, key.mode, key.path);
 
 
     }

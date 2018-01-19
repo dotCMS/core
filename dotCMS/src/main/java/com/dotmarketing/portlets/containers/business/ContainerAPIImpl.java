@@ -243,7 +243,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 	    VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getWorkingInode(), user, respectFrontendRoles);
+		return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
 
 	}
 
@@ -308,14 +308,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				}
 				
 				//Add the list to the cache.
-				//CacheLocator.getContainerCache().clearCache();
-				CacheLocator.getContainerCache().remove(containerIdentifier);
-				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
+                final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerIdentifier);
+				CacheLocator.getContainerCache().remove(info);
+
 			} catch(DotHibernateException e){
 				throw new DotDataException(e.getMessage(),e);
 
 			}
 		}
+		
 	}
 
 	@CloseDBIfOpened

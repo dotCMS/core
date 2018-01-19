@@ -686,7 +686,7 @@
 	// HTMLPage popup
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
 		var objId = page.inode;
-        var pageURI = page.pageURI;
+        var pageURI = page.inode;
 		var objIden = page.identifier;
 		var referer = encodeURIComponent(origReferer);
 
@@ -704,9 +704,7 @@
 		var archived = page.deleted;
 		var locked = page.locked;
 		var hasLiveVersion = page.hasLiveVersion;
-
 		var strHTML = '';
-
 		if ((live || working) && read && !archived) {
 			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\');" class="context-menu__item">';
 		    	//strHTML += '<span class="pageIcon"></span>';

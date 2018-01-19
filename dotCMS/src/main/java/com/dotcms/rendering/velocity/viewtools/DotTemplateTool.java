@@ -111,7 +111,7 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
         final String key = themeInode + isPreview;
         if (!UtilMethods.isSet(themeInode)) {
-            throw new IllegalArgumentException("the themeInode is null");
+            return null;
         }
 
         TemplateLayout layout = layoutCache.getIfPresent(key);

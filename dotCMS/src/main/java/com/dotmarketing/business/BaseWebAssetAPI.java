@@ -286,7 +286,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
                 dc.loadResult();
 
 				new ContainerLoader().invalidate((Container)currWebAsset);
-				CacheLocator.getContainerCache().remove(currWebAsset.getInode());
+				CacheLocator.getContainerCache().remove((Container)currWebAsset);
 			}
 			else if(currWebAsset instanceof Template)
 			{

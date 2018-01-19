@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.IOException;
@@ -107,12 +108,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void save(Template template) throws DotDataException {
-		if(!UtilMethods.isSet(template.getIdentifier())){
-			throw new DotStateException("Cannot save a template without an Identifier");
-		}
-		HibernateUtil.save(template);
+
+
 		
-		new TemplateLoader().invalidate(template);
+		save(template, UUIDGenerator.generateUuid());
+		
 
 	}
 	
@@ -120,6 +120,18 @@ public class TemplateFactoryImpl implements TemplateFactory {
         if(!UtilMethods.isSet(template.getIdentifier())){
             throw new DotStateException("Cannot save a tempalte without an Identifier");
         }
+        
+        if(UtilMethods.isSet(template.getDrawedBody())) {
+            template.setDrawed(true);
+        }else {
+            template.setDrawedBody((String)null);
+            template.setDrawed(false);
+        }
+        
+        
+        
+        
+        
         HibernateUtil.saveWithPrimaryKey(template, existingId);
         templateCache.add(template.getInode(), template);
         new TemplateLoader().invalidate(template);

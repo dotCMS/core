@@ -72,10 +72,9 @@ public class FieldLoader implements DotLoader {
     }
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
-            throws DotDataException, DotSecurityException {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
-            return this.buildVelocity(id2, id1, mode, filePath);
+            return this.buildVelocity(key.id2, key.id1, key.mode, key.path);
         
     }
 

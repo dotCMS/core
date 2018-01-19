@@ -158,8 +158,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
-    public Template getTemplate(IHTMLPage page, boolean preview) throws DotDataException, DotSecurityException {
-        if (preview) 
+    public Template getTemplate(IHTMLPage page, boolean working) throws DotDataException, DotSecurityException {
+        if (working) 
             return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
         else
             return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
@@ -370,7 +370,20 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
     }
 
-    
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean)
+     */
+    @Override
+    public IHTMLPage findPage(final String inode, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        Contentlet cpage = contentletAPI.find(inode, user, respectFrontendRoles);
+        if(cpage!=null) {
+            return this.fromContentlet(cpage);
+        }
+        return null;
+
+    }
 
     
     @Override
