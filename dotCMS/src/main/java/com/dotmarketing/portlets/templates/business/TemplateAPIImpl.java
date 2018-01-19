@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,6 +29,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.liferay.portal.model.User;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -258,24 +256,24 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-		final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
-		final List<String> containersId = layout.getContainersId();
+        final List<Container> containers = new ArrayList<>();
 
-		final List<Container> containers = new ArrayList<>();
+	    if (template.isDrawed()){
+            final TemplateLayout layout     = DotTemplateTool.themeLayout(template.getInode());
+            final List<String> containersId = layout.getContainersId();
 
-		for (final String cont : containersId) {
-			final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+            for (final String cont : containersId) {
+                final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
 
-			if(container==null) {
-				continue;
-			}
+                if(container==null) {
+                    continue;
+                }
 
-			containers.add(container);
-		}
+                containers.add(container);
+            }
+        }
 
         return containers;
-
-
     }
 
 	private String replaceWithNewContainerIds(String body, List<ContainerRemapTuple> containerMappings) {
