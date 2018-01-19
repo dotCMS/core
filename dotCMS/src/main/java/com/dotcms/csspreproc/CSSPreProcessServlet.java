@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -78,14 +79,15 @@ public class CSSPreProcessServlet extends HttpServlet {
 
             }
 
-            if(!reqURI.endsWith(".css")) {
-                resp.sendError(404);
-                return;
+
+            // choose compiler based on the request URI
+            Class<? extends CSSCompiler> compilerClass = reqURI.startsWith("/DOTSASS/") ? SassCompiler.class
+                                           :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
+            
+            if(Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true)) {
+                compilerClass = DotLibSassCompiler.class;
             }
             
-            // choose compiler based on the request URI
-            Class<? extends CSSCompiler> compilerClass = reqURI.startsWith("/DOTSASS/") ? DotLibSassCompiler.class
-                                           :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
             CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,uri,live);
             
             // check if the asset exists
