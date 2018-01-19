@@ -1,0 +1,24 @@
+@import "variables";
+@import "mixins";
+
+.ui-multiselect {
+    width: 100%;
+}
+
+.environment-selector__list {
+    height: 140px;
+    margin: $basic-padding 0;
+    overflow-x: hidden;
+    border: 1px solid $gray-light;
+    padding: 0;
+}
+
+.environment-selector__list-item {
+    @include naked-list;
+    border-top: 1px solid $gray-lighter;
+    padding: $basic-padding / 2 0;
+
+    &:first-child {
+        border-top: none;
+    }
+}

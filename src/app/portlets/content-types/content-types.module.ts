@@ -54,6 +54,7 @@ import { IFrameModule } from '../../view/components/_common/iframe';
 import { DotTextareaContentModule } from '../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';
 import { WorkflowService } from '../../api/services/workflow/workflow.service';
+import { PushPublishContentTypesDialogModule } from '../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
 
 @NgModule({
     declarations: [
@@ -107,6 +108,7 @@ import { WorkflowService } from '../../api/services/workflow/workflow.service';
         InputTextModule,
         ListingDataTableModule,
         OverlayPanelModule,
+        PushPublishContentTypesDialogModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropDownModule,

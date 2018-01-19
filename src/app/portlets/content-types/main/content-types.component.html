@@ -10,3 +10,5 @@
     url="v1/contenttype"
     [actions]="rowActions">
 </listing-data-table>
+
+<dot-push-publish-dialog *ngIf="pushPublishIdentifier" [show]="pushPublishIdentifier" [assetIdentifier]="pushPublishIdentifier" (cancel)="closeDialog($event)"></dot-push-publish-dialog>

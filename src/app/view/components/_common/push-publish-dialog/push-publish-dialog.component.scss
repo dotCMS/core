@@ -1,0 +1,17 @@
+@import "variables";
+
+.ui-calendar, .ui-inputtext{
+    width: 100%;
+}
+
+.push-publish-dialog__error-message {
+    color: $error;
+}
+
+.push-publish-dialog__calendar {
+    display: flex;
+}
+
+.push-publish-dialog__calendar-date {
+    flex-grow: 1;
+}

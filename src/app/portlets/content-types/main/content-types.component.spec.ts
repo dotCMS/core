@@ -17,10 +17,40 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
+import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 
 @Injectable()
 class MockDotContentletService {
-    getAllContentTypes() {}
+    getAllContentTypes() { }
+}
+
+@Injectable()
+class MockDotcmsConfig {
+    getConfig() {
+        return Observable.of({
+            license: {
+                isCommunity: false
+            }
+        });
+    }
+}
+
+@Injectable()
+class MockPushPublishService {
+    getEnvironments() {
+        return Observable.of([
+            {
+                id: '123',
+                name: 'Environment 1'
+            },
+            {
+                id: '456',
+                name: 'Environment 2'
+            }
+        ]);
+    }
 }
 
 describe('ContentTypesPortletComponent', () => {
@@ -30,6 +60,8 @@ describe('ContentTypesPortletComponent', () => {
     let el: HTMLElement;
     let crudService: CrudService;
     let dotContentletService: DotContentletService;
+    let dotcmsConfigService: DotcmsConfig;
+    let pushPublishService: PushPublishService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -37,7 +69,9 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
-            mod_date: 'Last Edit Date'
+            'mod_date': 'Last Edit Date',
+            'contenttypes.action.delete': 'Delete',
+            'contenttypes.content.push_publish': 'Push Publish'
         });
 
         DOTTestBed.configureTestingModule({
@@ -45,15 +79,18 @@ describe('ContentTypesPortletComponent', () => {
             imports: [
                 RouterTestingModule.withRoutes([{ path: 'test', component: ContentTypesPortletComponent }]),
                 BrowserAnimationsModule,
-                ListingDataTableModule
+                ListingDataTableModule,
+                PushPublishContentTypesDialogModule
             ],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                CrudService,
-                FormatDateService,
                 ContentTypesInfoService,
+                CrudService,
                 DotConfirmationService,
-                { provide: DotContentletService, useClass: MockDotContentletService }
+                FormatDateService,
+                { provide: DotContentletService, useClass: MockDotContentletService },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotcmsConfig, useClass: MockDotcmsConfig },
+                { provide: PushPublishService, useClass: MockPushPublishService }
             ]
         });
 
@@ -63,24 +100,28 @@ describe('ContentTypesPortletComponent', () => {
         el = de.nativeElement;
         crudService = fixture.debugElement.injector.get(CrudService);
         dotContentletService = fixture.debugElement.injector.get(DotContentletService);
-        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
-            Observable.of([
-                { name: 'CONTENT', label: 'Content', types: [] },
-                { name: 'WIDGET', label: 'Widget', types: [] },
-                { name: 'FORM', label: 'Form', types: [] }
-            ])
-        );
+        dotcmsConfigService = fixture.debugElement.injector.get(DotcmsConfig);
+        pushPublishService = fixture.debugElement.injector.get(PushPublishService);
+
+        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(Observable.of([
+            { name: 'CONTENT', label: 'Content', types: [] },
+            { name: 'WIDGET', label: 'Widget', types: [] },
+            { name: 'FORM', label: 'Form', types: [] }
+        ]));
     });
 
     it('should display a listing-data-table.component', () => {
         const listingDataTable = fixture.debugElement.query(By.css('listing-data-table'));
-        comp.ngOnInit();
+        fixture.detectChanges();
 
         expect('v1/contenttype').toEqual(listingDataTable.nativeElement.getAttribute('url'));
 
         const columns = comp.contentTypeColumns;
         expect(5).toEqual(columns.length);
 
+        /*
+            TODO: needs to compare the whole array and not each entry.
+        */
         expect('name').toEqual(columns[0].fieldName);
         expect('Content Type Name').toEqual(columns[0].header);
 
@@ -100,12 +141,12 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should remove the content type on click command function', () => {
-        comp.ngOnInit();
+        fixture.detectChanges();
         const fakeActions: MenuItem[] = [
             {
                 icon: 'fa-trash',
                 label: 'Remove',
-                command: () => {}
+                command: () => { }
             }
         ];
 
@@ -136,8 +177,69 @@ describe('ContentTypesPortletComponent', () => {
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
     });
 
+    it('should have remove and push publish action to the list item', () => {
+        fixture.detectChanges();
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish']);
+    });
+
+    it('should have ONLY remove action because is community license', () => {
+        spyOn(dotcmsConfigService, 'getConfig').and.returnValue(Observable.of({
+            license: {
+                isCommunity: true
+            }
+        }));
+        fixture.detectChanges();
+        expect(comp.rowActions.map(action => {
+            return {
+                label: action.menuItem.label,
+                icon: action.menuItem.icon
+            };
+        })).toEqual([{
+            label: 'Delete',
+            icon: 'fa-trash'
+        }]);
+    });
+
+    it('should have ONLY remove action because no publish environments are created', () => {
+        spyOn(pushPublishService, 'getEnvironments').and.returnValue(Observable.of([]));
+        fixture.detectChanges();
+
+        expect(comp.rowActions.map(action => {
+            return {
+                label: action.menuItem.label,
+                icon: action.menuItem.icon
+            };
+        })).toEqual([{
+            label: 'Delete',
+            icon: 'fa-trash'
+        }]);
+    });
+
+    it('should open push publish dialog', () => {
+        fixture.detectChanges();
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+        expect(comp.pushPublishIdentifier).not.toBeDefined();
+
+        comp.rowActions[1].menuItem.command(mockContentType);
+        fixture.detectChanges();
+
+        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        expect(comp.pushPublishIdentifier).toEqual(mockContentType.id);
+    });
+
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
-        comp.ngOnInit();
+        fixture.detectChanges();
         expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
         expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
     });
