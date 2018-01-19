@@ -42,14 +42,16 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FolderAPITest {
 
@@ -118,28 +120,19 @@ public class FolderAPITest {
 		final Folder ftest3 = folderAPI
 				.createFolders(ftest.getPath()+"/ff1/ff2/ff3", host, user, false);
 
-		// get identifiers to cache
-		identifierAPI.find(ftest);
-		identifierAPI.find(ftest1);
-		identifierAPI.find(ftest2);
-		identifierAPI.find(ftest3);
-
 		Assert.assertTrue(folderAPI
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
-		// those should be cleared from cache
-		Assert.assertNull(identifierAPI.loadFromCache(ftest1.getIdentifier()));
-		Assert.assertNull(identifierAPI.loadFromCache(ftest2.getIdentifier()));
-		Assert.assertNull(identifierAPI.loadFromCache(ftest3.getIdentifier()));
-
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
-		final Identifier ident= identifierAPI.find(ftest),ident1= identifierAPI.find(ftest1),
-				ident2= identifierAPI.find(ftest2),ident3= identifierAPI.find(ftest3);
+        final Identifier ident  = identifierAPI.find(ftest);
+        final Identifier ident1 = identifierAPI.find(ftest1);
+        final Identifier ident2 = identifierAPI.find(ftest2);
+        final Identifier ident3 = identifierAPI.find(ftest3);
+
 		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
 		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
 		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());
-
 	}
 
 	/**

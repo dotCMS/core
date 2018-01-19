@@ -2522,7 +2522,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
             }
             catch(Exception e){
-                throw new DotDataException(e.getMessage());
+                throw new DotDataException(e.getMessage(),e);
             }
 
             deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);

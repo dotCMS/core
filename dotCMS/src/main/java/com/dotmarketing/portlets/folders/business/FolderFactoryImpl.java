@@ -43,6 +43,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -309,7 +310,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
@@ -844,7 +845,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
-		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		final Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		final String identifierPath = ident.getPath();
+		final String identifierHostId = ident.getHostId();
+
 		StringBuilder newPath = new StringBuilder(ident.getParentPath()).append(newName);
 		if(!newName.endsWith("/")) newPath.append("/"); // Folders must end with '/'
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
@@ -859,8 +863,8 @@ public class FolderFactoryImpl extends FolderFactory {
 		final ArrayList<String> childIdents=new ArrayList<String>();
 		DotConnect dc=new DotConnect();
 		dc.setSQL("select id from identifier where parent_path like ? and host_inode=?");
-		dc.addParam(ident.getPath()+"%");
-		dc.addParam(ident.getHostId());
+		dc.addParam(identifierPath+"%");
+		dc.addParam(identifierHostId);
 		for(Map<String,Object> rr : (List<Map<String,Object>>)dc.loadResults()) {
 		    childIdents.add((String)rr.get("id"));
 		}
@@ -883,7 +887,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run() {
-                APILocator.getContentletAPI().refreshContentUnderFolder(ff);
+                APILocator.getContentletAPI().refreshContentUnderFolderPath(identifierHostId, identifierPath);
             }
         });
 

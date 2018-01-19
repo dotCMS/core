@@ -324,10 +324,10 @@ public class PushPublisher extends Publisher {
 				PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish");
 				pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
 			} catch (DotPublisherException e1) {
-				throw new DotPublishingException(e.getMessage());
+				throw new DotPublishingException(e.getMessage(),e);
 			}
 			Logger.error(this.getClass(), e.getMessage(), e);
-			throw new DotPublishingException(e.getMessage());
+			throw new DotPublishingException(e.getMessage(),e);
 		}
 	}
 

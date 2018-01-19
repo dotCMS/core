@@ -93,7 +93,7 @@ public class WfTaskAjax extends WfBaseAction {
 		} catch (Exception e) {
 			Logger.error(WfTaskAjax.class, e.getMessage(), e);
 			writeError(response, e.getMessage()); 
-			throw new ServletException(e.getMessage());
+			throw new ServletException(e.getMessage(),e);
 		}
 		response.getWriter().println("SUCCESS:" + c.getInode());
 

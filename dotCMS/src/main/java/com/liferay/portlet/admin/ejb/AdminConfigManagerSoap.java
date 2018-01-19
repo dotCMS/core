@@ -42,7 +42,7 @@ public class AdminConfigManagerSoap {
 			return (com.liferay.portlet.admin.model.AdminConfig[])returnValue.toArray(new com.liferay.portlet.admin.model.AdminConfig[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -56,7 +56,7 @@ public class AdminConfigManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -68,7 +68,7 @@ public class AdminConfigManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -80,7 +80,7 @@ public class AdminConfigManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -91,7 +91,7 @@ public class AdminConfigManagerSoap {
 			AdminConfigManagerUtil.updateJournalConfig(journalConfig, portletId);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -102,7 +102,7 @@ public class AdminConfigManagerSoap {
 			AdminConfigManagerUtil.updateShoppingConfig(shoppingConfig);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -113,7 +113,7 @@ public class AdminConfigManagerSoap {
 			AdminConfigManagerUtil.updateUserConfig(userConfig);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }

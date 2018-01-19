@@ -384,7 +384,7 @@ public class TilesTool extends ImportSupport implements ViewTool
         }
         catch (InstantiationException ex)
         {
-            throw new Exception(ex.getMessage());
+            throw new Exception(ex.getMessage(),ex);
         }
     }
 

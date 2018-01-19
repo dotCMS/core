@@ -95,7 +95,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Trying to invoke method:" + cmd);
 				Logger.error(this.getClass(), e.getMessage(), e.getCause());
-				throw new DotRuntimeException(e.getMessage());
+				throw new DotRuntimeException(e.getMessage(),e);
 			}
 		}
 	}
