@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -13,8 +14,14 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -22,6 +29,9 @@ import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -77,8 +87,9 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
-    public Response loadJson(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
+    public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                             @PathParam("uri") final String uri,
+                             @QueryParam("live") @DefaultValue("true")  final boolean live) {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -181,19 +192,26 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
-    public Response renderHTMLOnly(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("mode") @DefaultValue("LIVE_ADMIN") String modeStr) {
+    public Response renderHTMLOnly(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   @PathParam("uri") final String uri,
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
+
+        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
+
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
 
-        PageMode mode = PageMode.get(modeStr);
+        final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
         try {
 
-            final String html = this.pageResourceHelper.getPageRendered(request, response, user, uri, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html));
+            final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+            final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
+            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
+                    page.getIdentifier(), "inode", page.getInode()));
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
@@ -315,4 +333,59 @@ public class PageResource {
         return res;
     }
 
+    /**
+     * Update all the content's page receive a json object with the follow format:
+     *
+     * {
+     *     container_1_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     *     container_2_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     *     ...
+     *     container_n_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
+     * }
+     *
+     * where:
+     *
+     * - container_1_id, container_2_id,..., container_n_id: Each container's identifier
+     * - contentlet_1_id, contentlet_2_id,...,contentlet_n_id: each contentlet identifier
+     *
+     * @param req
+     * @param pageId
+     * @param pageContainerForm
+     * @return
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("{pageId}/content")
+    public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
+                                     final PageContainerForm pageContainerForm) {
+
+        Logger.debug(this, String.format("Saving page's content: %s", pageContainerForm.getRequestJson()));
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        Response res = null;
+
+        try {
+            final Contentlet page = pageResourceHelper.getPage(user, pageId);
+            if (page == null) {
+                return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+            }
+
+            pageResourceHelper.checkPagePermission(user, page);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+            res = Response.ok(new ResponseEntityView("ok")).build();
+        } catch (DotSecurityException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            Logger.error(this, e.getMessage(), e);
+        } catch (DotDataException e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        return res;
+    }
 }

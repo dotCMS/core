@@ -62,15 +62,15 @@ public class ConfigLoader {
         }
         catch (SAXException e) {
             Logger.fatal(ConfigLoader.class, "Could not parse config XML", e);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(),e);
         }
         catch (IOException e) {
         	Logger.fatal(ConfigLoader.class, "Could not read config from stream", e);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(),e);
         }
         catch (ParserConfigurationException e) {
         	Logger.fatal(ConfigLoader.class, "Could not obtain SAX parser", e);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(),e);
         }
         catch (RuntimeException e) {
         	Logger.fatal(ConfigLoader.class, "RuntimeException", e);
@@ -78,7 +78,7 @@ public class ConfigLoader {
         }
         catch (Throwable e) {
         	Logger.fatal(ConfigLoader.class, "Exception", e);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(),e);
         }
     }
 

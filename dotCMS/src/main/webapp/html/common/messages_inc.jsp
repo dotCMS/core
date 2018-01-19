@@ -144,8 +144,22 @@ request.getSession().removeAttribute("com.dotcms.repackage.org.apache.struts.act
 
     	<%if(dialogMessage != null){%>
 			dojo.addOnLoad(function() {
-                dijit.byId("messageDialog").set("title", "<%= dialogMessage.getTitle() %>");
-                dojo.byId("messageDialogError").innerHTML = "<%= dialogMessage.getError() %>";
+                var dia = dijit.byId("messageDialog");
+                if(dia){
+                    dia.destroyRecursive();
+                }
+
+                dia = new dijit.Dialog({
+                    id			:	"messageDialog",
+                    title		: 	"<%=dialogMessage.getTitle()%>",
+                    style		:	"display:none;width:630px;height:auto;vertical-align: middle; ",
+					draggable	:	true
+                });
+                var contentPane = new dojox.layout.ContentPane({
+                    id 			: "messageDialogContentPane"
+                }).placeAt("messageDialog");
+
+                dojo.place("<span style='color: red; font-weight: bold'><%= dialogMessage.getError() %></span>", "messageDialogContentPane", "last");
 
                 <%
                 String messageHTML = "";
@@ -156,17 +170,12 @@ request.getSession().removeAttribute("com.dotcms.repackage.org.apache.struts.act
 					}
 					messageHTML += "</tbody></table>";
                 }%>
-				dojo.byId("messageDialogContent").innerHTML = "<%= messageHTML %>";
-                dojo.byId("messageDialogFooter").innerHTML = "<%= dialogMessage.getFooter() %>";
-				dijit.byId("messageDialog").show();
+
+                dojo.place("<div style='overflow: auto;height:auto; margin-top: 10px; margin-bottom: 20px'><%= messageHTML %></div>", "messageDialogContentPane", "last");
+				
+                dojo.place("<span style='margin-bottom: 10px; color: #888888;font-size: smaller'><%= dialogMessage.getFooter() %></span>", "messageDialogContentPane", "last");
+
+				dia.show();
     		}) ;
     	<%}%>
 </script>
-
-<div id="messageDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:auto;vertical-align: middle; "
-	 draggable="true" title="Title" >
-
-	<span id="messageDialogError" style="color: red; font-weight: bold">Error</span>
-	<div id="messageDialogContent" style="overflow: auto;height:auto; margin-top: 10px; margin-bottom: 20px">HTML List of Elements</div>
-	<span id="messageDialogFooter" style="margin-bottom: 10px; color: #888888;font-size: smaller"></span>
-</div>

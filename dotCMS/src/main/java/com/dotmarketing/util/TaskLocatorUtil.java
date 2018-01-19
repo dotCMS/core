@@ -220,6 +220,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04310CreateWorkflowRoles.class);
 		ret.add(Task04315UpdateMultiTreePK.class);
 		ret.add(Task04320WorkflowActionRemoveNextStepConstraint.class);
+		ret.add(Task04325RemoveFKFromWorkflowTaskTable.class);
 
 		return ret;
 	}

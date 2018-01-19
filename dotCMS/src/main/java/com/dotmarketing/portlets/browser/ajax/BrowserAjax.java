@@ -544,7 +544,7 @@ public class BrowserAjax {
 
 		} catch (Exception e) {
 			Logger.error(BrowserAjax.class, e.getMessage(), e);
-			throw new ServletException(e.getMessage());
+			throw new ServletException(e.getMessage(),e);
 		}
 	}
 

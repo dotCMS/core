@@ -4,6 +4,7 @@ package com.dotcms.util;
  * Returnable delegate without any parameter.
  * @author jsanca
  */
+@FunctionalInterface
 public interface ReturnableDelegate<T> {
 
     /**

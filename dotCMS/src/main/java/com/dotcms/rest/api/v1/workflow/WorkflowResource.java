@@ -29,6 +29,7 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -622,7 +623,66 @@ public class WorkflowResource {
 
         return response;
     } // deleteAction
+    
+    /**
+     * Change the order of the steps in a scheme
+     * @param request                           HttpServletRequest
+     * @param workflowReorderActionStepForm     WorkflowReorderBean
+     * @return Response
+     */
+    @PUT
+    @Path("/reorder/step/{stepId}/order/{order}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response reorderStep(@Context final HttpServletRequest request,
+                                        @PathParam("stepId")   final String stepId, 
+                                        @PathParam("order")    final int order) {
 
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+            WorkflowStep step = workflowAPI.findStep(stepId);
+            WorkflowScheme scheme = workflowAPI.findScheme(step.getSchemeId());
+            List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+            IntStream.range(0, steps.size())
+                .filter(i -> steps.get(i).getId().equals(step.getId()))
+                .boxed()
+                .findFirst()
+                .map(i -> steps.remove((int) i));
+
+            int newOrder = (order > steps.size()) ? steps.size():order;
+            steps.add(newOrder, step);
+            
+            int i=0;
+            for(WorkflowStep stepp : steps) {
+                stepp.setMyOrder(i++);
+                workflowAPI.saveStep(stepp);
+            }
+            
+            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on reorderStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on reorderStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // reorderAction
+    
+    
     /**
      * Change the order of an action associated to the step
      * @param request                           HttpServletRequest

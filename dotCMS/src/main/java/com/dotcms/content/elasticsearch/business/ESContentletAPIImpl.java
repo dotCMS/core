@@ -2522,7 +2522,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
             }
             catch(Exception e){
-                throw new DotDataException(e.getMessage());
+                throw new DotDataException(e.getMessage(),e);
             }
 
             deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
@@ -2872,7 +2872,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 WorkflowAPI wapi  = APILocator.getWorkflowAPI();
                 WorkflowProcessor workflow=null;
 
-                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null) {
+                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
+                        ))  {
                     workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
                 }
 
@@ -2882,7 +2885,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
 
                 boolean priority = contentlet.isLowIndexPriority();
+
                 Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
+                Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
+
                 boolean isNewContent = false;
                 if(!InodeUtils.isSet(workingContentletInode)){
                     isNewContent = true;
@@ -3082,12 +3088,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // Publish once if needed and reindex once if needed. The publish
                 // method reindexes.
                 contentlet.setLowIndexPriority(priority);
-                //set again the don't validate me property if this was set
+
+                //set again the don't validate me and disable workflow properties
+                //if they were set
                 if(dontValidateMe != null){
                     contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
                 }
 
-
+                if(disableWorkflow != null){
+                    contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                }
 
                 // http://jira.dotmarketing.net/browse/DOTCMS-1073
                 // storing binary files in file system.
@@ -5004,7 +5014,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      *             The contentlet object could not be saved.
      */
-    private Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+    @Override
+    public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = Strings.EMPTY;
         ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();

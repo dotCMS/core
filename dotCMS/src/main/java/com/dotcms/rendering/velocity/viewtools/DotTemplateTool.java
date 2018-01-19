@@ -5,15 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.transform.JsonTransformer;
-
-import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -39,15 +34,34 @@ import com.liferay.portal.model.User;
  */
 public class DotTemplateTool implements ViewTool {
 
-    private static HttpServletRequest request;
-    Context ctx;
-    private static User sysUser = null;
+    private HttpServletRequest request;
+    private User sysUser = null;
+
     private static Cache<String, Map<String, Object>> cache = CacheBuilder.<String, Map<String, Object>>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
         .build(); 
     private static Cache<String, TemplateLayout> layoutCache = CacheBuilder.<String,TemplateLayout>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
-        .build(); 
+        .build();
+
+    private static class DrawedBody {
+        private String title;
+        private String drawedBody;
+
+        private DrawedBody(String title, String drawedBody) {
+            this.title = title;
+            this.drawedBody = drawedBody;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDrawedBody() {
+            return drawedBody;
+        }
+    }
+
     /**
      * @param initData the ViewContext that is automatically passed on view tool initialization, either in the request or the application
      * @return
@@ -56,12 +70,12 @@ public class DotTemplateTool implements ViewTool {
     public void init ( Object initData ) {
         ViewContext context = (ViewContext) initData;
         request = context.getRequest();
-        ctx = context.getVelocityContext();
+
         try {
-			sysUser = APILocator.getUserAPI().getSystemUser();
-		} catch (DotDataException e) {
-			Logger.error(DotTemplateTool.class,e.getMessage(),e);
-		}
+            sysUser = APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            Logger.error(DotTemplateTool.class,e.getMessage(),e);
+        }
     }
 
     /**
@@ -74,8 +88,10 @@ public class DotTemplateTool implements ViewTool {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    public static TemplateLayout themeLayout ( String themeInode ) throws DotDataException, DotSecurityException {
-        return themeLayout( themeInode, false );
+    public static TemplateLayout themeLayout ( final String themeInode )
+            throws DotDataException, DotSecurityException {
+        final User user = APILocator.getUserAPI().getSystemUser();
+        return themeLayout( themeInode, user, false );
     }
 
     /**
@@ -89,39 +105,83 @@ public class DotTemplateTool implements ViewTool {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    public static TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
-        String key = themeInode + isPreview;
+    public static TemplateLayout themeLayout (final String themeInode,
+                                              final User user,
+                                              final Boolean isPreview )
+            throws DotDataException, DotSecurityException {
+        final String key = themeInode + isPreview;
+        if (!UtilMethods.isSet(themeInode)) {
+            throw new IllegalArgumentException("the themeInode is null");
+        }
+
+        TemplateLayout layout = layoutCache.getIfPresent(key);
+
+        if(layout == null) {
+            layout = getLayout(themeInode, isPreview, getDrawedBody(themeInode, user));
+        }
+
+        return layout;
+    }
+
+    private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
+        final Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
+        final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
+
+        return new DrawedBody(template.getTitle(), template.getDrawedBody());
+    }
+
+    private DrawedBody getDrawedBody() {
+        return new DrawedBody((String) request.getAttribute("title"), (String) request.getAttribute("designedBody"));
+    }
+
+    /**
+     * Given a theme id we will parse it and return the Layout for the given template
+     *
+     * @param themeInode
+     * @param isPreview
+     * @return
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     */
+    public TemplateLayout themeLayout ( final String themeInode, final Boolean isPreview ) throws DotDataException, DotSecurityException {
+        final String key = themeInode + isPreview;
         TemplateLayout layout = layoutCache.getIfPresent(key);
 
         if(layout==null) {
-            String title = null;
-            String drawedBody;
+
+            final DrawedBody drawedBody;
+
             if (UtilMethods.isSet(themeInode)) {
-                Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-
-                Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
-
-
-                drawedBody = template.getDrawedBody();
-                title = template.getTitle();
+                drawedBody = getDrawedBody(themeInode, sysUser);
             } else {
-                drawedBody = (String) request.getAttribute("designedBody");
-                if (request.getAttribute("title") != null) {
-                    title = (String) request.getAttribute("title");
-                }
+                drawedBody = getDrawedBody();
             }
 
-            //Parse and return the layout for this template
-
-            try {
-                layout = getTemplateLayoutFromJSON(drawedBody);
-            } catch (IOException e) {
-                layout = DesignTemplateUtil.getDesignParameters(drawedBody, isPreview);
-            }
-
-            layout.setTitle(title);
-            layoutCache.put(key, layout);
+            layout = getLayout(themeInode, isPreview, drawedBody);
         }
+
+        return layout;
+    }
+
+    private static TemplateLayout getLayout ( final String themeInode, final Boolean isPreview,
+                                              final DrawedBody drawedBody)
+            throws DotDataException, DotSecurityException {
+
+        String key = themeInode + isPreview;
+
+        //Parse and return the layout for this template
+        TemplateLayout layout;
+
+        try {
+            layout = getTemplateLayoutFromJSON(drawedBody.getDrawedBody());
+        } catch (IOException e) {
+            layout = DesignTemplateUtil.getDesignParameters(drawedBody.getDrawedBody(), isPreview);
+        }
+
+        layout.setTitle(drawedBody.getTitle());
+        layoutCache.put(key, layout);
 
         return layout;
     }
@@ -141,7 +201,8 @@ public class DotTemplateTool implements ViewTool {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static Map<String, Object> theme ( String themeFolderInode, String hostId ) throws DotDataException, DotSecurityException {
+    public static Map<String, Object> theme ( final String themeFolderInode, final String hostId )
+            throws DotDataException, DotSecurityException {
 
         //Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
@@ -255,5 +316,6 @@ public class DotTemplateTool implements ViewTool {
       }
         return themeMap;
     }
+
 
 }

@@ -23,6 +23,9 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import static com.dotcms.util.CollectionsUtils.*;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+
 /**
  * Description of the Class
  * 
@@ -1096,44 +1099,33 @@ public class DotConnect {
      * Executes an update operation for a preparedStatement, returns the number of affected rows.
      * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
      * @param preparedStatement String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
      * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
      * @return int rows affected
      * @throws DotDataException
      */
     public int executeUpdate (final String preparedStatement,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(preparedStatement, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement, returns the number of affected rows.
+     * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
+     * @param preparedStatement String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+
+    public int executeUpdate (final String preparedStatement, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
-        final boolean isNewTransaction = DbConnectionFactory.startTransactionIfNeeded();
-        Connection connection = null;
-        int rowsAffected = 0;
+        return  this.executeUpdate(DbConnectionFactory.getConnection(),
+                preparedStatement, logException, parameters);
 
-        try {
 
-            connection   =  DbConnectionFactory.getConnection();
-            rowsAffected =  this.executeUpdate(connection,
-                    preparedStatement, parameters);
 
-            if (isNewTransaction) {
-                connection.commit();
-            }
-        } catch (DotDataException e) {
-
-            if (isNewTransaction) {
-                this.rollback(connection);
-            }
-           throw e;
-        } catch (Exception e) {
-
-            Logger.error(DotConnect.class, e.getMessage(), e);
-            throw new DotDataException(e.getMessage(), e);
-        } finally {
-
-            if (isNewTransaction) {
-                closeQuietly(connection);
-            }
-        }
-
-        return rowsAffected;
     } // executeUpdate.
 
     protected void rollback(final Connection connection) throws DotDataException {
@@ -1157,27 +1149,46 @@ public class DotConnect {
      * @throws DotDataException
      */
     public int executeUpdate (final Connection connection, final String preparedStatementString,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(connection, preparedStatementString, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement
+     * @param connection {@link Connection}
+     * @param preparedStatementString String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public int executeUpdate (final Connection connection, final String preparedStatementString, Boolean logException,
                               final Object... parameters) throws DotDataException {
 
 
-        PreparedStatement preparedStatement = null;
-        int rowsAffected = 0;
-
+        PreparedStatement  preparedStatement = null;
         try {
 
             preparedStatement = connection.prepareStatement(preparedStatementString);
             this.setParams(preparedStatement, parameters);
-            rowsAffected = preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-
-            Logger.error(DotConnect.class, e.getMessage(), e);
+            if (logException) {
+                Logger.error(DotConnect.class, e.getMessage(), e);
+            }
             throw new DotDataException(e.getMessage(), e);
         } finally {
-
-            closeQuietly(preparedStatement);
+            if(null!= preparedStatement ) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    Logger.debug(this.getClass(), e.getMessage(),e);
+                }
+            }
         }
 
-        return rowsAffected;
+
     } // executeUpdate.
 
     private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {

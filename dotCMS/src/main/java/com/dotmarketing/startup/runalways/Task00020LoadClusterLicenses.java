@@ -34,7 +34,12 @@ public class Task00020LoadClusterLicenses implements StartupTask {
     @Override
     public boolean forceRun() {
         
-       return licensePackFiles().length>0;
+       File[] licPackFiles = licensePackFiles();
+       if(licPackFiles == null) {
+         Logger.warn(this.getClass(), "licPackFiles is NULL - this usually means something is wrong with the assets folder");
+         return false;
+       }
+       return licPackFiles.length>0;
 
     }
 

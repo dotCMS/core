@@ -1,9 +1,51 @@
-.editRow{width:97%;margin:auto;}
+.portlet-toolbar__actions-secondary{padding-right: 50px;}
+
+.flex-container {
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	-ms-box-orient: horizontal;
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: -moz-flex;
+	display: -webkit-flex;
+	display: flex;
+}
+.flex-wrap{ 
+	-webkit-flex-wrap: wrap;
+	flex-wrap: wrap;
+	padding-left:10px;
+}
+.flex-item {
+	position: relative;
+	background: #fff;
+	padding: 0;
+	width: 45%;
+	max-width: 420px;
+	min-height: 300px;
+	margin: 10px;
+	box-sizing: border-box;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.wfSchemeTitle {
+	background-color: #fff;
+	color: #666;
+	margin-bottom: 0;
+	padding: 16px 24px 8px 16px;
+	font-size: 16px;
+	font-weight: bold;
+	border-bottom: 1px solid #e0e0e0;
+	min-height: 75px; 
+}
+
 .editRow:hover th{background:#C1D9EE;}
 .editRow:hover td{background:#DBEBF9;}
-ol.wfStepsList{margin:15px 15px 20px 15px;}
-ol.wfStepsList li{padding:3px 10px;margin:0 10px; list-style:decimal; border-bottom:1px dashed #ccc; list-style-position:inside;}
-ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
+
+ol.wfStepsList{margin:15px 15px 75px 15px;}
+ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-style-position:inside;}
+
 .wfSchemeShowSteps{
 	padding:10px;
 	margin:10px;
@@ -30,11 +72,10 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	margin:10px;
 }
 .wfStepTitle{
-	padding-left:10px;
-	padding-right:10px;
+	padding: 8px 8px 8px 24px;
 	background: #eeeeee;
-	font-weight: bold;
 	margin-bottom:20px;
+	font-size: 14px;
 }
 .wfStepTitleDivs{
 	padding-top:10px;
@@ -59,27 +100,22 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	width:20px;text-align: center;cursor:pointer;
 }
 
-  .container {
-
+.container {
      display: block;
  }
+
 .showPointer{
 	cursor: pointer;
 }
+
 .wfAddActionButtonRow{
 	margin:10px;
-
 	text-align: center;	
-	
 }
 .wfWhoCanUseDiv{
 	padding:10px;	
 }
 
-.saveButtonHide{
-	//visibility:hidden;	
-	//font-:1px solid white;	
-}
 .saveButtonDivShow{
 	font-weight:bold;	
 }
@@ -99,9 +135,10 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	float:right;
 }
 #actionClassParamsDia{
-	width:600px;
-	min-height:250px;
-	max-height:600px;
+	min-width:600px;
+	max-width:70%;
+	min-height:400px;
+	max-height:90%;
 	overflow:auto;
 }
 .wfnoSubActions{
@@ -109,8 +146,10 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	padding:10px;	
 }
 .wfParamTextArea{
-	min-height:40px;
-	max-height:120px;	
+	min-height:75px;
+	max-height:200px;	
+	width:300px;
+
 }
 
 #stepEditDia .escalation-row {
@@ -128,3 +167,178 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	height:300px;
 	margin:auto;
 }
+
+.portlet-toolbar {
+	background-color: #fff; 
+	margin: 0 0 0 0; 
+	padding: 32px 0 16px 24px;
+	border-bottom: #e3e3e3;
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+	position: absolute;
+	z-index: 10;
+	top: 0;
+	width: 100%;
+	height: 92px;
+}
+.board-wrapper {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 92px;
+	bottom: 0;
+	padding-top: 30px;
+	background-color: #F4F3F4;
+}
+.board-main-content{
+	height: 100%;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	-ms-flex-direction: column;
+	flex-direction: column;
+	margin-right: 0;
+	-webkit-transition: margin .1s ease-in;
+	transition: margin .1s ease-in;
+}
+.board-canvas {
+	position: relative;
+	-webkit-box-flex: 1;
+	-ms-flex-positive: 1;
+	flex-grow: 1;
+}
+.board {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	white-space: nowrap;
+	margin-bottom: 10px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-bottom: 10px;
+	padding-right: 56px;
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+}
+.list-wrapper {
+	width: 275px;
+	margin: 0 8px;
+	height: 100%;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	display: inline-block;
+	vertical-align: top;
+	white-space: nowrap;
+}
+.list-wrapper:first-child {
+	margin-left: 20px;
+}
+.list-item {
+	background: #Fff;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	-ms-flex-direction: column;
+	flex-direction: column;
+	max-height: 100%;
+	position: relative;
+	white-space: normal;
+	padding-bottom: 24px;
+	min-height: 450px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+}
+.wfActionList {
+	border: 0;
+	margin-left:5px;
+	margin-right: 5px;
+	width: 265px;
+	min-height: 300px;
+}
+
+.scrollbar {
+	-webkit-overflow-scrolling: touch;
+	-webkit-transform: translate3d(0, 0, 0);
+}
+
+.wfStepTitle {
+	background-color: #0F75C4;
+	color: #fff;
+	margin-bottom: 0;
+}
+
+.wf-action-wrapper {
+	background: #fcfcfc;
+	margin: 8px 0px;
+	border-bottom: 1px solid #ccc;
+	padding: 12px 12px;
+
+}
+.wf-action-wrapper:hover{
+	background: #E6EFF7;
+}
+.pull-right {
+	float: right;
+	margin: 0 0px 8px 8px;
+}
+
+.btn-flat-wrapper {
+	position: absolute;
+	bottom: 18px;
+	width: 100%;
+	text-align: right;
+}
+
+.btn-flat {
+	text-transform: uppercase;
+	display: inline-block;
+	padding: 8px 16px;
+	margin: 0px;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 300;
+	color: #a6a6a6;
+	letter-spacing: 0.1em
+}
+.btn-flat:last-child{
+	margin-right: 10px;
+}
+
+.btn-flat:hover{
+	background: #F4F3F4;
+}
+
+.btn-primary {
+	color: #0F75C4;
+}
+
+.box-wrapper:hover .ghost-box {
+  opacity: 1
+}
+.box-wrapper:hover .title {
+  opacity: 0
+}
+
+.ghostAddDiv {
+    opacity: .1;
+    border:2px dotted black;
+    -webkit-transition: opacity .5s;
+    -moz-transition: opacity .5s;
+    transition: opacity .5s;
+}
+
+.ghostAddDiv:hover  {
+    opacity: 1;
+    	cursor: pointer;
+    	border:1px dotted silver;
+}
+
+
