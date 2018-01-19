@@ -132,11 +132,11 @@ function editTemplate(inode){
 	}
 }
 
-function delTemplate(inode, referer, identifier) {
+function delTemplate(inode, referer, identifier, name) {
 
 	var callMetaData = {
 			  callback:handleDepResponse,
-			  arg: inode + '|' + referer + '|' + identifier, // specify an argument to pass to the callback and exceptionHandler
+			  arg: inode + '|' + referer + '|' + identifier + '|' + name, // specify an argument to pass to the callback and exceptionHandler
 			};
 
     TemplateAjax.checkDependencies(inode, callMetaData);
@@ -147,10 +147,11 @@ function handleDepResponse(data, arg1) {
 	var inode = params[0];
 	var referer = params[1];
 	var identifier = params[2];
+	var name = params[3];
 	
 	if(data!=null) {
 		var res = data.split(",");
-		var resultTableStr = '<table class="listingTable" style=\'margin-bottom: 0px\'><thead><tr><th><%=LanguageUtil.get(pageContext, "title")%></th></tr></thead><tbody>';
+		var resultTableStr = '<table class="listingTable" style=\'margin-bottom: 0px\'><thead><tr><th>'+ name +'</th></tr></thead><tbody>';
 		for (i = 0; i < res.length; i++) {
 			resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
 		}
@@ -364,7 +365,9 @@ function processDelete(inode, referer) {
 								'<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>',
 								'<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>',
 								'<%=user.getUserId()%>',
-								'<%=template.hasLiveVersion() ? "1" : "0"%>'));
+								'<%=template.hasLiveVersion() ? "1" : "0"%>',
+                                '<%=template.getName().replaceAll("'","&rsquo;")%>'
+							));
 						</script>
 					</td>
 				</tr>
