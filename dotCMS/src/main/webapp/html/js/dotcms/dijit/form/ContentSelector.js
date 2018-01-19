@@ -104,7 +104,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.noResultsTextValue = this.noResultsText.value;
 		this.matchResultsTextValue = this.matchResultsText.value;
 		!isNg && this.dialog.hide();
-		dojo.parser.parse(this.search_fields_table);
+        dojo.parser.parse(this.search_fields_table);
+        
+        if (isNg) {
+            this.addContentletButton.style.display = "block";
+        }
 	},
 
 	displayStructureFields: function (structureInode) {
@@ -930,5 +934,5 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_nextPage: function (){
 		this._doSearch(this.currentPage+1);
-	}
+    }
 });

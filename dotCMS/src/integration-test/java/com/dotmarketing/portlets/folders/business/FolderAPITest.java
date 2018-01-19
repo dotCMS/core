@@ -129,17 +129,11 @@ public class FolderAPITest {
 		Assert.assertTrue(folderAPI
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
-        // folderAPI.renameFolder does a find() and that one puts the value in cache.
-		Assert.assertNotNull(identifierAPI.loadFromCache(ftest.getIdentifier()));
-
 		// those should be cleared from cache
+        Assert.assertNull(identifierAPI.loadFromCache(ftest.getIdentifier()));
 		Assert.assertNull(identifierAPI.loadFromCache(ftest1.getIdentifier()));
 		Assert.assertNull(identifierAPI.loadFromCache(ftest2.getIdentifier()));
 		Assert.assertNull(identifierAPI.loadFromCache(ftest3.getIdentifier()));
-
-        // Just to double check 'ident' will come from the DB.
-        CacheLocator.getIdentifierCache().clearCache();
-        Assert.assertNull(identifierAPI.loadFromCache(ftest.getIdentifier()));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
         final Identifier ident  = identifierAPI.find(ftest);

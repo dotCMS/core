@@ -91,7 +91,6 @@ public class MenuResource implements Serializable {
 
 			final User user = this.userAPI.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
 			final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
-
 			final MenuContext menuContext = new MenuContext(httpServletRequest, user);
 
 			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {

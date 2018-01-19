@@ -162,6 +162,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                         Logger.warn(this.getClass(), "unable to find content type:" + struct);
                     }
                 }
+
                 editWrapperDiv.append("WIDGET,FORM");
                 editWrapperDiv.append("\">");
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
