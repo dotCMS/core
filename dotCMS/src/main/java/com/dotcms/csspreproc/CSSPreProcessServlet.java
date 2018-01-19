@@ -84,7 +84,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             Class<? extends CSSCompiler> compilerClass = reqURI.startsWith("/DOTSASS/") ? SassCompiler.class
                                            :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
             
-            if(Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true)) {
+            if(Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) && reqURI.startsWith("/DOTSASS/")) {
                 compilerClass = DotLibSassCompiler.class;
             }
             
