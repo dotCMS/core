@@ -55,7 +55,6 @@ public class Task04330CreateSystemWorkflow implements StartupTask {
 
         if (UtilMethods.isSet (systemWorkflowMap)) {
 
-            Logger.debug(this, "The System Workflow does not exists, creating it");
             final List schemeList = (List) systemWorkflowMap.get("schemes");
 
             if (UtilMethods.isSet(schemeList)) {
@@ -63,6 +62,7 @@ public class Task04330CreateSystemWorkflow implements StartupTask {
                 final Map schemeMap = (Map)schemeList.get(0);
                 if (!this.existsSystemWorkflow((String) schemeMap.get("id"))) {
 
+                    Logger.debug(this, "The System Workflow does not exists, creating it");
                     this.createScheme       (schemeMap);
                     this.createSteps        ((List)systemWorkflowMap.get("steps"));
                     this.createActions      ((List)systemWorkflowMap.get("actions"));
