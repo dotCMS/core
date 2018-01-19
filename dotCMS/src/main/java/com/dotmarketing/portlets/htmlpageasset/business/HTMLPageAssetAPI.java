@@ -288,4 +288,6 @@ public interface HTMLPageAssetAPI {
 
 	}
 
+    IHTMLPage findPage(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 }

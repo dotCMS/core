@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -44,14 +45,22 @@ public class ContainerCacheImpl extends ContainerCache {
     // Clear the cache for all group.
     cache.flushGroup(primaryGroup);
   }
+  @Override
+  public void remove(VersionInfo cvinfo) {
+      cache.remove(primaryGroup + cvinfo.getWorkingInode(), primaryGroup);
+      cache.remove(primaryGroup + cvinfo.getIdentifier(), primaryGroup);
+      if(UtilMethods.isSet(cvinfo.getLiveInode())) {
+          cache.remove(primaryGroup + cvinfo.getLiveInode(), primaryGroup);
+      }
+      
+  }
+  public void remove(Container container) {
 
-  public void remove(String inode) {
-    String key = primaryGroup + inode;
 
 
     try {
-      cache.remove(key, primaryGroup);
-
+      cache.remove(primaryGroup + container.getInode(), primaryGroup);
+      cache.remove(primaryGroup + container.getIdentifier(), primaryGroup);
 
     } catch (Exception e) {
       Logger.debug(this, "Cache not able to be removed", e);

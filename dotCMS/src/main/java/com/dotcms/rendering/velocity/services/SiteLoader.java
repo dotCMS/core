@@ -74,13 +74,13 @@ public class SiteLoader implements DotLoader {
     }
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
-            throws DotDataException, DotSecurityException {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
+
 
         Host host = APILocator.getHostAPI()
-            .find(id1, sysUser(), false);
+            .find(key.id1, sysUser(), false);
 
-        return buildStream(host, mode, filePath);
+        return buildStream(host, key.mode, key.path);
 
     }
 

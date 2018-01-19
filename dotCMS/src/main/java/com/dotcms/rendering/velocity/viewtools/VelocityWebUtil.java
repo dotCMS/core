@@ -1,6 +1,15 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
+
+import java.io.StringWriter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
@@ -10,10 +19,6 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.StringWriter;
-
 /**
  * @author Jason Tesser
  * @since 1.6.5
@@ -21,44 +26,15 @@ import java.io.StringWriter;
  */
 public class VelocityWebUtil implements ViewTool {
 
-    static final String _logVariable = "LOG_VELOCITY_TEMPLATES";
+
     private Context ctx;
-    private HttpServletRequest req;
-    boolean debug = false;
+
 
     // private HttpServletRequest request;
     public void init(Object obj) {
         ViewContext context = (ViewContext) obj;
-        this.req = context.getRequest();
         this.ctx = context.getVelocityContext();
-        this.debug = Config.getBooleanProperty(_logVariable, false);
 
-        if (!this.debug) {
-            try {
-                if (ctx.get("request") != null) {
-                    if (((HttpServletRequest) ctx.get("request")).getParameter(_logVariable) != null
-                            || (req.getSession(false) != null && req.getSession(false)
-                                .getAttribute(_logVariable) != null)) {
-                        this.debug = true;
-
-
-                        if ("false".equals(req.getParameter(_logVariable))) {
-                            this.debug = true;
-                            req.getSession()
-                                .removeAttribute(_logVariable);
-                        } else {
-                            req.getSession()
-                                .setAttribute(_logVariable, "true");
-                        }
-
-
-
-                    }
-                }
-            } catch (Exception e) {
-                Logger.debug(VelocityWebUtil.class, e.getMessage(), e);
-            }
-        }
 
     }
 
@@ -67,16 +43,11 @@ public class VelocityWebUtil implements ViewTool {
         VelocityEngine ve = VelocityUtil.getEngine();
         Template template = null;
         StringWriter sw = new StringWriter();
-        String threadName = Thread.currentThread()
-            .getName();
-        if (this.debug) {
-            Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);
-        }
+
+
+        final String threadName = Thread.currentThread().getName();
         try {
-            String newThreadName = (threadName.contains("{")) ? threadName.replaceAll("\\{[^\\}]*\\}", "{" + templatePath + "}")
-                    : threadName + " {" + templatePath + "}";
-            Thread.currentThread()
-                .setName(newThreadName);
+            Thread.currentThread().setName(threadName + " >" + templatePath);
             template = ve.getTemplate(templatePath);
 
             template.merge(ctx, sw);
@@ -98,8 +69,7 @@ public class VelocityWebUtil implements ViewTool {
 
             throw e;
         } finally {
-            Thread.currentThread()
-                .setName(threadName);
+            Thread.currentThread().setName(threadName);
         }
 
 
@@ -110,20 +80,15 @@ public class VelocityWebUtil implements ViewTool {
             throws ResourceNotFoundException, ParseErrorException, Exception {
         VelocityEngine ve = VelocityUtil.getEngine();
         Template template = null;
-        String threadName = Thread.currentThread()
-            .getName();
+        final String threadName = Thread.currentThread().getName();
         try {
-            Thread.currentThread()
-                .setName(threadName + " >" + templatePath);
-            if (this.debug) {
-                Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);
-            }
+            Thread.currentThread().setName(threadName + " >" + templatePath);
+
 
             template = ve.getTemplate(templatePath);
             template.merge(ctx, response.getWriter());
         } finally {
-            Thread.currentThread()
-                .setName(threadName);
+            Thread.currentThread().setName(threadName);
         }
     }
 

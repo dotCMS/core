@@ -289,7 +289,7 @@ public class ResourceManagerImpl
          * (static content from #include) with a Template.
          */
 
-        String resourceKey = resourceType + resourceName;
+        final String resourceKey = resourceType + resourceName;
         Resource resource = globalCache.get(resourceKey);
 
         if (resource != null)

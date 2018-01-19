@@ -1,9 +1,14 @@
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.BaseContentType"%>
+
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
+
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="java.util.*" %>
 
@@ -31,6 +36,7 @@
 
     Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
 %>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -83,6 +89,7 @@
                         inode: content.inode,
                         identifier: content.identifier,
                         type: "type"
+                        type: content.typeVariable
                     }
                 })
             }
@@ -100,7 +107,12 @@
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
         }
-
+        
+	    	function displayStructure(structureInode) {
+	        	contentSelector.displayStructureFields(structureInode);
+		}
+	    	
+	    	
         djConfig = {
             parseOnLoad: true,
             i18n: "/html/js/dojo/custom-build/custom-build/build/",
@@ -145,6 +157,11 @@
 
             contentSelector._fillStructures();
         })
+
+	function displayStructure(structureInode) {
+        	contentSelector.displayStructureFields(structureInode);
+	}
+
     </script>
 </head>
 <body>

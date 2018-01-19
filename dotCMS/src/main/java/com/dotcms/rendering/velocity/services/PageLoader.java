@@ -1,17 +1,13 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.bsh.This;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -19,7 +15,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
 
@@ -81,20 +76,9 @@ public class PageLoader implements DotLoader {
 
 
 
+
+
     public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath)
-            throws DotStateException, DotDataException {
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(htmlPage);
-        try {
-            return buildStream(htmlPage, identifier, mode, filePath);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(),e);
-        }
-    }
-
-
-    public InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, PageMode mode, final String filePath)
             throws DotDataException, DotSecurityException {
         String folderPath = mode.name() + File.separator;
 
@@ -102,15 +86,15 @@ public class PageLoader implements DotLoader {
 
 
         Template cmsTemplate = APILocator.getHTMLPageAssetAPI()
-            .getTemplate(htmlPage, mode.showLive);
+            .getTemplate(htmlPage, !mode.showLive);
 
 
         User sys = APILocator.systemUser();
 
 
         if (cmsTemplate == null || !InodeUtils.isSet(cmsTemplate.getInode())) {
-            Logger.error(This.class, "PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id "
-                    + htmlPage.getIdentifier() + ":" + identifier.getURI());
+            throw new DotStateException("PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id "
+                    + htmlPage.getIdentifier() + " template id" + htmlPage.getTemplateId());
         }
 
 
@@ -173,7 +157,14 @@ public class PageLoader implements DotLoader {
 
 
         sb.append("#if(!$doNotParseTemplate)");
-        if (cmsTemplate.isDrawed()) {// We have a designed template
+        if (cmsTemplate.isDrawed()) {
+            
+            if(null == cmsTemplate.getTheme()) {
+                throw new DotStateException("Drawed template has no theme.  Template id: " + cmsTemplate.getIdentifier() + " template name:" + cmsTemplate.getName());
+            }
+            
+            
+            // We have a designed template
             // Setting some theme variables
             sb.append("#set ($dotTheme = $templatetool.theme(\"")
                 .append(cmsTemplate.getTheme())
@@ -202,15 +193,15 @@ public class PageLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, final String filePath)
-            throws DotDataException, DotSecurityException {
+
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
             .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(id1, mode.showLive, Long.parseLong(language), sysUser(), true));
+                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language), sysUser(), true));
 
 
-        return buildStream(page, mode, filePath);
+        return buildStream(page, key.mode, key.path);
 
 
     }

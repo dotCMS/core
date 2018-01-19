@@ -19,7 +19,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
@@ -38,7 +41,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private String image;
 
 	//	*********************** BEGIN GRAZIANO issue-12-dnd-template
-	private Boolean drawed;
+	private Boolean drawed=false;
 
 	private String drawedBody;
 
@@ -192,7 +195,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * @return
 	 */
 	public Boolean isDrawed() {
-		return drawed;
+		return (this.drawed==null) ? UtilMethods.isSet(drawedBody) : this.drawed;
 	}
 
 	/**
@@ -200,10 +203,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * @param drawed
 	 */
 	public void setDrawed(Boolean drawed) {
-		if(null!=drawed)
-			this.drawed = drawed;
-		else
-			this.drawed = false;
+	    this.drawed = (null!=drawed) ? drawed : false;
 	}
 
 	public String getDrawedBody() {
@@ -305,5 +305,12 @@ public class Template extends WebAsset implements Serializable, Comparable {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
+    }
 }

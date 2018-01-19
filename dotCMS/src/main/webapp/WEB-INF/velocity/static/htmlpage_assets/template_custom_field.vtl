@@ -50,11 +50,19 @@ dojo.ready(function(){
         pageSize: 15,
         autoComplete: false,
         ignoreCase: true,
-        labelAttr: "fullTitle",
+        labelType:"html",
+        searchType:"html",
+        labelAttr: "htmlTitle",
         searchAttr: "fullTitle",
         value: dojo.byId("template").value,
         invalidMessage: '$text.get("Invalid-option-selected")'
     },"templateHolder");
+    
+    var val  = dojo.byId("template").value;
+    if (val != undefined && val != "0"){
+    	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
+    }
+   
 });
 </script>
 

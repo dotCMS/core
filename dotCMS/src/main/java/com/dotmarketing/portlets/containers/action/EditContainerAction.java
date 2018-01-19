@@ -659,6 +659,7 @@ public class EditContainerAction extends DotPortletAction implements
 		Container workingContainer = (Container) super._getVersionBackWebAsset(
 				req, res, config, form, user, Container.class,
 				WebKeys.CONTAINER_EDIT);
+		    CacheLocator.getContainerCache().remove(workingContainer);
 	      new ContainerLoader().invalidate(workingContainer);
 	}
 
