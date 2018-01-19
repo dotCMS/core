@@ -21,12 +21,15 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.Beta;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
@@ -37,9 +40,10 @@ import java.util.stream.IntStream;
 public class WorkflowResource {
 
     private final WorkflowHelper workflowHelper;
-    private final WebResource webResource;
-    private final WorkflowAPI workflowAPI;
-    private final ResponseUtil responseUtil;
+    private final WebResource    webResource;
+    private final WorkflowAPI    workflowAPI;
+    private final ResponseUtil   responseUtil;
+    private final WorkflowImportExportUtil workflowImportExportUtil;
 
 
     /**
@@ -49,6 +53,7 @@ public class WorkflowResource {
         this(WorkflowHelper.getInstance(),
                 APILocator.getWorkflowAPI(),
                 ResponseUtil.INSTANCE,
+                WorkflowImportExportUtil.getInstance(),
                 new WebResource());
     }
 
@@ -56,12 +61,15 @@ public class WorkflowResource {
     protected WorkflowResource(final WorkflowHelper workflowHelper,
                                final WorkflowAPI workflowAPI,
                                final ResponseUtil responseUtil,
+                               final WorkflowImportExportUtil workflowImportExportUtil,
                                final WebResource webResource) {
 
-        this.workflowHelper = workflowHelper;
-        this.webResource    = webResource;
-        this.responseUtil   = responseUtil;
-        this.workflowAPI    = workflowAPI;
+        this.workflowHelper           = workflowHelper;
+        this.webResource              = webResource;
+        this.responseUtil             = responseUtil;
+        this.workflowAPI              = workflowAPI;
+        this.workflowImportExportUtil = workflowImportExportUtil;
+
     }
 
     /**
@@ -625,9 +633,11 @@ public class WorkflowResource {
     } // deleteAction
     
     /**
+     * Todo: change the signature to be align with the rest implementation such as: reorderAction
      * Change the order of the steps in a scheme
      * @param request                           HttpServletRequest
-     * @param workflowReorderActionStepForm     WorkflowReorderBean
+     * @param stepId                            String stepid to reorder
+     * @param order                             int    order
      * @return Response
      */
     @PUT
@@ -729,4 +739,52 @@ public class WorkflowResource {
 
         return response;
     } // reorderAction
+
+
+    /**
+     * Returns a set of actions associated to the schemeId
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @GET
+    @Path("/schemes/{schemeId}/export")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response exportScheme(@Context final HttpServletRequest request,
+                                              @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        WorkflowSchemeImportExportObject exportObject;
+        WorkflowScheme                   scheme;
+        Locale                           locale;
+
+        try {
+
+            Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
+            scheme       = this.workflowAPI.findScheme(schemeId);
+            exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
+            response     = Response.ok(new ResponseEntityView(exportObject)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "The Scheme does not exist, id: " + schemeId, e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-does-not-exists-scheme-id", schemeId);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findActionsByScheme, schemeId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // exportScheme.
 } // E:O:F:WorkflowResource.
