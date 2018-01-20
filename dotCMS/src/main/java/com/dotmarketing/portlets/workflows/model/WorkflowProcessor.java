@@ -107,10 +107,12 @@ public class WorkflowProcessor {
 
 			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null != scheme) {
 				workflowActionId = scheme.getEntryActionId();
-				action = findAction(contentlet, workflowActionId);
+				if (UtilMethods.isSet(workflowActionId)) {
+					action = findAction(contentlet, workflowActionId);
+				}
 			}
 
-			if (!UtilMethods.isSet(workflowActionId)) {
+			if (null == action) {
 				if (null != scheme && scheme.isMandatory()) {
 					throw new DotWorkflowException(LanguageUtil
 							.get(user, "message.workflow.error.mandatory.action.type")
