@@ -97,7 +97,7 @@ public class WorkflowProcessor {
 
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 			if (UtilMethods.isSet(workflowActionId)) {
-				action = findAction(contentlet, firingUser, workflowActionId);
+				action = findAction(contentlet, workflowActionId);
 			}
 
 			//If we found and action and we don't have a workflow we can search for it
@@ -107,13 +107,13 @@ public class WorkflowProcessor {
 
 			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null != scheme) {
 				workflowActionId = scheme.getEntryActionId();
-				action = findAction(contentlet, firingUser, workflowActionId);
+				action = findAction(contentlet, workflowActionId);
 			}
 
 			if (!UtilMethods.isSet(workflowActionId)) {
 				if (null != scheme && scheme.isMandatory()) {
 					throw new DotWorkflowException(LanguageUtil
-							.get(firingUser, "message.workflow.error.mandatory.action.type")
+							.get(user, "message.workflow.error.mandatory.action.type")
 							+ contentlet.getStructure().getName());
 				}
 
@@ -121,11 +121,12 @@ public class WorkflowProcessor {
 			}
 
 			if(action.requiresCheckout()){
-				try{
+				try {
 					APILocator.getContentletAPI().canLock(contentlet, user);
-				}
-				catch(Exception ex){
-					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.content.requires.lock") + contentlet.getStructure().getName());
+				} catch (Exception ex) {
+					throw new DotWorkflowException(LanguageUtil
+							.get(user, "message.workflow.error.content.requires.lock")
+							+ contentlet.getStructure().getName(), ex);
 				}
 			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
@@ -166,17 +167,16 @@ public class WorkflowProcessor {
 	 * already have associated an action the existing action will be returned and no search will be
 	 * executed.
 	 */
-	private WorkflowAction findAction(Contentlet contentlet, User firingUser,
-			String workflowActionId)
+	private WorkflowAction findAction(final Contentlet contentlet, final String workflowActionId)
 			throws LanguageException {
 
 		if (null == action) {
 			try {
-				action = getWorkflowAPI().findAction(workflowActionId, user);
+				action = getWorkflowAPI().findAction(workflowActionId, this.user);
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
-						LanguageUtil.get(firingUser, "message.workflow.error.invalid.action")
-								+ contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY));
+						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
+								+ contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY), ex);
 			}
 		}
 
