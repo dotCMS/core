@@ -45,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -126,8 +127,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			newTemplate.setIdentifier(newIdentifier.getInode());
 			// persists the webasset
 			save(newTemplate);
-			List<Container> destinationContainers = getContainersInTemplate(newTemplate, user, respectFrontendRoles);
-
 
 			//Copy the host again
 			newIdentifier.setHostId(destination.getIdentifier());

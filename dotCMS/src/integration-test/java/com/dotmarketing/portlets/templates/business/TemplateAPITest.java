@@ -1,43 +1,42 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TemplateAPITest extends IntegrationTestBase {
 
@@ -271,5 +270,40 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertNotNull(result);
         assertTrue(!result.isEmpty());
+    }
+
+    @Test
+    public void copyTemplate() throws Exception {
+        Template oldTemplate = null;
+        Template newTemplate = null;
+
+        try {
+            //Create a Template.
+            oldTemplate = new Template();
+            oldTemplate.setTitle("Title");
+            oldTemplate.setBody("<html><body> I'm mostly empty </body></html>");
+            oldTemplate = templateAPI.saveTemplate(oldTemplate, host, user, false);
+
+            //Copy Template.
+            newTemplate = templateAPI.copy(oldTemplate, user);
+
+            //Body should be the same.
+            Assert.assertEquals(oldTemplate.getBody(), newTemplate.getBody());
+
+            //Name, identifier, inode and mod_date shouldn't be the same.
+            Assert.assertNotEquals(oldTemplate.getTitle(), newTemplate.getTitle());
+            Assert.assertNotEquals(oldTemplate.getIdentifier(), newTemplate.getIdentifier());
+            Assert.assertNotEquals(oldTemplate.getInode(), newTemplate.getInode());
+            Assert.assertNotEquals(oldTemplate.getModDate(), newTemplate.getModDate());
+
+        } finally {
+            //Clean up.
+            if (oldTemplate != null) {
+                templateAPI.delete(oldTemplate, user, false);
+            }
+            if (newTemplate != null) {
+                templateAPI.delete(newTemplate, user, false);
+            }
+        }
     }
 }

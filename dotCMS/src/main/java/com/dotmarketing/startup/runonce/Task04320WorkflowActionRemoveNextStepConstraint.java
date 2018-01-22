@@ -33,21 +33,16 @@ public class Task04320WorkflowActionRemoveNextStepConstraint implements StartupT
 
     @Override
     public void executeUpgrade() throws DotDataException {
-        final DotConnect dc = new DotConnect();
-        if (DbConnectionFactory.isMsSql()) {
-            try {
-                dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
-            } catch (SQLException e) {
-                throw new DotRuntimeException(
-                        "Transaction isolation level could not be set.", e);
-            }
-        }
 
         // SCHEMA CHANGES
         this.removeWorkflowActionStepIdWorkflowStepFK    ();
     } // executeUpgrade.
 
     private void removeWorkflowActionStepIdWorkflowStepFK() throws DotDataException {
+
+        if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+            DbConnectionFactory.setAutoCommit(true);
+        }
 
         final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
         final ForeignKey foreignKey        = metaData.findForeignKeys
