@@ -74,7 +74,8 @@
     <script type="text/javascript">
         function addNewContentlet() {
 
-            var selectedStructure = document.getElementsByName('structuresSelect+1')[0].value;
+            var selectedStructureElement = document.getElementsByName('structuresSelect+1');
+            var selectedStructure = selectedStructureElement && selectedStructureElement.lenght ? selectedStructureElement.value : '<%=contentTypes.get(0).id()%>';
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
             href += "&selectedStructure=" + selectedStructure + "&lang=1";
@@ -106,12 +107,8 @@
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
         }
-        
-        function displayStructure(structureInode) {
-	        	contentSelector.displayStructureFields(structureInode);
-		}
-	    	
-	    	
+
+
         djConfig = {
             parseOnLoad: true,
             i18n: "/html/js/dojo/custom-build/custom-build/build/",
@@ -156,10 +153,6 @@
 
             contentSelector._fillStructures();
         })
-
-        function displayStructure(structureInode) {
-                contentSelector.displayStructureFields(structureInode);
-        }
 
     </script>
 </head>
