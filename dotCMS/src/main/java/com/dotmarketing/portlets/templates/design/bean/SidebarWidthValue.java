@@ -28,8 +28,5 @@ public enum SidebarWidthValue {
         return NONE;
     }
 
-    @Override
-    public String toString() {
-        return name().toLowerCase();
-    }
+
 }

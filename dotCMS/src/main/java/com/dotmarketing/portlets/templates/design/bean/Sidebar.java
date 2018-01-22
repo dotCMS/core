@@ -43,7 +43,7 @@ public class Sidebar extends ContainerHolder implements Serializable{
     }
 
     public String getWidth() {
-        return width != null ? width.name() : null;
+        return width != null ? width.name().toLowerCase() : null;
     }
 
     @Override
