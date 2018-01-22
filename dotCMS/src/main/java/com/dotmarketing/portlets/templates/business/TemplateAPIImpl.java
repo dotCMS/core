@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,6 +29,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.liferay.portal.model.User;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -122,8 +120,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			newTemplate.setIdentifier(newIdentifier.getInode());
 			// persists the webasset
 			save(newTemplate);
-			List<Container> destinationContainers = getContainersInTemplate(newTemplate, user, respectFrontendRoles);
-
 
 			//Copy the host again
 			newIdentifier.setHostId(destination.getIdentifier());
