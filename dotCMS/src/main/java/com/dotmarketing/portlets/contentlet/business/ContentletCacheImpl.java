@@ -137,19 +137,17 @@ public class ContentletCacheImpl extends ContentletCache {
 	}
     public void remove(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet){
         remove(contentlet.getInode());
-        try {
-            if(contentlet.getContentType() instanceof PageContentType ) {
-                new PageLoader().invalidate(contentlet);
-                
-                
-            }
-            if ("host".equalsIgnoreCase(contentlet.getContentType().variable())) {
-                new SiteLoader().invalidate(new Host(contentlet));
-            }
+
+        if(contentlet.getContentType() instanceof PageContentType ) {
+            new PageLoader().invalidate(contentlet);
             
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotStateException(e);
+            
         }
+        if ("host".equalsIgnoreCase(contentlet.getContentType().variable())) {
+            new SiteLoader().invalidate(new Host(contentlet));
+        }
+            
+
         
         
         
