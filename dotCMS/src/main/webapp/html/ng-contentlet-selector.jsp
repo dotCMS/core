@@ -107,7 +107,7 @@
             return (x && x != undefined && x != "" && x.length > 15);
         }
         
-	    	function displayStructure(structureInode) {
+        function displayStructure(structureInode) {
 	        	contentSelector.displayStructureFields(structureInode);
 		}
 	    	
@@ -157,9 +157,9 @@
             contentSelector._fillStructures();
         })
 
-	function displayStructure(structureInode) {
-        	contentSelector.displayStructureFields(structureInode);
-	}
+        function displayStructure(structureInode) {
+                contentSelector.displayStructureFields(structureInode);
+        }
 
     </script>
 </head>
