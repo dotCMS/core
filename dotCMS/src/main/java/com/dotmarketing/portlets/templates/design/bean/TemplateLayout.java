@@ -160,7 +160,7 @@ public class TemplateLayout implements Serializable{
             widthPercent = 40;
         }
 
-        this.sidebar = new Sidebar(containers, location, 0, widthPercent);
+        this.sidebar = new Sidebar(containers, location, null, widthPercent);
         this.sidebar.setPreview( isPreview );
 
     }

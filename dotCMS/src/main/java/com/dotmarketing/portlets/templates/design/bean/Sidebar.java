@@ -18,12 +18,12 @@ public class Sidebar extends ContainerHolder implements Serializable{
 
     private String location;
     private Integer widthPercent;
-    private Integer width;
+    private SidebarWidthValue width;
 
     @JsonCreator
     public Sidebar(@JsonProperty("containers") List<ContainerUUID> containers,
                    @JsonProperty("location") final String location,
-                   @JsonProperty("width") final int width,
+                   @JsonProperty("width") final SidebarWidthValue width,
                    @JsonProperty("widthPercent") final int widthPercent) {
         super(containers);
 
@@ -37,12 +37,13 @@ public class Sidebar extends ContainerHolder implements Serializable{
     }
 
     public Integer getWidthPercent() {
-        return widthPercent;
+        return widthPercent != null ? widthPercent : width.getWidthPercent();
     }
 
-    public Integer getWidth() {
+    public SidebarWidthValue getWidth() {
         return width;
     }
+
     @Override
     public String toString() {
        try {
