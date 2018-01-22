@@ -48,10 +48,10 @@ export class DotMessageService {
      * @returns {string}
      * @memberof DotMessageService
      */
-    get(key: string, args?: IArguments): string {
-        if (args && args.length > 1) {
+    get(key: string): string {
+        if (arguments && arguments.length > 1) {
             return this.messagesLoaded[key]
-                ? this.formatMessage(this.messagesLoaded[key], Array.from(args).slice(1))
+                ? this.formatMessage(this.messagesLoaded[key], Array.from(arguments).slice(1))
                 : key;
         } else {
             return this.messagesLoaded[key] || key;

@@ -11,26 +11,20 @@ import { Config } from 'dotcms-js/core/config.service';
 import { Logger } from 'angular2-logger/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 
-class MockDotEditContentHtmlService {
-    bindContainersEvents(): void {
-
-    }
-
-    bindContenletsEvents(): void {
-
-    }
-}
-
 describe('DotEditContentHtmlService', () => {
-    const testDoc = document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
-    const htmlElement = testDoc.getElementsByTagName('html')[0];
-    const dummyContainer = testDoc.createElement('div');
-    dummyContainer.innerHTML = `<div data-dot-object="container">
-                                        <div data-dot-object="contentlet">
-                                            <div class="large-column"></div>
-                                        </div>
-                                    </div>`;
-    htmlElement.appendChild(dummyContainer);
+    const fakeHTML = `
+        <html>
+        <head></head>
+        <body>
+            <div data-dot-object="container" data-dot-identifier="123">
+                <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
+                    <div class="large-column"></div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+    let fakeIframeEl;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.content.contentlet.menu.drag': 'Drag',
@@ -44,7 +38,7 @@ describe('DotEditContentHtmlService', () => {
 
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([
-            { provide: DotEditContentHtmlService, useClass: MockDotEditContentHtmlService },
+            DotEditContentHtmlService,
             DotContainerContentletService,
             DotEditContentToolbarHtmlService,
             DotDragDropAPIHtmlService,
@@ -57,27 +51,84 @@ describe('DotEditContentHtmlService', () => {
         ]);
         this.dotEditContentHtmlService = this.injector.get(DotEditContentHtmlService);
         this.dotEditContentToolbarHtmlService = this.injector.get(DotEditContentToolbarHtmlService);
+
+        fakeIframeEl = document.createElement('iframe');
+        document.body.appendChild(fakeIframeEl);
+        fakeIframeEl.contentWindow.document.open();
+        fakeIframeEl.contentWindow.document.write('');
+        fakeIframeEl.contentWindow.document.close();
+        /*
+            TODO: in the refactor we need to make this service just to generate and return stuff, pass the iframe
+            is not a good architecture.
+        */
+        this.dotEditContentHtmlService.initEditMode(fakeHTML, {nativeElement: fakeIframeEl});
     });
 
-    it('should bind containers events when dotEditContentToolbarHtmlService resolved', fakeAsync((): void => {
-        const spyEditContentHtmlService = spyOn(this.dotEditContentHtmlService, 'bindContainersEvents');
+    it('should bind containers events when the html is done', fakeAsync((): void => {
+        spyOn(this.dotEditContentHtmlService, 'bindContainersEvents');
 
-        this.dotEditContentToolbarHtmlService.addContainerToolbar(testDoc).then(() => {
+        this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
             this.dotEditContentHtmlService.bindContainersEvents();
         });
 
         tick();
-        expect(spyEditContentHtmlService).toHaveBeenCalledTimes(1);
+        expect(this.dotEditContentHtmlService.bindContainersEvents).toHaveBeenCalledTimes(1);
     }));
 
-    it('should bind contentlets events when dotEditContentToolbarHtmlService resolved', fakeAsync((): void => {
-        const spyEditContentHtmlService = spyOn(this.dotEditContentHtmlService, 'bindContenletsEvents');
+    it('should bind contentlets events when the html is done', fakeAsync((): void => {
+        spyOn(this.dotEditContentHtmlService, 'bindContenletsEvents');
 
-        this.dotEditContentToolbarHtmlService.addContainerToolbar(testDoc).then(() => {
+        this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
             this.dotEditContentHtmlService.bindContenletsEvents();
         });
 
         tick();
-        expect(spyEditContentHtmlService).toHaveBeenCalledTimes(1);
+        expect(this.dotEditContentHtmlService.bindContenletsEvents).toHaveBeenCalledTimes(1);
     }));
+
+    it('should add contentlet', () => {
+        spyOn(this.dotEditContentHtmlService, 'renderAddedContentlet');
+        this.dotEditContentHtmlService.addContentContainerIdentifier = '123';
+
+        this.dotEditContentHtmlService.contentletEvents.next({
+            name: 'save',
+            data: {
+                identifier: '123'
+            }
+        });
+
+        expect(this.dotEditContentHtmlService.renderAddedContentlet).toHaveBeenCalledWith({
+            identifier: '123'
+        });
+    });
+
+    it('should edit contentlet', () => {
+        spyOn(this.dotEditContentHtmlService, 'renderEditedContentlet');
+
+        this.dotEditContentHtmlService.contentletEvents.next({
+            name: 'save',
+            data: {
+                identifier: '456'
+            }
+        });
+
+        expect(this.dotEditContentHtmlService.renderEditedContentlet).toHaveBeenCalledWith({
+            identifier: '456'
+        });
+    });
+
+    it('should relocate contentlet', () => {
+        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet');
+
+        this.dotEditContentHtmlService.contentletEvents.next({
+            name: 'relocate',
+            data: {
+                identifier: '456'
+            }
+        });
+
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith({
+            identifier: '456'
+        });
+    });
 });
