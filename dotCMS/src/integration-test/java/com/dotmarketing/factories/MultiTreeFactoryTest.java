@@ -182,10 +182,9 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
 
     @Test
     public void testMultiTreeForContainerStructure() throws Exception {
-        long time = System.currentTimeMillis();
 
         //Search for an existing Container Structure (contentlet)
-        Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+        final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
 
         //Create a MultiTree and relate it to that Contentlet
         APILocator.getContainerAPI().findAllContainers(null, false);
