@@ -80,12 +80,19 @@
 			style: "width: 80%",
             required:false,
             onClick:function(){
-            	dijit.byId("whoCanUseSelect").set("displayedValue","");
-            	dijit.byId("whoCanUseSelect").loadDropDown();            	
+	            	dijit.byId("whoCanUseSelect").set("displayedValue","");
+	            	dijit.byId("whoCanUseSelect").loadDropDown();            	
+
             }
         },
         "actionWhoCanUseSelect");
 		
+		   dojo.addOnLoad(function(){
+		       dojo.connect(dijit.byId("whoCanUseSelect"), 'onChange', function(event){ 
+					
+					actionAdmin.addSelectedToWhoCanUse();
+		       });
+		   });
 	    <%
             String assignToLabel=null;
             if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId())) {
@@ -139,7 +146,13 @@
 
         // Refresh action classes table
         actionClassAdmin.refreshActionClasses();
+        
+        
+
+        
 	});
+	
+
 </script>
 
 
@@ -188,7 +201,7 @@
 							<label for=""><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</label>
 						</dt>
 						<dd>
-							<input id="actionWhoCanUseSelect" />
+							<input id="actionWhoCanUseSelect"/>
 							<button dojoType="dijit.form.Button"
 								onClick='actionAdmin.addSelectedToWhoCanUse'
 								iconClass="addIcon">
@@ -321,7 +334,7 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<select name="wfActionlets" id="wfActionlets" dojoType="dijit.form.FilteringSelect">
+							<select name="wfActionlets" id="wfActionlets" dojoType="dijit.form.FilteringSelect" onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
 									<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
@@ -367,9 +380,5 @@
 		</div>
 	</div>
 </div>
-
-
-
-
 
 
