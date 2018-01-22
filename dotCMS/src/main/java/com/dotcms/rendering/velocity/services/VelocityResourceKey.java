@@ -49,7 +49,7 @@ public class VelocityResourceKey implements Serializable {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
     }
     public VelocityResourceKey(final Contentlet asset, PageMode mode, long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
     }
     public VelocityResourceKey(final String filePath) {
         path = cleanKey(filePath);

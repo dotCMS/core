@@ -744,9 +744,10 @@ public class ContentletLoader implements DotLoader {
     @Override
     public void invalidate(Object obj, PageMode mode) {
         Contentlet asset = (Contentlet) obj;
-        CacheLocator.getContentletCache()
-            .remove(asset);
 
+        VelocityResourceKey key = new VelocityResourceKey(asset, mode, asset.getLanguageId());
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(key);
 
         List<Field> fields;
         try {
@@ -759,28 +760,11 @@ public class ContentletLoader implements DotLoader {
             throw new DotStateException(e);
         }
 
-
-        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-          VelocityResourceKey key = new VelocityResourceKey(asset, mode, lang.getId());
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-            vc.remove(key);
-        }
         try {
-            if (asset.getContentType()
-                .baseType() == BaseContentType.HTMLPAGE) {
+            if (asset.getContentType() .baseType() == BaseContentType.HTMLPAGE) {
                 new PageLoader().invalidate(asset, mode);
             }
 
-            if (asset != null && asset.isVanityUrl()) {
-                // remove from cache
-                VanityUrlServices.getInstance()
-                    .invalidateVanityUrl(asset);
-            }
-            if (asset != null && asset.isKeyValue()) {
-                // remove from cache
-                CacheLocator.getKeyValueCache()
-                    .remove(asset);
-            }
         } catch (DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
