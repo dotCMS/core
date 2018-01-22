@@ -24,7 +24,6 @@ import com.dotmarketing.util.Logger;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -121,9 +120,7 @@ public class MultiTreeFactory {
             .addParam(relationType);
         db.loadResult();
 
-        return dbToMultiTree(db.loadObjectResults()).stream()
-            .findFirst()
-            .orElse(null);
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
 
     }
     /**
@@ -145,9 +142,7 @@ public class MultiTreeFactory {
             .addParam(Container.LEGACY_RELATION_TYPE);
         db.loadResult();
 
-        return dbToMultiTree(db.loadObjectResults()).stream()
-            .findFirst()
-            .orElse(null);
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
 
     }
     public static java.util.List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException {
@@ -164,7 +159,7 @@ public class MultiTreeFactory {
             .addParam(parentInode)
             .addParam(parentInode);
 
-        return dbToMultiTree(db.loadObjectResults());
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
 
@@ -172,7 +167,7 @@ public class MultiTreeFactory {
         try {
             DotConnect db = new DotConnect().setSQL(SELECT_ALL);
 
-            return dbToMultiTree(db.loadObjectResults());
+            return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
         } catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
@@ -187,7 +182,7 @@ public class MultiTreeFactory {
                 .addParam(htmlPage)
                 .addParam(container)
                 .addParam(relationType);
-            return dbToMultiTree(db.loadObjectResults());
+            return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
             throw new DotRuntimeException(e.toString());
@@ -204,7 +199,7 @@ public class MultiTreeFactory {
         DotConnect db = new DotConnect().setSQL(SELECT_BY_TWO_PARENTS)
             .addParam(htmlPage)
             .addParam(container);
-        return dbToMultiTree(db.loadObjectResults());
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
 
@@ -223,7 +218,7 @@ public class MultiTreeFactory {
         DotConnect db = new DotConnect().setSQL(SELECT_BY_CHILD)
             .addParam(contentIdentifier);
 
-        return dbToMultiTree(db.loadObjectResults());
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
 
@@ -233,9 +228,9 @@ public class MultiTreeFactory {
      * @param structureIdentifier
      * @return List of MultiTree
      */
-    public static List<MultiTree> getContainerStructureMultiTree(String containerIdentifier, String structureInode) {
+    public static List<MultiTree> getContainerStructureMultiTree(final String containerIdentifier, final String structureInode) {
         try {
-            DotConnect dc = new DotConnect();
+            final DotConnect dc = new DotConnect();
             dc.setSQL(SELECT_BY_CONTAINER_AND_STRUCTURE);
             dc.addParam(containerIdentifier);
             dc.addParam(structureInode);
@@ -400,22 +395,6 @@ public class MultiTreeFactory {
         } catch (DotStateException | DotSecurityException e) {
             Logger.warn(MultiTreeFactory.class, "unable to refresh page cache:" + e.getMessage());
         }
-    }
-
-
-    private static MultiTree dbToMultiTree(Map<String, Object> row) {
-        final String relationType = (String) row.getOrDefault("relation_type", null);
-        final String parent1 = (String) row.getOrDefault("parent1", null);
-        final String parent2 = (String) row.getOrDefault("parent2", null);
-        final String child = (String) row.getOrDefault("child", null);
-        final int order = Integer.valueOf((Integer) row.getOrDefault("tree_order", 0));
-        return new MultiTree(parent1, parent2, child, relationType, order);
-    }
-
-    public static List<MultiTree> dbToMultiTree(List<Map<String, Object>> dbRows) {
-        return (List<MultiTree>) dbRows.stream()
-            .map(row -> dbToMultiTree(row))
-            .collect(Collectors.toList());
     }
 
     /**

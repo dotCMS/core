@@ -1,5 +1,6 @@
 package com.dotmarketing.beans.transform;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.util.UtilMethods;
@@ -17,24 +18,24 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String RELATION_TYPE = "relation_type";
     private static final String TREE_ORDER = "tree_order";
 
-    private final List<MultiTree> list = new ArrayList<>();
+    private final ArrayList<MultiTree> list = new ArrayList<>();
 
     @Override
     public List<MultiTree> asList() {
-        return this.list;
+        return (List)this.list.clone();
     }
 
-    public MultiTreeTransformer(List<Map<String, Object>> initList) {
+    public MultiTreeTransformer(final List<Map<String, Object>> initList) {
         if (initList != null) {
-            for (Map<String, Object> map : initList) {
+            for (final Map<String, Object> map : initList) {
                 this.list.add(transform(map));
             }
         }
     }
 
     @NotNull
-    private static MultiTree transform(Map<String, Object> map) {
-        MultiTree mt = new MultiTree();
+    private static MultiTree transform(final Map<String, Object> map) {
+        final MultiTree mt = new MultiTree();
         mt.setContentlet((String) map.get(CHILD));
         mt.setHtmlPage((String) map.get(PARENT1));
         mt.setContainer((String) map.get(PARENT2));
@@ -42,7 +43,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
             mt.setRelationType((String) map.get(RELATION_TYPE));
         }
         if (UtilMethods.isSet(map.get(TREE_ORDER))) {
-            mt.setTreeOrder((Integer) map.get(TREE_ORDER));
+            mt.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
         }
         return mt;
     }
