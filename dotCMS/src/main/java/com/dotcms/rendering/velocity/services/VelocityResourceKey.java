@@ -2,7 +2,6 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.field.Field;
 
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,20 +34,20 @@ public class VelocityResourceKey implements Serializable {
         this("/" + mode.name() + "/" + con.getIdentifier() + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
     }
     
-    public VelocityResourceKey(final Template asset, PageMode mode) {
+    public VelocityResourceKey(final Template asset, final PageMode mode) {
         this("/" + mode.name() + "/" + asset.getIdentifier() +  "." + VelocityType.TEMPLATE.fileExtension);
     }
-    public VelocityResourceKey(final Container asset, PageMode mode) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension);
+    public VelocityResourceKey(final Container asset, final PageMode mode) {
+        this(asset, Container.LEGACY_RELATION_TYPE, mode);
     }
     
-    public VelocityResourceKey(final Container asset, String uuid, PageMode mode) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() +  "." + VelocityType.CONTAINER.fileExtension);
+    public VelocityResourceKey(final Container asset, final String uuid, final PageMode mode) {
+        this("/" + mode.name() + "/" + asset.getIdentifier() + "/" + uuid +  "." + VelocityType.CONTAINER.fileExtension);
     }
-    public VelocityResourceKey(final HTMLPageAsset asset, PageMode mode, long language) {
+    public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
     }
-    public VelocityResourceKey(final Contentlet asset, PageMode mode, long language) {
+    public VelocityResourceKey(final Contentlet asset, final PageMode mode, final long language) {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
     }
     public VelocityResourceKey(final String filePath) {

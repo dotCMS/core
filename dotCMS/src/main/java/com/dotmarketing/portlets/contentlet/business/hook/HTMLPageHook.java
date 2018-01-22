@@ -23,23 +23,23 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
     public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) {
 
         super.publish(contentlet, user, respectFrontendRoles);
-
+/*
         if (contentlet.getContentType() instanceof PageContentType) {
             IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             publishTemplateLayout(page, user, respectFrontendRoles);
-        }
+        }*/
     }
 
     @Override
     public void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) {
 
-        super.publish(contentlets, user, respectFrontendRoles);
+        super.publish(contentlets, user, respectFrontendRoles);/*
         for (Contentlet contentlet : contentlets) {
             if (contentlet.getContentType() instanceof PageContentType) {
                 IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                 publishTemplateLayout(page, user, respectFrontendRoles);
             }
-        }
+        }*/
     }
 
     private void publishTemplateLayout(final IHTMLPage page, final User user, final boolean respectFrontendRoles) {

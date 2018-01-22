@@ -35,6 +35,7 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -200,7 +201,7 @@ public class ContainerResource implements Serializable {
                                 mode.respectAnonPerms);
 
 
-
+        final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
 
 
@@ -210,7 +211,7 @@ public class ContainerResource implements Serializable {
 
        // new ContainerLoader().invalidate(container);
         
-        VelocityResourceKey key = new VelocityResourceKey(container, mode);
+
 
         VelocityUtil.getEngine().mergeTemplate(key.path, context, out);
 
