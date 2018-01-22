@@ -187,7 +187,6 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
 
         //Create a MultiTree and relate it to that Contentlet
-        APILocator.getContainerAPI().findAllContainers(null, false);
         MultiTree mt = new MultiTree()
                 .setContainer(CONTAINER)
                 .setHtmlPage(PAGE)
