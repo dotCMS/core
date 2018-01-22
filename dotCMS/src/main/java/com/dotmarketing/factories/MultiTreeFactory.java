@@ -230,10 +230,10 @@ public class MultiTreeFactory {
      */
     public static List<MultiTree> getContainerStructureMultiTree(final String containerIdentifier, final String structureInode) {
         try {
-            final DotConnect dc = new DotConnect();
-            dc.setSQL(SELECT_BY_CONTAINER_AND_STRUCTURE);
-            dc.addParam(containerIdentifier);
-            dc.addParam(structureInode);
+            final DotConnect dc = new DotConnect()
+                .setSQL(SELECT_BY_CONTAINER_AND_STRUCTURE)
+                .addParam(containerIdentifier)
+                .addParam(structureInode);
 
             return TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
 
