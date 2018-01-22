@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -10,6 +11,7 @@ import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -157,55 +159,45 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         PageMode mode = PageMode.get(req);
-        Language landId = WebAPILocator.getLanguageWebAPI()
-            .getLanguage(req);
+        Language landId = WebAPILocator.getLanguageWebAPI().getLanguage(req);
 
 
-        
-        
+
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
-        
-        
-        
-        
-        
-        ShortyId contentShorty = APILocator.getShortyAPI()
-            .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
 
 
 
-        final Contentlet contentlet = (contentShorty.type == ShortType.IDENTIFIER) ? APILocator.getContentletAPI()
-            .findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(), user, mode.respectAnonPerms)
-                : APILocator.getContentletAPI()
-                    .find(contentShorty.longId, user, mode.respectAnonPerms);
+        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+        });
 
-        if (contentlet.getContentType()
-            .baseType() == BaseContentType.WIDGET) {
+
+
+        final Contentlet contentlet = (contentShorty.type == ShortType.IDENTIFIER)
+                ? APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(),
+                        user, mode.respectAnonPerms)
+                : APILocator.getContentletAPI().find(contentShorty.longId, user, mode.respectAnonPerms);
+
+        if (contentlet.getContentType().baseType() == BaseContentType.WIDGET) {
             Map<String, String> response = new HashMap<>();
             response.put("render", WidgetResource.parseWidget(req, res, contentlet));
 
-            return Response.ok(response)
-                .build();
+            return Response.ok(response).build();
 
 
         }
 
-        ShortyId containerShorty = APILocator.getShortyAPI()
-            .getShorty(containerId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find Container:" + containerId);
-            });
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find Container:" + containerId);
+        });
 
         Container container = (containerShorty.type != ShortType.IDENTIFIER)
-                ? APILocator.getContainerAPI()
-                    .find(containerId, user, mode.showLive)
-                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                    .findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
-                        : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
+                ? APILocator.getContainerAPI().find(containerId, user, mode.showLive)
+                : (mode.showLive)
+                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user,
+                                mode.respectAnonPerms)
+                        : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user,
+                                mode.respectAnonPerms);
 
 
 
@@ -216,18 +208,70 @@ public class ContainerResource implements Serializable {
         context.put("contentletList" + container.getIdentifier() + uuid, Lists.newArrayList(contentlet.getIdentifier()));
         StringWriter out = new StringWriter();
 
+       // new ContainerLoader().invalidate(container);
+        
+        VelocityResourceKey key = new VelocityResourceKey(container, mode);
 
-
-
-        VelocityUtil.getEngine()
-            .mergeTemplate(mode.name() + File.separator + container.getIdentifier() + "/" + uuid + "."
-                    + VelocityType.CONTAINER.fileExtension, context, out);
+        VelocityUtil.getEngine().mergeTemplate(key.path, context, out);
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());
 
-        return Response.ok(response)
-            .build();
+        return Response.ok(response).build();
+
+    }
+
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
+    public final Response putContainerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId, 
+            @PathParam("contentletId") final String contentletId,
+            @PathParam("uuid") final String uuid, 
+            @QueryParam("order") final int order) throws DotDataException, DotSecurityException, ParseErrorException,
+            MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
+            InvocationTargetException, NoSuchMethodException {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+        PageMode mode = PageMode.get(req);
+        Language landId = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+
+        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+
+
+        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+        });
+
+
+
+        final Contentlet contentlet = (contentShorty.type == ShortType.IDENTIFIER)
+                ? APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(),
+                        user, mode.respectAnonPerms)
+                : APILocator.getContentletAPI().find(contentShorty.longId, user, mode.respectAnonPerms);
+
+
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find Container:" + containerId);
+        });
+
+        Container container = (containerShorty.type != ShortType.IDENTIFIER)
+                ? APILocator.getContainerAPI().find(containerId, user, mode.showLive)
+                : (mode.showLive)
+                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user,
+                                mode.respectAnonPerms)
+                        : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user,
+                                mode.respectAnonPerms);
+
+        MultiTree mt = new MultiTree().setContainer(container).setContentlet(contentlet).setRelationType(uuid).setOrder(order);
+        MultiTreeFactory.saveMultiTree(mt);
+
+        return Response.ok("ok").build();
 
     }
 
@@ -247,50 +291,40 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
-        
-        
-        final Language id = WebAPILocator.getLanguageWebAPI()
-            .getLanguage(req);
 
-        ShortyId contentShorty = APILocator.getShortyAPI()
-            .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
-            .find(contentShorty.longId, user, !mode.isAdmin)
-                : APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, !mode.isAdmin);
+
+        final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+        ShortyId contentShorty = APILocator.getShortyAPI().getShorty(contentletId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+        });
+        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET)
+                ? APILocator.getContentletAPI().find(contentShorty.longId, user, !mode.isAdmin)
+                : APILocator.getContentletAPI().findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user,
+                        !mode.isAdmin);
 
 
 
-        ShortyId containerShorty = APILocator.getShortyAPI()
-            .getShorty(containerId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find Container:" + containerId);
-            });
-        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
-            .find(containerId, user, !mode.isAdmin)
-                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                    .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
-                        : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
+        ShortyId containerShorty = APILocator.getShortyAPI().getShorty(containerId).orElseGet(() -> {
+            throw new ResourceNotFoundException("Can't find Container:" + containerId);
+        });
+        Container container = (containerShorty.subType == ShortType.CONTAINER)
+                ? APILocator.getContainerAPI().find(containerId, user, !mode.isAdmin)
+                : (mode.showLive)
+                        ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
+                        : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerShorty.longId, user,
+                                !mode.isAdmin);
 
 
-        APILocator.getPermissionAPI()
-            .checkPermission(contentlet, PermissionLevel.READ, user);
-        APILocator.getPermissionAPI()
-            .checkPermission(container, PermissionLevel.EDIT, user);
+        APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.READ, user);
+        APILocator.getPermissionAPI().checkPermission(container, PermissionLevel.EDIT, user);
 
-        MultiTree mt = new MultiTree().setContainer(containerId)
-            .setContentlet(contentletId)
-            .setRelationType(uid);
+        MultiTree mt = new MultiTree().setContainer(containerId).setContentlet(contentletId).setRelationType(uid);
 
 
         MultiTreeFactory.deleteMultiTree(mt);
 
-        return Response.ok("ok")
-            .build();
+        return Response.ok("ok").build();
     }
 
 
@@ -304,22 +338,18 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
 
-        Language id = WebAPILocator.getLanguageWebAPI()
-            .getLanguage(req);
+        Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
 
         PageMode mode = PageMode.get(req);
 
-        Container container = APILocator.getContainerAPI()
-            .find(containerId, user, !mode.isAdmin);
+        Container container = APILocator.getContainerAPI().find(containerId, user, !mode.isAdmin);
 
         org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-        Contentlet contentlet = APILocator.getContentletAPI()
-            .find(contentInode, user, !mode.isAdmin);
+        Contentlet contentlet = APILocator.getContentletAPI().find(contentInode, user, !mode.isAdmin);
         ContainerStructure cStruct = APILocator.getContainerAPI()
             .getContainerStructures(container)
             .stream()
-            .filter(cs -> contentlet.getStructureInode()
-                .equals(cs.getStructureId()))
+            .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId()))
             .findFirst()
             .orElse(null);
 
@@ -341,9 +371,7 @@ public class ContainerResource implements Serializable {
 
 
 
-        VelocityUtil.getEngine()
-            .evaluate(context, out, this.getClass()
-                .getName(), IOUtils.toInputStream(in.toString()));
+        VelocityUtil.getEngine().evaluate(context, out, this.getClass().getName(), IOUtils.toInputStream(in.toString()));
 
         Map<String, String> response = new HashMap<>();
         response.put("render", out.toString());

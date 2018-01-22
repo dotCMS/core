@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
@@ -18,15 +19,18 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -378,6 +382,7 @@ public class PageResource {
     @POST
     @JSONP
     @NoCache
+    @WrapInTransaction
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
@@ -397,7 +402,22 @@ public class PageResource {
             }
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
-
+            
+            
+            MultiTreeFactory.deleteMultiTreeByParent(page.getIdentifier());
+            
+            
+            for(PageContainerForm.ContainerEntry entry: pageContainerForm.getContainerEntries()) {
+                int i=0;
+                for(String conId : entry.getContentIds()) {
+                    MultiTree mTree = new MultiTree().setHtmlPage(page.getIdentifier())
+                            .setContainer(entry.getContainerId())
+                            .setContentlet(conId)
+                            .setOrder(i++);
+                    MultiTreeFactory.saveMultiTree(mTree);
+                    
+                }
+            }
 
             res = Response.ok(new ResponseEntityView("ok")).build();
         } catch (DotSecurityException e) {

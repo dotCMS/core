@@ -4,6 +4,10 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+
 import java.io.Serializable;
 
 /**
@@ -85,11 +89,13 @@ public class MultiTree implements Serializable {
         return this.relationType;
     }
 
-    public MultiTree setContentlet(String contentlet) {
+    public MultiTree setContentlet(final String contentlet) {
         this.child = contentlet;
         return new MultiTree(this);
     }
-
+    public MultiTree setContentlet(final Contentlet contentlet) {
+        return this.setContentlet(contentlet.getIdentifier());
+    }
     public MultiTree setRelationType(java.lang.String relationType) {
         this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
         return new MultiTree(this);
@@ -104,7 +110,9 @@ public class MultiTree implements Serializable {
         this.treeOrder = treeOrder;
         return new MultiTree(this);
     }
-
+    public MultiTree setOrder(final int treeOrder) {
+        return this.setTreeOrder(treeOrder);
+    }
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
@@ -189,7 +197,9 @@ public class MultiTree implements Serializable {
         this.parent1 = htmlPage;
         return new MultiTree(this);
     }
-
+    public MultiTree setHtmlPage(final HTMLPageAsset page) {
+        return this.setHtmlPage(page.getIdentifier());
+    }
     /**
      * @return Returns the container.
      */
@@ -200,11 +210,16 @@ public class MultiTree implements Serializable {
     /**
      * @param container The container to set.
      */
-    public MultiTree setContainer(String container) {
+    public MultiTree setContainer(final String container) {
         this.parent2 = container;
         return new MultiTree(this);
     }
-
+    /**
+     * @param container The container to set.
+     */
+    public MultiTree setContainer(final Container container) {
+        return this.setContainer(container.getIdentifier());
+    }
 
 
 }
