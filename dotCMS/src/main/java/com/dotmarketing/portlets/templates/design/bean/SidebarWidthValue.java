@@ -27,5 +27,6 @@ public enum SidebarWidthValue {
         }
         return NONE;
     }
-    
+
+
 }
