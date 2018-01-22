@@ -243,7 +243,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 
         if(updateVersionTS) {
@@ -295,7 +295,17 @@ public class VersionableFactoryImpl extends VersionableFactory {
          contv = (ContentletVersionInfo)dh.load();
          return contv;
     }
+    @Override
+    protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
 
+         HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? ");
+         dh.setParam(identifier);
+
+         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+         return (List<ContentletVersionInfo>)dh.list();
+
+    }
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
     	Identifier ident = this.iapi.find(cvInfo.getIdentifier());
@@ -307,7 +317,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         try {
 			BeanUtils.copyProperties(vi, cvInfo);
 		} catch (Exception e) {
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
         if(updateVersionTS){
         	vi.setVersionTs(new Date());

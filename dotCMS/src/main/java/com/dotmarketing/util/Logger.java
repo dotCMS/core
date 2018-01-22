@@ -5,13 +5,13 @@
  */
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+
 import java.io.File;
 import java.util.WeakHashMap;
 
+import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
-import com.dotmarketing.velocity.VelocityServlet;
 
 /**
  *@author     David Torres
@@ -120,8 +120,12 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-
-        logger.error(message, ex);
+    	try{
+    	    logger.error(message, ex);
+    	}
+    	catch(java.lang.IllegalStateException e){
+    	    ex.printStackTrace();
+    	}
     }
 
     public static void fatal(Object ob, String message) {

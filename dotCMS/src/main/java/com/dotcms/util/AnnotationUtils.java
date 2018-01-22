@@ -1,16 +1,14 @@
 package com.dotcms.util;
 
 
+import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
+import com.google.common.collect.ImmutableSet;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 
 
 /**
@@ -19,8 +17,13 @@ import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
  */
 public class AnnotationUtils {
 
-    private static final Map<com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey, String []> attributesAnnotatedByCacheMap =
-            new ConcurrentHashMap<MultiKey, String[]>(256);
+    private static final Map<MultiKey, String []> attributesAnnotatedByCacheMap =
+            new ConcurrentHashMap<>(256);
+
+    private AnnotationUtils(){
+        throw new IllegalStateException("Utility class");
+    }
+
 
     /**
      * Determinate if the bean is annotated by specified annotation
@@ -95,7 +98,7 @@ public class AnnotationUtils {
                     attributesAnnotatedByCacheMap.get(multiKey);
         } else {
 
-            final List<String> fieldList = new ArrayList<String>();
+            final List<String> fieldList = new ArrayList<>();
             for (Field field : beanClass.getDeclaredFields()) {
 
                 if (isFieldAnnotatedBy(field, annotationType)) {
@@ -242,5 +245,32 @@ public class AnnotationUtils {
 
         return null;
     } // getMethodAnnotatedBy.
+
+    /**
+     * Get all methods annotated by annotationType, not looking for super class. Just the subclass
+     * @param object {@link Object}
+     * @param annotationType {@link Class}
+     * @return Set returns an immutable set with the methods annotated by annotationType
+     */
+    public static Set<Method> getMethodsAnnotatedBy (final Object object,
+                                                     final Class<? extends Annotation> annotationType) {
+
+        final ImmutableSet.Builder<Method> setBuilder =
+            new ImmutableSet.Builder<>();
+        final Class clazz = object.getClass();
+
+        if (null != clazz) {
+
+            for (Method method : clazz.getMethods()) {
+
+                if (isMethodAnnotatedBy(method, annotationType)) {
+
+                    setBuilder.add(method);
+                }
+            }
+        }
+
+        return setBuilder.build();
+    } // getMethodsAnnotatedBy.
 
 } // E:O:F:AnnotationUtils,

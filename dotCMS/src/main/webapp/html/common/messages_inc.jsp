@@ -19,6 +19,7 @@ if(request.getSession().getAttribute(ActionErrors.GLOBAL_ERROR) != null){
 
 Set<String> messages = new HashSet<String>();
 Set<String> errors = new HashSet<String>();
+SessionDialogMessage dialogMessage = null;
 
 if(request.getAttribute(ActionErrors.GLOBAL_ERROR) !=null){
 	ActionErrors aes = (ActionErrors) request.getAttribute(ActionErrors.GLOBAL_ERROR);
@@ -75,15 +76,34 @@ if(SessionMessages.contains(session, "custommessage")){
 	messages.add((String) SessionMessages.get(session, "custommessage"));
 }
 
-if(SessionMessages.contains(request, "message")){
-	messages.add((String) SessionMessages.get(request, "message"));
+if (SessionMessages.contains(session, "dialogMessage")){
+	dialogMessage = (SessionDialogMessage) SessionMessages.get(session, "dialogMessage");
 }
-if(SessionMessages.contains(request, "error")){
-	errors.add((String) SessionMessages.get(request, "error"));
-}
-if(SessionMessages.contains(request, "custommessage")){
-	messages.add((String) SessionMessages.get(request, "custommessage"));
-}
+
+//Support multiple messages
+int i = 0;
+do {
+	if (SessionMessages.contains(request, "message" + i)) {
+		messages.add((String) SessionMessages.get(request, "message" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "message" + i));
+
+i = 0;
+do {
+	if(SessionMessages.contains(request, "error" + i)){
+		errors.add((String) SessionMessages.get(request, "error" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "error" + i));
+
+i = 0;
+do {
+	if(SessionMessages.contains(request, "custommessage" + i)){
+		messages.add((String) SessionMessages.get(request, "custommessage" + i));
+		i++;
+	}
+} while (SessionMessages.contains(request, "custommessage" + i));
 
 
 
@@ -98,6 +118,8 @@ request.getSession().removeAttribute("com.dotcms.repackage.org.apache.struts.act
 
 <script type='text/javascript' src='/html/js/messages.js'></script>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@ page import="com.liferay.util.servlet.SessionDialogMessage" %>
+<%@ page import="java.util.Map.Entry" %>
 
 <script>
 	dojo.require("dojo.fx");
@@ -120,4 +142,40 @@ request.getSession().removeAttribute("com.dotcms.repackage.org.apache.struts.act
 		   		);
 		<%}%>
 
+    	<%if(dialogMessage != null){%>
+			dojo.addOnLoad(function() {
+                var dia = dijit.byId("messageDialog");
+                if(dia){
+                    dia.destroyRecursive();
+                }
+
+                dia = new dijit.Dialog({
+                    id			:	"messageDialog",
+                    title		: 	"<%=dialogMessage.getTitle()%>",
+                    style		:	"display:none;width:630px;height:auto;vertical-align: middle; ",
+					draggable	:	true
+                });
+                var contentPane = new dojox.layout.ContentPane({
+                    id 			: "messageDialogContentPane"
+                }).placeAt("messageDialog");
+
+                dojo.place("<span style='color: red; font-weight: bold'><%= dialogMessage.getError() %></span>", "messageDialogContentPane", "last");
+
+                <%
+                String messageHTML = "";
+                for (Entry<String, List<String>> entry : dialogMessage.getMessages().entrySet()) {
+					messageHTML += "<table class='listingTable' style='margin-bottom: 0px'><thead><tr><th>"+ entry.getKey() +"</th></tr></thead><tbody>";
+					for (String item : entry.getValue()) {
+						messageHTML += "<tr><td>" + item + "</td></tr>";
+					}
+					messageHTML += "</tbody></table>";
+                }%>
+
+                dojo.place("<div style='overflow: auto;height:auto; margin-top: 10px; margin-bottom: 20px'><%= messageHTML %></div>", "messageDialogContentPane", "last");
+				
+                dojo.place("<span style='margin-bottom: 10px; color: #888888;font-size: smaller'><%= dialogMessage.getFooter() %></span>", "messageDialogContentPane", "last");
+
+				dia.show();
+    		}) ;
+    	<%}%>
 </script>

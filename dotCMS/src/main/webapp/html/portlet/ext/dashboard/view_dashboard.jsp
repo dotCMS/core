@@ -31,7 +31,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 
 
@@ -385,7 +385,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 		dojo.style(inode, "background", "#ffffff"); 
 	}
 
-    <% if(LicenseUtil.getLevel() > 199){ %>		
+    <% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
     dojo.addOnLoad(function(){
     	dojo.place('<br/><br/><br/><br/><img src="/html/images/icons/round-progress-bar.gif" /><br/>&nbsp;&nbsp;&nbsp;<b><%= LanguageUtil.get(pageContext, "Loading") %>...</b>', 'hosts', 'only');    	
    		DashboardAjax.getHosts(getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>"),20,1,'',dojo.hitch(this, fillHostsTable));
@@ -406,7 +406,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 
 <div class="portlet-main">
 
-<% if(LicenseUtil.getLevel() > 199){ %>		
+<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
 <form id="fm" method="post">
 	<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
 	<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>

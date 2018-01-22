@@ -8,12 +8,12 @@
 		"variable": "testFileAsset",
 		"folder": "SYSTEM_FOLDER",
 		"host": "demo.dotcms.com",
-		"implClass": "com.dotcms.contenttype.model.type.FileAssetContentType",
+		"clazz": "com.dotcms.contenttype.model.type.FileAssetContentType",
 		"fields": [
 			{
 				"dataType": "TEXT",
 				"fixed": false,
-				"implClass": "com.dotcms.contenttype.model.field.TextField",
+				"clazz": "com.dotcms.contenttype.model.field.TextField",
 				"indexed": true,
 				"listed": true,
 				"modDate": 1478557845000,

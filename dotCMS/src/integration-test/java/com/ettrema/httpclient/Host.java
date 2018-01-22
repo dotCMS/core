@@ -13,8 +13,10 @@ import com.dotcms.repackage.com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.Utils.CancelledException;
 import com.ettrema.httpclient.zsyncclient.FileSyncer;
 import java.io.*;
+import java.io.File;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -274,7 +276,7 @@ public class Host extends Folder {
      * @throws FileNotFoundException
      * @throws HttpException
      */
-    public int doPut(Path remotePath, java.io.File file, ProgressListener listener) throws FileNotFoundException, HttpException, CancelledException, NotAuthorizedException, ConflictException {
+    public int doPut(Path remotePath, final File file, final ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException {
         if (fileSyncer != null) {
             try {
                 fileSyncer.upload(this, file, remotePath, listener);
@@ -287,13 +289,13 @@ public class Host extends Folder {
                 throw new GenericHttpException(remotePath.toString(), ex);
             }
         }
-        InputStream in = null;
+        InputStream is = null;
         try {
-            in = new FileInputStream(file);
+            is = Files.newInputStream(file.toPath());
             String dest = buildEncodedUrl(remotePath);
-            return doPut(dest, in, file.length(), null, listener);
+            return doPut(dest, is, file.length(), null, listener);
         } finally {
-            IOUtils.closeQuietly(in);
+            IOUtils.closeQuietly(is);
         }
 
     }

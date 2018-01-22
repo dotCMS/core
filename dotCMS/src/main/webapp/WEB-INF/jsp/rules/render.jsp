@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.*" %>
@@ -40,7 +41,7 @@
 	<div class="portlet-wrapper">
 		<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
-		<%if( LicenseUtil.getLevel() < 200){ %>
+		<%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 		
 			<jsp:include page="/WEB-INF/jsp/rules/not_licensed.jsp"></jsp:include>
 

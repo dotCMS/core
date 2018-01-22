@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
@@ -12,17 +14,17 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  */
 public class TemplateLayout {
 
-    public String pageWidth;
-    public String width;
-    public String layout;
+    private String pageWidth;
+    private String width;
+    private String layout;
 
-    public String title;
+    private String title;
 
-    public boolean header;
-    public boolean footer;
+    private boolean header;
+    private boolean footer;
 
-    public TemplateLayoutColumn body;
-    public TemplateLayoutColumn sidebar;
+    private Body body;
+    private Sidebar sidebar;
 
     public String getPageWidth () {
         return pageWidth;
@@ -86,7 +88,7 @@ public class TemplateLayout {
         return header;
     }
 
-    public void setHeader ( boolean header ) {
+    public void setHeader ( final boolean header ) {
         this.header = header;
     }
 
@@ -94,52 +96,84 @@ public class TemplateLayout {
         return footer;
     }
 
-    public void setFooter ( boolean footer ) {
+    public void setFooter ( final boolean footer ) {
         this.footer = footer;
     }
 
-    public TemplateLayoutColumn getBody () {
+    public Body getBody () {
         return body;
     }
 
-    public void setBody ( List<TemplateLayoutRow> bodyRows ) {
-
-        this.body = new TemplateLayoutColumn();
-        this.body.setType( TemplateLayoutColumn.TYPE_BODY );
-        this.body.setRows( bodyRows );
+    public void setBody (final Body body) {
+        this.body = body;
     }
 
-    public TemplateLayoutColumn getSidebar () {
+    public void setBodyRows ( final List<TemplateLayoutRow> bodyRows ) {
+
+        this.body = new Body(bodyRows);
+    }
+
+    public Sidebar getSidebar () {
         return sidebar;
     }
 
-    public void setSidebar ( List<String> containers, Boolean isPreview ) {
+    public void setSidebar (final Sidebar sidebar) {
+        this.sidebar = sidebar;
+    }
 
-        this.sidebar = new TemplateLayoutColumn();
-        this.sidebar.setType( TemplateLayoutColumn.TYPE_SIDEBAR );
-        this.sidebar.setContainers( containers );
-        this.sidebar.setPreview( isPreview );
+    public void setContainers ( final List<ContainerUUID> containers, final Boolean isPreview ) {
+        String location = null;
+        int widthPercent  = 0;
 
         if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T1 ) ) {//layout-160-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 20 );
+            location = Sidebar.LOCATION_LEFT;
+            widthPercent = 20;
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T2 ) ) {//layout-240-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 30 );
+            location = Sidebar.LOCATION_LEFT;
+            widthPercent = 30;
         } else if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T3 ) ) {//layout-300-left
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
-            this.sidebar.setWidthPercent( 40 );
+            location =  Sidebar.LOCATION_LEFT;
+            widthPercent = 40;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T4 ) ) {//layout-160-right
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 20 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 20;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T5 ) ) {//layout-240-right
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 30 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 30;
         } else if ( layout.equals( YUI_LAYOUT_RIGHT_CLASS_T6 ) ) {//layout-300-right*/
-            this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_RIGHT );
-            this.sidebar.setWidthPercent( 40 );
+            location =  Sidebar.LOCATION_RIGHT;
+            widthPercent = 40;
         }
 
+        this.sidebar = new Sidebar(containers, location, 0, widthPercent);
+        this.sidebar.setPreview( isPreview );
+
+    }
+
+    public List<String> getContainersId() {
+        final List<String> containerIdentifiers = new ArrayList<>();
+        final List<TemplateLayoutRow> rows = this.body.getRows();
+
+        for (final TemplateLayoutRow row : rows) {
+            final List<TemplateLayoutColumn> columns = row.getColumns();
+
+            for (final TemplateLayoutColumn column : columns) {
+                final List<ContainerUUID> columnContainers = column.getContainers();
+                containerIdentifiers.addAll(
+                        columnContainers.stream()
+                                .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        if (this.sidebar != null && this.sidebar.getContainers() != null) {
+            containerIdentifiers.addAll(
+                    this.sidebar.getContainers().stream()
+                            .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
+                            .collect(Collectors.toList()));
+        }
+
+        return containerIdentifiers;
     }
 
 }

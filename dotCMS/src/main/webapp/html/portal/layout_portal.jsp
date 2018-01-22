@@ -4,7 +4,7 @@
 <tiles:useAttribute id="tilesPortletSubNav" name="portlet_sub_nav" classname="java.lang.String" />
 <%
         boolean inPortal = (request.getAttribute("org.dotcms.variables.inPortlets") != null);
-        boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) || (UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME))) || (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME));
+        boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) || (UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME))) || (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean) request.getSession().getAttribute(WebKeys.IN_FRAME));
 		boolean isAjaxIframe = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.AJAX_PORTLET)) && "true".equals(ParamUtil.getString(request, WebKeys.AJAX_PORTLET));
 		
         request.setAttribute("org.dotcms.variables.inPortlets", "true"); 

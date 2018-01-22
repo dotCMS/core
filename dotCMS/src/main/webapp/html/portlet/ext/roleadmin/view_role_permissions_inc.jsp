@@ -28,7 +28,6 @@
              		<td><%= LanguageUtil.get(pageContext, "Edit") %></td>
              		<td><%= LanguageUtil.get(pageContext, "Publish") %></td>
              		<td><%= LanguageUtil.get(pageContext, "Edit-Permissions") %></td>
-             		<td><%= LanguageUtil.get(pageContext, "Virtual-Links") %></td>
              	</tr>
              </table>
          </div>

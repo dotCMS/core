@@ -555,13 +555,10 @@
       </action>
       <!-- HMTLPage Management -->
 
-      <!-- Virtual Link Management -->
-      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotmarketing.portlets.virtuallinks.action.ViewVirtualLinksAction">
+      <!-- Virtual Link Management -->      
+      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotcms.vanityurl.action.ViewVanityURLAction">
          <forward name="portlet.ext.virtuallinks.view_virtuallinks" path="portlet.ext.virtuallinks.view_virtuallinks" />
          <forward name="portlet.ext.virtuallinks.view" path="portlet.ext.virtuallinks.view" />
-      </action>
-      <action path="/ext/virtuallinks/edit_virtuallink" type="com.dotmarketing.portlets.virtuallinks.action.EditVirtualLinkAction" name="VirtualLinkForm" scope="request" input="portlet.ext.virtuallinks.edit_virtuallink" validate="false">
-         <forward name="portlet.ext.virtuallinks.edit_virtuallink" path="portlet.ext.virtuallinks.edit_virtuallink"></forward>
       </action>
       <!-- Virtual Link  Management -->
 

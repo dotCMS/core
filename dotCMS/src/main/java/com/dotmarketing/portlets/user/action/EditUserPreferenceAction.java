@@ -67,7 +67,7 @@ public class EditUserPreferenceAction extends DotPortletAction
             
         }
         
-        HibernateUtil.commitTransaction();
+        HibernateUtil.closeAndCommitTransaction();
     }
 
 	///// ************** ALL METHODS HERE *************************** ////////

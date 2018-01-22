@@ -3,6 +3,8 @@
  */
 package com.dotmarketing.plugin.business;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -18,12 +20,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -50,10 +51,12 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#delete(com.dotmarketing.plugin.model.Plugin)
 	 */
+	@WrapInTransaction
 	public void delete(Plugin plugin) throws DotDataException {
 		pluginFac.delete(plugin);
 	}
 
+	@WrapInTransaction
 	public void deletePluginProperties(String pluginId) throws DotDataException {
 		pluginFac.deletePluginProperties(pluginId);
 	}
@@ -61,6 +64,7 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#loadPlugin(java.lang.String)
 	 */
+	@CloseDBIfOpened
 	public Plugin loadPlugin(String id) throws DotDataException {
 		return pluginFac.loadPlugin(id);
 	}
@@ -68,6 +72,7 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#loadPlugins()
 	 */
+	@CloseDBIfOpened
 	public List<Plugin> findPlugins() throws DotDataException {
 		return pluginFac.findPlugins();
 	}
@@ -75,6 +80,7 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#loadProperty(java.lang.String, java.lang.String)
 	 */
+	@CloseDBIfOpened
 	public String loadProperty(String pluginId, String key)	throws DotDataException {
 		PluginProperty pp = pluginFac.loadProperty(pluginId, key);
 		if(pp!= null){
@@ -87,6 +93,7 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#save(com.dotmarketing.plugin.model.Plugin)
 	 */
+	@WrapInTransaction
 	public void save(Plugin plugin) throws DotDataException {
 		pluginFac.save(plugin);
 	}
@@ -94,6 +101,7 @@ public class PluginAPIImpl implements PluginAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginAPI#saveProperty(java.lang.String, java.lang.String, java.lang.String)
 	 */
+	@WrapInTransaction
 	public void saveProperty(String pluginId, String key, String value)	throws DotDataException {
 		PluginProperty pp = pluginFac.loadProperty(pluginId, key);
 		if(pp != null && UtilMethods.isSet(pp.getPluginId())){
@@ -166,6 +174,7 @@ public class PluginAPIImpl implements PluginAPI {
 		this.pluginJarDir = directory;		
 	}
 
+	@CloseDBIfOpened
 	public void loadBackEndFiles(String pluginId) throws IOException, DotDataException{
 		try{
 			
@@ -205,7 +214,7 @@ public class PluginAPIImpl implements PluginAPI {
 					//Create temporary file with the inputstream
 					InputStream input = jar.getInputStream(entry);
 					File temporaryFile = new File("file.temp");
-					OutputStream output=new FileOutputStream(temporaryFile);
+					final OutputStream output= Files.newOutputStream(temporaryFile.toPath());
 					byte buf[]=new byte[1024];
 					int len;
 					while((len=input.read(buf))>0){

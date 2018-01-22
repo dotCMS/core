@@ -46,6 +46,10 @@ public class SessionMessages {
 
 	public static final String KEY = SessionMessages.class.getName();
 
+	public static final String ERROR = "error";
+
+	public static final String DIALOG_MESSAGE = "dialogMessage";
+
 	// Servlet Request
 
 	public static void add(HttpServletRequest req, String key) {

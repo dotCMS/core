@@ -1,12 +1,5 @@
 package com.dotmarketing.webdav;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.Map;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FileItem;
@@ -32,6 +25,13 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
 
 public class FileResourceImpl implements FileResource, LockableResource {
 
@@ -164,7 +164,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 			Logger.error(this, e.getMessage(), e);
 			return;
 		}
-		FileInputStream fis = new FileInputStream(f);
+		InputStream fis = Files.newInputStream(f.toPath());
         BufferedInputStream bin = new BufferedInputStream(fis);
         final byte[] buffer = new byte[ 1024 ];
         int n = 0;

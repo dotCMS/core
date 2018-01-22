@@ -5,8 +5,11 @@ import java.util.Map;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -153,13 +156,17 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         User modUser = null;
         try {
             modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-        }
+        } catch (NoSuchUserException e) {
+            Logger.warn(this, "User " + this.getModUser() + " does not exist. Setting system as mod user.");
+        } catch (DotDataException | DotSecurityException e1) {
+            Logger.warn(this, "There was an issue when pulling " + this.getModUser() + " from DB. Continuing as system user.");
+        } catch (Exception e2) {
+            Logger.warn(this, "There was an unexpected problem with pulling user " + this.getModUser() + " from DB. Continuing as system user.");
+        } 
         if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
             map.put("modUserName", modUser.getFullName());
         else
-            map.put("modUserName", "unknown");
+            map.put("modUserName", UserAPI.SYSTEM_USER_ID);
         
         map.put("metadata", getMetadata());
         map.put("httpsRequired", isHttpsRequired());

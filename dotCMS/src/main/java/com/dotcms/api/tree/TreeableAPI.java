@@ -50,7 +50,7 @@ public class TreeableAPI {
      */
     public List<Treeable> loadAssetsUnderHost(Host host, User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
         List<Treeable> assets = new ArrayList<Treeable>();
-        assets.addAll(folderAPI.findFoldersByHost(host,user,respectFrontEndPermissions));
+        assets.addAll(folderAPI.findSubFolders(host,user,respectFrontEndPermissions));
         assets.addAll(fileAssetAPI.findFileAssetsByHost(host,user,live,working,archived,respectFrontEndPermissions));
         return assets;
     }

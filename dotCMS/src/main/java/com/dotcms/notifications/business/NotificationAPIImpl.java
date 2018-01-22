@@ -1,6 +1,8 @@
 package com.dotcms.notifications.business;
 
 import com.dotcms.api.system.event.*;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.*;
@@ -19,6 +21,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -162,7 +165,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 
     @Override
     public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
-                                     final NotificationLevel level, final NotificationType type, Visibility visibility,
+                                     final NotificationLevel level, final NotificationType type, final Visibility visibility,
                                      final String visibilityId, final String userId, final Locale locale) throws DotDataException {
 
         // since the notification is not a priory process on the current thread, we decided to execute it async
@@ -175,49 +178,9 @@ public class NotificationAPIImpl implements NotificationAPI {
 
             try {
 
-                //Start a transaction
-                HibernateUtil.startTransaction();
-
-                Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
-
-                //If the is Visibility.ROLE we need to create a notification for each user under that role
-                if ( visibility.equals(Visibility.ROLE) ) {
-                    //Search for all the users in the given role
-                    Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
-                    if ( foundUsers != null && !foundUsers.isEmpty() ) {
-                        this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
-                    }
-                } else if ( visibility.equals(Visibility.USER) ) {
-                    this.notificationFactory.saveNotification(dto);
-                } else {
-                    throw new NotImplementedException("Visibility no implemented [" + visibility + "]");
-                }
-
-                // Adding notification to System Events table
-                final Notification notificationBean = new Notification(level, userId, data);
-                final Payload payload = new Payload(notificationBean, visibility, visibilityId);
-
-                notificationBean.setGroupId(dto.getGroupId());
-                notificationBean.setTimeSent(new Date());
-                notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
-
-                final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
-                this.systemEventsAPI.push(systemEvent);
-                Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
-
-                //Everything ok..., committing the transaction
-                HibernateUtil.commitTransaction();
-
+                this.saveNotification(dto, data, visibility,
+                        visibilityId, level, userId, locale);
             } catch (Exception e) {
-
-                try {
-                    //On error rolling back the changes
-                    HibernateUtil.rollbackTransaction();
-                } catch (DotHibernateException hibernateException) {
-                    if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
-                        Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                    }
-                }
 
                 if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
                     Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
@@ -227,6 +190,44 @@ public class NotificationAPIImpl implements NotificationAPI {
         });
     } // generateNotification.
 
+    @WrapInTransaction
+    private void saveNotification (final NotificationDTO dto,
+                                   final NotificationData data,
+                                   final Visibility visibility,
+                                   final String visibilityId,
+                                   final NotificationLevel level,
+                                   final String userId,
+                                   final Locale locale) throws DotSecurityException, DotDataException {
+
+        Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
+
+        //If the is Visibility.ROLE we need to create a notification for each user under that role
+        if ( visibility.equals(Visibility.ROLE) ) {
+            //Search for all the users in the given role
+            Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
+            if ( foundUsers != null && !foundUsers.isEmpty() ) {
+                this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
+            }
+        } else if ( visibility.equals(Visibility.USER) ) {
+            this.notificationFactory.saveNotification(dto);
+        } else {
+            throw new NotImplementedException("Visibility no implemented [" + visibility + "]");
+        }
+
+        // Adding notification to System Events table
+        final Notification notificationBean = new Notification(level, userId, data);
+        final Payload payload = new Payload(notificationBean, visibility, visibilityId);
+
+        notificationBean.setGroupId(dto.getGroupId());
+        notificationBean.setTimeSent(new Date());
+        notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
+
+        final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+        this.systemEventsAPI.push(systemEvent);
+        Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
+    }
+
+    @CloseDBIfOpened
     @Override
     public Notification findNotification(final String userId, final String groupId) throws DotDataException {
 
@@ -242,9 +243,7 @@ public class NotificationAPIImpl implements NotificationAPI {
                     final NotificationDTO dto =
                         this.notificationFactory.findNotification(userId, groupId);
 
-                    notification = this.conversionUtils.convert(dto, (NotificationDTO record) -> {
-                        return convertNotificationDTO(record);
-                    });
+                    notification = this.conversionUtils.convert(dto,  this::convertNotificationDTO);
 
                     if(notification!=null){
                         this.newNotificationCache.addNotification(notification);
@@ -256,36 +255,21 @@ public class NotificationAPIImpl implements NotificationAPI {
         return notification;
     } // findNotification.
 
+    @WrapInTransaction
     @Override
     public void deleteNotification(final String userId, final String groupId) throws DotDataException {
 
         synchronized (this) {
 
-            boolean localTransaction = false;
-
             try {
 
                 //Check for a transaction and start one if required
-                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
                 this.notificationFactory.deleteNotification(userId, groupId);
                 this.newNotificationCache.removeNotification(userId, groupId);
                 this.newNotificationCache.remove(userId);
 
-                //Everything ok..., committing the transaction
-                if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
-                }
             } catch (Exception e) {
-
-                try {
-                    //On error rolling back the changes
-                    if ( localTransaction ) {
-                        HibernateUtil.rollbackTransaction();
-                    }
-                } catch (DotHibernateException hibernateException) {
-                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                }
 
                 final String msg = "An error occurred when deleting Notification.";
                 Logger.error(this, msg, e);
@@ -294,18 +278,13 @@ public class NotificationAPIImpl implements NotificationAPI {
         }
     } // deleteNotification.
 
-
+    @WrapInTransaction
     @Override
     public void deleteNotifications(final String userId, final String... groupsId) throws DotDataException {
 
         synchronized (this) {
 
-            boolean localTransaction = false;
-
             try {
-
-                //Check for a transaction and start one if required
-                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
                 this.notificationFactory.deleteNotification(userId, groupsId);
 
@@ -315,20 +294,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 
                 this.newNotificationCache.remove(userId);
 
-                //Everything ok..., committing the transaction
-                if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
-                }
             } catch (Exception e) {
-
-                try {
-                    //On error rolling back the changes
-                    if ( localTransaction ) {
-                        HibernateUtil.rollbackTransaction();
-                    }
-                } catch (DotHibernateException hibernateException) {
-                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                }
 
                 final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
                 Logger.error(this, msg, e);
@@ -337,35 +303,17 @@ public class NotificationAPIImpl implements NotificationAPI {
         }
     } // deleteNotifications.
 
+    @WrapInTransaction
     @Override
     public void deleteNotifications(final String userId) throws DotDataException {
 
         synchronized (this) {
 
-            boolean localTransaction = false;
-
             try {
-
-                //Check for a transaction and start one if required
-                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
                 this.notificationFactory.deleteNotifications(userId);
                 this.newNotificationCache.remove(userId);
-
-                //Everything ok..., committing the transaction
-                if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
-                }
             } catch (Exception e) {
-
-                try {
-                    //On error rolling back the changes
-                    if ( localTransaction ) {
-                        HibernateUtil.rollbackTransaction();
-                    }
-                } catch (DotHibernateException hibernateException) {
-                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                }
 
                 final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
                 Logger.error(this, msg, e);
@@ -374,6 +322,7 @@ public class NotificationAPIImpl implements NotificationAPI {
         }
     } // deleteNotifications.
 
+    @CloseDBIfOpened
     @Override
     public List<Notification> getNotifications(final long offset,
                                                final long limit) throws DotDataException {
@@ -400,6 +349,7 @@ public class NotificationAPIImpl implements NotificationAPI {
         return notifications;
     } // getNotifications.
 
+    @CloseDBIfOpened
     @Override
     public Long getNotificationsCount() throws DotDataException {
 
@@ -420,6 +370,7 @@ public class NotificationAPIImpl implements NotificationAPI {
         return count;
     } // getNotificationsCount.
 
+    @CloseDBIfOpened
     @Override
     public Long getNotificationsCount(final String userId) throws DotDataException {
 
@@ -440,6 +391,8 @@ public class NotificationAPIImpl implements NotificationAPI {
         return count;
     } // getNotificationsCount.
 
+
+    @CloseDBIfOpened
     @Override
     public List<Notification> getAllNotifications(final String userId) throws DotDataException {
 
@@ -453,9 +406,7 @@ public class NotificationAPIImpl implements NotificationAPI {
                 if (null == notifications) {
 
                     final List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
-                    notifications = this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
-                        return convertNotificationDTO(record);
-                    });
+                    notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
 
                     this.newNotificationCache.addAllNotifications(userId, notifications);
                 }
@@ -465,6 +416,7 @@ public class NotificationAPIImpl implements NotificationAPI {
         return notifications;
     } // getAllNotifications.
 
+    @CloseDBIfOpened
     @Override
     public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
 
@@ -478,9 +430,7 @@ public class NotificationAPIImpl implements NotificationAPI {
                 if (null == notifications) {
 
                     final List<NotificationDTO> dtos = this.notificationFactory.getNotifications(userId, offset, limit);
-                    notifications = this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
-                        return convertNotificationDTO(record);
-                    });
+                    notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
 
                     this.newNotificationCache.addNotifications(userId, offset, limit, notifications);
                 }
@@ -490,6 +440,7 @@ public class NotificationAPIImpl implements NotificationAPI {
         return notifications;
     } // getNotifications.
 
+    @CloseDBIfOpened
     @Override
     public Long getNewNotificationsCount(final String userId) throws DotDataException {
 
@@ -510,35 +461,17 @@ public class NotificationAPIImpl implements NotificationAPI {
         return count;
     } // getNewNotificationsCount.
 
+    @WrapInTransaction
     @Override
     public void markNotificationsAsRead(final String userId) throws DotDataException {
 
         synchronized (this) {
 
-            boolean localTransaction = false;
-
             try {
-
-                //Check for a transaction and start one if required
-                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
                 this.notificationFactory.markNotificationsAsRead(userId);
                 this.newNotificationCache.remove(userId);
-
-                //Everything ok..., committing the transaction
-                if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
-                }
             } catch (Exception e) {
-
-                try {
-                    //On error rolling back the changes
-                    if ( localTransaction ) {
-                        HibernateUtil.rollbackTransaction();
-                    }
-                } catch (DotHibernateException hibernateException) {
-                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                }
 
                 final String msg = "An error occurred marking Notifications as read for user [" + userId + "]";
                 Logger.error(this, msg, e);

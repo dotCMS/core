@@ -1,12 +1,37 @@
-/*
- *  UtilMethods.java
- *
- *  Created on March 4, 2002, 2:56 PM
- */
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+
 import java.beans.PropertyDescriptor;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -19,6 +44,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -35,52 +61,27 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.velocity.VelocityServlet;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
-import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 /**
- * @author will
- * @created April 23, 2002
- */
-/**
- * @author Carlos Rivas
- *
+ * Provides several widely used routines that handle, verify or format many data structures, such as
+ * date/time handling and conversion, array handling, collection handling and verification, HTTP
+ * Request operations, file operations, business logic operations, HTML and String formatting etc.
+ * 
+ * @author Will Ezell
+ * @since April 23, 2002
+ * 
  */
 public class UtilMethods {
 
@@ -239,11 +240,6 @@ public class UtilMethods {
             return false;
 
         return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
-        /*
-        return (x.toLowerCase().endsWith(".gif") || x.toLowerCase().endsWith(".jpg") || x.toLowerCase().endsWith(".jpe")
-                || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".jpeg"))
-                || x.toLowerCase().endsWith(".svg");
-                */
     }
 
     public static final String getMonthFromNow() {
@@ -299,6 +295,9 @@ public class UtilMethods {
         return ((month < 2) || (month > 12)) ? (month = 12) : (month - 1);
     }
 
+    public static final boolean isEmpty(String x) {
+        return !isSet(x);
+    }
     public static final boolean isSet(String x) {
         if (x == null) {
             return false;
@@ -342,6 +341,28 @@ public class UtilMethods {
         return (x.trim().length() > 1);
     }
 
+    /**
+     * Determines if a collection of objects is different from {@code null} and is not empty.
+     * 
+     * @param collection - The {@link Collection} to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Collection<?> collection) {
+        return null != collection && !collection.isEmpty();
+    }
+
+    /**
+     * Determines if an array of objects is different from {@code null} and is not empty.
+     *
+     * @param array - The {@link Object} array to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Object[] array) {
+        return null != array && array.length > 0;
+    }
+
     public static final boolean isValidEmail(String email) {
         if (email == null) {
             return false;
@@ -359,9 +380,6 @@ public class UtilMethods {
                 .matches(
                         "((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-z0-9\\._\\-,]+)*[a-z0-9\\-_\\.\\s\\%]+(\\?[a-z0-9=%&\\.\\-,#]+)?",
                         url);
-        // UrlValidator val = new UrlValidator();
-        // return val.isValid(url);
-
     }
 
     public static final boolean isValidEmail(Object email) {
@@ -563,11 +581,6 @@ public class UtilMethods {
         return cf.format(f);
     }
 
-    /*
-     * public final static String capitalize(String var) { if (var != null &&
-     * var.length() > 1) { return var.substring(0, 1).toUpperCase() +
-     * var.substring(1); } else { return var; } }
-     */
     public static final String formatter(String original, String from, String to) {
         return replace(original, from, to);
     }
@@ -637,8 +650,6 @@ public class UtilMethods {
         }
 
         return original.replaceAll("\r", "").replaceAll("\n\n", "<br/>&nbsp;<br/>").replaceAll("\n", "<br/>");
-
-        // return original;
     }
 
     public static final java.util.Date htmlToDate(String d) {
@@ -647,8 +658,6 @@ public class UtilMethods {
         DATE_TO_HTML_DATE.setLenient(true);
         rDate = (java.util.Date) DATE_TO_HTML_DATE.parse(d, pos);
 
-        // need to find non deprecaited method to do this, but it works
-        // rDate.setHours(12);
         return rDate;
     }
 
@@ -1048,7 +1057,6 @@ public class UtilMethods {
 
         char[] chars = s.toLowerCase().toCharArray();
 
-        // java.util.ArrayList al = new java.util.ArrayList();
         boolean capitalNext = true;
 
         for (int i = 0; i < chars.length; i++) {
@@ -1115,7 +1123,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         } else {
-            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n");
+            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n").replaceAll("\"", "\\\\\"");
             return x;
         }
     }
@@ -1309,7 +1317,6 @@ public class UtilMethods {
             StringWriter sw = new StringWriter();
             //Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //            I actually think it should be fine passed the ctx which is a chained context here
-//            VelocityContext vc = pushVelocityContext(ctx);
             VelocityEngine ve = VelocityUtil.getEngine();
             boolean success = ve.evaluate(ctx, sw, "RenderTool.eval()", vtl);
             if (success)
@@ -1325,7 +1332,6 @@ public class UtilMethods {
     public static Context pushVelocityContext(Context ctx) {
 //    	/Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
-//    	return new VelocityContext(ctx);
     	return ctx;
     }
     public static Context popVelocityContext(VelocityContext vctx) {
@@ -2374,7 +2380,6 @@ public class UtilMethods {
      * @param obj
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static Map<String, Object> toMap(Object obj) {
 
         HashMap<String, Object> map = new HashMap<String, Object>();
@@ -2453,10 +2458,8 @@ public class UtilMethods {
         } catch (Exception e) {
             /* Get the htmlpage a publish */
             String idStr = liveUrl.substring(liveUrl.indexOf("/") + 1, liveUrl.indexOf("."));
-            //long idInode = Long.parseLong(idStr);
             IHTMLPage htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(APILocator.getIdentifierAPI().find(idStr), APILocator.getUserAPI().getSystemUser(),false);
             if(htmlPage != null && InodeUtils.isSet(htmlPage.getInode())){
-            	//PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
             	PublishFactory.publishHTMLPage(htmlPage, null, APILocator.getUserAPI().getSystemUser(), false);
             	return getVelocityTemplate(liveUrl);
             }
@@ -2647,18 +2650,7 @@ public class UtilMethods {
         char[] text = unsafeString.toCharArray();
         safeText = new StringBuffer(unsafeString.length() + 50);
 
-        // StringBuffer attributedInput = new StringBuffer();
-
         for (int i = 0; i < text.length; i++) {
-            // attributedInput.append(text[i]);
-            // if ((text[i] < 'A' || text[i] > 'Z') &&
-            // (text[i] < 'a' || text[i] > 'z') &&
-            // text[i] != ' ') {
-            // attributedInput.append('[');
-            // attributedInput.append(Integer.toHexString(text[i]));
-            // attributedInput.append(']');
-            // }
-
             switch (text[i]) {
             case '<':
                 safeText.append("&lt;");
@@ -2691,9 +2683,6 @@ public class UtilMethods {
                 }
             }
         }
-
-        // print("made html safe \"" + attributedInput + "\" -> \"" + safeText +
-        // "\"");
 
         return safeText.toString();
     }
@@ -2981,7 +2970,6 @@ public class UtilMethods {
         } else {
             sampledText = text;
         }
-        // stem.out.println("shortstring: " + sampledText);
         return sampledText;
     }
 
@@ -3279,16 +3267,6 @@ public class UtilMethods {
         return product;
     }
 
-    // public static String formatPercent(int selection, int total) {
-    // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
-    // "%";
-    // }
-    //
-    // public static String formatPercent(long selection, long total) {
-    // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
-    // "%";
-    // }
-
     /**
      * pluralize(1, hour) => hour pluralize(2, hour) => 2 hours
      */
@@ -3371,12 +3349,6 @@ public class UtilMethods {
 
     public static String getDotCMSStackTrace() {
     	StringBuilder strB = new StringBuilder ();
-//    	StackTraceElement[] elems = Thread.currentThread().getStackTrace();
-//    	for(StackTraceElement el : elems) {
-//    		if(el.getClassName().startsWith("com.dotmarketing")) {
-//    			strB.append(el.toString() + "\n");
-//    		}
-//    	}
     	return strB.toString();
 
     }
@@ -3530,50 +3502,31 @@ public class UtilMethods {
     }
 
     public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
-        HttpSession session = request.getSession(false);
 
         // set the preview mode
-        boolean adminMode = false;
+        boolean adminMode =   PageMode.get(request).isAdmin;
 
-        if (session != null) {
+        if (adminMode) {
+            HttpSession session = request.getSession();
+
             // struts crappy messages have to be retrived from session
-            if (session.getAttribute(Globals.ERROR_KEY) != null) {
-                request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-                session.removeAttribute(Globals.ERROR_KEY);
-            }
-            if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-                request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-                session.removeAttribute(Globals.MESSAGE_KEY);
-            }
-            // set the preview mode
-            adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+
+            request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
+            session.removeAttribute(Globals.ERROR_KEY);
+            request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
+            session.removeAttribute(Globals.MESSAGE_KEY);
+
 
             if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
+                PageMode.setPageMode(request, PageMode.LIVE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.EDIT_MODE);
             }
 
             if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
+                PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
             }
         }
         return adminMode;

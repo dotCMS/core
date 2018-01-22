@@ -1,0 +1,37 @@
+<script language="Javascript">
+	dojo.require('dotcms.dijit.FileBrowserDialog');
+
+	function browseFiles() {
+		fileSelector.show();
+	}
+
+	function fileSelected(file) {
+		var path = file.pageURI;
+		if (!path) {
+			path = file.path + file.fileName;
+		}
+		dojo.byId('vlUri').value = path;
+		dojo.byId('${field.velocityVarName}').value = path;
+	}
+
+    function setValue(e) {
+        dojo.byId('${field.velocityVarName}').value = e.target.value;
+    }
+
+	dojo.ready(function() {
+		dojo.byId('vlUri').value = dojo.byId('${field.velocityVarName}').value;
+
+        dojo.require('dojo.on')(dojo.byId('vlUri'), 'change', setValue);
+	});
+	
+</script>
+<div class="inline-form">
+	<input id="vlUri" type="text" name="uri" dojoType="dijit.form.TextBox"
+		trim="true" invalidMessage="$text.get('Invalid-option-selected')" />
+	<button dojoType="dijit.form.Button"
+		onClick="browseFiles();return false;" iconClass="browseIcon">
+		$text.get('click-here-to-browse')</button>
+</div>
+<div dojoAttachPoint="fileBrowser" jsId="fileSelector"
+	onFileSelected="fileSelected" dojoType="dotcms.dijit.FileBrowserDialog">
+</div>

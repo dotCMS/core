@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -91,11 +92,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		}
 
 	}
-
+	@WrapInTransaction
 	public void setCluster(Server localServer) throws Exception {
 			Logger.info(this, "***\t Starting Cluster Setup");
 
-			journalAPI = APILocator.getDistributedJournalAPI();
+
 			ServerAPI serverAPI = APILocator.getServerAPI();
 
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
@@ -131,13 +132,12 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 				} else {
 					bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
 				}
-
-                localServer.setCachePort(Integer.parseInt(bindPort));
-
+	            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
+   
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());
 
-                List<Server> aliveServers = serverAPI.getAliveServers(myself);
+                List<Server> aliveServers = serverAPI.getAliveServers();
                 aliveServers.add(localServer);
 
                 StringBuilder initialHosts = new StringBuilder();
@@ -233,26 +233,22 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 		flushAlLocalOnly(false);
 
-		try {
-			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
-				journalAPI.addCacheEntry("0", ROOT_GOUP);
-			} else if ( useTransportChannel ) {
 
-				if (! cacheProviderAPI.isDistributed()) {
-					if ( getTransport() != null ) {
-						try {
-							getTransport().send("0:" + ROOT_GOUP);
-						} catch ( Exception e ) {
-							Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-						}
-					} else {
-						throw new CacheTransportException("No Cache transport implementation is defined");
+		if ( useTransportChannel ) {
+
+			if (! cacheProviderAPI.isDistributed()) {
+				if ( getTransport() != null ) {
+					try {
+						getTransport().send("0:" + ROOT_GOUP);
+					} catch ( Exception e ) {
+						Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 					}
+				} else {
+					throw new CacheTransportException("No Cache transport implementation is defined");
 				}
 			}
-		} catch (DotDataException e) {
-			Logger.error(this, "Unable to add journal entry for cluster", e);
 		}
+
 	}
 
 	/*
@@ -272,21 +268,15 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 		flushGroupLocalOnly(group, false);
 
-		try {
-			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
-				journalAPI.addCacheEntry("0", group);
-			} else if ( useTransportChannel ) {
-				if (! cacheProviderAPI.isGroupDistributed( group )) {
-					try {
-						cacheTransport.send("0:" + group);
-					} catch (Exception e) {
-						Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-					}
+		if ( useTransportChannel ) {
+			if (! cacheProviderAPI.isGroupDistributed( group )) {
+				try {
+					cacheTransport.send("0:" + group);
+				} catch (Exception e) {
+					Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 				}
 			}
-		} catch (DotDataException e) {
-			Logger.error(this, "Unable to add journal entry for cluster", e);
-		}
+		} 
 	}
 
 	public void flushAlLocalOnly (boolean ignoreDistributed) {
@@ -359,25 +349,18 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 				String g = group.toLowerCase();
 				removeLocalOnly(k, g, false);
 
-				try {
-					if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
-						journalAPI.addCacheEntry(k, g);
-					} else if ( useTransportChannel ) {
-
-						if (! cacheProviderAPI.isGroupDistributed( group )) {
-							if ( getTransport() != null) {
-								try {
-									getTransport().send(k + ":" + g);
-								} catch ( Exception e ) {
-									Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-								}
-							} else {
-								throw new CacheTransportException("No Cache transport implementation is defined");
-							}							
-						}
+				if ( useTransportChannel ) {
+					if (! cacheProviderAPI.isGroupDistributed( group )) {
+						if ( getTransport() != null) {
+							try {
+								getTransport().send(k + ":" + g);
+							} catch ( Exception e ) {
+								Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+							}
+						} else {
+							throw new CacheTransportException("No Cache transport implementation is defined");
+						}							
 					}
-				} catch (DotDataException e) {
-					Logger.error(this, "Unable to add journal entry for cluster", e);
 				}
 	         }
 		};

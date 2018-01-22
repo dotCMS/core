@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotmarketing.filters.Constants;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
@@ -22,6 +23,7 @@ import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -84,18 +86,13 @@ public class SpeedyAssetServlet extends HttpServlet {
         }
 
 
-		boolean PREVIEW_MODE = false;
-		boolean EDIT_MODE = false;
+        PageMode mode = PageMode.get(request);
 		HttpSession session = request.getSession(false);
 
 
-		if(session != null) {
-			PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
-			EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
-		}
 		//GIT-4506
 
-		boolean serveWorkingVersion = (EDIT_MODE || PREVIEW_MODE);
+		boolean serveWorkingVersion = !mode.showLive;
 
         User user = null;
         try {
@@ -141,7 +138,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 
     private Identifier resolveIdentifier(HttpServletRequest request) {
-      Identifier ident = (Identifier) request.getAttribute(CMSFilter.CMS_FILTER_IDENTITY);
+      Identifier ident = (Identifier) request.getAttribute(Constants.CMS_FILTER_IDENTITY);
       if(ident==null){
         if(request.getParameter("path")==null) {
           // Getting the identifier from the path like /dotAsset/{identifier}.{ext} E.G. /dotAsset/1234.js

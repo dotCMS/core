@@ -11,7 +11,6 @@
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.web.HostWebAPI"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.cache.VirtualLinksCache"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.URLUtils"%>
 <%@page import="com.dotmarketing.util.URLUtils.ParsedURL"%>
@@ -22,7 +21,7 @@
 <%
 
 	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) ||(UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME)));
-    boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME)) && !UtilMethods.isSet(ParamUtil.getString(request, WebKeys.HIDE_SUBNAV));
+    boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME)) && !UtilMethods.isSet(ParamUtil.getString(request, WebKeys.HIDE_SUBNAV));
 
 
 		UserAPI userAPI = APILocator.getUserAPI();

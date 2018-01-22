@@ -2,26 +2,31 @@ package com.dotmarketing.sitesearch.business;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
 
 public class SiteSearchAuditAPIImpl implements SiteSearchAuditAPI {
 
-    SiteSearchAuditFactory ssFac=new SiteSearchAuditFactoryImpl();
-    
+    final SiteSearchAuditFactory siteSearchAuditFactory = new SiteSearchAuditFactoryImpl();
+
+    @WrapInTransaction
     @Override
     public void save(SiteSearchAudit audit) throws DotDataException {
-        ssFac.save(audit);
+        siteSearchAuditFactory.save(audit);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<SiteSearchAudit> findRecentAudits(String jobId, int offset,  int limit) throws DotDataException {
-        return ssFac.findRecentAudits(jobId, offset, limit);
+        return siteSearchAuditFactory.findRecentAudits(jobId, offset, limit);
     }
 
+    @WrapInTransaction
     @Override
     public void removeAudits(String jobId) throws DotDataException {
-        ssFac.removeAudits(jobId);
+        siteSearchAuditFactory.removeAudits(jobId);
     }
     
 }

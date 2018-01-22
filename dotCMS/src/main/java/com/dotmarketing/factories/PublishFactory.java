@@ -1,5 +1,13 @@
 package com.dotmarketing.factories;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -8,7 +16,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -23,16 +30,20 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 /**
  *
@@ -167,7 +178,7 @@ public class PublishFactory {
 		if (webAsset instanceof WebAsset)
 		{
 			try {
-				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion);
+				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion); // todo: reviewing here
 			} catch (Exception e) {
 				Logger.error(PublishFactory.class, "publishAsset: Failed to publish the asset.", e);
 			}
@@ -176,7 +187,7 @@ public class PublishFactory {
 		if (webAsset instanceof Container) {
 
 			//saves to live folder under velocity
-			ContainerServices.invalidate((Container)webAsset);
+		    new ContainerLoader().invalidate((Container)webAsset);
 		}
 
 
@@ -202,7 +213,7 @@ public class PublishFactory {
             //Clean-up the cache for this template
             CacheLocator.getTemplateCache().remove( webAsset.getInode() );
             //writes the template to a live directory under velocity folder
-			TemplateServices.invalidate((Template)webAsset);
+			new TemplateLoader().invalidate((Template)webAsset);
 
 		}
 
@@ -265,7 +276,7 @@ public class PublishFactory {
 			    	try {
 			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet =
 							conAPI.convertFatContentletToContentlet(cont);
-						ContentletServices.invalidateLive(newFormatContentlet);
+			    		    new ContentletLoader().invalidate(newFormatContentlet);
 					} catch (DotDataException e) {
 						throw new WebAssetException(e.getMessage(), e);
 					}
@@ -283,7 +294,8 @@ public class PublishFactory {
 	}
 
     /**
-     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
+     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).
+     * It will also remove the page from the Page/Block cache<br/>
      * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
      * call this method after publish the legacy HTMLPage.
      *
@@ -307,9 +319,12 @@ public class PublishFactory {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
-                    Contentlet c = (Contentlet) asset;
-                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( c.getStructure() ).isMandatory() ) {
-                        contentletAPI.publish( (Contentlet) asset, user, false );
+                    Contentlet contentlet = (Contentlet) asset;
+                    WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+
+                    if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
+                    	contentletAPI.publish( (Contentlet) asset, user, false );
+                    	new ContentletLoader().invalidate(asset);
                     }
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
@@ -322,14 +337,12 @@ public class PublishFactory {
         }
 
         //writes the htmlpage to a live directory under velocity folder
-        PageServices.invalidateAll(htmlPage);
-
-        if ( htmlPage instanceof HTMLPageAsset ) {
-            //And finally publish the page
-            APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
-        }
+        new PageLoader().invalidate(htmlPage);
+        APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
 
 
+        //Remove from block cache.
+        CacheLocator.getBlockPageCache().remove(htmlPage);
 
         return true;
     }
@@ -449,6 +462,7 @@ public class PublishFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public static List getUnpublishedRelatedAssetsForPage ( IHTMLPage htmlPage, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
 
         Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- PrePublishing" );

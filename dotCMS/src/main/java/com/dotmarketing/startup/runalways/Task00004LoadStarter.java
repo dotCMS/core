@@ -9,9 +9,8 @@ import com.dotmarketing.startup.StartupTask;
 public class Task00004LoadStarter implements StartupTask {
 
 	
-		public void executeUpgrade() throws DotDataException, DotRuntimeException {
-			
-			
+	public void executeUpgrade() throws DotDataException, DotRuntimeException {
+
 		DotCMSInitDb.InitializeDb();
 	}
 

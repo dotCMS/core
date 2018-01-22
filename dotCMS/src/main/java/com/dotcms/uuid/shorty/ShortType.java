@@ -14,7 +14,6 @@ public enum ShortType {
     RELATIONSHIP("relationship"),
     STRUCTURE("structure"),
     USER_PROXY("user_proxy"),
-    VIRTUAL_LINK("virtual_link"),
     IDENTIFIER("identifier"),
     INODE("inode");
     

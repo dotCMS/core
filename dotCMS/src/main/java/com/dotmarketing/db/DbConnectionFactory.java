@@ -15,8 +15,10 @@ import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.naming.Binding;
@@ -34,6 +36,38 @@ public class DbConnectionFactory {
     protected static final String ORACLE = "Oracle";
     protected static final String MSSQL = "Microsoft SQL Server";
     protected static final String H2 = "H2";
+
+    /**
+     * Gets the autoCommit for the current connection
+     * @return boolean
+     */
+    public static boolean getAutoCommit() {
+
+        boolean autoCommit = false;
+
+        try {
+            autoCommit = getConnection().getAutoCommit();
+        } catch (SQLException e) {
+            autoCommit = false;
+        }
+
+        return autoCommit;
+    } // getAutoCommit.
+
+    /**
+     * If is in transaction, will set the autocommit value
+     * @param autoCommit boolean
+     */
+    public static void setAutoCommit(final boolean autoCommit) {
+
+        try {
+            getConnection().setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: error setting the autocommit " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                    e);
+        }
+    } // setAutoCommit.
 
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;
@@ -112,6 +146,30 @@ public class DbConnectionFactory {
             throw new DotRuntimeException(e.toString());
         }
     }
+
+    /**
+     * Returns true if the connection is already create and will be reuse in a transaction.
+     * Otherwise will returns false, that means a new connection will be created.
+     * @return boolean
+     */
+    public static boolean connectionExists() {
+
+        boolean isCreated = false;
+        final Map<String, Connection> connectionsMap =
+                (HashMap<String, Connection>) connectionsHolder.get();
+
+        if (connectionsMap != null && connectionsMap.size() > 0) {
+            final Connection connection =
+                    connectionsMap.get(Constants.DATABASE_DEFAULT_DATASOURCE);
+            try {
+                isCreated = (connection != null && !connection.isClosed());
+            } catch (SQLException e) {
+                Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+            }
+        }
+
+        return isCreated;
+    } // connectionExists.
 
     /**
      * Returns if the db is in a transaction - it will not open a db connection
@@ -365,20 +423,50 @@ public class DbConnectionFactory {
 
     }
 
+    /**
+     * Return true if the String represent one of the true
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB true value
+     */
     public static boolean isDBTrue(String value) {
         String x = getDBType();
 
-        if (MYSQL.equals(x)) {
-            return value.trim().equals("1") || value.trim().equals("true");
+        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
+            return "1".equals(value.trim()) || "true".equals(value.trim());
         } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
-            return value.trim().equals("t") || value.trim().equals("true");
-        } else if (MSSQL.equals(x)) {
-            return value.trim().equals("1");
-        } else if (ORACLE.equals(x)) {
-            return value.trim().equals("1");
+            return "t".equals(value.trim()) || "true".equals(value.trim());
         }
         return false;
 
+    }
+
+    /**
+     * Return true if the String represent one on the false
+     * boolean value for the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false value
+     */
+    public static boolean isDBFalse(final String value) {
+        String x = getDBType();
+
+        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
+            return "0".equals(value.trim()) || "false".equals(value.trim());
+        } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
+            return "f".equals(value.trim()) || "false".equals(value.trim());
+        }
+        return false;
+
+    }
+
+    /**
+     * Return true if the String represent one on the true or false
+     * values accepted by the current database
+     * @param value String representation of the boolean
+     * @return true is the string represents a DB false or true value
+     */
+    public static boolean isDBBoolean(final String value) {
+        return isDBTrue(value) || isDBFalse(value);
     }
 
     public static boolean isOracle() {
@@ -413,6 +501,24 @@ public class DbConnectionFactory {
             throw new DotRuntimeException(e.toString());
         }
         return version;
+    }
+
+    /**
+     * Method to get the Database Full Version
+     * @return Database Version (Major.Minor)
+     */
+    public static float getDbFullVersion() {
+        try {
+            Connection con = getConnection();
+            DatabaseMetaData meta = con.getMetaData();
+            String version = "%d.%d";
+            version = String.format(version, meta.getDatabaseMajorVersion(), meta.getDatabaseMinorVersion());
+            return Float.parseFloat(version);
+        } catch (SQLException e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: Error getting DB Full version " + "---------------", e);
+            throw new DotRuntimeException(e.toString());
+        }
     }
 
     /**
@@ -472,7 +578,6 @@ public class DbConnectionFactory {
      */
     public static boolean startTransactionIfNeeded() throws DotDataException {
         boolean startTransaction = !inTransaction();
-        ;
 
         try {
             if (startTransaction) {
@@ -483,6 +588,18 @@ public class DbConnectionFactory {
             throw new DotDataException(e.getMessage(), e);
         }
         return startTransaction;
+    }
+
+    public static void commit () throws DotDataException {
+
+        try {
+            if (inTransaction()) {
+                DbConnectionFactory.getConnection().commit();
+
+            }
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     public static void closeAndCommit() throws DotDataException {
@@ -525,5 +642,24 @@ public class DbConnectionFactory {
         return defaultInteger;
     }
 
+    /**
+     * Returns true if the throwable is a constraint violation
+     * @param throwable Throwable
+     * @return boolean
+     */
+    public static boolean isConstraintViolationException(final Throwable throwable) {
+
+        boolean isConstraintViolationException = false;
+
+        if (null != throwable && throwable instanceof SQLException) {
+
+            isConstraintViolationException =
+                    (throwable instanceof SQLIntegrityConstraintViolationException ||
+                            throwable.getClass().getName().contains("IntegrityConstraint")   ||
+                            throwable.getMessage().toLowerCase().contains("duplicate"));
+        }
+
+        return isConstraintViolationException;
+    } // isConstraintViolationException.
 
 }

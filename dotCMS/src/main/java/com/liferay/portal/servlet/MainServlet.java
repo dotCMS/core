@@ -22,28 +22,7 @@
 
 package com.liferay.portal.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.config.DotInitializationService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.dotcms.cluster.common.ClusterServerActionThread;
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
@@ -53,7 +32,7 @@ import com.dotcms.repackage.org.dom4j.DocumentException;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
@@ -65,7 +44,6 @@ import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
-import com.liferay.portal.events.StartupAction;
 import com.liferay.portal.job.JobScheduler;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Portlet;
@@ -73,22 +51,29 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.struts.StrutsUtil;
-import com.liferay.portal.util.ContentUtil;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.ShutdownUtil;
-import com.liferay.portal.util.WebAppPool;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CookieUtil;
+import com.liferay.portal.util.*;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Http;
 import com.liferay.util.ParamUtil;
-import com.liferay.util.PwdGenerator;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -119,23 +104,8 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			} catch (DotDataException e1) {
 				throw new ServletException(e1);
-			}
-
-			// Starting the reindexation threads
-			ClusterThreadProxy.createThread();
-			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
-				ClusterThreadProxy.startThread(Config.getIntProperty("DIST_INDEXATION_SLEEP", 500), Config.getIntProperty("DIST_INDEXATION_INIT_DELAY", 5000));
-			}
-
-			ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-
-			//Start Cluster Server Action Thread.
-			ClusterServerActionThread.startThread(Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000));
-
-			try {
-				EventsProcessor.process(new String[] { StartupAction.class.getName() }, true);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
+			} finally {
+				DbConnectionFactory.closeSilently();
 			}
 
 			// Context path
@@ -303,46 +273,6 @@ public class MainServlet extends ActionServlet {
 
 		HttpSession ses = req.getSession();
 		
-		if (!GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL))) {
-			String sharedSessionId = CookieUtil.get(req.getCookies(), CookieKeys.SHARED_SESSION_ID);
-
-			_log.debug("Shared session id is " + sharedSessionId);
-
-			if (sharedSessionId == null) {
-				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
-
-				String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
-				
-				String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-					
-				StringBuilder headerStr = new StringBuilder();
-				headerStr.append(CookieKeys.SHARED_SESSION_ID).append("=").append(sharedSessionId).append(";").append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=86400");
-				res.addHeader("SET-COOKIE", headerStr.toString());
-
-				_log.debug("Shared session id is " + sharedSessionId);
-			}
-
-			// if (ses.getAttribute(WebKeys.SHARED_SESSION_ID) == null) {
-			ses.setAttribute(WebKeys.SHARED_SESSION_ID, sharedSessionId);
-			// }
-
-			HttpSession portalSes = (HttpSession) SharedSessionPool.get(sharedSessionId);
-
-			if ((portalSes == null) || (ses != portalSes)) {
-				if (portalSes == null) {
-					_log.debug("No session exists in pool");
-				} else {
-					_log.debug("Session " + portalSes.getId() + " in pool is old");
-				}
-
-				_log.debug("Inserting current session " + ses.getId() + " in pool");
-
-				SharedSessionPool.put(sharedSessionId, ses);
-			}
-		}
-
-		// Test CAS auto login
 
 		/*
 		 * ses.setAttribute(

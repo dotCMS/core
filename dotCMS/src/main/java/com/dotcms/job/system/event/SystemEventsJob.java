@@ -1,21 +1,18 @@
 package com.dotcms.job.system.event;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.quartz.job.ContentReindexerThread;
+import com.dotcms.job.system.event.delegate.SystemEventsJobDelegate;
+import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
+import com.dotcms.util.Delegate;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.dotcms.util.Delegate;
-import com.dotcms.job.system.event.delegate.SystemEventsJobDelegate;
-import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This Job is in charge of triggering the verification of new System Events
@@ -81,11 +78,7 @@ public class SystemEventsJob implements Runnable, Job { //extends DotJob {
 
 			Logger.info(this, e.toString());
 		} finally {
-			try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(ContentReindexerThread.class, e.getMessage(), e);
-			}
+			DbConnectionFactory.closeSilently();
 		}
 	} // run.
 }

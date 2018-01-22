@@ -9,6 +9,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@page import="com.dotmarketing.portlets.contentlet.util.HostUtils" %>
 <%@ include file="/html/portlet/ext/formhandler/init.jsp" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <%
 	java.util.Map params = new java.util.HashMap();
@@ -112,7 +113,7 @@ function downloadToExcel(structureInode){
 
 <div class="portlet-main">
 	
-<% if(LicenseUtil.getLevel() > 199){ %>
+<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
 	
 	<form id="fm" method="post">
 		<!-- START Toolbar -->

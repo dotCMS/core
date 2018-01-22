@@ -3,6 +3,7 @@ package com.dotcms.publishing.job;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler;
 import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
@@ -40,7 +41,7 @@ public class SiteSearchJobImpl {
     }
     @SuppressWarnings("unchecked")
     public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
-        if(LicenseUtil.getLevel()<200)
+        if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return;
         
         String date = DateUtil.getCurrentDate();

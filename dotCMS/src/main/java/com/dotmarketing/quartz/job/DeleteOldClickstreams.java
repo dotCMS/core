@@ -28,7 +28,7 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 		now.add(Calendar.DATE, -(days-1));
 		
 		try {
-			if(DbConnectionFactory.isOracle()){				
+			if(DbConnectionFactory.isOracle()){	// todo: this should be encapsulated on an util class
 				sdate =df_oracle.format(now.getTime());				
 			}else{
 				sdate =df_other.format(now.getTime());
@@ -37,7 +37,7 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 			HibernateUtil.delete("from clickstream_request in class com.dotmarketing.beans.ClickstreamRequest where timestampper < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream in class com.dotmarketing.beans.Clickstream where start_date < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream_404 in class com.dotmarketing.beans.Clickstream404 where timestampper < '"+sdate+"'");
-			HibernateUtil.commitTransaction();	
+			HibernateUtil.closeAndCommitTransaction();
 			
 		} catch (Exception e) {
 			try {
@@ -45,6 +45,8 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 			} catch (DotHibernateException e1) {				
 				e1.printStackTrace();
 			}
+		} finally {
+			HibernateUtil.closeSessionSilently();
 		}
 		
 	}

@@ -26,7 +26,7 @@ import java.util.Map;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.viewtools.content.ContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 
 /**
  * SortTool allows a user to sort a collection (or array, iterator, etc)

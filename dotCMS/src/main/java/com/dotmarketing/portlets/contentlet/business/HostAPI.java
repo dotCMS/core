@@ -249,13 +249,6 @@ public interface HostAPI {
 	public void updateCache(Host host);
 
 	/**
-	 * Updates the VirtualLinks of the host with the new hostname
-	 *
-	 * @param host
-	 */
-	public void updateVirtualLinks(Host workinghost,Host updatedhost) throws DotDataException;
-
-	/**
 	 * Updates the MenuLinks of the host with the new hostname
 	 *
 	 * @param host
@@ -305,6 +298,59 @@ public interface HostAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
 
+	/**
+	 * Retrieves the subset of all hosts in the system
+	 * that matches the current host name filter, offset and limit
+	 *
+	 * @param filter characters to search in the host name
+	 * @param showStopped boolean true if its requires that also stopped host are returned, false if not
+	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
+	 * @param limit Max number of element to return
+	 * @param offset First element of the subset to return
+	 * @param user Current user to validate permissions
+	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
+	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
+	 */
+	public PaginatedArrayList<Host> searchByStopped(String filter, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Retrieves the subset of all hosts in the system
+	 * that matches the current host name filter, offset and limit
+	 *
+	 * @param filter characters to search in the host name
+	 * @param showArchived boolean true if its requires that also archived host are returned, false if not
+	 * @param showStopped boolean true if its requires that also stopped host are returned, false if not
+	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
+	 * @param limit Max number of element to return
+	 * @param offset First element of the subset to return
+	 * @param user Current user to validate permissions
+	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
+	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
+	 */
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Retrieves the subset of all hosts in the system
+	 * that matches the current host name filter, offset and limit
+	 *
+	 * @param filter characters to search in the host name
+	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
+	 * @param limit Max number of element to return
+	 * @param offset First element of the subset to return
+	 * @param user Current user to validate permissions
+	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
+	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
+	 */
+	public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Return the number of sites for user
+	 *
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public long count(User user, boolean respectFrontendRoles);
 }

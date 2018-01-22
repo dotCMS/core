@@ -29,78 +29,85 @@ import com.dotmarketing.util.UtilMethods;
 public class TimeMachineAPIImpl implements TimeMachineAPI {
 
     @Override
-    public List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs, boolean incremental)  {
-        List<PublishStatus> list=new ArrayList<PublishStatus>(langs.size());
-        
-        
-        Date d = new Date();
-        
-        
-        
-        for(Language lang : langs) {
+    public List<PublishStatus> startTimeMachine(final List<Host> hosts,
+                                                final List<Language> languages,
+                                                final boolean incremental)  {
+
+        final List<PublishStatus> publishStatusList = new ArrayList<PublishStatus>(languages.size()); // todo: could it be immutable?
+        final Date currentDate = new Date();
+
+        for(Language language : languages) {
+
             try {
-                TimeMachineConfig tmconfig = new TimeMachineConfig();
-                tmconfig.setUser(APILocator.getUserAPI().getSystemUser());
-                tmconfig.setHosts(hosts);
-                tmconfig.setLanguage(lang.getId());
-                tmconfig.setDestinationBundle("tm_" + d.getTime());
-                tmconfig.setIncremental(incremental);
-                if(incremental){
-                	tmconfig.setId("timeMachineBundle_incremental_" + lang.getId());
-                }else{
-                	tmconfig.setId("timeMachineBundle_" +d.getTime() + "_" + lang.getId());
+
+                TimeMachineConfig timeMachineConfig = new TimeMachineConfig();
+                timeMachineConfig.setUser(APILocator.getUserAPI().getSystemUser());
+                timeMachineConfig.setHosts(hosts);
+                timeMachineConfig.setLanguage(language.getId());
+                timeMachineConfig.setDestinationBundle("tm_" + currentDate.getTime());
+                timeMachineConfig.setIncremental(incremental);
+                if(incremental) {
+                	timeMachineConfig.setId("timeMachineBundle_incremental_" + language.getId());
+                } else {
+                	timeMachineConfig.setId("timeMachineBundle_" +currentDate.getTime() + "_" + language.getId());
                 }
                 
-                list.add(APILocator.getPublisherAPI().publish(tmconfig));
+                publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig));
             }
             catch(Exception ex) {
                 Logger.error(this, ex.getMessage(), ex);
             }
         }
-        return list;
+        return publishStatusList;
     }
 	
 	@Override
 	public List<Host> getHostsWithTimeMachine() {
-	    Set<Host> list = new HashSet<Host>();
-        File tmPath = new File(ConfigUtils.getTimeMachinePath());
-        for ( File file : tmPath.listFiles()) {
+	    final Set<Host> hostSet = new HashSet<Host>();
+        final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
+
+        for ( File file : timeMachinePath.listFiles()) {
             if ( file.isDirectory() && file.getName().startsWith("tm_")) {
-                File hostDir = new File(file.getAbsolutePath() + File.separator + "live");
+
+                final File hostDir = new File(file.getAbsolutePath() + File.separator + "live");
                 if ( hostDir.exists() && hostDir.isDirectory() ) {
                     for(String hostname : hostDir.list()) {
                         try {
-                            Host host=APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
-                            if(host!=null && UtilMethods.isSet(host.getIdentifier()))
-                                list.add(host);
-                        }catch(Exception ex) {
+                            final Host host = APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
+                            if(host!=null && UtilMethods.isSet(host.getIdentifier())) {
+                                hostSet.add(host);
+                            }
+                        } catch(Exception ex) {
                             Logger.warn(this, ex.getMessage(),ex);
                         }
                     }
                 }
             }
         }
-        return new ArrayList<Host>(list);
+        return new ArrayList<Host>(hostSet);
 	}
 
 	@Override
-	public List<Date> getAvailableTimeMachineForSite(Host host) throws DotDataException {
-		List<Date> list = new ArrayList<Date>();
-		File tmPath = new File(ConfigUtils.getTimeMachinePath());
-		for ( File file : tmPath.listFiles()) {
+	public List<Date> getAvailableTimeMachineForSite(final Host host) throws DotDataException {
+
+		final List<Date> list = new ArrayList<Date>();
+		final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
+
+		for ( File file : timeMachinePath.listFiles()) {
 			if ( file.isDirectory() && file.getName().startsWith("tm_")) {
-				File hostDir = new File(file.getAbsolutePath() + File.separator + "live" + File.separator + host.getHostname());
+
+				final File hostDir = new File(file.getAbsolutePath() + File.separator + "live" + File.separator + host.getHostname());
 				if ( hostDir.exists() && hostDir.isDirectory() ) {
 					try {
-					    Date date=new Date(Long.parseLong(file.getName().substring(3)));
+					    final Date date=new Date(Long.parseLong(file.getName().substring(3)));
 						list.add(date);
-					}
-					catch (Throwable t) {
+					} catch (Throwable t) {
 						Logger.error(this, "bundle seems a time machine bundle but it is not! " + file.getName());
 					}
 				}
 			}
 		}
+
 		return list;
 	}
 	
@@ -122,16 +129,14 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
 
     @Override
-    public List<String> getAvailableLangForTimeMachine(Host host, Date date) {
-        File hostPath = new File(ConfigUtils.getTimeMachinePath()+File.separator+
+    public List<String> getAvailableLangForTimeMachine(final Host host, final Date date) {
+
+        final File hostPath = new File(ConfigUtils.getTimeMachinePath()+File.separator+
                                  "tm_"+date.getTime()+File.separator+
                                  "live"+File.separator+host.getHostname());
-        if(hostPath.exists()) {
-            return Arrays.asList(hostPath.list(new TimeMachineFileNameFilter()));
-        }
-        else {
-            return null;
-        }
+        return (hostPath.exists())?
+             Arrays.asList(hostPath.list(new TimeMachineFileNameFilter())):
+             null;
     }
     
     @Override
@@ -172,13 +177,10 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         }
     }
 
-    
-    
+
     private class TimeMachineFileNameFilter implements FilenameFilter{
     	
-    	
-    
-	
+
 		@Override
 		public boolean accept(File dir, String name) {
 			int lang = 0;
@@ -192,9 +194,6 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
 			return lang > 0;
 		}
-    
     }
-    
-    
-    
+
 }

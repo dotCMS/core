@@ -56,23 +56,29 @@ function cancelEdit(form) {
 
 dojo.ready(function() {
 	var fieldWidth = "300px";
-	new dijit.form.TextBox({
+	new dijit.form.ValidationTextBox({
 		name: "languageCode",
-		style: "width: " + fieldWidth
+		value: "<%=language.getLanguageCode()%>",
+		style: "width: " + fieldWidth,
+		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageCode-Required") %>"
 	}, "languageCode");
 
 	new dijit.form.TextBox({
 		name: "countryCode",
+		value: "<%=language.getCountryCode()%>",
 		style: "width: " + fieldWidth
 	}, "countryCode");
 
-	new dijit.form.TextBox({
+	new dijit.form.ValidationTextBox({
 		name: "language",
-		style: "width: " + fieldWidth
+		value: "<%=language.getLanguage()%>",
+		style: "width: " + fieldWidth,
+		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageDescription-Required") %>"
 	}, "language");
 
 	new dijit.form.TextBox({
 		name: "country",
+		value: "<%=language.getCountry()%>",
 		style: "width: " + fieldWidth
 	}, "country");
 })
@@ -100,19 +106,20 @@ dojo.ready(function() {
 			</dl>
 	    <%} %>
 	    <dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
 		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
-		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
-	    </dl>
-		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
 		    <dd>
 				<html:text size="30" property="language" styleId="language" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
 			</dd>
+	    </dl>
+		<dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
+		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
+
 	    </dl>
 		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>

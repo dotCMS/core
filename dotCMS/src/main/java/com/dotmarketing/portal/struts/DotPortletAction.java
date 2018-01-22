@@ -696,7 +696,7 @@ public class DotPortletAction extends PortletAction {
 		} catch (Exception e) {
 			req.setAttribute(viewWebKey, results);
 			Logger.error(this, "Exception e =" + e.getMessage(), e);
-			throw new Exception(e.getMessage());
+			throw new Exception(e.getMessage(),e);
 		}
 
 	}

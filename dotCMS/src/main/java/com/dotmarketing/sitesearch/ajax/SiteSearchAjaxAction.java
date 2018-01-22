@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotcms.rest.ESIndexResource;
@@ -225,7 +226,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         Map<String, String> map = getURIParams();
         String indexAlias = map.get("indexAlias");
         String indexName = "";
-        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             String indexName1=APILocator.getESIndexAPI()
                     .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
                     .get(indexAlias);

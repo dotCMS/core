@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.util.regex.Pattern"%>
 <%@page import="java.util.regex.Matcher"%>
 <%@page import="com.liferay.portal.model.User"%>
@@ -20,7 +21,7 @@ try {
 } catch (Exception e) {
 	Logger.warn(this.getClass(), "no user found");
 } 
-if(user ==null || LicenseUtil.getLevel()==100) {
+if(user ==null || LicenseUtil.getLevel()==LicenseLevel.COMMUNITY.level) {
 	response.getWriter().println("Unauthorized");
 	return;
 }
@@ -79,7 +80,7 @@ if(clipboard ==null){
 
 <div id="imageContainer">
 
-	<%if(user ==null || 100==LicenseUtil.getLevel()) {%>
+	<%if(user ==null || LicenseLevel.COMMUNITY.level==LicenseUtil.getLevel()) {%>
 		<div style="text-align:center;padding-top:140px;">
 			<h3 style="color:silver"><%=LanguageUtil.get(pageContext, "dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %></h3>
 		</div>

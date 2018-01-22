@@ -1,13 +1,7 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -17,7 +11,6 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -31,6 +24,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class RelationshipFactoryImpl implements RelationshipFactory{
 
@@ -283,7 +280,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             boolean hasParent, boolean live, String orderBy) throws  DotDataException {
         List<Contentlet> matches = new ArrayList<Contentlet>();
 
-        if(contentlet == null || !InodeUtils.isSet(contentlet.getInode()))
+        if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier()))
         	return matches;
         String iden = "";
         try{
@@ -368,20 +365,32 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         Relationship relationship = byInode(inode);
         delete(relationship);
     }
-   @Override
+
+    @Override
     public void delete(Relationship relationship) throws DotHibernateException {
+        delete(relationship, false);
+    }
+
+    @Override
+    public void deleteKeepTrees(Relationship relationship) throws DotHibernateException {
+        delete(relationship, true);
+    }
+
+    private void delete(Relationship relationship, Boolean keepTreeRecords) throws DotHibernateException {
+
         InodeFactory.deleteInode(relationship);
-        
-        TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
-        
-        
+
+        if ( !keepTreeRecords ) {
+            TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
+        }
+
         CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
         try {
             CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
             CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
         } catch (DotCacheException e) {
-            Logger.error(this.getClass(), e.getMessage(),e);
-            
+            Logger.error(this.getClass(), e.getMessage(), e);
+
         }
     }
 
@@ -505,20 +514,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     /**
-     * This method retrieves all the related contenlets and regardless if it has to retrieve parents, children or siblings
-     * @param relationship
-     * @param contentlet
-     * @param orderBy
-     * @return
-     * @throws DotDataException 
-     */
-    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, String orderBy, String sqlCondition, boolean liveContent) throws DotDataException {
-
-    	return dbRelatedContent(relationship, contentlet, orderBy, sqlCondition, liveContent, 0);
-
-    }
-
-    /**
      * Removes the relationships from the list of related contentlets to the passed in contentlet
      * @param contentlet
      * @param relationship
@@ -527,90 +522,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      */
     @Override
     public  void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException{
-    	Tree t = new Tree();
-		for (Contentlet con : relatedContentlets) {
-
-			t= TreeFactory.getTree(contentlet.getIdentifier(), con.getIdentifier(), relationship.getRelationTypeValue());
-			if(InodeUtils.isSet(t.getChild())  & InodeUtils.isSet(t.getParent())){
-				TreeFactory.deleteTree(t);
-			}else{
-				t= TreeFactory.getTree(con.getIdentifier(),contentlet.getIdentifier(), relationship.getRelationTypeValue());
-				if(InodeUtils.isSet(t.getChild()) & InodeUtils.isSet(t.getParent())){
-					TreeFactory.deleteTree(t);
-				}
-			}
-		}
-    }
-
-    /**
-     * This method retrieves all the related contenlets and regardless if it has to retrieve parents, children or siblings
-     * @param relationship
-     * @param contentlet
-     * @param orderBy
-     * @param sqlCondition
-     * @param liveContent
-     * @param limit
-     * @return
-     * @throws DotDataException 
-     */
-    @SuppressWarnings("unchecked")
-	public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, String orderBy, String sqlCondition, boolean liveContent, int limit) throws DotDataException {
-
-        List<Contentlet> matches = new ArrayList<Contentlet>();
-
-    	if(contentlet == null || !InodeUtils.isSet(contentlet.getInode())) {
-    		return matches;
-    	}
-
-    	Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
-    	if(iden == null || !InodeUtils.isSet(iden.getInode()))
-    		return matches;
-
-        HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-
-        String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, tree relationshipTree, identifier iden, tree identifierTree "
-        		+ "where (relationshipTree.child = ? or relationshipTree.parent = ?) and relationshipTree.relation_type = ? "
-        		+ "and (iden.inode = relationshipTree.parent or iden.inode = relationshipTree.child) "
-                + "and (iden.inode = identifierTree.parent and identifierTree.child = contentlet_1_.inode) "
-                + "and contentlet.inode = contentlet_1_.inode and contentlet.inode <> ? ";
-        if(liveContent)
-        	sql += "and contentlet.live = " + DbConnectionFactory.getDBTrue();
-        else
-        	sql += "and contentlet.working = " + DbConnectionFactory.getDBTrue();
-
-        if(UtilMethods.isSet(sqlCondition))
-        	sql += "and " + sqlCondition;
-
-       	if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-       		sql = sql + " order by contentlet." + orderBy;
-       	} else {
-       		sql = sql + " order by relationshipTree.tree_order";
-       	}
-
-        Logger.debug(this.getClass(), "sql:  " + sql + "\n");
-
-        dh.setSQLQuery(sql);
-        dh.setParam(iden.getInode());
-        dh.setParam(iden.getInode());
-        dh.setParam(relationship.getRelationTypeValue());
-        dh.setParam(contentlet.getInode());
-
-        if(limit > 0) {
-        	dh.setMaxResults(limit);
+        if(contentlet.getIdentifier()!=null){
+            for (Contentlet con : relatedContentlets) {
+                if(con.getIdentifier()!=null){
+                    TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
+                            con.getIdentifier(), relationship.getRelationTypeValue());
+                    TreeFactory.deleteTreesByParentAndChildAndRelationType(con.getIdentifier(),
+                            contentlet.getIdentifier(), relationship.getRelationTypeValue());
+                }
+            }
         }
-
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> l = dh.list();
-        List<Contentlet> conResult = new ArrayList<Contentlet>();
-        ESContentFactoryImpl conFac = new ESContentFactoryImpl();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : l) {
-        	try {
-				conResult.add(conFac.convertFatContentletToContentlet(fatty));
-			} catch (DotStateException | DotSecurityException e) {
-				throw new DotDataException(e.getMessage(),e);
-			}
-		}
-
-        return new ArrayList<Contentlet> (new LinkedHashSet<Contentlet>(conResult));
     }
 
     

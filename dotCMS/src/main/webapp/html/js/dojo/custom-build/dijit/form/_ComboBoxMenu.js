@@ -37,6 +37,7 @@ define("dijit/form/_ComboBoxMenu", [
 				domClass.add(this.previousButton, "dijitMenuItemRtl");
 				domClass.add(this.nextButton, "dijitMenuItemRtl");
 			}
+			this.containerNode.setAttribute("role","listbox");
 		},
 
 		_createMenuItem: function(){

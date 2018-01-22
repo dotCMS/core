@@ -7,19 +7,22 @@ import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.servlets.taillog.TailLogServlet;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
-
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
 
@@ -154,7 +157,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     
                     
 
-                    FileOutputStream out = new FileOutputStream( osgiJar );
+                    final OutputStream out = Files.newOutputStream(osgiJar.toPath());
                     IOUtils.copyLarge( in, out );
                     IOUtils.closeQuietly( out );
                     IOUtils.closeQuietly( in );

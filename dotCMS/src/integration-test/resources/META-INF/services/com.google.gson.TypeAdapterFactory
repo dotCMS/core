@@ -1,3 +1,5 @@
+com.dotcms.contenttype.model.type.GsonAdaptersVanityUrlContentType
+com.dotcms.contenttype.model.type.GsonAdaptersKeyValueContentType
 com.dotcms.contenttype.model.type.GsonAdaptersPersonaContentType
 com.dotcms.contenttype.model.type.GsonAdaptersSimpleContentType
 com.dotcms.contenttype.model.type.GsonAdaptersPageContentType

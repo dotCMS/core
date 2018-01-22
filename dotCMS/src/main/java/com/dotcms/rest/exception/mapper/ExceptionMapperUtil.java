@@ -83,4 +83,10 @@ public final class ExceptionMapperUtil {
                 .header("error-message", message)
                 .build();
     }
+
+    public static Response  createResponse(final Response.Status status){
+        return Response
+                .status(status)
+                .build();
+    }
 }

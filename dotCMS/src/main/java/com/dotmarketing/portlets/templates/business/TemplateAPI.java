@@ -1,22 +1,17 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public interface TemplateAPI {
 
@@ -109,20 +104,16 @@ public interface TemplateAPI {
 	/**
 	 * Return the list of container identifiers used in a template body.
 	 *
-	 * @param body
-	 * @return List<Identifier>
+	 * @param template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List<Container>
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
+	 *
 	 */
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
-
-	/**
-	 * Update template body code to use the new parse container syntax
-	 *
-	 * @param template
-	 */
-	void updateParseContainerSyntax(Template template);
 
 	/**
 	 * Retrieves the template associated to a host
@@ -175,9 +166,19 @@ public interface TemplateAPI {
      */
 	public List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
-	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
+	/**
+	 * Check if there are Contentlet Pages using this Template
+	 * @param templateInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List of Contentlet Pages (page's titles) using the specified Template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
@@ -202,4 +203,5 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+	
 }

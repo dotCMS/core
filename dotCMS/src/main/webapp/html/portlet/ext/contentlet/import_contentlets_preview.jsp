@@ -114,57 +114,59 @@
 	</div>
 </div>
 
-<div class="shadowBox headerBox" style="width:600px;margin:auto;padding:10px 20px;margin-bottom:20px;">
-	<h3 style="margin-bottom:20px;"><%= LanguageUtil.get(pageContext, "Preview-Analysis-Results") %></h3>
-	
-	<h4><%= LanguageUtil.get(pageContext, "Summary") %></h4>
-	<ul class="withBullets" style="margin-bottom:20px;">
-		<%
-			List<String> messages = previewResults.get("messages");
-			for (String message : messages) {
-	    %>
-	    	<li><%= message %></li>
-	    <% } %>						
-	</ul>
-
-
-	<h4><%= LanguageUtil.get(pageContext, "Warnings") %>:</h4>
-	<ul class="withBullets" style="margin-bottom:20px;">
-		<%
-			List<String> warnings = previewResults.get("warnings");
-			for (String warning : warnings) {
-	    %>
-	    		<li><%= warning %></li>
-	     <% } %>							
-	
-		<% if(warnings.size() == 0) { %>
-	    	<li><%= LanguageUtil.get(pageContext, "No-warnings-found") %></li>
-		<% } %>
-	</ul>
-
-	<h4><%= LanguageUtil.get(pageContext, "Errors") %>:</h4>
-	<ul class="withBullets" style="margin-bottom:20px;">
-		<%
-			List<String> errors = previewResults.get("errors");
-			for (String error : errors) {
-	    %>
-		    <li><%= error %></li>
-	    <% } %>						
-	
-		<% if(errors.size() == 0) { %>
-	    	<li><%= LanguageUtil.get(pageContext, "No-errors-were-found-in-the-file") %></li>
-		<% } %>
-	</ul>
-
-	<div class="buttonRow">
-	    <button dojoType="dijit.form.Button" id="goBackButton"  onclick="goBack()" iconClass="cancelIcon">
-	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-	    </button>
-	    <button dojoType="dijit.form.Button" onClick="submitForm(document.fm)" id="proceedButton" onclick="submitForm()" iconClass="uploadIcon">
-	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import Content" )) %>
-	    </button>
+<div class="shadowBox headerBox import-preview" style="width:600px;">
+	<div class="import-preview__heading">
+		<h3><%= LanguageUtil.get(pageContext, "Preview-Analysis-Results") %></h3>
 	</div>
-
+	<div class="import-preview__body">
+		<h4><%= LanguageUtil.get(pageContext, "Summary") %></h4>
+		<ul class="withBullets" style="margin-bottom:20px;">
+			<%
+				List<String> messages = previewResults.get("messages");
+				for (String message : messages) {
+			%>
+				<li><%= message %></li>
+			<% } %>						
+		</ul>
+	
+	
+		<h4><%= LanguageUtil.get(pageContext, "Warnings") %>:</h4>
+		<ul class="withBullets" style="margin-bottom:20px;">
+			<%
+				List<String> warnings = previewResults.get("warnings");
+				for (String warning : warnings) {
+			%>
+					<li><%= warning %></li>
+				<% } %>							
+		
+			<% if(warnings.size() == 0) { %>
+				<li><%= LanguageUtil.get(pageContext, "No-warnings-found") %></li>
+			<% } %>
+		</ul>
+	
+		<h4><%= LanguageUtil.get(pageContext, "Errors") %>:</h4>
+		<ul class="withBullets" style="margin-bottom:20px;">
+			<%
+				List<String> errors = previewResults.get("errors");
+				for (String error : errors) {
+			%>
+				<li><%= error %></li>
+			<% } %>						
+		
+			<% if(errors.size() == 0) { %>
+				<li><%= LanguageUtil.get(pageContext, "No-errors-were-found-in-the-file") %></li>
+			<% } %>
+		</ul>
+	
+		<div class="buttonRow">
+			<button dojoType="dijit.form.Button" id="goBackButton"  onclick="goBack()" iconClass="cancelIcon">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+			</button>
+			<button dojoType="dijit.form.Button" onClick="submitForm(document.fm)" id="proceedButton" onclick="submitForm()" iconClass="uploadIcon">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import Content" )) %>
+			</button>
+		</div>
+	</div>
 </div>
 
 </html:form>

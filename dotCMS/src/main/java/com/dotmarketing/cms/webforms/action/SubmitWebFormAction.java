@@ -28,6 +28,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -55,7 +56,7 @@ import com.liferay.util.servlet.UploadServletRequest;
  * @author David
  * @version $Revision: 1.5 $ $Date: 2007/07/18 16:48:42 $
  */
-public final class SubmitWebFormAction extends DispatchAction {
+public final class SubmitWebFormAction extends SecureAction {
 
 	HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	

@@ -17,6 +17,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,8 +89,9 @@ public class ContentletUtil {
 	 * @return Contentlet with the values in place.
 	 *
 	 * @throws DotDataException
+	 * @throws IOException 
      */
-	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException {
+	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException, IOException {
 		Map<String, Object> m = new HashMap<>();
 
 		c.setTags();
@@ -97,20 +101,41 @@ public class ContentletUtil {
 		Structure s = c.getStructure();
 
 		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
+			if(f.getFieldType().equals(Field.FieldType.BINARY.toString()) && c.get(f.getVelocityVarName())!=null){
+			  File x = c.getBinary(f.getVelocityVarName());
+				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName() + "/" + x.getName()	);
 				m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
 			} else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
+
 				List<Category> cats = null;
+				
 				try {
+
 					cats = APILocator.getCategoryAPI().getParents(c, user, true);
 				} catch (Exception e) {
 					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
 				}
 
 				if(cats!=null && !cats.isEmpty()) {
-					String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-					m.put(f.getVelocityVarName(), catsStr);
+					try {
+
+						final Category parentCategory        = APILocator.getCategoryAPI().find(f.getValues(), user, true);
+						final List<Category> childCategories = new ArrayList<>();
+						for (Category category : cats) {
+
+							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user)) {
+
+								childCategories.add(category);
+							}
+						}
+
+						if (!childCategories.isEmpty()){
+							String catsStr = childCategories.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
+							m.put(f.getVelocityVarName(), catsStr);
+						}
+					} catch (DotSecurityException e) {
+						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+					}
 				}
 			}
 		}

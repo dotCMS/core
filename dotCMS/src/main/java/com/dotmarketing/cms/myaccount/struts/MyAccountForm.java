@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotmarketing.util.UtilMethods;
 
+@Deprecated
 public class MyAccountForm extends ActionForm
 {
 	private static final long serialVersionUID = 1L;

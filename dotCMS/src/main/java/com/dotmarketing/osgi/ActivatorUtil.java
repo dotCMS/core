@@ -8,19 +8,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.FileUtil;
-import org.apache.felix.http.api.ExtHttpService;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-
-import javax.servlet.ServletContext;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Enumeration;
+import javax.servlet.ServletContext;
+import org.apache.felix.http.api.ExtHttpService;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 class ActivatorUtil {
 
@@ -144,7 +143,7 @@ class ActivatorUtil {
                     resourceFile.createNewFile();
 
                     in = entryUrl.openStream();
-                    out = new FileOutputStream( resourceFile );
+                    out = Files.newOutputStream(resourceFile.toPath());
 
                     byte[] buffer = new byte[1024];
                     int length;

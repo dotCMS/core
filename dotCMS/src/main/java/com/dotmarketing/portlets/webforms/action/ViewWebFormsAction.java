@@ -16,7 +16,7 @@ public class ViewWebFormsAction extends PortletAction {
     public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
             RenderResponse res) throws Exception {
 
-        Logger.debug(this, "Going to: portlet.ext.virtuallinks.view");
+        Logger.debug(this, "Going to: portlet.ext.webforms.view");
         return mapping.findForward("portlet.ext.webforms.view");
     }
 

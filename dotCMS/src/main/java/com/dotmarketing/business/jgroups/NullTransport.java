@@ -45,7 +45,54 @@ public class NullTransport implements CacheTransport {
 
   @Override
   public CacheTransportInfo getInfo(){
-	  return null;
+    return new CacheTransportInfo(){
+      @Override
+      public String getClusterName() {
+        return "NullTransport";
+      }
+
+      @Override
+      public String getAddress() {
+        return ("");
+      }
+
+      @Override
+      public int getPort() {
+        return 0;
+      }
+
+
+      @Override
+      public boolean isOpen() {
+        return false;
+      }
+
+      @Override
+      public int getNumberOfNodes() {
+        return 0;
+      }
+
+
+      @Override
+      public long getReceivedBytes() {
+        return 0;
+      }
+
+      @Override
+      public long getReceivedMessages() {
+        return 0;
+      }
+
+      @Override
+      public long getSentBytes() {
+        return 0;
+      }
+
+      @Override
+      public long getSentMessages() {
+        return 0;
+      }
+    };
   }
 
 

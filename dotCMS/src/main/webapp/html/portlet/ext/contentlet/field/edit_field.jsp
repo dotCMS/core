@@ -30,6 +30,7 @@
 
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -236,8 +237,8 @@
             }
         %>
         <div class="wysiwyg-wrapper">
-            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall"></div>
-            <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
+            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
+            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                     class="editWYSIWYGField aceText aceTall" 
                     name="<%=field.getFieldContentlet()%>"
                     id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
@@ -274,12 +275,12 @@
         </div>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
-                <% if(!wysiwygDisabled) {%>
-                enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
-                <% }else if(wysiwygPlain){ %>
-                toPlainView('<%=field.getVelocityVarName()%>');
-                <% }else {%>
-                toCodeArea('<%=field.getVelocityVarName()%>');
+                <% if (!wysiwygDisabled) { %>
+                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
+                <% } else if (wysiwygPlain) { %>
+                    toPlainView('<%=field.getVelocityVarName()%>');
+                <% } else {%>
+                    toCodeArea('<%=field.getVelocityVarName()%>');
                 <% }%>
             });
         </script>
@@ -376,23 +377,26 @@
         <%}%>
         <script type="text/javascript">
             function toggleExpire(velocityVarName) {
-                var neverExpireField = dijit.byId("fieldNeverExpire");
-                var never = neverExpireField.getValue();
+                var never = dijit.byId("fieldNeverExpire").getValue();
                 var dateField = dijit.byId(velocityVarName + "Date");
                 var timeField = dijit.byId(velocityVarName + "Time");
 
                 if (never) {
                     dateField.set("value", null);
                     timeField.set("value", null);
+                    document.getElementById("fm").elements["fieldNeverExpire"].value = "true";
+                } else {
+                    document.getElementById("fm").elements["fieldNeverExpire"].value = "false";
                 }
-                neverExpireField.set("value", never);
-                dateField.set('disabled', never);
-                timeField.set('disabled', never);
+
+                dateField.set("disabled", never);
+                timeField.set("disabled", never);
             }
 
             dojo.addOnLoad(function() {
                 toggleExpire('<%=field.getVelocityVarName()%>');
             });
+
         </script>
         <%}
         }
@@ -451,7 +455,7 @@
         <%int showDim=300; %>
         <%int imageEditors=0; %>
         <!--  If you are not enterprise -->
-        <%if(LicenseUtil.getLevel() < 199 ){ %>
+        <%if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){ %>
         <div id="thumbnailParent<%=field.getVelocityVarName()%>">
             <%
                 String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
@@ -697,7 +701,7 @@
                     selected = "SELECTED";
                 }
         %>
-        <option value="<%=pairvalue%>" <%=selected%>><%=name%></option>
+        <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
         <%
             }
         %>
@@ -734,9 +738,9 @@
                     }
                 }
             }
-    %>
-    <option value="<%=pairvalue%>" <%=selected%>><%=name%></option>
-    <%
+            %>
+            <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+            <%
         }
     %>
     </select>
@@ -747,7 +751,10 @@
             var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
             for(var i = 0; i < multiselect.options.length; i++) {
                 if(multiselect.options[i].selected) {
-                    valuesList += multiselect.options[i].value + ",";
+                    if (valuesList != ""){
+                        valuesList += ","
+                    }
+                    valuesList += multiselect.options[i].value;
                 }
             }
             $('<%=field.getVelocityVarName()%>').value = valuesList;
@@ -993,7 +1000,7 @@
                 }
             }
 
-            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel()>199) {  %>
+            if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {  %>
         <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
             <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
                 int k = 0;

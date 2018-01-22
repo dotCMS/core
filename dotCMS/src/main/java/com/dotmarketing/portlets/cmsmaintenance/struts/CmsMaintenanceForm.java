@@ -19,7 +19,7 @@ public class CmsMaintenanceForm extends ActionForm {
 	private String searchString="";
 	private String replaceString="";
 	private String userId="";
-	private List<Structure> structures;
+
 	private String structure;
 	private String removeassetsdate;
 	
@@ -35,12 +35,7 @@ public class CmsMaintenanceForm extends ActionForm {
 	public void setStructure(String structure) {
 		this.structure = structure;
 	}
-	public List<Structure> getStructures() {
-		return structures;
-	}
-	public void setStructures(List<Structure> structures) {
-		this.structures = structures;
-	}
+
 	/**
 	 * @return Returns the cacheName.
 	 */

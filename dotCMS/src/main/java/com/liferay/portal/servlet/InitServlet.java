@@ -25,7 +25,6 @@ package com.liferay.portal.servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -33,6 +32,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.events.InitAction;
+import com.liferay.util.SystemProperties;
 
 /**
  * <a href="InitServlet.java.html"><b><i>View Source</i></b></a>
@@ -49,10 +49,12 @@ public class InitServlet extends HttpServlet {
 			// Initialize
 
 			super.init();
+
 			if(Config.CONTEXT ==null){
 				Config.CONTEXT = this.getServletContext();
 			}
-			
+
+			SystemProperties.getProperties(); // Init the system properties
 			//initial system cache
 			//http://jira.dotmarketing.net/browse/DOTCMS-1873
 			CacheLocator.init();

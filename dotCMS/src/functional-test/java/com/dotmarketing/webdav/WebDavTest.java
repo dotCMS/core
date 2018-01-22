@@ -1,7 +1,6 @@
 package com.dotmarketing.webdav;
 
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Permission;
@@ -36,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.assertEquals;
 
-public class WebDavTest extends IntegrationTestBase {
+public class WebDavTest {
 	
 	@Before
 	public void before () {
@@ -211,7 +210,7 @@ public class WebDavTest extends IntegrationTestBase {
 	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
                 PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
 	        
-	        HibernateUtil.commitTransaction();
+	        HibernateUtil.closeAndCommitTransaction();
 	    }
 	    catch(Exception ex) {
 	        HibernateUtil.rollbackTransaction();

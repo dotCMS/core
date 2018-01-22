@@ -146,6 +146,15 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.RELATIONSHIPS.name());
 	}
 
+    @SuppressWarnings("unchecked")
+    public Set<String> getCategories() {
+        if(get(AssetTypes.CATEGORIES.name()) == null){
+            Set<String> categoriesToBuild =   new HashSet<>();
+            put(AssetTypes.CATEGORIES.name(), categoriesToBuild);
+        }
+        return (Set<String>) get(AssetTypes.CATEGORIES.name());
+    }
+
 	public void setHTMLPages(Set<String> htmlPages) {
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
@@ -186,6 +195,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	public void setRelationships(Set<String> relationships) {
 		put(AssetTypes.RELATIONSHIPS.name(), relationships);
 	}
+
+    public void setCategories(Set<String> categories) {
+        put(AssetTypes.CATEGORIES.name(), categories);
+    }
 
     public boolean isDownloading () {
         return downloading;

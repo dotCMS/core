@@ -29,7 +29,7 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.DotResourceLoader;
+
 
 /**
  * This class represent a general text resource that
@@ -116,7 +116,7 @@ public abstract class Resource implements Serializable
      */
     public boolean isSourceModified()
     {
-        return DotResourceLoader.getInstance().isSourceModified(this);
+        return com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().isSourceModified(this);
     }
 
     /**

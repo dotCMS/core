@@ -17,6 +17,8 @@ public interface ContentWrapper {
 
     List<Map<String, Object>> getMultiTree ();
 
+    List<String> getCategories ();
+
     List<Tag> getTags ();
 
     Operation getOperation ();

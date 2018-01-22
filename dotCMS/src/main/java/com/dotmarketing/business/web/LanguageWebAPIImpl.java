@@ -5,12 +5,14 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -114,6 +116,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
      * third,      is there a language in session, if so use it
      * finally     use the default language
      */
+    @CloseDBIfOpened
     @Override
     public Language getLanguage(HttpServletRequest httpRequest) {
         final Language current = currentLanguage(httpRequest);
@@ -132,7 +135,8 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
             //only set in session if we are not in a timemachine
             if(sessionOpt.getAttribute("tm_lang")==null){
                 sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
-                boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
+                boolean ADMIN_MODE =   PageMode.get(httpRequest).isAdmin;
+
                 if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
                     sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
                     httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);

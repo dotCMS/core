@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -31,17 +32,18 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 public class CalendarReminderAPIImpl implements CalendarReminderAPI {
-	EventFactory EFI = FactoryLocator.getEventFactory();
-	CalendarReminderFactory CRFI = FactoryLocator.getCalendarReminderFactory();
+	final EventFactory eventFactory = FactoryLocator.getEventFactory();
+	final CalendarReminderFactory calendarReminderFactory = FactoryLocator.getCalendarReminderFactory();
 
 	/**
 	 * Delete a specific CalendarReminder
 	 * @param calendarReminder CalendarReminder to delete
 	 * @throws DotDataException
 	 */
+	@WrapInTransaction
 	public void delete(CalendarReminder calendarReminder)
 			throws DotDataException {
-		CRFI.deleteCalendarReminder(calendarReminder);
+		calendarReminderFactory.deleteCalendarReminder(calendarReminder);
 	}
 
 	/**
@@ -49,9 +51,10 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 	 * @param calendarReminders List of CalendarReminder to delete
 	 * @throws DotDataException
 	 */
+	@WrapInTransaction
 	public void delete(List<CalendarReminder> calendarReminders)
 			throws DotDataException {
-		CRFI.deleteCalendarReminders(calendarReminders);
+		calendarReminderFactory.deleteCalendarReminders(calendarReminders);
 	}
 
 	/**
@@ -62,9 +65,10 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	public CalendarReminder find(long userId, String eventId, Date date)
 			throws DotDataException {
-		return CRFI.getCalendarReminder(userId, eventId,date);
+		return calendarReminderFactory.getCalendarReminder(userId, eventId,date);
 	}
 
 	/**
@@ -72,8 +76,9 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	public List<CalendarReminder> findAll() throws DotDataException {
-		return CRFI.getAll();
+		return calendarReminderFactory.getAll();
 	}
 	
 	/**
@@ -85,6 +90,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 	 * @param daysInAdvance How many days in advance the reminder will be sent
 	 * @throws DotDataException
 	 */
+	@WrapInTransaction
 	public void create(String emailAddress,String firstName, String lastName,String eventId, int daysInAdvance)
 			throws DotDataException {
 		daysInAdvance = (daysInAdvance < 0 ? daysInAdvance : -daysInAdvance);
@@ -112,7 +118,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 		// Create the CalendarReminder
 		String userId = user.getUserId();
 		try {
-			Event event = EFI.find(eventId, true, user, true);
+			Event event = eventFactory.find(eventId, true, user, true);
 			Date eventDate = event.getStartDate();
 			GregorianCalendar gc = new GregorianCalendar();
 			gc.setTime(eventDate);
@@ -123,7 +129,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 			calendarReminder.setUserId(userId);
 			calendarReminder.setEventId(eventId);
 			calendarReminder.setSendDate(calendarReminderDate);
-			CRFI.saveCalendarReminder(calendarReminder);
+			calendarReminderFactory.saveCalendarReminder(calendarReminder);
 		} catch (Exception ex) {
 			Logger.warn(CalendarReminderAPIImpl.class, ex.getMessage());
 		}
@@ -133,9 +139,10 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 	 * Send all the CalendarReminder that has been set to be send before the date used as parameter
 	 * @param date The date used to search the CalendarReminders
 	 */
+	@CloseDBIfOpened
 	public void sendCalendarRemainder(Date date) {
 		// Get All the Reminders that have to be send today
-		List<CalendarReminder> calendarReminders = CRFI.getCalendarReminderBefore(date);
+		List<CalendarReminder> calendarReminders = calendarReminderFactory.getCalendarReminderBefore(date);
 		for (CalendarReminder calendarReminder : calendarReminders) {
 			try {
 				// Get the user information
@@ -144,7 +151,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 
 				// Get the event information
 				String eventId = calendarReminder.getEventId();
-				Event event = EFI.find(eventId, true, user, true);
+				Event event = eventFactory.find(eventId, true, user, true);
 				Map<String, Object> parameters = new HashMap<String, Object>();
 				parameters.put("fullName", user.getFullName());
 				parameters.put("eventTitle", event.getTitle());
@@ -180,7 +187,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 			}
 		}
 		// Delete the remainders that have already be sent
-		CRFI.deleteCalendarReminders(calendarReminders);
+		calendarReminderFactory.deleteCalendarReminders(calendarReminders);
 	}
 
 	private User createAccount(String emailAddress,String firstName,String lastName) throws Exception {

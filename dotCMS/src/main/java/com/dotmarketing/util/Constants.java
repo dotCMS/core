@@ -62,9 +62,7 @@ public final class Constants {
 	
     public static final String TEMPLATE_ADD_CONTAINER = "add_container";
     public static final String TEMPLATE_ADD_FILE = "add_file";
-    public static final String TEMPLATE_PREPROCESS = "#parse (\"preprocess.vl\")";
-    public static final String TEMPLATE_POSTPROCESS = "#parse (\"postprocess.vl\")";
-    
+
     public static final String CONTAINER_ADD_VARIABLE = "add_variable";
     
     public static final String HTML_PAGE_TMP_DIR = "/tmp_jsps";
@@ -128,9 +126,13 @@ public final class Constants {
     public static String USER_AGENT_DOTCMS_TIMEMACHINE = "DOTCMS-TIMEMACHINE";
     public static String USER_AGENT_DOTCMS_PUSH_PUBLISH = "DOTCMS-PUSHPUBLISH";
 
-	//Http headres
+	//Http headers
 	public static String ORIGINAL_REQUEST_URL_HTTP_HEADER = "javax.servlet.forward.request_uri";
 	public static String REFERER_URL_HTTP_HEADER = "referer";
 
-    
+	// REGEX to validate emails
+	public static final String REG_EX_EMAIL = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+
+	public static final String CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD = "DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD";
+
 }

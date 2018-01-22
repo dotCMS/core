@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
@@ -21,61 +23,76 @@ import com.liferay.portal.model.User;
  */
 public class LayoutAPIImpl implements LayoutAPI {
 
-	private LayoutFactory lf = FactoryLocator.getLayoutFactory();
+	private final LayoutFactory layoutFactory = FactoryLocator.getLayoutFactory();
 	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#addPortletsToLayout(com.dotmarketing.business.Layout, java.util.List)
 	 */
-	public void setPortletsToLayout(Layout layout, List<Portlet> portlets) throws DotDataException {
+	@Override
+	@WrapInTransaction
+	public void setPortletsToLayout(final Layout layout, final List<Portlet> portlets) throws DotDataException {
 		List<String> portletIds = new ArrayList<String>();
 		for(Portlet p : portlets) {
 			portletIds.add(p.getPortletId());
 		}
-		lf.setPortletsToLayout(layout, portletIds);
+		layoutFactory.setPortletsToLayout(layout, portletIds);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#loadLayout(java.lang.String)
 	 */
-	public Layout loadLayout(String layoutId) throws DotDataException {
-		return lf.loadLayout(layoutId);
+	@Override
+	@CloseDBIfOpened
+	public Layout loadLayout(final String layoutId) throws DotDataException {
+		return layoutFactory.loadLayout(layoutId);
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#loadLayout(java.lang.String)
 	 */
-	public Layout findLayout(String layoutId) throws DotDataException {
-		return lf.findLayout(layoutId);
+	@Override
+	@CloseDBIfOpened
+	public Layout findLayout(final String layoutId) throws DotDataException {
+		return layoutFactory.findLayout(layoutId);
 	}
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#removeLayout(com.dotmarketing.business.Layout)
 	 */
-	public void removeLayout(Layout layout) throws DotDataException {
-		lf.removeLayout(layout);
+	@Override
+	@WrapInTransaction
+	public void removeLayout(final Layout layout) throws DotDataException {
+		layoutFactory.removeLayout(layout);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#saveLayout(com.dotmarketing.business.Layout)
 	 */
+	@Override
+	@WrapInTransaction
 	public void saveLayout(Layout layout) throws LayoutNameAlreadyExistsException, DotDataException {
-		Layout oldLayout = lf.findLayoutByName(layout.getName());
+		Layout oldLayout = layoutFactory.findLayoutByName(layout.getName());
 		if(UtilMethods.isSet(oldLayout) && UtilMethods.isSet(oldLayout.getId()) && !oldLayout.getId().equals(layout.getId()))
 			throw new LayoutNameAlreadyExistsException("Layout with name: " + layout.getName() + " already exists in the system, " +
 					"cannot save a new layout using the same name");
 		
 		
 		
-		lf.saveLayout(layout);
+		layoutFactory.saveLayout(layout);
 	}
 
+	@WrapInTransaction
+	@Override
 	public void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException {
-		lf.setPortletsToLayout(layout, portletIds);
+		layoutFactory.setPortletsToLayout(layout, portletIds);
 	}
 
-	public List<Layout> loadLayoutsForUser(User user) throws DotDataException {
+	@Override
+	@CloseDBIfOpened
+	public List<Layout> loadLayoutsForUser(final User user) throws DotDataException {
 		
-		List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
-		Set<String> lids = new HashSet<String>();
+		final List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
+		final Set<String> lids = new HashSet<String>();
 		for (Role role : urs) {
 			 lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
 		}
@@ -91,6 +108,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return layouts;
 	}
 
+	@Override
 	public boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException {
 		List<Layout> layouts = loadLayoutsForUser(user);
 		boolean hasAccess = false;
@@ -103,10 +121,13 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return hasAccess;
 	}
 
+	@Override
+	@CloseDBIfOpened
 	public List<Layout> findAllLayouts() throws DotDataException {
-		return lf.findAllLayouts();
+		return layoutFactory.findAllLayouts();
 	}
 
+	@Override
 	public List<Layout> loadLayoutsForRole(Role role) throws DotDataException {
 		Set<String> lids = new HashSet<String>();
 		lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	

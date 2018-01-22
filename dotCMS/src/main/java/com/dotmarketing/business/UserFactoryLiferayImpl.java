@@ -71,10 +71,11 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		String companyId = comp.getCompanyId();
 		boolean autoID = false;
 		User defaultUser = null;
-		if(!UtilMethods.isSet(userId)){
-			autoID = true;
-			try {
-				boolean more = false; 
+		try {
+			if(!UtilMethods.isSet(userId)){
+				autoID = true;
+
+				boolean more;
 				do {
 					userId = companyId + "." +
 					Long.toString(CounterManagerUtil.increment(User.class.getName() + "." + companyId));
@@ -84,22 +85,20 @@ public class UserFactoryLiferayImpl extends UserFactory {
 							more=true;
 						else
 							more=false;
-						
+
 					} catch (PortalException e) {
 						more=false;
 					}
-					
+
 				}while(more);
-			} catch (Exception e) {
-				throw new DotDataException("Can't get a counter");
+			}else{
+				CounterManagerUtil.increment(User.class.getName() + "." + companyId);
 			}
-		}
-		
-		try {
+
 			defaultUser = APILocator.getUserAPI().getDefaultUser();
-			CounterManagerUtil.increment(User.class.getName() + "." + companyId);
+
 		} catch (Exception e) {
-			throw new DotDataException("Can't get default user");
+			throw new DotDataException("Error creating new user", e);
 		}		
 
 		if(!UtilMethods.isSet(email)){
@@ -182,13 +181,44 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
-	
+
 	@Override
-	public List<User> getUsersByName(String filter, int start, int limit) throws DotDataException {
+	public long getCountUsersByName(String filter) throws DotDataException {
 		filter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(filter);
 		filter = (isFilteredByName ? filter : "");
+		StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
+		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
+
+		if( isFilteredByName ) {
+			baseSql.append(" and lower(");
+			baseSql.append(userFullName);
+			baseSql.append(") like ?");
+		}
+
+		baseSql.append(" and delete_in_progress = ");
+		baseSql.append(DbConnectionFactory.getDBFalse());
+
+		String sql = baseSql.toString();
+		dotConnect.setSQL(sql);
+		Logger.debug( UserFactoryLiferayImpl.class,"::getCountUsersByName -> query: " + dotConnect.getSQL() );
+
+		dotConnect.addParam(PublicCompanyFactory.getDefaultCompanyId());
+		if(isFilteredByName) {
+			dotConnect.addParam("%"+filter.toLowerCase()+"%");
+		}
+
+		return dotConnect.getInt("count");
+	}
+
+	@Override
+	public List<User> getUsersByName(final String filter, final int start, final int limit) throws DotDataException {
+
+		String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
+		DotConnect dotConnect = new DotConnect();
+		boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
+		sanitizeFilter = (isFilteredByName ? sanitizeFilter : "");
 		StringBuffer baseSql = new StringBuffer("select user_.userId from user_ where companyid = ? and userid <> 'system' ");
 		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
 
@@ -210,16 +240,16 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		dotConnect.addParam(PublicCompanyFactory.getDefaultCompanyId());
 		if(isFilteredByName) {
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
+			dotConnect.addParam("%"+sanitizeFilter.toLowerCase()+"%");
 		}
-		
+
 		if(start > -1)
 			dotConnect.setStartRow(start);
 		if(limit > -1)
 			dotConnect.setMaxRows(limit);
 
 		ArrayList<Map<String, Object>> results = dotConnect.loadResults();
-		
+
 		// Since limit is a small number, convert each row to appropriate entity
 		ArrayList<User> users = new ArrayList<User>();
 
@@ -232,7 +262,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			uc.add(u.getUserId(), u);
 		}
 
-		return users;   
+		return users;
 	}
 	
 	@Override

@@ -1,5 +1,49 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
+
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.util.transform.TransformerLocator;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Inode.Type;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.cache.FolderCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.AssetsComparator;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,59 +60,13 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotIdentifierStateException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.cache.FolderCache;
-
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
-
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.PageServices;
-import com.dotmarketing.util.AssetsComparator;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-
 /**
  *
  * @author maria 2323
  */
 public class FolderFactoryImpl extends FolderFactory {
-	private int nodeId;
 
 	private FolderCache fc = CacheLocator.getFolderCache();
-	private java.text.DateFormat loginDateFormat;
 
 	@Override
 	protected boolean exists(String folderInode) throws DotDataException {
@@ -79,111 +77,122 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	}
 
-
 	@Override
 	protected void delete(Folder f) throws DotDataException {
-		Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
-		HibernateUtil.delete(f);
-		fc.removeFolder(f, id);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
+
+           Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
+           new DotConnect()
+                .setSQL("delete from folder where folder.inode = ? ")
+                .addParam(f.getInode()).loadResult();
+        
+           new DotConnect()
+            .setSQL("delete from inode where inode = ? ")
+            .addParam(f.getInode()).loadResult();
+           fc.removeFolder(f, id);
+
+        
+	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
 
-	/*
-	 * protected boolean existsFolder(long folderInode) { return
-	 * existsFolder(Long.toString(folderInode)); }
-	 */
+
 	@Override
 	protected Folder find(String folderInode) throws DotDataException {
 		Folder folder = fc.getFolder(folderInode);
 		if (folder == null) {
 			try{
-				folder = (Folder) new HibernateUtil(Folder.class).load(folderInode);
+			     DotConnect dc    = new DotConnect()
+			             .setSQL("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_ where folder.inode = ? or folder.identifier=?")
+			             .addParam(folderInode)
+			             .addParam(folderInode);
+				folder = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 				fc.addFolder(folder, id);
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
 		return folder;
 	}
 
-
+	/**
+	 *
+	 * @param folder
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
+	@Deprecated
 	protected java.util.List<Folder> getSubFolders(Folder folder) throws DotStateException, DotDataException {
 
-		Identifier id = APILocator.getIdentifierAPI().find(folder);
-
-		HibernateUtil dh = new HibernateUtil(Folder.class);
-		List<Folder> list = null;
-		String query = "SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? order by name, sort_order";
-
-		dh.setSQLQuery(query);
-		dh.setParam(id.getPath());
-		dh.setParam(id.getHostId());
-		list = (java.util.List<Folder>) dh.list();
-        Collections.sort(list,new Comparator<Folder>() {
-            public int compare(Folder o1, Folder o2) {
-                return o1.getTitle().compareToIgnoreCase(o2.getTitle());
-            }
-        });
-		return list;
+		return getSubFoldersTitleSort(folder);
 	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	protected java.util.List<Folder> getSubFoldersTitleSort(Folder folder) throws DotDataException  {
 		Identifier id = APILocator.getIdentifierAPI().find(folder);
-		HibernateUtil dh = new HibernateUtil(Folder.class);
-		List<Folder> folders = null;
 
-		String query = "SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? order by lower(folder.title)";
-
-		dh.setSQLQuery(query);
-		dh.setParam(id.getPath());
-		dh.setParam(id.getHostId());
-		folders = (java.util.List<Folder>) dh.list();
-
-		return folders;
+		return getSubFolders(null, id.getPath(), id.getHostId(), "lower(folder.title)");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Folder> findSubFolders(Folder folder, boolean showOnMenu) throws DotStateException, DotDataException {
+	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu)
+			throws DotStateException, DotDataException {
 		Identifier id = APILocator.getIdentifierAPI().find(folder);
-		HibernateUtil dh = new HibernateUtil(Folder.class);
-		String condition = "";
-		if(UtilMethods.isSet(showOnMenu)){
-			condition = "show_on_menu = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
-		}
-		dh.setSQLQuery("SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? and "
-				+ condition + " order by sort_order, name");
-		dh.setParam(id.getPath());
-		dh.setParam(id.getHostId());
-		return (java.util.List<Folder>)dh.list();
-
+		return getSubFolders(showOnMenu, id.getPath(), id.getHostId(), null);
 	}
+
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException   {
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)
+			throws DotHibernateException {
 
-		HibernateUtil dh = new HibernateUtil(Folder.class);
+		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
+	}
+
+	private List<Folder> getSubFolders(Boolean showOnMenu, String path, final String hostId, String order) {
+		DotConnect dc    = new DotConnect();
 		String condition = "";
-		if(UtilMethods.isSet(showOnMenu)){
-			condition = "show_on_menu = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
+		StringBuilder orderBy   = new StringBuilder(" order by ");
+		StringBuilder query = new StringBuilder();
+
+		if (UtilMethods.isSet(showOnMenu)) {
+			condition = "show_on_menu = " + (showOnMenu ? DbConnectionFactory
+					.getDBTrue() : DbConnectionFactory.getDBFalse());
 		}
-		String query = "select {folder.*} from folder, inode folder_1_, identifier identifier where parent_path = '/' and "+
-		               "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ? and "
-					   + condition + " order by sort_order, name";
 
-		dh.setSQLQuery(query);
-		dh.setParam(host.getIdentifier());
+		if (!UtilMethods.isSet(order)){
+			orderBy.append("sort_order, name");
+		}else{
+			orderBy.append(order);
+		}
 
-		return (java.util.List<Folder>)dh.list();
+		query.append("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_, identifier identifier ").
+				append("where folder.identifier = identifier.id and ").
+				append("folder_1_.type = 'folder' and folder_1_.inode = folder.inode and ").
+				append("identifier.parent_path = ? and identifier.host_inode = ? ");
+
+		query.append((!condition.isEmpty()?" and " + condition:condition) + orderBy);
+
+		dc.setSQL(query.toString());
+		dc.addParam(path);
+		dc.addParam(hostId);
+
+		try{
+
+			return TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
+		}catch(DotDataException e){
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -191,6 +200,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		String originalPath = path;
 		Folder folder;
+		List<Folder> result;
 
 		if(host == null){
 			return null;
@@ -225,13 +235,22 @@ public class FolderFactoryImpl extends FolderFactory {
 					hostId = host.getIdentifier();
 				}
 
-				HibernateUtil dh = new HibernateUtil(Folder.class);
-				dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
+				DotConnect dc = new DotConnect();
+				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
-				dh.setParam(assetName);
-				dh.setParam(parentPath);
-				dh.setParam(hostId);
-				folder = (Folder) dh.load();
+				dc.addParam(assetName.toLowerCase());
+				dc.addParam(parentPath.toLowerCase());
+				dc.addParam(hostId);
+
+
+				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
+
+				if (result != null && !result.isEmpty()){
+					folder = result.get(0);
+				}else{
+					folder = new Folder();
+				}
 
 				// if it is found add it to folder cache
 				if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
@@ -262,18 +281,26 @@ public class FolderFactoryImpl extends FolderFactory {
 						}
 					}
 
-					dh = new HibernateUtil(Folder.class);
-					dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier"
+					dc = new DotConnect();
+					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
 							+ " where asset_name = ?"
 							+ " and parent_path = ?"
 							+ " and folder_1_.type = 'folder'"
 							+ " and folder.inode = folder_1_.inode"
 							+ " and folder.identifier = identifier.id"
 							+ " and host_inode = ?");
-					dh.setParam(parentFolder);
-					dh.setParam(parentPath);
-					dh.setParam(hostId);
-					folder = (Folder) dh.load();
+					dc.addParam(parentFolder.toLowerCase());
+					dc.addParam(parentPath.toLowerCase());
+					dc.addParam(hostId);
+
+
+					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
+							.asList();
+
+
+					if (result != null && !result.isEmpty()){
+						folder = result.get(0);
+					}
 
 					// if it is found add it to folder cache
 					if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
@@ -283,7 +310,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 			}
 			catch(Exception e){
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 
 		}
@@ -469,7 +496,6 @@ public class FolderFactoryImpl extends FolderFactory {
             rename = folderContains( newFolder.getName(), (Folder) destination );
         }
 
-        //newFolder.setPath(((Folder) destination).getPath() + newFolder.getName() + "/");
         newFolder.setHostId( destination.getHostId() );
         Identifier parentId = APILocator.getIdentifierAPI().find( destination.getIdentifier() );
         Identifier newFolderId = createIdentifierForFolder( newFolder, parentId.getPath() );
@@ -477,9 +503,6 @@ public class FolderFactoryImpl extends FolderFactory {
         newFolder.setModDate(new Date());
 
         save( newFolder );
-
-        // TreeFactory.saveTree(new Tree(destination.getInode(),
-        // newFolder.getInode()));
 
         saveCopiedFolder( folder, newFolder, copiedObjects );
     }
@@ -528,7 +551,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
             Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+            List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(cont.getIdentifier());
             for(MultiTree m : pageContents){
             	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
             	MultiTreeFactory.saveMultiTree(mt);
@@ -620,7 +643,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		if (contains)
 			return false;
 
-		List<Folder> subFolders = getSubFolders(folder);
+		List<Folder> subFolders = getSubFoldersTitleSort(folder);
 		List links = getChildrenClass(folder, Link.class);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
@@ -665,9 +688,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	/***
-	 * This methos update recursively the inner folders of the specified folder
+	 * This method update recursively the inner folders of the specified folder
 	 *
-	 * @param folder
+	 * @param oldFolder
+	 * @param newFolder
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
@@ -821,7 +845,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
-		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		final Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		final String identifierPath = ident.getPath();
+		final String identifierHostId = ident.getHostId();
+
 		StringBuilder newPath = new StringBuilder(ident.getParentPath()).append(newName);
 		if(!newName.endsWith("/")) newPath.append("/"); // Folders must end with '/'
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
@@ -829,14 +856,15 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
+		CacheLocator.getIdentifierCache().removeFromCacheByInode(folder.getInode());
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
 
 		final ArrayList<String> childIdents=new ArrayList<String>();
 		DotConnect dc=new DotConnect();
 		dc.setSQL("select id from identifier where parent_path like ? and host_inode=?");
-		dc.addParam(ident.getPath()+"%");
-		dc.addParam(ident.getHostId());
+		dc.addParam(identifierPath+"%");
+		dc.addParam(identifierHostId);
 		for(Map<String,Object> rr : (List<Map<String,Object>>)dc.loadResults()) {
 		    childIdents.add((String)rr.get("id"));
 		}
@@ -849,7 +877,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName);
+		ff.setName(newName.toLowerCase());
 		ff.setTitle(newName);
 		ff.setModDate(new Date());
 
@@ -859,7 +887,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run() {
-                APILocator.getContentletAPI().refreshContentUnderFolder(ff);
+                APILocator.getContentletAPI().refreshContentUnderFolderPath(identifierHostId, identifierPath);
             }
         });
 
@@ -942,7 +970,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			folder1.setShowOnMenu(false);
 
 			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = UUIDGenerator.generateUuid();
+			String uuid = FolderAPI.SYSTEM_FOLDER_ID;
 			dc.setSQL(IdentifierQuery);
 			dc.addParam(uuid);
 			dc.addParam("/System folder");
@@ -957,7 +985,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			dc.addParam(folder1.getiDate());
 			dc.addParam(folder1.getType());
 			dc.loadResult();
-			String hostQuery = "INSERT INTO FOLDER(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
+			String hostQuery = "INSERT INTO " + Type.FOLDER.getTableName() + "(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
 			dc.setSQL(hostQuery);
 			dc.addParam(folder1.getInode());
 			dc.addParam(folder1.getName());
@@ -974,31 +1002,18 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException {
-		HibernateUtil dh = new HibernateUtil(Folder.class);
-		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
-			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/' order by lower(folder.title)");
-		dh.setParam(host.getIdentifier());
-		List<Folder> folderList=dh.list();
-		Collections.sort(folderList,new Comparator<Folder>() {
-		    public int compare(Folder o1, Folder o2) {
-		        return o1.getName().compareToIgnoreCase(o2.getName());
-		    }
-        });
+		List<Folder> folderList = getSubFolders(null, "/", host.getIdentifier(), null);
+		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
+				.compareToIgnoreCase(folder2.getName()));
 		return folderList;
 	}
 
 	@SuppressWarnings("unchecked")
 	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException {
-		HibernateUtil dh = new HibernateUtil(Folder.class);
-		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
-			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/application/themes/' order by lower(folder.title)");
-		dh.setParam(host.getIdentifier());
-		List<Folder> folderList=dh.list();
-		Collections.sort(folderList,new Comparator<Folder>() {
-		    public int compare(Folder o1, Folder o2) {
-		        return o1.getName().compareToIgnoreCase(o2.getName());
-		    }
-        });
+		List<Folder> folderList = getSubFolders(null, "/application/themes/", host.getIdentifier(),
+				null);
+		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
+				.compareToIgnoreCase(folder2.getName()));
 		return folderList;
 	}
 
@@ -1080,8 +1095,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
         String versionTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
-        HibernateUtil dh = new HibernateUtil( clazz );
-        String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName
+        DotConnect dc = new DotConnect();
+        String sql = "SELECT " + tableName + ".*" + " from " + tableName + " " + tableName + ",  inode " + tableName
                 + "_1_, identifier " + tableName + "_2_ ";
 
         if ( cond != null && versionTable != null && (cond.deleted != null || cond.working != null || cond.live != null) )
@@ -1117,18 +1132,31 @@ public class FolderFactoryImpl extends FolderFactory {
             sql = sql + " order by " + orderBy;
         }
 
-        dh.setSQLQuery( sql );
-        dh.setFirstResult( offset );
-        dh.setMaxResults( limit );
+        dc.setSQL( sql );
+        dc.setStartRow( offset );
+        dc.setMaxRows( limit );
         if ( identifier.getHostId().equals( Host.SYSTEM_HOST ) ) {
-            dh.setParam( "/" );
-            dh.setParam( identifier.getId() );
+            dc.addParam( "/" );
+            dc.addParam( identifier.getId() );
         } else {
-            dh.setParam( identifier.getURI() + "/" );
-            dh.setParam( identifier.getHostId() );
+            dc.addParam( identifier.getURI() + "/" );
+            dc.addParam( identifier.getHostId() );
         }
 
-        return dh.list();
+        try {
+
+			DBTransformer transformer = TransformerLocator.createDBTransformer(dc.loadObjectResults(), clazz);
+
+			if (transformer != null){
+				return transformer.asList();
+			}
+
+
+		}catch(Exception e){
+        	Logger.warn(this, e.getMessage(), e);
+		}
+
+		return Collections.emptyList();
     }
 
 
@@ -1160,5 +1188,4 @@ public class FolderFactoryImpl extends FolderFactory {
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
 	}
-
 }

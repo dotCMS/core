@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.widget.business;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -19,8 +21,9 @@ import com.liferay.portal.model.User;
 
 public class WidgetAPIImpl implements WidgetAPI {
 	
-	public PermissionAPI perAPI = APILocator.getPermissionAPI();
+	public final PermissionAPI perAPI = APILocator.getPermissionAPI(); // todo: could it be private?
 
+	@WrapInTransaction
 	public void createBaseWidgetFields(Structure structure)	throws DotDataException,DotStateException {
 		if(!InodeUtils.isSet(structure.getInode())){
 			throw new DotStateException("Cannot create base widget feilds on a structure that doesn't exist");
@@ -39,6 +42,7 @@ public class WidgetAPIImpl implements WidgetAPI {
 		FieldsCache.clearCache();
 	}
 
+	@CloseDBIfOpened
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_WIDGET);
 		List<Structure> wids = new ArrayList<Structure>();

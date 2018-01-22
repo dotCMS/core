@@ -198,7 +198,24 @@ public interface ContentletAPIPreHook {
 	public default boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles){
       return true;
     }
-	
+
+	/**
+	 * Make a copye of a contentlet which the copySuffix to rename the filename + suffix.
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean copyContentlet(final Contentlet contentletToCopy,
+				   final Host host, final Folder folder, final User user, final String copySuffix,
+				   final boolean respectFrontendRoles) {
+		return true;
+	}
+
+
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
@@ -1352,6 +1369,8 @@ public interface ContentletAPIPreHook {
 	public default boolean isInodeIndexed(String inode,boolean live){
       return true;
     }
+
+	public default boolean isInodeIndexed(String inode, boolean live, boolean working) { return true; }
 
 	/**
 	 * Method will time out after 30 seconds returning false

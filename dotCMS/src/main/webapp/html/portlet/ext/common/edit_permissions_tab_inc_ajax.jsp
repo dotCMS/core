@@ -56,7 +56,6 @@
 		        <th><%= LanguageUtil.get(pageContext, "Edit") %></th>
 		        <th><%= LanguageUtil.get(pageContext, "Publish") %></th>
 		        <th><%= LanguageUtil.get(pageContext, "Edit") %><br/><%= LanguageUtil.get(pageContext, "Permissions") %></th>
-		        <th><%= LanguageUtil.get(pageContext, "Virtual-br-Links") %></th>
 		    </tr>
 		</table>
 	</div>
@@ -78,7 +77,7 @@
 				<label for="cascadeChangesCheckbox">
 					<%= LanguageUtil.get(pageContext, "Reset-Children-Permissions") %>&nbsp;<a href="javascript: ;" id="resetPermissionsHintHook">?</a>
 				</label>
-				<span dojoType="dijit.Tooltip" connectId="resetPermissionsHintHook" id="resetPermissionsHint" class="fieldHint"><%= LanguageUtil.get(pageContext, "Reset-Children-Permissions-Hint") %></span>
+				<span dojoType="dijit.Tooltip" connectId="resetPermissionsHintHook" id="resetPermissionsHint" class="fieldHint"><%= LanguageUtil.get(pageContext, "Reset-Categories-Children-Permissions-Hint") %></span>
 			</div>
 		</span>
 	</div>

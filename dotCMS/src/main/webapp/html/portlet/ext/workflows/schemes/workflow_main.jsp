@@ -1,9 +1,11 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <script type="text/javascript" src="/html/portlet/ext/workflows/schemes/workflow_js.jsp" ></script>
 
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css"; 
+	@import "/html/js/dragula-3.7.2/dragula.min.css"; 
 </style>	
 
 <div class="portlet-wrapper">
@@ -17,7 +19,7 @@
 		<div class="clear"></div>
 	</div>
 	
-	<%if(LicenseUtil.getLevel() < 200){ %>
+	<%if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	
 	
 	

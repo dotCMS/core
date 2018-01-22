@@ -176,9 +176,20 @@ public interface CategoryAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
+    /**
+     * Important: should be use only for Push Publish.
+     *
+     * Save Remote categories, in this case we don't need to check if this category exists into
+     * the system but just save with its own inode.
+     *
+     */
+    void saveRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
-	 * Publish Remote categories,
+	 * * Important: should be use only for Push Publish.
+     *
+     * Publish Remote categories,
 	 * in this case we don't need to check if this category exists into the system but just save with its own inode.
 	 * 
 	 * Mar 6, 2013 - 10:12:47 AM
@@ -461,5 +472,15 @@ public interface CategoryAPI {
 	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
 	 */
 	public boolean isParent(Category givenChild, Category givenParent, User user);
+	
+	
+	/**
+	 * Returns a suggestion for the Velocity Variable Name.
+	 * 
+	 * @param categoryVelVarName Velocity Variable Name
+	 * @return Suggestion for the Velocity Variable Name
+	 * @throws DotDataException Error occurred when performing the action.
+	 */
+	public String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 }

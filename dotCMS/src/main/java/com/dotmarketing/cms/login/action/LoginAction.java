@@ -19,6 +19,7 @@ import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
@@ -34,7 +35,8 @@ import com.liferay.portal.model.User;
 /**
  *
  */
-public class LoginAction extends DispatchAction {
+@Deprecated
+public class LoginAction extends SecureAction {
 
     public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
             HttpServletResponse response) throws Exception {
@@ -101,6 +103,9 @@ public class LoginAction extends DispatchAction {
 	            	if (cookie != null) {
 	            		cookie.setMaxAge(-1);
 	            		cookie.setPath("/");
+
+	            		CookieUtil.setHttpOnlyCookie(cookie);
+
 	                    response.addCookie(cookie);
 	            	}
 	            }

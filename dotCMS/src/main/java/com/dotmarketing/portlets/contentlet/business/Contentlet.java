@@ -12,7 +12,6 @@ import java.util.Map;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -26,7 +25,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 /** @author Hibernate CodeGenerator */
 public class Contentlet extends WebAsset implements Serializable {
@@ -1650,7 +1648,7 @@ public class Contentlet extends WebAsset implements Serializable {
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
 		try{
-		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fields()).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;

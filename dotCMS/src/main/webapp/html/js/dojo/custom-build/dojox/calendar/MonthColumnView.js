@@ -1057,7 +1057,7 @@ function(
 			//		private
 
 			var pos = 0;
-			if(start){
+			if(start || d.getHours() != 0 || d.getMinutes() != 0){
 				pos = (d.getDate()-1) * this.renderData.daySize;
 			}else{
 				var d2 = this._waDojoxAddIssue(d, "day", -1);

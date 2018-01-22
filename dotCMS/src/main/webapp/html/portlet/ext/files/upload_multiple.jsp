@@ -21,7 +21,14 @@ String selectedStructure = (request.getParameter("selectedStructure") != null &&
 		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
-WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);
+List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(s);
+boolean isWfMandatory = false;
+for(WorkflowScheme scheme : schemes){
+    if(scheme.isMandatory()){
+		isWfMandatory=true;
+        break;
+	}
+}
 
 boolean hasExplicitRequiredFields = false;//GIT-191
 List<Field> fields = FieldsCache.getFieldsByStructureInode(selectedStructure);
@@ -40,17 +47,17 @@ for (Field field : fields) {
 PermissionAPI perAPI = APILocator.getPermissionAPI();
 FolderAPI folderAPI = APILocator.getFolderAPI();
 
+// Retrieves the parent folder where the new files will be uploaded
 com.dotmarketing.portlets.folders.model.Folder parentFolder = (com.dotmarketing.portlets.folders.model.Folder) request.getAttribute("PARENT_FOLDER");
-//gets parent folder
 com.dotmarketing.portlets.folders.model.Folder folder = folderAPI.find(parentFolder.getInode(),user,false);
 
-//The host of the file
+// Retrieves the site of the parent folder
 Host host = folder != null?APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false):null;
 
 boolean hasOwnerRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole().getId());
 boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 boolean canUserWriteToFile = hasOwnerRole || hasAdminRole;
-boolean canUserPublishFile = hasOwnerRole || hasAdminRole;
+boolean canUserPublishFile = hasOwnerRole || hasAdminRole || perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
 
 boolean inFrame = false;
 if(request.getParameter(WebKeys.IN_FRAME)!=null){
@@ -129,7 +136,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
 				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader"
-				        style="height:200px; overflow-y: auto;"
+				        style="height:170px; overflow-y: auto;"
 				        	<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
 				        		headerFilesize="" 
 				        	<% } %>				        
@@ -155,7 +162,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                         <% } %>
 					</script>
                 </button>
-                <%if(!scheme.isMandatory()) {%>
+                <%if(!isWfMandatory) {%>
            		<button dojoType="dijit.form.Button" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">

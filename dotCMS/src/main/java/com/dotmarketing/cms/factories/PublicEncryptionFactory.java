@@ -17,6 +17,7 @@ import com.liferay.util.EncryptorException;
  * @author will
  * 
  */
+@Deprecated
 public class PublicEncryptionFactory {
     
     public static  String getRandomPassword(){

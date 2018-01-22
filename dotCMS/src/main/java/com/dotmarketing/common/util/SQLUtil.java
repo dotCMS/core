@@ -1,13 +1,23 @@
 package com.dotmarketing.common.util;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotcms.util.SecurityLoggerServiceAPIFactory;
-import com.dotmarketing.business.APILocator;
-import com.liferay.util.StringPool;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -17,17 +27,6 @@ import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringUtil;
-
 /**
  * Util class for sanitize, tokenize, etc
  */
@@ -36,9 +35,26 @@ public class SQLUtil {
 	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
 
-	private static final Set<String> EVIL_SQL_WORDS =  ImmutableSet.of( "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and", "or", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
-			"unlock","write", "engine", "null","not ","mode", "set ",";");
+	public static final String ASC  = "asc";
+	public static final String DESC  = "desc";
+	public static final String _ASC  = " " + ASC ;
+	public static final String _DESC  = " " + DESC;
+	public static final String PARAMETER = "?";
+
+	private static final String ORACLE_SQL_STATE_UNIQUE_CONSTRAINT = "23000";
+	private static final String POSTGRE_SQL_STATE_UNIQUE_CONSTRAINT = "23505";
+
+    private static final Set<String> EVIL_SQL_CONDITION_WORDS =  ImmutableSet.of( "insert", "delete", "update",
+            "replace", "create", "drop", "alter", "truncate", "declare", "exec", "--", "procedure", "pg_", "lock",
+            "unlock", "write", "engine", "mode", "set ", "sleep", ";");
+
+    private static final Set<String> EVIL_SQL_PARAMETER_WORDS =  ImmutableSet.of( "select", "distinct", "like", "and", "or", "limit",
+            "group", "order", "as ", "count", "where", "null", "not ");
+
+	private static final Set<String> EVIL_SQL_WORDS =  new ImmutableSet.Builder<String>()
+                                                                        .addAll( EVIL_SQL_CONDITION_WORDS )
+                                                                        .addAll( EVIL_SQL_PARAMETER_WORDS )
+                                                                        .build();
 
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
 			"title","filename", "moddate", "tagname","pageUrl",
@@ -46,7 +62,8 @@ public class SQLUtil {
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
-			"mod_date,upper(name)", "relation_type_value");
+			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
+			"parent_relation_name");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -194,7 +211,7 @@ public class SQLUtil {
 		}
   	  return queryString.toString();
 	}
-	
+
 	/**
 	 * Method to sanitize order by SQL injection
 	 * @param parameter
@@ -206,7 +223,10 @@ public class SQLUtil {
 			return StringPool.BLANK;
 		}
 
-		String testParam=parameter.replaceAll(" asc", StringPool.BLANK).replaceAll(" desc", StringPool.BLANK).replaceAll("-", StringPool.BLANK).toLowerCase();
+		String testParam=parameter.replaceAll(_ASC, StringPool.BLANK)
+				.replaceAll(_DESC, StringPool.BLANK)
+				.replaceAll("-", StringPool.BLANK).toLowerCase();
+
 		if(ORDERBY_WHITELIST.contains(testParam)){
 			return parameter;
 		}
@@ -217,50 +237,76 @@ public class SQLUtil {
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return StringPool.BLANK;
 	}
-
 	/**
-	 * Applies the sanitize to the parameter argument in order to avoid evil sql words
-	 * @param parameter String
-	 * @return String
+	 * Applies the sanitize to the parameter argument in order to avoid evil sql words for a PARAMETER.
+	 * @param parameter SQL to filter.
+	 * @return String with filtered SQL.
 	 */
 	public static String sanitizeParameter(String parameter){
 
-		if(!UtilMethods.isSet(parameter)) { //check if is not null
+        if(!UtilMethods.isSet(parameter)) { //check if is not null
 
-			return StringPool.BLANK;
-		}
+            return StringPool.BLANK;
+        }
 
-		parameter = StringEscapeUtils.escapeSql(parameter);
+        parameter = StringEscapeUtils.escapeSql( parameter );
 
-		final String parameterLowercase = parameter.toLowerCase();
-
-		for(String evilWord : EVIL_SQL_WORDS){
-
-			final int index = parameterLowercase.indexOf(evilWord);
-
-			//check if the order by requested have any other command
-			if(index != -1  &&
-					(
-							(index  == 0 // if the evilWord is at the begin of the parameterLowercase AND
-									|| !isValidSQLCharacter(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
-							)  &&
-							(index + evilWord.length() == parameterLowercase.length() // if the evilWord is at the end of the parameterLowercase is invalid
-									|| !isValidSQLCharacter(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
-							)
-					)) {
-
-				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
-				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
-				securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
-
-				return StringPool.BLANK;
-			}
-		}
-
-		return parameter;
+	    return sanitizeSQL( parameter, EVIL_SQL_WORDS );
 	} // sanitizeParameter.
 
-	/**
+    /**
+     * Applies the sanitize to the parameter argument in order to avoid evil sql words for a CONDITION.
+     * @param condition SQL to filter.
+     * @return String with filtered SQL.
+     */
+    public static String sanitizeCondition(String condition){
+
+        if(!UtilMethods.isSet(condition)) { //check if is not null
+
+            return StringPool.BLANK;
+        }
+
+        return sanitizeSQL( condition, EVIL_SQL_CONDITION_WORDS );
+    } // sanitizeCondition.
+
+    /**
+     * Util method to filter the parameter SQL with a list of EVIL WORDS not allowed.
+     *
+     * @param query SQL to filter.
+     * @param evilWords words not allowed in the parameter SQL.
+     * @return String with filtered SQL.
+     */
+    private static String sanitizeSQL( String query, final Set<String> evilWords) {
+
+        final String parameterLowercase = query.toLowerCase();
+
+        for(String evilWord : evilWords){
+
+            final int index = parameterLowercase.indexOf(evilWord);
+
+            //check if the order by requested have any other command
+            if(index != -1  &&
+                    (
+                            (index  == 0 // if the evilWord is at the begin of the parameterLowercase AND
+                                    || !isValidSQLCharacter(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
+                            )  &&
+                                    (index + evilWord.length() == parameterLowercase.length() // if the evilWord is at the end of the parameterLowercase is invalid
+                                            || !isValidSQLCharacter(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
+                                    )
+                    )) {
+
+				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				Logger.error(SQLUtil.class, message, new DotStateException(message));
+				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
+
+                return StringPool.BLANK;
+            }
+        }
+
+        return query;
+    }
+
+    /**
 	 * Determine if the character is a valid for sql
 	 * @param c char
 	 * @return boolean
@@ -269,5 +315,20 @@ public class SQLUtil {
 
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
+
+	/**
+	 * Method to check if an exception is a Unique Constraint Exception
+	 * It depends on the database engine. So far only Oracle and postgres has been implemented
+	 * @param ex
+	 * @return
+	 */
+	public static boolean isUniqueConstraintException (DotDataException ex) {
+		if (ex != null && ex.getCause() instanceof SQLException) {
+			final SQLException sqle =  (SQLException) ex.getCause();
+			return (DbConnectionFactory.isOracle() && sqle.getSQLState().equals(ORACLE_SQL_STATE_UNIQUE_CONSTRAINT)) ||
+					(DbConnectionFactory.isPostgres() && sqle.getSQLState().equals(POSTGRE_SQL_STATE_UNIQUE_CONSTRAINT));
+		}
+		return false;
+	}
 
 } // E:O:F:SQLUtil.

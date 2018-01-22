@@ -1,8 +1,6 @@
 package com.dotcms.xmlsitemap;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -11,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import com.dotcms.business.CloseDBIfOpened;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -35,7 +34,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -52,6 +50,20 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 /**
  * This class manage the generation of the XMLSitemap<X>.xml.gz files from every
@@ -163,6 +175,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	 * folder
 	 */
 	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
 	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);
@@ -225,11 +238,16 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
 					IHTMLPage page = null;
+					final List<Contentlet> results = APILocator.getContentletAPI()
+							.search("+identifier:" + st.getPagedetail() + " +live:true", 0, 0,
+									"moddate", systemUser, false);
+					if (results != null && !results.isEmpty()) {
 						//First lets asume it is a HTMLPageAsset
-						Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier:" + st.getPagedetail() + " +live:true", 0, 0, "moddate", systemUser, false ).get( 0 );
-						if ( contentlet != null ) {
-							page = APILocator.getHTMLPageAssetAPI().fromContentlet( contentlet );
+						final Contentlet contentlet = results.get(0);
+						if (contentlet != null) {
+							page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 						}
+					}
 
 					if ( !UtilMethods.isSet( page ) || !UtilMethods.isSet( page.getIdentifier() ) ) {
 						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );
@@ -258,6 +276,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 					for (Contentlet contenlet : hits) {
+						stringbuf = null;
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
@@ -333,7 +352,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 							}
-							writeFile(stringbuf);
+
+							if (stringbuf != null) {
+								writeFile(stringbuf);
+							}
 							addRegistryProcessed();
 
 						} catch (Exception e) {
@@ -489,7 +511,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		try {
 			temporaryFile = new File(Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_FILENAME","XMLSitemap")
 					+ ".xml");
-			out = new OutputStreamWriter(new FileOutputStream(temporaryFile),
+			out = new OutputStreamWriter(Files.newOutputStream(temporaryFile.toPath()),
 					"UTF-8");
 
 			out.write( "<?xml version='1.0' encoding='UTF-8'?>\n" );
@@ -522,11 +544,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			String sitemapName = Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_GZ_FILENAME","XMLSitemapGenerated")
 					+ dateCounter + counter + ".xml.gz";
 			compressedFile = new File(sitemapName);
-			GZIPOutputStream gout = new GZIPOutputStream(new FileOutputStream(
-					compressedFile));
+			GZIPOutputStream gout = new GZIPOutputStream(Files.newOutputStream(compressedFile.toPath()));
 
 			// Open the input file
-			FileInputStream in = new FileInputStream(temporaryFile);
+			InputStream in = Files.newInputStream(temporaryFile.toPath());
 
 			// Transfer bytes from the input file to the GZIP output stream
 			byte[] buf = new byte[1024];

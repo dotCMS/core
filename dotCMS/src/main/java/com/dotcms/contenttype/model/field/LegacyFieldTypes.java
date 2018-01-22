@@ -2,6 +2,8 @@ package com.dotcms.contenttype.model.field;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -54,11 +56,10 @@ public enum LegacyFieldTypes {
       oldFieldMap = ImmutableMap.copyOf(map);
     }
   
-  
-  
-  
 	private String legacyValue;
 	private Class<? extends Field> implClass;
+	private static final Pattern immutablePattern = Pattern.compile(".Immutable");
+	private static final Map<String, String> classToLegacyClassMap = new ConcurrentHashMap<> ();
 
 	/**
 	 * Default constructor where the association between the legacy and new
@@ -108,7 +109,7 @@ public enum LegacyFieldTypes {
 	 * @return The class of the new field.
 	 */
 	public static Class getImplClass (String legacyValue) {
-		String className = legacyValue.replace("Immutable", "");
+		String className =  immutablePattern.matcher(legacyValue).replaceFirst(".");
 		
 		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
 			if(fieldType.legacyValue.equals(legacyValue) || fieldType.implClass.getCanonicalName().equals(className)){
@@ -143,8 +144,12 @@ public enum LegacyFieldTypes {
 	 * @return The legacy field type.
 	 */
 	public static String getLegacyName (String clazz) {
-		clazz=clazz.replace(".Immutable", ".");
-		return oldFieldMap.get(clazz);
+
+	    if (!classToLegacyClassMap.containsKey(clazz)) {
+	        classToLegacyClassMap.put(clazz, immutablePattern.matcher(clazz).replaceFirst("."));
+	    }
+	    
+	    return oldFieldMap.get(classToLegacyClassMap.get(clazz));
 	}
 
 }

@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
@@ -9,7 +10,7 @@
 
 
 
-<%if( LicenseUtil.getLevel() < 200){ %>
+<%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
@@ -69,12 +70,6 @@
 		setTimeout(resizeIframe, 100);
 		setTimeout(resizeIframe, 500);
 		setTimeout(resizeIframe, 5000);
-
-		// deal with style funk
-		dojo.style("subNavCrumbTrail", "margin", "0px -10px 10px -10px");
-		dojo.style("dotAjaxMainHangerDiv", "margin-top", "-9px");
-		
-		
 	});
 	dojo.connect(window, "onresize", this, "resizeIframe");
 	

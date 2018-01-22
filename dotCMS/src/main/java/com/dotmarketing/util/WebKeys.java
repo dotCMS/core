@@ -143,7 +143,6 @@ public final class WebKeys {
     ////EXCEPTIONS
     public static final String EDIT_ASSET_EXCEPTION = "com.dotmarketing.webasset.edit.exception";
 	public static final String GET_LIVE_ASSET_EXCEPTION = "com.dotmarketing.webasset.get.live.exception";
-    public static final String UNIQUE_VIRTUAL_LINK_EXCEPTION = "com.dotmarketing.virtualllinks.unique.exception";
     public static final String USER_PERMISSIONS_EXCEPTION = "com.dotmarketing.webasset.user.permissions.exception";
 
     public static final String FILEUPLOAD_EDIT = "com.dotmarketing.fileupload.edit";
@@ -259,9 +258,14 @@ public final class WebKeys {
     public static final String ADMIN_MODE_COOKIE = "ADMIN_MODE_COOKIE";
 
     // SESSION ATTRIBUTES
+    /*
     public static final String EDIT_MODE_SESSION = "com.dotmarketing.EDIT_MODE_SESSION";
     public static final String PREVIEW_MODE_SESSION = "com.dotmarketing.PREVIEW_MODE_SESSION";
     public static final String ADMIN_MODE_SESSION = "com.dotmarketing.ADMIN_MODE_SESSION";
+    */
+    
+    public static final String API_EDIT_MODE="API_EDIT_MODE";
+    public static final String PAGE_MODE_SESSION = "com.dotmarketing.PAGE_MODE_SESSION";
     public static final String SESSION_RATING_CACHE = "com.dotmarketing.beans.Rating";
     public static final String LAST_RATED_CONTENTLET = "last.rated.contentlet";
 	public static final String CMSFILTER_REDIRECTING = "com.dotmarketing.filters.CMSFilter";
@@ -389,11 +393,6 @@ public final class WebKeys {
 	public static final String JAVAX_PORTLET_CONFIG = "com.dotmarketing.javax.portlet.config";
 	public static final String LAYOUT = "com.dotmarketing.LAYOUT";
     public static final String SESSION_MESSAGES = "com.dotmarketing.session.messages";
-
-    //VIRTUAL LINKS
-    public static final String VIRTUAL_LINK_VIEW_PORTLET = "com.dotmarketing.virtuallinks.view.portlet";
-    public static final String VIRTUAL_LINK_LIST_VIEW = "com.dotmarketing.virtuallinks.view";
-    public static final String VIRTUAL_LINK_EDIT = "com.dotmarketing.virtuallinks.edit";
 
     //LANGUAGE MANAGER
     public static final String LANGUAGE_MANAGER_LIST = "com.dotmarketing.languagemanager.view.portlet";
@@ -575,7 +574,6 @@ public final class WebKeys {
         public static final String CACHE_LIVE_CACHE = "com.dotmarketing.cache.LiveCache";
         public static final String CACHE_PAGE_NOT_FOUND_CACHE = "com.dotmarketing.cache.PageNotFoundCache";
         public static final String CACHE_PERMISSION_CACHE = PermissionCache.class.getName();
-        public static final String CACHE_VIRTUAL_LINKS_CACHE = "com.dotmarketing.cache.VirtualLinksCache";
 
         public static final String CACHE_ALL_CACHES = "CACHE_ALL_CACHES";
         public static final String CACHE_WORKING_FILES = "CACHE_WORKING_FILES";
@@ -708,4 +706,10 @@ public final class WebKeys {
 	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS = "dotcms.cache.transport.udp.mcast.address";
 	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT = "dotcms.cache.transport.udp.mcast.port";
 
+	//Pagination Parameters
+    public static final String DOTCMS_PAGINATION_ROWS = "dotcms.paginator.rows";
+    public static final String DOTCMS_PAGINATION_LINKS = "dotcms.paginator.links";
+
+    //User validations
+    public static final String DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS = "dotcms.use.regex.to.validate.emails";
 }

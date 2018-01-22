@@ -24,6 +24,8 @@ package com.liferay.portal.ejb;
 
 import java.util.TimeZone;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.CacheLocator;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -37,6 +39,8 @@ import com.liferay.portal.model.Company;
  *
  */
 public class CompanyManagerUtil {
+
+	@CloseDBIfOpened
 	public static com.liferay.portal.model.Company getCompany()
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException {
@@ -56,6 +60,7 @@ public class CompanyManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static com.liferay.portal.model.Company getCompany(
 		java.lang.String companyId)
 		throws com.liferay.portal.PortalException, 
@@ -76,6 +81,7 @@ public class CompanyManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static java.util.List getUsers()
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException {
@@ -122,7 +128,7 @@ public class CompanyManagerUtil {
 			throw new com.liferay.portal.SystemException(e);
 		}
 	}
-	
+
 	public static com.liferay.portal.model.Company updateCompany(Company c)throws com.liferay.portal.SystemException{
 		try {
 			CompanyManager companyManager = CompanyManagerFactory.getManager();

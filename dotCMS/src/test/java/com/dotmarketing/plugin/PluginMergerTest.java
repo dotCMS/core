@@ -23,7 +23,7 @@ public class PluginMergerTest extends UnitTestBase {
 		String name = "override-test";
 
 		StringBuilder sb = new StringBuilder();
-		String newline = System.getProperty("line.separator");
+		String newline = "\n";
 
 		sb.append("<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">");
 		sb.append(newline).append("<param name=\"class\" value=\"com.mycompany.plugins.ajax.MyCompanyUserAjax\"/>");
@@ -56,7 +56,7 @@ public class PluginMergerTest extends UnitTestBase {
 		sb.append(newline).append("<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\"><param name=\"class\" value=\"com.dotmarketing.portlets.user.ajax.UserAjax\"/></create>");
 		sb.append(newline).append(" END OVERRIDE:override-test -->");
 
-		String comentedPart = sb.toString();
+		String commentedPart = sb.toString();
 
 		sb = new StringBuilder("<!-- BEGIN PLUGIN:override-test -->");
 		sb.append(newline).append("<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">");
@@ -66,7 +66,7 @@ public class PluginMergerTest extends UnitTestBase {
 
 		String newPart = sb.toString();
 
-		assertTrue(fileContent.toString().contains(comentedPart));
+		assertTrue(fileContent.toString().contains(commentedPart));
 		assertTrue(fileContent.toString().contains(newPart));
 
 

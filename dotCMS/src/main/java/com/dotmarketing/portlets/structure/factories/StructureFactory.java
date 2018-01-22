@@ -17,6 +17,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 
 import com.dotcms.util.ContentTypeUtil;
@@ -316,14 +317,14 @@ public class StructureFactory {
 
 
 		try{
-			String condition = " host = ?";
+			String condition = " host = '" + h.getIdentifier() + "'";
 			int limit = -1;
 			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 	}
@@ -339,7 +340,7 @@ public class StructureFactory {
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 		
@@ -366,7 +367,7 @@ public class StructureFactory {
 	public static List<Structure> getStructures(String condition, String orderBy,int limit,int offset,String direction) {
 
         //Forms are an enterprise feature...
-        if ( LicenseUtil.getLevel() <= 100 ) {
+        if ( LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level ) {
             if ( !UtilMethods.isSet(condition) ) {
                 condition  = " structuretype not in(" + BaseContentType.FORM.getType() + ","+BaseContentType.PERSONA.getType() +") ";
             }
@@ -498,7 +499,7 @@ public class StructureFactory {
      */
 	public static void disableDefault() throws DotHibernateException
 	{
-		throw new DotHibernateException("You cannot disbale the defualt without setting a new one");
+		throw new DotHibernateException("You cannot disbale the default without setting a new one");
 	}
 
 	public static int getTotalDates(Structure structure)
@@ -595,7 +596,7 @@ public class StructureFactory {
         StringBuffer sb = new StringBuffer();
 
         condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
-        if (LicenseUtil.getLevel() < 200) {
+        if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             condition += " structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", "
                     + Structure.STRUCTURE_TYPE_PERSONA + ") AND ";
         }

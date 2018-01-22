@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
@@ -60,6 +62,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private PublishQueueMapper mapper = null;
 
 	private static PublisherAPIImpl instance= null;
+
+	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
 	/**
 	 * Returns a single instance of this class.
@@ -276,7 +280,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                   }
 
                   if(localTransaction) {
-                      HibernateUtil.commitTransaction();
+                      HibernateUtil.closeAndCommitTransaction();
                   }
               } catch ( Exception e ) {
                   if(localTransaction) {
@@ -288,17 +292,25 @@ public class PublisherAPIImpl extends PublisherAPI{
                   }
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
                   throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
-              }
-          }
+              } finally {
+				  if(localTransaction) {
+				  	HibernateUtil.closeSessionSilently();
+				  }
+			  }
+		  }
+
     	  Map<String, Object> dataMap = CollectionsUtils.map("deliveryStrategy", deliveryStrategy);
-		firePublisherQueueNow(dataMap);
-		  
-		//Preparing and returning the response status object
-		resultMap.put( "errorMessages", errorsList );
-		resultMap.put( "errors", errorsList.size() );
-		resultMap.put( "bundleId", bundleId );
-		resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
-		return resultMap;
+		  firePublisherQueueNow(dataMap);
+
+		  //Preparing and returning the response status object
+		  resultMap.put( "errorMessages", errorsList );
+		  resultMap.put( "errors", errorsList.size() );
+		  resultMap.put( "bundleId", bundleId );
+		  resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
+
+		  //Triggering event listener
+		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent(getQueueElementsByBundleId(bundleId)));
+		  return resultMap;
     }
 
     @Override
@@ -566,7 +578,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 		catch(Exception e){
 			Logger.error(PublisherAPIImpl.class, e.getMessage());
-			throw new DotPublisherException(e.getMessage());
+			throw new DotPublisherException(e.getMessage(),e);
 		}
 	}
 
@@ -593,7 +605,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"left join publishing_queue_audit a "+
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
-			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) and p.publish_date is not null "+
+			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) "+
+			"and p.publish_date is not null and p.publish_date <= ? "+
 			"order by publish_date ASC,operation ASC";
 
 	@Override
@@ -604,6 +617,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
 			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
+			dc.addParam(new Date());
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
@@ -691,7 +705,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction){
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -703,6 +717,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
+		} finally {
+			if(localTransaction) {
+				HibernateUtil.closeSessionSilently();
+			}
 		}
 	}
 
@@ -741,7 +759,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 			if(localTransaction) {
@@ -753,6 +771,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
+		} finally {
+			if(localTransaction) {
+				HibernateUtil.closeSessionSilently();
+			}
 		}
 	}
 
@@ -778,7 +800,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-			    HibernateUtil.commitTransaction();
+			    HibernateUtil.closeAndCommitTransaction();
 			}
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -790,6 +812,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
+		} finally {
+			if(localTransaction) {
+				HibernateUtil.closeSessionSilently();
+			}
 		}
 	}
 
@@ -811,7 +837,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.loadResult();
 
 			if(localTransaction) {
-                HibernateUtil.commitTransaction();
+                HibernateUtil.closeAndCommitTransaction();
             }
 		}catch(Exception e){
 		    if(localTransaction) {
@@ -823,6 +849,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
+		} finally {
+			if(localTransaction) {
+				HibernateUtil.closeSessionSilently();
+			}
 		}
 	}
 

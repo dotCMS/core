@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.system.ruleengine;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -9,7 +8,6 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
-import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.json.JSONException;
 
 
@@ -20,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  *
  * Use this test class to write tests against Actionlets Rest endpoint.
  */
-public class ActionletResourceFTest extends IntegrationTestBase {
+public class ActionletResourceFTest {
 
     private final FunctionalTestConfig config;
 

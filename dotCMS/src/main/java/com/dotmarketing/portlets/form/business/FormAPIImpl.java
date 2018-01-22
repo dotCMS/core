@@ -1,7 +1,8 @@
 package com.dotmarketing.portlets.form.business;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -18,11 +19,13 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.VelocityUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.liferay.portal.model.User;
 
 /**
@@ -35,6 +38,7 @@ public class FormAPIImpl implements FormAPI {
 	public PermissionAPI perAPI = APILocator.getPermissionAPI();
 	public ContentletAPI conAPI = APILocator.getContentletAPI();
 
+	@WrapInTransaction
 	public void createBaseFormFields(Structure structure) throws DotDataException,DotStateException {
 		if(!InodeUtils.isSet(structure.getInode())){
 			throw new DotStateException("Cannot create base forms fields on a structure that doesn't exist");
@@ -58,6 +62,7 @@ public class FormAPIImpl implements FormAPI {
 		FieldsCache.clearCache();
 	}
 
+	@CloseDBIfOpened
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
         List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_FORM);
         List<Structure> forms = new ArrayList<Structure>();
@@ -69,6 +74,7 @@ public class FormAPIImpl implements FormAPI {
         return forms;
 	}
 
+	@WrapInTransaction
 	public void createFormWidgetInstanceStructure() throws DotDataException,DotStateException{
 
 		//try {
@@ -140,7 +146,7 @@ public class FormAPIImpl implements FormAPI {
 		/*Saving the structure in cache*/
 		CacheLocator.getContentTypeCache().remove(structure);
 		CacheLocator.getContentTypeCache().add(structure);
-		StructureServices.removeStructureFile(structure);
+		new ContentTypeLoader().invalidate(structure);
 
 		/*Adding Widget Fields*/
 		Field formIdField = new Field(FORM_WIDGET_FORM_ID_FIELD_NAME,Field.FieldType.TEXT,Field.DataType.TEXT,structure,true,true,true,1,"", "", "", true, false, true);

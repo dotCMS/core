@@ -1,6 +1,7 @@
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -33,7 +34,7 @@
 	} catch (Exception e) {
 		Logger.warn(this.getClass(), "Unauthorized access to ImageToolAjax from IP + "+ request.getRemoteAddr() +", no user found");
 	} 
-    if(user ==null || "100".equals(LicenseUtil.getLevel())){
+    if(user ==null || LicenseLevel.COMMUNITY.level == LicenseUtil.getLevel()){
     	response.getWriter().println("Unauthorized");
     	return;
     }

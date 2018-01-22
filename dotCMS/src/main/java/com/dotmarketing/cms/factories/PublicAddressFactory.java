@@ -17,6 +17,7 @@ import com.liferay.portal.model.Address;
  *
  *
  */
+@Deprecated
 public class PublicAddressFactory extends AddressUtil {
 
 	@SuppressWarnings("unchecked")

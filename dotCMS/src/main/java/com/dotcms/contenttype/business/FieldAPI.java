@@ -50,7 +50,6 @@ public interface FieldAPI {
 		return api;
 	}
 
-	public static final Date VALIDATE_AFTER = new Date(1451606400000l);
 	
 	/**
 	 * Retrieves the list of the base Fields Types

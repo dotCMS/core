@@ -296,8 +296,9 @@ var cmsfile=null;
 		if(enabledWYSIWYG[id]){
 			disableWYSIWYG(id);
 		}
-		if(!enabledCodeAreas[id])
+		if(!enabledCodeAreas[id]) {
 			aceAreaById(id);
+		}
 	}
 
 	function toWYSIWYG(id) {
@@ -310,45 +311,34 @@ var cmsfile=null;
 		}
 	}
 
-	function enableWYSIWYG(textAreaId, confirmChange)
-	{
-        if(!isWYSIWYGEnabled(textAreaId))
-        {
-        	//Confirming the change
-			if(confirmChange == true &&
-				!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg.view")) %>'))
-			{
+	function enableWYSIWYG(textAreaId, confirmChange) {
+		if (!isWYSIWYGEnabled(textAreaId)) {
+			//Confirming the change
+			if (confirmChange == true &&
+				!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg.view")) %>')) {
 				return;
 			}
 
 			//Enabling the wysiwyg
-			try
-			{
+			try {
 				(new tinymce.Editor(textAreaId, tinyMCEProps, tinymce.EditorManager)).render();
-
 			}
-			catch(e)
-			{
+			catch(e) {
 				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
 			enabledWYSIWYG[textAreaId] = true;
-
 		}
 	}
 
-	function disableWYSIWYG(textAreaId)
-	{
-
-		if(isWYSIWYGEnabled(textAreaId))
-        {
+	function disableWYSIWYG(textAreaId) {
+		if(isWYSIWYGEnabled(textAreaId)) {
 			//Disabling the control
 			tinymce.EditorManager.get(textAreaId).remove();
 			enabledWYSIWYG[textAreaId] = false;
 		}
 	}
 
-	function isWYSIWYGEnabled(id)
-	{
+	function isWYSIWYGEnabled(id) {
 		return (enabledWYSIWYG[id]);
 	}
 
@@ -512,6 +502,7 @@ var cmsfile=null;
 		aceEditors[textarea] = document.getElementById(textarea+'aceEditor');
 		var aceClass = aceEditors[textarea].className;
 		aceEditors[textarea].className = aceClass.replace('classAce', 'aceText');
+		aceEditors[textarea].style.display = 'block';
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
@@ -526,19 +517,71 @@ var cmsfile=null;
 
 	function aceRemover(textarea){
 		var editorText = aceEditors[textarea].getValue();
-	    var aceEditor = document.getElementById(textarea+'aceEditor');
-	    var aceClass = aceEditor.className;
+		var aceEditor = document.getElementById(textarea+'aceEditor');
+		var aceClass = aceEditor.className;
 		aceEditor.className = aceClass.replace('aceText', 'classAce');
+		aceEditor.style.display = 'none';
 		dojo.query('#'+textarea).style({display:''});
-		dojo.query('#'+textarea)[0].value=editorText;
+		dojo.query('#'+textarea)[0].value = editorText;
 		enabledCodeAreas[textarea]=false;
 		aceEditors[textarea] = null;
 	}
 
 	function addFileImageCallback(file) {
-		var assetURI = [file.path, file.name].join("");
+		
+		//console.log(file);
+		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
+		var assetURI = replaceUrlPattern(pattern, file);
+
+	    // console.log("assetURI:" + assetURI)
+	    /*
+	    pattern="/dA/{shortyId}/{name}?language_id";
+	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+	    
+	    pattern="/dA/{shortyInode}/{name}?language_id={languageId}";
+	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+	        
+        pattern="/dA/{shortyInode}/{extension}?language_id={languageId}";
+        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+            
+        pattern="/dA/{inode}/{extension}?language_id={languageId}";
+        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+        
+        pattern="/dA/{identifier}/{extension}?language_id={languageId}";  
+        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+
+	    
+        pattern="//{hostName}{path}{name}?language_id={languageId}";  
+        console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
+	    */
+	    
+	    
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
 	}
+	
+	
+	function replaceUrlPattern(pattern, file){
+		
+		
+	     return pattern
+          .replace(/{name}/g        ,file.name)
+          .replace(/{fileName}/g        ,file.name)
+          .replace(/{path}/g        ,file.path)
+          .replace(/{extension}/g   ,file.extension)
+          .replace(/{languageId}/g   ,file.languageId)
+          .replace(/{hostname}/g    ,file.hostName)
+          .replace(/{hostName}/g    ,file.hostName)
+          .replace(/{inode}/g       ,file.inode)
+          .replace(/{hostId}/g      ,file.host)   
+          .replace(/{identifier}/g  ,file.identifier)
+          .replace(/{id}/g          ,file.identifier)
+          .replace(/{shortyInode}/g ,file.inode.replace("-", "").substring(0, 10))
+          .replace(/{shortyId}/g    ,file.identifier.replace("-", "").substring(0, 10))
+          ;
+		
+	}
+	
+	
 	function addFileCallback(file) {
 		var ident
 		var ext = file.extension;

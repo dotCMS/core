@@ -10,12 +10,16 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
+	final StringBuilder actionsDropDownOptions
+			= new StringBuilder("<option value='new'>New Action</option>"); // todo: i18n
+
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	String schemeId = request.getParameter("schemeId");
-	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
-	WorkflowScheme scheme = new WorkflowScheme();
-	scheme = wapi.findScheme(schemeId);
-	List<WorkflowStep> steps = wapi.findSteps(scheme);
+	String schemeId  = request.getParameter("schemeId");
+	WorkflowScheme defaultScheme   = wapi.findDefaultScheme();
+	WorkflowScheme scheme          = wapi.findScheme(schemeId);
+	final List<WorkflowStep> steps = wapi.findSteps(scheme);
+	final List<WorkflowAction> schemaActions =
+			wapi.findActions(scheme, APILocator.getUserAPI().getSystemUser());
 	WorkflowAction entryAction = null;
 	if(scheme.isMandatory() && UtilMethods.isSet(scheme.getEntryActionId())){
 		try{
@@ -25,188 +29,144 @@
 			
 		}
 	}
-	
-	
-	
 %>
-
 
 <script type="text/javascript">
 
 
+	dragula([document.querySelectorAll('.wfStepInDrag'), document.getElementById('wfStepInDragContainer')], {
+		  moves: function (el, source, handle, sibling) {
 
-
-
-	dojo.ready(function(){
-		mainAdmin.resetCrumbTrail();
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp<%=(scheme.isArchived()) ? "?showArchived=1" : ""%>");
-		
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Steps")%>", stepAdmin.baseJsp + "?schemeId=<%=schemeId%>");
-		mainAdmin.refreshCrumbtrail();	
-		
-
-		dojo.query(".wfActionList").forEach(
-			function(selectedTag){
-				var source = new dojo.dnd.Source(selectedTag);
-				dojo.connect(source, "onDropInternal",this, actionAdmin.reorderAction);
-
-			}
-		);
-		
-		// the action class reordering was interferring with this reordering 
-		if(actionClassAdmin.dndHandle){
-			dojo.disconnect(actionClassAdmin.dndHandle);
-			actionClassAdmin.dndHandle = null;
-			
-		
-		}
-		
-	});
+			  return handle.classList.contains('handle'); 
+		  },
+		  accepts: function (el, target, source, sibling) {
+		    return target ==document.getElementById('wfStepInDragContainer');
+		  },
+		  direction: 'horizontal',             // Y axis is considered when determining where an element would be dropped
+		  revertOnSpill: false,              // spilling will put the element back where it was dragged from, if this is true
+		  ignoreInputTextSelection: true     // allows users to select input text, see details below
+		}).on('drop', function (el) {
+		  	var stepID = el.id.split("stepID").join("");
+			let sibblings = el.parentNode.children
+			let index = Array.from(sibblings).indexOf(el)
+		  	console.log("moving: " + stepID + " to " + index);
+			stepAdmin.reorderStep(stepID, index);
+		 });
 	
 	
-	
+		var arr = new Array(<%=steps.size()%>);
+		<%for(WorkflowStep step : steps){ %>
+			arr.push(document.getElementById("jsNode<%=step.getId()%>"));
+		<%}%>
+		
+		
+	  dragula(arr, {
+		  moves: function (el, source, handle, sibling) {
+
+			  return el.classList.contains('wf-action-wrapper'); 
+		  },
+		  accepts: function (el, target, source, sibling) {
+
+		    return true;
+		  },
+		  revertOnSpill: true,    
+		  copy: true,                       // elements are moved by default, not copied
+		  copySortSource: true,             // elements in copy-source containers can be reordered
+		  
+		}).on('drop', function (ele) {
+
+			actionAdmin.copyOrReorderAction(ele);
+		 });
+
 
 </script>
 
-<div class="portlet-main">
-	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
-		<div class="portlet-toolbar__actions-primary">
-			<strong><%=LanguageUtil.get(pageContext, "Workflow-Scheme")%></strong>
-		</div>
 
-    	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button" iconClass="editIcon" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
-				<%=LanguageUtil.get(pageContext, "Edit-Workflow-Scheme")%>
-			</button>
-		</div>
-	</div>
-	<!-- END Toolbar -->
-		
-	<table class="listingTable showPointer" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
+
+<div class="portlet-toolbar">
+
+	<div class="portlet-toolbar__actions-primary showPointer" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
-		<tr>
-			<th style="width:150px;"><%=LanguageUtil.get(pageContext, "Name")%>:</th>
-			<th>
-				<%=UtilMethods.webifyString(scheme.getName())%>
-			</th>
-		</tr>
-		<tr>
-			<td><%=LanguageUtil.get(pageContext, "Description")%>:</td>
-			<td><%=UtilMethods.webifyString(scheme.getDescription())%>
-			</td>
-		</tr>
-		<tr>
-			<td><%=LanguageUtil.get(pageContext, "Archived")%>:</td>
-			<td><%=(scheme.isArchived()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%>
-			</td>
-		</tr>
-		<tr>
-			<td><%=LanguageUtil.get(pageContext, "Mandatory")%>:</td>
-			<td>
-				<%=(scheme.isMandatory()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%>
+		<div>
+			<h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%> &nbsp; &nbsp; <span class="editIcon" style="float: right;"></span></h2>
+			<p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
+		</div>
+	</div>
 
-			</td>
-		</tr>
-		<%if(scheme.isMandatory() && entryAction !=null){ %>
-			<tr>
-				<td><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</td>
-				<td>
-					&quot;<%=entryAction.getName() %>&quot;
+	<div class="portlet-toolbar__info"></div>
 
-				</td>
-			</tr>
-		<%} %>
-		
-	</table>
-</div>
+	<div class="portlet-toolbar__actions-secondary">
+		<!-- ADD STEP -->
 
-<div class="portlet-main">
-	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
-		<div class="portlet-toolbar__actions-primary"></div>
-
-    	<div class="portlet-toolbar__actions-secondary">
-    		<form id="fm" method="post">
-	    		<div id="dropdownButtonContainer"></div>
-					<script>
-			            dojo.addOnLoad(function() {
-			                var dialog = new dijit.TooltipDialog({
-			                    content: '<div class="inline-form"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
-			                    onKeyPress:function(e){
-			                    	if(e.keyCode==13){
-			                    		stepAdmin.addStep();
-			                    	}
-		                    	}
-			                });
-		
-			                var button = new dijit.form.DropDownButton({
-			                    label: "<%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%>",
-			                    dropDown: dialog,
-			                    iconClass:"addIcon",
-			                    onClick:function(){
-			                    	stepAdmin.schemeId = '<%=schemeId%>';
-			                    	
-			                    },
-			                    
-			                    
-			                });
-			                dojo.byId("dropdownButtonContainer").appendChild(button.domNode);
-			              
-			            });
-					</script>
-				</div>
-			</form>
-    	</div>
-   </div>
-   <!-- END Toolbar -->
+	   <!-- ADD STEP -->
+	</div>
 </div>
 
 
-<div id="wfStepsBoundingBoxMain" >
-	
-	<%for(WorkflowStep step : steps){ %>
-		
-		<%List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());%>
-		<div class="wfStepBoundingBox" >
-			<div class="wfStepTitle ">
-				<div  style="float:left;width:89%;" class="showPointer wfStepTitleDivs" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
-					<span style="border-bottom:dotted 1px gray;"><%=step.getName() %></span>
-					<span style="font-weight:normal;padding:5px;display:inline-block;">
-						<%=step.isResolved() ? "(" +  LanguageUtil.get(pageContext, "resolved") + ")" : "" %>
-					</span>
-				</div>
-				<div style="float:right; width:10%;text-align: right" class="wfStepTitleDivs showPointer" onclick="stepAdmin.deleteStep('<%=step.getId()%>')"><span class="deleteIcon"></span></div>
-				<div class="clear"></div>
-			</div>
-			<table class="wfActionList" id="<%= "jsNode" + step.getId()  %>" dojoType="dojo.dnd.Source" class="dndContainer container" accept="actionOrderClass<%=step.getId()%>">
-				<tbody>
 
-					<%for(WorkflowAction action : actions){ %>
-						<tr class="dojoDndItem actionOrderClass<%=step.getId()%> actionOrderClass" id="id_<%=action.getId()%>_<%=step.getId()%>">
-							<td class="wfXBox showPointer" onclick="actionAdmin.deleteAction('<%=action.getId()%>')"><span class="deleteIcon"></span></td>
-							<td onClick="actionAdmin.viewAction('<%=step.getId()%>', '<%=action.getId() %>');" class="showPointer">
-								<span class="<%=action.getIcon()%>"></span>
-								<%=action.getName() %> 
-								<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>
-								<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.45;"><span class="saveIcon"></span></div><%} %>
-							</td>
-						</tr>
-					<%} %>
-				</tbody>
-			</table>
-			<div class="wfAddActionButtonRow">
-				<button dojoType="dijit.form.Button"
-				 onClick="actionAdmin.viewAction('<%=step.getId()%>', '');" iconClass="addIcon">
-				<%=LanguageUtil.get(pageContext, "Add-Workflow-Action")%>
-				</button>
+<!-- Workflow Steps -->
+<div class="board-wrapper">
+	<div class="board-main-content">
+		<div class="board-canvas">
+			<div class="" id="wfStepInDragContainer">
+				
+				<%for(WorkflowStep step : steps){ %>
+					<%List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());%>
+					<div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">	
+						<div class="list-item">
+							<div class="wfStepTitle">
+								<div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
+									<span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
+									<span style="font-weight:normal;display:inline-block;">
+										<%=step.isResolved() ? "(" +  LanguageUtil.get(pageContext, "resolved") + ")" : "" %>
+									</span>
+								</div>
+								<div class="clear"></div>
+							</div>
+							<div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
+									<%for(WorkflowAction action : actions){ %>
+										<div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>">
+											<div class="handles"></div>
+											<div class="wf-action showPointer">
+												<div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this)"><span class="deleteIcon"></span></div>
+												<div  class="pull-left showPointer" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');">
+													<%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
+												</div>
+											</div>
+										</div>
+									<%} %>
+							</div>
+
+							<div class="btn-flat-wrapper">
+									<div class="btn-flat showPointer" onclick="stepAdmin.deleteStep('<%=step.getId()%>')">Delete</div>
+									<div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
+										<i class="fa fa-plus" aria-hidden="true"></i> Add
+									</div>
+							</div>
+						</div>
+					</div>
+				<%}%>
+				<div class="list-wrapper showPointer ghostAddDiv" onclick="stepAdmin.schemeId='<%=schemeId%>';stepAdmin.showAddNewStep();" >	
+					<div class="list-item">
+						<div class="wfStepTitle">
+							<div class="wfStepTitleDivs">
+								<span style="border-bottom:dotted 0px #fff;"><%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%></span>
+							</div>
+							<div class="clear"></div>
+						</div>
+						<div class="wfActionList">
+						
+						</div>
+					</div>
+				</div>
+				
+				
 			</div>
 		</div>
-
-	<%} %>
+	</div>
 </div>
+<script>
 
 
-
+</script>

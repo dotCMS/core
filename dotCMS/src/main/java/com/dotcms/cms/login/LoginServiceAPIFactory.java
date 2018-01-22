@@ -2,6 +2,8 @@ package com.dotcms.cms.login;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
@@ -223,6 +225,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.isLoggedIn(req);
         }
 
+        @CloseDBIfOpened
         @Override
         public boolean doActionLogin(String userId,
                                      final String password,
@@ -247,8 +250,7 @@ public class LoginServiceAPIFactory implements Serializable {
                 }
 
                 authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), userId, password );
-                userId = UserManagerUtil.getUserId( company.getCompanyId(), userId );
-
+                userId     = UserManagerUtil.getUserId( company.getCompanyId(), userId );
             } else {
 
                 //Verify that the System User is not been use to log in inside the system
@@ -290,6 +292,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return authenticated;
         }
 
+        @WrapInTransaction
         private void doAuthentication(String userId, boolean rememberMe, HttpServletRequest req, HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
             final HttpSession ses = req.getSession();
@@ -326,9 +329,9 @@ public class LoginServiceAPIFactory implements Serializable {
                     h = APILocator.getHostAPI().findByAlias(domainName, user, false);
                 }
 
-                if(h != null && UtilMethods.isSet(h.getInode())){
+                if(h != null && UtilMethods.isSet(h.getInode())) {
                     req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, h.getIdentifier());
-                }else{
+                } else {
                     req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
                 }
             } catch (DotSecurityException se) {
@@ -382,6 +385,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
 
         @Override
+        @CloseDBIfOpened
         public boolean doLogin(final LoginForm form,
                                final HttpServletRequest request,
                                final HttpServletResponse response) throws NoSuchUserException {
@@ -417,6 +421,7 @@ public class LoginServiceAPIFactory implements Serializable {
             }
         } // doRememberMe.
 
+        @CloseDBIfOpened
         @Override
         public boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
             // note: keep in mind we are doing BE and FE login, not sure if this is right
@@ -435,6 +440,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return doCookieLogin;
         }
 
+        @CloseDBIfOpened
         @Override
         public boolean doLogin(final String userName, final String password, final boolean rememberMe,
                                final HttpServletRequest request, final HttpServletResponse response) throws NoSuchUserException {
@@ -442,6 +448,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.doLogin(userName, password, rememberMe, request, response);
         }
 
+        @CloseDBIfOpened
         @Override
         public boolean doLogin(final String userName, final String password, final boolean rememberMe,
                                final HttpServletRequest request,
@@ -451,6 +458,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.doLogin(userName, password, rememberMe, request, response, skipPasswordCheck);
         }
 
+        @CloseDBIfOpened
         @Override
         public boolean doLogin(final String userName, final String password) throws NoSuchUserException {
 
@@ -463,6 +471,7 @@ public class LoginServiceAPIFactory implements Serializable {
             LoginServiceAPI.super.doLogout(request, response);
         }
 
+        @CloseDBIfOpened
         @Override
         public boolean passwordMatch(String password, User user) {
             return LoginFactory.passwordMatch(password, user);

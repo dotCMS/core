@@ -2,15 +2,11 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -18,13 +14,16 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -33,22 +32,27 @@ import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -69,6 +73,11 @@ public class EditFieldAction extends DotPortletAction {
 
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private FieldAPI fAPI = APILocator.getFieldAPI();
+    private static final String INVALIDATE_DATA_MESSAGE = "message.structure.invaliddata";
+    private static final String INVALIDATE_DATA_BOOLEAN_MESSAGE = "message.structure.invaliddataboolean";
+    private static final String MISSING_DATA_VALUE_MESSAGE = "message.structure.missingdatavalue";
+    private static final String INVALIDATE_DATA_TYPE_MESSAGE = "message.structure.invaliddatatype";
+    private static final String ERROR = "error";
 
 	/**
 	 * Default constructor for Struts to instantiate this action.
@@ -115,89 +124,80 @@ public class EditFieldAction extends DotPortletAction {
         if ((cmd == null) || !cmd.equals("reorder")) {
             _retrieveField(form, req, res);
         }
-        HibernateUtil.startTransaction();
+
+        try {
+            HibernateUtil.startTransaction();
 
         /*
          * saving the field
          */
-        if ((cmd != null) && cmd.equals(Constants.ADD)) {
-            try {
-                Logger.debug(this, "Calling Add/Edit Method");
+            if ((cmd != null) && cmd.equals(Constants.ADD)) {
+                try {
+                    Logger.debug(this, "Calling Add/Edit Method");
 
-                Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-                if (InodeUtils.isSet(field.getInode())) {
-                    if (field.isFixed()
-                            || (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())
-                                    || field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())
-                                    || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())
-                                    || field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString())
-                                    || field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())
-                                    || field.getFieldContentlet().equals(FieldAPI.ELEMENT_CONSTANT) || field
-                                    .getFieldType().equals(Field.FieldType.HIDDEN.toString()))) {
-                        FieldForm fieldForm = (FieldForm) form;
-                        field.setFieldName(fieldForm.getFieldName());
-
-                        // This is what you can change on a fixed field
+                    Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
+                    if (InodeUtils.isSet(field.getInode())) {
                         if (field.isFixed()) {
+
+                            FieldForm fieldForm = (FieldForm) form;
+                            field.setFieldName(fieldForm.getFieldName());
                             field.setHint(fieldForm.getHint());
                             field.setDefaultValue(fieldForm.getDefaultValue());
                             field.setSearchable(fieldForm.isSearchable());
                             field.setListed(fieldForm.isListed());
-                        }
 
-                        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
+                            com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
+                            if (LegacyFieldTypes.CONSTANT.implClass().getCanonicalName().equals(newField.typeName()) ||
+                                    LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName())) {
+                                field.setValues(fieldForm.getValues());
+                            }
 
-                        if (((contentType.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT) && !fAPI
-                                .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FORM) && fAPI
-                                        .isElementConstant(field))) {
-                            field.setValues(fieldForm.getValues());
+                            BeanUtils.copyProperties(fieldForm, field);
                         }
-                        BeanUtils.copyProperties(fieldForm, field);
                     }
-                }
-                if (Validator.validate(req, form, mapping)) {
-                    if (_saveField(form, req, res, user)) {
-                        _sendToReferral(req, res, referer);
-                        return;
+                    if (Validator.validate(req, form, mapping)) {
+                        if (_saveField(form, req, res, user)) {
+                            _sendToReferral(req, res, referer);
+                            return;
+                        }
                     }
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
                 }
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
             }
-        }
         /*
          * If we are deleting the field, run the delete action and return to the
          * list
          *
          */
-        else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
-            try {
-                Logger.debug(this, "Calling Delete Method");
-                _deleteField(req);
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
+            else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
+                try {
+                    Logger.debug(this, "Calling Delete Method");
+                    _deleteField(req);
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
+                }
+                _sendToReferral(req, res, referer);
+            } else if ((cmd != null) && cmd.equals("reorder")) {
+                try {
+                    Logger.debug(this, "Calling reorder Method");
+                    _reorderFields(form, req, res);
+                } catch (Exception ae) {
+                    _handleException(ae, req);
+                    return;
+                }
+                _sendToReferral(req, res, referer);
             }
-            _sendToReferral(req, res, referer);
-        } else if ((cmd != null) && cmd.equals("reorder")) {
+        } finally {
             try {
-                Logger.debug(this, "Calling reorder Method");
-                _reorderFields(form, req, res);
-            } catch (Exception ae) {
-                _handleException(ae, req);
-                return;
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (DotHibernateException e) {
+                HibernateUtil.closeSessionSilently();
             }
-            _sendToReferral(req, res, referer);
         }
-        HibernateUtil.commitTransaction();
+
         _loadForm(form, req, res);
         setForward(req, "portlet.ext.structure.edit_field");
     }
@@ -294,15 +294,16 @@ public class EditFieldAction extends DotPortletAction {
 	            }
             }
 
-            // Validate values entered for decimal/number type check box field
-            if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
+            // Validate values entered for decimal/number type in check box or select fields
+            if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(
+                    FieldType.SELECT.toString())){
                 String values = fieldForm.getValues();
                 String temp = values.replaceAll("\r\n","|");
                 String[] tempVals = StringUtil.split(temp.trim(), "|");
                 try {
                     if(dataType.equals(Field.DataType.FLOAT.toString())){
                         if(values.indexOf("\r\n") > -1) {
-                            SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+                            SessionMessages.add(req, ERROR, INVALIDATE_DATA_TYPE_MESSAGE);
                             return false;
                         }
 
@@ -311,7 +312,7 @@ public class EditFieldAction extends DotPortletAction {
                         }
                     }else if(dataType.equals(Field.DataType.INTEGER.toString())){
                         if(values.indexOf("\r\n") > -1) {
-                            SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+                            SessionMessages.add(req, ERROR, INVALIDATE_DATA_TYPE_MESSAGE);
                             return false;
                         }
 
@@ -321,10 +322,14 @@ public class EditFieldAction extends DotPortletAction {
                     }
 
                   }catch (Exception e) {
-                      String message = "message.structure.invaliddata";
-                    SessionMessages.add(req, "error", message);
+                    SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
                     return false;
                  }
+            }
+
+            // Validate values entered for decimal/number/boolean type radio button field
+            if (field.getFieldType().equals(FieldType.RADIO.toString()) && !isValidRadioField(fieldForm,req)){
+                    return false;
             }
 
             // check if is a new field to add at the botton of the structure
@@ -337,7 +342,7 @@ public class EditFieldAction extends DotPortletAction {
                     // http://jira.dotmarketing.net/browse/DOTCMS-3232
                     if (f.getFieldType().equalsIgnoreCase(fieldForm.getFieldType())
                             && f.getFieldType().equalsIgnoreCase(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                        SessionMessages.add(req, "error", "message.structure.duplicate.host_or_folder.field");
+                        SessionMessages.add(req, ERROR, "message.structure.duplicate.host_or_folder.field");
                         return false;
                     }
                     if (f.getSortOrder() > sortOrder)
@@ -346,53 +351,23 @@ public class EditFieldAction extends DotPortletAction {
                 field.setSortOrder(sortOrder + 1);
                 field.setFixed(false);
                 field.setReadOnly(false);
-
-                String fieldVelocityName = VelocityUtil.convertToVelocityVariable(fieldForm.getFieldName(), false);
-                int found = 0;
-                if (VelocityUtil.isNotAllowedVelocityVariableName(fieldVelocityName)) {
-                    found++;
-                }
-
-                String velvar;
-                for (Field f : fields) {
-                    velvar = f.getVelocityVarName();
-                    if (velvar != null) {
-                        if (fieldVelocityName.equals(velvar)) {
-                            found++;
-                        } else if (velvar.contains(fieldVelocityName)) {
-                            String number = velvar.substring(fieldVelocityName.length());
-                            if (RegEX.contains(number, "^[0-9]+$")) {
-                                found++;
-                            }
-                        }
-                    }
-                }
-                if (found > 0) {
-                    fieldVelocityName = fieldVelocityName + Integer.toString(found);
-                }
-
-                if(!validateInternalFieldVelocityVarName(fieldVelocityName)){
-                    fieldVelocityName+="1";
-                }
-
-                field.setVelocityVarName(fieldVelocityName);
+                field.setFieldContentlet(dataType);
             }
 
-            boolean isUpdating = UtilMethods.isSet(field.getInode());
-            // saves this field
-            FieldFactory.saveField(field);
+            com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(field).from();
+            APILocator.getContentTypeFieldAPI().save(newField, user);
 
-            if(isUpdating) {
-                ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
-                        + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+            if(UtilMethods.isSet(field.getInode())) {
+                ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " in " + structure.getName()
+                        + " Content Type.", HostUtil.hostNameUtil(req, _getUser(req)));
             } else {
-                ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
-                        + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+                ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " in " + structure.getName()
+                        + " Content Type.", HostUtil.hostNameUtil(req, _getUser(req)));
             }
 
             FieldsCache.removeFields(structure);
             CacheLocator.getContentTypeCache().remove(structure);
-            StructureServices.removeStructureFile(structure);
+            new ContentTypeLoader().invalidate(structure);
             StructureFactory.saveStructure(structure);
 
             FieldsCache.addFields(structure, structure.getFields());
@@ -409,8 +384,7 @@ public class EditFieldAction extends DotPortletAction {
             }
 
             if (fAPI.isElementConstant(field)) {
-                ContentletServices.removeContentletFile(structure);
-                ContentletMapServices.removeContentletMapFile(structure);
+                new ContentletLoader().invalidate(structure);
                 conAPI.refresh(structure);
             }
 
@@ -475,7 +449,7 @@ public class EditFieldAction extends DotPortletAction {
         Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
         if (!UtilMethods.isSet(field.getIdentifier())) {
         	String message = "message.contenttype.deletefield.error.alreadydeleted";
-            SessionMessages.add(req, "error", message);
+            SessionMessages.add(req, ERROR, message);
             return;
         }
         Structure contentType = StructureFactory.getStructureByInode(field.getStructureInode());
@@ -485,7 +459,7 @@ public class EditFieldAction extends DotPortletAction {
         } catch (Exception ae) {
             if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
                 String message = "message.insufficient.permissions.to.delete";
-                SessionMessages.add(req, "error", message);
+                SessionMessages.add(req, ERROR, message);
                 return;
             }
         }
@@ -493,7 +467,7 @@ public class EditFieldAction extends DotPortletAction {
             DeleteFieldJob.triggerDeleteFieldJob(contentType, field, user);
         } catch(Exception e) {
             Logger.error(this, "Unable to trigger DeleteFieldJob", e);
-            SessionMessages.add(req, "error", "message.structure.deletefield.error");
+            SessionMessages.add(req, ERROR, "message.structure.deletefield.error");
         }
         SessionMessages.add(req, "message", "message.structure.deletefield.async");
     }
@@ -584,6 +558,54 @@ public class EditFieldAction extends DotPortletAction {
         }
 
         return h.getTitle()!=null?h.getTitle():"default";
+    }
+
+    /**
+     * Validate if the radio field is valid
+     * @param fieldForm The field form
+     * @param req The action request
+     * @return true if the field is valid, false if not
+     */
+    private boolean isValidRadioField(FieldForm fieldForm, ActionRequest req){
+        boolean isValid = true;
+        final int EVEN_NUMBER = 2;
+        final int ADD_NUMBER = 2;
+        String dataType = fieldForm.getDataType();
+        String values = fieldForm.getValues();
+        String temp = values.replaceAll("\r\n","|");
+        String[] tempVals = StringUtil.split(temp.trim(), "|");
+
+        if (tempVals.length % EVEN_NUMBER == 1){
+            SessionMessages.add(req, ERROR, MISSING_DATA_VALUE_MESSAGE);
+            isValid = false;
+        } else if(dataType.equals(DataTypes.BOOL.toString())){
+            for(int i=1;i<tempVals.length;i+= ADD_NUMBER){
+                if(!DbConnectionFactory.isDBBoolean(tempVals[i])){
+                    SessionMessages.add(req, ERROR, INVALIDATE_DATA_BOOLEAN_MESSAGE);
+                    isValid = false;
+                }
+            }
+        } else if(dataType.equals(DataTypes.FLOAT.toString())){
+            try {
+                for(int i=1;i<tempVals.length;i+= ADD_NUMBER){
+                    Float.parseFloat(tempVals[i]);
+                }
+            }catch (NumberFormatException e) {
+                SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
+                isValid = false;
+            }
+        } else if(dataType.equals(DataTypes.INTEGER.toString())){
+            try {
+                for(int i=1;i<tempVals.length;i+= ADD_NUMBER) {
+                    Integer.parseInt(tempVals[i]);
+                }
+            }catch (NumberFormatException e) {
+                SessionMessages.add(req, ERROR, INVALIDATE_DATA_MESSAGE);
+                isValid = false;
+            }
+        }
+
+        return isValid;
     }
 
 }

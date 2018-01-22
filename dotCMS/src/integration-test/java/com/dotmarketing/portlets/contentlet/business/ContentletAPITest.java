@@ -1,33 +1,28 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -37,6 +32,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotmarketing.beans.Host;
@@ -49,6 +45,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -57,13 +54,15 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -75,13 +74,44 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba.
@@ -499,8 +529,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(host2.getInode());
         
         
-        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator
-                + UUIDGenerator.generateUuid() + java.io.File.separator + "hello.txt");
+        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + separator
+                + UUIDGenerator.generateUuid() + separator + "hello.txt");
         bin.getParentFile().mkdirs();
         
         bin.createNewFile();
@@ -647,7 +677,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -671,34 +701,33 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void cleanBinaryField() throws DotDataException, DotSecurityException {
-
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        List<Contentlet> contentletList = contentletAPI.findByStructure(structure, user, false, 0, 0);
         Contentlet contentlet = contentletList.iterator().next();
 
         //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Binary-" + identifier );
+        Field foundBinaryField = FieldFactory.getFieldByVariableName(structure.getInode(), "junitTestBinary" + identifier);
 
 
         //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
+        Object value = contentletAPI.getFieldValue(contentlet, foundBinaryField);
 
         //Validations
-        assertNotNull( value );
-        assertTrue( ((java.io.File) value).exists() );
+        assertNotNull(value);
+        assertTrue(((java.io.File) value).exists());
 
         //Cleaning the binary field
-        contentletAPI.cleanField( structure, foundBinaryField, user, false );
+        contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
         //Validations
-        assertFalse( ((java.io.File) value).exists() );
+        assertFalse(((java.io.File) value).exists());
     }
 
     /**
@@ -724,7 +753,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known tag field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Tag-" + identifier );
+        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestTag" + identifier );
 
         //Getting the current value for this field
         List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
@@ -866,7 +895,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             StructureDataGen.remove(structure);
             FolderDataGen.remove(folder);
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
             HibernateUtil.rollbackTransaction();
             throw e;
@@ -891,7 +920,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestWysiwyg" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -949,7 +978,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
             menuLinkAPI.delete( menuLink, user, false );
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -974,7 +1003,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {
@@ -1159,6 +1188,94 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Ignore
+    @Test
+    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
+   // respect CMS Anonymous permissions
+      boolean respectFrontendRoles = false;
+      int num = 5;
+      Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
+      Folder folder = APILocator.getFolderAPI().findSystemFolder();
+
+      Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
+      ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
+      List<Contentlet> origCons = new ArrayList<>();
+
+      Map map = new HashMap<>();
+      map.put("stInode", type.id());
+      map.put("host", host.getIdentifier());
+      map.put("folder", folder.getInode());
+      map.put("languageId", lang.getId());
+      map.put("sortOrder", new Long(0));
+      map.put("body", "body");
+
+
+      //add 5 contentlets
+      for(int i = 0;i<num;i++){
+        map.put("title", i+ "my test title");
+
+        // create a new piece of content backed by the map created above
+        Contentlet content = new Contentlet(map);
+
+        // check in the content
+        content= contentletAPI.checkin(content,user, respectFrontendRoles);
+
+        assertTrue( content.getIdentifier()!=null );
+        assertTrue( content.isWorking());
+        assertFalse( content.isLive());
+        // publish the content
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        assertTrue( content.isLive());
+        origCons.add(content);
+      }
+
+
+      //commit it index
+      HibernateUtil.closeSession();
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+
+      HibernateUtil.startTransaction();
+      try{
+        List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
+        for(Contentlet c : checkedOut){
+          c.setStringProperty("title", c.getStringProperty("title") + " new");
+          c = contentletAPI.checkin(c,user, respectFrontendRoles);
+          contentletAPI.publish(c, user, respectFrontendRoles);
+          assertTrue( c.isLive());
+        }
+        throw new DotDataException("uh oh, what happened?");
+      }
+      catch(DotDataException e){
+        HibernateUtil.rollbackTransaction();
+
+      }
+      finally{
+        HibernateUtil.closeSession();
+      }
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
      *
@@ -1909,7 +2026,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1=new Date();
+        Date d1= new Date();
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
@@ -1933,8 +2050,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
 
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
-        assertEquals(d1,ident.getSysPublishDate());
-        assertEquals(d2,ident.getSysExpireDate());
+        assertNotNull(ident.getSysPublishDate());
+        assertNotNull(ident.getSysExpireDate());
+
+        assertTrue(d1
+                .equals(ident.getSysPublishDate()));
+        assertTrue(d2.equals(ident.getSysExpireDate()));
+
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
@@ -1949,13 +2071,19 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
 
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
-        assertEquals(d3,ident2.getSysPublishDate());
-        assertEquals(d4,ident2.getSysExpireDate());
+        assertNotNull(ident2.getSysPublishDate());
+        assertNotNull(ident2.getSysExpireDate());
+
+        assertTrue(d3
+                .equals(ident2.getSysPublishDate()));
+        assertTrue(d4
+                .equals(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
-        assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
+        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
+        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+
 
         Thread.sleep(2000); // wait a bit for the index
         
@@ -1966,6 +2094,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
+    }
+
+    private boolean compareDates(Date date1, Date date2) {
+
+        DateFormat dateFormat = SimpleDateFormat
+                .getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
+        return dateFormat.format(date1).equals(dateFormat.format(date2));
     }
 
 
@@ -2026,7 +2161,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         /*
          * For every language we should get the same content and contentMap template code
          */
-        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION", "content");
         VelocityEngine engine = VelocityUtil.getEngine();
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
@@ -2035,8 +2169,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
 
-        org.apache.velocity.Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        org.apache.velocity.Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng1 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                        + VelocityType.CONTENT.fileExtension);
+        org.apache.velocity.Template tesp1 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                        + VelocityType.CONTENT.fileExtension);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         StringWriter writer=new StringWriter();
@@ -2056,8 +2194,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(w2.getInode(),true);
 
         // now if everything have been cleared correctly those should match again
-        org.apache.velocity.Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        org.apache.velocity.Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng3 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                        + VelocityType.CONTENT.fileExtension);
+        org.apache.velocity.Template tesp3 = engine.getTemplate(
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                        + VelocityType.CONTENT.fileExtension);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();
         teng3.merge(ctx, writer);
@@ -2164,7 +2306,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try{
         	HibernateUtil.startTransaction();
         	APILocator.getStructureAPI().delete(testStructure, user);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(ContentletAPITest.class, e.getMessage());
@@ -2225,8 +2367,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     	// languages
     	int english = 1;
     	int spanish = 2;
-        //Using System User.
-        User user = APILocator.getUserAPI().getSystemUser();
+
         // new template
         Template template = new TemplateDataGen().nextPersisted();
         // new test folder
@@ -2349,6 +2490,1445 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             // Delete structure
             APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
+    /**
+     * https://github.com/dotCMS/core/issues/11950
+     */
+    @Test
+    public void testContentWithTwoBinaryFieldsAndSameFile_afterCheckinShouldContainBothFields() {
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+        com.dotcms.contenttype.model.field.Field binaryField1 = null;
+        com.dotcms.contenttype.model.field.Field binaryField2 = null;
+
+        Contentlet contentlet = null;
+
+        try {
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Test ContentType Two Fields")
+                    .host(defaultHost.getIdentifier())
+                    .name("Test ContentType Two Fields")
+                    .owner("owner")
+                    .variable("testContentTypeWithTwoBinaryFields")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Save Fields. 1. Text, 2. Binary, 3. Binary.
+            //Creating Text Field.
+            textField = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            //Creating First Binary Field.
+            binaryField1 = ImmutableBinaryField.builder()
+                    .name("Image 1")
+                    .variable("image1")
+                    .contentTypeId(contentType.id())
+                    .build();
+
+            binaryField1 = fieldAPI.save(binaryField1, user);
+
+            //Creating Second Binary Field.
+            binaryField2 = ImmutableBinaryField.builder()
+                    .name("Image 2")
+                    .variable("image2")
+                    .contentTypeId(contentType.id())
+                    .build();
+
+            binaryField2 = fieldAPI.save(binaryField2, user);
+
+            //Creating a temporary File to use in the binary fields.
+            File imageFile = temporaryFolder.newFile("ImageFile.png");
+            writeTextIntoFile(imageFile, "This is the same image");
+
+            contentlet = new Contentlet();
+            contentlet.setStructureInode(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+            contentlet.setStringProperty(textField.variable(), "Test Content with Same Image");
+            contentlet.setBinary(binaryField1.variable(), imageFile);
+            contentlet.setBinary(binaryField2.variable(), imageFile);
+
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+
+            //Check that the properties still exist.
+            assertTrue(contentlet.getMap().containsKey(binaryField1.variable()));
+            assertTrue(contentlet.getMap().containsKey(binaryField2.variable()));
+
+            //Check that the properties have value.
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField1.variable())));
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField2.variable())));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                //Delete Contentlet.
+                if (contentlet != null) {
+                    contentletAPI.archive(contentlet, user, false);
+                    contentletAPI.delete(contentlet, user, false);
+                }
+                //Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                if (binaryField1 != null) {
+                    fieldAPI.delete(binaryField1);
+                }
+                if (binaryField2 != null) {
+                    fieldAPI.delete(binaryField2);
+                }
+                //Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+
+    }
+
+    /**
+     * This case should run once this ticket https://github.com/dotCMS/core/issues/12116 is solved
+     */
+    @Test
+    @Ignore
+    public void test_saveMultilingualFileAssetBasedOnLegacyFile_shouldKeepBinaryFile()
+        throws IOException, DotSecurityException, DotDataException {
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+        com.dotcms.contenttype.model.field.Field binaryField = null;
+
+        File imageFile;
+        FileAssetDataGen fileAssetDataGen = null;
+        Contentlet initialContent = null;
+        Contentlet spanishContent = null;
+        Contentlet englishContent = null;
+
+        try {
+
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("ContentType for Legacy File")
+                .host(defaultHost.getIdentifier())
+                .name("ContentType for Legacy File")
+                .owner("owner")
+                .variable("testContentTypeForLegacyFile")
+                .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Save Fields. 1. Text, 2. Binary
+            //Creating Text Field.
+            textField = ImmutableTextField.builder()
+                .name("Title")
+                .variable("title")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.TEXT)
+                .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            //Creating First Binary Field.
+            binaryField = ImmutableBinaryField.builder()
+                .name("File")
+                .variable("file")
+                .contentTypeId(contentType.id())
+                .build();
+
+            binaryField = fieldAPI.save(binaryField, user);
+
+            //Creating a temporary binary file
+            imageFile = temporaryFolder.newFile("BinaryFile.txt");
+            writeTextIntoFile(imageFile, "This is the same file");
+
+            initialContent = new Contentlet();
+            initialContent.setStructureInode(contentType.inode());
+            initialContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+            initialContent.setStringProperty(textField.variable(), "Test Content with Same File");
+            initialContent.setBinary(binaryField.variable(), imageFile);
+
+            //Saving initial contentlet
+            initialContent = contentletAPI.checkin(initialContent, user, false);
+
+            //File assets creation based on the initial content
+            fileAssetDataGen = new FileAssetDataGen(testFolder, initialContent.getBinary(binaryField.variable()));
+
+            //Creating file asset content in Spanish
+            spanishContent = fileAssetDataGen.languageId(2).nextPersisted();
+
+            //Creating content version in English
+            englishContent = contentletAPI.checkout(spanishContent.getInode(), user, false);
+            englishContent.setLanguageId(1);
+            englishContent = contentletAPI.checkin(englishContent, user, false);
+
+            //Check that the properties still exist.
+            assertTrue(initialContent.getMap().containsKey(binaryField.variable()));
+            assertTrue(spanishContent.getMap().containsKey(FileAssetAPI.BINARY_FIELD));
+            assertTrue(englishContent.getMap().containsKey(FileAssetAPI.BINARY_FIELD));
+
+            //Check that the properties have value.
+            assertTrue(UtilMethods.isSet(initialContent.getMap().get(binaryField.variable())));
+            assertTrue(UtilMethods.isSet(spanishContent.getMap().get(FileAssetAPI.BINARY_FIELD)));
+            assertTrue(UtilMethods.isSet(englishContent.getMap().get(FileAssetAPI.BINARY_FIELD)));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+
+            try {
+                //Delete initial Contentlet.
+                if (initialContent != null) {
+                    contentletAPI.archive(initialContent, user, false);
+                    contentletAPI.delete(initialContent, user, false);
+                }
+                //Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                if (binaryField != null) {
+                    fieldAPI.delete(binaryField);
+                }
+                //Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+
+                if (fileAssetDataGen != null) {
+
+                    if (spanishContent != null) {
+                        fileAssetDataGen.remove(spanishContent);
+                    }
+
+                    if (englishContent != null) {
+                        fileAssetDataGen.remove(englishContent);
+                    }
+
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+    }
+
+
+    /*
+     * https://github.com/dotCMS/core/issues/11978
+     * 
+     * Creates a new Content Type with a DateTimeField and sets it as Expire Field, saves a new Content a checks that 
+     * the value of the expire field is set and retrieve correctly
+     */
+    @Test
+    public void contentOnlyWithExpireFieldTest() throws Exception{
+    	ContentTypeAPIImpl contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.owner(APILocator.systemUser().toString()).variable("CTVariable11").expireDateVar("expireDate").build();
+		contentType = contentTypeApi.save(contentType);
+
+		assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
+
+		List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(contentType.fields());
+
+		com.dotcms.contenttype.model.field.Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Expire Date").variable("expireDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, fields);
+		
+		Contentlet contentlet = new Contentlet();
+		contentlet.setStructureInode(contentType.inode());
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+        contentlet.setDateProperty(fieldToSave.variable(), new Date(new Date().getTime()+60000L));
+
+        contentlet = contentletAPI.checkin(contentlet, user, false);
+        contentletAPI.isInodeIndexed(contentlet.getInode());
+        
+        contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+		Date expireDate = contentlet.getDateProperty("expireDate");
+        
+        assertNotNull(expireDate);
+		
+		// Deleting content type.
+		contentTypeApi.delete(contentType);
+    }
+
+    /**
+     * This test will:
+     * --- Create a content type called "Nested".
+     * --- Add only 1 Text field called Title
+     * --- Create a Content "A". Save/publish it.
+     * --- Create a Content "B". Save/publish it.
+     * --- Create a Content "C". Save/publish it.
+     * --- Create a 1:N Relationship, Parent and Child same Content Type: Nested
+     * --- Relate Content: Parent: A, Child B.
+     * --- Relate Content: Parent: B, Child C.
+     * --- Edit Content A, update title to "ABC"
+     *
+     * Before the fix we were getting an exception when editing content A because validateContentlet
+     * validates that if there's a 1-N relationship the parent content can't relate to a child
+     * that already has a parent; but we were pulling other related content, not just the parents.
+     *
+     * https://github.com/dotCMS/core/issues/10656
+     */
+    @Test
+    public void test_validateContentlet_noErrors_whenRelationChainSameContentType() {
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+
+        Contentlet contentletA = null;
+        Contentlet contentletB = null;
+        Contentlet contentletC = null;
+
+        Relationship relationShip = null;
+
+        try {
+            // Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Nested")
+                    .host(defaultHost.getIdentifier())
+                    .name("Nested")
+                    .owner("owner")
+                    .variable("nested")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            // Save Fields. 1. Text
+            // Creating Text Field: Title.
+            textField = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            contentletA = new Contentlet();
+            contentletA.setStructureInode(contentType.inode());
+            contentletA.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletA.setStringProperty(textField.variable(), "A");
+            contentletA = contentletAPI.checkin(contentletA, user, false);
+            contentletAPI.isInodeIndexed(contentletA.getInode());
+
+            contentletB = new Contentlet();
+            contentletB.setStructureInode(contentType.inode());
+            contentletB.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletB.setStringProperty(textField.variable(), "B");
+            contentletB = contentletAPI.checkin(contentletB, user, false);
+            contentletAPI.isInodeIndexed(contentletB.getInode());
+
+            contentletC = new Contentlet();
+            contentletC.setStructureInode(contentType.inode());
+            contentletC.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletC.setStringProperty(textField.variable(), "B");
+            contentletC = contentletAPI.checkin(contentletC, user, false);
+            contentletAPI.isInodeIndexed(contentletC.getInode());
+
+            relationShip = createRelationShip(contentType.inode(),
+                    contentType.inode(), false);
+
+            // Relate the content.
+            contentletAPI
+                    .relateContent(contentletA, relationShip, Lists.newArrayList(contentletB), user,
+                            false);
+            contentletAPI
+                    .relateContent(contentletB, relationShip, Lists.newArrayList(contentletC), user,
+                            false);
+
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationShip, Lists.newArrayList(contentletB));
+
+            contentletA = contentletAPI.checkout(contentletA.getInode(), user, false);
+            contentletA.setStringProperty(textField.variable(), "ABC");
+            contentletA = contentletAPI.checkin(contentletA, relationshipListMap, user, false);
+            contentletAPI.isInodeIndexed(contentletA.getInode());
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                // Delete Relationship.
+                if (relationShip != null) {
+                    relationshipAPI.delete(relationShip);
+                }
+                // Delete Contentlet.
+                if (contentletA != null) {
+                    contentletAPI.archive(contentletA, user, false);
+                    contentletAPI.delete(contentletA, user, false);
+                }
+                if (contentletB != null) {
+                    contentletAPI.archive(contentletB, user, false);
+                    contentletAPI.delete(contentletB, user, false);
+                }
+                if (contentletC != null) {
+                    contentletAPI.archive(contentletC, user, false);
+                    contentletAPI.delete(contentletC, user, false);
+                }
+                // Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                // Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ShouldDeletePreviousBinary_WhenBinaryIsUpdated()
+            throws DotSecurityException, DotDataException, IOException {
+
+        final String FILE_V1_NAME = "textFileVersion1.txt";
+        final String FILE_V2_NAME = "textFileVersion2.txt";
+        final String FILE_V2_CONTENT = "textFileVersion2 CONTENT";
+        ContentType typeWithBinary = null;
+
+        try {
+            typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
+            com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
+            File textFileVersion1 = createTempFileWithText(FILE_V1_NAME, FILE_V1_NAME);
+            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+                    binaryField.variable(), textFileVersion1);
+            Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
+
+            // let's verify that newly saved file exists
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
+
+            File textFileVersion2 = createTempFileWithText(FILE_V2_NAME, FILE_V2_CONTENT);
+            // replace old binary with new one
+            contentletWithBinary.setBinary(binaryField.variable(), textFileVersion2);
+            Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
+
+            // we've just checkedIn without versioning, so old binary should not exist
+            assertFalse(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
+
+            File newBinary = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), FILE_V2_NAME);
+            // new binary should exist
+            assertTrue(newBinary.exists());
+            // and content should be the expected
+            BufferedReader reader = Files.newReader(newBinary, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, FILE_V2_CONTENT);
+
+        } finally {
+            if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ShouldPreserveBinary_WhenOtherFieldsAreUpdated()
+            throws DotDataException, DotSecurityException, IOException {
+        final String BINARY_NAME = "testCheckinWithoutVersioningBinary.txt";
+        final String BINARY_CONTENT = "testCheckinWithoutVersioningBinary CONTENT";
+        ContentType typeWithBinary = null;
+
+        try {
+            typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
+            com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
+            File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_CONTENT);
+            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+                    binaryField.variable(), textFileVersion1);
+            Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
+
+            // let's verify that newly saved file exists
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), BINARY_NAME).exists());
+
+            //let's update a field different from the binary
+            contentletWithBinary.setStringProperty(textField.variable(), "contentV2");
+            Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
+
+            // let's verify the binary is still in FS
+            File binaryFromAssetsDir = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), BINARY_NAME);
+            assertTrue(binaryFromAssetsDir.exists());
+
+            // let's also verify file content remains the same
+            BufferedReader reader = Files.newReader(binaryFromAssetsDir, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, BINARY_CONTENT);
+
+            // let's verify the reference is still ok
+            File binaryFromContentlet = contentWithoutVersioning.getBinary(binaryField.variable());
+            assertEquals(binaryFromContentlet.getName(), BINARY_NAME);
+
+        } finally {
+            if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
+        }
+
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldWithDataTypeWholeNumber()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Whole Number Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.INTEGER)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setLongProperty(field.variable(),1);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet2.setLongProperty(field.variable(),1);
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsWithDiffLanguages()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),"test");
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            //Contentlet in Spanish (should not be an issue since the unique is per lang)
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(2);
+            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin1_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, (ContentletRelationships) null, categories,
+                null, user, false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+                null, null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertTrue(existingCats.containsAll(categories));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent)
+     *
+     */
+    @Test
+    public void testCheckin2_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent =
+                contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                    null, user, false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, null,
+                null, null, user, false, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertTrue(existingCats.containsAll(categories));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,
+     * List<Permission> permissions, User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin3_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                null, user, false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertTrue(existingCats.containsAll(categories));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+     * User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin4_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                null, user, false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                (Map<Relationship, List<Contentlet>>) null, null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertTrue(existingCats.containsAll(categories));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithCats_NullCats_ShouldKeepExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                null, user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
+                (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertTrue(existingCats.containsAll(categories));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin1_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
+                null, user,false);
+
+            Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent, (ContentletRelationships) null,
+                new ArrayList<>(), null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertFalse(UtilMethods.isSet(existingCats));
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+     * List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent)
+     *
+     */
+    @Test
+    public void testCheckin2_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, null, categories,
+                null, user,false, false);
+
+            Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent, null,
+                new ArrayList<>(), null, user, false, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertFalse(UtilMethods.isSet(existingCats));
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,
+     * List<Permission> permissions, User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin3_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                null, user,false);
+
+            Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent,
+                (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertFalse(UtilMethods.isSet(existingCats));
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * This one tests the ContentletAPI.checkin with the following signature:
+     *
+     * checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+     * User user,boolean respectFrontendRoles)
+     *
+     */
+    @Test
+    public void testCheckin4_ExistingContentWithCats_EmptyCatsList_ShouldWipeExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, (Map<Relationship, List<Contentlet>>) null, categories,
+                user,false);
+
+            Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent,
+                (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertFalse(UtilMethods.isSet(existingCats));
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithCats_EmptyCats_ShouldWipeExistingCats()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, (Map<Relationship, List<Contentlet>>) null, categories, null, user,
+                false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(newsContent,
+                null, new ArrayList<>(), null, user, false);
+
+            List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
+                false);
+
+            assertFalse(UtilMethods.isSet(existingCats));
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin1_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+            final List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
+                false);
+
+            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+
+            assertTrue(relatedContentFromDB.containsAll(relatedContent));
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+                null, null, user, false);
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin2_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, relationships,
+                categories, null, user, false, false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+                null, null, user, false, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin3_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+                relationships.getRelationshipsRecords().get(0).getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
+                null, user,false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin4_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+                relationships.getRelationshipsRecords().get(0).getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                (Map<Relationship, List<Contentlet>>) null, null, user, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+                relationships.getRelationshipsRecords().get(0).getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
+                null, null, null, user, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin3_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords =
+                relationships.getRelationshipsRecords().get(0);
+
+            final Relationship relationship = relationshipRecords.getRelationship();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationship,
+                relationshipRecords.getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
+                null, user,false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                new HashMap<>(), null, null, user, false);
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertFalse(UtilMethods.isSet(existingRelationships));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckin4_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+                relationships.getRelationshipsRecords().get(0).getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+                new HashMap<>(), null, user, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertFalse(UtilMethods.isSet(existingRelationships));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinWithoutVersioning_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+
+        try {
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+                relationships.getRelationshipsRecords().get(0).getRecords());
+
+            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
+                new HashMap<>(), null, null, user, false);
+
+            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+
+            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertFalse(UtilMethods.isSet(existingRelationships));
+        } finally {
+            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    private ContentletRelationships getACoupleOfRelationships(Contentlet contentlet)
+        throws DotDataException, DotSecurityException {
+        ContentletRelationships relationships = new ContentletRelationships(contentlet);
+        final Relationship blogComments = APILocator.getRelationshipAPI().byInode("631a07ea-c840-402d-a330-37ed2826ba30");
+
+        ContentletRelationships.ContentletRelationshipRecords records =
+            relationships.new ContentletRelationshipRecords(blogComments, true);
+
+        final ContentType commentsType = APILocator.getContentTypeAPI(user).find("Comments");
+
+        Contentlet comment1 = new Contentlet();
+        comment1.setContentTypeId(commentsType.id());
+        comment1.setStringProperty("title", "comment1");
+        comment1.setStringProperty("email", "email");
+        comment1.setStringProperty("comment", "comment");
+
+        comment1 = contentletAPI.checkin(comment1, new HashMap<>(), user, false);
+
+        Contentlet comment2 = new Contentlet();
+        comment2.setContentTypeId(commentsType.id());
+        comment2.setStringProperty("title", "comment2");
+        comment2.setStringProperty("email", "email");
+        comment2.setStringProperty("comment", "comment");
+
+        comment2 = contentletAPI.checkin(comment2, new HashMap<>(), user, false);
+
+        records.setRecords(Arrays.asList(comment1, comment2));
+        relationships.setRelationshipsRecords(Collections.singletonList(records));
+
+        return relationships;
+    }
+
+    @NotNull
+    private List<Category> getACoupleOfCategories() throws DotDataException, DotSecurityException {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final String firstTimeInvestorCatId = "36abf3c4-d58b-4e42-8e1d-e9a1fe661831";
+        final String retirementCatId = "bba0fcba-eb79-46dc-ae36-fe2f3d9cf1e7";
+        final Category firstTimeInvestorCat = categoryAPI.find(firstTimeInvestorCatId, user, false);
+        final Category retirementCat = categoryAPI.find(retirementCatId, user, false);
+
+        return Arrays.asList(firstTimeInvestorCat, retirementCat);
+    }
+
+    @NotNull
+    private Contentlet getWikiContent() throws DotDataException, DotSecurityException {
+        final ContentType wikiType = APILocator.getContentTypeAPI(user).find("Wiki");
+        Contentlet wikiContent = new Contentlet();
+        wikiContent.setContentTypeId(wikiType.id());
+        wikiContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        wikiContent.setStringProperty("title", "blogContent");
+        wikiContent.setStringProperty("urlTitle", "blogContent");
+        wikiContent.setStringProperty("story", "story");
+        wikiContent.setDateProperty("sysPublishDate", new Date());
+        wikiContent.setStringProperty("byline", "byline");
+        return wikiContent;
+    }
+
+    @NotNull
+    private Contentlet getBlogContent() throws DotDataException, DotSecurityException {
+        final ContentType blogType = APILocator.getContentTypeAPI(user).find("Blog");
+        Contentlet blogContent = new Contentlet();
+        blogContent.setContentTypeId(blogType.id());
+        blogContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        blogContent.setStringProperty("title", "blogContent");
+        blogContent.setStringProperty("urlTitle", "blogContent");
+        blogContent.setStringProperty("author", "systemUser");
+        blogContent.setDateProperty("sysPublishDate", new Date());
+        blogContent.setStringProperty("body", "blogBody");
+        return blogContent;
+    }
+
+    @NotNull
+    private Contentlet getNewsContent() throws DotDataException, DotSecurityException {
+        final ContentType newsType = APILocator.getContentTypeAPI(user).find("News");
+        Contentlet newsContent = new Contentlet();
+        newsContent.setContentTypeId(newsType.id());
+        newsContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        newsContent.setHost(defaultHost.getIdentifier());
+        newsContent.setStringProperty("title", "newsContent");
+        newsContent.setStringProperty("urlTitle", "newsContent");
+        newsContent.setStringProperty("byline", "byline");
+        newsContent.setDateProperty("sysPublishDate", new Date());
+        newsContent.setStringProperty("story", "newsStory");
+        return newsContent;
+    }
+
+    @Test
+    public void testDeletePageDefinedAsDetailPage() throws DotSecurityException, DotDataException {
+
+        long time              = System.currentTimeMillis();
+        ContentType type       = null;
+        Folder testFolder      = null;
+        HTMLPageAsset htmlPage = null;
+        Template template      = null;
+
+        try{
+            // new template
+            template = new TemplateDataGen().nextPersisted();
+
+            // new test folder
+            testFolder = new FolderDataGen().nextPersisted();
+
+            //new html page
+            htmlPage = new HTMLPageDataGen(testFolder, template)
+                    .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            //new content type with detail page
+            type = ContentTypeBuilder
+                    .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+                    .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
+                    .host(Host.SYSTEM_HOST)
+                    .name("ContentTypeWithDetailPage" + time).owner("owner")
+                    .variable("velocityVarNameTesting" + time)
+                    .detailPage(htmlPage.getIdentifier()).urlMapPattern("mapPatternForTesting")
+                    .build();
+            type = contentTypeAPI.save(type, null, null);
+
+            //html page is removed
+            contentletAPI.delete(htmlPage, user, false);
+
+            //verify that the content type was unlinked from the deleted page
+            type = contentTypeAPI.find(type.id());
+            assertNull(type.detailPage());
+            assertNull(type.urlMapPattern());
+        } finally {
+            if (type != null){
+                contentTypeAPI.delete(type);
+            }
+
+            if (testFolder != null){
+                FolderDataGen.remove(testFolder);
+            }
+
+            if (template != null){
+                TemplateDataGen.remove(template);
+            }
+        }
+    }
+
+    private File getBinaryAsset(String inode, String varName, String binaryName) {
+
+        FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+
+        File binaryFromAssetsFolder = new File(fileAssetAPI.getRealAssetsRootPath()
+                + separator
+                + inode.charAt(0)
+                + separator
+                + inode.charAt(1)
+                + separator
+                + inode
+                + separator
+                + varName
+                + separator
+                + binaryName);
+
+        return binaryFromAssetsFolder;
+    }
+
+    private Contentlet createContentWithFieldValues(String contentTypeId, Map<String, Object> fieldValues)
+            throws DotSecurityException, DotDataException {
+        Contentlet contentlet = new Contentlet();
+        contentlet.setContentTypeId(contentTypeId);
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+        for(String fieldVariable : fieldValues.keySet()) {
+            contentlet.setProperty(fieldVariable, fieldValues.get(fieldVariable));
+        }
+
+        return contentletAPI.checkin(contentlet, user, false);
+    }
+
+    private File createTempFileWithText(String name, String text) throws IOException {
+        File tempFile = temporaryFolder.newFile(name);
+        writeTextIntoFile(tempFile, text);
+        return tempFile;
+    }
+
+    private ContentType createContentType(String name, BaseContentType baseType)
+            throws DotSecurityException, DotDataException {
+        ContentType contentType = ContentTypeBuilder.builder(baseType.immutableClass())
+                .description(name)
+                .host(defaultHost.getIdentifier())
+                .name(name)
+                .owner("owner")
+                .build();
+
+        return contentTypeAPI.save(contentType);
+    }
+
+    private com.dotcms.contenttype.model.field.Field createTextField(String name, String contentTypeId)
+            throws DotSecurityException, DotDataException {
+        com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                .name(name)
+                .contentTypeId(contentTypeId)
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    private com.dotcms.contenttype.model.field.Field createBinaryField(String name, String contentTypeId)
+            throws DotSecurityException, DotDataException {
+        com.dotcms.contenttype.model.field.Field field = ImmutableBinaryField.builder()
+                .name(name)
+                .contentTypeId(contentTypeId)
+                .build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Util method to write dummy text into a file.
+     *
+     * @param file that we need to write. File should be empty.
+     * @param textToWrite text that we are going to write into the file.
+     */
+    private void writeTextIntoFile(File file, final String textToWrite) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+            bw.write(textToWrite);
+        } catch (IOException e) {
+            fail(e.getMessage());
         }
     }
 

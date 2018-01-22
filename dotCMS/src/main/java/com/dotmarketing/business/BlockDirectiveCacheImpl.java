@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -31,7 +32,7 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 		cache = CacheLocator.getCacheAdministrator();
 		//delete everything on startup
 		//clearCache();
-		canCache = LicenseUtil.getLevel() > 99;
+		canCache = LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level;
 		
 		
 	}

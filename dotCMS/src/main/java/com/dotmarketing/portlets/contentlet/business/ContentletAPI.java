@@ -247,7 +247,25 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 */
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
+
+	/**
+	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
+	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
+	 * And moves the the new piece of content to the given folder. CopySuffix will be to append suffix to the file name.
+	 *
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
@@ -618,7 +636,10 @@ public interface ContentletAPI {
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
-	 * This method completely deletes the given contentlet from the system
+	 * Deletes the specified list of {@link Contentlet} objects ONLY in the
+	 * specified language. If any of the specified contentlets is not archived,
+	 * an exception will be thrown. If there's only one language for a given
+	 * contentlet, the object will be destroyed.
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
@@ -919,7 +940,7 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/**
+	/** 
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.
@@ -1347,6 +1368,14 @@ public interface ContentletAPI {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode, boolean live);
+
+	/**
+	 * Waits until the contentlet with the given inode is indexed with the given status conditions.
+	 * <p><strong>Example of the resulting query when using this method:</strong>
+	 * +inode:﻿38a3f133-85e1-4b07-b55e-179f38303b90 +live:false +working:true </p> <p>This method
+	 * will time out after 30 seconds returning false</p>
+	 */
+	public boolean isInodeIndexed(String inode, boolean live, boolean working);
 
 	/**
 	 * Method will time out after 30 seconds returning false

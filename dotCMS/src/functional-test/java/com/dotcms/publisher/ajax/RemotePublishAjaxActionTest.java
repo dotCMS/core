@@ -5,19 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -26,26 +13,19 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import junit.framework.Assert;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -59,7 +39,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -68,7 +47,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -76,16 +54,35 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+import junit.framework.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * @author Jonathan Gamba
  *         Date: 3/17/14
  */
 
-public class RemotePublishAjaxActionTest extends IntegrationTestBase {
+public class RemotePublishAjaxActionTest {
 
 	private static User user;
 	private static User adminUser;
+    private final PublishingEndPointFactory factory = new PublishingEndPointFactory();
+    private final String protocol = "http";
 
 	@BeforeClass
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
@@ -133,11 +130,11 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		environmentAPI.saveEnvironment( environment, permissions );
 
 		//Now we need to create the end point
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+		endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -247,11 +244,11 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		 */
 
 		//Create a receiving end point
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );
@@ -279,18 +276,24 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		assertTrue( newBundleFile.exists() );
 
 		//Prepare the post request
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
-
 		//Sending bundle to endpoint
-        Response clientResponse = ClientBuilder.newClient().register(MultiPartFeature.class)
+		String contentDisposition = "attachment; filename=\"" + newBundleFile.getName() + "\"";
+
+		final InputStream newBundleFileStream = new BufferedInputStream(Files.newInputStream(newBundleFile.toPath()));
+
+		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.entity(form, form.getMediaType()));
+			.queryParam("AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ))
+			.queryParam("GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId())
+			.queryParam("BUNDLE_NAME", bundle.getName())
+			.queryParam("ENDPOINT_ID", receivingFromEndpoint.getId())
+			.queryParam("FILE_NAME", newBundleFile.getName())
+            .request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+			.header("Content-Disposition", contentDisposition)
+			.post(Entity.entity(newBundleFileStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+
+		CloseUtils.closeQuietly(newBundleFileStream);
+		
 		//Validations
 		assertEquals( clientResponse.getStatus(), HttpStatus.SC_OK );
 
@@ -309,6 +312,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 	 * to avoid issues trying to edit those contents in the receiver node
 	 * @throws Exception 
 	 */
+	@Ignore
 	@Test
 	public void push_archived_issue5086 () throws Exception {
 
@@ -339,7 +343,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
         try{
         	HibernateUtil.startTransaction();
         	newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -383,8 +387,8 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset);
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId);
 		Identifier contenletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
-		int contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size();
+		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier, Container.LEGACY_RELATION_TYPE);
+		int contentletCount = MultiTreeFactory.getMultiTrees(workinghtmlPageAsset.getIdentifier()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -395,8 +399,8 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Relating content to archived page
 		 */
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
-		contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size();
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier, Container.LEGACY_RELATION_TYPE);
+		contentletCount = MultiTreeFactory.getMultiTrees(workinghtmlPageAsset.getIdentifier()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -443,11 +447,11 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+		PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );
@@ -533,15 +537,15 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
     		//APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
         }
 		
 	
-		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size());
-		Assert.assertEquals(0,MultiTreeFactory.getMultiTreeByChild(contentlet.getIdentifier()).size());
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTrees(workinghtmlPageAsset.getInode()).size());
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTreesByChild(contentlet.getIdentifier()).size());
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(!UtilMethods.isSet(folder.getInode()));
@@ -557,11 +561,11 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
@@ -602,6 +606,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 	 * Check that content reorder changes in a page are reflected in the push publishing
 	 * @throws Exception 
 	 */
+	@Ignore
 	@Test
 	public void push_container_issue5189 () throws Exception {
 
@@ -702,8 +707,8 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset);
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId);
 		Identifier contenletIdentifier1 = APILocator.getIdentifierAPI().find(contentlet1);
-		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier1);
-		int contentletCount = MultiTreeFactory.getMultiTree(htmlPageIdentifier).size();
+		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier1, Container.LEGACY_RELATION_TYPE);
+		int contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -712,8 +717,8 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		}
 
 		Identifier contenletIdentifier2 = APILocator.getIdentifierAPI().find(contentlet2);
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier2);
-		contentletCount = MultiTreeFactory.getMultiTree(htmlPageIdentifier).size();
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier2, Container.LEGACY_RELATION_TYPE);
+		contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -722,8 +727,8 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		}
 
 		Identifier contenletIdentifier3 = APILocator.getIdentifierAPI().find(contentlet3);
-		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier3);
-		contentletCount = MultiTreeFactory.getMultiTree(htmlPageIdentifier).size();
+		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier3, Container.LEGACY_RELATION_TYPE);
+		contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -736,7 +741,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		 * Validations
 		 */
 		assertTrue(workinghtmlPageAsset.isLive());
-		contentletCount = MultiTreeFactory.getMultiTree(htmlPageIdentifier).size();
+		contentletCount = MultiTreeFactory.getMultiTrees(htmlPageIdentifier).size();
 		assertTrue(contentletCount == 3);
 
 		/*
@@ -771,11 +776,13 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Now we need to create the end point
 		 */
-		PublishingEndPoint endpoint = new PublishingEndPoint();
+
+
+        PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		endpoint.setAddress( "127.0.0.1" );
 		endpoint.setPort( "9999" );
-		endpoint.setProtocol( "http" );
+        endpoint.setProtocol(protocol);
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
 		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
@@ -862,7 +869,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
     		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
@@ -882,11 +889,11 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Create a receiving end point
 		 */
-		PublishingEndPoint receivingFromEndpoint = new PublishingEndPoint();
+        PublishingEndPoint receivingFromEndpoint = factory.getPublishingEndPoint(protocol);
 		receivingFromEndpoint.setServerName( new StringBuilder( "TestReceivingEndPoint" + String.valueOf( new Date().getTime() ) ) );
 		receivingFromEndpoint.setAddress( req.getServerName() );
 		receivingFromEndpoint.setPort( String.valueOf( req.getServerPort() ) );
-		receivingFromEndpoint.setProtocol( "http" );
+		receivingFromEndpoint.setProtocol(protocol);
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
 		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
@@ -916,18 +923,6 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		assertTrue( newBundleFile.exists() );
 
 		/*
-		 * Prepare the post request
-		 */
-		Client client = RestClientBuilder.newClient();
-
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
-
-		/*
 		 * Cleaning test values
 		 */
         try{
@@ -937,7 +932,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
     		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
     		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());

@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -21,12 +20,13 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -97,6 +97,27 @@ public class FolderResource implements Serializable {
                     )).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error handling Save Folder Post Request", e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    @GET
+    @Path ("/sitename/{siteName}/uri/{uri : .+}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response loadFolderByURI(@Context final HttpServletRequest req,
+                                          @PathParam("siteName") final String siteName,
+                                          @PathParam("uri") final String uri){
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        try{
+            Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);
+            response = Response.ok( new ResponseEntityView(folder) ).build();
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            Logger.error(this, "Error gettign folder for URI", e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;

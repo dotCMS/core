@@ -12,6 +12,8 @@ import com.dotcms.enterprise.LDAPImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.Action;
 import com.liferay.portal.struts.ActionException;
@@ -84,11 +86,7 @@ public class DotCustomLoginPostAction extends Action {
 			Logger.warn(this, "ERROR: "+e.getMessage());
 		}
 		
-		//Enabling pages edit mode
-		HttpSession session = request.getSession();
-		session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-		session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-		session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");		
+		PageMode.setPageMode(request, PageMode.EDIT_MODE);
 		
 	}
 

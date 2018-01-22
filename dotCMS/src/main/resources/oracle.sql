@@ -649,14 +649,6 @@ create table web_form (
    categories varchar2(255),
    primary key (web_form_id)
 );
-create table virtual_link (
-   inode varchar2(36) not null,
-   title varchar2(255),
-   url varchar2(255),
-   uri varchar2(255),
-   active number(1,0),
-   primary key (inode)
-);
 create table analytic_summary_period (
    id number(19,0) not null,
    full_date date,
@@ -1514,8 +1506,6 @@ create index idx_recipiets_1 on recipient (email);
 create index idx_recipiets_2 on recipient (sent);
 alter table recipient add constraint fk30e172195fb51eb foreign key (inode) references inode;
 create index idx_user_webform_1 on web_form (form_type);
-create index idx_virtual_link_1 on virtual_link (url);
-alter table virtual_link add constraint fkd844f8ae5fb51eb foreign key (inode) references inode;
 create index idx_analytic_summary_period_4 on analytic_summary_period (month);
 create index idx_analytic_summary_period_3 on analytic_summary_period (week);
 create index idx_analytic_summary_period_2 on analytic_summary_period (day);
@@ -2216,28 +2206,32 @@ create table workflow_step(
 	my_order number(10,0) default 0,
 	resolved number(1,0) default 0,
 	escalation_enable number(1,0) default 0,
-    escalation_action varchar(36),
-    escalation_time number(10,0) default 0
+  escalation_action varchar(36),
+  escalation_time number(10,0) default 0
 );
 create index wk_idx_step_scheme on workflow_step(scheme_id);
 
 -- Permissionable ---
 create table workflow_action(
 	id varchar2(36) primary key,
-	step_id varchar2(36) not null  references workflow_step(id),
+	step_id varchar2(36),
 	name varchar2(255) not null,
 	condition_to_progress nclob,
-	next_step_id varchar2(36) not null references workflow_step(id),
+	next_step_id varchar2(36),
 	next_assign varchar2(36) not null references cms_role(id),
 	my_order number(10,0) default 0,
 	assignable number(1,0) default 0,
 	commentable number(1,0) default 0,
 	requires_checkout number(1,0) default 0,
 	icon varchar2(255) default 'defaultWfIcon',
-	use_role_hierarchy_assign number(1,0) default 0
+  show_on varchar2(255) default 'LOCKED,UNLOCKED',
+	use_role_hierarchy_assign number(1,0) default 0,
+  scheme_id varchar2(36) NOT NULL
 );
-create index wk_idx_act_step on workflow_action(step_id);
 
+CREATE TABLE workflow_action_step ( action_id varchar2(36) NOT NULL, step_id varchar2(36) NOT NULL, action_order number(10,0) default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id) );
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 
 create table workflow_action_class(
 	id varchar2(36) primary key,
@@ -2264,8 +2258,6 @@ create table workflow_scheme_x_structure(
 	structure_id varchar2(36) not null references structure(inode)
 );
 
-create unique index wk_idx_scheme_str_2 on
-	workflow_scheme_x_structure(structure_id);
 
 
 
@@ -2432,7 +2424,7 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 -- Cluster Tables
 CREATE TABLE dot_cluster(cluster_id varchar2(36), PRIMARY KEY (cluster_id) );
-CREATE TABLE cluster_server(server_id varchar2(36) NOT NULL, cluster_id varchar2(36) NOT NULL, name varchar2(100), ip_address varchar2(39) NOT NULL, host varchar2(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar2(100), PRIMARY KEY (server_id) );
+CREATE TABLE cluster_server(server_id varchar2(36) NOT NULL, cluster_id varchar2(36) NOT NULL, name varchar2(100), ip_address varchar2(39) NOT NULL, host varchar2(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar2(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar2(36) NOT NULL,server_id varchar2(36) NOT NULL, startup TIMESTAMP, heartbeat TIMESTAMP, PRIMARY KEY (id));
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);

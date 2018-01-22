@@ -20,7 +20,7 @@ public interface FieldBuilder {
 	FieldBuilder variable(String variable);
 	FieldBuilder contentTypeId(String contentTypeId);
 	FieldBuilder hint(String hint);
-	FieldBuilder defaultValue(String defualtValue);
+	FieldBuilder defaultValue(String defaultValue);
 	FieldBuilder dataType(DataTypes types);
 	FieldBuilder required(boolean val);
 	FieldBuilder unique(boolean val);
@@ -30,7 +30,8 @@ public interface FieldBuilder {
 	FieldBuilder readOnly(boolean val);
 	FieldBuilder indexed(boolean val);
     FieldBuilder listed(boolean listed);
-	
+    FieldBuilder values(String values);
+    
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
 	}

@@ -1,32 +1,21 @@
 package com.dotmarketing.fixtask;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.TaskLocatorUtil;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotmarketing.util.TaskLocatorUtil;
+
+import org.quartz.JobExecutionContext;
+import org.quartz.StatefulJob;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 public class FixTasksExecutor  implements StatefulJob {
 

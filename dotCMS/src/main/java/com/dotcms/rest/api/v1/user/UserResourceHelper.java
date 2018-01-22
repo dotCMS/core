@@ -198,14 +198,7 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.",
 					"loginas.error.selfloginas");
 		}
-		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
-		if (!this.roleAPI.doesUserHaveRole(currentUser, loginAsRole)) {
-			// Potential hacking attempt
-			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
-			throw new DotDataException(
-					"Current user [" + currentUser.getUserId() + "] does not have the proper 'Login As' role.",
-					"loginas.error.missingloginasrole");
-		}
+		checkLoginAsRole(currentUser);
 		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
 		final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(loginAsUser);
@@ -238,6 +231,23 @@ public class UserResourceHelper implements Serializable {
 		final Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
 				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
+	}
+
+	/**
+	 * Check if the user has the LOGIN_AS role.
+	 *
+	 * @param user
+	 * @throws DotDataException if the user doesn't have the Login_AS Role.
+	 */
+	private void checkLoginAsRole(User user) throws DotDataException {
+		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
+		if (!this.roleAPI.doesUserHaveRole(user, loginAsRole)) {
+			// Potential hacking attempt
+			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
+			throw new DotDataException(
+					"Current user [" + user.getUserId() + "] does not have the proper 'Login As' role.",
+					"loginas.error.missingloginasrole");
+		}
 	}
 
 	/**
@@ -303,7 +313,7 @@ public class UserResourceHelper implements Serializable {
 	 * @throws Exception if anything if wrong
 	 */
 	public ResponseEntityView getLoginAsUsers(User currentUser, String filter, boolean includeUsersCount) throws Exception {
-
+		checkLoginAsRole(currentUser);
 		List<User> users = userAPI.getUsersByName(filter, 1, 100, currentUser, false);
 
 		List<Map<String, Object>> userList = new ArrayList<>();

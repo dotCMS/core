@@ -2,6 +2,7 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -9,6 +10,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
+import com.dotcms.util.ConfigTestHelper;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -30,8 +33,9 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 	@Test
 	public void jsonTests() throws Exception {
 
-		URL resource = this.getClass().getResource(base);
-		File directory = new File(resource.toURI());
+		URL resource = ConfigTestHelper.getUrlToTestResource("com/dotcms/contenttype/test/file-asset.json");
+		File pivotResource = new File(resource.toURI());
+		File directory = pivotResource.getParentFile();
 		assertThat("we have a testing directory with json in it", directory != null);
 
 		for (String file : directory.list()) {
@@ -52,23 +56,29 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		List<ContentType> delTypes = new JsonContentTypeTransformer(json).asList();
 		for(ContentType delType:delTypes){
 			try {
-				contentTypeApi.delete(contentTypeApi.find(delType.id()));
+				if (UtilMethods.isSet(delType.id())){
+					contentTypeApi.delete(contentTypeApi.find(delType.id()));
+				}
 			} catch (NotFoundInDbException e) {
 
 			}
 			try {
-				contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+				if (UtilMethods.isSet(delType.variable())){
+					contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+				}
 			} catch (NotFoundInDbException ee) {
 
 			}
 		}
 
-		ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeResource resource = new ContentTypeResource();
 
-		Response response = resource.createType(getHttpRequest(), json);
+		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+		ContentTypeForm contentTypeForm = contentTypeFormDeserialize.buildForm(json);
+		Response response = resource.createType(getHttpRequest(), contentTypeForm);
 
 		int x = response.getStatus();
-		assertThat("result:200 with json " + jsonFile, x == 200);
+		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
 	}
 
 	/**

@@ -10,10 +10,11 @@ define("dojo/request/iframe", [
 	'../has',
 	'../dom',
 	'../dom-construct',
-	'../_base/window'/*=====,
+	'../_base/window',
+	'../NodeList-dom'/*=====,
 	'../request',
 	'../_base/declare' =====*/
-], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win/*=====, request, declare =====*/){
+], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win/*=====, NodeList, request, declare =====*/){
 	var mid = module.id.replace(/[\/\.\-]/g, '_'),
 		onload = mid + '_onload';
 
@@ -244,10 +245,10 @@ define("dojo/request/iframe", [
 					}
 				}else{
 					if(!methodNode || !methodNode.value){
-						if(mthdNode){
-							mthdNode.value = options.method;
+						if(methodNode){
+							methodNode.value = options.method;
 						}else{
-							fn.setAttribute("method", options.method);
+							formNode.setAttribute('method', options.method);
 						}
 					}
 				}

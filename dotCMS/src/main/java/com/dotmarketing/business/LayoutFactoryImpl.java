@@ -96,7 +96,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 	@Override
 	protected void saveLayout(Layout layout) throws DotDataException {
 		lc.remove(layout);
-		HibernateUtil.save(layout);
+		HibernateUtil.merge(layout);
 		populatePortlets(layout);
 		lc.add(layout.getId(), layout);
 	}
@@ -169,7 +169,6 @@ public class LayoutFactoryImpl extends LayoutFactory {
 		hu.setQuery("from com.dotmarketing.business.Layout where layout_name = ?");
 		hu.setParam(name);
 		return (Layout)hu.load();
-	
 	}
 	
 }

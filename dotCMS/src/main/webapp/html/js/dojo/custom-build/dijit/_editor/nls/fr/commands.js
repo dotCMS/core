@@ -32,8 +32,8 @@ define(
 	'deleteTable': 'Supprimer le tableau',
 	'tableProp': 'Propriété du tableau',
 	'htmlToggle': 'Source HTML',
-	'foreColor': 'Couleur d\'avant-plan',
-	'hiliteColor': 'Couleur d\'arrière-plan',
+	'foreColor': 'Couleur avant-plan',
+	'hiliteColor': 'Couleur arrière-plan',
 	'plainFormatBlock': 'Style de paragraphe',
 	'formatBlock': 'Style de paragraphe',
 	'fontSize': 'Taille de police',
@@ -44,7 +44,7 @@ define(
 	"print": "Imprimer",
 	"newPage": "Nouvelle page",
 	/* Error messages */
-	'systemShortcut': 'L\'action "${0}" est disponible dans votre navigateur uniquement, par le biais d\'un raccourci-clavier. Utilisez ${1}.',
+	'systemShortcut': 'Action "${0}" uniquement disponible dans votre navigateur via un raccourci clavier. Utilisez ${1}.',
 	'ctrlKey':'ctrl+${0}',
 	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })

@@ -1,10 +1,9 @@
-<%@page import="com.dotmarketing.util.Config"%>
-<%@page import="java.util.Random"%>
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="java.util.*"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotmarketing.filters.CMSFilter"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@ page import="com.dotmarketing.filters.CMSFilter" %>
+<%@ page import="com.dotmarketing.util.Config"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%
 
 	String catCount = (String) request.getAttribute("counter");
@@ -21,6 +20,9 @@
     var isContentAutoSaving = false;
     var isContentSaving = false;
     var doesUserCancelledEdit = false;
+
+    // We define this variable when we load this page from an iframe in the ng edit page
+    var ngEditContentletEvents;
 
     var tabsArray=new Array();
 
@@ -78,17 +80,19 @@
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
     function cancelEditCallback(callbackData){
-        <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-        callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
-        <%}%>
-
-        if(callbackData.indexOf("referer") != -1){
-            var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
-            sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
-            callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
-            self.location = callbackData+"&referer="+escape(sourceReferer);
-        }else{
-            self.location = callbackData;
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                name: 'cancel'
+            });
+        } else {
+            if (callbackData.indexOf("referer") != -1) {
+                var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
+                sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
+                callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
+                self.location = callbackData+"&referer="+escape(sourceReferer);
+            } else {
+                self.location = callbackData;
+            }
         }
     }
 
@@ -557,7 +561,7 @@
 
 
         // Show DotContentletValidationExceptions.
-        if(data["saveContentErrors"] != null ){
+        if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
             var errorDisplayElement = dijit.byId('saveContentErrors');
             var exceptionData = data["saveContentErrors"];
             var errorList = "";
@@ -581,15 +585,21 @@
             return;
         }
 
-
-
+        if (ngEditContentletEvents) {
+            ngEditContentletEvents.next({
+                name: 'save',
+                data: {
+                    identifier: data.contentletIdentifier,
+                    inode: data.contentletInode,
+                    type: null // Need to get the type of the content here
+                }
+            });
+            return;
+        }
 
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
 
-            <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-            self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
-            <%}else{%>
             if(data["isHtmlPage"]){
                 self.location = data["htmlPageReferer"];
             } else if(data["sourceReferer"]){
@@ -597,7 +607,6 @@
             }else{
                 self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
             }
-            <%}%>
             return;
         }
         resetHasChanged();
@@ -688,8 +697,9 @@
                 fieldDiv.appendChild(thumbnailParentDiv);
             }
 
-            var licence = <%=LicenseUtil.getLevel()%>;
-            if ( licence < 199 ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
+            var license = <%=LicenseUtil.getLevel()%>;
+            var licenseLevelStandard = <%=LicenseLevel.STANDARD.level%>;
+            if ( license <= licenseLevelStandard ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
                 var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
                 var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'

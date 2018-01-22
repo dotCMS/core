@@ -1,26 +1,10 @@
 package com.dotmarketing.portlets.calendar.business;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.model.Event;
@@ -28,31 +12,32 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderFactory;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Html;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+
 public class EventAPIImpl implements EventAPI {
 
-	PermissionAPI perAPI;
-	EventFactory eventFactory;
-	CategoryAPI catAPI;
-	ContentletAPI conAPI;
+	final PermissionAPI permissionAPI;
+	final EventFactory eventFactory;
+	final CategoryAPI categoryAPI;
+	final ContentletAPI contentletAPI;
 
 	public EventAPIImpl() {
-		perAPI = APILocator.getPermissionAPI();
+		permissionAPI = APILocator.getPermissionAPI();
 		eventFactory = FactoryLocator.getEventFactory();
-		catAPI = APILocator.getCategoryAPI();
-		conAPI = APILocator.getContentletAPI();
+		categoryAPI = APILocator.getCategoryAPI();
+		contentletAPI = APILocator.getContentletAPI();
 	}
 
 
@@ -77,7 +62,7 @@ public class EventAPIImpl implements EventAPI {
 	public List<Event> find(Date fromDate, Date endDate, String[] tags, String[] keywords, List<Category> categories, boolean liveOnly, boolean includeArchived, int offset,
 			int limit, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Event> events = eventFactory.find(fromDate, endDate, tags, keywords, categories, liveOnly, includeArchived, offset, limit, user, respectFrontendRoles);
-		events = perAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		events = permissionAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return events;
 	}
 
@@ -102,7 +87,7 @@ public class EventAPIImpl implements EventAPI {
 	public List<Event> find(String hostId, Date fromDate, Date endDate, String[] tags, String[] keywords, List<Category> categories, boolean liveOnly, boolean includeArchived, int offset,
 			int limit, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Event> events = eventFactory.find(hostId, fromDate, endDate, tags, keywords, categories, liveOnly, includeArchived, offset, limit, user, respectFrontendRoles);
-		events = perAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		events = permissionAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return events;
 	}
 
@@ -122,8 +107,8 @@ public class EventAPIImpl implements EventAPI {
 	public Event find(String id, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Event ev = eventFactory.find(RecurrenceUtil.getBaseEventIdentifier(id), live, user, respectFrontendRoles);
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
-		if (!perAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		if (!permissionAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permissions to access this event");
 
 		if(ev.isRecurrent()) {
@@ -141,10 +126,10 @@ public class EventAPIImpl implements EventAPI {
 	}
 
 	public Event findbyInode(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles);
+		Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles); // todo: this method should be here, since it is an API call and convert.
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
-		if (!perAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		if (!permissionAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permissions to access this event");
 		return ev;
 	}
@@ -158,7 +143,7 @@ public class EventAPIImpl implements EventAPI {
 			tagsArray[a]=tagsArray[a].trim();
 		}
 		List<Event> events = eventFactory.find(fromDate, toDate, tagsArray, null, categories, live, false, 0, -1, user, respectFrontendRoles);
-		events = perAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		events = permissionAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return events;
 	}
 
@@ -167,13 +152,13 @@ public class EventAPIImpl implements EventAPI {
 		List<Category> cats = new ArrayList<Category>();
 
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
 
-		if (!perAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user))
+		if (!permissionAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user))
 			throw new DotSecurityException("User doesn't have permissions to save events");
 
 		if (cont != null) {
-			cats = (List<Category>) catAPI.getParents(cont, false, user, respectFrontendRoles);
+			cats = (List<Category>) categoryAPI.getParents(cont, false, user, respectFrontendRoles);
 		}
 
 		return cats;
@@ -190,44 +175,44 @@ public class EventAPIImpl implements EventAPI {
 		oldcats = getCategories(ev, user, respectFrontendRoles);
 
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
 
 		for (Category category : cats) {
-			if (!catAPI.canUseCategory(category, user, false))
+			if (!categoryAPI.canUseCategory(category, user, false))
 				throw new DotSecurityException("User is not able to use the given category inode = " + category.getInode());
 		}
 
 		if (!oldcats.isEmpty()) {
 			for (Category category : oldcats) {
-				if (catAPI.canUseCategory(category, user, false)) {
-					catAPI.removeChild(cont, category, user, respectFrontendRoles);
+				if (categoryAPI.canUseCategory(category, user, false)) {
+					categoryAPI.removeChild(cont, category, user, respectFrontendRoles);
 				}
 			}
 		}
 		for (Category node : cats) {
-			catAPI.addParent(cont, node, user, respectFrontendRoles);
+			categoryAPI.addParent(cont, node, user, respectFrontendRoles);
 		}
 
 	}
 
 	public List<Contentlet> getRelatedContent(Event ev, Relationship rel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
-		List<Contentlet> contentlets = conAPI.getRelatedContent(cont, rel, user, respectFrontendRoles);
-		perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		List<Contentlet> contentlets = contentletAPI.getRelatedContent(cont, rel, user, respectFrontendRoles);
+		permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return contentlets;
 	}
 
 	public void setRelatedContent(Event ev, Relationship rel, List<Contentlet> related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		Contentlet cont = new Contentlet();
-		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
-		conAPI.relateContent(cont, rel, related, user, respectFrontendRoles);
+		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		contentletAPI.relateContent(cont, rel, related, user, respectFrontendRoles);
 
 	}
 
 
-
+	@CloseDBIfOpened
 	public Structure getEventStructure() throws DotDataException {
 		return eventFactory.getEventStructure();
 	}
@@ -299,7 +284,7 @@ public class EventAPIImpl implements EventAPI {
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException{
 		Event newEvent = null;
 		if(event!=null && event.isRecurrent()){
-			Contentlet newCont = conAPI.copyContentlet(event,user, true);
+			Contentlet newCont = contentletAPI.copyContentlet(event,user, true);
 			newEvent = eventFactory.convertToEvent(newCont);
 			newEvent.setDisconnectedFrom(event.getIdentifier());
 			newEvent.setRecurrenceDatesToIgnore("");
@@ -322,12 +307,12 @@ public class EventAPIImpl implements EventAPI {
 
 			List<Category> eventCategories =  APILocator.getCategoryAPI().getParents(event, user, true);
 			
-			Contentlet oldCont  = conAPI.checkout(event.getInode(), user, true);
+			Contentlet oldCont  = contentletAPI.checkout(event.getInode(), user, true);
 			oldCont.setStringProperty("recurrenceDatesToIgnore", event.getStringProperty("recurrenceDatesToIgnore"));
-			oldCont = conAPI.checkin(oldCont, user,true, eventCategories);
+			oldCont = contentletAPI.checkin(oldCont, user,true, eventCategories);
 			if(event.isLive())
 			    APILocator.getVersionableAPI().setLive(oldCont);
-			newEvent = eventFactory.convertToEvent(conAPI.checkin(newEvent, user, true, eventCategories));
+			newEvent = eventFactory.convertToEvent(contentletAPI.checkin(newEvent, user, true, eventCategories));
 			if(oldCont.isLive())
 			    APILocator.getVersionableAPI().setLive(newEvent);
 		}

@@ -33,6 +33,9 @@ public abstract class NumberOfTimeVisitedCounter {
             siteVisitsCookie.setValue(Integer.toString(visits));
             siteVisitsCookie.setMaxAge(60 * 60 * 24 * 356 * 5);
             siteVisitsCookie.setPath("/");
+
+    		CookieUtil.setHttpOnlyCookie(siteVisitsCookie);
+
             response.addCookie(siteVisitsCookie);
         }
     }

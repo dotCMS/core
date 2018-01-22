@@ -51,17 +51,6 @@ public class ViewLanguageAction extends PortletAction {
 			}
 			else {
 				//get their lists
-				/*List list = new ArrayList();
-				if (InodeUtils.isSet(req.getParameter("inode"))) {
-					HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("inode"),HTMLPage.class);
-					Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-					list = VirtualLinkFactory.getVirtualLinks(identifier.getURI());
-				}
-				else {
-					list = VirtualLinkFactory.getVirtualLinks();
-				}
-
-				req.setAttribute(WebKeys.VIRTUAL_LINK_LIST_VIEW, list);*/
 				List list = langAPI.getLanguages();
 				req.setAttribute(WebKeys.LANGUAGE_MANAGER_LIST, list);
 		        Logger.debug(this, "Going to: portlet.ext.languagesmanager.view_languages");

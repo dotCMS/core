@@ -1,18 +1,15 @@
 package com.dotmarketing.portlets.containers.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.util.transform.TransformerLocator;
+
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
@@ -33,14 +30,19 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import com.liferay.portal.model.User;
 
 /**
@@ -66,6 +68,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		hostAPI = APILocator.getHostAPI();
 	}
 
+	@WrapInTransaction
 	@Override
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
@@ -125,7 +128,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		permissionAPI.copyPermissions(source, newContainer);
 
 		//saves to working folder under velocity
-		ContainerServices.invalidate(newContainer, newIdentifier, true);
+		new ContainerLoader().invalidate(newContainer);
 
 		return newContainer;
 	}
@@ -149,6 +152,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		containerFactory.save(container, existingId);
 	}
 
+	@WrapInTransaction
 	@Override
 	protected void save(WebAsset webAsset) throws DotDataException {
 		save((Container) webAsset);
@@ -160,49 +164,64 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @param existingId
 	 * @throws DotDataException
 	 */
+	@WrapInTransaction
 	protected void save(WebAsset webAsset, String existingId) throws DotDataException {
 		save((Container) webAsset, existingId);
 	}
 
 	/**
-	 * 
+	 *
 	 * @param containerTitle
 	 * @param destination
 	 * @return
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
-	private String getAppendToContainerTitle(String containerTitle, Host destination) throws DotDataException {
+	private String getAppendToContainerTitle(final String containerTitle, Host destination)
+			throws DotDataException {
+		List<Container> containers;
 		String temp = new String(containerTitle);
 		String result = "";
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv "+
-					 "where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
-			          Inode.Type.CONTAINERS.getTableName() + ".identifier = ident.id and host_inode = ? order by title ";
-		dh.setSQLQuery(sql);
-		dh.setParam(destination.getIdentifier());
+		final DotConnect dc = new DotConnect();
+		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".*, dot_containers_1_.* from "
+				+ Inode.Type.CONTAINERS.getTableName()
+				+ ", inode dot_containers_1_, identifier ident, container_version_info vv " +
+				"where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS
+				.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName()
+				+ ".inode = dot_containers_1_.inode and " +
+				Inode.Type.CONTAINERS.getTableName()
+				+ ".identifier = ident.id and host_inode = ? order by title ";
+		dc.setSQL(sql);
+		dc.addParam(destination.getIdentifier());
 
-		List<Container> containers = dh.list();
+
+		containers = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+
+
 
 		boolean isContainerTitle = false;
 
-		for (; !isContainerTitle;) {
+		for (; !isContainerTitle; ) {
 			isContainerTitle = true;
 			temp += result;
 
-			for (Container container: containers) {
+			for (Container container : containers) {
 				if (container.getTitle().equals(temp)) {
 					isContainerTitle = false;
 					break;
 				}
 			}
 
-			if (!isContainerTitle)
+			if (!isContainerTitle) {
 				result += " (COPY)";
+			}
 		}
 
 		return result;
 	}
+
+	@CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
     public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -217,9 +236,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
       }
       
       return container;
-      
-      
     }
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -237,39 +255,45 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
       return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotStateException, DotDataException, DotSecurityException  {
 
-		HibernateUtil dh = new HibernateUtil(TemplateContainers.class);
-		dh.setSQLQuery("select {template_containers_2_.*} from template_containers, identifier template_containers_1_,identifier template_containers_2_ " +
-					   "where template_containers.template_id = template_containers_1_.id and " +
-					   "template_containers.container_id = template_containers_2_.id " +
-					   "and template_containers.template_id = ? ");
-		dh.setParam(parentTemplate.getIdentifier());
-		List<Identifier> identifiers = dh.list();
-		List<Container> containers = new ArrayList<Container>();
-		for(Identifier id : identifiers) {
-			Container cont = (Container) APILocator.getVersionableAPI().findWorkingVersion(id,APILocator.getUserAPI().getSystemUser(),false);
-			containers.add(cont);
-		}
-		return containers;
-	}
 
+
+
+
+    @CloseDBIfOpened
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Container> getContainersOnPage(final IHTMLPage page)
+            throws DotStateException, DotDataException, DotSecurityException {
+
+        final List<Container> containers = new ArrayList<>();
+        List<Identifier> identifiers = new ArrayList<>();
+        DotConnect dc = new DotConnect();
+        dc.setSQL("select * from identifier where id in (select distinct(parent2) as containers from multi_tree where parent1=?)");
+        dc.addParam(page.getIdentifier());
+
+
+        identifiers = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+
+
+
+        
+        final List<Container> pageContainers = new ArrayList<>();
+        for (Identifier id : identifiers) {
+            final Container cont = (Container) APILocator.getVersionableAPI()
+                    .findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+            pageContainers.add(cont);
+        }
+        return containers;
+    }
+    
+	@WrapInTransaction
 	@Override
-	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
+	public void saveContainerStructures(final List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
 	    
 		if(!containerStructureList.isEmpty()) {
-			
-			boolean local = false;
-			
-			try{
-				try {
-					local = HibernateUtil.startLocalTransactionIfNeeded();
-				} catch (DotDataException e1) {
-					Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
-					throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
-				}
+
+			try {
 
 				//Get one of the relations to get the container id.
 				String containerIdentifier = containerStructureList.get(0).getContainerId();
@@ -287,21 +311,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				//CacheLocator.getContainerCache().clearCache();
 				CacheLocator.getContainerCache().remove(containerIdentifier);
 				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
-				
-			}catch(DotHibernateException e){
-				if(local){
-					HibernateUtil.rollbackTransaction();
-				}
-				throw new DotDataException(e.getMessage());
+			} catch(DotHibernateException e){
+				throw new DotDataException(e.getMessage(),e);
 
-			}finally{
-				if(local){
-					HibernateUtil.commitTransaction();
-				}
 			}
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings({ "unchecked" })
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
@@ -328,6 +345,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containerStructures;
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
@@ -342,11 +360,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return structureList;
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
 		return containerFactory.findContainersUnder(parentPermissionable);
 	}
 
+	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -437,11 +457,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 		saveContainerStructures(containerStructureList);
 		// saves to working folder under velocity
-		ContainerServices.invalidate(container, true);
+		new ContainerLoader().invalidate(container);
 
 		return container;
 	}
 
+	@WrapInTransaction
 	@Override
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -453,6 +474,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -466,11 +488,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return hostAPI.findParentHost(cont, user, respectFrontendRoles);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Container> findContainers(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
@@ -479,34 +503,41 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containerFactory.findContainers(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
+
+
+	@CloseDBIfOpened
 	@Override
-	public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
-	    return containerFactory.findContainersForStructure(structureInode);
+	public List<Container> findContainersForStructure(String structureInode,
+			boolean workingOrLiveOnly) throws DotDataException {
+		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly);
 	}
 
-    @Override
+	@Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }
 
+    @WrapInTransaction
     @Override
-    public void deleteContainerStructureByContentType(ContentType type)
+    public void deleteContainerStructureByContentType(final ContentType type)
             throws DotDataException {
             
-      List<Container> containers = findContainersForStructure(type.id());
 
       new DotConnect()
         .setSQL("DELETE FROM container_structures WHERE structure_id = ?")
         .addParam(type.id())
         .loadResult();
       
-        for(Container container : containers){
-          CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
-        }
+
     }
 
+    @CloseDBIfOpened
+    @Override
+    public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
+        return containerFactory.findContainersForStructure(structureInode);
+    }
     
-    
+    @WrapInTransaction
 	@Override
 	public void deleteContainerStructuresByContainer(Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
@@ -520,6 +551,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
 	public void deleteContainerContentTypesByContainerInode(final Container container) throws DotStateException, DotDataException {
 		if (container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())) {
@@ -541,6 +573,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
+	@WrapInTransaction
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		containerFactory.updateUserReferences(userId, replacementUserId);
 	}

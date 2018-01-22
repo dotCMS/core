@@ -9,11 +9,7 @@ public abstract class ServerFactory {
 
 	public abstract void saveServer(Server server) throws DotDataException;
 
-	public abstract Server getServer(String serverId);
-
-	public abstract void createServerUptime(String serverId) throws DotDataException;
-
-	public abstract void updateHeartbeat(String serverId) throws DotDataException;
+	public abstract Server getServer(String serverId) throws DotDataException;
 
 	public abstract List<Server> getAliveServers() throws DotDataException;
 
@@ -33,5 +29,7 @@ public abstract class ServerFactory {
 	 * @throws DotDataException
 	 */
 	public abstract void removeServerFromClusterTable(String serverId) throws DotDataException;
+
+	public abstract List<Server> getInactiveServers() throws DotDataException;
 
 }

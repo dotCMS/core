@@ -93,4 +93,13 @@ public class ContentletVersionInfo implements Serializable {
 	public void setVersionTs(Date versionDate) {
 		this.versionTs = versionDate;
 	}
+
+    @Override
+    public String toString() {
+        return "ContentletVersionInfo{" +
+                "identifier='" + identifier + '\'' +
+                ", workingInode='" + workingInode + '\'' +
+                ", liveInode='" + liveInode + '\'' +
+                '}';
+    }
 }

@@ -5,12 +5,12 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
-
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 
 
 <%if((DbConnectionFactory.isOracle() ||  DbConnectionFactory.isMsSql()) 
-		&& 100==LicenseUtil.getLevel() 
+		&& LicenseLevel.COMMUNITY.level==LicenseUtil.getLevel()
 		&& session.getAttribute("db-community-edition-warning") ==null){ %>
 		<%session.setAttribute("db-community-edition-warning", "1");  %>
 	<script>

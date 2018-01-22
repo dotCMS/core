@@ -30,11 +30,9 @@ import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -619,7 +617,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
 	    	//Set up a test folder
 	    	testFolder = APILocator.getFolderAPI().createFolders( "testSearchIndexByDateFolder", defaultHost, user, false );
-	    	permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user, false );
+	    	permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user);
 
 	    	//Set up a test structure
 	    	String structureName = "testSearchIndexByDateStructure";
@@ -743,7 +741,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Set up a test folder
         Folder testFolder = APILocator.getFolderAPI().createFolders( "/" + new Date().getTime() + "/", defaultHost, user, false );
-        permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user, false );
+        permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user);
 
         //Set up a test structure
         String structureName = "ESContentletIndexAPITest_" + new Date().getTime();

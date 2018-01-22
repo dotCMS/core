@@ -28,14 +28,12 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return scheme;
 	}
 
-	protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) {
+	protected List<WorkflowScheme> addForStructure(String struct, List<WorkflowScheme> schemes) {
 		String key = struct;
 
 		// Add the key to the cache
-		cache.put(key, scheme.getId(), getPrimaryGroup());
-		cache.put(scheme.getId(), scheme, getPrimaryGroup());
-
-		return scheme;
+		cache.put(key, schemes, getPrimaryGroup());
+		return schemes;
 		
 	}
 	
@@ -62,11 +60,11 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 
 	
-	protected WorkflowScheme getSchemeByStruct(String structId) {
+	protected List<WorkflowScheme> getSchemesByStruct(String structId) {
 
 
 		try {
-			return  (WorkflowScheme) cache.get((String) cache.get(structId, getPrimaryGroup()), getPrimaryGroup());
+			return  (List<WorkflowScheme>) cache.get(structId, getPrimaryGroup());
 		} catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
@@ -94,6 +92,11 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	protected void removeActions(WorkflowStep step) {
 		if(step != null)
 			cache.remove(step.getId(), ACTION_GROUP);
+	}
+
+	protected void removeActions(final WorkflowScheme scheme) {
+		if(scheme != null)
+			cache.remove(scheme.getId(), ACTION_GROUP);
 	}
 	
 	protected void remove(WorkflowTask task) {
@@ -169,16 +172,15 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			}
 			return task;
 	 }
-	 protected WorkflowStep getStep(Contentlet contentlet){
+	 protected List<WorkflowStep> getSteps(Contentlet contentlet){
 			
-		 WorkflowStep step = null;
+		 List<WorkflowStep> steps = null;
 			try {
-				String stepId = (String) cache.get(contentlet.getIdentifier(), STEP_GROUP);
-				step = (WorkflowStep) cache.get(stepId, STEP_GROUP);
+				steps = (List<WorkflowStep>) cache.get(contentlet.getIdentifier(), STEP_GROUP);
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
-			return step;
+			return steps;
 	 }
 	 
 	protected WorkflowStep addStep(WorkflowStep step) {
@@ -186,7 +188,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			 return null;
 		 }
 
-		cache.put(step.getId(), step , STEP_GROUP);		
+		cache.put(step.getId(), step , STEP_GROUP);
 
 		return step;
 	}
@@ -203,16 +205,16 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	
 	
 	
-	protected WorkflowStep addStep(Contentlet contentlet, WorkflowStep step) {
+	protected List<WorkflowStep> addSteps(Contentlet contentlet, List<WorkflowStep> steps) {
 		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())
-				 || step ==null || !UtilMethods.isSet(step.getId()) ){
+				 || steps ==null || !steps.isEmpty() ){
 			 return null;
 		 }
 
 
 		// Add the Step id as a string to the cache
-		cache.put(contentlet.getIdentifier(), step.getId(), STEP_GROUP);
-		return addStep(step);	
+		cache.put(contentlet.getIdentifier(), steps, STEP_GROUP);
+		return steps;
 
 
 	}
@@ -244,11 +246,31 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		
 	}
 
+	protected List<WorkflowAction> addActions(final WorkflowScheme scheme,
+											  final List<WorkflowAction> actions) {
+
+		if(scheme == null || actions==null)return null;
+
+		cache.put(scheme.getId(), actions, ACTION_GROUP);
+		return actions;
+	}
+
 	@Override
 	protected List<WorkflowAction> getActions(WorkflowStep step) {
 		if(step == null ) return null;
 		try {
 			return (List<WorkflowAction>) cache.get(step.getId(), ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
+		}
+		return null;
+	}
+
+	@Override
+	protected List<WorkflowAction> getActions(WorkflowScheme scheme) {
+		if(scheme == null ) return null;
+		try {
+			return (List<WorkflowAction>) cache.get(scheme.getId(), ACTION_GROUP);
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
 		}

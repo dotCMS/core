@@ -91,6 +91,8 @@ public interface UserAPI {
 	 */
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws  DotDataException;
 
+	public long getCountUsersByName(String filter) throws DotDataException;
+
 	/**
 	 * Creates an instance of a user
      * @param userId Can be null

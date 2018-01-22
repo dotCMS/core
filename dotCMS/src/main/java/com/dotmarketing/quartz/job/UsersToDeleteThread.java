@@ -91,16 +91,17 @@ public class UsersToDeleteThread extends Thread implements Job {
 	
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running UsersToDeleteThread - " + new Date());
-		
-		run();
-	
+
 		try {
-            HibernateUtil.closeSession();
-        } catch (DotHibernateException e) {
-            Logger.warn(this, e.getMessage(), e);
-        }
-        finally {
-            DbConnectionFactory.closeConnection();
-        }
+			run();
+		} finally {
+			try {
+				HibernateUtil.closeSession();
+			} catch (DotHibernateException e) {
+				Logger.warn(this, e.getMessage(), e);
+			} finally {
+				DbConnectionFactory.closeConnection();
+			}
+		}
 	}
 }

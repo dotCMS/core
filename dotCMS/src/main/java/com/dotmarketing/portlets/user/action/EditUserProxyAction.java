@@ -13,7 +13,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerForm;
 import com.dotmarketing.util.Logger;
@@ -51,7 +50,7 @@ public class EditUserProxyAction extends DotPortletAction {
 				"/c/portal/layout?p_l_id=1&p_p_id=EXT_USERMANAGER&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_USERMANAGER_struts_action=%2Fadmin%2Fedit_user_profile&_EXT_USERMANAGER_p_u_e_a="
 						+ userForm.getEmailAddress());
 		// setForward(req, "portlet.my_account.edit_profile");
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 	}
 
 	/* Private Methods */

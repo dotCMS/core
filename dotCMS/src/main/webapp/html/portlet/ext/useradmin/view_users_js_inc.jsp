@@ -1,6 +1,7 @@
 
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
@@ -386,7 +387,8 @@
 
 		var userEmail;
 		if(emailChanged){
-			var pattern=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
+            var pattern=new RegExp("<%= Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, com.dotmarketing.util.Constants.REG_EX_EMAIL)%>", 'gi');
+
 			userEmail = dijit.byId('emailAddress').attr('value');
 			if(!pattern.test(userEmail)){
 				alert(invalidEmail);

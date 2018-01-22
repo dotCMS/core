@@ -1,7 +1,16 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
+
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -10,22 +19,11 @@ import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
-
+import com.dotmarketing.util.Logger;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.Logger;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
 /**
  * This conditionlet will allow CMS users to check the current URL in a request.
@@ -61,7 +59,7 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 
 		try {
 			requestUri = HttpRequestDataUtil.getUri(request);
-			Object rewriteOpt = request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE);
+			Object rewriteOpt = request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
 			if(rewriteOpt != null)
 				requestUri = (String) rewriteOpt;
 		} catch (UnsupportedEncodingException e) {

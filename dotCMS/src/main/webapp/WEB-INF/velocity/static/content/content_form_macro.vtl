@@ -363,7 +363,7 @@ var theme = 'dmundra';
 					    	</script>
 					    </dd>
 					</div>
-				#elseif(!$structures.isFieldConstant($field) && $field.fieldName != 'Form Host')
+				#elseif((!$structures.isFieldConstant($field) && !$structures.isFieldHidden($field)) && $field.fieldName != 'Form Host')
 					#set($fieldAux = $field)
 				    <div class="group">
 				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">

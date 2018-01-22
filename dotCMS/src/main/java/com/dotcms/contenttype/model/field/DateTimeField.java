@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -10,6 +11,8 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 @JsonSerialize(as = ImmutableDateTimeField.class)
 @JsonDeserialize(as = ImmutableDateTimeField.class)
@@ -38,9 +41,21 @@ public abstract class DateTimeField extends Field {
 	
     @Value.Check
     public void check() {
-        super.check();
 
-        Preconditions.checkArgument(new FieldUtil().validDateTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
+        Preconditions.checkArgument(new FieldUtil().validDateTime(defaultValue()), this.getClass().getSimpleName() + " invalid default Value:" + defaultValue());
 
     }
+
+	@JsonIgnore
+	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
+				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DEFAULT_VALUE,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
+				ContentTypeFieldProperties.LISTED);
+	}
+
+	@JsonIgnore
+	public String getContentTypeFieldLabelKey(){
+		return "Date-and-Time";
+	}
 }

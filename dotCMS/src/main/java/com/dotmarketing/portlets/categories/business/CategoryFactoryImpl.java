@@ -18,12 +18,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
+import com.dotmarketing.util.VelocityUtil;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -34,9 +38,11 @@ import java.util.*;
 public class CategoryFactoryImpl extends CategoryFactory {
 
 	CategoryCache catCache;
+	final CategorySQL categorySQL;
 
 	public CategoryFactoryImpl () {
 		catCache = CacheLocator.getCategoryCache();
+		this.categorySQL = CategorySQL.getInstance();
 	}
 
 	@Override
@@ -236,30 +242,14 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 		protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 
-		List<String> childrenIds = catCache.getChildren(parent);
-		List<Category> children;
-		if(childrenIds == null) {
-		    DotConnect dc = new DotConnect();
-		    dc.setSQL("select inode,category_name,category_key,sort_order,active,keywords,category_velocity_var_name "+
-		              " from category join tree on (category.inode = tree.child) where tree.parent = ? "+
-		              " order by sort_order, category_name");
-		    dc.addParam(parent.getCategoryId());
-		    children = readCatFromDotConnect(dc.loadObjectResults());
-			
+		List<Category> children= catCache.getChildren(parent);
+		if(children == null) {
+			children = getChildren(parent, "sort_order");
 			try {
 				catCache.putChildren(parent, children);
 			} catch (DotCacheException e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
-		} else {
-			children = new ArrayList<Category>();
-			for(String id : childrenIds) {
-				Category cat = find(id);
-				if(cat != null) {
-					children.add(cat);
-				}
-			}
-			Collections.sort(children,new CategoryComparator());
 		}
 
 		return children;
@@ -600,7 +590,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				conn.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
@@ -609,7 +598,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				s.close();
 				conn.close();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -700,96 +688,94 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 			rs = s.executeQuery(catSQL.getSortParents());
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
-		} catch (SQLException e) {
+            putResultInCatCache( rs );
+        } catch (SQLException e) {
 			try {
 				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException sqlException) {
+				Logger.debug( this, "Error trying to rollback connection", sqlException );
 			}
-			e.printStackTrace();
+            Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+            closeEverything( s, conn, rs );
+        }
 	}
 
-	public void sortChildren(String inode)  throws DotDataException {
-		Statement s = null;
+    public void sortChildren(String inode)  throws DotDataException {
+
+		Statement statement = null;
 		Connection conn = null;
 		ResultSet rs = null;
 		try {
 			CategorySQL catSQL= CategorySQL.getInstance();
 			conn = DbConnectionFactory.getDataSource().getConnection();
 			conn.setAutoCommit(false);
-			s = conn.createStatement();
-			String sql = "";
-			sql = catSQL.getCreateSortChildren(inode);
-			s.executeUpdate( sql );
+			statement = conn.createStatement();
+			String sql;
+
+            if ( DbConnectionFactory.isOracle() ){
+                //For Oracle we need to avoid ORA-01027 by creating the table before.
+                sql = catSQL.createCategoryReorderTable();
+                statement.execute( sql );
+            }
+
+			PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
+            createSortPreparedStatement.setString( 1, inode );
+            createSortPreparedStatement.executeUpdate();
+
 			sql = catSQL.getUpdateSort();
-			s.executeUpdate( sql );
+			statement.executeUpdate( sql );
+
 			sql = catSQL.getDropSort();
-			s.executeUpdate(sql);
+			statement.executeUpdate(sql);
+
 			conn.commit();
-			sql = catSQL.getSortedChildren(inode);
-			rs = s.executeQuery(sql);
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
+            PreparedStatement getSortedPreparedStatement = conn.prepareStatement( catSQL.getSortedChildren() );
+            getSortedPreparedStatement.setString( 1, inode );
+            rs = getSortedPreparedStatement.executeQuery();
 
-		} catch (SQLException e) {
+            putResultInCatCache( rs );
+
+        } catch (SQLException e) {
 			try {
 				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException sqlException) {
+                Logger.debug( this, "Error trying to rollback connection", sqlException );
 			}
-			e.printStackTrace();
+            Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+            closeEverything( statement, conn, rs );
+        }
 	}
+
+    private void putResultInCatCache( ResultSet rs ) throws SQLException, DotDataException {
+        while(rs.next()) {
+            Category cat = null;
+            try {
+                cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
+            } catch (DotHibernateException e) {
+                if(!(e.getCause() instanceof ObjectNotFoundException ))
+                    throw e;
+            }
+            if(cat != null)
+                try {
+                    catCache.put(cat);
+                } catch (DotCacheException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+        }
+    }
+
+    private void closeEverything( Statement s, Connection conn, ResultSet rs ) {
+        try {
+            rs.close();
+            s.close();
+            conn.close();
+        } catch (SQLException e) {
+            Logger.debug( this, "Error trying to close statement, connection and result set", e );
+        }
+    }
 
     /**
      * Cleans the parent and child cache for a given category
@@ -806,43 +792,27 @@ public class CategoryFactoryImpl extends CategoryFactory {
                 catCache.removeChildren( parentId );
             }
         }
-        List<String> childrenIds = catCache.getChildren( category );
-        if ( childrenIds != null ) {
-            for ( String childId : childrenIds ) {
-                catCache.removeParents( childId );
-            }
-        }
+		List<Category> children = catCache.getChildren( category );
+		if ( children != null ) {
+			for ( Category child : children ) {
+				catCache.removeParents( child.getCategoryId() );
+			}
+		}
     }
 
-	private class CategoryComparator implements Comparator<Category> {
-
-		public int compare(Category cat1, Category cat2) {
-
-			int returnValue = 0;
-			try
-			{
-				if(cat1.getSortOrder() > cat2.getSortOrder())
-				{
-					returnValue = 1;
-				}
-				else if(cat2.getSortOrder() > cat1.getSortOrder())
-				{
-					returnValue = -1;
-				}
-				else if (Objects.equals(cat1.getSortOrder(), cat2.getSortOrder()))
-				{
-					returnValue = cat1.getCategoryName().compareTo(cat2.getCategoryName());
-				}
-			}
-			catch(Exception ex)
-			{
-				Logger.debug(CategoryFactoryImpl.class, ex.getMessage());
-				//At this point we can not do any comparation as the compareTo it self failed, so just return a -1
-				returnValue = -1;
-			}
-			return returnValue;
-		}
-	}
-
+    protected String suggestVelocityVarName(String categoryVelVarName) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        String var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false);
+        for (int i = 1; i < 100000; i++) {
+          dc.setSQL(this.categorySQL.getVelocityVarNameCount());
+          dc.addParam(var);
+          if (dc.getInt("test") == 0) {
+            return var;
+          }
+            var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false) + String
+                    .valueOf(i);
+        }
+        throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
+    }
 
 }

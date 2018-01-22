@@ -2,6 +2,7 @@
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -13,9 +14,9 @@
 %>
 <script language="JavaScript">
 
-var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
-<%  boolean inFrame=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false;
+<%  boolean inFrame=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false;
     String locationMode = inFrame?"window.location":"top.location";
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
@@ -278,7 +279,7 @@ function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,li
 }
 
 // Template Flyout
-function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,hasLiveVersion) {
+function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,hasLiveVersion,name) {
 
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
@@ -339,9 +340,9 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 
 		if ((deleted == "1") && (write == "1"))
 		{
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>\')){ delTemplate(\'' +objId+ '\', \'' +referer+ '\'); }">';
-		  		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Template"))%>';
-			strHTML += '</div>';
+            strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>\')){ delTemplate(\'' +objId+ '\', \'' +referer+ '\', \'' +objIden+ '\', \'' +name+ '\'); }">';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Template"))%>';
+            strHTML += '</div>';
 		}
 		if (((live=="1") || (working=="1")) && (write=="1") && (deleted!="1"))  {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="copyIcon" class="pop_divider" onClick="<%=locationMode%>=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&referer=' + referer + '\';">';

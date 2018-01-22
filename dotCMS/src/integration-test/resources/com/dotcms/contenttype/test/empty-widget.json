@@ -7,5 +7,5 @@
   "variable" : "testWidget",
   "folder" : "SYSTEM_FOLDER",
   "host" : "demo.dotcms.com",
-  "implClass" : "com.dotcms.contenttype.model.type.WidgetContentType"
+  "clazz" : "com.dotcms.contenttype.model.type.WidgetContentType"
 } ]

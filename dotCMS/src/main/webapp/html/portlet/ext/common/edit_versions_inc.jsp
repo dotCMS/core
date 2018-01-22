@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.business.IdentifierFactory" %>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.factories.WebAssetFactory" %>
+<%@page import="com.liferay.util.StringPool" %>
 
 
 <%
@@ -113,7 +114,7 @@
 			<% } %>
 			</td>
 			<% if(isContentlet){ %>
-				<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;("+langV.getCountryCode()+")" %></td>
+				<td> <img src="/html/images/languages/<%= LanguageUtil.getLiteralLocale(langV.getLanguageCode(), langV.getCountryCode()) %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;"+(UtilMethods.isSet(langV.getCountryCode()) ? ("(" + langV.getCountryCode() + ")&nbsp;") : StringPool.BLANK) %></td>
 			<% } %>
 			<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
 	<%

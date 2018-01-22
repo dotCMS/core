@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.containers.factories;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -16,8 +15,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.Logger;
+
+import java.util.LinkedList;
+import java.util.List;
 /**
  *
  * @author  will
@@ -136,8 +137,7 @@ public class ContainerFactory {
 		perAPI.copyPermissions(currentContainer, newContainer);
 
 		//saves to working folder under velocity
-		ContainerServices.invalidate(newContainer, newIdentifier,
-				true);
+		new ContainerLoader().invalidate(newContainer);
 
 		// issue-2093 Copying multiple structures per container
 		if(currentContainer.getMaxContentlets()>0) {

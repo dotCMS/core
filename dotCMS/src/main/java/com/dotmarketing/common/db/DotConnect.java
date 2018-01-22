@@ -21,6 +21,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import static com.dotcms.util.CollectionsUtils.*;
+
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 
 /**
  * Description of the Class
@@ -50,6 +54,9 @@ public class DotConnect {
     int startRow = 0;
     
     boolean forceQuery=false;
+
+    private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
+            map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -504,8 +511,7 @@ public class DotConnect {
         paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
         return this;
     }
-    
-    
+
     private void executeQuery() throws SQLException{
         Connection conn = DbConnectionFactory.getConnection();
         executeQuery(conn);
@@ -583,12 +589,16 @@ public class DotConnect {
 	        		}
 	        		afterPreparation = System.nanoTime();
 	        	}
-	        	
-	        	
+
 	        	//statement.setMaxRows(maxRows);
 		        Logger.debug(this, "SQL = " + statement.toString());
 		        for (int i = 0; i < paramList.size(); i++) {
-		            statement.setObject(i + 1, paramList.get(i));
+		            Object param = paramList.get(i);
+		            if(param!=null && statementSetterHandlerMap.containsKey(param.getClass())) {
+		                statementSetterHandlerMap.get(param.getClass()).execute(statement, i+1, param);
+                    } else {
+                        statement.setObject(i + 1, paramList.get(i));
+                    }
 		        }
 				if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
 		        	beforeQueryExecution = System.nanoTime();
@@ -928,9 +938,12 @@ public class DotConnect {
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 */
-	public Long getRecordCount(String tableName) throws DotDataException {
-		Long recordCount = 0L;
-		setSQL("SELECT COUNT(*) AS count FROM " + tableName);
+ 	public Long getRecordCount(String tableName) throws DotDataException {
+		return getRecordCount(tableName, "");
+	}
+ 	public Long getRecordCount(String tableName, String whereClause) throws DotDataException {
+ 		Long recordCount = 0L;
+		setSQL("SELECT COUNT(*) AS count FROM " + tableName +" "+ whereClause);
 		if (DbConnectionFactory.isOracle()) {
 			BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
 			recordCount = new Long(result.toPlainString());
@@ -1073,5 +1086,122 @@ public class DotConnect {
         }
     }
 
+    private void setParams(final PreparedStatement preparedStatement,
+                           final Object... params) throws SQLException {
+
+        for (int i = 0; i < params.length; ++i) {
+
+            preparedStatement.setObject(i+1, params[i]);
+        }
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement, returns the number of affected rows.
+     * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
+     * @param preparedStatement String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final String preparedStatement,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(preparedStatement, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement, returns the number of affected rows.
+     * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
+     * @param preparedStatement String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+
+    public int executeUpdate (final String preparedStatement, Boolean logException,
+                              final Object... parameters) throws DotDataException {
+
+        return  this.executeUpdate(DbConnectionFactory.getConnection(),
+                preparedStatement, logException, parameters);
+
+
+
+    } // executeUpdate.
+
+    protected void rollback(final Connection connection) throws DotDataException {
+
+        if (null != connection) {
+
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+        }
+    } // rollback.
+
+    /**
+     * Executes an update operation for a preparedStatement
+     * @param connection {@link Connection}
+     * @param preparedStatementString String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final Connection connection, final String preparedStatementString,
+            final Object... parameters) throws DotDataException {
+        return executeUpdate(connection, preparedStatementString, true, parameters);
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement
+     * @param connection {@link Connection}
+     * @param preparedStatementString String
+     * @param logException when an exception occurs, whether or not to log the exception as Error in log file
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public int executeUpdate (final Connection connection, final String preparedStatementString, Boolean logException,
+                              final Object... parameters) throws DotDataException {
+
+
+        PreparedStatement  preparedStatement = null;
+        try {
+
+            preparedStatement = connection.prepareStatement(preparedStatementString);
+            this.setParams(preparedStatement, parameters);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            if (logException) {
+                Logger.error(DotConnect.class, e.getMessage(), e);
+            }
+            throw new DotDataException(e.getMessage(), e);
+        } finally {
+            if(null!= preparedStatement ) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    Logger.debug(this.getClass(), e.getMessage(),e);
+                }
+            }
+        }
+
+
+    } // executeUpdate.
+
+    private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
+
+        final DotTimezonedTimestamp dotTimezonedTimestamp = (DotTimezonedTimestamp) timestamp;
+        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(dotTimezonedTimestamp.getTimezone()));
+
+        try {
+            statement.setTimestamp(parameterIndex, dotTimezonedTimestamp.getTimestamp(), calendar);
+        } catch(SQLException e) {
+            Logger.error(DotConnect.class, "Error setting Timestamp to PreparedStatement. " +
+                    "Parameter Index " + parameterIndex + "; Timestamp: " + timestamp, e);
+        }
+    }
 
 }

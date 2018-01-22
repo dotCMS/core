@@ -45,11 +45,9 @@ public class CategoryCacheImpl extends CategoryCache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<String> getChildren(Categorizable parent) throws DotDataException {
-		List<String> childrenIds = null;
+	protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 		try{
-			childrenIds = (List<String>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
-			return childrenIds;
+			return (List<Category>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 			return null;
@@ -89,12 +87,9 @@ public class CategoryCacheImpl extends CategoryCache {
 	@Override
 	public void putChildren(Categorizable parent, List<Category> children)
 			throws DotDataException, DotCacheException {
-		
-		List<String> catsIds = new ArrayList<String>();
-		for(Category cat : children) {
-			catsIds.add(cat.getInode());
-		}
-		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), catsIds, categoryChildrenCacheGroup);
+
+		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), children, categoryChildrenCacheGroup);
+
 
 		//Putting the children cats on the plain cache
 		for(Category cat : children) {
@@ -146,9 +141,9 @@ public class CategoryCacheImpl extends CategoryCache {
     @SuppressWarnings ("unchecked")
     @Override
     protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
-        List<String> childrenIds = null;
+        List<Category> childrenIds = null;
         try {
-            childrenIds = (List<String>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
+            childrenIds = (List<Category>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
         } catch ( DotCacheException e ) {
             Logger.debug( this, "Cache Entry not found", e );
         }
@@ -156,8 +151,8 @@ public class CategoryCacheImpl extends CategoryCache {
 
         //Updating the associated parent caches to keep it consistent
         if ( childrenIds != null ) {
-            for ( String child : childrenIds ) {
-                cache.remove( categoryParentsCacheGroup + child, categoryParentsCacheGroup );
+            for (final Category child : childrenIds ) {
+                cache.remove( categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup );
             }
         }
     }
@@ -216,30 +211,6 @@ public class CategoryCacheImpl extends CategoryCache {
         removeParents( child.getCategoryId() );
     }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void addChild(Categorizable parent, Category child, List<Category> children)throws DotDataException, DotCacheException {
-		if(children == null)
-			children = new ArrayList<Category>();
-		else
-			children = new ArrayList<Category>(children);
-		
-		List<String> childrenIds = new ArrayList<String>();
-		for(Category childcat : children) {
-			childrenIds.add(childcat.getInode());
-		}
-		
-		childrenIds.add(child.getCategoryId());
-		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), childrenIds, categoryChildrenCacheGroup);
-		
-		//putting the parent in the plain category cache if it's a category type
-		if(parent instanceof Category){
-			put((Category)parent);
-		}
-		
-		//putting the parent in the plain category cache if it's a category type
-		put(child);
-	}
 
 	@SuppressWarnings("unchecked")
 	@Override

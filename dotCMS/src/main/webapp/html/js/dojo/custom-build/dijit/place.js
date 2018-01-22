@@ -4,9 +4,9 @@ define("dijit/place", [
 	"dojo/dom-style", // domStyle.getComputedStyle
 	"dojo/_base/kernel", // kernel.deprecated
 	"dojo/_base/window", // win.body
-	"dojo/window", // winUtils.getBox
+	"./Viewport", // getEffectiveBox
 	"./main"	// dijit (defining dijit.place to match API doc)
-], function(array, domGeometry, domStyle, kernel, win, winUtils, dijit){
+], function(array, domGeometry, domStyle, kernel, win, Viewport, dijit){
 
 	// module:
 	//		dijit/place
@@ -31,7 +31,7 @@ define("dijit/place", [
 
 		// get {x: 10, y: 10, w: 100, h:100} type obj representing position of
 		// viewport over document
-		var view = winUtils.getBox(node.ownerDocument);
+		var view = Viewport.getEffectiveBox(node.ownerDocument);
 
 		// This won't work if the node is inside a <div style="position: relative">,
 		// so reattach it to win.doc.body.	 (Otherwise, the positioning will be wrong
@@ -133,14 +133,10 @@ define("dijit/place", [
 		// has sized the node, due to browser quirks when the viewport is scrolled
 		// (specifically that a Tooltip will shrink to fit as though the window was
 		// scrolled to the left).
-		//
-		// In RTL mode, set style.right rather than style.left so in the common case,
-		// window resizes move the popup along with the aroundNode.
-		var l = domGeometry.isBodyLtr(node.ownerDocument),
-			s = node.style;
+		var s = node.style;
 		s.top = best.y + "px";
-		s[l ? "left" : "right"] = (l ? best.x : view.w - best.x - best.w) + "px";
-		s[l ? "right" : "left"] = "auto";	// needed for FF or else tooltip goes to far left
+		s.left = best.x + "px";
+		s.right = "auto";	// needed for FF or else tooltip goes to far left
 
 		return best;
 	}

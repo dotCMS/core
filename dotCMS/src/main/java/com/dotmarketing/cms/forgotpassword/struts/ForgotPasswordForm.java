@@ -11,6 +11,7 @@ import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.util.UtilMethods;
 
+@Deprecated
 public class ForgotPasswordForm extends ValidatorForm {
 
 

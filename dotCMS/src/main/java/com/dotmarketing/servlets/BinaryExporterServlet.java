@@ -1,36 +1,6 @@
 package com.dotmarketing.servlets;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
-
-import javax.imageio.ImageIO;
-import javax.imageio.spi.IIORegistry;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
@@ -44,6 +14,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -54,16 +25,26 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
+import static com.liferay.util.HttpHeaders.EXPIRES;
 
 /**
  *
@@ -135,9 +116,6 @@ public class BinaryExporterServlet extends HttpServlet {
         final IIORegistry registry = IIORegistry.getDefaultInstance();
         registry.deregisterServiceProvider(registry.getServiceProviderByClass(com.twelvemonkeys.imageio.plugins.svg.SVGImageReaderSpi.class));
         registry.registerServiceProvider(new SVGImageReaderSpi());
-        
-		
-		
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -194,23 +172,21 @@ public class BinaryExporterServlet extends HttpServlet {
         if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
             tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
         } else {
-            tempBinaryImageInodes = new ArrayList<String>();
+            tempBinaryImageInodes = new ArrayList<>();
         }
 
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
         
 		ServletOutputStream out = null;
-		FileChannel from = null;
-		WritableByteChannel to = null;
 		RandomAccessFile input = null;
-		FileInputStream is = null;
+		InputStream is = null;
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-
+			PageMode mode = PageMode.get(req);
 			//If session is in Admin Mode (Edit Mode) we should respect front end roles also.
-			if(session != null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null){
+			if(mode.isAdmin){
 				respectFrontendRoles = true;
 			}
 
@@ -228,23 +204,10 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
-				    boolean PREVIEW_MODE = false;
-					boolean EDIT_MODE = false;
 
-					if(session != null) {
-						PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
-						try {
-							EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
-						} catch (Exception e) {
-							Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
-						}
-					}
 					//GIT-4506
 					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-						if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
-							live = true;
-						else
-							live = false;
+					    live = mode.showLive;
 					}
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
@@ -313,10 +276,12 @@ public class BinaryExporterServlet extends HttpServlet {
 				//Find the contentlet content type
 				ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find((content.getContentTypeId()));
 				//And the file asset field
-				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
+				com.dotcms.contenttype.model.field.Field field;
 
-				if(field == null){
-					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
+				try {
+					field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
+				} catch (NotFoundInDbException e) {
+					Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
 					resp.sendError(404);
 					return;
 				}
@@ -333,6 +298,15 @@ public class BinaryExporterServlet extends HttpServlet {
 				downloadName = inputFile.getName();
 			}
 
+
+			
+			if(downloadName.endsWith(".vtl") || downloadName.endsWith(".vm")){
+				resp.sendError(404);
+			    DbConnectionFactory.closeSilently();
+			    return;
+			}
+			
+			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
@@ -369,14 +343,19 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *  Start serving the data
 			 *
 			 *******************************/
+			long _fileLength = data.getDataFile().length();
+			
 			String mimeType = fileAssetAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			resp.setContentType(mimeType);
+			
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
+			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
+			resp.setContentType(mimeType);
+			
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
@@ -386,18 +365,13 @@ public class BinaryExporterServlet extends HttpServlet {
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
-				resp.setHeader("Content-Type", "application/force-download");
+			
 			} else {
 
-				boolean _adminMode = false;
-				try {
-				    _adminMode = (session!=null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-				}catch(Exception e){
 
-				}
 
 			    // Set the expiration time
-				if (!_adminMode) {
+				if (!mode.isAdmin) {
 
 				    int _daysCache = 365;
 				    GregorianCalendar expiration = new GregorianCalendar();
@@ -413,16 +387,19 @@ public class BinaryExporterServlet extends HttpServlet {
 					_lastModified = _lastModified * 1000;
 					Date _lastModifiedDate = new java.util.Date(_lastModified);
 
-					long _fileLength = data.getDataFile().length();
+					
 					String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
 
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
 					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
 		            /* Setting cache friendly headers */
-		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
-		            resp.setHeader("Cache-Control", "public, max-age="+seconds);
+					if (!resp.containsHeader(EXPIRES)) {
+						resp.setHeader(EXPIRES, httpDate.format(expiration.getTime()));
+					}
 
-		            String ifModifiedSince = req.getHeader("If-Modified-Since");
+		            if (!resp.containsHeader(CACHE_CONTROL)) {
+						resp.setHeader(CACHE_CONTROL, "public, max-age=" + seconds);
+					}
 		            String ifNoneMatch = req.getHeader("If-None-Match");
 
 		            /*
@@ -436,18 +413,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		                }
 		            }
 
-		            /* Using the If-Modified-Since Header */
-		             /*if(ifModifiedSince != null){
-					    try{
-					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
-					            resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-					            return;
-					        }
-					    }
-					    catch(Exception e){}
-					}*/
-
 		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
 		            resp.setHeader("Content-Length", String.valueOf(_fileLength));
 		            resp.setHeader("ETag", _eTag);
@@ -456,8 +421,13 @@ public class BinaryExporterServlet extends HttpServlet {
 				}else{
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.MONTH, -1);
-					resp.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
-					resp.setHeader("Cache-Control", "max-age=-1");
+					if (!resp.containsHeader(EXPIRES)) {
+						resp.setHeader(EXPIRES, DownloadUtil.httpDate.get().format(expiration.getTime()));
+					}
+
+					if (!resp.containsHeader(CACHE_CONTROL)) {
+						resp.setHeader(CACHE_CONTROL, "max-age=-1");
+					}
 				}
 			}
 
@@ -466,17 +436,9 @@ public class BinaryExporterServlet extends HttpServlet {
 
 				try {
 					out = resp.getOutputStream();
-					from = new FileInputStream(data.getDataFile()).getChannel();
-					to = Channels.newChannel(out);
-					//DOTCMS-5716
-					//32 MB at a time	
-					int maxTransferSize = (32 * 1024 * 1024) ;
-					long size = from.size();
-					long position = 0;
-					
-					boolean responseSent = false;
+
 					byte[] dataBytes = Files.toByteArray(data.getDataFile());
-		            //ServletOutputStream sos = resp.getOutputStream();
+
 					//extract range header
 					 resp.setHeader("Accept-Ranges", "bytes");
 					// Range header should match format "bytes=n-n,n-n,n-n...". If not, then return 416.
@@ -536,15 +498,14 @@ public class BinaryExporterServlet extends HttpServlet {
 							out.println();
 							out.println("--" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY + "--");
 						}
-						responseSent = true;
 					}
 				} catch (Exception e) {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} 
+				}
 			}else{
-				is = new FileInputStream(data.getDataFile());
+				is = java.nio.file.Files.newInputStream(data.getDataFile().toPath());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
@@ -561,7 +522,6 @@ public class BinaryExporterServlet extends HttpServlet {
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 		} catch (DotRuntimeException e) {
-			//Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -616,23 +576,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		// close our resources no matter what
 		finally{
-			if(from!=null){
-				try{
-					from.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
-
-			if(to!=null){
-				try{
-					to.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
 			
 			if(input!=null){
 				try{

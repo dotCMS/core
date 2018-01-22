@@ -1,11 +1,23 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.UserAgent;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Date;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -15,19 +27,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
-
-import eu.bitwalker.useragentutils.Browser;
-import eu.bitwalker.useragentutils.UserAgent;
 
 /**
  * This filter takes all incoming requests related to displaying the contents of
@@ -55,7 +54,7 @@ public class TimeMachineFilter implements Filter {
 
     private static final String ERROR_404 = "/html/portlet/ext/timemachine/timemachine_404.jsp";
 
-    CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
 
     @Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -74,12 +73,13 @@ public class TimeMachineFilter implements Filter {
 			req.getSession().removeAttribute(TM_DATE_VAR);
 			req.getSession().removeAttribute(TM_LANG_VAR);
 			req.getSession().removeAttribute(TM_HOST_VAR);
+			
 		}
 		// If a Time Machine request is present...
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-
+			PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){
@@ -113,7 +113,7 @@ public class TimeMachineFilter implements Filter {
 				sendFile(file, request, response);
 			} else {
 				// File not found for the selected language
-				boolean useDefaultLanguage = Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+				boolean useDefaultLanguage = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 				if (!useDefaultLanguage) {
 					// Send page in default language is false, so send an error
 					sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
@@ -167,7 +167,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append("live").append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.PREVIEW_MODE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;
@@ -245,7 +245,7 @@ public class TimeMachineFilter implements Filter {
 		}
 		resp.setContentType(mimeType);
 		resp.setContentLength((int) file.length());
-		try (FileInputStream fis = new FileInputStream(file)) {
+		try (InputStream fis = Files.newInputStream(file.toPath())) {
 			IOUtils.copy(fis, resp.getOutputStream());
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Time Machine : File [" + file.getAbsolutePath() + "] cannot be found.", e);

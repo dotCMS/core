@@ -4,6 +4,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <%
 	PermissionAPI permAPI = APILocator.getPermissionAPI();
@@ -116,8 +117,8 @@
             <h2><%=LanguageUtil.get(pageContext, "Create-a-new-Host")%></h2>
             <div id="addNewHostStep1Parameters">
 	            <hr/>
-	            <input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="copyHostRadio" <%if(LicenseUtil.getLevel() > 199){%>checked value="on"<% }else{ %>disabled="disabled"<% } %> />
-	           <%if(LicenseUtil.getLevel() >199){%>
+	            <input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="copyHostRadio" <%if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){%>checked value="on"<% }else{ %>disabled="disabled"<% } %> />
+	           <%if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){%>
 	           		<label for="copyHostRadio" id="copyHostTextId">
 		                <%= LanguageUtil.get(pageContext, "Copy-an-existing-Host") %>
 		            </label>
@@ -133,7 +134,7 @@
 	            <br/>
 	            <!-- <span style="text-align: center"><%= LanguageUtil.get(pageContext, "or") %></span> -->
 				<br/>
-				<input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="startBlankHostRadio" <%if(LicenseUtil.getLevel() > 199){%>value="off"<% }else{ %>checked value="on"<% } %>  />
+				<input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="startBlankHostRadio" <%if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){%>value="off"<% }else{ %>checked value="on"<% } %>  />
 	            <label for="startBlankHostRadio">
 	                <%= LanguageUtil.get(pageContext, "Start-with-a-blank-Host") %>
 	            </label>
@@ -215,12 +216,6 @@
 						    </div>
 						</div>
 						<div class="yui-g" style="margin-bottom: 16px;">
-						    <div class="yui-u first" style="text-align: left">
-						        <input type="checkbox" id="copyVirtualLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
-								<label for="copyVirtualLinks">
-			    					<%= LanguageUtil.get(pageContext, "Virtual-Links") %>
-								</label>
-						    </div>
 							<div class="yui-u" style="text-align: left">
 								<input type="checkbox" id="copyLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
 								<label for="copyLinks">

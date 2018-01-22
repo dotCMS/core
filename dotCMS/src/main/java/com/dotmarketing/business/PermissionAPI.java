@@ -1,11 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
@@ -21,6 +15,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface PermissionAPI {
 
@@ -35,10 +34,9 @@ public interface PermissionAPI {
 	final int PERMISSION_PUBLISH = 4;
 	final int PERMISSION_EDIT_PERMISSIONS = 8;
 	final int PERMISSION_CAN_ADD_CHILDREN = 16;
-	final int PERMISSION_CREATE_VIRTUAL_LINKS = 32;
 
 
-	final static String[] PERMISSION_TYPES={"PERMISSION_READ","PERMISSION_CREATE_VIRTUAL_LINKS","PERMISSION_WRITE","PERMISSION_PUBLISH","PERMISSION_USE","PERMISSION_CAN_ADD_CHILDREN","PERMISSION_EDIT","PERMISSION_EDIT_PERMISSIONS","PERMISSION_CREATE_VIRTUAL_LINKS"};
+	final static String[] PERMISSION_TYPES={"PERMISSION_READ","PERMISSION_WRITE","PERMISSION_PUBLISH","PERMISSION_USE","PERMISSION_CAN_ADD_CHILDREN","PERMISSION_EDIT","PERMISSION_EDIT_PERMISSIONS"};
 
 
 
@@ -786,16 +784,27 @@ public interface PermissionAPI {
 	 */
 	boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException;
 
-	/**
-	 *
-	 * @param parent
-	 * @param permissionable
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable, User user) instead.
+     */
+    @Deprecated
+    void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * This method should be called when we want to break permission inheritance. It will find
+     * parent permissions and apply all those permissions to the permissionable.
+     */
+    void permissionIndividually(Permissionable parent, Permissionable permissionable, User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * This method should be called when we want to break permission inheritance. It will find
+     * parent permissions and apply all those permissions to the permissionable. It will check that
+     * those permission not belong to a child role already (in that case we already inherit it.)
+     */
+    void permissionIndividuallyByRole(Permissionable parent, Permissionable permissionable,
+            User user, Role role) throws DotDataException, DotSecurityException;
 
 	/**
      * Finds the permissionable instance from where <code>permissionable</code> is inheriting its permissions.

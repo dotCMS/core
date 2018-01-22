@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.liferay.portal.util.Constants"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -36,7 +37,7 @@
 		UserAjax.getUserRolesValues('<%=user.getUserId()%>', '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', getUserRolesValuesCallBack);
 	});
 
-	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+	var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
 	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
@@ -44,12 +45,19 @@
 
 	<%
 	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
-	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	List<WorkflowScheme> fileWorkflows = APILocator.getWorkflowAPI().findSchemesForStruct(fileStructure);
+	boolean isWfMandatory = false;
+	for(WorkflowScheme fileWorkflow : fileWorkflows){
+	    if(fileWorkflow.isMandatory()){
+	        isWfMandatory = true;
+	        break;
+	    }
+	}
 	String frameName = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	
 	%>
 
-	var filesMandatoryWorkflow = <%=fileWorkflow.isMandatory()%>
+	var filesMandatoryWorkflow = <%=isWfMandatory%>
 
 
 	function getUserRolesValuesCallBack(response) {
@@ -677,8 +685,8 @@
 
 	// HTMLPage popup
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
-
 		var objId = page.inode;
+        var pageURI = page.pageURI;
 		var objIden = page.identifier;
 		var referer = encodeURIComponent(origReferer);
 
@@ -700,7 +708,7 @@
 		var strHTML = '';
 
 		if ((live || working) && read && !archived) {
-			strHTML += '<a href="javascript: previewHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="context-menu__item">';
+			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\');" class="context-menu__item">';
 		    	//strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';

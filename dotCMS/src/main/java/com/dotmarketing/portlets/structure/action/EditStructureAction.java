@@ -2,19 +2,13 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-import java.net.URLDecoder;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -22,12 +16,12 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -43,7 +37,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -52,6 +45,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -149,7 +151,7 @@ public class EditStructureAction extends DotPortletAction {
 			return;
 		}
 
-		HibernateUtil.commitTransaction();
+		HibernateUtil.closeAndCommitTransaction();
 		_loadForm(form, req, res);
 		if (returnToList) {
 			if (!UtilMethods.isSet(referer)) {
@@ -177,14 +179,15 @@ public class EditStructureAction extends DotPortletAction {
 		ContentType type;
 		Structure struc = new Structure();
 		try{
-			type= APILocator.getContentTypeAPI(user).find(inodeString);
-			struc = new StructureTransformer(type).asStructure();
-		}
-		catch(NotFoundInDbException nodb){
+			if(!UtilMethods.isSet(inodeString)) {
+				type= ContentTypeBuilder.instanceOf(SimpleContentType.class);
+			} else {
+				type = APILocator.getContentTypeAPI(user).find(inodeString);
+				struc = new StructureTransformer(type).asStructure();
+			}
+		} catch(NotFoundInDbException nodb){
 			type= ContentTypeBuilder.instanceOf(SimpleContentType.class);
-			
 		}
-		
 
 		if(!type.fixed()){//GIT-780
 			if(type.baseType() == BaseContentType.WIDGET
@@ -375,16 +378,16 @@ public class EditStructureAction extends DotPortletAction {
 			//structureForm.setInode(type.inode());
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
+			final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
+			String[] schemeIds = req.getParameterValues("workflowScheme");
 
-			String schemeId = req.getParameter("workflowScheme");
-
-			if (scheme != null && UtilMethods.isSet(schemeId) && !schemeId.equals(scheme.getId())) {
-				scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
-				APILocator.getWorkflowAPI().saveSchemeForStruct(structure, scheme);
+			for(String schemeId : schemeIds) {
+				if (UtilMethods.isSet(schemeId)) {
+					WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
+					schemes.add(scheme);
+				}
 			}
-
-			
+			APILocator.getWorkflowAPI().saveSchemesForStruct(structure, schemes.build());
 			
 			/**
 			 * 
@@ -423,7 +426,7 @@ public class EditStructureAction extends DotPortletAction {
 			// Saving the structure in cache
 			CacheLocator.getContentTypeCache().remove(structure);
 			CacheLocator.getContentTypeCache().add(structure);
-			StructureServices.removeStructureFile(structure);
+			new ContentTypeLoader().invalidate(structure);
 
 			String message = "message.structure.savestructure";
 			if (structure.getStructureType() == 3) {

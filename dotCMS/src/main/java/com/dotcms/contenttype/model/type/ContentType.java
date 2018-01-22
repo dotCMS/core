@@ -15,6 +15,7 @@ import org.immutables.value.Value.Default;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -36,7 +37,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 
-
 @JsonTypeInfo(
 	use = Id.CLASS,
 	include = JsonTypeInfo.As.PROPERTY,
@@ -49,13 +49,15 @@ import com.google.common.collect.ImmutableMap;
 	@Type(value = PersonaContentType.class),
 	@Type(value = SimpleContentType.class),
 	@Type(value = WidgetContentType.class),
+	@Type(value = VanityUrlContentType.class),
+	@Type(value = KeyValueContentType.class),
 })
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 
-
-
   @Value.Check
   protected void check() {
+	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+
     if (!(this instanceof UrlMapable)) {
       Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
       Preconditions.checkArgument(urlMapPattern() == null, "urlmap cannot be set for " + this.getClass());
@@ -80,8 +82,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return id();
   }
 
-
-
   @Nullable
   public abstract String description();
 
@@ -89,14 +89,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public boolean defaultType() {
     return false;
   }
-
-  /*
-  @JsonIgnore
-  @Value.Default
-  public StorageType storageType() {
-    return ImmutableDbStorageType.of();
-  }
-  */
 
   @Value.Default
   @Nullable
@@ -119,7 +111,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return false;
   }
 
-
   @Value.Default
   public boolean versionable() {
     return true;
@@ -130,7 +121,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return false;
   }
 
-
+  @Nullable
   public abstract String variable();
 
   @Nullable
@@ -182,6 +173,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return innerFields;
   }
+
   @JsonIgnore
   @Value.Lazy
   public Map<String, Field> fieldMap() {

@@ -3,7 +3,11 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -11,9 +15,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-
-import com.dotmarketing.cache.VirtualLinksCache;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -22,17 +23,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,6 +36,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.liferay.portal.model.User;
 
 /**
  * @author jtesser
@@ -276,8 +274,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//Get the identifier of the webAsset
 			Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
 
-			VersionInfo auxVersionInfo = null;
-
 			//### Get and delete the webAsset ###
 			List<Versionable> webAssetList = new ArrayList<Versionable>();
 			webAssetList.addAll(APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false));
@@ -289,34 +285,17 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
                 dc.addParam(currWebAsset.getIdentifier());
                 dc.loadResult();
 
-				ContainerServices.unpublishContainerFile((Container)currWebAsset);
+				new ContainerLoader().invalidate((Container)currWebAsset);
 				CacheLocator.getContainerCache().remove(currWebAsset.getInode());
 			}
 			else if(currWebAsset instanceof Template)
 			{
-				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
-				APILocator.getTemplateAPI().associateContainers(new ArrayList<Container>(), (Template)currWebAsset);
+	             new TemplateLoader().invalidate((Template)currWebAsset);
+	
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
 			}
-			else if(currWebAsset instanceof Link)
-			{
-				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
 
-				if(!UtilMethods.isSet(vi)) {
-					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
-							webAssetList, "links");
-				}
-
-				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
-			}
-
-			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine
-				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
-			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it providing the asset_type, instead of using identifier's asset_type
-				String ident = auxVersionInfo.getIdentifier();
-				HibernateUtil.delete(auxVersionInfo);
-				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident);
-			}
+			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
 
 			for(Versionable webAsset : webAssetList)
 			{
@@ -340,7 +319,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
 			if (currWebAsset instanceof Container)
 			{
-				multiTrees = MultiTreeFactory.getMultiTree(identifier);
+				multiTrees = MultiTreeFactory.getMultiTrees(identifier);
 			}
 			if(UtilMethods.isSet(multiTrees))
 			{
@@ -397,49 +376,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return auxVersionInfo;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(condition, assetsClass, 100000, 0, parentId, showDeleted, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsPerConditionWithPermission(String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(condition, c, null, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Deprecated
-	public int getCountAssetsPerConditionWithPermission(String condition, Class c, String parent, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermission(condition, c, -1, 0, parent, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(hostId, condition, assetsClass, 100000, 0, parentId, showDeleted, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, User user) {
-		return getCountAssetsPerConditionWithPermission(hostId, condition, c, null, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, String parent, User user) {
-		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, parent, user);
-	}
-
-	@SuppressWarnings("unchecked")
-	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, String parent, User user) {
-		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
-	}
-
+	@WrapInTransaction
 	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 
@@ -477,7 +414,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         //No need to run all the SQL is we don't get any inodes from the condition.
         if(!resultInodes.isEmpty()){
             List<String> inodesToDelete = new ArrayList<>();
-            List<List<String>> inodesToDeleteMatrix = new ArrayList<>();
             int truncateAt = 100;
 
             //Fill inodesToDelete where each inode from the result.
@@ -486,11 +422,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
             }
 
             //We want to create lists of 100 inodes.
-            while (inodesToDelete.size() >= truncateAt){
-                inodesToDeleteMatrix.add(inodesToDelete.subList(0,truncateAt));
-                inodesToDelete.subList(0,truncateAt).clear();
-            }
-            inodesToDeleteMatrix.add(inodesToDelete.subList(0, inodesToDelete.size()));
+			List<List<String>> inodesToDeleteMatrix = Lists.partition(inodesToDelete, truncateAt);
 
             //These are all the queries we want to run involving the inodes.
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",

@@ -72,7 +72,6 @@ public class CopyHostContentUtil{
 					boolean copyFolders = copyParams.get("copy_folders").equals("on");
 					boolean copyContentOnHost = copyParams.get("copy_content_on_host").equals("on");
 					boolean copyLinks = copyParams.get("copy_links").equals("on");
-					boolean copyVirtualLinks = copyParams.get("copy_virtual_links").equals("on");
 					boolean copyHostVariables = copyParams.get("copy_host_variables").equals("on");
 
 					Host source = hostAPI.find(copyFromHostId, user, false);
@@ -81,7 +80,7 @@ public class CopyHostContentUtil{
 						hostCopyOptions = new HostCopyOptions(copyAll);
 					else
 						hostCopyOptions = new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,
-								copyVirtualLinks, copyHostVariables);
+								copyHostVariables);
 
 					Map<String, Object> parameters = new HashMap<String, Object>();
 					parameters.put("sourceHostId", source.getIdentifier());

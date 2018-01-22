@@ -23,6 +23,7 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -66,6 +67,7 @@ public class VisitorsCurrentUrlConditionletFTest {
         rulesToRemove.clear();
     }
 
+    @Ignore
     @Test
     public void testIsComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
@@ -180,6 +182,7 @@ public class VisitorsCurrentUrlConditionletFTest {
         assertNull("Specified '" + pattern + "' , requested '" + call5 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
+    @Ignore
     @Test
     public void testStartWithFullPathComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();

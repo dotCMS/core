@@ -95,25 +95,26 @@ public class PublishAuditUtil {
 
         //Getting the default language
         Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        Contentlet foundContentlet = null;
 
         /*
         We may added a contentlet that exist only in a NON default language so
         assuming the content will always exist in the default language is wrong.
          */
         List<Contentlet> allLanguages = APILocator.getContentletAPI().search( "+identifier:" + identifier, 0, 0, "moddate", user, false );
-
-        /*
-        For display purposes we are trying to return the contentlet with the default language, if
-        nothing found for the default language just return the first one.
-         */
-        Contentlet foundContentlet = null;
-        for ( Contentlet contentlet : allLanguages ) {
-            if ( contentlet.getLanguageId() == defaultLanguage.getId() ) {
-                foundContentlet = contentlet;
+        if(!allLanguages.isEmpty()) {
+            /*
+            For display purposes we are trying to return the contentlet with the default language, if
+            nothing found for the default language just return the first one.
+             */
+            for (Contentlet contentlet : allLanguages) {
+                if (contentlet.getLanguageId() == defaultLanguage.getId()) {
+                    foundContentlet = contentlet;
+                }
             }
-        }
-        if ( foundContentlet == null ) {
-            foundContentlet = allLanguages.get( 0 );
+            if (foundContentlet == null) {
+                foundContentlet = allLanguages.get(0);
+            }
         }
 
         return foundContentlet;

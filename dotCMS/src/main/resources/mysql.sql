@@ -651,14 +651,6 @@ create table web_form (
    categories varchar(255),
    primary key (web_form_id)
 );
-create table virtual_link (
-   inode varchar(36) not null,
-   title varchar(255),
-   url varchar(255),
-   uri varchar(255),
-   active tinyint(1),
-   primary key (inode)
-);
 create table analytic_summary_period (
    id bigint not null auto_increment,
    full_date datetime,
@@ -1518,8 +1510,6 @@ create index idx_recipiets_1 on recipient (email);
 create index idx_recipiets_2 on recipient (sent);
 alter table recipient add index fk30e172195fb51eb (inode), add constraint fk30e172195fb51eb foreign key (inode) references inode (inode);
 create index idx_user_webform_1 on web_form (form_type);
-create index idx_virtual_link_1 on virtual_link (url);
-alter table virtual_link add index fkd844f8ae5fb51eb (inode), add constraint fkd844f8ae5fb51eb foreign key (inode) references inode (inode);
 create index idx_analytic_summary_period_4 on analytic_summary_period (month);
 create index idx_analytic_summary_period_3 on analytic_summary_period (week);
 create index idx_analytic_summary_period_2 on analytic_summary_period (day);
@@ -2042,23 +2032,28 @@ create table workflow_step(
 );
 create index workflow_idx_step_scheme on workflow_step(scheme_id);
 
--- Permissionable ---
+-- Permissionable  ---
 create table workflow_action(
     id varchar(36) primary key,
-    step_id varchar(36) not null  references workflow_step(id),
+    step_id varchar(36),
     name varchar(255) not null,
     condition_to_progress text,
-    next_step_id varchar(36) not null references workflow_step(id),
+    next_step_id varchar(36),
     next_assign varchar(36) not null references cms_role(id),
     my_order int default 0,
     assignable boolean default false,
     commentable boolean default false,
     requires_checkout boolean default false,
     icon varchar(255) default 'defaultWfIcon',
-    use_role_hierarchy_assign bool default false
+    show_on varchar(255) default 'LOCKED,UNLOCKED',
+    use_role_hierarchy_assign bool default false,
+    scheme_id VARCHAR(36) NOT NULL
 );
-create index workflow_idx_action_step on workflow_action(step_id);
 
+CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
+ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
 
 create table workflow_action_class(
     id varchar(36) primary key,
@@ -2087,9 +2082,13 @@ create table workflow_scheme_x_structure(
 create index workflow_idx_scheme_structure_1 on
     workflow_scheme_x_structure(structure_id);
 
-create unique index workflow_idx_scheme_structure_2 on
-    workflow_scheme_x_structure(structure_id);
-
+delete from workflow_history;
+delete from workflow_comment;
+delete from workflowtask_files;
+delete from workflow_task;
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
@@ -2231,7 +2230,7 @@ alter table publishing_bundle add force_push tinyint(1) ;
 -- Cluster Tables
 
 CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
-CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id) );
+CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar(36),server_id varchar(36) NOT NULL, startup datetime, heartbeat datetime, PRIMARY KEY (id)) ;
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
@@ -2312,3 +2311,4 @@ CREATE TABLE system_event (
 );
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
+

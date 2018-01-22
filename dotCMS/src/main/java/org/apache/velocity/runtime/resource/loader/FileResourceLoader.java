@@ -19,26 +19,24 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.
  */
 
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+import com.dotmarketing.util.Logger;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.io.UnicodeInputStream;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.StringUtils;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * A loader for templates stored on the file system.  Treats the template
@@ -234,10 +232,10 @@ public class FileResourceLoader extends ResourceLoader
 
             if (file.canRead())
             {
-                FileInputStream fis = null;
+                InputStream is = null;
                 try
                 {
-                    fis = new FileInputStream(file.getAbsolutePath());
+                    is = Files.newInputStream(file.toPath());
 
                     if (unicode)
                     {
@@ -245,7 +243,7 @@ public class FileResourceLoader extends ResourceLoader
 
                         try
                         {
-                            uis = new UnicodeInputStream(fis, true);
+                            uis = new UnicodeInputStream(is, true);
 
                             if (Logger.isDebugEnabled(this.getClass()))
                             {
@@ -262,12 +260,12 @@ public class FileResourceLoader extends ResourceLoader
                     }
                     else
                     {
-                        return new BufferedInputStream(fis);
+                        return new BufferedInputStream(is);
                     }
                 }
                 catch (IOException e)
                 {
-                    closeQuiet(fis);
+                    closeQuiet(is);
                     throw e;
                 }
             }

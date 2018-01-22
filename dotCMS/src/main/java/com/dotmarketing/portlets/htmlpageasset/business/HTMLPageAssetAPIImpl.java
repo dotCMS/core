@@ -1,32 +1,21 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -39,9 +28,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.ClickstreamFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -53,15 +40,28 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.exception.ResourceNotFoundException;
+
 import com.liferay.portal.model.User;
 
 
@@ -70,12 +70,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
-    private PermissionAPI permissionAPI;
-    private IdentifierAPI identifierAPI;
-    private UserAPI userAPI;
-    private VersionableAPI versionableAPI;
-    private ContentletAPI contentletAPI;
-    private SystemEventsAPI systemEventsAPI;
+    private final PermissionAPI permissionAPI;
+    private final IdentifierAPI identifierAPI;
+    private final UserAPI userAPI;
+    private final VersionableAPI versionableAPI;
+    private final ContentletAPI contentletAPI;
+    private final SystemEventsAPI systemEventsAPI;
 
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
@@ -86,6 +86,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         systemEventsAPI = APILocator.getSystemEventsAPI();
     }
 
+    @WrapInTransaction
     @Override
     public void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException {
         if (structure == null || !InodeUtils.isSet(structure.getInode())) {
@@ -118,10 +119,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(TEMPLATE_FIELD);
         FieldFactory.saveField(field);
         
-        
-        
-        
-        
         field = new Field(ADVANCED_PROPERTIES_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 6, "", "", "", false, false, false);
         field.setVelocityVarName(ADVANCED_PROPERTIES_TAB);
         FieldFactory.saveField(field);
@@ -138,9 +135,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(FRIENDLY_NAME_FIELD);
         FieldFactory.saveField(field);
         
-
-        
-        field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10, 
+        field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10,
                 "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(REDIRECT_URL_FIELD);
         FieldFactory.saveField(field);
@@ -160,7 +155,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field = new Field(PAGE_METADATA_FIELD_NAME, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, structure, false, false, true, 14, "", "", "", true, false, true);
         field.setVelocityVarName(PAGE_METADATA_FIELD);
         FieldFactory.saveField(field);
-                
     }
 
     @Override
@@ -400,6 +394,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
     }
 
+    @WrapInTransaction
     @Override
     public boolean rename ( HTMLPageAsset page, String newName, User user ) throws DotDataException, DotSecurityException {
 
@@ -427,7 +422,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public boolean move(HTMLPageAsset page, Host host, User user) throws DotDataException, DotSecurityException {
         return move(page,host,APILocator.getFolderAPI().findSystemFolder(),user);
     }
-    
+
+    @WrapInTransaction
     public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
             throws DotDataException, DotSecurityException {
         Identifier sourceIdent = identifierAPI.find(page);
@@ -472,6 +468,31 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
         return false;
     }
+
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean)
+     */
+    @Override
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        return findPagesByTemplate(template, user, respectFrontendRoles, -1);
+    }
+
+    /**
+     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean, int)
+     */
+    @Override
+    public List<Contentlet> findPagesByTemplate(Template template, User user, boolean respectFrontendRoles, int limit)
+            throws DotDataException, DotSecurityException {
+
+        return permissionAPI.filterCollection(
+                    contentletAPI.search("+_all:" + template.getIdentifier() + " +baseType:"
+                                    + BaseContentType.HTMLPAGE.getType(), limit, 0, null, user,
+                            respectFrontendRoles),
+                    PermissionAPI.PERMISSION_READ,
+                    respectFrontendRoles,
+                    user);
+    }
     
     /**
      * Returns the ids for Pages whose Templates, Containers, or Content 
@@ -483,6 +504,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
      * @param endDate Must be Set
      * @return
      */
+    @CloseDBIfOpened
     @Override
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
 
@@ -651,31 +673,34 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public String getHTML(String uri, Host host, boolean liveMode, String contentId, User user, Long langId,
             String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
-
-        HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), uri).request();
+        HttpServletRequest requestProxy =
+            new MockAttributeRequest(
+                new MockSessionRequest(
+                    new MockHttpRequest(host.getHostname(), uri).request()
+                ).request()
+            ).request();
         HttpServletResponse responseProxy = new BaseResponse().response();
 
-        StringWriter out = new StringWriter();
-        Context context = null;
 
+        Identifier ident = identifierAPI.find(host, uri);
+        if (ident==null || !UtilMethods.isSet(ident.getId()) ) {
+            throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
+        }
 
-
-        // Map with all identifier inodes for a given uri.
-        String idInode = identifierAPI.find(host, uri).getId();
         
 
-        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, langId );
+        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), langId );
         if(cinfo==null && langId!=APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(idInode) || cinfo.getLiveInode() == null) {
+        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 
         responseProxy.setContentType("text/html");
         requestProxy.setAttribute("User-Agent", userAgent);
-        requestProxy.setAttribute("idInode", String.valueOf(idInode));
+        requestProxy.setAttribute("idInode", ident.getId());
 
         /* Set long lived cookie regardless of who this is */
         String _dotCMSID = UtilMethods.getCookieValue(requestProxy.getCookies(),
@@ -688,16 +713,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
 
 
-        if (!liveMode) {
-            requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-            requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-        }
-        boolean signedIn = false;
+        PageMode mode =  (liveMode) ?PageMode.setPageMode(requestProxy, PageMode.LIVE) : PageMode.setPageMode(requestProxy, PageMode.PREVIEW_MODE);
+            
+        
+        boolean signedIn = (user != null);
 
-        if (user != null) {
-            signedIn = true;
-        }
-        Identifier ident = identifierAPI.find(host, uri);
 
         Logger.debug(HTMLPageAssetAPIImpl.class, "Page Permissions for URI=" + uri);
 
@@ -757,66 +777,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
-            context = VelocityUtil.getWebContext(requestProxy, responseProxy);
-
-            if (langId != null && langId > 0) {
-                context.put("language", Long.toString(langId));
-            }
-
-            if (!liveMode) {
-                context.put("PREVIEW_MODE", new Boolean(true));
-            } else {
-                context.put("PREVIEW_MODE", new Boolean(false));
-            }
-
-            context.put("host", host);
-            VelocityEngine ve = VelocityUtil.getEngine();
-
-            Logger.debug(HTMLPageAssetAPIImpl.class, "Got the template!!!!" + idInode);
-
-            requestProxy.setAttribute("velocityContext", context);
-
-            String langStr = "";
-            if (langId != null && langId > 0) {
-                langStr = "_" + langId;
-            }
-
-            String VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-            String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
-                    : "/working/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
-
-            ve.getTemplate(vTempalate).merge(context, out);
+            requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+            return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
 
         } catch (Exception e1) {
             Logger.error(this, e1.getMessage(), e1);
-        } finally {
-            context = null;
-            VelocityServlet.velocityCtx.remove();
-        }
+            return null;
+        } 
 
-        if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-            Logger.debug(HTMLPageAssetAPIImpl.class, "Into the ClickstreamFilter");
-            // Ensure that clickstream is recorded only once per request.
-            if (requestProxy.getAttribute(ClickstreamFilter.FILTER_APPLIED) == null) {
-                requestProxy.setAttribute(ClickstreamFilter.FILTER_APPLIED, Boolean.TRUE);
-
-                if (user != null) {
-                    UserProxy userProxy = null;
-                    try {
-                        userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
-                                userAPI.getSystemUser(), false);
-                    } catch (DotRuntimeException e) {
-                        e.printStackTrace();
-                    } catch (DotSecurityException e) {
-                        e.printStackTrace();
-                    } catch (DotDataException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-        }
-
-        return out.toString();
     }
 }

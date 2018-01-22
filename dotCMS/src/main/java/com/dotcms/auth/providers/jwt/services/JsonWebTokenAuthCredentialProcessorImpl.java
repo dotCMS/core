@@ -72,8 +72,10 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
                 throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
             }
 
-            httpSession.setAttribute(WebKeys.CMS_USER, user);
-            httpSession.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            if (null != httpSession) {
+                httpSession.setAttribute(WebKeys.CMS_USER, user);
+                httpSession.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            }
         }
 
         return user;

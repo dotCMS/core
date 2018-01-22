@@ -33,7 +33,7 @@ public abstract class SelectableValuesField extends Field{
 	
 	@Value.Check
 	public void check() {
-		super.check();
+
 		if(iDate().before(legacyFieldDate))return;
 		if(values()!=null){
 	        String[] tempVals = StringUtil.split(values().replaceAll("\r\n","|").trim(), "|");

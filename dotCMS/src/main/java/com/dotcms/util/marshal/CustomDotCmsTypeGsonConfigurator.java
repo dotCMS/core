@@ -27,7 +27,7 @@ public class CustomDotCmsTypeGsonConfigurator implements GsonConfigurator {
 
         gsonBuilder.registerTypeAdapter( Payload.class, new PayloadAdapter() );
         gsonBuilder.registerTypeAdapter(ExcludeOwnerVerifierBean.class, new ExcludeOwnerVerifierAdapter());
-        gsonBuilder.registerTypeAdapter(Contentlet.class, new ContentletDeserializer() );
+        gsonBuilder.registerTypeAdapter(Contentlet.class, new ContentletDeserializer() ); // todo: for 4.2 use just one instance for all of them.
         gsonBuilder.registerTypeAdapter(HTMLPageAsset.class, new ContentletDeserializer() );
         gsonBuilder.registerTypeAdapter(Host.class, new ContentletDeserializer() );
 

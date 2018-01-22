@@ -1,11 +1,14 @@
 define("dojox/widget/PortletSettings", [
 	"dojo/_base/declare",
-	"dojo/_base/kernel",
+	"dojo/_base/lang",
+	"dojo/dom-style",
+	"dojo/dom-class",
 	"dojo/fx",
-	"dijit/TitlePane"
-	], function(declare, kernel, fx, TitlePane){
+	"dijit/_Container",
+	"dijit/layout/ContentPane"
+	], function(declare, lang, domStyle, domClass, fx, _Container, ContentPane){
 		
-return declare("dojox.widget.PortletSettings", [dijit._Container, dijit.layout.ContentPane], {
+return declare("dojox.widget.PortletSettings", [_Container, ContentPane], {
 	// summary:
 	//		A settings widget to be used with a dojox.widget.Portlet.
 	// description:
@@ -29,11 +32,11 @@ return declare("dojox.widget.PortletSettings", [dijit._Container, dijit.layout.C
 		//		Sets the require CSS classes on the widget.
 
 		// Start the PortletSettings widget hidden, always.
-		dojo.style(this.domNode, "display", "none");
-		dojo.addClass(this.domNode, "dojoxPortletSettingsContainer");
+		domStyle.set(this.domNode, "display", "none");
+		domClass.add(this.domNode, "dojoxPortletSettingsContainer");
 
 		// Remove the unwanted content pane class.
-		dojo.removeClass(this.domNode, "dijitContentPane");
+		domClass.remove(this.domNode, "dijitContentPane");
 	},
 
 	_setPortletAttr: function(portlet){
@@ -46,20 +49,20 @@ return declare("dojox.widget.PortletSettings", [dijit._Container, dijit.layout.C
 		// summary:
 		//		Toggles the visibility of this widget.
 		var n = this.domNode;
-		if(dojo.style(n, "display") == "none"){
-			dojo.style(n,{
+		if(domStyle.get(n, "display") == "none"){
+			domStyle.set(n,{
 				"display": "block",
 				"height": "1px",
 				"width": "auto"
 			});
-			dojo.fx.wipeIn({
+			fx.wipeIn({
 				node: n
 			}).play();
 		}else{
-			dojo.fx.wipeOut({
+			fx.wipeOut({
 				node: n,
-				onEnd: dojo.hitch(this, function(){
-					dojo.style(n,{"display": "none", "height": "", "width":""});
+				onEnd: lang.hitch(this, function(){
+					domStyle.set(n,{"display": "none", "height": "", "width":""});
 				}
 			)}).play();
 		}

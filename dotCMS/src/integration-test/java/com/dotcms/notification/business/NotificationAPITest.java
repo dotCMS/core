@@ -71,7 +71,7 @@ public class NotificationAPITest extends IntegrationTestBase  {
             //Delete it
             APILocator.getNotificationAPI().deleteNotification(latest.getUserId(), latest.getGroupId());
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
 
             //Make sure it was deleted
             assertNull(APILocator.getNotificationAPI().findNotification(systemUser.getUserId(), latest.getGroupId()));
@@ -246,7 +246,7 @@ public class NotificationAPITest extends IntegrationTestBase  {
             notificationAPI.deleteNotifications(newUser1.getUserId());
             notificationAPI.deleteNotifications(newUser2.getUserId());
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
 
             //Make sure everything is clean
             assertTrue(notificationAPI.getNotificationsCount(systemUser.getUserId()) == 0);
@@ -328,7 +328,7 @@ public class NotificationAPITest extends IntegrationTestBase  {
             assertNotNull(foundUsers);
             assertTrue(foundUsers.size() == 3);
 
-            HibernateUtil.commitTransaction();
+            HibernateUtil.closeAndCommitTransaction();
 
             //Generate a notification for the new created test role
             notificationAPI.generateNotification(

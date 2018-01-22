@@ -180,7 +180,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 
             }
 
-            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName()) > 0;
+            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
         } catch (Exception e) {
             throw new Exception("Error running the Roles Integrity Check", e);
         }
@@ -252,6 +252,11 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 		dc.loadResult();
 
 		dc.setSQL("UPDATE permission SET roleid=? WHERE roleid=?");
+		dc.addParam(newRoleId);
+		dc.addParam(oldRoleId);
+		dc.loadResult();
+
+		dc.setSQL("UPDATE layouts_cms_roles SET role_id = ? WHERE role_id = ?");
 		dc.addParam(newRoleId);
 		dc.addParam(oldRoleId);
 		dc.loadResult();

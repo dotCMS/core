@@ -17,7 +17,7 @@
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.viewtools.CategoriesWebAPI"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -26,6 +26,7 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
+<%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -105,7 +106,12 @@
 
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
-	if (request.getParameter("referer") != null) {
+	if (request.getHeader("referer") != null && 
+	                (request.getHeader("referer").contains("baseType") || 
+	                                request.getHeader("referer").contains("structure_id"))){
+	    referer = request.getHeader("referer");
+	}
+	else if (request.getParameter("referer") != null) {
 		referer = request.getParameter("referer");
 	} else {
 		Map params = new HashMap();
@@ -441,7 +447,7 @@ var editButtonRow="editContentletButtonRow";
 	   	<%if(InodeUtils.isSet(contentlet.getInode()) && contentlet.getStructure()!=null ){ %>
 	   		<%if(contentlet.isHost() || contentlet.getStructure().isHTMLPageAsset()){ %>
 				<div id="rulez" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Rules") %>" onShow="refreshRulesCp()">
-					<div id="contentletRulezDiv" style="height:100%;">
+					<div id="contentletRulezDiv" class="rules__tab-container" style="height:100%;">
 					</div>
 				</div>
 			<%} %>
@@ -453,7 +459,19 @@ var editButtonRow="editContentletButtonRow";
 	<%if(!permissionsTabFieldExists && canEditAsset){%>
 		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 			<%
-				IHTMLPage permParent = (IHTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), IHTMLPage.class);
+				IHTMLPage permParent = null;
+				final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+
+				try {
+
+					permParent = (IHTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), IHTMLPage.class);
+				} finally {
+
+					if (isNewConnection) {
+
+						DbConnectionFactory.closeSilently();
+					}
+				}
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				if(permParent != null)
 					request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, permParent);
@@ -507,11 +525,18 @@ var editButtonRow="editContentletButtonRow";
 			</div>
 
 			<div class="content-edit-workflow">
+				<% if(null != wfSteps && wfSteps.size() ==1){
+					WorkflowStep step = wfSteps.get(0);
+				%>
 				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
 				<table>
 					<tr>
+						<th><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
+						<td><%=APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).getName() %></td>
+					</tr>
+					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-						<td><%=wfStep.getName() %></td>
+						<td><%=step.getName() %></td>
 					</tr>
 					<tr>
 						<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
@@ -528,6 +553,7 @@ var editButtonRow="editContentletButtonRow";
 						<%} %>
 					</tr>
 				</table>
+				<% } %>
 			</div>
 
 			<% } %>

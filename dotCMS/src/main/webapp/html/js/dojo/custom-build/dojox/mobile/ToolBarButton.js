@@ -85,6 +85,11 @@ define("dojox/mobile/ToolBarButton", [
 			}
 			this.bodyNode = domConstruct.create("span", {className:"mblToolBarButtonBody"}, this.domNode);
 			this.tableNode = domConstruct.create("table", {cellPadding:"0",cellSpacing:"0",border:"0"}, this.bodyNode);
+			if(!this.label && this.arrow){
+				// The class mblToolBarButtonText is needed for arrow shape too.
+				// If the button has a label, the class is set by _setLabelAttr. If no label, do it here.
+				this.tableNode.className = "mblToolBarButtonText";
+			}
 
 			var row = this.tableNode.insertRow(-1);
 			this.iconParentNode = row.insertCell(-1);
@@ -137,7 +142,7 @@ define("dojox/mobile/ToolBarButton", [
 			// summary:
 			//		Sets the button label text.
 			this.inherited(arguments);
-			domClass.toggle(this.tableNode, "mblToolBarButtonText", text);
+			domClass.toggle(this.tableNode, "mblToolBarButtonText", text || this.arrow); // also needed if only arrow
 		},
 
 		_setSelectedAttr: function(/*Boolean*/selected){

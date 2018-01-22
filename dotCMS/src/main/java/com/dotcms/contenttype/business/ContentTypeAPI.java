@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
@@ -24,7 +25,6 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
  * <li> Forms
  * <li> HTMLPage
  * <li> Menu Link
- * <li> Virtual Link
  * <li> Container
  * <li> Template
  * <li> User
@@ -42,13 +42,13 @@ public interface ContentTypeAPI {
    * Name of Structures already set by dotcms
    */
   final Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "forms", "html page",
-      "menu link", "virtual link", "container", "template", "user");
+      "menu link", "container", "template", "user");
 
   /**
    * Variable Name of the Structures already set by dotcms
    */
   final Set<String> reservedStructureVars = ImmutableSet.of("host", "folder", "file", "forms", "htmlpage", "menulink",
-      "virtuallink", "container", "template", "user", "calendarEvent");
+		  "container", "template", "user", "calendarEvent");
 
   /**
    * Deletes the given Content Type
@@ -62,12 +62,12 @@ public interface ContentTypeAPI {
   /**
    * Find a Content Type given the inode
    * 
-   * @param inode The Inode representing the Structure to find
+   * @param inodeOrVar Either the Inode or the Velocity var name representing the Structure to find
    * @return Content Type Object
    * @throws DotSecurityException The user does not have permissions to perform this action.
    * @throws DotDataException Error occurred when performing the action.
    */
-  ContentType find(String inode) throws DotSecurityException, DotDataException;
+  ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
    * Finds All the Content Types that exists in the system
@@ -251,4 +251,50 @@ public interface ContentTypeAPI {
    * @throws DotDataException
    */
   Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  
+  /**
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields with the values set on the fields
+   * parameter
+   * 
+   * @param contentType Content Type that is going to be modified
+   * @param newFields Content Type list of fields
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType contentType, List<Field> newFields) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields and fields variables with the values set 
+   * on the fields and fieldVariables parameters 
+   * 
+   * @param contentType Content Type that is going to be modified
+   * @param newFields Content Type list of fields
+   * @param newFieldVariables ContentType list of field variables
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Update the Content Type mod_date and clean the cache
+   * @param type Content Type that is going to be modified
+   * @return true if the mod_date was updated, false if not
+   * @throws DotDataException 
+   */
+   boolean updateModDate(ContentType type) throws DotDataException;
+
+  boolean updateModDate(Field field) throws DotDataException;
+
+  /**
+   * Remove url mapping and detail page from a specific content type
+   * @param contentType Content Type that is going to be modified
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
+  void unlinkPageFromContentType(ContentType contentType)
+          throws DotSecurityException, DotDataException;
 }

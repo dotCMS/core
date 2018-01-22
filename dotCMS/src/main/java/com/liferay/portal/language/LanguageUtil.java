@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -188,14 +189,17 @@ public class LanguageUtil {
         return value;
     }
 
-	public static String get(PageContext pageContext, String key)
+	public static String get(PageContext pageContext, String key) throws LanguageException {
+    	return get(pageContext, key, null);
+	}
+	public static String get(PageContext pageContext, String key, Object... args)
 		throws LanguageException {
 		Logger.debug(LanguageUtil.class, key);
 		String value = null;
 
 		try {
 			value = TagUtils.getInstance().message(
-				pageContext, null, null, key);
+				pageContext, null, null, key, args);
 		}
 		catch (Exception e) {
 			_log.error(e.getMessage());
@@ -550,4 +554,27 @@ public class LanguageUtil {
 
 		return defaultLocale;
 	}
+	
+	/**
+	 * Returns a String with the languageCode and the CountryCode appended, if there is no 
+	 * CountryCode only the languageCode. This is use to search the flags that shows in the UI.
+	 * 
+	 * @param languageCode
+	 * @param countryCode
+	 * @return
+	 */
+    public static String getLiteralLocale(final String languageCode, final String countryCode) {
+        final String newCountryCode = (countryCode == null || countryCode.isEmpty()) ? "" : "_"+countryCode;
+        return new StringBuilder(languageCode).append(newCountryCode).toString();
+    }
+
+    public static Language getUserLanguage(final Language lang, final Locale locale) {
+        Language userLanguage = lang;
+        if(lang.getCountryCode()==null || lang.getCountryCode().isEmpty()){
+            String defaultCountryCode = locale.getCountry();
+            userLanguage = APILocator.getLanguageAPI().getLanguage(lang.getLanguageCode(), defaultCountryCode);
+            userLanguage = (userLanguage != null && userLanguage.getId()>0)?userLanguage:lang;
+        }
+        return userLanguage;
+    }
 }

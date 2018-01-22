@@ -10,9 +10,10 @@
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
-<%	if( LicenseUtil.getLevel()<300){ %>
+<%	if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
 <%return;} %>
 
@@ -72,30 +73,11 @@ function goToEditEnvironment(identifier){
     dojo.style(dialog.domNode,'top','80px');
 }
 
-function goToEditEndpoint(identifier, envId, isSender){
-    var dialog = new dijit.Dialog({
-        id: 'addEndpoint',
-        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
-        style: "width: 800px; ",
-        content: new dojox.layout.ContentPane({
-            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier+"&environmentId="+envId+"&isSender="+isSender
-        }),
-        onHide: function() {
-            var dialog=this;
-            setTimeout(function() {
-                dialog.destroyRecursive();
-            },200);
-        },
-        onLoad: function() {
-        }
-    });
-    dialog.show();
-    dojo.style(dialog.domNode,'top','80px');
-}
+function deleteEndpoint(identifier, isServer) {
 
-function deleteEndpoint(identifier, fromEnvironment) {
-
-    if (confirm("Are you sure you want to delete this endpoint?")) {
+    var confirmMessage = (isServer) ? '<%= LanguageUtil.get(pageContext, "publisher_Server_Delete_Confirm")%>' :
+                                                '<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Delete_Confirm")%>';
+    if (confirm(confirmMessage)) {
 
         var xhrArgs = {
             url: "/api/config/deleteEndpoint",
@@ -111,7 +93,15 @@ function deleteEndpoint(identifier, fromEnvironment) {
                 }
 
                 loadRemotePublishingTab();
-                showDotCMSSystemMessage(data.message, isError);
+                if (isError) {
+                    showDotCMSSystemMessage(data.message, isError);
+                } else {
+                    showDotCMSSystemMessage( (isServer) ?
+                        '<%= LanguageUtil.get(pageContext, "publisher_Server_deleted")%>' :
+                        '<%= LanguageUtil.get(pageContext, "publisher_End-Point_deleted")%>'
+                        , false);
+                }
+
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
@@ -709,9 +699,10 @@ function deleteEnvironment(identifier) {
 }
 
 function goToAddEndpoint(environmentId, isSender) {
+    console.log('Add Endpoint: isSender ='+ isSender);
     var dialog = new dijit.Dialog({
         id: 'addEndpoint',
-        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Add")%>",
+        title: (isSender === 'true') ? "<%= LanguageUtil.get(pageContext, "publisher_Add_Server")%>" : "<%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint")%>",
         style: "width: 582px; ",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?environmentId=" + environmentId + "&isSender=" + isSender
@@ -731,9 +722,10 @@ function goToAddEndpoint(environmentId, isSender) {
 }
 
 function goToEditEndpoint(identifier, envId, isSender){
+    console.log('Edit Endpoint: isSender ='+ isSender);
     var dialog = new dijit.Dialog({
         id: 'addEndpoint',
-        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
+        title: (isSender === 'true') ? "<%= LanguageUtil.get(pageContext, "publisher_Edit_Server")%>" : "<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint")%>",
         style: "width: 582px; ",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier+"&environmentId="+envId+"&isSender="+isSender
@@ -835,15 +827,21 @@ function deleteEnvPushHistory(envId) {
         handleAs : "json",
         sync: false,
         load : function(data) {
-            var confirmDialog  =new dijit.Dialog({
-                id: "deleteHistory",
-                class: "noDijitDialogTitleBar",
-                content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
-            });
+            var confirmDialog = dijit.byId("deleteHistory");
+
+            if(confirmDialog===null || confirmDialog === undefined) {
+                confirmDialog = new dijit.Dialog({
+                    id: "deleteHistory",
+                    class: "noDijitDialogTitleBar",
+                    content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+                });
+            }
+
             confirmDialog.show();
         },
         error : function(error) {
-            targetNode.innerHTML = "An unexpected error occurred: " + error;
+            console.log("this is the error:" + error);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
 
@@ -913,26 +911,32 @@ function deleteEnvPushHistory(envId) {
                 <div style="padding:10px 8px; margin: -10px 0; border-left:1px solid #ECEDEE;border-right:1px solid #ECEDEE;">
                     <div class="buttonsGroup">
 
-                        <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                        
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
-                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
-                            </button>
-                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
-                            </button>
-                            <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
-                                <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
-                                    <img src="/html/images/icons/processing.gif" /></font>
-                            </div>
+                            <%if((environment.getPushToAll() || i == 0)
+                                    && !"awss3".equalsIgnoreCase(endpoint.getProtocol())
+                                    && !"static".equalsIgnoreCase(endpoint.getProtocol())){%>
+                                <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
+                                    <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
+                                </button>
+                                <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
+                                    <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
+                                </button>
+                            <%} %>
+                            <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                                <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
+                                    <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
+                                        <img src="/html/images/icons/processing.gif" /></font>
+                                </div>
+                            <%} %>
                             <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
-                            <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">
+                            <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', false)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">
                                 <%= LanguageUtil.get( pageContext, "delete" ) %>
                             </button>
                         </div>
-                        <%} %>
+                        
 
                     </div>
 
@@ -1037,7 +1041,7 @@ function deleteEnvPushHistory(envId) {
 <table class="listingTable">
         <tr>
             <th style="width:40px"></th>
-            <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
+            <th><%= LanguageUtil.get(pageContext, "publisher_Server_Name") %></th>
 
         </tr>
         <%
@@ -1049,9 +1053,9 @@ function deleteEnvPushHistory(envId) {
                 hasRow=true;%>
         <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
         <td class="listingTable__actions">
-                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Server_Title") %>">
                     <span class="deleteIcon"></span></a>&nbsp;
-                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Server_Title") %>">
                     <span class="editIcon"></span></a>
             </td>
 

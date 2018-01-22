@@ -21,6 +21,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.util.ReleaseInfo"%>
 
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
@@ -34,7 +35,7 @@ params.put("struts_action",	new String[] { "/ext/cmsmaintenance/view_cms_mainten
 String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.NORMAL.toString(), params), "UTF-8");
 
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
-session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true);
+
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 List<Structure> structs = StructureFactory.getStructures();
 %>
@@ -1228,6 +1229,7 @@ function assetHostListTable_deleteHost(hostId){
 		dojo.byId("assetHost").value=ids;
 	}
 }
+
 </script>
 
 <style>
@@ -1797,6 +1799,8 @@ dd.leftdl {
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
 		<br>&nbsp;<br>
 		<div style="width:80%;margin: 0 auto;">
+		    <h2 id="version-info"><%=LanguageUtil.get(pageContext, "version") %>&#58;&nbsp;<%=ReleaseInfo.getVersion() %>&nbsp;&#40;<%=ReleaseInfo.getBuildDateString() %>&#41;</h2>
+            <br>&nbsp;<br>
 	        <table class="listingTable shadowBox">
 	            <thead>
 	            <th>

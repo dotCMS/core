@@ -141,6 +141,8 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				user = (User) session.getUserProperties().get(USER);
 				this.queue.add(new SessionWrapper(session, user));
 				isLoggedIn = true;
+				Logger.debug(this, "New session open: " + session +
+										", with user: " + user.getEmailAddress());
 			} catch (Exception e) {
 
 				if (Logger.isErrorEnabled(this.getClass())) {
@@ -169,9 +171,6 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				}
 				throw new IllegalStateException(e);
 			}
-		} else {
-			// if session succesfully we start the ping pong (if it enables)
-			this.doPing(session);
 		}
 	} // open.
 

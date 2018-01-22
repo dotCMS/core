@@ -27,8 +27,8 @@ public class StructureTransformer implements ContentTypeTransformer  {
 		this(ImmutableList.of(type));
 	}
 	public StructureTransformer(List<? extends ContentTypeIf> types) {
-		List<Structure> strucs = new ArrayList<Structure>();
-		List<ContentType> cTypes = new ArrayList<ContentType>();
+		List<Structure> strucs = new ArrayList<>(types.size());
+		List<ContentType> cTypes = new ArrayList<>(types.size());
 		for(ContentTypeIf type : types){
 			if(type instanceof Structure){
 				strucs.add((Structure)type);

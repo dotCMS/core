@@ -10,6 +10,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.util.List"%>
 
 <%
@@ -31,7 +32,6 @@
 	params.put("copy_folders", new String[] { "{copyFolders}" });
 	params.put("copy_content_on_host", new String[] { "{copyContentOnHost}" });
 	params.put("copy_links", new String[] { "{copyLinks}" });
-	params.put("copy_virtual_links", new String[] { "{copyVirtualLinks}" });
 	params.put("copy_host_variables", new String[] { "{copyHostVariables}" });
 	params.put("copy_tag_storage", new String[] { "{copyTagStorage}" });
 
@@ -57,7 +57,7 @@
 	var publishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-host-confirm")) %>';
 	var makeDefaultConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "make-default-host-confirm")) %>';
 
-	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+	var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
 	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
@@ -71,7 +71,7 @@
 
 		viewHostsReferer: '<%= referer %>',
 
-		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_links:{copyLinks};copy_virtual_links:{copyVirtualLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
+		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
 
 		newHostURL: '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">\
 							<portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />\
@@ -292,7 +292,6 @@
 						copyFolders: dijit.byId('copyFolders').attr('value'),
 						copyContentOnHost: dijit.byId('copyContentOnHost').attr('value'),
 						copyLinks: dijit.byId('copyLinks').attr('value'),
-						copyVirtualLinks: dijit.byId('copyVirtualLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value
 					}));				

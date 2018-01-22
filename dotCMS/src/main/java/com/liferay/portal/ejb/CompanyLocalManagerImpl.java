@@ -26,6 +26,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -196,6 +197,7 @@ public class CompanyLocalManagerImpl implements CompanyLocalManager {
 		return CompanyUtil.findAll();
 	}
 
+	@CloseDBIfOpened
 	public Company getCompany(String companyId)
 		throws PortalException, SystemException {
 

@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -153,6 +154,7 @@ public class ImportUtil {
         results.put("results", new ArrayList<String>());
         results.put("counters", new ArrayList<String>());
         results.put("identifiers", new ArrayList<String>());
+        results.put("updatedInodes", new ArrayList<String>());
         results.put("lastInode", new ArrayList<String>());
 
         Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
@@ -251,7 +253,7 @@ public class ImportUtil {
                             }
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
-                                HibernateUtil.commitTransaction();
+                                HibernateUtil.closeAndCommitTransaction();
                                 Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
@@ -272,7 +274,7 @@ public class ImportUtil {
                         results.get("counters").add("errors="+errors);
                         results.get("counters").add("newContent="+counters.getNewContentCounter());
                         results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
-                        HibernateUtil.commitTransaction();
+                        HibernateUtil.closeAndCommitTransaction();
                     }
 
                     results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));
@@ -790,6 +792,7 @@ public class ImportUtil {
                     bean.setField(field);
                     bean.setValue(valueObj);
                     bean.setLineNumber(lineNumber);
+                    bean.setLanguageId(language);
                     uniqueFieldBeans.add(bean);
                 }
             }
@@ -1005,6 +1008,8 @@ public class ImportUtil {
                         }
                         if(columnExists) {
                             contentlets.add(con);
+                            //Keep a register of all contentlets to be updated
+                            results.get("updatedInodes").add(con.getInode());
                         }
                     }
                 }
@@ -1130,14 +1135,14 @@ public class ImportUtil {
 
                         if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
                             if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
+                                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
                             }
                             cont.setHost(folder.getHostId());
                             cont.setFolder(value.toString());
                         }
                         else if(host != null) {
                             if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-                                throw new DotSecurityException("User have no Add Children Permissions on selected host");
+                                throw new DotSecurityException("User has no Add Children Permissions on selected host");
                             }
                             cont.setHost(value.toString());
                             cont.setFolder(FolderAPI.SYSTEM_FOLDER);
@@ -1228,23 +1233,9 @@ public class ImportUtil {
                 //Check if line has repeated values for a unique field, if it does then ignore the line
                 boolean ignoreLine = false;
                 if(!uniqueFieldBeans.isEmpty()){
-                    for(Field f : uniqueFields){
-                        Object value = null;
-                        int count = 0;
-                        for(UniqueFieldBean bean : uniqueFieldBeans){
-                            if(bean.getField().equals(f)){
-                                if(count > 0 && value!=null && value.equals(bean.getValue()) && lineNumber == bean.getLineNumber()){
-                                    counters.setNewContentCounter(counters.getNewContentCounter() - 1);
-                                    ignoreLine = true;
-                                    results.get("warnings").add(
-                                            LanguageUtil.get(user, "Line--") + " " + lineNumber +  " " +LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f.getVelocityVarName() + " "  +LanguageUtil.get(user, "and-will-be-ignored") );
-                                }
-                                value = bean.getValue();
-                                count++;
-
-                            }
-                        }
-                    }
+                    ignoreLine =
+                        validateUniqueFields(user, results, lineNumber, language, counters, uniqueFieldBeans,
+                            uniqueFields);
                 }
 
                 if(!ignoreLine){
@@ -1371,8 +1362,48 @@ public class ImportUtil {
             }
         } catch (Exception e) {
             Logger.error(ImportUtil.class,e.getMessage(),e);
-            throw new DotRuntimeException(e.getMessage());
+            throw new DotRuntimeException(e.getMessage(),e);
         }
+    }
+
+    /**
+     *
+     * @param user
+     * @param results
+     * @param lineNumber
+     * @param language
+     * @param counters
+     * @param uniqueFieldBeans
+     * @param uniqueFields
+     * @return
+     * @throws LanguageException
+     */
+    private static boolean validateUniqueFields(User user, HashMap<String, List<String>> results, int lineNumber,
+                                                long language, Counters counters,
+                                                List<UniqueFieldBean> uniqueFieldBeans,
+                                                List<Field> uniqueFields) throws LanguageException {
+        boolean ignoreLine = false;
+        for (Field f : uniqueFields) {
+            Object value = null;
+            int count = 0;
+            for (UniqueFieldBean bean : uniqueFieldBeans) {
+                if (bean.getField().equals(f) && language == bean.getLanguageId()) {
+                    if (count > 0 && value != null && value.equals(bean.getValue()) && lineNumber == bean
+                        .getLineNumber()) {
+                        counters.setNewContentCounter(counters.getNewContentCounter() - 1);
+                        ignoreLine = true;
+                        results.get("warnings").add(
+                            LanguageUtil.get(user, "Line--") + " " + lineNumber + " " + LanguageUtil
+                                .get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f
+                                .getVelocityVarName() + " " + LanguageUtil.get(user, "and-will-be-ignored"));
+                    }
+                    value = bean.getValue();
+                    count++;
+
+                }
+            }
+        }
+        return ignoreLine;
     }
 
     /**
@@ -1571,6 +1602,8 @@ public class ImportUtil {
 
         private Integer lineNumber;
 
+        private long languageId;
+
         /**
          * 
          * @return
@@ -1617,6 +1650,14 @@ public class ImportUtil {
          */
         public void setLineNumber(Integer lineNumber) {
             this.lineNumber = lineNumber;
+        }
+
+        public long getLanguageId() {
+            return languageId;
+        }
+
+        public void setLanguageId(long languageId) {
+            this.languageId = languageId;
         }
 
     }

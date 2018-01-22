@@ -2,24 +2,20 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.company.CompanyAPI;
-import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -30,6 +26,10 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.keyvalue.business.KeyValueAPI;
+import com.dotcms.keyvalue.business.KeyValueAPIImpl;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -43,21 +43,26 @@ import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
@@ -95,8 +100,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -140,9 +143,9 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of this class.
 	 */
 	public synchronized static void init(){
-		if(instance != null)
+		if(instance != null) {
 			return;
-
+		}
 
 		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null, false);
 		if (apiLocatorClass != null) {
@@ -185,8 +188,11 @@ public class APILocator extends Locator<APIIndex>{
 		}
 	} // destroy.
 
-
-
+    /**
+     * Creates a single instance of the {@link SecurityLoggerServiceAPI} class.
+     *
+     * @return The {@link SecurityLoggerServiceAPI} class.
+     */
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
 	}
@@ -336,7 +342,9 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of the {@link FieldAPI} class.
 	 *
 	 * @return The {@link FieldAPI} class.
+	 * @deprecated
 	 */
+	@Deprecated
 	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
 		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
 	}
@@ -469,15 +477,6 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link VirtualLinkAPI} class.
-	 *
-	 * @return The {@link VirtualLinkAPI} class.
-	 */
-	public static VirtualLinkAPI getVirtualLinkAPI(){
-		return (VirtualLinkAPI) getInstance(APIIndex.VIRTUALLINK_API);
-	}
-
-	/**
 	 * Creates a single instance of the {@link DashboardAPI} class.
 	 *
 	 * @return The {@link DashboardAPI} class.
@@ -539,7 +538,6 @@ public class APILocator extends Locator<APIIndex>{
 	public static TagAPI getTagAPI(){
 		return (TagAPI) getInstance(APIIndex.TAG_API);
 	}
-
 
 	/**
 	 * Creates a single instance of the {@link LoginServiceAPI} class.
@@ -608,7 +606,12 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of the {@link StructureAPI} class.
 	 *
 	 * @return The {@link StructureAPI} class.
+	 * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+	 *             please use the {@link ContentTypeAPI} class via
+	 *             {@link APILocator#getContentTypeAPI(User)} in order to interact
+	 *             with Content Types.
 	 */
+	@Deprecated
 	public static StructureAPI getStructureAPI() {
 	    return (StructureAPI)getInstance(APIIndex.STRUCTURE_API);
 	}
@@ -753,15 +756,29 @@ public class APILocator extends Locator<APIIndex>{
     	return getAPILocatorInstance().getContentTypeAPIImpl(user, respectFrontendRoles);
 	}
 
+    public static MultiTreeAPI getMultiTreeAPI() {
+        return (MultiTreeAPI) getInstance( APIIndex.MULTI_TREE_API );
+    }
+
     @VisibleForTesting
     protected ContentTypeAPI getContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     	return new ContentTypeAPIImpl(user, respectFrontendRoles);
     }
 
+    /**
+     * Creates a single instance of the {@link FieldAPI} class.
+     *
+     * @return The {@link FieldAPI} class.
+     */
     public static FieldAPI getContentTypeFieldAPI() {
 		return new FieldAPIImpl();
 	}
 
+    /**
+     * Returns the dotCMS System User object.
+     * 
+     * @return The System {@link User}.
+     */
     public static User systemUser()  {
       try{
         return getUserAPI().getSystemUser();
@@ -770,8 +787,12 @@ public class APILocator extends Locator<APIIndex>{
         throw new DotStateException(e);
       }
 	}
-    
-    
+
+    /**
+     * Returns the dotCMS System Host object.
+     * 
+     * @return The System {@link Host}.
+     */
     public static Host systemHost()  {
       try{
         return getHostAPI().findSystemHost();
@@ -780,10 +801,13 @@ public class APILocator extends Locator<APIIndex>{
         throw new DotStateException(e);
       }
 	}
-    
 
+    /**
+     * Creates a single instance of the {@link TreeableAPI} class.
+     *
+     * @return The {@link TreeableAPI} class.
+     */
 	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
-
 
 	/**
 	 * Returns the System Events API that allows other pieces of the application
@@ -804,6 +828,42 @@ public class APILocator extends Locator<APIIndex>{
 	public static FileWatcherAPI getFileWatcherAPI() {
 		return (FileWatcherAPI) getInstance(APIIndex.FILE_WATCHER_API);
 	}
+	
+	/**
+	 * Creates a single instance of the {@link VanityUrlAPI}
+	 *
+	 * @return The {@link VanityUrlAPI} class.
+	 */
+	public static VanityUrlAPI getVanityUrlAPI() {
+		return (VanityUrlAPI) getInstance(APIIndex.VANITY_URLS_API);
+	}
+
+	/**
+     * Creates a single instance of the {@link KeyValueAPI}
+     *
+     * @return The {@link KeyValueAPI} class.
+     */
+    public static KeyValueAPI getKeyValueAPI() {
+        return (KeyValueAPI) getInstance(APIIndex.KEY_VALUE_API);
+    }
+
+	/**
+	 * Creates a single instance of the {@link LocalSystemEventsAPI}
+	 *
+	 * @return The {@link LocalSystemEventsAPI} class.
+	 */
+	public static LocalSystemEventsAPI getLocalSystemEventsAPI() {
+		return (LocalSystemEventsAPI) getInstance(APIIndex.LOCAL_SYSTEM_EVENTS_API);
+	}
+
+    /**
+     * Creates a single instance of the {@link LanguageVariableAPI}
+     *
+     * @return The {@link LanguageVariableAPI} class.
+     */
+    public static LanguageVariableAPI getLanguageVariableAPI() {
+        return (LanguageVariableAPI) getInstance(APIIndex.LANGUAGE_VARIABLE_API);
+    }
 
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
@@ -826,6 +886,11 @@ public class APILocator extends Locator<APIIndex>{
 		return serviceRef;
 	}
 
+	/**
+	 * Creates a unique instance of this API Locator.
+	 * 
+	 * @return A new instance of the {@link APILocator}.
+	 */
 	private static APILocator getAPILocatorInstance() {
 		if(instance == null){
 			init();
@@ -894,7 +959,6 @@ enum APIIndex
 	FILE_API,
 	HTMLPAGE_API,
 	MENULINK_API,
-	VIRTUALLINK_API,
 	DASHBOARD_API,
 	SITESEARCH_API,
 	VERSIONABLE_API,
@@ -927,75 +991,108 @@ enum APIIndex
 	WEB_SOCKET_CONTAINER_API,
 	COMPANY_API,
 	SECURITY_LOGGER_API,
-	FILE_WATCHER_API;
+	FILE_WATCHER_API,
+	KEY_VALUE_API,
+	LOCAL_SYSTEM_EVENTS_API,
+	LANGUAGE_VARIABLE_API,
+	VANITY_URLS_API,
+	MULTI_TREE_API;
 
 	Object create() {
 		switch(this) {
-		case PERMISSION_API: return new PermissionBitAPIImpl();
-		case ROLE_API: return new RoleAPIImpl();
-		case USER_API: return new UserAPIImpl();
-		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
-		case LOGIN_SERVICE_API: return LoginServiceAPIFactory.getInstance().getLoginService();
-		case EVENT_API: return new EventAPIImpl();
-		case CATEGORY_API: return new CategoryAPIImpl();
-		case CONTENTLET_API: return new  ESContentletAPIImpl();
-		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
-		case RELATIONSHIP_API: return new RelationshipAPIImpl();
-		case IDENTIFIER_API: return new IdentifierAPIImpl();
-		case FIELD_API: return new com.dotmarketing.portlets.structure.business.FieldAPIImpl();
-		case PORTLET_API: return new PortletAPIImpl();
-		case WIDGET_API: return new WidgetAPIImpl();
-		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
-		case PLUGIN_API: return new PluginAPIImpl();
-		case LANGUAGE_API: return new LanguageAPIImpl();
-		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
-		case TEMPLATE_API : return new TemplateAPIImpl();
-		case FOLDER_API: return new FolderAPIImpl();
-		case CONTAINER_API: return new ContainerAPIImpl();
-		case USER_PROXY_API : return new UserProxyAPIImpl();
-		case HOST_API : return new HostAPIImpl();
-		case LAYOUT_API : return new LayoutAPIImpl();
-		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
-		case FORM_API: return new FormAPIImpl();
-		case MENULINK_API: return new MenuLinkAPIImpl();
-		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
-		case DASHBOARD_API: return new DashboardAPIImpl();
-		case SITESEARCH_API: return new ESSiteSearchAPI();
-		case FILEASSET_API: return new FileAssetAPIImpl();
-		case VERSIONABLE_API: return new VersionableAPIImpl();
-		case WORKFLOW_API : return new WorkflowAPIImpl();
-		case CACHE_PROVIDER_API : return new CacheProviderAPIImpl();
-		case TAG_API: return new TagAPIImpl();
-		case INDICIES_API: return new IndiciesAPIImpl();
-		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
-		case ES_INDEX_API: return new ESIndexAPI();
-		case PUBLISHER_API: return new PublisherAPIImpl();
-		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
-		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
-		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
-		case STRUCTURE_API: return new StructureAPIImpl();
-		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
-		case ENVIRONMENT_API: return new EnvironmentAPIImpl();
-		case BUNDLE_API: return new BundleAPIImpl();
-		case PUSHED_ASSETS_API: return new PushedAssetsAPIImpl();
-		case SERVER_API: return new ServerAPIImpl();
-		case NOTIFICATION_API: return new NotificationAPIImpl();
-		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
-		case PERSONA_API: return new PersonaAPIImpl();
-		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
-		case ES_SEARCH_API: return new ESSearchProxy();
-		case RULES_API: return new RulesAPIProxy();
-		case VISITOR_API: return new VisitorAPIImpl();
-		case SHORTY_ID_API: return new ShortyIdAPIImpl();
-		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
-		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
-		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
-		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
-		case FILE_WATCHER_API: return createFileWatcherAPI();
+    		case PERMISSION_API: return new PermissionBitAPIImpl();
+    		case ROLE_API: return new RoleAPIImpl();
+    		case USER_API: return new UserAPIImpl();
+    		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
+    		case LOGIN_SERVICE_API: return LoginServiceAPIFactory.getInstance().getLoginService();
+    		case EVENT_API: return new EventAPIImpl();
+    		case CATEGORY_API: return new CategoryAPIImpl();
+    		case CONTENTLET_API: return new  ESContentletAPIImpl();
+    		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
+    		case RELATIONSHIP_API: return new RelationshipAPIImpl();
+    		case IDENTIFIER_API: return new IdentifierAPIImpl();
+    		case FIELD_API: return new com.dotmarketing.portlets.structure.business.FieldAPIImpl();
+    		case PORTLET_API: return new PortletAPIImpl();
+    		case WIDGET_API: return new WidgetAPIImpl();
+    		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
+    		case PLUGIN_API: return new PluginAPIImpl();
+    		case LANGUAGE_API: return new LanguageAPIImpl();
+    		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
+    		case TEMPLATE_API : return new TemplateAPIImpl();
+    		case FOLDER_API: return new FolderAPIImpl();
+    		case CONTAINER_API: return new ContainerAPIImpl();
+    		case USER_PROXY_API : return new UserProxyAPIImpl();
+    		case HOST_API : return new HostAPIImpl();
+    		case LAYOUT_API : return new LayoutAPIImpl();
+    		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
+    		case FORM_API: return new FormAPIImpl();
+    		case MENULINK_API: return new MenuLinkAPIImpl();
+    		case DASHBOARD_API: return new DashboardAPIImpl();
+    		case SITESEARCH_API: return new ESSiteSearchAPI();
+    		case FILEASSET_API: return new FileAssetAPIImpl();
+    		case VERSIONABLE_API: return new VersionableAPIImpl();
+    		case WORKFLOW_API : return new WorkflowAPIImpl();
+    		case CACHE_PROVIDER_API : return new CacheProviderAPIImpl();
+    		case TAG_API: return new TagAPIImpl();
+    		case INDICIES_API: return new IndiciesAPIImpl();
+    		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
+    		case ES_INDEX_API: return new ESIndexAPI();
+    		case PUBLISHER_API: return new PublisherAPIImpl();
+    		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
+    		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
+    		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
+    		case STRUCTURE_API: return new StructureAPIImpl();
+    		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
+    		case ENVIRONMENT_API: return new EnvironmentAPIImpl();
+    		case BUNDLE_API: return new BundleAPIImpl();
+    		case PUSHED_ASSETS_API: return new PushedAssetsAPIImpl();
+    		case SERVER_API: return new ServerAPIImpl();
+    		case NOTIFICATION_API: return new NotificationAPIImpl();
+    		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
+    		case PERSONA_API: return new PersonaAPIImpl();
+    		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
+    		case ES_SEARCH_API: return new ESSearchProxy();
+    		case RULES_API: return new RulesAPIProxy();
+    		case VISITOR_API: return new VisitorAPIImpl();
+    		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+    		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
+    		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
+    		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
+    		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
+    		case FILE_WATCHER_API: return createFileWatcherAPI();
+    		case VANITY_URLS_API: return createVanityUrlAPI();
+			case KEY_VALUE_API: return new KeyValueAPIImpl();
+    		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
+			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
+			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
 
+	/**
+	 * Correctly initializes a new single instance of the {@link VanityUrlAPI}.
+	 *
+	 * @return The {@link VanityUrlAPI}.
+	 */
+	private static VanityUrlAPI createVanityUrlAPI () {
+
+		VanityUrlAPI vanityUrlAPI = null;
+
+		try {
+
+			vanityUrlAPI = new VanityUrlAPIImpl();
+		} catch (DotDataException e) {
+			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
+		}
+
+		return vanityUrlAPI;
+	} // createVanityUrlAPI.
+
+    /**
+     * Correctly initializes a new single instance of the {@link FileWatcherAPI}.
+     * 
+     * @return The {@link FileWatcherAPI}.
+     */
 	private static FileWatcherAPI createFileWatcherAPI () {
 
 		FileWatcherAPIImpl fileWatcherAPI = null;

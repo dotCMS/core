@@ -68,7 +68,7 @@ public class H22Cache extends CacheProvider {
 	// will disable auto recover
 	private final long recoverAfterErrors = Config.getIntProperty("cache.h22.recover.after.errors", 5000);
 
-	// try to recover with h2 if within this time (30m defualt)
+	// try to recover with h2 if within this time (30m default)
 	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 1000 * 60 * 30);
 	private long lastLog = System.currentTimeMillis();
 	private long[] errorCounter = new long[numberOfDbs];

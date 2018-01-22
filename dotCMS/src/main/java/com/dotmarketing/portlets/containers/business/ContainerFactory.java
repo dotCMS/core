@@ -54,7 +54,16 @@ public interface ContainerFactory {
 	 */
 	public List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
-    public List<Container> findContainersForStructure(String structureInode) throws DotDataException;
+    public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException;
+
+	/**
+	 * Search Containers associated with a specific Structure
+	 * @param structureIdentifier
+	 * @param workingOrLiveOnly True to filter the Containers if the version associated with the Structure is live or Working only
+	 * @return list of container
+	 * @throws DotDataException
+	 */
+	public List<Container> findContainersForStructure(String structureIdentifier, boolean workingOrLiveOnly) throws DotDataException;
 	
     /**
 	 * Method will replace user references of the given userId in containers 

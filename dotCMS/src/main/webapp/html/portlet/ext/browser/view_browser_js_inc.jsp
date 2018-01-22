@@ -369,7 +369,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             editLink(inode,referer);
         }
         if (inodes[inode].type == 'htmlpage') {
-            previewHTMLPage(inode,referer);
+            previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url);
         }
         return;
     }
@@ -877,9 +877,14 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
+                var langIcon = asset.languageFlag;
+                var langCode = asset.languageCode + "_" + asset.countryCode;
+                if(asset.countryCode==""){
+                	langCode = asset.languageCode;
+                }
                 var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
-                    ?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode +
-                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":"";
+                    ?"<img src=\"/html/images/languages/"+ langIcon +
+                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+ langCode +")</span>":"";
                 if(asset.type == 'file_asset'){
                     var html =  '<tr id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
@@ -891,11 +896,11 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
                         '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }else{
-                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
+                    var html =  '<tr data-url="' +  asset.pageURI +'"id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
+                        '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -960,7 +965,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     function getStatusHTML (asset) {
         var html =  '<table class="browserTableStatus"><tr>';
 
-        if(!asset.live && asset.working) {
+        if(!asset.live && asset.working && !asset.deleted) {
             html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
         } else {
             html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
@@ -1407,7 +1412,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     //---------------------------------------------------------------------------------------------------------
     //Asset Actions
-    var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
+    var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
     //Host Actions
     function editHost(id, referer) {
         var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
@@ -1576,14 +1581,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         });
     }
 
-    function previewHTMLPage (objId, referer) {
-        var y = Math.floor(Math.random()*1123213213);
-        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+    function previewHTMLPage(url) {
+        // We can't new CustomEvent becuase it's not supported by IE11
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-page",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
     }
 
     function editHTMLPage (objId, referer) {
@@ -2122,7 +2129,17 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     {
         if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-html-page-this-cannot-be-undone")) %>"))
         {
-            BrowserAjax.deleteHTMLPageAsset(objId, deleteHTMLPageCallback);
+            BrowserAjax.validateRelatedContentType(objId, validateRelatedContentTypeCallback);
+        }
+    }
+
+    function validateRelatedContentTypeCallback(response){
+        if (response.message != ""){
+            if(confirm(response.message)){
+                BrowserAjax.deleteHTMLPageAsset(response.inode, deleteHTMLPageCallback);
+            }
+        }else{
+            BrowserAjax.deleteHTMLPageAsset(response.inode, deleteHTMLPageCallback);
         }
     }
 

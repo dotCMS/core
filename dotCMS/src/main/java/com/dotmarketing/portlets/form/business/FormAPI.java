@@ -18,6 +18,7 @@ public interface FormAPI {
 		public static final String FORM_RETURN_PAGE_FIELD_NAME = "Form Return Page";
 		public static final String FORM_EMAIL_FIELD_NAME = "Form Email";
 		public static final String FORM_TITLE_FIELD_NAME = "Form Title";
+		public static final String FORM_TITLE_FIELD_VELOCITY_VAR_NAME = "formTitle";
 		public static final String FORM_HOST_FIELD_NAME = "Form Host";
 		
 		public static final String FORM_WIDGET_CODE_FIELD_NAME = "Widget Code";
@@ -26,6 +27,8 @@ public interface FormAPI {
 		public static final String FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME = "formId";
 		public static final String FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME = "Forms";
 		public static final String FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME = "forms";
+		public static final String FORM_WIDGET_TITLE_FIELD_NAME = "Widget Title";
+        public static final String FORM_WIDGET_TITLE_VELOCITY_VAR_NAME = "widgetTitle";
 		
 		/**
 		 * Will create the base form fields for a specific structure.

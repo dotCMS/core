@@ -17,6 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+@Deprecated
 public class CreateAccountForm extends ActionForm implements Serializable {
     /**
      * 

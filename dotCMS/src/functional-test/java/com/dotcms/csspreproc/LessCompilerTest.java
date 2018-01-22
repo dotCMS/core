@@ -1,16 +1,9 @@
 package com.dotcms.csspreproc;
 
-import java.io.File;
-import java.net.URL;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.csspreproc.CompilerUtils.newFile;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -21,7 +14,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.File;
+import java.net.URL;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class LessCompilerTest {
 
@@ -30,7 +32,8 @@ public class LessCompilerTest {
     @Before
     public void prepare() throws Exception {
         HttpServletRequest req=ServletTestRunner.localRequest.get();
-        baseURL = "http://"+req.getServerName()+":"+req.getServerPort();
+        baseURL = "http://" + req.getServerName() + ((UtilMethods.isSet(req.getServerPort()) ? ":"
+                + req.getServerPort() : StringPool.BLANK));
     }
 
     @Ignore
@@ -116,7 +119,7 @@ public class LessCompilerTest {
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
-        	HibernateUtil.commitTransaction();
+        	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(LessCompilerTest.class, e.getMessage());
@@ -124,13 +127,42 @@ public class LessCompilerTest {
         APILocator.getHostAPI().publish(host, user, false);
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
                 
         Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
-        
-        Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
-        Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
-        Folder f3=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/d", defaultHost, user, false);
-        Folder f4=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
+        if (!defaultHost.isLive()) {
+            try {
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().publish(defaultHost, user, false);
+                HibernateUtil.closeAndCommitTransaction();
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                Logger.error(SassCompilerTest.class, e.getMessage());
+            } finally {
+                HibernateUtil.closeSessionSilently();
+            }
+
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
+            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //Do nothing...
+            }
+        }
+
+        Folder f1 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a", defaultHost, user, false);
+        Folder f2 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a/b/c", defaultHost, user, false);
+        Folder f3 = APILocator.getFolderAPI()
+                .createFolders("/" + runId + "/a/b/d", defaultHost, user, false);
+        Folder f4 = APILocator.getFolderAPI()
+                .findFolderByPath("/" + runId + "/a/b", defaultHost, user, false);
         Folder ff=APILocator.getFolderAPI().createFolders("/less", host, user, false);
         
 
@@ -157,28 +189,12 @@ public class LessCompilerTest {
                                            "@import \"../d/file4\"; \r\n"+
                                            "someclass { width: (@file1 + @file2 + @file3 + @file4); } \r\n");
         Contentlet fileAsset5=newFile(file5,f2,defaultHost);
-        
-        
+
         URL cssURL = new URL(baseURL + "/DOTLESS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         
         Assert.assertEquals("someclass{width:30}", response.trim());
         
     }
-    
-    protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
-        Contentlet fileAsset=new Contentlet();
-        fileAsset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-        fileAsset.setHost(host.getIdentifier());
-        fileAsset.setFolder(f.getInode());
-        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
-        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
-        return fileAsset;
-    }
+
 }

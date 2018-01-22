@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -27,6 +28,14 @@ import com.liferay.portal.model.User;
 /** @author Hibernate CodeGenerator */
 public class Container extends WebAsset implements Serializable {
 
+    
+    /*
+     * Convenience access 
+     */
+    public static final String LEGACY_RELATION_TYPE = MultiTree.LEGACY_RELATION_TYPE;
+    
+    
+    
 	private static final long serialVersionUID = 1L;
 
 	/** nullable persistent field */

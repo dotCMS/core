@@ -26,8 +26,11 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.ArrayList;
 
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotcms.repackage.bsh.This;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.Template;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.Macro;
@@ -36,7 +39,7 @@ import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.Node;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.velocity.DotResourceLoader;
+
 
 /**
  *  VelocimacroFactory.java
@@ -206,11 +209,14 @@ public class VelocimacroFactory
                              twonk.modificationTime = template.getLastModified();
                              libModMap.put(lib, twonk);
                          }
+                         catch(ResourceNotFoundException rnse){
+                        	 Logger.warn(this.getClass(),rnse.getMessage());
+                         }
                          catch (Exception e)
                          {
                              String msg = "Velocimacro : Error using VM library : " + lib;
                              Logger.error(this,msg, e);
-                             throw new VelocityException(msg, e);
+                            throw new VelocityException(msg, e);
                          }
 
                          Logger.debug(this,"VM library registration complete.");
@@ -644,6 +650,13 @@ public class VelocimacroFactory
         return vp;
     }
 
+     
+     public void dumpGlobalVMNamespace()
+     {
+          vmManager.dumpGlobalNamespace();
+     }
+     
+     
     /**
      * tells the vmManager to dump the specified namespace
      * 

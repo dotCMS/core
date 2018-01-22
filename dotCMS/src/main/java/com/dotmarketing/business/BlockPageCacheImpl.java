@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 
@@ -49,7 +50,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 	 */
 	public BlockPageCacheImpl() {
 		this.cache = CacheLocator.getCacheAdministrator();
-		this.canCache = LicenseUtil.getLevel() > 99;
+		this.canCache = LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level;
 	}
 
 	@Override

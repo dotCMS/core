@@ -59,6 +59,9 @@ public abstract class RestUtilTest extends UnitTestBase {
         assertEquals(response.getStatus(), 200);
         assertNotNull(response.getEntity());
         assertTrue(response.getEntity() instanceof ResponseEntityView);
+
+        assertTrue((ResponseEntityView.class.cast(response.getEntity()).getErrors() == null) ||
+                ResponseEntityView.class.cast(response.getEntity()).getErrors().isEmpty());
     }
 
     public static void initMockContext(){

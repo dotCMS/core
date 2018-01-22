@@ -1,5 +1,6 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -20,7 +21,7 @@
 
 	<%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
 
-	<% if(LicenseUtil.getLevel()< 199){ %>
+	<% if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){ %>
 	<%@ include file="/html/portlet/ext/timemachine/not_licensed.jsp" %>
 
 	<%return;} %>

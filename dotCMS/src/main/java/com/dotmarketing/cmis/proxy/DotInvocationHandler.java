@@ -17,7 +17,10 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
-//http://jira.dotmarketing.net/browse/DOTCMS-3392
+/**
+* @deprecated CMIS is deprecated and slated for removal.
+*/
+@Deprecated
 public class DotInvocationHandler implements InvocationHandler{
     private final Map map;
 

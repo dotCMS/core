@@ -30,6 +30,7 @@ import java.util.Locale;
 import javax.mail.internet.InternetAddress;
 
 import com.dotcms.api.system.user.UserService;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -201,6 +202,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		UserLocalManagerUtil.deleteUser(userId);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public String encryptUserId(String userId)
 		throws PortalException, SystemException {

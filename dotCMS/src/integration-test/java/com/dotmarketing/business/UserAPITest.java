@@ -1,13 +1,11 @@
 package com.dotmarketing.business;
 
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
+import com.dotcms.util.TimeUtil;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,18 +34,15 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,10 +53,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -110,7 +102,14 @@ public class UserAPITest extends IntegrationTestBase {
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
+		//setDebugMode(true);
 	}
+
+	/*@AfterClass
+	public static void cleanup() throws DotDataException, DotSecurityException {
+
+		cleanupDebug(UserAPITest.class);
+	}*/
 
 	/**
 	 * Testing {@link UserAPI#delete(User, User, User, boolean)}
@@ -123,7 +122,7 @@ public class UserAPITest extends IntegrationTestBase {
 	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream 
 	 */
 	@Test
-	public void delete() throws DotDataException,DotSecurityException, PortalException, SystemException, WebAssetException, IOException, Exception {
+	public void delete() throws Exception {
 
 		long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		String id = String.valueOf( new Date().getTime());
@@ -167,7 +166,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		if ( APILocator.getPermissionAPI().isInheritingPermissions(host) ) {
 			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(host);
-			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser, false);
+			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser);
 		}
 
 		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
@@ -177,7 +176,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add role permission over htmlpages
 		 */
 		Structure pageStructure = StructureFactory.getStructureByVelocityVarName(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
-		perAPI.permissionIndividually(host, pageStructure, systemUser, false);
+		perAPI.permissionIndividually(host, pageStructure, systemUser);
 
 		List<Permission> permissions = new ArrayList<Permission>();
 		Permission p1=new Permission();
@@ -237,9 +236,9 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder ftest = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
-		ftest.setOwner(newUser.getUserId());
-		folderAPI.save(ftest, newUser, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
+		testFolder.setOwner(newUser.getUserId());
+		folderAPI.save(testFolder, newUser, false);
 
 		/**
 		 * Create workflow scheme
@@ -287,22 +286,23 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step1
 		 */
 		WorkflowAction newAction = new WorkflowAction();
+		newAction.setSchemeId(ws.getId());
 		newAction.setName("Edit");
 		newAction.setAssignable(true);
 		newAction.setCommentable(true);
 		newAction.setIcon("workflowIcon");
 		newAction.setNextStep(workflowStep2.getId());
-		newAction.setStepId(workflowStep1.getId());
 		newAction.setCondition("");
 		newAction.setRequiresCheckout(false);
 		newAction.setRoleHierarchyForAssign(false);
 		newAction.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction = new ArrayList<>();
 		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction, permissionsNewAction);
-		
+		workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
+
 		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
 		Assert.assertTrue(actions1.size()==1);
 		WorkflowAction action1 = actions1.get(0);
@@ -311,21 +311,22 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step2
 		 */
 		WorkflowAction newAction2 = new WorkflowAction();
+		newAction2.setSchemeId(ws.getId());
 		newAction2.setName("Publish");
 		newAction2.setAssignable(true);
 		newAction2.setCommentable(true);
 		newAction2.setIcon("workflowIcon");
 		newAction2.setNextStep(workflowStep2.getId());
-		newAction2.setStepId(workflowStep2.getId());
 		newAction2.setCondition("");
 		newAction2.setRequiresCheckout(false);
 		newAction2.setRoleHierarchyForAssign(false);
 		newAction2.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction2 = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction2 = new ArrayList<>();
 		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction2, permissionsNewAction2);
+		workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
 
 		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);
 		Assert.assertTrue(actions2.size()==1);
@@ -336,7 +337,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		Structure st = new Structure();
 		st.setHost(host.getIdentifier());
-		st.setFolder(ftest.getInode());
+		st.setFolder(testFolder.getInode());
 		st.setName("structure"+id);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
 		st.setOwner(newUser.getUserId());
@@ -355,7 +356,9 @@ public class UserAPITest extends IntegrationTestBase {
 		FieldFactory.saveField(field2);
 		FieldsCache.addField(field2);
 
-		workflowAPI.saveSchemeForStruct(st, ws);
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		workflowAPI.saveSchemesForStruct(st, schemes);
 
 		/**
 		 * Add container
@@ -388,6 +391,7 @@ public class UserAPITest extends IntegrationTestBase {
 		template.setTitle(templateTitle);
 		template.setBody(templateBody);
 		template.setOwner(newUser.getUserId());
+		template.setDrawedBody(templateBody);
 		template = templateAPI.saveTemplate(template, host, newUser, false);
 		PublishFactory.publishAsset(template, newUser, false, false);
 
@@ -405,7 +409,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest.getInode());
+		contentAsset.setFolder(testFolder.getInode());
 		contentAsset=conAPI.checkin(contentAsset, newUser, false);
 		conAPI.publish(contentAsset, newUser, false);
 
@@ -419,7 +423,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setProperty("title", title);
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
-		contentAsset2.setFolder(ftest.getInode());
+		contentAsset2.setFolder(testFolder.getInode());
 		contentAsset2=conAPI.checkin(contentAsset2, newUser, false);
 		conAPI.publish(contentAsset2, newUser, false);
 
@@ -438,6 +442,8 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(currentStep);
+
 		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
 		/**
@@ -453,11 +459,11 @@ public class UserAPITest extends IntegrationTestBase {
 		Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
-		link.setParent(ftest.getInode());
+		link.setParent(testFolder.getInode());
 		link.setTarget("_blank");
 		link.setOwner(newUser.getUserId());
 		link.setModUser(newUser.getUserId());
-		IHTMLPage page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 
 		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -470,7 +476,7 @@ public class UserAPITest extends IntegrationTestBase {
 		}
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
-		WebAssetFactory.createAsset(link, newUser.getUserId(), ftest);
+		WebAssetFactory.createAsset(link, newUser.getUserId(), testFolder);
 		versionableAPI.setLive(link);
 
 		/**
@@ -492,7 +498,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
 		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
 
-		WorkflowStep step = workflowAPI.findStepByContentlet(contentAsset2);
+		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(step);
 		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
 		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
 
@@ -507,14 +514,26 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(newUser.getUserId()));
 		assertTrue(template.getModUser().equals(newUser.getUserId()));
 
-		assertTrue(ftest.getOwner().equals(newUser.getUserId()));
+		assertTrue(testFolder.getOwner().equals(newUser.getUserId()));
 
-		/**
-		 * delete user and replace its references with the replacement user
+		//Verify we have the proper user set in the HTMLPage
+		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
+		assertTrue(page.getOwner().equals(newUser.getUserId()));
+		assertTrue(page.getModUser().equals(newUser.getUserId()));
+
+		/*
+		 * delete user and replace its references with the replacement user, this delete method
+		 * does a lot of things, after the delete lets wait a bit in order to allow the reindex
+		 * of the modified contentlets to finish processing.
 		 */
+
+		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
+
 		userAPI.delete(newUser, replacementUser, systemUser,false);
 
-		/**
+		waitForDeleteCompletedNotification();
+		/*
 		 * Validate that the user was deleted and if its references were updated
 		 */
 		try {
@@ -530,7 +549,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
 
-		page =htmlPageAssetAPI.getPageByPath(ftest.getPath()+page0Str, host, langId, true);
+		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
@@ -544,6 +563,7 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
 
 			step = workflowAPI.findStepByContentlet(content);
+			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
 			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
 
@@ -561,9 +581,38 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
 
-		CacheLocator.getFolderCache().removeFolder(ftest, identifierAPI.find(ftest.getIdentifier()));
-		ftest = folderAPI.findFolderByPath(ftest.getPath(), host, systemUser, false);
-		assertTrue(ftest.getOwner().equals(replacementUser.getUserId()));
+		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
+		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
+		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+	}
+
+	private void waitForDeleteCompletedNotification() throws DotDataException, InterruptedException {
+
+		final int MAX_TIME = 10000;
+		final int WAIT_TIME = 1000;
+
+		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
+
+			boolean isReindexFinished = false;
+			List<Notification> notifications = null;
+
+			try {
+				notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
+			} catch (DotDataException e) {
+				Logger.error(this, "Unable to get notifications. ", e);
+			}
+
+			for (Notification notification : notifications) {
+				String notificationKey = notification.getMessage().getKey();
+				if (notificationKey.contains("Reindexing of updated related content after deleting user")
+					&& notification.getMessage().getKey().contains("has finished successfully")) {
+					isReindexFinished = true;
+				}
+			}
+
+			return isReindexFinished;
+
+		});
 	}
 
 	/**
@@ -630,28 +679,45 @@ public class UserAPITest extends IntegrationTestBase {
 
 	@Test
 	public void testGetUnDeletedUsers() throws DotDataException, DotSecurityException {
-		User newUser = null;
+
 		UserAPI userAPI = APILocator.getUserAPI();
-		String id = String.valueOf(new Date().getTime());
 
-		Calendar calendar = Calendar.getInstance();
-		calendar.add(Calendar.HOUR, -48);
+		//Getting the current list
+		List<User> currentUsers = userAPI.getUnDeletedUsers();
+		int currentUsersCount = 0;
+		if (null != currentUsers) {
+			currentUsersCount = currentUsers.size();
+		}
 
-		/**
+		/*
 		 * Add user
 		 */
-		String newUserName = "user" + id;
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -48);
+		String newUserName = "user" + System.currentTimeMillis();
 
-		newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
+		User newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
 
-		List<User> users = userAPI.getUnDeletedUsers();
+		List<User> foundUsers = userAPI.getUnDeletedUsers();
 
-		assertNotNull(users);
-		assertTrue(users.size() == 1);
-		assertTrue(users.get(0).getDeleteInProgress());
-		assertNotNull(users.get(0).getDeleteDate());
-		assertEquals(users.get(0).getFirstName(), newUserName);
+		assertNotNull(foundUsers);
+		assertEquals(foundUsers.size(), currentUsersCount + 1);
 
+		Boolean found = false;
+		for (User user : foundUsers) {
+			if (newUserName.equals(user.getFirstName())) {
+				assertTrue(user.getDeleteInProgress());
+				assertNotNull(user.getDeleteDate());
+				assertEquals(user.getFirstName(), newUserName);
+				found = true;
+			}
+		}
+
+		if (!found) {
+			fail("The user saved was not found in the retrieved list.");
+		}
+
+		//Clean up the created user
 		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 

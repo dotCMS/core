@@ -14,7 +14,8 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@ page import="com.dotmarketing.util.Config" %>
+<%@page import="com.dotmarketing.util.Config" %>
+<%@page import="com.dotmarketing.util.StringUtils" %>
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
 <%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
@@ -128,7 +129,10 @@
 	%>
 			<script type="text/javascript">
 				dojo.ready(function(){
-					dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
+                    var mainTabContainerTablistRelationships = dojo.byId("mainTabContainer_tablist_relationships");
+                    if (mainTabContainerTablistRelationships) {
+                        dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
+                    }
 				});
 			</script>
 	<%
@@ -434,7 +438,7 @@
 		 		function identifier_func (o) {
 					var value = "";
 					if (o != null)
-						value = o['identifier'];
+						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['identifier'] + "</a>";
 		 			return value;
 		 		}
 
@@ -648,10 +652,8 @@
 					href += "&relname_inodes=" + '<%= rel.getInode()%>';
 					href += "&referer=" + escape(referer);
 
-					if(doesChanges()){
-						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-							return;
-					}
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+                        return;
 
 					window.location=href;
 				}
@@ -670,48 +672,6 @@
 				var <%= relationJsName %>RelatedCons;
 				
 				<jsp:include page="/html/portlet/ext/contentlet/field/tiny_mce_config.jsp"/>
-				
-				function doesChanges(){
-
-					var formEle = document.getElementById('fm').elements;
-					for (var i=0;i<formEle.length;i++){
-						if(formEle[i].className=="editWYSIWYGField"){
-							if(tinymce.EditorManager.get(formEle[i].id)){
-								tinymce.EditorManager.get(formEle[i].id).remove();
-								(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();	
-							}
-						}
-						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
-						formEle[i].value = formEle[i].value.replace(/\r\n/g, '');
-						formEle[i].value = formEle[i].value.replace(/\n/g, '');
-						formEle[i].value = formEle[i].value.replace(/\r/g, '');
-						<%
-						Iterator it = con.entrySet().iterator();
-						while (it.hasNext()) {
-							Map.Entry pairs = (Map.Entry)it.next();
-							String v = "";
-							if(pairs.getValue()!=null){
-								v = pairs.getValue().toString();
-								v = v.replace("\'","\\\\'");
-								v = v.replace("\"","\\\\\"");
-								v = v.replace("\r\n","");
-								v = v.replace("\n","");
-								v = v.replace("\r","");
-								if(v.matches("(.*)-(.*)-(.*):(.*):(.*)")){
-									int index = v.lastIndexOf( ':' );
-									v = v.substring(0,index);
-								}
-							}
-						%>
-						if ("<%=pairs.getKey()%>"== formEle[i].id && "<%= UtilMethods.htmlifyString(v)%>" != formEle[i].value && formEle[i].value != "") {
-							return true;
-						}				
-					<%}
-						    
-					%>
-					}
-					return false;
-				}
 
 				function <%= relationJsName %>buildListing(nodeId,data){
 					var srcNode = document.getElementById(nodeId);
@@ -820,11 +780,9 @@
 
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
-					
-					if(doesChanges()){
-						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-							return;
-					}
+
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+						return;
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";

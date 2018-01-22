@@ -1,18 +1,14 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.List;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-
-import com.dotcms.content.business.DotMappingException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ContentletIndexAPI {
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");

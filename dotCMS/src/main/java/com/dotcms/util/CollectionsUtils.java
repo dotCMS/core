@@ -1,17 +1,16 @@
 package com.dotcms.util;
 
-import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.MapBuilder;
 
-import java.util.Arrays;
+import java.io.Serializable;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -317,6 +316,16 @@ public class CollectionsUtils implements Serializable {
                 entry(key6, value6), entry(key7, value7), entry(key8, value8));
     } // map.
 
+
+    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
+            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
+                                     final K key6, final V value6, final K key7, final V value7,
+                                     final K key8, final V value8, final K key9, final V value9) {
+        return mapEntries(entry(key1, value1), entry(key2, value2),
+                entry(key3, value3), entry(key4, value4), entry(key5, value5),
+                entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9));
+    } // map.
+
     /**
      * Get a new map based on a list of key/value.
      * @param key1 K
@@ -351,6 +360,44 @@ public class CollectionsUtils implements Serializable {
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6), entry(key7, value7), entry(key8, value8),
                 entry(key9, value9), entry(key10, value10));
+    } // map.
+
+    /**
+     * Get a new map based on a list of key/value.
+     * @param key1 K
+     * @param value1 V
+     * @param key2 K
+     * @param value2 V
+     * @param key3 K
+     * @param value3 V
+     * @param key4 K
+     * @param value4 V
+     * @param key5 K
+     * @param value5 V
+     * @param key6 K
+     * @param value6 V
+     * @param key7 K
+     * @param value7 V
+     * @param key8 K
+     * @param value8 V
+     * @param key9 K
+     * @param value9 V
+     * @param key10 K
+     * @param value10 V
+     * @param key11 K
+     * @param value11 V
+     * @param <K>
+     * @param <V>
+     * @return Map
+     */
+    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
+            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
+            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
+            , final K key9, final V value9, final K key10, final V value10, final K key11, final V value11) {
+        return mapEntries(entry(key1, value1), entry(key2, value2),
+                entry(key3, value3), entry(key4, value4), entry(key5, value5),
+                entry(key6, value6), entry(key7, value7), entry(key8, value8),
+                entry(key9, value9), entry(key10, value10), entry(key11, value11));
     } // map.
 
     /**
@@ -453,9 +500,64 @@ public class CollectionsUtils implements Serializable {
     } // map.
 
     /**
+     * Creates a new map based on a list of key/value parameters.
      * 
-     * @param entries
+     * @param key1
+     * @param value1
+     * @param key2
+     * @param value2
+     * @param key3
+     * @param value3
+     * @param key4
+     * @param value4
+     * @param key5
+     * @param value5
+     * @param key6
+     * @param value6
+     * @param key7
+     * @param value7
+     * @param key8
+     * @param value8
+     * @param key9
+     * @param value9
+     * @param key10
+     * @param value10
+     * @param key11
+     * @param value11
+     * @param key12
+     * @param value12
+     * @param key13
+     * @param value13
+     * @param key14
+     * @param value14
+     * @param key15
+     * @param value15
+     * @param key16
+     * @param value16
+     * @param key17
+     * @param value17
+     * @param key18
+     * @param value18
      * @return
+     */
+    public static <K, V> Map<K, V> map(final K key1, final V value1, final K key2, final V value2, final K key3, final V value3,
+                    final K key4, final V value4, final K key5, final V value5, final K key6, final V value6, final K key7,
+                    final V value7, final K key8, final V value8, final K key9, final V value9, final K key10, final V value10,
+                    final K key11, final V value11, final K key12, final V value12, final K key13, final V value13, final K key14,
+                    final V value14, final K key15, final V value15, final K key16, final V value16, final K key17,
+                    final V value17, final K key18, final V value18) {
+        return mapEntries(entry(key1, value1), entry(key2, value2), entry(key3, value3), entry(key4, value4), entry(key5, value5),
+                        entry(key6, value6), entry(key7, value7), entry(key8, value8), entry(key9, value9), entry(key10, value10),
+                        entry(key11, value11), entry(key12, value12), entry(key13, value13), entry(key14, value14),
+                        entry(key15, value15), entry(key16, value16), entry(key17, value17), entry(key18, value18));
+    } // map.
+    
+    /**
+     * Returns an immutable map based on the objects entries (must be pairs otherwise will throws an {@link IllegalArgumentException})
+     * @param entries Object an array
+     * @param <K>
+     * @param <V>
+     * @return Map
      */
     @SuppressWarnings("unchecked")
 	public static <K,V> Map<K,V> imap(Object... entries) {
@@ -469,7 +571,7 @@ public class CollectionsUtils implements Serializable {
             entriesCollection.add(entry((K) entries[i], (V) entries[i + 1]));
         }
 
-        return mapEntries(entriesCollection);
+        return imapEntries(entriesCollection);
     } // map.
 
     /**
@@ -507,6 +609,24 @@ public class CollectionsUtils implements Serializable {
         }
 
         return hashMap;
+    } // map.
+
+    /**
+     * Get a new immutable map based on a collections of entries
+     * @param entries Collection
+     * @param <K>
+     * @param <V>
+     * @return Map
+     */
+    public static <K,V> Map<K,V> imapEntries(final Collection<Map.Entry<K, V>> entries) {
+        final MapBuilder<K,V> hashMap = new MapBuilder<>();
+
+        for (Map.Entry<K, V> entry : entries) {
+
+            hashMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return hashMap.immutableMap();
     } // map.
 
     /**
@@ -595,5 +715,43 @@ public class CollectionsUtils implements Serializable {
 		}
 		return defaultValue;
 	}
+
+    /**
+     * Returns a {@code Collector} that accumulates the input elements into a
+     * new {@link ImmutableList}.
+     *
+     * @param <T> the type of the input elements
+     * @return a {@code Collector} which collects all the input elements into immutable list
+     */
+	public static <T> Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> toImmutableList () {
+	    return new ImmutableListCollector<>();
+    }
+
+	private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
+        @Override
+        public Supplier<ImmutableList.Builder<T>> supplier() {
+            return ImmutableList.Builder::new;
+        }
+
+        @Override
+        public BiConsumer<ImmutableList.Builder<T>, T> accumulator() {
+            return (b, e) -> b.add(e);
+        }
+
+        @Override
+        public BinaryOperator<ImmutableList.Builder<T>> combiner() {
+            return (b1, b2) -> b1.addAll(b2.build());
+        }
+
+        @Override
+        public Function<ImmutableList.Builder<T>, ImmutableList<T>> finisher() {
+            return ImmutableList.Builder::build;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return ImmutableSet.of();
+        }
+    } // ImmutableListCollector.
 
 }

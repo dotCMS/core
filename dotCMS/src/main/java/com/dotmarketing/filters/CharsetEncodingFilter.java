@@ -100,8 +100,6 @@ public class CharsetEncodingFilter implements Filter {
 	        	    //if frontend the locale is defined by the dotCMS frontend language session variables
 	        	    // ALL work should be done here
         	        WebAPILocator.getLanguageWebAPI().checkSessionLocale(httpRequest);
-	        	    
-		        
 	        	}
 	        }
 	

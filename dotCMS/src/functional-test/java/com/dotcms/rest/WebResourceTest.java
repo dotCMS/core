@@ -1,18 +1,19 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-
-import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
-import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.dotcms.repackage.javax.ws.rs.NotAuthorizedException;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
+import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
+import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
@@ -20,12 +21,9 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotcms.repackage.javax.ws.rs.NotAuthorizedException;
 import com.liferay.portal.model.User;
 
-import static org.mockito.Mockito.*;
-
-public class WebResourceTest extends IntegrationTestBase {
+public class WebResourceTest {
 
     private Client client;
     private WebTarget webTarget;
@@ -121,6 +119,5 @@ public class WebResourceTest extends IntegrationTestBase {
         InitDataObject data = webResource.init(null, true, request, true, requiredPortlet);
         assertNotNull(data);
     }
-
 
 }

@@ -1,28 +1,21 @@
 package com.dotmarketing.image.filter;
 
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.MediaTracker;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Map;
-
-import javax.imageio.ImageIO;
-
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImageResizeUtils;
 import com.dotmarketing.util.Logger;
 import com.twelvemonkeys.image.ResampleOp;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Map;
+import javax.imageio.ImageIO;
 
 public class ThumbnailImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters() {
@@ -51,7 +44,6 @@ public class ThumbnailImageFilter extends ImageFilter {
 			return resultFile;
 		}
 
-		FileOutputStream fos = null;
 		try {
 			resultFile.delete();
 	        if (height <= 0 && width <= 0) {
@@ -118,7 +110,7 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        resultGraphics.dispose();
 
 	        // save thumbnail image to OUTFILE
-	        BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(resultFile));
+	        final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
 	        ImageIO.write(bgImage, "png", out);
 	        out.close();
 
@@ -127,14 +119,6 @@ public class ThumbnailImageFilter extends ImageFilter {
 			Logger.error(this.getClass(), e.getMessage());
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
-		} finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e) {
-					Logger.error(this.getClass(), "should not be here");
-				}
-			}
 		}
 
 		return resultFile;

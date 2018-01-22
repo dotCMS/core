@@ -63,8 +63,9 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             String[] addrParts = physicalAddr.toString().split(":");
             String usedPort = addrParts[addrParts.length - 1];
 
+            
             //Update the cluster_server table with the current server info
-            localServer.setCachePort(Integer.parseInt(usedPort));
+            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(usedPort)).build();
             serverAPI.updateServer(localServer);
 
             Logger.info(this, "***\t " + channel.toString(true));
