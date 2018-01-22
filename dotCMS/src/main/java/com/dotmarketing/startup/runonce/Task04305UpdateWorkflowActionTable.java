@@ -113,9 +113,9 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String ORACLE_DROP_WORKFLOW_ACTION_STEP_INDEX = "DROP INDEX wk_idx_act_step";
 
     private static final String MYSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action MODIFY step_id varchar(36) NULL";
-    private static final String POSTGRES_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN scheme_id DROP NOT NULL";
-    private static final String MSSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN scheme_id NVARCHAR(36) NULL";
-    private static final String ORACLE_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action MODIFY (scheme_id null)";
+    private static final String POSTGRES_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN step_id DROP NOT NULL";
+    private static final String MSSQL_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action ALTER COLUMN step_id NVARCHAR(36) NULL";
+    private static final String ORACLE_DROP_WORKFLOW_ACTION_STEP_NOT_NULL = "ALTER TABLE workflow_action MODIFY (step_id NULL)";
 
     private static final String POSTGRES_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX workflow_idx_scheme_structure_2 ON workflow_scheme_x_structure(structure_id)";
     private static final String ORACLE_CREATE_WORKFLOW_SCHEME_X_STRUCTURE_INDEX = "CREATE INDEX wk_idx_scheme_str_2 ON workflow_scheme_x_structure(structure_id)";
@@ -144,14 +144,6 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException {
         final DotConnect dc = new DotConnect();
-        if (DbConnectionFactory.isMsSql()) {
-            try {
-                dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
-            } catch (SQLException e) {
-                throw new DotRuntimeException(
-                        "Transaction isolation level could not be set.", e);
-            }
-        }
 
         // SCHEMA CHANGES
         this.createWorkflowActionStepTable                      (dc);
@@ -161,19 +153,32 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         this.removeWorkflowActionStepIdWorkflowStepFK             ();
         this.executeDropWorkflowActionStepIdIndex               (dc);
         this.executeDropWorkflowActionStepIdNotNullConstrain    (dc);
+
         // DATA CHANGES
+        if (DbConnectionFactory.isMsSql() && DbConnectionFactory.getAutoCommit()) {
+            DbConnectionFactory.setAutoCommit(false); // set a transactional for data
+        }
         this.addWorkflowActionStepData                          (dc);
         this.updateWorkflowActionData                           (dc);
+
+        // if mssql is in a transaction for the data, commit, close and start a new one.
+        if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+            this.closeCommitAndStartTransaction();
+            DbConnectionFactory.setAutoCommit(true);
+        }
+
         this.updateWorkflowSchemeXStructureData                 (dc);
 
         if (schemeIdColumnCreated) {
             this.addNotNullConstraintShowOnColumn               (dc);
         }
-
-
     } // executeUpgrade.
 
     private void removeWorkflowActionStepIdWorkflowStepFK() throws DotDataException {
+
+        if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+            DbConnectionFactory.setAutoCommit(true);
+        }
 
         final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
         final ForeignKey foreignKey        = metaData.findForeignKeys
@@ -193,9 +198,14 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void executeDropWorkflowActionStepIdIndex(DotConnect dc) {
+    private void executeDropWorkflowActionStepIdIndex(final DotConnect dc) {
         Logger.info(this, "Removing 'workflow_idx_action_step' index in 'workflow_action' table.");
         try {
+
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.setAutoCommit(true);
+            }
+
             dc.executeStatement(dropWorkflowActionStepIdIndexQuery());
         } catch (SQLException e) {
             throw new DotRuntimeException(
@@ -204,9 +214,14 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         }
     }
 
-    private void executeDropWorkflowActionStepIdNotNullConstrain(DotConnect dc) {
+    private void executeDropWorkflowActionStepIdNotNullConstrain(final DotConnect dc) {
         Logger.info(this, "Removing the 'step_id' NOT NULL constrain from the 'workflow_action' table.");
         try {
+
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.setAutoCommit(true);
+            }
+
             dc.executeStatement(dropWorkflowActionStepIdNotNullConstrainQuery());
         } catch (SQLException e) {
             throw new DotRuntimeException(
@@ -320,6 +335,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         Logger.info(this, "Adding new 'show_on' column to 'workflow_action' table.");
 
         try {
+
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.setAutoCommit(true);
+            }
+
             dc.setSQL(findShowOnColumn()).loadObjectResults();
         } catch (Throwable e) {
 
@@ -331,6 +351,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
         if (needToCreate) {
             try {
+
+                if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                    DbConnectionFactory.setAutoCommit(true);
+                }
+
                 dc.executeStatement(addShowOnColumn());
             } catch (SQLException e) {
                 throw new DotRuntimeException("The 'show_on' column could not be created.", e);
@@ -346,6 +371,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         Logger.info(this, "Adding new 'scheme_id' column to 'workflow_action' table.");
 
         try {
+
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.setAutoCommit(true);
+            }
+
             dc.setSQL(findSchemeIdColumn()).loadObjectResults();
         } catch (Throwable e) {
 
@@ -357,6 +387,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
         if (needToCreate) {
             try {
+
+                if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                    DbConnectionFactory.setAutoCommit(true);
+                }
+
                 dc.executeStatement(addSchemeIdColumn());
             } catch (SQLException e) {
                 throw new DotRuntimeException("The 'scheme_id' column could not be created.", e);
@@ -375,6 +410,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
         try {
 
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.setAutoCommit(true);
+            }
+
             dc.setSQL(findIntermediateTable()).loadObjectResults();
         } catch (Throwable e) {
 
@@ -386,6 +425,11 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
         if (needToCreate) {
             try {
+
+                if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                    DbConnectionFactory.setAutoCommit(true);
+                }
+
                 dc.setSQL(createIntermediateTable()).loadResult();
                 // The SQL Server and Oracle table definition already include de PK creation
                 if (DbConnectionFactory.isMySql() || DbConnectionFactory.isPostgres()) {

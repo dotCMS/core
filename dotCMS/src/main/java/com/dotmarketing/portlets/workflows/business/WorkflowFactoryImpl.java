@@ -477,7 +477,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 				cache.addDefaultScheme(scheme);
 			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 		}
 		return scheme;
@@ -507,7 +507,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
 				cache.add(scheme);
 			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			}
 		}
 		return scheme;
@@ -705,7 +705,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			try {
 				contents.add(APILocator.getContentletAPI().find(f.getFileInode(), user, false));
 			} catch (DotSecurityException e) {
-				throw new DotDataException(e.getMessage());
+				throw new DotDataException(e.getMessage(),e);
 			} catch(ClassCastException c) {
 				// not file as contentlet
 			}
@@ -1123,7 +1123,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 			cache.remove(scheme);
 		} catch (final Exception e) {
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 	}
 
@@ -1139,7 +1139,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 	}
 
@@ -1176,7 +1176,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			cache.clearStepsCache();
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 	}
 

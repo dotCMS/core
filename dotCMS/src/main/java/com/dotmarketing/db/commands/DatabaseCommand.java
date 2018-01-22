@@ -29,5 +29,5 @@ public interface DatabaseCommand {
      * Execute the query
      * @throws DotDataException
      */
-    void execute (DotConnect dotConnect, String query, Object... parameters) throws DotDataException;
+    void execute (DotConnect dotConnect, SimpleMapAppContext queryReplacements, Object... parameters) throws DotDataException;
 }

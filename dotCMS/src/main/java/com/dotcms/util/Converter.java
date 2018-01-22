@@ -9,6 +9,7 @@ import java.io.Serializable;
  * @version 3.7
  * @since Jun 8, 2016
  */
+@FunctionalInterface
 public interface Converter<Original, Destiny> extends Serializable {
 
 	/**

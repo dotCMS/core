@@ -68,7 +68,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 PushNowActionlet.class,
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
-				SaveContentAsDraftActionlet.class
+				SaveContentAsDraftActionlet.class,
+				CopyActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
@@ -915,7 +916,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 
@@ -977,7 +978,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				saveActionClass(action);
 			}
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 

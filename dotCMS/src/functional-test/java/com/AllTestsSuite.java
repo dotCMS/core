@@ -12,7 +12,6 @@ import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.i18n.I8NResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
-import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.rules.RulesUnderPageAssetsFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
@@ -67,7 +66,6 @@ import org.junit.runners.Suite;
     ContentResourceTest.class, //Needs Enterprise License
     RoleResourceTest.class,
     WebResourceTest.class,
-    PermissionAPITest.class,
     FileAssetTest.class,
     //Ignored PersonaActionletFTest, see: https://github.com/dotCMS/core/issues/10746
     //PersonaActionletFTest.class, //Needs Enterprise License.

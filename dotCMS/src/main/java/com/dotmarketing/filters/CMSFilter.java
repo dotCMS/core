@@ -165,7 +165,7 @@ public class CMSFilter implements Filter {
 
             } catch (DotDataException e) {
                 Logger.error(CMSFilter.class, e.getMessage(), e);
-                throw new IOException(e.getMessage());
+                throw new IOException(e.getMessage(),e);
             }
             return;
         }

@@ -90,7 +90,7 @@ public class SetValueActionlet extends WorkFlowActionlet {
                 finalValue = ctx.get("value");
 
             } catch (Exception e) {
-                throw new WorkflowActionFailureException(e.getMessage());
+                throw new WorkflowActionFailureException(e.getMessage(),e);
             }
 
         }

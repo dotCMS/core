@@ -47,7 +47,7 @@ public class AddressManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -57,7 +57,7 @@ public class AddressManagerSoap {
 			AddressManagerUtil.deleteAddress(addressId);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -69,7 +69,7 @@ public class AddressManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -83,7 +83,7 @@ public class AddressManagerSoap {
 			return (com.liferay.portal.model.Address[])returnValue.toArray(new com.liferay.portal.model.Address[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class AddressManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -115,7 +115,7 @@ public class AddressManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -126,7 +126,7 @@ public class AddressManagerSoap {
 			AddressManagerUtil.updateAddresses(className, classPK, addressIds);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -138,7 +138,7 @@ public class AddressManagerSoap {
 				addressId, priority);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -150,7 +150,7 @@ public class AddressManagerSoap {
 			return returnValue;
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }
