@@ -1,3 +1,7 @@
+
+<%@page import="com.dotcms.contenttype.model.field.ColumnField"%>
+<%@page import="com.dotcms.contenttype.model.field.RowField"%>
+<%@page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer"%>
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
@@ -269,6 +273,10 @@ dojo.addOnLoad(function () {
             <% boolean fieldSetOpen = false;
                 int fieldCounter =0;
                 for (Field f : fields) {
+                    com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
+                    if(fieldCounter ==0 &&(newField instanceof RowField || newField instanceof ColumnField)){
+                        continue;
+                    }
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
