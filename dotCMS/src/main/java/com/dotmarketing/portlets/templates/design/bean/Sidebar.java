@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import java.io.Serializable;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * It's a {@link com.dotmarketing.portlets.templates.model.Template}'s Sidebar
@@ -30,11 +30,8 @@ public class Sidebar extends ContainerHolder implements Serializable{
         this.location = location;
         this.widthPercent = widthPercent;
 
-        try {
-            this.width = SidebarWidthValue.valueOf(width);
-        } catch(IllegalArgumentException e) {
-            this.width = null;
-        }
+        this.width = SidebarWidthValue.fromString(width);
+
     }
 
     public String getLocation() {

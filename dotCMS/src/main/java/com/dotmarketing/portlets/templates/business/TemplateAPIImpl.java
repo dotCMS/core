@@ -33,6 +33,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,11 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import com.liferay.portal.model.User;
+import java.util.stream.Collectors;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -119,13 +117,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
 			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newTemplate, destination);
-			Logger.debug(TemplateFactory.class, "Parent newIdentifier=" + newIdentifier.getInode());
+			Logger.debug(TemplateFactory.class, "Parent newIdentifier=" + newIdentifier.getId());
 
-			newTemplate.setIdentifier(newIdentifier.getInode());
+			newTemplate.setIdentifier(newIdentifier.getId());
 			// persists the webasset
 			save(newTemplate);
-			List<Container> destinationContainers = getContainersInTemplate(newTemplate, user, respectFrontendRoles);
-
 
 			//Copy the host again
 			newIdentifier.setHostId(destination.getIdentifier());
@@ -306,37 +302,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
     }
-
-
-
-
-	@SuppressWarnings("unchecked")
-	private String getCopyTemplateName(String templateName, Host host) throws DotDataException {
-		String result = new String(templateName);
-
-		List<Template> templates = findTemplatesAssignedTo(host);
-
-		boolean isValidTemplateName = false;
-
-		for (; !isValidTemplateName;) {
-			isValidTemplateName = true;
-
-			for (Template template: templates) {
-				if (template.getTitle().equals(result)) {
-					isValidTemplateName = false;
-
-					break;
-				}
-			}
-
-			if (!isValidTemplateName)
-				result += " (COPY)";
-		}
-
-		return result;
-	}
-
-
 
 
 

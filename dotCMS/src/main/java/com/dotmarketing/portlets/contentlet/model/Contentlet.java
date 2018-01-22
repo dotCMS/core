@@ -1067,8 +1067,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public ContentType getContentType() throws DotDataException, DotSecurityException{
+	public ContentType getContentType() {
+	    try {
 		return APILocator.getContentTypeAPI(APILocator.systemUser()).find(getContentTypeId());
+	    }
+	    catch(DotDataException | DotSecurityException e) {
+	        throw new DotStateException(e);
+	    }
     }
 	
 	/**

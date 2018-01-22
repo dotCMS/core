@@ -243,10 +243,8 @@ public class PageResourceHelper implements Serializable {
 
         final Host site =resolveSite(request, user);
         
-                
 
-        
-        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
+        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
         
 
         

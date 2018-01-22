@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.hook.HTMLPageHook;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -57,6 +58,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	 */
 	public ContentletAPIInterceptor() {
 		conAPI = APILocator.getContentletAPIImpl();
+		try {
+            this.addPostHook(new HTMLPageHook());
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            Logger.warn(this.getClass(), e.getMessage(), e);
+        }
 	}
 
 	@Override

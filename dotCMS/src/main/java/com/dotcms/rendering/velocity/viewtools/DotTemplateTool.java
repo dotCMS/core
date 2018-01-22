@@ -312,6 +312,7 @@ public class DotTemplateTool implements ViewTool {
         themeMap.put( "path", themePath );
         themeMap.put( "templatePath", themeTemplatePath );
         themeMap.put( "htmlHead", haveHtmlHead );
+        themeMap.put( "title", themeFolder.getName());
         cache.put(key, themeMap);
       }
         return themeMap;
