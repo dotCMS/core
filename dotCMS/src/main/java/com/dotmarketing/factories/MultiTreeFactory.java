@@ -61,7 +61,7 @@ public class MultiTreeFactory {
     static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
-    static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
+    private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
 
     public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
