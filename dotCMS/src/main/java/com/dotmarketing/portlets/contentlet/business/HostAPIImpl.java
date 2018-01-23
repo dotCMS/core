@@ -501,7 +501,8 @@ public class HostAPIImpl implements HostAPI {
                 createSystemHost();
             } else {
                 final String systemHostId = (String) rs.get(0).get("id");
-                this.systemHost = DBSearch(systemHostId, user, respectFrontendRoles);
+                this.systemHost = (Host) APILocator.getContentletAPI().find(systemHostId,user,respectFrontendRoles);
+                //this.systemHost = DBSearch(systemHostId, user, respectFrontendRoles);
             }
             if(rs.size() > 1){
                 Logger.fatal(this, "There is more than one working version of the system host!!");
@@ -838,7 +839,8 @@ public class HostAPIImpl implements HostAPI {
             this.systemHost = systemHost;
         } else {
             final String systemHostId = (String) rs.get(0).get("id");
-            this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
+            this.systemHost = (Host) APILocator.getContentletAPI().find(systemHostId,systemUser,false);
+            //this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
         }
         return systemHost;
     }
