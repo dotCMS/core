@@ -294,7 +294,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 
 				/*
-				Verify we are not validating the next step of the step we want to delete.
+				Verify we are not validating the next step is the step we want to delete.
 				Remember the step can point to itself and that should not be a restriction when deleting.
 				 */
 				if (!otherStep.getId().equals(step.getId())) {
