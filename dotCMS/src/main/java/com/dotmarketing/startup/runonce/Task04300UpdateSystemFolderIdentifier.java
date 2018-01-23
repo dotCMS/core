@@ -16,8 +16,14 @@ import java.util.List;
 public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTask {
 
     public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.SYSTEM_FOLDER_ID;
+
+    public static final String UPDATE_IDENTIFIER_NAME =
+            "update identifier set asset_name='System folder', parent_path='/System folder' " +
+            "where id = (select identifier from folder where inode ='SYSTEM_FOLDER')";
+    public static final String UPDATE_IDENTIFIER_QUERY =
+            "update identifier set id = ? where id = (select identifier from folder where inode ='SYSTEM_FOLDER')";
     public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
-    public static final String UPDATE_IDENTIFIER_QUERY = "update identifier set id = ? where asset_name = 'system folder'";
+
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
     public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
     public static final String CREATE_CONSTRAINT_QUERY = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) " +
@@ -81,8 +87,14 @@ public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
 
     @WrapInTransaction
     private void updateFolderIDs() throws DotDataException {
-        //Update identifier table
+        //Update identifier asset name and parent path to the default ones
         DotConnect dc = new DotConnect();
+        dc.setSQL(UPDATE_IDENTIFIER_NAME);
+        Logger.info(this, "Executing Update identifier name and path query: " + dc.getSQL());
+        dc.loadResult();
+
+        //Update identifier table
+        dc = new DotConnect();
         dc.setSQL(UPDATE_IDENTIFIER_QUERY);
         dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
         Logger.info(this, "Executing Update identifier query: " + dc.getSQL());
