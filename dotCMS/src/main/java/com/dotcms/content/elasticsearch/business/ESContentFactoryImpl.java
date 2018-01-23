@@ -1425,7 +1425,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         try {
             final StringBuilder luceneQuery = new StringBuilder();
-            luceneQuery.append("+modUser:").append(userToReplace.getUserId());
+            luceneQuery.append("+working:true +modUser:").append(userToReplace.getUserId());
             final int limit = 0;
             final int offset = -1;
             final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex

@@ -7,6 +7,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -529,8 +530,17 @@ public class UserAPITest extends IntegrationTestBase {
 		 * of the modified contentlets to finish processing.
 		 */
 
-		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), false);
 		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
+
+		final StringBuilder luceneQuery = new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
+		final int limit = 0;
+		final int offset = -1;
+		final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
+			(luceneQuery.toString(), limit, offset, null, systemUser, false);
+
+		Logger.info(this, "ES query: " + luceneQuery.toString());
+		Logger.info(this, "contentlets.size: " + contentlets.size());
 
 		userAPI.delete(userToDelete, replacementUser, systemUser,false);
 
@@ -552,6 +562,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
 
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+		Logger.info(this, "Page inode:" + page.getInode());
+		Logger.info(this, "Page identifier:" + page.getIdentifier());
 		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
