@@ -10,7 +10,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.tika.Tika;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -582,7 +581,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         //Subtracting 1024 Bytes (buffer size)
         metadataLimitInBytes = metadataLimitInBytes - 1024;
 
-        String type=new Tika().detect(metadataFile);
+		String type = new TikaUtils().detect(metadataFile);
 
         InputStream input= Files.newInputStream(metadataFile.toPath());
 
