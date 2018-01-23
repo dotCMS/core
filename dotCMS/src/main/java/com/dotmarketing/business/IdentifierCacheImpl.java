@@ -102,7 +102,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
 
-	public Identifier getIdentifier(String identId)  {
+	protected Identifier getIdentifier(String identId)  {
 
 		Identifier value = null;
 		try {
