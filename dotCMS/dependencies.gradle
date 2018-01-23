@@ -29,7 +29,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.castor', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.cglib-nodep', version:'2.2_2'
-    //compile group: 'com.dotcms.lib', name: 'dot.chemistry-commons', version:'0.5-SNAPSHOT_4'
     compile group: 'com.dotcms.lib', name: 'dot.com.dotmarketing.jhlabs.images.filters', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-beanutils', version:'1.6.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version:'1.2_2'
