@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -33,7 +34,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,8 +42,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import java.util.stream.Collectors;
+
+import com.liferay.portal.model.User;
+
+
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
@@ -264,6 +267,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
+
         final Set<Container> containers = new HashSet<>();
         if(template.isDrawed()) {
             final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
@@ -290,6 +294,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
                     .map(MultiTree::getContainer)
                     .collect(Collectors.toSet());
 
+
             for (String cont : containerId) {
                 Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
                 if(container==null) {
@@ -299,7 +304,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
             }
         }
         return new ArrayList<Container>(containers);
-
 
     }
 

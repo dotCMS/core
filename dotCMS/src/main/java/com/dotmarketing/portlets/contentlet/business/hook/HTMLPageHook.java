@@ -23,35 +23,34 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
     public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) {
 
         super.publish(contentlet, user, respectFrontendRoles);
-/*
+
         if (contentlet.getContentType() instanceof PageContentType) {
             IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             publishTemplateLayout(page, user, respectFrontendRoles);
-        }*/
+        }
     }
 
     @Override
     public void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) {
 
-        super.publish(contentlets, user, respectFrontendRoles);/*
+        super.publish(contentlets, user, respectFrontendRoles);
         for (Contentlet contentlet : contentlets) {
             if (contentlet.getContentType() instanceof PageContentType) {
                 IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                 publishTemplateLayout(page, user, respectFrontendRoles);
             }
-        }*/
+        }
     }
 
     private void publishTemplateLayout(final IHTMLPage page, final User user, final boolean respectFrontendRoles) {
 
         try {
-            final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(page.getTemplateId());
-            final Template template =
-                    APILocator.getTemplateAPI().findWorkingTemplate(info.getWorkingInode(), user, respectFrontendRoles);
-            if (template.isAnonymous()) {
-                if (null != info.getWorkingInode() && !info.getWorkingInode().equals(info.getLiveInode())) {
-                    APILocator.getVersionableAPI().setLive(template);
-                }
+            final Template template =  APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), user, respectFrontendRoles);
+            if(template==null) {
+                return;
+            }
+            if (!APILocator.getVersionableAPI().isLive(template)) {
+                APILocator.getVersionableAPI().setLive(template);
             }
 
 

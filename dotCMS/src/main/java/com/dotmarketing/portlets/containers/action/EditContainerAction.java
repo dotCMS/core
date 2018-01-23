@@ -15,6 +15,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,6 +25,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
@@ -48,6 +50,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -618,16 +622,17 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 
 		//Delete MultiTree for old / unused ContainerStructures
+		final Map<String, Object> newContainerStructures = csList.stream().collect(
+				Collectors.toMap(ContainerStructure::getStructureId, (ContainerStructure cs) -> cs));
+
 		for (ContainerStructure oldCS : oldContainerStructures) {
-			boolean unused = true;
-			for (ContainerStructure newCS : csList) {
-				if (newCS.getStructureId().equals(oldCS.getStructureId())) {
-					unused = false;
-					break;
+			if (!newContainerStructures.containsKey(oldCS.getStructureId())) {
+				List<MultiTree> multiTreeList = MultiTreeFactory
+						.getContainerStructureMultiTree(oldCS.getContainerId(), oldCS.getStructureId());
+				for (MultiTree mt : multiTreeList) {
+					MultiTreeFactory.deleteMultiTree(mt);
 				}
 			}
-
-
 		}
 	}
 

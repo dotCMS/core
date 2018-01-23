@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -274,10 +275,10 @@ public class PageResourceHelper implements Serializable {
 
         for (final ContainerView containerView : containers.values()) {
             final Container container = containerView.getContainer();
-
+            VelocityResourceKey key = new VelocityResourceKey(container, mode);
             try {
-
-                final String rendered = VelocityUtil.mergeTemplate("/" + mode +"/" + container.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension, velocityContext);
+                
+                final String rendered = VelocityUtil.mergeTemplate(key.path, velocityContext);
                 containerView.setRendered(rendered);
             } catch (Exception e) {
                 throw new DotDataException(String.format("Container '%s' could not be " +
@@ -377,7 +378,7 @@ public class PageResourceHelper implements Serializable {
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
         Template saveTemplate = new Template();
 
-        if (UtilMethods.isSet(oldTemplate) && UtilMethods.isSet(form.getTitle()) && oldTemplate.isAnonymous()) {
+        if (UtilMethods.isSet(oldTemplate) && !UtilMethods.isSet(form.getTitle()) && oldTemplate.isAnonymous()) {
             saveTemplate=oldTemplate;
         } 
         saveTemplate.setTitle(form.getTitle());
