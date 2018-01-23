@@ -18,11 +18,11 @@ public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     public static final String SYSTEM_FOLDER_IDENTIFIER = FolderAPI.SYSTEM_FOLDER_ID;
 
     public static final String UPDATE_IDENTIFIER_NAME =
-            "update identifier set asset_name='System folder', parent_path='/System folder' " +
-            "where id = (select identifier from folder where inode ='SYSTEM_FOLDER')";
+            "update identifier set asset_name = ?, parent_path = ? " +
+            "where id = (select identifier from folder where inode = ?)";
     public static final String UPDATE_IDENTIFIER_QUERY =
-            "update identifier set id = ? where id = (select identifier from folder where inode ='SYSTEM_FOLDER')";
-    public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = 'SYSTEM_FOLDER'";
+            "update identifier set id = ? where id = (select identifier from folder where inode = ?)";
+    public static final String UPDATE_FOLDER_QUERY = "update folder set identifier = ? where inode = ?";
 
     public static final String DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder drop constraint folder_identifier_fk";
     public static final String MYSQL_DROP_CONSTRAINT_QUERY = "ALTER TABLE Folder DROP FOREIGN KEY folder_identifier_fk";
@@ -88,22 +88,27 @@ public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     @WrapInTransaction
     private void updateFolderIDs() throws DotDataException {
         //Update identifier asset name and parent path to the default ones
-        DotConnect dc = new DotConnect();
-        dc.setSQL(UPDATE_IDENTIFIER_NAME);
+        DotConnect dc = new DotConnect()
+            .setSQL(UPDATE_IDENTIFIER_NAME)
+            .addParam(FolderAPI.SYSTEM_FOLDER_ASSET_NAME)
+            .addParam(FolderAPI.SYSTEM_FOLDER_PARENT_PATH)
+            .addParam(FolderAPI.SYSTEM_FOLDER);
         Logger.info(this, "Executing Update identifier name and path query: " + dc.getSQL());
         dc.loadResult();
 
         //Update identifier table
-        dc = new DotConnect();
-        dc.setSQL(UPDATE_IDENTIFIER_QUERY);
-        dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
+        dc = new DotConnect()
+            .setSQL(UPDATE_IDENTIFIER_QUERY)
+            .addParam(SYSTEM_FOLDER_IDENTIFIER)
+            .addParam(FolderAPI.SYSTEM_FOLDER);
         Logger.info(this, "Executing Update identifier query: " + dc.getSQL());
         dc.loadResult();
 
         //Update folder table
-        dc = new DotConnect();
-        dc.setSQL(UPDATE_FOLDER_QUERY);
-        dc.addParam(SYSTEM_FOLDER_IDENTIFIER);
+        dc = new DotConnect()
+            .setSQL(UPDATE_FOLDER_QUERY)
+            .addParam(SYSTEM_FOLDER_IDENTIFIER)
+            .addParam(FolderAPI.SYSTEM_FOLDER);
         Logger.info(this, "Executing update folder query: " + dc.getSQL());
         dc.loadResult();
     }
