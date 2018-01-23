@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -124,6 +125,8 @@ public class FolderAPITest {
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
+		Logger.info(this, "ftest.getInode:" + ftest.getInode());
+		Logger.info(this, "identifier from cache: " + CacheLocator.getIdentifierCache().getIdentifier( ftest.getInode()));
         final Identifier ident  = identifierAPI.find(ftest);
         final Identifier ident1 = identifierAPI.find(ftest1);
         final Identifier ident2 = identifierAPI.find(ftest2);
