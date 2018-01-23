@@ -13,7 +13,7 @@ public abstract class IdentifierCache implements Cachable {
     
     abstract protected void addIdentifierToCache(String identifier, String inode) ;
 
-	abstract public Identifier getIdentifier(String identId);
+	abstract protected Identifier getIdentifier(String identId);
 
 	abstract protected Identifier getIdentifier(Host host, String URI);
 
