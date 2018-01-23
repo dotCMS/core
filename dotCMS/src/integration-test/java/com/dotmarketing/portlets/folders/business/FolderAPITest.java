@@ -129,6 +129,7 @@ public class FolderAPITest {
 		Logger.info(this, "identifier from cache: " + identifierAPI.loadFromCache( ftest.getInode()));
 		Logger.info(this, "identifier from db: " + identifierAPI.loadFromDb( ftest.getInode()));
 		Logger.info(this, "identifier from db's asset name: " + identifierAPI.loadFromDb( ftest.getInode()).getAssetName());
+
         final Identifier ident  = identifierAPI.find(ftest);
         final Identifier ident1 = identifierAPI.find(ftest1);
         final Identifier ident2 = identifierAPI.find(ftest2);
