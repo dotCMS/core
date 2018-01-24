@@ -1,4 +1,4 @@
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
@@ -24,7 +24,7 @@ export class DotEditLayoutComponent implements OnInit {
     @ViewChild('templateName') templateName: ElementRef;
 
     form: FormGroup;
-    initialFormValue: FormGroup;
+    initialFormValue: any;
     isModelUpdated = false;
 
     pageView: DotPageView;
@@ -56,7 +56,8 @@ export class DotEditLayoutComponent implements OnInit {
                 'editpage.layout.dialog.info',
                 'editpage.layout.dialog.header',
                 'dot.common.message.saving',
-                'dot.common.message.saved'
+                'dot.common.message.saved',
+                'common.validation.name.error.required'
             ])
             .subscribe();
 
@@ -98,17 +99,26 @@ export class DotEditLayoutComponent implements OnInit {
      *
      * @memberof DotEditLayoutComponent
      */
-    saveAsTemplateHandleChange(value: boolean): void {
+    saveAsTemplateHandleChange(value: any): void {
+        const titleFormControl = this.form.get('title');
+        titleFormControl.markAsUntouched();
+        titleFormControl.markAsPristine();
         this.saveAsTemplate = value;
-
         if (this.saveAsTemplate) {
+            titleFormControl.setValidators(Validators.required);
             /*
                 Need the timeout so the textfield it's loaded in the DOM before focus, wasn't able to find a better solution
             */
             setTimeout(() => {
                 this.templateName.nativeElement.focus();
             }, 0);
+        } else {
+            titleFormControl.setValidators(null);
+            if (this.initialFormValue.title === null) {
+                titleFormControl.setValue(null);
+            }
         }
+        titleFormControl.updateValueAndValidity();
     }
 
     /**
@@ -139,14 +149,17 @@ export class DotEditLayoutComponent implements OnInit {
      * @memberof DotEditLayoutComponent
      */
     setEditLayoutMode(): void {
+        this.initialFormValue.title = null;
         this.form.get('title').setValue(null);
         this.showTemplateLayoutSelectionDialog = false;
+        this.pageView.template.anonymous = true;
     }
 
     private setupLayout(pageView: DotPageView): void {
         this.pageView = pageView;
         this.templateContainersCacheService.set(this.pageView.containers);
         this.initForm();
+        this.saveAsTemplateHandleChange(false);
     }
 
     private initForm(): void {
@@ -167,10 +180,10 @@ export class DotEditLayoutComponent implements OnInit {
                 )
             })
         });
-        this.initialFormValue = _.cloneDeep(this.form);
+        this.initialFormValue = _.cloneDeep(this.form.value);
         this.isModelUpdated = false;
         this.form.valueChanges.subscribe(() => {
-            this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue.value);
+            this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue);
         });
     }
 

@@ -20,6 +20,7 @@ import { DotActionButtonModule } from '../../../../view/components/_common/dot-a
 import { FormsModule, FormGroup } from '@angular/forms';
 import { Component, Input } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
+import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -104,7 +105,8 @@ const testConfigObject = {
         RouterTestingModule,
         BrowserAnimationsModule,
         DotActionButtonModule,
-        FormsModule
+        FormsModule,
+        FieldValidationMessageModule
     ],
     providers: [
         DotConfirmationService,
@@ -202,6 +204,7 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
     });
 
     it('should show template name input and hide page title if save as template is checked', () => {
+        fixture.detectChanges();
         component.saveAsTemplate = true;
         fixture.detectChanges();
 
@@ -209,7 +212,7 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
         expect(pageTitle === null).toBe(true);
 
         const templateNameInput: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-template-name')
+            By.css('.dot-edit-layout__toolbar-template-name input')
         );
         expect(templateNameInput).toBeDefined();
     });
@@ -248,11 +251,12 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
     });
 
     it('template-name should has the right formControlName', () => {
+        fixture.detectChanges();
         component.saveAsTemplate = true;
         fixture.detectChanges();
 
         const templateNameInput: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-template-name')
+            By.css('.dot-edit-layout__toolbar-template-name input')
         );
         expect(templateNameInput.attributes.formControlName).toEqual('title');
     });
@@ -315,6 +319,26 @@ describe('DotEditLayoutComponent - Template (anonymous = false)', () => {
         expect(dialog.styles.display).toEqual('block');
     });
 
+    it('should set edit template mode', () => {
+        fixture.detectChanges();
+        spyOn(component, 'setEditLayoutMode');
+
+        const editLayoutButton: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__dialog-edit-template')
+        );
+        editLayoutButton.nativeElement.click();
+        fixture.detectChanges();
+
+        const checkboxSave: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__toolbar-save-template')
+        );
+
+        expect(component.setEditLayoutMode).not.toHaveBeenCalled();
+        expect(component.showTemplateLayoutSelectionDialog).toEqual(false, 'hide the dialog');
+        expect(component.form.get('title').value).toEqual('Hello Template Name');
+        expect(checkboxSave === null).toBe(true, 'checkbox not showing');
+    });
+
     it('should set edit layout mode', () => {
         spyOn(component, 'setEditLayoutMode').and.callThrough();
 
@@ -329,23 +353,22 @@ describe('DotEditLayoutComponent - Template (anonymous = false)', () => {
         expect(component.form.get('title').value).toBeNull('form title null');
     });
 
-    it('should set edit template mode', () => {
-        spyOn(component, 'setEditLayoutMode').and.callThrough();
-
+    it('should set the title field required when save as a template is checked', () => {
+        spyOn(component, 'saveAsTemplateHandleChange').and.callThrough();
         fixture.detectChanges();
         const editLayoutButton: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__dialog-edit-template')
+            By.css('.dot-edit-layout__dialog-edit-layout')
         );
         editLayoutButton.nativeElement.click();
         fixture.detectChanges();
-
-        const checkboxSave: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-save-template')
+        const templateNameInput: DebugElement = fixture.debugElement.query(
+            By.css('.dot-edit-layout__toolbar-template-name input')
         );
+        component.saveAsTemplateHandleChange(true);
+        fixture.detectChanges();
+        const focusElement: DebugElement = fixture.debugElement.query(By.css(':focus'));
 
-        expect(component.setEditLayoutMode).not.toHaveBeenCalled();
-        expect(component.showTemplateLayoutSelectionDialog).toEqual(false, 'hide the dialog');
-        expect(component.form.get('title').value).toEqual('Hello Template Name');
-        expect(checkboxSave).toBeNull('checkbox not showing');
+        expect(templateNameInput).toEqual(focusElement);
+        expect(component.form.get('title').valid).toEqual(false);
     });
 });

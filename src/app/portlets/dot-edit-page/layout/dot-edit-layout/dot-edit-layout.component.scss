@@ -37,7 +37,7 @@
 .dot-edit-layout__toolbar {
     align-items: center;
     justify-content: space-between;
-    margin: $basic-padding * 2 $basic-padding * 2 $basic-padding * 3;
+    margin: $basic-padding * 2 $basic-padding * 2 0;
 }
 
 .dot-edit-layout__toolbar-actions {
@@ -55,6 +55,10 @@
  }
 
 .dot-edit-layout__toolbar-template-name {
+    height: 75px;
+}
+
+.dot-edit-layout__toolbar-template-name input {
     width: 280px;
 }
 
