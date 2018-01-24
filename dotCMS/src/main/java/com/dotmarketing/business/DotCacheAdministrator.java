@@ -63,6 +63,20 @@ public interface DotCacheAdministrator  {
 	 */
 	Object get ( String key, String group ) throws DotCacheException;
 	
+	   /**
+     * Get an object from the cache
+     * @param key
+     * @return
+     */
+    default Object getNoThrow ( String key, String group ) {
+        try {
+            return get(key, group);
+        }
+        catch(DotCacheException e) {
+            return null;
+        }
+        
+    };
 	/**
 	 * Puts an object in a cache
 	 * This will create journal entries for other servers in a clustered environment. 

@@ -31,9 +31,9 @@ public class UnarchiveContentActionlet extends WorkFlowActionlet {
 
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
-
-			APILocator.getContentletAPI().unarchive(processor.getContentlet(), processor.getUser(), false);
-
+		    if(processor.getContentlet().isArchived()) {
+		        APILocator.getContentletAPI().unarchive(processor.getContentlet(), processor.getUser(), false);
+		    }
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);

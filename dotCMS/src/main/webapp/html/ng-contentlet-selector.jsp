@@ -30,8 +30,8 @@
     } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
         contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
     } else {
-        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
-        contentTypes = new StructureTransformer(structuresInContainer).asList();
+        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
+
     }
     contentTypes = new ArrayList<>(contentTypes);
 
@@ -148,7 +148,8 @@
                 %>
                 {
                     "inode": "<%=contentType.id()%>",
-                    "name": "<%=contentType.name()%>"
+                    "name": "<%=contentType.name()%>",
+                    "baseType": "<%=contentType.baseType()%>"
                 },
                 <%
                     }
