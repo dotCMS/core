@@ -307,7 +307,7 @@ public class HostAPIImpl implements HostAPI {
         Host host  = hostCache.get(id);
 
         if(host ==null){
-            DBSearch(id,user,respectFrontendRoles);
+            host = DBSearch(id,user,respectFrontendRoles);
         }
 
         if(host != null){
