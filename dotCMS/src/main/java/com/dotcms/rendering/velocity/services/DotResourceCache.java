@@ -9,10 +9,13 @@ import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
@@ -58,12 +61,8 @@ public class DotResourceCache implements ResourceCache, Cachable {
     public String[] getMacro(String name) {
 
 
-        String[] rw = null;
-        try {
-            rw = (String[]) cache.get(MACRO_PREFIX + name, macroCacheGroup);
-        } catch (DotCacheException e) {
-            Logger.debug(this, "Cache Entry not found", e);
-        }
+        String[] rw = (String[]) cache.getNoThrow(MACRO_PREFIX + name, macroCacheGroup);
+
         return rw;
 
     }
@@ -87,13 +86,18 @@ public class DotResourceCache implements ResourceCache, Cachable {
 
         final VelocityResourceKey key = new VelocityResourceKey(resourceKey);
 
-        try {
-            return (Resource) cache.get(key.cacheKey, primaryGroup);
-        } catch (DotCacheException e) {
-            Logger.debug(this, "Cache Entry not found", e);
+        if(key.type == VelocityType.CONTAINER) {
+            Map<String, Resource> map= (Map<String, Resource>) cache.getNoThrow(key.cacheKey, primaryGroup);
+            if(map==null) {
+                return null;
+            }else {
+                return map.get(key.path);
+            }
         }
-    
-        return null;
+        else {
+            return (Resource) cache.getNoThrow(key.cacheKey, primaryGroup);
+        }
+
     }
 
     @Override
@@ -117,10 +121,18 @@ public class DotResourceCache implements ResourceCache, Cachable {
             return resource;
         }
 
-
-        // Add the key to the cache
-        cache.put(key.cacheKey, resource, primaryGroup);
-
+        if(key.type == VelocityType.CONTAINER) {
+            Map<String, Resource> map= (Map<String, Resource>) cache.getNoThrow(key.cacheKey, primaryGroup);
+            if(null==map) {
+                map=new ConcurrentHashMap<>();
+            }
+            map.put(key.path, resource);
+            cache.put(key.cacheKey, map, primaryGroup);
+        }else {
+        
+            // Add the key to the cache
+            cache.put(key.cacheKey, resource, primaryGroup);
+        }
         return resource;
 
     }
