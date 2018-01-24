@@ -22,16 +22,14 @@
 
 package com.liferay.util.xml;
 
+import com.liferay.util.xml.descriptor.XMLDescriptor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.Element;
-
-import com.liferay.util.xml.descriptor.XMLDescriptor;
+import org.dom4j.Document;
+import org.dom4j.Element;
 
 /**
  * <a href="XMLMerger.java.html"><b><i>View Source</i></b></a>

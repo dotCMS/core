@@ -22,17 +22,15 @@
 
 package com.liferay.util.xml;
 
+import com.liferay.util.StringUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentException;
-import com.dotcms.repackage.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-
-import com.liferay.util.StringUtil;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 /**
  * <a href="XMLFormatter.java.html"><b><i>View Source</i></b></a>

@@ -15,10 +15,6 @@
  */
 package com.dotmarketing.util.diff;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.Locale;
-
 import com.dotmarketing.util.diff.html.HTMLDiffer;
 import com.dotmarketing.util.diff.html.HtmlSaxDiffOutput;
 import com.dotmarketing.util.diff.html.TextNodeComparator;
@@ -26,11 +22,14 @@ import com.dotmarketing.util.diff.html.dom.DomTreeBuilder;
 import com.dotmarketing.util.diff.tag.TagComparator;
 import com.dotmarketing.util.diff.tag.TagDiffer;
 import com.dotmarketing.util.diff.tag.TagSaxDiffOutput;
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.InputSource;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.XMLReader;
-import com.dotcms.repackage.org.xml.sax.helpers.XMLReaderFactory;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.Locale;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 public class DaisyDiff {
 

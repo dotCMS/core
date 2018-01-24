@@ -15,16 +15,15 @@
  */
 package com.dotmarketing.util.diff.html.dom;
 
+import com.dotmarketing.util.diff.html.ancestor.TextOnlyComparator;
+import com.dotmarketing.util.diff.html.dom.helper.AttributesMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import com.dotmarketing.util.diff.html.ancestor.TextOnlyComparator;
-import com.dotmarketing.util.diff.html.dom.helper.AttributesMap;
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Node that can contain other nodes. Represents an HTML tag.

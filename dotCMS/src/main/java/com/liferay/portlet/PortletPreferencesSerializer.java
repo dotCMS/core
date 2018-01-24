@@ -22,6 +22,12 @@
 
 package com.liferay.portlet;
 
+import com.dotcms.repackage.javax.portlet.PortletPreferences;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.PortletPreferencesPK;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.Validator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -29,22 +35,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.javax.portlet.PortletPreferences;
-
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentException;
-import com.dotcms.repackage.org.dom4j.DocumentFactory;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.PortletPreferencesPK;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.Validator;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentFactory;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 /**
  * <a href="PortletPreferencesSerializer.java.html"><b><i>View Source</i></b>

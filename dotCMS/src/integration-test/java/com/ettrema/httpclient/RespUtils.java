@@ -1,5 +1,8 @@
 package com.ettrema.httpclient;
 
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -7,14 +10,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.jdom.Element;
-import com.dotcms.repackage.org.jdom.JDOMException;
-import com.dotcms.repackage.org.jdom.Namespace;
-import com.dotcms.repackage.org.jdom.filter.ElementFilter;
-import com.dotcms.repackage.org.jdom.input.SAXBuilder;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.Namespace;
+import org.jdom.filter.ElementFilter;
+import org.jdom.input.SAXBuilder;
 
 
 
@@ -82,7 +82,7 @@ public class RespUtils {
         return list;
     }    
     
-    public static  com.dotcms.repackage.org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
+    public static  org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		try {
 			IOUtils.copy(in, bout);

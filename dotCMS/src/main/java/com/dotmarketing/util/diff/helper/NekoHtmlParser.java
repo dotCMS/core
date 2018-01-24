@@ -15,15 +15,14 @@
  */
 package com.dotmarketing.util.diff.helper;
 
+import com.sun.org.apache.xerces.internal.parsers.SAXParser;
 import java.io.IOException;
-
-import com.dotcms.repackage.org.cyberneko.html.parsers.SAXParser;
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.InputSource;
-import com.dotcms.repackage.org.xml.sax.Locator;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Parses HTML files using the Neko HTML parser. Puts all elements and attribute

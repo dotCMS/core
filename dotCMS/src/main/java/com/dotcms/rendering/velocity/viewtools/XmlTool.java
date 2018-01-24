@@ -19,6 +19,9 @@ package com.dotcms.rendering.velocity.viewtools;
  * under the License.
  */
 
+import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
+import com.dotcms.rendering.velocity.viewtools.cache.XmlToolCache;
+import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,21 +30,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
-import com.dotcms.rendering.velocity.viewtools.cache.XmlToolCache;
-import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
-import com.dotcms.repackage.org.dom4j.Attribute;
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentHelper;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.Node;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-
-import com.dotmarketing.util.Logger;
+import org.dom4j.Attribute;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
 
 
 /**

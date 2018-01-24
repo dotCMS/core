@@ -1,8 +1,8 @@
 package com.dotcms.rest.api.v1.user;
 
-import com.dotcms.repackage.com.drew.lang.annotations.NotNull;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
 

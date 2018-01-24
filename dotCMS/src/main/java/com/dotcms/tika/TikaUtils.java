@@ -1,7 +1,6 @@
 package com.dotcms.tika;
 
 import com.dotcms.osgi.OSGIConstants;
-import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +22,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 public class TikaUtils {
 

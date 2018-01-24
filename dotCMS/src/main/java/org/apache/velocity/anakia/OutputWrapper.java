@@ -21,10 +21,9 @@ package org.apache.velocity.anakia;
 
 import java.io.IOException;
 import java.io.StringWriter;
-
-import com.dotcms.repackage.org.jdom.Element;
-import com.dotcms.repackage.org.jdom.output.XMLOutputter;
-import com.dotcms.repackage.org.jdom.output.Format;
+import org.jdom.Element;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
 /**
  * This class extends XMLOutputter in order to provide

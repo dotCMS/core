@@ -22,18 +22,16 @@
 
 package com.liferay.portal.tools;
 
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.util.EntityResolver;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.util.EntityResolver;
-import com.liferay.util.FileUtil;
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 
 /**
  * <a href="EJBXMLBuilder.java.html"><b><i>View Source</i></b></a>
