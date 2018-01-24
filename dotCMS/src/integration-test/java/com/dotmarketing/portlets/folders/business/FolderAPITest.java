@@ -125,10 +125,10 @@ public class FolderAPITest {
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
-		Logger.info(this, "ftest.getInode:" + ftest.getInode());
-		Logger.info(this, "identifier from cache: " + identifierAPI.loadFromCache( ftest.getInode()));
-		Logger.info(this, "identifier from db: " + identifierAPI.loadFromDb( ftest.getInode()));
-		Logger.info(this, "identifier from db's asset name: " + identifierAPI.loadFromDb( ftest.getInode()).getAssetName());
+		Logger.info(this, "ftest..getVersionId():" + ftest.getVersionId());
+		Logger.info(this, "identifier from cache: " + identifierAPI.loadFromCache( ftest.getVersionId()));
+		Logger.info(this, "identifier from db: " + identifierAPI.loadFromDb( ftest.getVersionId()));
+		Logger.info(this, "identifier from db's asset name: " + identifierAPI.loadFromDb( ftest.getVersionId()).getAssetName());
 
         final Identifier ident  = identifierAPI.find(ftest);
         final Identifier ident1 = identifierAPI.find(ftest1);
