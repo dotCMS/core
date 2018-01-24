@@ -1,0 +1,9 @@
+<p-overlayPanel appendTo="body" #overlay>
+    <div class="dot-sidebar-properties__radio-buttons-container" [formGroup]="group">
+        <p-radioButton name="sidebarWidth" value="small" [label]="dotMessageService.get('editpage.layout.sidebar.width.small')" formControlName="width"></p-radioButton>
+        <p-radioButton name="sidebarWidth" value="medium" [label]="dotMessageService.get('editpage.layout.sidebar.width.medium')" formControlName="width"></p-radioButton>
+        <p-radioButton name="sidebarWidth" value="large" [label]="dotMessageService.get('editpage.layout.sidebar.width.large')" formControlName="width"></p-radioButton>
+    </div>
+</p-overlayPanel>
+
+<button pButton type="button" aria-label="dotMessageService.get('editpage.layout.sidebar.action.open')" icon="fa-ellipsis-v" (click)="overlay.toggle($event)"></button>

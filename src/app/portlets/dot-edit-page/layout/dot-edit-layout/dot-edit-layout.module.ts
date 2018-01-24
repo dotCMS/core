@@ -10,6 +10,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
 import { Routes, RouterModule } from '@angular/router';
 import { PageViewResolver } from '../../dot-edit-page-resolver.service';
+import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
 
 const routes: Routes = [
@@ -37,6 +38,7 @@ const routes: Routes = [
         InputTextModule,
         DotLayoutPropertiesModule,
         DialogModule,
+        DotSidebarPropertiesModule
         FieldValidationMessageModule
     ],
     exports: [DotEditLayoutComponent],

@@ -20,6 +20,7 @@ import { DotActionButtonModule } from '../../../../view/components/_common/dot-a
 import { FormsModule, FormGroup } from '@angular/forms';
 import { Component, Input } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
+import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
 
 @Component({
@@ -102,6 +103,7 @@ const testConfigObject = {
     declarations: [DotEditLayoutComponent, MockAdditionalOptionsComponent, MockDotLayoutPropertiesComponent],
     imports: [
         DotEditLayoutGridModule,
+        DotSidebarPropertiesModule,
         RouterTestingModule,
         BrowserAnimationsModule,
         DotActionButtonModule,
@@ -217,17 +219,83 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
         expect(templateNameInput).toBeDefined();
     });
 
-    xit('should have header in the template', () => {});
+    it('should have header in the template', () => {
+        fixture.detectChanges();
+        component.form.get('layout.header').setValue(true);
 
-    xit('should NOT have header in the template', () => {});
+        fixture.detectChanges();
+        const headerElem: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-header'));
 
-    xit('should have footer in the template', () => {});
+        expect(headerElem).toBeDefined();
+        expect(headerElem.nativeElement.innerHTML).toEqual('HEADER');
+    });
 
-    xit('should NOT have footer in the template', () => {});
+    it('should NOT have header in the template', () => {
+        fixture.detectChanges();
+        const headerElem: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-header'));
 
-    xit('should have sidebar in the template', () => {});
+        expect(headerElem).toBeNull();
+    });
 
-    xit('should NOT have sidebar in the template', () => {});
+    it('should have footer in the template', () => {
+        fixture.detectChanges();
+        component.form.get('layout.footer').setValue(true);
+
+        fixture.detectChanges();
+        const footerElem: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-footer'));
+
+        expect(footerElem).toBeDefined();
+        expect(footerElem.nativeElement.innerHTML).toEqual('FOOTER');
+    });
+
+    it('should NOT have footer in the template', () => {
+        fixture.detectChanges();
+        const footerElem: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-footer'));
+
+        expect(footerElem).toBeNull();
+    });
+
+    it('should NOT have sidebar in the template', () => {
+        fixture.detectChanges();
+        const sidebarLeft: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-sidebar--left'));
+        const sidebarRight: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-sidebar--right'));
+
+        expect(sidebarLeft).toBeNull();
+        expect(sidebarRight).toBeNull();
+    });
+
+    it('should set sidebar left with "dot-edit-layout__template-sidebar--small" class', () => {
+        fixture.detectChanges();
+        component.form.get('layout.sidebar.location').setValue('left');
+        component.form.get('layout.sidebar.width').setValue('small');
+
+        fixture.detectChanges();
+        const sidebarLeft: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-sidebar--left'));
+        expect(sidebarLeft).toBeDefined();
+        expect(sidebarLeft.nativeElement.classList.contains('dot-edit-layout__template-sidebar--small')).toEqual(true);
+    });
+
+    it('should set sidebar left with "dot-edit-layout__template-sidebar--medium" class', () => {
+        fixture.detectChanges();
+        component.form.get('layout.sidebar.location').setValue('left');
+        component.form.get('layout.sidebar.width').setValue('medium');
+
+        fixture.detectChanges();
+        const sidebarLeft: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-sidebar--left'));
+        expect(sidebarLeft.nativeElement.classList.contains('dot-edit-layout__template-sidebar--medium')).toEqual(true);
+        expect(sidebarLeft).toBeDefined();
+    });
+
+    it('should set sidebar left with "dot-edit-layout__template-sidebar--large" class', () => {
+        fixture.detectChanges();
+        component.form.get('layout.sidebar.location').setValue('left');
+        component.form.get('layout.sidebar.width').setValue('large');
+
+        fixture.detectChanges();
+        const sidebarLeft: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__template-sidebar--left'));
+        expect(sidebarLeft.nativeElement.classList.contains('dot-edit-layout__template-sidebar--large')).toEqual(true);
+        expect(sidebarLeft).toBeDefined();
+    });
 
     it('should have a form', () => {
         const form: DebugElement = fixture.debugElement.query(By.css('form'));

@@ -18,14 +18,16 @@
     <div class="dot-edit-layout__template">
         <div class="dot-edit-layout__template-header" *ngIf="form.value.layout.header">HEADER</div>
         <div class="dot-edit-layout__template-main">
-            <div class="dot-edit-layout__template-sidebar--left" *ngIf="form.value.layout.sidebar.location === 'left'">
+            <div class="dot-edit-layout__template-sidebar--left" [ngClass]="'dot-edit-layout__template-sidebar--' + form.value.layout.sidebar.width" *ngIf="form.value.layout.sidebar.location === 'left'">
                 SIDEBAR
+                <dot-sidebar-properties [group]="form.get('layout.sidebar')" class="dot-edit-layout__template-sidebar-properties"></dot-sidebar-properties>
             </div>
             <div class="dot-edit-layout__grid-guides" formGroupName="layout">
                 <dot-edit-layout-grid #editLayoutGrid formControlName="body"></dot-edit-layout-grid>
             </div>
-            <div class="dot-edit-layout__template-sidebar--right" *ngIf="form.value.layout.sidebar.location === 'right'">
+            <div class="dot-edit-layout__template-sidebar--right" [ngClass]="'dot-edit-layout__template-sidebar--' + form.value.layout.sidebar.width" *ngIf="form.value.layout.sidebar.location === 'right'">
                 SIDEBAR
+                <dot-sidebar-properties [group]="form.get('layout.sidebar')" class="dot-edit-layout__template-sidebar-properties"></dot-sidebar-properties>
             </div>
         </div>
         <div class="dot-edit-layout__template-footer" *ngIf="form.value.layout.footer">FOOTER</div>
