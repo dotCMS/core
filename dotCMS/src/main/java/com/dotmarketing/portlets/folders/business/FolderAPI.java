@@ -332,7 +332,6 @@ import com.liferay.portal.model.User;
 			DotSecurityException;
 
 	/**
-	 * Required by CMIS
 	 *
 	 * @param query
 	 * @param user

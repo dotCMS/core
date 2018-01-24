@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -455,12 +454,12 @@ public class LinkFactory {
 		if(UtilMethods.isSet(query.getSelectAttributes())){
 			
 			if(!query.getSelectAttributes().contains("title")){
-				query.getSelectAttributes().add("title" + " as " + QueryResult.CMIS_TITLE);
+				query.getSelectAttributes().add("title");
 			}
 		}else{
 			List<String> atts = new ArrayList<String>();
 			atts.add("*");
-			atts.add("title" + " as " + QueryResult.CMIS_TITLE);
+			atts.add("title");
 			query.setSelectAttributes(atts);
 		}
 				

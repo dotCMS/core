@@ -1,1 +1,0 @@
-document.write('<div class="header"><div class="logo"><a href="http://jackrabbit.apache.org/" align="right"><img src="logo.png" align="right"></a></div><a href="index.html">CMIS v0.61+ JavaScript Client</a><br>Content Management Interoperability Services (CMIS) draft implementation</div>');
