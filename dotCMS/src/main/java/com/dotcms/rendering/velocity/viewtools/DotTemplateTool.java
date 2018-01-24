@@ -131,7 +131,7 @@ public class DotTemplateTool implements ViewTool {
         final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
 
         if (!template.isDrawed()){
-            throw new DotDataException("Template with inode: " + themeInode + " is not drawed");
+            throw new RuntimeException("Template with inode: " + themeInode + " is not drawed");
         }
 
         return new DrawedBody(template.getTitle(), template.getDrawedBody());
@@ -183,7 +183,7 @@ public class DotTemplateTool implements ViewTool {
 
         final String drawedBodyAsString = drawedBody.getDrawedBody();
         if (!UtilMethods.isSet(drawedBodyAsString)){
-            throw new DotDataException("Template with inode: " + themeInode + " has not drawedBody");
+            throw new RuntimeException("Template with inode: " + themeInode + " has not drawedBody");
         }
 
         try {

@@ -28,7 +28,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -271,7 +271,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
         final Set<Container> containers = new HashSet<>();
         if(template.isDrawed()) {
             final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
-            final List<String> containersId = layout.getContainersId();
+            final List<String> containersId = this.getContainersId(layout);
     
             for (final String cont : containersId) {
                 final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
@@ -307,7 +307,34 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     }
 
+	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
+		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
+		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
+		for (final TemplateLayoutRow row : rows) {
+			final List<TemplateLayoutColumn> columns = row.getColumns();
+
+			for (final TemplateLayoutColumn column : columns) {
+				final List<ContainerUUID> columnContainers = column.getContainers();
+				containerUUIDS.addAll(columnContainers);
+			}
+		}
+
+		Sidebar sidebar = layout.getSidebar();
+
+		if (sidebar != null && sidebar.getContainers() != null) {
+			containerUUIDS.addAll(sidebar.getContainers());
+		}
+
+		return containerUUIDS;
+	}
+
+	private List<String> getContainersId(TemplateLayout layout) {
+
+		return this.getContainersUUID(layout).stream()
+				.map(ContainerUUID::getIdentifier)
+				.collect(Collectors.toList());
+	}
 
 	public Host getTemplateHost(Template template) throws DotDataException {
 

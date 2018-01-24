@@ -165,35 +165,7 @@ public class TemplateLayout implements Serializable{
 
     }
 
-    public List<String> getContainersId() {
-        final List<String> containerIdentifiers = new ArrayList<>();
-        final List<TemplateLayoutRow> rows = this.body.getRows();
 
-        for (final TemplateLayoutRow row : rows) {
-            final List<TemplateLayoutColumn> columns = row.getColumns();
-
-            for (final TemplateLayoutColumn column : columns) {
-                final List<ContainerUUID> columnContainers = column.getContainers();
-                containerIdentifiers.addAll(
-                        columnContainers.stream()
-
-                                .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
-
-                                .collect(Collectors.toList()));
-            }
-        }
-
-        if (this.sidebar != null && this.sidebar.getContainers() != null) {
-            containerIdentifiers.addAll(
-                    this.sidebar.getContainers().stream()
-
-                            .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
-
-                            .collect(Collectors.toList()));
-        }
-
-        return containerIdentifiers;
-    }
 
     @Override
     public String toString() {

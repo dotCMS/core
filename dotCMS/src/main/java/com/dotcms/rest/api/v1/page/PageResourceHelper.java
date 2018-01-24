@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -23,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -97,8 +99,11 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries, User user) throws DotDataException {
-        
+    @WrapInTransaction
+    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+
+        MultiTreeFactory.deleteMultiTreeByParent(pageId);
+
         final List<MultiTree> multiTres = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {

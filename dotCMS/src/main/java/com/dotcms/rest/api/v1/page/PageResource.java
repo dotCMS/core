@@ -382,7 +382,6 @@ public class PageResource {
     @POST
     @JSONP
     @NoCache
-    @WrapInTransaction
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
@@ -400,24 +399,9 @@ public class PageResource {
             if (page == null) {
                 return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
             }
-            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
-            
-            
-            MultiTreeFactory.deleteMultiTreeByParent(page.getIdentifier());
-            
-            
-            for(PageContainerForm.ContainerEntry entry: pageContainerForm.getContainerEntries()) {
-                int i=0;
-                for(String conId : entry.getContentIds()) {
-                    MultiTree mTree = new MultiTree().setHtmlPage(page.getIdentifier())
-                            .setContainer(entry.getContainerId())
-                            .setContentlet(conId)
-                            .setOrder(i++);
-                    MultiTreeFactory.saveMultiTree(mTree);
-                    
-                }
-            }
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
 
             res = Response.ok(new ResponseEntityView("ok")).build();
         } catch (DotSecurityException e) {
