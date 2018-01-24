@@ -1,5 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import java.io.Serializable;
@@ -1422,7 +1425,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         try {
             final StringBuilder luceneQuery = new StringBuilder();
-            luceneQuery.append("+modUser:").append(userToReplace.getUserId());
+            luceneQuery.append("+working:true +modUser:").append(userToReplace.getUserId());
             final int limit = 0;
             final int offset = -1;
             final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
@@ -1464,19 +1467,46 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     indexAPI.indexContentList(contentToIndex, null, false);
                 }
 
-                final String successMessage = String.format("Reindexing of updated related content after " +
+                Logger.info(this, String.format("Reindexing of updated related content after " +
                     "deleting user '%s' has finished successfully.", userToReplace.getUserId()
-                    + "/" + userToReplace.getFullName());
+                    + "/" + userToReplace.getFullName()));
 
-                Logger.info(this, successMessage);
-                notificationAPI.error(successMessage, user.getUserId());
+                notificationAPI.generateNotification(
+                    new I18NMessage("notification.contentapi.update.user.references"),
+                    new I18NMessage(
+                        "notification.contentapi.reindex.related.content.success", null,
+                        userToReplace.getUserId()
+                            + "/" + userToReplace.getFullName()),
+                    null, // no actions
+                    NotificationLevel.INFO,
+                    NotificationType.GENERIC,
+                    user.getUserId(),
+                    user.getLocale()
+                );
+
+
             }
         } catch (Exception e) {
-            final String errorMsg = String.format("Unable to reindex updated related content for " +
-                    "deleted " + "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId()
-                    + "/" + userToReplace.getFullName());
-            Logger.error(this.getClass(), errorMsg + ": " + e.getMessage(), e);
-            notificationAPI.error(errorMsg, user.getUserId());
+            Logger.error(this.getClass(), String.format("Unable to reindex updated related content for " +
+                "deleted " + "user '%s'. " + "Please run a full Reindex.", userToReplace.getUserId()
+                + "/" + userToReplace.getFullName()), e);
+
+            try {
+                notificationAPI.generateNotification(
+                    new I18NMessage("notification.contentapi.update.user.references"),
+                    new I18NMessage(
+                        "notification.contentapi.reindex.related.content.error", null,
+                        userToReplace.getUserId()
+                            + "/" + userToReplace.getFullName()),
+                    null, // no actions
+                    NotificationLevel.ERROR,
+                    NotificationType.GENERIC,
+                    user.getUserId(),
+                    user.getLocale()
+                );
+            } catch (DotDataException e1) {
+                Logger.error(this, "Unable to send error Notification", e);
+            }
         }
     }
 

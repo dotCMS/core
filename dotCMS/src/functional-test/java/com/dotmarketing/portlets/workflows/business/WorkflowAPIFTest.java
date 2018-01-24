@@ -57,6 +57,10 @@ public class WorkflowAPIFTest {
 
 		User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", systemUser, false);
 		Role role = roleAPI.getUserRole(adminUser);
+
+		User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+		Role anonymousRole = roleAPI.getUserRole(anonymousUser);
+
 		/*
 		 * Create workflow scheme
 		 */
@@ -92,7 +96,7 @@ public class WorkflowAPIFTest {
 		 * Add action to scheme step1
 		 */
 		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfActionAjax?cmd=save&stepId="+step1.getId()+"&schemeId="+UtilMethods.webifyString(ws.getId())+"&actionName=Edit&whoCanUse=";
-		baseURL+=role.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
+		baseURL+=anonymousRole.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
 		baseURL+="&actionAssignToSelect="+role.getId()+"&actionNextStep="+step2.getId()+"&actionCondition=";
 		testUrl = new URL(baseURL);
 		IOUtils.toString(testUrl.openStream(),"UTF-8");
@@ -104,7 +108,7 @@ public class WorkflowAPIFTest {
 		 * Add action to scheme step2
 		 */
 		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfActionAjax?cmd=save&stepId="+step2.getId()+"&schemeId="+UtilMethods.webifyString(ws.getId())+"&actionName=Publish&whoCanUse=";
-		baseURL+=role.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
+		baseURL+=anonymousRole.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
 		baseURL+="&actionAssignToSelect="+role.getId()+"&actionNextStep="+step2.getId()+"&actionCondition=";
 
 		testUrl = new URL(baseURL);

@@ -10,7 +10,6 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
@@ -167,7 +166,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	/**
 	 *
-	 * @param folder
 	 * @return List of sub folders for passed in folder
 	 * @throws DotSecurityException
 	 * @throws DotDataException
@@ -235,7 +233,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	/**
 	 *
-	 * @param folder
 	 * @return List of sub folders for passed in folder
 	 * @throws DotSecurityException
 	 * @throws DotDataException
@@ -637,12 +634,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (UtilMethods.isSet(query.getSelectAttributes())) {
 
 			if (!query.getSelectAttributes().contains("title")) {
-				query.getSelectAttributes().add("title" + " as " + QueryResult.CMIS_TITLE);
+				query.getSelectAttributes().add("title");
 			}
 		} else {
 			List<String> atts = new ArrayList<String>();
 			atts.add("*");
-			atts.add("title" + " as " + QueryResult.CMIS_TITLE);
+			atts.add("title");
 			query.setSelectAttributes(atts);
 		}
 

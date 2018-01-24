@@ -1,20 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
 import com.dotcms.contenttype.transform.JsonTransformer;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -24,9 +18,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.liferay.portal.model.User;
+
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by Jonathan Gamba
@@ -127,6 +130,10 @@ public class DotTemplateTool implements ViewTool {
         final Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
         final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
 
+        if (!template.isDrawed()){
+            throw new DotDataException("Template with inode: " + themeInode + " is not drawed");
+        }
+
         return new DrawedBody(template.getTitle(), template.getDrawedBody());
     }
 
@@ -167,17 +174,22 @@ public class DotTemplateTool implements ViewTool {
 
     private static TemplateLayout getLayout ( final String themeInode, final Boolean isPreview,
                                               final DrawedBody drawedBody)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         String key = themeInode + isPreview;
 
         //Parse and return the layout for this template
         TemplateLayout layout;
 
+        final String drawedBodyAsString = drawedBody.getDrawedBody();
+        if (!UtilMethods.isSet(drawedBodyAsString)){
+            throw new DotDataException("Template with inode: " + themeInode + " has not drawedBody");
+        }
+
         try {
-            layout = getTemplateLayoutFromJSON(drawedBody.getDrawedBody());
+            layout = getTemplateLayoutFromJSON(drawedBodyAsString);
         } catch (IOException e) {
-            layout = DesignTemplateUtil.getDesignParameters(drawedBody.getDrawedBody(), isPreview);
+            layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, isPreview);
         }
 
         layout.setTitle(drawedBody.getTitle());

@@ -320,6 +320,7 @@ public class ContentResource {
             throws DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
+
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -705,6 +706,9 @@ public class ContentResource {
 
         Map<String, Object> map = new HashMap<String, Object>();
         List<String> usedBinaryFields = new ArrayList<String>();
+        String binaryFieldsInput = null;
+        List<String> binaryFields = new ArrayList<>();
+
         for (BodyPart part : multipart.getBodyParts()) {
             ContentDisposition cd = part.getContentDisposition();
             String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
@@ -714,6 +718,21 @@ public class ContentResource {
                     .equals("json")) {
                 try {
                     processJSON(contentlet, part.getEntityAs(InputStream.class));
+                    try {
+                        binaryFieldsInput =
+                            webResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields")
+                                .toString();
+                    } catch (NullPointerException npe) {
+                    }
+                    if (UtilMethods.isSet(binaryFieldsInput)) {
+                        if (!binaryFieldsInput.contains(",")) {
+                            binaryFields.add(binaryFieldsInput);
+                        } else {
+                            for (String binaryFieldSplit : binaryFieldsInput.split(",")) {
+                                binaryFields.add(binaryFieldSplit.trim());
+                            }
+                        }
+                    }
                 } catch (JSONException e) {
 
                     Logger.error(this.getClass(), "Error processing JSON for Stream", e);
@@ -794,7 +813,11 @@ public class ContentResource {
                         String fieldName = ff.getFieldContentlet();
                         if (fieldName.startsWith("binary")
                                 && !usedBinaryFields.contains(fieldName)) {
-                            contentlet.setBinary(ff.getVelocityVarName(), tmp);
+                            String fieldVarName = ff.getVelocityVarName();
+                            if (binaryFields.size() > 0) {
+                                fieldVarName = binaryFields.remove(0);
+                            }
+                            contentlet.setBinary(fieldVarName, tmp);
                             usedBinaryFields.add(fieldName);
                             break;
                         }
