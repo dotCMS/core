@@ -398,6 +398,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+
+		if (task.getLanguageId() <= 0) {
+
+			Logger.error(this, "The task: " + task.getId() +
+								", does not have language id, setting to the default one");
+			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
 		workFlowFactory.saveWorkflowTask(task);
 	}
 
@@ -1071,6 +1079,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					task.setCreatedBy(r.getId());
 					task.setWebasset(processor.getContentlet().getIdentifier());
+					task.setLanguageId(processor.getContentlet().getLanguageId());
 					if(processor.getWorkflowMessage() != null){
 						task.setDescription(processor.getWorkflowMessage());
 					}
