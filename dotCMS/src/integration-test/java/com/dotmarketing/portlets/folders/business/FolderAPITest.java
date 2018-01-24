@@ -125,12 +125,11 @@ public class FolderAPITest {
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
-		Logger.info(this, "ftest.getInode:" + ftest.getInode());
-		Logger.info(this, "identifier from cache: " + CacheLocator.getIdentifierCache().getIdentifier( ftest.getInode()));
-        final Identifier ident  = identifierAPI.find(ftest);
-        final Identifier ident1 = identifierAPI.find(ftest1);
-        final Identifier ident2 = identifierAPI.find(ftest2);
-        final Identifier ident3 = identifierAPI.find(ftest3);
+
+        final Identifier ident  = identifierAPI.loadFromDb(ftest.getVersionId());
+        final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
+        final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
+        final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
 
 		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());

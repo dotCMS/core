@@ -41,11 +41,6 @@
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
-	<filter>
-		<filter-name>FixCmisFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.FixCmis.FixCmisFilter</filter-class>
-	</filter>
 	<filter>
 		<filter-name>VanityURLFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.VanityURLFilter</filter-class>
@@ -118,11 +113,6 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-	<filter-mapping>
-		<filter-name>FixCmisFilter</filter-name>
-		<url-pattern>/cmis</url-pattern>
-	</filter-mapping>
-	
     <filter-mapping>
         <filter-name>UrlRewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
@@ -175,9 +165,6 @@
     <listener>
         <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
     </listener>
-    <listener>
-		<listener-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
-	</listener>
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
     </listener>
@@ -312,16 +299,6 @@
 				<param-name>resource.factory.class</param-name>
 				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
 		</init-param>
-	</servlet>
-	
-	<servlet>
-		<servlet-name>CMIS</servlet-name>
-		<servlet-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
-		<init-param>
-			<param-name>callContextHandler</param-name>
-			<param-value>com.dotcms.repackage.org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
-		</init-param>
-		<load-on-startup>2</load-on-startup>
 	</servlet>
 	
 	<servlet>
@@ -466,11 +443,6 @@
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
 		<url-pattern>/dotTailLogServlet/*</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>CMIS</servlet-name>
-		<url-pattern>/cmis/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
