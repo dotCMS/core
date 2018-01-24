@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -124,10 +125,11 @@ public class FolderAPITest {
 				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
-        final Identifier ident  = identifierAPI.find(ftest);
-        final Identifier ident1 = identifierAPI.find(ftest1);
-        final Identifier ident2 = identifierAPI.find(ftest2);
-        final Identifier ident3 = identifierAPI.find(ftest3);
+
+        final Identifier ident  = identifierAPI.loadFromDb(ftest.getVersionId());
+        final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
+        final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
+        final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
 
 		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
