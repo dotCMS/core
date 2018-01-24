@@ -103,8 +103,10 @@ describe('DotEditContentComponent', () => {
         const mockResEvent = {
             contentletEvents: {},
             dataset: {
-                dotIdentifier: '2sfasfk-sd2d-4dxc-sdfnsdkjnajd0',
-                dotInode: '26ad1jbj-23xd-4cx3-9cf2-432scc413cc2'
+                dotContentIdentifier: '2sfasfk-sd2d-4dxc-sdfnsdkjnajd0',
+                dotContentInode: '26ad1jbj-23xd-4cx3-9cf2-432scc413cc2',
+                dotContainerIdentifier: '3',
+                dotContainerUuid: '4'
             },
             name: 'remove'
         };
@@ -119,6 +121,14 @@ describe('DotEditContentComponent', () => {
 
         component['removeContentlet'](mockResEvent);
 
-        expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(mockResEvent.dataset.dotInode);
+        expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(
+            {
+                identifier: mockResEvent.dataset.dotContainerIdentifier,
+                uuid: mockResEvent.dataset.dotContainerUuid
+            },
+            {
+                inode: mockResEvent.dataset.dotContentInode,
+                identifier: mockResEvent.dataset.dotContentIdentifier
+            });
     });
 });

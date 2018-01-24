@@ -7,6 +7,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { tick } from '@angular/core/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { DotPageContainer } from '../../dot-edit-page/shared/models/dot-page-container.model';
+import { DotPageContent } from '../../dot-edit-page/shared/models/dot-page-content.model';
 
 describe('DotContainerContentletService', () => {
     let dotContainerContentletService: DotContainerContentletService;
@@ -22,15 +23,25 @@ describe('DotContainerContentletService', () => {
     });
 
     it('should do a request for get the contentlet html code', fakeAsync(() => {
-        const containerId = '1';
         const contentletId = '2';
+        const pageContainer: DotPageContainer = {
+            identifier: '1',
+            uuid: '3'
+        };
+
+        const pageContent: DotPageContent = {
+            identifier: '2',
+            inode: '4',
+            type: 'content_type'
+        };
 
         let response;
 
-        dotContainerContentletService.getContentletToContainer(containerId, contentletId).subscribe(resp => response = resp);
+        dotContainerContentletService.getContentletToContainer(pageContainer, pageContent).subscribe(resp => response = resp);
 
         tick();
-        expect(lastConnection.request.url).toContain(`v1/containers/${containerId}/uuid/LEGACY_RELATION_TYPE/content/${contentletId}`);
+        expect(lastConnection.request.url).
+            toContain(`v1/containers/${pageContainer.identifier}/uuid/${pageContainer.uuid}/content/${contentletId}`);
     }));
 
     it('should do a request for save content', fakeAsync(() => {

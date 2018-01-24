@@ -33,17 +33,20 @@ export class DotEditContentToolbarHtmlService {
                             <div class="dotedit-container__menu">
                                 <ul>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-add="content" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="content" data-dot-identifier="${container.dataset.dotIdentifier}"
+                                                                  data-dot-uuid="${container.dataset.dotUuid}"  role="button">
                                             ${res['editpage.content.container.menu.content']}
                                         </a>
                                     </li>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-add="widget" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="widget" data-dot-identifier="${container.dataset.dotIdentifier}"
+                                                                 data-dot-uuid="${container.dataset.dotUuid}"  role="button">
                                             ${res['editpage.content.container.menu.widget']}
                                         </a>
                                     </li>
                                     <li class="dotedit-container__menu-item">
-                                        <a data-dot-add="form" data-dot-identifier="${container.dataset.dotIdentifier}" role="button">
+                                        <a data-dot-add="form" data-dot-identifier="${container.dataset.dotIdentifier}"
+                                                               data-dot-uuid="${container.dataset.dotUuid}"  role="button">
                                             ${res['editpage.content.container.menu.form']}
                                         </a>
                                     </li>
@@ -76,22 +79,36 @@ export class DotEditContentToolbarHtmlService {
                 try {
                     const contentlets = Array.from(doc.querySelectorAll('div[data-dot-object="contentlet"]'));
                     contentlets.forEach((contentlet: HTMLElement) => {
+                        const container: HTMLElement = contentlet.parentElement;
+
                         const contentletToolbar = document.createElement('div');
                         contentletToolbar.classList.add('dotedit-contentlet__toolbar');
                         contentletToolbar.innerHTML = `
-                            <button type="button" role="button" data-dot-identifier="${contentlet.dataset.dotIdentifier}"
-                            data-dot-inode="${contentlet.dataset.dotInode}"
-                            class="dotedit-contentlet__drag" aria-label="${res['editpage.content.contentlet.menu.drag']}">
+                            <button type="button" role="button"
+                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
+                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
+                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
+                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
+                                                  class="dotedit-contentlet__drag"
+                                                  aria-label="${res['editpage.content.contentlet.menu.drag']}">
                                 ${res['editpage.content.contentlet.menu.drag']}
                             </button>
-                            <button type="button" role="button" data-dot-identifier="${contentlet.dataset.dotIdentifier}"
-                            data-dot-inode="${contentlet.dataset.dotInode}"
-                            class="dotedit-contentlet__edit" aria-label="${res['editpage.content.contentlet.menu.edit']}">
+                            <button type="button" role="button"
+                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
+                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
+                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
+                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
+                                                  class="dotedit-contentlet__edit"
+                                                  aria-label="${res['editpage.content.contentlet.menu.edit']}">
                                 ${res['editpage.content.contentlet.menu.edit']}
                             </button>
-                            <button type="button" role="button" data-dot-identifier="${contentlet.dataset.dotIdentifier}"
-                            data-dot-inode="${contentlet.dataset.dotInode}"
-                            class="dotedit-contentlet__remove" aria-label="${res['editpage.content.contentlet.menu.remove']}">
+                            <button type="button" role="button"
+                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
+                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
+                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
+                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
+                                                  class="dotedit-contentlet__remove"
+                                                  aria-label="${res['editpage.content.contentlet.menu.remove']}">
                                 ${res['editpage.content.contentlet.menu.remove']}
                             </button>
                         `;

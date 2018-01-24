@@ -35,7 +35,6 @@ export const EDIT_PAGE_JS = `
     var drake = dragula(
         getContainers(), {
         accepts: function (el, target, source, sibling) {
-
             var canDrop =  el.dataset.dotBasetype === 'WIDGET' || el.dataset.dotBasetype === 'FORM' ||
                             target.dataset.dotAcceptTypes.indexOf(el.dataset.dotType) > -1;
 
@@ -70,7 +69,7 @@ export const EDIT_PAGE_JS = `
                 data: {
                     container: {
                         identifier: target.dataset.dotIdentifier,
-                        uuid: 'fake-one'
+                        uuid: target.dataset.dotUuid
                     },
                     contentlet: {
                         identifier: el.dataset.dotIdentifier,
