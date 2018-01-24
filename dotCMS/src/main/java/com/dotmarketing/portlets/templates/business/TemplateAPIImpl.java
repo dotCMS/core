@@ -314,6 +314,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		for (final TemplateLayoutRow row : rows) {
 			final List<TemplateLayoutColumn> columns = row.getColumns();
 
+
 			for (final TemplateLayoutColumn column : columns) {
 				final List<ContainerUUID> columnContainers = column.getContainers();
 				containerUUIDS.addAll(columnContainers);
