@@ -88,7 +88,10 @@ describe('DotEditContentHtmlService', () => {
 
     it('should add contentlet', () => {
         spyOn(this.dotEditContentHtmlService, 'renderAddedContentlet');
-        this.dotEditContentHtmlService.addContentContainerIdentifier = '123';
+        this.dotEditContentHtmlService.currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
 
         this.dotEditContentHtmlService.contentletEvents.next({
             name: 'save',

@@ -38,7 +38,7 @@ const routes: Routes = [
         InputTextModule,
         DotLayoutPropertiesModule,
         DialogModule,
-        DotSidebarPropertiesModule
+        DotSidebarPropertiesModule,
         FieldValidationMessageModule
     ],
     exports: [DotEditLayoutComponent],

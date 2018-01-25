@@ -30,7 +30,7 @@ export class DotEditContentHtmlService {
         this.contentletEvents.subscribe((contentletEvent: any) => {
             switch (contentletEvent.name) {
                 case 'save':
-                    if (this.addContentContainerIdentifier) {
+                    if (this.currentContainer) {
                         this.renderAddedContentlet(contentletEvent.data);
                     } else {
                         this.renderEditedContentlet(contentletEvent.data);
