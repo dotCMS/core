@@ -16,8 +16,10 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
@@ -48,13 +50,13 @@ public abstract class VelocityModeHandler {
 
     abstract void serve() throws DotDataException, IOException, DotSecurityException;
 
-    abstract void serve(Writer out) throws DotDataException, IOException, DotSecurityException;
+    abstract void serve(OutputStream out) throws DotDataException, IOException, DotSecurityException;
 
 
     public final String eval() {
-        try(StringWriter out = new StringWriter(4096)) {
+        try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
             serve(out);
-            return out.toString();
+            return new String(out.toByteArray());
         } catch (DotDataException | IOException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
