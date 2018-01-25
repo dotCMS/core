@@ -578,6 +578,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
+				db.addParam(contentlet.getLanguageId());
 
 				dbResults = db.loadObjectResults();
                 step      = (WorkflowStep) this.convertListToObjects
@@ -649,7 +650,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		if (task == null) {
 			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
 			hu.setQuery(
-					"from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ? and languageId = ?");
+					"from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ? and language_id = ?");
 			hu.setParam(contentlet.getIdentifier());
 			hu.setParam(contentlet.getLanguageId());
 			task = (WorkflowTask) hu.load();

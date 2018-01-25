@@ -34,6 +34,7 @@ import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
@@ -149,6 +150,35 @@ public class WorkflowHelper {
             throw new DotWorkflowException(e.getMessage(), e);
         }
     }  // reorderAction.
+
+
+    /**
+     * Reorder the action associated to the scheme.
+     * @param stepId  String step id
+     * @param order   int    order for the step
+     */
+    @WrapInTransaction
+    public void reorderStep(final String stepId,
+                            final int order)  {
+
+        final WorkflowStep       step;
+
+        try {
+
+            Logger.debug(this, "Looking for the stepId: " + stepId);
+            step   = this.workflowAPI.findStep  (stepId);
+
+            Logger.debug(this, "Reordering the stepId: "  + stepId +
+                            ", order: " + order);
+            this.workflowAPI.reorderStep(step, order);
+        } catch (DotDataException | AlreadyExistException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+    }  // reorderAction.
+
 
     /**
      * Deletes the step

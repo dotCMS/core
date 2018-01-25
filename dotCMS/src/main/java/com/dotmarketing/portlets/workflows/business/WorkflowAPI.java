@@ -204,6 +204,13 @@ public interface WorkflowAPI {
 
 	public void deleteStep(WorkflowStep step) throws DotDataException;
 
+	/**
+	 * This method makes the reorder for the step, reordering the rest of the steps too.
+	 * @param step   WorkflowStep   step to reorder
+	 * @param order  int			Order for the action
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException;
 
 	/**
@@ -231,6 +238,8 @@ public interface WorkflowAPI {
 							  final WorkflowStep step,
 							  final User user,
 							  final int order) throws DotDataException, AlreadyExistException;
+
+
 
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 
