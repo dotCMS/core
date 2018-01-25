@@ -91,10 +91,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	availableLanguages: new Array(),
 
 	postCreate: function () {
-		if(this.containerStructures.length > 0)
-			this._fillStructures();
-		else
-			this._structureChanged();
+		this.containerStructures = JSON.parse(this.containerStructures.toString())
+
+		if (this.containerStructures.length > 0) {
+            this._fillStructures();
+		} else {
+            this._structureChanged();
+		}
 		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 
 		if(this.title != '')
@@ -147,7 +150,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_fillStructures: function() {
-        console.log(JSON.stringify(this.containerStructures));
 		this.structures_select.innerHTML = "";
 		var htmlstr = "<dl class='vertical'>";
 		htmlstr += "<dt><label><b>Content Type:</b></label></dt>";
