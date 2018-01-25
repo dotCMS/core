@@ -47,7 +47,9 @@ describe('PushPublishContentTypesDialogComponent', () => {
         'contenttypes.content.push_publish.push_to': 'Push To',
         'contenttypes.content.push_publish.push_to_errormsg': 'Must add at least one Environment',
         'contenttypes.content.push_publish.form.cancel': 'Cancel',
-        'contenttypes.content.push_publish.form.push': 'Push'
+        'contenttypes.content.push_publish.form.push': 'Push',
+        'contenttypes.content.push_publish.publish_date_errormsg': 'Publish Date is required',
+        'contenttypes.content.push_publish.expire_date_errormsg': 'Expire Date is required'
     });
 
     beforeEach(() => {
@@ -83,11 +85,29 @@ describe('PushPublishContentTypesDialogComponent', () => {
         expect(comp.form).toEqual(form.componentInstance.form);
     });
 
-    it('should be valid if at least one environment was selected', () => {
+    it('should be invalid if no environment was selected', () => {
         fixture.detectChanges();
-        expect(comp.form.get('environment').value).toEqual('');
         expect(comp.form.valid).toEqual(false);
+    });
 
+    it('should be invalid if publish date is empty', () => {
+        fixture.detectChanges();
+        comp.form.get('environment').setValue('my environment');
+        comp.form.get('publishdate').setValue('');
+        expect(comp.form.valid).toEqual(false);
+    });
+
+    it('should be invalid if expire date is empty', () => {
+        fixture.detectChanges();
+        comp.form.get('environment').setValue('my environment');
+        comp.form.get('expiredate').setValue('');
+        expect(comp.form.valid).toEqual(false);
+    });
+
+    it('should be valid if all required fields are filled', () => {
+        fixture.detectChanges();
+        comp.form.get('publishdate').setValue(new Date);
+        comp.form.get('expiredate').setValue(new Date);
         comp.form.get('environment').setValue('my environment');
         expect(comp.form.valid).toEqual(true);
     });
@@ -185,9 +205,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
 
         comp.form.get('pushActionSelected').setValue('publishexpire');
         comp.form.get('publishdate').setValue(newDate);
-        comp.form.get('publishdatetime').setValue(newDate);
         comp.form.get('expiredate').setValue(newDate);
-        comp.form.get('expiredatetime').setValue(newDate);
         comp.form.get('environment').setValue(['my environment, my second environment']);
         comp.form.get('forcePush').setValue(true);
 
@@ -201,9 +219,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
         expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
             pushActionSelected: 'publishexpire',
             publishdate: newDate,
-            publishdatetime: newDate,
             expiredate: newDate,
-            expiredatetime: newDate,
             environment: ['my environment, my second environment'],
             forcePush: true
         });

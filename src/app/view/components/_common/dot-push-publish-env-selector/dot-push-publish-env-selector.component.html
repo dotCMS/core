@@ -1,4 +1,8 @@
- <!--//TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. https://github.com/primefaces/primeng/issues/2857 -->
+ <!--
+     TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. https://github.com/primefaces/primeng/issues/2857
+
+     Also there is a problem here, when the field is invalid this multiselect should have the invalid class
+-->
 <p-multiSelect 
     [options]="pushEnvironments | async" 
     [(ngModel)]="selectedEnvironments" 

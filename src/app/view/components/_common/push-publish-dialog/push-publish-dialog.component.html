@@ -25,17 +25,17 @@
         <div class="form__group push-publish-dialog__publish-date" *ngIf="form.get('pushActionSelected').value === 'publish' || form.get('pushActionSelected').value === 'publishexpire'">
             <label class="form__label">{{dotMessageService.get('contenttypes.content.push_publish.publish_date')}}: </label>
             <div class="push-publish-dialog__calendar">
-                <p-calendar class="push-publish-dialog__calendar-date" formControlName="publishdate" dataType="string" dateFormat="yy-mm-dd" placeholder="yy-mm-dd"></p-calendar>
-                <p-calendar class="push-publish-dialog__calendar-time" formControlName="publishdatetime" [timeOnly]="true" hourFormat="24" placeholder="00-00"></p-calendar>
+                <p-calendar class="push-publish-dialog__calendar-date" formControlName="publishdate" dataType="string" dateFormat="yy-mm-dd" placeholder="yy-mm-dd" showTime="true" readonlyInput="true" [minDate]="dateFieldMinDate" ></p-calendar>
             </div>
+            <field-validation-message message="{{dotMessageService.get('contenttypes.content.push_publish.publish_date_errormsg')}}" [field]="form.get('publishdate')"></field-validation-message>
         </div>
 
         <div class="form__group push-publish-dialog__expire-date" *ngIf="form.get('pushActionSelected').value === 'expire' || form.get('pushActionSelected').value === 'publishexpire'">
             <label class="form__label">{{dotMessageService.get('contenttypes.content.push_publish.expire_date')}}: </label>
             <div class="push-publish-dialog__calendar">
-                <p-calendar class="push-publish-dialog__calendar-date" formControlName="expiredate" dataType="string" dateFormat="yy-mm-dd" placeholder="yy-mm-dd"></p-calendar>
-                <p-calendar class="push-publish-dialog__calendar-time" formControlName="expiredatetime" [timeOnly]="true" hourFormat="24" placeholder="00-00"></p-calendar>
+                <p-calendar class="push-publish-dialog__calendar-date" formControlName="expiredate" dataType="string" dateFormat="yy-mm-dd" placeholder="yy-mm-dd" showTime="true" readonlyInput="true" [minDate]="dateFieldMinDate" ></p-calendar>
             </div>
+            <field-validation-message message="{{dotMessageService.get('contenttypes.content.push_publish.expire_date_errormsg')}}" [field]="form.get('expiredate')"></field-validation-message>
         </div>
 
         <div class="form__group">
