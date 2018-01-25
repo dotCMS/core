@@ -7,7 +7,6 @@ import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 
