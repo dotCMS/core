@@ -84,15 +84,21 @@
             href += "&selectedStructure=" + _dotSelectedStructure + "&lang=1";
             window.location = href;
         }
+        
 
         function contentSelected(content) {
             if (ngEditContentletEvents) {
+				var typeVar = ("WIDGET" ==content.baseType ) ? "WIDGET" : 
+					("FORM" ==content.baseType ) ? "FORM" : 
+					content.typeVariable;
+
+
                 ngEditContentletEvents.next({
                     name: "select",
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: content.typeVariable
+                        type: typeVar
                     }
                 })
             }
@@ -149,7 +155,8 @@
                 {
                     "inode": "<%=contentType.id()%>",
                     "name": "<%=contentType.name()%>",
-                    "baseType": "<%=contentType.baseType()%>"
+                    "baseType": "<%=contentType.baseType()%>",
+                    "variable": "<%=contentType.variable()%>"
                 },
                 <%
                     }
