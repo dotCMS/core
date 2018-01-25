@@ -140,6 +140,7 @@
     <script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
+    <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
 
     <script type="text/javascript">
