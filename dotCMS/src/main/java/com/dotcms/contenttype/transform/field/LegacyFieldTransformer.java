@@ -108,15 +108,16 @@ public class LegacyFieldTransformer implements FieldTransformer {
 	}
 	
     private static String buildNewFieldDbColumn(com.dotmarketing.portlets.structure.model.Field oldField){
-      String fieldContent = (oldField.getFieldContentlet()!=null) 
+      String fieldContent = (oldField.getFieldContentlet()!=null)
           ?  (oldField.getFieldContentlet().startsWith("binary"))
               ? "system_field"
               :  oldField.getFieldContentlet()
                 : null;
-              
+
       return fieldContent;
-  }
-	private static Field transformToNew(final com.dotmarketing.portlets.structure.model.Field oldField) {
+    }
+
+    private static Field transformToNew(final com.dotmarketing.portlets.structure.model.Field oldField) {
 		final String fieldType = oldField.getFieldType();
 
 		@SuppressWarnings("serial")

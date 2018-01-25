@@ -293,12 +293,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Checking for Next Step references
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 
-				for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+				/*
+				Verify we are not validating the next step is the step we want to delete.
+				Remember the step can point to itself and that should not be a restriction when deleting.
+				 */
+				if (!otherStep.getId().equals(step.getId())) {
+					for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 
-					if(action.getNextStep().equals(step.getId())) {
-						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
-								" Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
-					}
+                        if(action.getNextStep().equals(step.getId())) {
+                            throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" +
+                                    " Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
+                        }
+                    }
 				}
 			}
 			
@@ -916,7 +922,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 
@@ -978,7 +984,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				saveActionClass(action);
 			}
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 

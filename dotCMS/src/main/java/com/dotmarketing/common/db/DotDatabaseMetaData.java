@@ -100,7 +100,8 @@ public class DotDatabaseMetaData {
 
             for (String primaryKeyColumnName : primaryKeyColumnNames) {
 
-                if (!foreignKey.getPrimaryKeyColumnNames().contains(primaryKeyColumnName)) {
+                if (!(foreignKey.getPrimaryKeyColumnNames().contains(primaryKeyColumnName) ||
+                        foreignKey.getPrimaryKeyColumnNames().contains(primaryKeyColumnName.toUpperCase()))) {
                     return false;
                 }
             }
@@ -118,7 +119,8 @@ public class DotDatabaseMetaData {
 
             for (String foreignKeyColumnName : foreignKeyColumnNames) {
 
-                if (!foreignKey.getForeignKeyColumnNames().contains(foreignKeyColumnName)) {
+                if (!(foreignKey.getForeignKeyColumnNames().contains(foreignKeyColumnName) ||
+                        foreignKey.getForeignKeyColumnNames().contains(foreignKeyColumnName.toUpperCase()))) {
                     return false;
                 }
             }

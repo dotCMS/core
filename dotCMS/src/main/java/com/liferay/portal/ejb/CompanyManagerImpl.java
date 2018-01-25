@@ -243,7 +243,7 @@ public class CompanyManagerImpl
 			dc.addParam(company.getCompanyId());
 			dc.getResult();
 		}catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage());
+			throw new DotRuntimeException(e.getMessage(),e);
 		}
 	
 	}

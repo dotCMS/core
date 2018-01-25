@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -2522,7 +2521,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
             }
             catch(Exception e){
-                throw new DotDataException(e.getMessage());
+                throw new DotDataException(e.getMessage(),e);
             }
 
             deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
@@ -4978,7 +4977,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }else{
             List<String> atts = new ArrayList<String>();
             atts.add("*");
-            atts.add(title + " as " + QueryResult.CMIS_TITLE);
+            atts.add(title);
             query.setSelectAttributes(atts);
         }
 

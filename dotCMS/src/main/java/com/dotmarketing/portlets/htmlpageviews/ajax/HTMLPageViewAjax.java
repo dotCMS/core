@@ -144,7 +144,7 @@ public class HTMLPageViewAjax {
 
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage());
+			throw new DotRuntimeException(e.getMessage(),e);
 		}
 
 		return results;

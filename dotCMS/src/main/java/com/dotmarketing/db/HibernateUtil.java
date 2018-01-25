@@ -1092,7 +1092,7 @@ public class HibernateUtil {
 			}
 		} catch (SQLException e) {
 			Logger.error(HibernateUtil.class,e.getMessage(),e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 		return startTransaction;
     }

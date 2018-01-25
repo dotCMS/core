@@ -16,7 +16,6 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 
@@ -105,7 +104,7 @@ public class StructureFactory {
 
 	/**
 	 * Gets the structure by variable name
-	 * @param type is the name of the structure
+	 * @param varName is the name of the structure
 	 */
 	@SuppressWarnings("unchecked")
 	public static Structure getStructureByVelocityVarName(String varName)
@@ -258,7 +257,7 @@ public class StructureFactory {
      * 4. File Assets.
      * 5. Pages.
      * 6. Personas
-     * @param type: Integer type, according to valid content types specified in Structure.java class
+     * @param structureType: Integer type, according to valid content types specified in Structure.java class
      * @return structures: List of Structures 
      */
 	public static List<Structure> getAllStructuresByType(int structureType)
@@ -324,7 +323,7 @@ public class StructureFactory {
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 	}
@@ -340,7 +339,7 @@ public class StructureFactory {
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		}
 		
@@ -493,9 +492,9 @@ public class StructureFactory {
      *
      * @throws com.dotmarketing.exception.DotHibernateException
      * 
-     * @deprecated Do not use this method anymore, Instead, use {@link ContentTypeAPI.setAsDefault(ContentType)}
+     * @deprecated Do not use this method anymore, Instead, use {@link com.dotcms.contenttype.business.ContentTypeAPI#setAsDefault(ContentType)}
      * 
-     * @see ContentTypeAPI.setAsDefault(ContentType)
+     * @see com.dotcms.contenttype.business.ContentTypeAPI#setAsDefault(ContentType)
      */
 	public static void disableDefault() throws DotHibernateException
 	{
@@ -671,13 +670,12 @@ public class StructureFactory {
 		if(UtilMethods.isSet(query.getSelectAttributes())){
 
 			if(!query.getSelectAttributes().contains("name")){
-				query.getSelectAttributes().add("name" + " as " + QueryResult.CMIS_TITLE);
+				query.getSelectAttributes().add("name");
 			}
 		}else{
 			List<String> atts = new ArrayList<String>();
 			atts.add("*");
-			atts.add("name" + " a" +
-					"s " + QueryResult.CMIS_TITLE);
+			atts.add("name");
 			query.setSelectAttributes(atts);
 		}
 
