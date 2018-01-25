@@ -26,6 +26,8 @@
         }
 
         &.ui-state-focus {
+
+
             .fa {
                 color: $dropdown-active-color;
             }
@@ -83,63 +85,11 @@ p-dropdown {
         }
     }
 
-    &.tiny {
-        .ui-inputtext {
-            height: $dropdown-tiny-height;
-        }
-
-        .ui-dropdown {
-            .ui-dropdown-label {
-                line-height: $dropdown-tiny-height;
-            }
-        }
-    }
-
-    &.invert {
-        .ui-dropdown {
-            &:not(.ui-state-disabled) {
-                &:hover,
-                &:active {
-                    color: white;
-                }
-
-                &.ui-state-focus {
-                    .fa {
-                        color: white;
-                    }
-                }
-            }
-
-            &.ui-state-disabled {
-                .ui-dropdown-trigger {
-                    color: white;
-                }
-
-                .ui-dropdown-label {
-                    &:hover {
-                        color: white;
-                    }
-                }
-            }
-        }
-
-        .ui-state-default {
-            color: white;
-        }
-
-        &:not(.ui-state-disabled) {
-            .ui-inputtext {
-                &:hover,
-                &:active {
-                    color: white;
-                }
-            }
-        }
-    }
 }
 
 .ui-dropdown-panel {
-    &.ng-trigger-panelState {
+
+    &.ng-trigger-panelState{
         margin-left: -10px;
     }
 
