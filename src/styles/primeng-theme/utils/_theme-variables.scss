@@ -106,7 +106,6 @@ $button-flat: (
 );
 
 // SELECT BUTTON
-
 $selectbutton-normal-bgcolor: $white;
 $selectbutton-normal-border: $button-border;
 $selectbutton-normal-shadow: $md-shadow-1;
@@ -115,7 +114,7 @@ $selectbutton-hover-bgcolor: $white;
 $selectbutton-hover-border: $button-border;
 $selectbutton-hover-shadow: $md-shadow-2;
 
-$selectbutton-button-hover-bgcolor: $gray-lighter;
+$selectbutton-button-hover-bgcolor: rgba($brand-primary, 0.1);
 $selectbutton-button-active-bgcolor: $brand-primary;
 $selectbutton-button-active-color: $white;
 
@@ -175,7 +174,6 @@ $datatable-cell-border: 1px solid $gray-lighter;
 $datatable-highlight-row-bgcolor: $gray-lightest;
 $datatable-row-color: $black;
 $datatable-row-bgcolor: $white;
-
 $datatable-head-bgcolor: $gray-lighter;
 $datatable-head-color: $gray-dark;
 
@@ -205,3 +203,10 @@ $dialog-message-line-height: 18px;
 $dialog-message-warning-color: $red;
 $dialog-close-button-normal-color: $gray-light;
 $dialog-close-button-hover-color: $black;
+
+// INPUTSWITCH
+$inputswitch-normal-track-color: rgba($black, 0.38);
+$inputswitch-checked-track-color: rgba($blue, 0.38);
+
+$inputswitch-normal-thumb-color: $white;
+$inputswitch-checked-thumb-color: $brand-primary;

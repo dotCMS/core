@@ -1,5 +1,5 @@
-@import "mixins";
 @import "variables";
+@import "mixins";
 
 :host {
     background-color: $white;
@@ -13,17 +13,88 @@
             height: 60px;
             margin-bottom: 2px;
         }
-
-        .ui-toolbar-group-right {
-            .ui-button {
-                margin-left: $basic-padding;
-            }
-        }
     }
 }
 
+.edit-page-toolbar__page-url,
 .edit-page-toolbar__page-title {
+    margin: 0;
+}
+
+.edit-page-toolbar__page-url {
+    align-self: center;
     color: $body-font-color;
-    font-size: $font-size-large;
-    font-weight: bold;
+    font-size: $font-size-x-large;
+    font-weight: normal;
+    margin-right: $basic-padding / 2;
+}
+
+.edit-page-toolbar__page-title {
+    color: $gray;
+    font-size: $font-size-medium;
+    font-weight: normal;
+}
+
+.edit-page-toolbar__page-url-wrapper {
+    display: flex;
+}
+
+.ui-toolbar-group-center {
+    display: flex;
+    justify-content: center;
+}
+
+.edit-page-toolbar__state-selector {
+    display: flex;
+    flex-direction: column;
+
+    ::ng-deep {
+        .ui-selectbutton {
+            align-items: center;
+            background-color: transparent;
+            display: flex;
+            flex-grow: 1;
+
+            .ui-button {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+                justify-content: center;
+
+                &.ui-state-active {
+                    background-color: rgba($brand-primary, 0.1);
+
+                    .ui-button-text {
+                        color: $brand-primary;
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
+.edit-page-toolbar__locker ::ng-deep {
+    align-self: center;
+    margin-right: $basic-padding * 2;
+
+    .ui-inputswitch-handle {
+        position: relative;
+
+        &:after {
+            content: "\F023";
+            display: inline-block;
+            font-size: inherit;
+            font: normal normal normal 14px / 1 FontAwesome;
+            left: 5px;
+            position: absolute;
+            text-rendering: auto;
+            top: 3px;
+        }
+    }
+
+    &.ui-inputswitch-checked .ui-inputswitch-handle {
+        color: $white;
+    }
 }

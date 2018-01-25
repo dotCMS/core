@@ -1,4 +1,13 @@
-<dot-edit-page-toolbar class="dot-edit__toolbar" [canSave]="isModelUpdated" (save)="saveContent()">
+<dot-edit-page-toolbar
+    (lockPage)="lockPageHandler($event)"
+    (pageState)="statePageHandler($event)"
+    (save)="saveContent()"
+    [canSave]="isModelUpdated"
+    [pageTitle]="pageTitle"
+    [pageUrl]="pageUrl"
+    [pageWorkflows]="pageWorkFlows | async"
+    class="dot-edit__toolbar"
+    #toolbar>
 </dot-edit-page-toolbar>
 
 <div class="dot-edit__page-wrapper">

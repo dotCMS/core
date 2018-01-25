@@ -1,4 +1,3 @@
-
 import * as _ from 'lodash';
 import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -15,6 +14,12 @@ import { DotMenuService } from '../../api/services/dot-menu.service';
 import { DotPageContainer } from '../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../dot-edit-page/shared/models/dot-page-content.model';
 import { DotContainer } from '../dot-edit-page/shared/models/dot-container.model';
+import { Workflow } from '../../shared/models/workflow/workflow.model';
+import { Observable } from 'rxjs/Observable';
+import { WorkflowService } from '../../api/services/workflow/workflow.service';
+import { DotEditPageToolbarComponent, PageState } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
+import { PageViewService } from '../../api/services/page-view/page-view.service';
+import { EditPageService } from '../../api/services/edit-page/edit-page.service';
 
 @Component({
     selector: 'dot-edit-content',
@@ -24,6 +29,7 @@ import { DotContainer } from '../dot-edit-page/shared/models/dot-container.model
 export class DotEditContentComponent implements OnInit {
     @ViewChild('contentletActionsIframe') contentletActionsIframe: ElementRef;
     @ViewChild('iframe') iframe: ElementRef;
+    @ViewChild('toolbar') toolbar: DotEditPageToolbarComponent;
 
     contentletActionsUrl: SafeResourceUrl;
     dialogSize = {
@@ -34,18 +40,24 @@ export class DotEditContentComponent implements OnInit {
     isModelUpdated = false;
     pageIdentifier: string;
     source: any;
+    pageTitle: string;
+    pageUrl: string;
+    pageWorkFlows: Observable<Workflow[]>;
 
     private originalValue: any;
 
     constructor(
         private dotConfirmationService: DotConfirmationService,
-        private dotMenuService: DotMenuService,
         private dotContainerContentletService: DotContainerContentletService,
         private dotGlobalMessageService: DotGlobalMessageService,
+        private dotMenuService: DotMenuService,
         private dotMessageService: DotMessageService,
+        private editPageService: EditPageService,
         private ngZone: NgZone,
+        private pageViewService: PageViewService,
         private route: ActivatedRoute,
         private sanitizer: DomSanitizer,
+        private workflowsService: WorkflowService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {}
@@ -53,9 +65,13 @@ export class DotEditContentComponent implements OnInit {
     ngOnInit() {
         this.dotLoadingIndicatorService.show();
 
-        this.route.data.pluck('editPageHTML').subscribe((editPageHTML: DotRenderedPage) => {
-            this.pageIdentifier = editPageHTML.identifier;
-            this.dotEditContentHtmlService.initEditMode(editPageHTML.render, this.iframe);
+        this.route.data.pluck('renderedPage').subscribe((renderedPage: DotRenderedPage) => {
+            this.pageTitle = renderedPage.title;
+            this.pageUrl = renderedPage.url;
+            this.pageIdentifier = renderedPage.identifier;
+            this.pageWorkFlows = this.workflowsService.getPageWorkflows(this.pageIdentifier);
+
+            this.dotEditContentHtmlService.initEditMode(renderedPage.render, this.iframe);
 
             this.dotEditContentHtmlService.contentletEvents.subscribe((contentletEvent: any) => {
                 this.ngZone.run(() => {
@@ -80,16 +96,15 @@ export class DotEditContentComponent implements OnInit {
                 });
             });
 
-            this.dotEditContentHtmlService.pageModelChange
-                .subscribe(model =>  {
-                    if (this.originalValue) {
-                        this.ngZone.run(() => {
-                            this.isModelUpdated = !_.isEqual(model, this.originalValue);
-                        });
-                    } else {
-                        this.setOriginalValue(model);
-                    }
-                });
+            this.dotEditContentHtmlService.pageModelChange.subscribe((model) => {
+                if (this.originalValue) {
+                    this.ngZone.run(() => {
+                        this.isModelUpdated = !_.isEqual(model, this.originalValue);
+                    });
+                } else {
+                    this.setOriginalValue(model);
+                }
+            });
         });
 
         this.dotMessageService
@@ -100,7 +115,11 @@ export class DotEditContentComponent implements OnInit {
                 'editpage.content.contentlet.remove.confirmation_message.reject',
                 'editpage.content.contentlet.add.content',
                 'dot.common.message.saving',
-                'dot.common.message.saved'
+                'dot.common.message.saved',
+                'dot.common.message.locking',
+                'dot.common.message.locked',
+                'dot.common.message.unlocking',
+                'dot.common.message.unlocked'
             ])
             .subscribe();
 
@@ -118,11 +137,40 @@ export class DotEditContentComponent implements OnInit {
     }
 
     /**
+     * Handle the page lock state
+     *
+     * @param {boolean} locked
+     * @memberof DotEditContentComponent
+     */
+    lockPageHandler(locked: boolean): void {
+        this.dotGlobalMessageService.display(
+            this.dotMessageService.get(locked ? 'dot.common.message.locking' : 'dot.common.message.unlocking')
+        );
+        this.pageViewService.lock(this.pageIdentifier).subscribe((res) => {
+            this.dotGlobalMessageService.display(
+                this.dotMessageService.get(locked ? 'dot.common.message.locked' : 'dot.common.message.unlocked')
+            );
+        });
+    }
+
+    /**
+     * Handle the state of the pate
+     *
+     * @param {string} state
+     * @memberof DotEditContentComponent
+     */
+    statePageHandler(state: PageState): void {
+        // TODO: do the request and set the new state
+        // this.editPageService.get(this.pageUrl, state);
+    }
+
+    /**
      * Save the page's content
      */
     saveContent(): void {
         this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
-        this.dotContainerContentletService.saveContentlet(this.pageIdentifier, this.dotEditContentHtmlService.getContentModel())
+        this.dotContainerContentletService
+            .saveContentlet(this.pageIdentifier, this.dotEditContentHtmlService.getContentModel())
             .subscribe(() => {
                 this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
                 this.setOriginalValue();
@@ -212,17 +260,20 @@ export class DotEditContentComponent implements OnInit {
             header: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.header'),
             message: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.message'),
             footerLabel: {
-                acceptLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.accept'),
-                rejectLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.reject')
+                acceptLabel: this.dotMessageService.get(
+                    'editpage.content.contentlet.remove.confirmation_message.accept'
+                ),
+                rejectLabel: this.dotMessageService.get(
+                    'editpage.content.contentlet.remove.confirmation_message.reject'
+                )
             }
         });
     }
 
     private setDialogSize(): void {
         this.dialogSize = {
-            width: (window.innerWidth) - 200,
-            height: (window.innerHeight) - 100
+            width: window.innerWidth - 200,
+            height: window.innerHeight - 100
         };
-
     }
 }

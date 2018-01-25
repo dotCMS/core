@@ -3,12 +3,21 @@
 @import "primeng-theme/components/button";
 
 .ui-selectbutton {
+    @extend #button-basic;
     @extend #button-raised;
-
     @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
 
     &:hover {
         @include button-base($selectbutton-hover-bgcolor, $selectbutton-hover-border, $selectbutton-hover-shadow);
+    }
+
+    [flat] & {
+        background-color: rgba($brand-primary, 0.1);
+        @extend #button-flat;
+
+        .ui-button {
+            background-color: transparent;
+        }
     }
 
     .ui-button {

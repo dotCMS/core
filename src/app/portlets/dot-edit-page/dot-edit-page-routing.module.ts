@@ -1,4 +1,3 @@
-import { PageViewResolver } from './dot-edit-page-resolver.service';
 import { NgModule } from '@angular/core';
 import { DotEditLayoutComponent } from './layout/dot-edit-layout/dot-edit-layout.component';
 import { RouterModule, Routes } from '@angular/router';
@@ -19,12 +18,12 @@ const dotEditPage: Routes = [
             },
             {
                 loadChildren: 'app/portlets/dot-edit-content/dot-edit-content.module#DotEditContentModule',
-                path: 'content',
+                path: 'content'
             },
             {
                 loadChildren: 'app/portlets/dot-edit-page/layout/dot-edit-layout/dot-edit-layout.module#DotEditLayoutModule',
                 path: 'layout'
-            },
+            }
         ]
     },
     {

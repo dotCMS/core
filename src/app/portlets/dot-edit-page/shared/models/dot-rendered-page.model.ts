@@ -1,5 +1,7 @@
 export interface DotRenderedPage {
-    render: string;
-    inode: string;
     identifier: string;
+    inode: string;
+    title: string;
+    url: string;
+    render: string;
 }

@@ -28,4 +28,19 @@ export class WorkflowService {
             })
             .pluck('entity');
     }
+
+    /**
+     * Returns the wokflow or workflow actions for a page asset
+     *
+     * @param {string} pageIdentifier
+     * @returns {Observable<Workflow[]>}
+     * @memberof WorkflowService
+     */
+    getPageWorkflows(pageIdentifier: string): Observable<Workflow[]> {
+        return Observable.of([
+            { name: 'Workflow 1', id: 'one' },
+            { name: 'Workflow 2', id: 'two' },
+            { name: 'Workflow 3', id: 'three' }
+        ]);
+    }
 }

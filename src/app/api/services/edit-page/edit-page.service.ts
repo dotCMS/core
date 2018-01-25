@@ -17,7 +17,7 @@ export class EditPageService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/page/renderHTML/${url.replace(/^\//, '')}?mode=EDIT_MODE`,
+                url: `v1/page/renderHTML/${url.replace(/^\//, '')}?mode=EDIT_MODE`
             })
             .pluck('bodyJsonObject');
     }

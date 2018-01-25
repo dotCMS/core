@@ -1,5 +1,7 @@
 p-splitbutton {
+
     .ui-splitbutton {
+        @extend #button-basic;
         @extend #button-raised;
         display: inline-block;
         border-radius: $button-radius;
@@ -10,19 +12,36 @@ p-splitbutton {
 
         // SplitButton component have 2 regular buttons inside, we don't want to style those.
         .ui-button {
-            background: none;
-            box-shadow: none;
-            border: none;
-            vertical-align: middle;
 
-            // Reset the styles coming from the icon button
-            &.ui-button-icon-only:hover {
-                background: none;
+            &[disabled] {
+                background-color: transparent;
+
+                .ui-button-text {
+                    color: map-get(map-get($button-flat, disabled), color);
+                }
             }
+
+            &:not([disabled]) {
+                background: none;
+                box-shadow: none;
+                border: none;
+                vertical-align: middle;
+
+                // Reset the styles coming from the icon button
+                &.ui-button-icon-only:hover {
+                    background: none;
+                }
+            }
+
+            &.ui-button-icon-only {
+                border-radius: $border-radius;
+            }
+
         }
 
         .ui-button-text-only,
         .ui-button-text-icon-left {
+
             .ui-button-text {
                 padding-right: 0;
             }

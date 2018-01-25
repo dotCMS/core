@@ -1,0 +1,40 @@
+@import "variables";
+
+/*
+    PrimeNG inputswitch component does it own math to set width of the component base on the OnLabel and offLabel
+    we pass, but in Material Design switch component doesn't have an internal label that's why we're setting a fit
+    width and height and also hidden ui-inputswitch-off and ui-inputswitch-on elements.
+*/
+
+.ui-inputswitch {
+    background-color: $inputswitch-normal-track-color;
+    border-radius: 7px;
+    height: 14px;
+    overflow: visible;
+    transition: background-color $field-animation-speed ease-in;
+    width: 36px !important;
+
+    &.ui-inputswitch-checked {
+        background-color: $inputswitch-checked-track-color;
+        
+        .ui-inputswitch-handle {
+            background-color: $inputswitch-checked-thumb-color;
+        }
+    }
+
+    .ui-inputswitch-handle {
+        background-color: $inputswitch-normal-thumb-color;
+        border-radius: 50%;
+        box-shadow: $md-shadow-1;
+        height: 20px !important;
+        top: -3px;
+        transition: background-color $field-animation-speed ease-in,
+                    left $field-animation-speed ease-in;
+        width: 20px !important;
+    }
+
+    .ui-inputswitch-off,
+    .ui-inputswitch-on {
+        display: none;
+    }
+}

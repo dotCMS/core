@@ -14,13 +14,14 @@ import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot
 import { EditContentResolver } from './services/dot-edit-content-resolver.service';
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
 import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { WorkflowService } from '../../api/services/workflow/workflow.service';
 
 const routes: Routes = [
     {
         component: DotEditContentComponent,
         path: '',
         resolve: {
-            editPageHTML: EditContentResolver
+            renderedPage: EditContentResolver
         }
     }
 ];
@@ -42,7 +43,8 @@ const routes: Routes = [
         DotEditContentHtmlService,
         DotEditContentToolbarHtmlService,
         EditContentResolver,
-        EditPageService
+        EditPageService,
+        WorkflowService
     ]
 })
 export class DotEditContentModule {}

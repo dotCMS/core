@@ -17,6 +17,13 @@ export class EditContentResolver implements Resolve<DotRenderedPage> {
     constructor(private editPageService: EditPageService) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotRenderedPage> {
-        return this.editPageService.get(route.queryParams.url);
+        return this.editPageService.get(route.queryParams.url).map((dotRenderedPage: DotRenderedPage) => {
+            // TODO: remove this when we do this: https://github.com/dotCMS/core/issues/13306
+            return {
+                ...dotRenderedPage,
+                title: 'Fake Page Title',
+                url: 'Fake Page Url'
+            };
+        });
     }
 }

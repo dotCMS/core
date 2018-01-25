@@ -33,11 +33,24 @@ export class PageViewService {
      * @returns {Observable<any>}
      * @memberof PageViewService
      */
-    save(pageViewIdentifier: string, dotLayout: DotLayout): Observable<DotPageView> {
+    save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotPageView> {
         return this.coreWebService.requestView({
             body: dotLayout,
             method: RequestMethod.Post,
-            url: `v1/page/${pageViewIdentifier}/layout`
+            url: `v1/page/${pageIdentifier}/layout`
         }).pluck('entity');
+    }
+
+    /**
+     * Lock a page given the identifier
+     *
+     * @param {string} pageIdentifier
+     * @returns {Observable<any>}
+     * @memberof PageViewService
+     */
+    lock(pageIdentifier: string): Observable<any> {
+        return Observable.of({
+            lock: true
+        }).delay(1000);
     }
 }
