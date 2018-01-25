@@ -22,6 +22,8 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -870,8 +872,9 @@ public class ContentletAjax {
 				}
 
 				searchResult = new HashMap<String, String>();
-				Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-				searchResult.put("typeVariable", s.getVelocityVarName());
+				ContentType type = con.getContentType();
+				searchResult.put("typeVariable", type.variable());
+				searchResult.put("baseType",type.baseType().name());
 				for (String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
@@ -900,8 +903,8 @@ public class ContentletAjax {
 
 					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
 					if (("url").equals(fieldContentlet) &&
-							s != null &&
-							s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
+							type != null &&
+							type  instanceof PageContentType &&
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
@@ -916,19 +919,19 @@ public class ContentletAjax {
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
-				String spanClass = (s.getStructureType() ==1)
+				String spanClass = (type.baseType().ordinal() ==1)
 						? "contentIcon"
-								:  (s.getStructureType() ==2)
+								:  (type.baseType().ordinal() ==2)
 								? "gearIcon"
-										:  (s.getStructureType() ==3)
+										:  (type.baseType().ordinal() ==3)
 										? "formIcon"
-											:  (s.getStructureType() ==4)
+											:  (type.baseType().ordinal() ==4)
 											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-												:  (s.getStructureType() ==5)
+												:  (type.baseType().ordinal() ==5)
 												? "pageIcon"
 														: "personaIcon";
 
-				String typeStringToShow = s.getName() ;
+				String typeStringToShow = type.name();
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
