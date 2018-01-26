@@ -88,17 +88,13 @@
 
         function contentSelected(content) {
             if (ngEditContentletEvents) {
-				var typeVar = ("WIDGET" ==content.baseType ) ? "WIDGET" : 
-					("FORM" ==content.baseType ) ? "FORM" : 
-					content.typeVariable;
-
-
                 ngEditContentletEvents.next({
                     name: "select",
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: typeVar
+                        type: content.typeVariable,
+                        baseType: content.baseType
                     }
                 })
             }

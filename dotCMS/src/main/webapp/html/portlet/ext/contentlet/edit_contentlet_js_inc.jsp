@@ -591,7 +591,7 @@
                 data: {
                     identifier: data.contentletIdentifier,
                     inode: data.contentletInode,
-                    type: null // Need to get the type of the content here
+                    type: null
                 }
             });
             return;

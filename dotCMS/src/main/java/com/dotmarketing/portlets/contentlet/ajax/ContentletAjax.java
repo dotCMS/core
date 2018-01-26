@@ -1436,6 +1436,8 @@ public class ContentletAjax {
 				callbackData.put("contentletInode", contentlet.getInode());
 				callbackData.put("contentletLocked", contentlet.isLocked());
                 callbackData.put("isHtmlPage", contentlet.isHTMLPage());
+				callbackData.put("contentletType", contentlet.getContentType().variable());
+				callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
 
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
@@ -1777,6 +1779,7 @@ public class ContentletAjax {
 			}
 		}
 		callbackData.put("referer", referer);
+
 		return callbackData;
 	}
 	@CloseDB
