@@ -24,7 +24,7 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
 
         super.publish(contentlet, user, respectFrontendRoles);
 
-        if (contentlet.getContentType() instanceof PageContentType) {
+        if (contentlet !=null && contentlet.getContentType() instanceof PageContentType) {
             IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             publishTemplateLayout(page, user, respectFrontendRoles);
         }
@@ -34,10 +34,13 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
     public void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) {
 
         super.publish(contentlets, user, respectFrontendRoles);
-        for (Contentlet contentlet : contentlets) {
-            if (contentlet.getContentType() instanceof PageContentType) {
-                IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-                publishTemplateLayout(page, user, respectFrontendRoles);
+        
+        if(contentlets !=null ) {
+            for (Contentlet contentlet : contentlets) {
+                if (contentlet.getContentType() instanceof PageContentType) {
+                    IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+                    publishTemplateLayout(page, user, respectFrontendRoles);
+                }
             }
         }
     }

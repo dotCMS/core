@@ -37,6 +37,25 @@
 
     contentTypes.addAll(APILocator.getContentTypeAPI(user).findByType(BaseContentType.WIDGET));
     Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
+
+    String containerStructures = "[";
+    Integer count = 1;
+
+    for (ContentType contentType: contentTypes) {
+        containerStructures = containerStructures + "{";
+        containerStructures = containerStructures + "\"inode\":" + "\"" + contentType.id() + "\",";
+        containerStructures = containerStructures + "\"name\":" + "\"" + contentType.name() + "\",";
+        containerStructures = containerStructures + "\"baseType\":" + "\"" + contentType.baseType() + "\",";
+        containerStructures = containerStructures + "\"variable\":" + "\"" + contentType.variable() + "\"";
+        containerStructures = containerStructures + "}";
+
+        if (count < contentTypes.size()) {
+            containerStructures = containerStructures + ',';
+        }
+        count++;
+    }
+
+    containerStructures = containerStructures + "]";
 %>
 
 
@@ -77,14 +96,11 @@
     
     var _dotSelectedStructure = '<%=contentTypes.get(0).id()%>';
         function addNewContentlet() {
-
-
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
             href += "&selectedStructure=" + _dotSelectedStructure + "&lang=1";
             window.location = href;
         }
-        
 
         function contentSelected(content) {
             if (ngEditContentletEvents) {
@@ -144,28 +160,11 @@
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-
-            contentSelector.containerStructures = [
-                <%
-                    for (ContentType contentType: contentTypes) {
-                %>
-                {
-                    "inode": "<%=contentType.id()%>",
-                    "name": "<%=contentType.name()%>",
-                    "baseType": "<%=contentType.baseType()%>",
-                    "variable": "<%=contentType.variable()%>"
-                },
-                <%
-                    }
-                %>
-            ];
-
-            contentSelector._fillStructures();
         })
 
     </script>
 </head>
 <body>
-<div jsId="contentSelector" onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
+<div jsId="contentSelector" containerStructures='<%=containerStructures%>' onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
 </body>
 </html>
