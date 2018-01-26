@@ -245,7 +245,7 @@ public class PageResource {
             pageMapBuilder.put("render",html )
                 .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
-                .put("shortyWorking", APILocator.getShortyAPI().getShorty(info.getWorkingInode()))
+                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()))
                 .put("languageId", info.getLang())
                 .put("pageTitle", page.getTitle())
                 .put("identifier", page.getIdentifier())
@@ -257,7 +257,7 @@ public class PageResource {
             }
             if(info.getLiveInode()!=null) {
                 pageMapBuilder.put("liveInode", info.getLiveInode())
-                .put("shortyLive", APILocator.getShortyAPI().getShorty(info.getLiveInode()));
+                .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
             }
 
             final Response.ResponseBuilder responseBuilder = Response.ok(pageMapBuilder.build());
