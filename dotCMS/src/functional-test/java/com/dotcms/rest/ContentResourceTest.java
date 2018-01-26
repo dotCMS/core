@@ -987,7 +987,7 @@ public class ContentResourceTest {
     }
 
     @Test
-    public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGfalse_shouldSucceed200()
+    public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGtrue_shouldSucceed200()
         throws DotSecurityException, DotDataException, JSONException {
         final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
 
