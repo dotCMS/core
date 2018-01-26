@@ -240,13 +240,14 @@ public class PageResource {
             
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-
+            final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
             pageMapBuilder.put("render",html )
                 .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
                 .put("languageId", info.getLang())
                 .put("pageTitle", page.getTitle())
+                .put("identifier", page.getIdentifier())
                 .put("pageUri", page.getURI());
             if(lockedBy!=null) {
                 pageMapBuilder.put("lockedOn", info.getLockedOn())
