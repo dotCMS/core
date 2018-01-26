@@ -111,6 +111,8 @@ public class ContentResourceTest {
     private static HostAPI hostAPI;
     private static User user;
 
+    private static final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -989,19 +991,19 @@ public class ContentResourceTest {
     @Test
     public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGtrue_shouldSucceed200()
         throws DotSecurityException, DotDataException, JSONException {
-        final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
 
-        boolean restAPIContentAllowFrontEndSavingValue = Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
+        final boolean restAPIContentAllowFrontEndSavingValue =
+            Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
         try {
-            long time = System.currentTimeMillis();
+            final long time = System.currentTimeMillis();
             final String TITLE_FIELD_VARIABLE = "title"+time;
             final String CAT_FIELD_VARIABLE = "eventType"+time;
 
-            ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
+            final ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
 
             Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, true);
 
-            Response response = webTarget.path("/save/1/").request()
+            final Response response = webTarget.path("/save/1/").request()
                 .put(Entity.entity(new JSONObject()
                     .put("stInode", type.id())
                     .put("languageId", 1)
@@ -1011,26 +1013,26 @@ public class ContentResourceTest {
 
             assertTrue(response.getStatus() == Response.Status.OK.getStatusCode());
         } finally {
-            Config.setProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", restAPIContentAllowFrontEndSavingValue);
+            Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, restAPIContentAllowFrontEndSavingValue);
         }
     }
 
     @Test
     public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGfalse_shouldFail403()
         throws DotSecurityException, DotDataException, JSONException {
-        final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
 
-        boolean restAPIContentAllowFrontEndSavingValue = Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
+        final boolean restAPIContentAllowFrontEndSavingValue =
+            Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
         try {
-            long time = System.currentTimeMillis();
+            final long time = System.currentTimeMillis();
             final String TITLE_FIELD_VARIABLE = "title"+time;
             final String CAT_FIELD_VARIABLE = "eventType"+time;
 
-            ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
+            final ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
 
             Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, false);
 
-            Response response = webTarget.path("/save/1/").request()
+            final Response response = webTarget.path("/save/1/").request()
                 .put(Entity.entity(new JSONObject()
                     .put("stInode", type.id())
                     .put("languageId", 1)
@@ -1040,14 +1042,15 @@ public class ContentResourceTest {
 
             assertTrue(response.getStatus() == Response.Status.FORBIDDEN.getStatusCode());
         } finally {
-            Config.setProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", restAPIContentAllowFrontEndSavingValue);
+            Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, restAPIContentAllowFrontEndSavingValue);
         }
     }
 
-    private ContentType createContentTypeWithCatAndTextField(String textFieldVar, String catFieldVar) throws DotSecurityException, DotDataException {
-        Host demoHost =hostAPI.findByName("demo.dotcms.com", user, false);
+    private ContentType createContentTypeWithCatAndTextField(final String textFieldVar, final String catFieldVar)
+        throws DotSecurityException, DotDataException {
+        final Host demoHost =hostAPI.findByName("demo.dotcms.com", user, false);
 
-        long time = System.currentTimeMillis();
+        final long time = System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
             .name("TestCat" + time)
@@ -1065,7 +1068,7 @@ public class ContentResourceTest {
 
         APILocator.getContentTypeFieldAPI().save(titleField, user);
 
-        Category eventTypesCat = APILocator.getCategoryAPI().findByKey("event", user, false);
+        final Category eventTypesCat = APILocator.getCategoryAPI().findByKey("event", user, false);
 
         com.dotcms.contenttype.model.field.Field catField = FieldBuilder.builder(CategoryField.class)
             .name(catFieldVar)
