@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -41,12 +42,16 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 
 /**
@@ -224,12 +229,35 @@ public class PageResource {
             final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ? (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms)  : this.pageResourceHelper.getPage(request, user, uri, mode);
             
             
+            final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
+            final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
+            final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
+            final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
+            final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
+            
+
             Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
             
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
+
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "page", page));
+            pageMapBuilder.put("render",html )
+                .put("canLock", canLock)
+                .put("workingInode", info.getWorkingInode())
+                .put("languageId", info.getLang())
+                .put("pageTitle", page.getTitle())
+                .put("pageUri", page.getURI());
+            if(lockedBy!=null) {
+                pageMapBuilder.put("lockedOn", info.getLockedOn())
+                    .put("lockedBy", lockedBy)
+                    .put("lockedByName", lockedUserName);
+            }
+            if(info.getLiveInode()!=null) {
+                pageMapBuilder.put("liveInode", info.getLiveInode());
+            }
+
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageMapBuilder.build());
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
