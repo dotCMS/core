@@ -214,7 +214,7 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
         expect(pageTitle === null).toBe(true);
 
         const templateNameInput: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-template-name input')
+            By.css('.dot-edit-layout__toolbar-template-name')
         );
         expect(templateNameInput).toBeDefined();
     });
@@ -324,7 +324,7 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
         fixture.detectChanges();
 
         const templateNameInput: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-template-name input')
+            By.css('.dot-edit-layout__toolbar-template-name')
         );
         expect(templateNameInput.attributes.formControlName).toEqual('title');
     });
@@ -430,7 +430,7 @@ describe('DotEditLayoutComponent - Template (anonymous = false)', () => {
         editLayoutButton.nativeElement.click();
         fixture.detectChanges();
         const templateNameInput: DebugElement = fixture.debugElement.query(
-            By.css('.dot-edit-layout__toolbar-template-name input')
+            By.css('.dot-edit-layout__toolbar-template-name')
         );
         component.saveAsTemplateHandleChange(true);
         fixture.detectChanges();

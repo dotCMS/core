@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 :host {
     background-color: $gray-lightest;
@@ -18,7 +18,13 @@
 }
 
 .dot-edit-layout__grid-guides {
-    background: repeating-linear-gradient(-90deg, transparent, transparent $basic-padding, $gray-lighter $basic-padding, $gray-lighter calc(100% / 12));
+    background: repeating-linear-gradient(
+        -90deg,
+        transparent,
+        transparent $basic-padding,
+        $gray-lighter $basic-padding,
+        $gray-lighter calc(100% / 12)
+    );
     flex-grow: 1;
     margin-right: -$basic-padding;
 }
@@ -27,6 +33,8 @@
     align-self: center;
     color: $body-font-color;
     margin: 0;
+    font-size: $font-size-x-large;
+    font-weight: 500;
 }
 
 .dot-edit-layout__toolbar,
@@ -37,7 +45,7 @@
 .dot-edit-layout__toolbar {
     align-items: center;
     justify-content: space-between;
-    margin: $basic-padding * 2 $basic-padding * 2 0;
+    margin: $basic-padding * 2 $basic-padding * 2 $basic-padding;
 }
 
 .dot-edit-layout__toolbar-actions {
@@ -51,14 +59,10 @@
 }
 
 .dot-edit-layout__toolbar-add {
-    margin-right: $basic-padding * 2;
- }
-
-.dot-edit-layout__toolbar-template-name {
-    height: 75px;
+    margin-bottom: $basic-padding;
 }
 
-.dot-edit-layout__toolbar-template-name input {
+.dot-edit-layout__toolbar-template-name {
     width: 280px;
 }
 
@@ -80,7 +84,7 @@
 
 .dot-edit-layout__template-footer,
 .dot-edit-layout__template-header,
-[class^="dot-edit-layout__template-sidebar"] {
+[class^='dot-edit-layout__template-sidebar'] {
     align-items: center;
     background: $gray-lighter;
     color: $gray;
@@ -90,7 +94,7 @@
     justify-content: center;
 }
 
-[class^="dot-edit-layout__template-sidebar"] {
+[class^='dot-edit-layout__template-sidebar'] {
     position: relative;
 }
 
@@ -114,7 +118,7 @@
 .dot-edit-layout__template-sidebar--left {
     margin-right: $basic-padding * 2;
 
-    .dot-edit-layout__template-sidebar-properties { 
+    .dot-edit-layout__template-sidebar-properties {
         left: $basic-padding;
     }
 }
@@ -122,14 +126,27 @@
 .dot-edit-layout__template-sidebar--right {
     margin-left: $basic-padding * 2;
 
-    .dot-edit-layout__template-sidebar-properties { 
+    .dot-edit-layout__template-sidebar-properties {
         right: $basic-padding;
     }
 }
 
-
 .dot-edit-layout__template-footer,
 .dot-edit-layout__template-header {
-    height: 100px;
+    height: 80px;
     margin: $basic-padding $basic-padding * 2;
+}
+
+.dot-edit-layout__template-body {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    border: solid 1px $gray-light;
+    padding: $basic-padding;
+
+    &::ng-deep .action-button--no-label .ui-button.ui-button-icon-only {
+        height: $field-height;
+        width: $field-height;
+        font-size: $font-size-small;
+    }
 }
