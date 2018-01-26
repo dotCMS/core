@@ -4,8 +4,6 @@ import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -42,6 +40,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 import org.mozilla.universalchardet.UniversalDetector;
 
 /**

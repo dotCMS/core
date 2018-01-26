@@ -3,28 +3,21 @@ package com.dotcms.rest.api.v1.site;
 import static com.dotmarketing.util.Logger.debug;
 import static com.dotmarketing.util.Logger.error;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
+import java.io.Serializable;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides all the utility methods used by the {@link SiteResource}

@@ -6,7 +6,7 @@
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%
 	String identifier = request.getParameter("id");
 	Bundle bundle = APILocator.getBundleAPI().getBundleById(identifier);

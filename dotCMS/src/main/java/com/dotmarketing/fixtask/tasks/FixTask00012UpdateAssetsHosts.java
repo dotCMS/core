@@ -1,7 +1,5 @@
 package com.dotmarketing.fixtask.tasks;
 
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -18,6 +16,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;

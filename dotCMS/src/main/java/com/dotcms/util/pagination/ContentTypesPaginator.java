@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -17,6 +16,7 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Handle {@link ContentType} pagination

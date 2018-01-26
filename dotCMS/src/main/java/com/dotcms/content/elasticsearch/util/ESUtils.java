@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.util;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 public class ESUtils {
 

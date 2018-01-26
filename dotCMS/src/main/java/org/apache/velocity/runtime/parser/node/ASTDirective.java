@@ -19,10 +19,11 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.IOException;
 import java.io.Writer;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -35,9 +36,6 @@ import org.apache.velocity.runtime.directive.RuntimeMacro;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ExceptionUtils;
-
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.VelocityUtil;
 
 /**
  * This class is responsible for handling the pluggable

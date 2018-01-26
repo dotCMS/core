@@ -1,24 +1,17 @@
 package com.dotmarketing.portlets.folders.action;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -43,6 +36,16 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 /**
  * @author Maria
  */

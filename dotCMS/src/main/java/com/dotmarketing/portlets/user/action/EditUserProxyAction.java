@@ -1,15 +1,8 @@
 package com.dotmarketing.portlets.user.action;
 
-import java.lang.reflect.InvocationTargetException;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -17,6 +10,10 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerForm;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /*
  * @author Oswaldo Gallango

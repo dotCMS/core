@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.container;
 
 
+import com.beust.jcommander.internal.Maps;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityType;
@@ -9,7 +10,6 @@ import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
 import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -17,7 +17,6 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -29,7 +28,6 @@ import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -44,7 +42,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
-
+import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -52,18 +51,12 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
-
-import com.beust.jcommander.internal.Maps;
-import com.google.common.collect.Lists;
-import com.liferay.portal.model.User;
 
 /**
  * This resource provides all the different end-points associated to information and actions that

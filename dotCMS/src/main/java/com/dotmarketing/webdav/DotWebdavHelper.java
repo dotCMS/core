@@ -11,11 +11,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
 import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -49,7 +44,12 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.auth.Authenticator;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,15 +67,11 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
-
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.FileUtil;
 
 public class DotWebdavHelper {
 
@@ -85,7 +81,7 @@ public class DotWebdavHelper {
 			return new Perl5Matcher();
 		}
 	};
-	private  com.dotcms.repackage.org.apache.oro.text.regex.Pattern tempResourcePattern;
+	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
 	private File tempHolderDir;
 	private String tempFolderPath = "dotwebdav";
 

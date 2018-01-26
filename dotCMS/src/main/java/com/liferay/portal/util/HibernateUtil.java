@@ -22,13 +22,12 @@
 
 package com.liferay.portal.util;
 
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.util.InstancePool;
 import com.liferay.util.dao.hibernate.SessionConfiguration;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
+import net.sf.hibernate.dialect.Dialect;
 
 /**
  * <a href="HibernateUtil.java.html"><b><i>View Source</i></b></a>

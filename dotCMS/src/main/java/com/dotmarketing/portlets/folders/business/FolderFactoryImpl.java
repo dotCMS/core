@@ -1,10 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -43,7 +39,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +54,10 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.oro.text.regex.Pattern;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
 
 /**
  *

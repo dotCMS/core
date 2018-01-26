@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.structure.model;
 
-import java.util.Date;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.util.UtilMethods;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
 /**
  * 
  * @deprecated use {@link com.dotcms.contenttype.model.field.Field}

@@ -1,7 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.FormParam;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -17,6 +15,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

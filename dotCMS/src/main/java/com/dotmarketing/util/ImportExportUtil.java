@@ -2,11 +2,6 @@ package com.dotmarketing.util;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -38,6 +33,8 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +60,9 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.persister.AbstractEntityPersister;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills

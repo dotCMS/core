@@ -1,10 +1,9 @@
 package com.dotmarketing.beans;
 
-import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.Serializable;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  *

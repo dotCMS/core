@@ -1,18 +1,17 @@
 package com.dotcms.rest.annotation;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.javax.annotation.Priority;
-import com.dotcms.repackage.javax.inject.Singleton;
 import com.dotcms.repackage.javax.ws.rs.Priorities;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
-
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.inject.Singleton;
 
 /**
  * This decorator reads the annotations on the resources and includes header based on it based on them.

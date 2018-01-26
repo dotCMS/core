@@ -9,10 +9,14 @@
  */
 package com.dotmarketing.filters;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Date;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -20,13 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
+import org.apache.commons.lang.time.FastDateFormat;
 
 public class ThreadNameFilter implements Filter {
 	FastDateFormat df = FastDateFormat.getInstance("MM-dd-yyyy hh:mm:ss z");

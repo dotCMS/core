@@ -26,13 +26,6 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PreferencesValidator;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.NoSuchPortletException;
 import com.liferay.portal.PortletActiveException;
@@ -46,11 +39,13 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.PortletPreferencesSerializer;
-import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
-import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="EditPortletAction.java.html"><b><i>View Source</i></b></a>

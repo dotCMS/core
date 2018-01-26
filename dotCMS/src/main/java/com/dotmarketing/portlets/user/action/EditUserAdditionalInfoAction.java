@@ -3,10 +3,6 @@ package com.dotmarketing.portlets.user.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -17,6 +13,8 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Martin Amaris 

@@ -19,7 +19,6 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;

@@ -1,13 +1,11 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.util.Calendar;
 import java.util.Date;
+import org.apache.commons.lang.RandomStringUtils;
 
 /**
  * Util to manage the token that is used in the user reset password proccess.

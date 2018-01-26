@@ -22,20 +22,18 @@
 
 package com.liferay.portal.ejb;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-
 import com.liferay.portal.NoSuchUserTrackerPathException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.ObjectNotFoundException;
+import net.sf.hibernate.Query;
+import net.sf.hibernate.ScrollableResults;
+import net.sf.hibernate.Session;
 
 /**
  * <a href="UserTrackerPathPersistence.java.html"><b><i>View Source</i></b></a>

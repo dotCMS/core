@@ -1,16 +1,15 @@
 package com.dotcms.publishing;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;

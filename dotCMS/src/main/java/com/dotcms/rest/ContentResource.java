@@ -1,28 +1,12 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.Map.Entry;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -45,7 +29,6 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposit
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -65,11 +48,40 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import static com.dotmarketing.util.NumberUtil.*;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {

@@ -1,12 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools.content;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * The class helps get at the values and options of a Select Field belonging to a piece of content. 

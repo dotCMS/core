@@ -1,6 +1,6 @@
 package com.dotmarketing.db;
 
-import com.dotcms.repackage.net.sf.hibernate.cfg.DefaultNamingStrategy;
+import net.sf.hibernate.cfg.DefaultNamingStrategy;
 
 public class LowercaseNamingStrategy extends DefaultNamingStrategy {
 	

@@ -1,21 +1,6 @@
 package com.dotmarketing.business.query;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
@@ -23,9 +8,14 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 

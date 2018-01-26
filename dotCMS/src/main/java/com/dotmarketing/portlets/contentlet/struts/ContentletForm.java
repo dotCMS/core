@@ -1,21 +1,6 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,6 +14,19 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.Constants;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.validator.ValidatorForm;
 
 public class ContentletForm extends ValidatorForm {
 

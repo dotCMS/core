@@ -1,24 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
-import org.elasticsearch.search.SearchHits;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -37,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -48,6 +30,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneHits;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+import org.elasticsearch.search.SearchHits;
 
 public class ContentsWebAPI implements ViewTool {
 

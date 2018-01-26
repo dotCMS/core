@@ -2,8 +2,6 @@ package com.dotmarketing.business.jgroups;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -18,6 +16,8 @@ import com.liferay.portal.struts.MultiMessageResources;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.collections.map.LRUMap;
+import org.apache.struts.Globals;
 import org.jgroups.Address;
 import org.jgroups.Event;
 import org.jgroups.JChannel;

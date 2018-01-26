@@ -238,6 +238,10 @@ public class OSGIUtil {
         return felixFramework.getBundleContext();
     }
 
+    public Boolean isInitialized() {
+        return null != felixFramework;
+    }
+
     /**
      * Gets the OSGi framework factory
      *

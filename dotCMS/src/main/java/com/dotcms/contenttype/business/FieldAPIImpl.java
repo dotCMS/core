@@ -37,8 +37,6 @@ import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -52,10 +50,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.UtilMethods;
-
-import java.util.List;
-
 import com.liferay.portal.model.User;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 
 public class FieldAPIImpl implements FieldAPI {

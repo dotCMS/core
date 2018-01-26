@@ -35,7 +35,6 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -61,6 +60,7 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarBuffer;
 
 /**

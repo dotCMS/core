@@ -19,14 +19,9 @@ package org.apache.velocity.tools.struts;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.servlet.ServletContext;
-
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-import com.dotcms.repackage.org.apache.struts.action.*;
-
+import org.apache.struts.action.ActionForm;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import com.dotcms.repackage.org.apache.struts.util.ModuleUtils;
 
 
 /**
@@ -149,7 +144,7 @@ public class FormTool implements ViewTool
      */
     public String getCancelName()
     {
-        return com.dotcms.repackage.org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY;
+        return org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY;
     }
 
 
@@ -170,7 +165,7 @@ public class FormTool implements ViewTool
      */
     public String getTokenName()
     {
-        return com.dotcms.repackage.org.apache.struts.taglib.html.Constants.TOKEN_KEY;
+        return org.apache.struts.taglib.html.Constants.TOKEN_KEY;
     }
 
 }

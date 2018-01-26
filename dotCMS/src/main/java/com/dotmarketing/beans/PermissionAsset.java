@@ -1,10 +1,9 @@
 package com.dotmarketing.beans;
 
+import com.dotmarketing.business.Permissionable;
 import java.io.Serializable;
 import java.util.ArrayList;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotmarketing.business.Permissionable;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  *

@@ -2,7 +2,6 @@ package com.dotmarketing.business.cache.provider.guava;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Test;
 
 public class CachePerformanceTest {

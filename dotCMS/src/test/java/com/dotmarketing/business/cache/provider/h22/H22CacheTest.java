@@ -2,7 +2,6 @@ package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.sql.Connection;
@@ -14,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Test;
 
 public class H22CacheTest {

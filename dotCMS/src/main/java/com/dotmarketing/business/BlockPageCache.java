@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This cache will keep a set of different {@link HTMLPage} objects and their 

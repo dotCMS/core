@@ -1,12 +1,10 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
-
 import java.util.Map;
 
 /**

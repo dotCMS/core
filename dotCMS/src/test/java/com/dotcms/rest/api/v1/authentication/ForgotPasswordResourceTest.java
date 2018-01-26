@@ -1,36 +1,40 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.SendPasswordException;
+import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
+import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.Locale;
-
-import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.struts.Globals;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class ForgotPasswordResourceTest extends UnitTestBase {
 

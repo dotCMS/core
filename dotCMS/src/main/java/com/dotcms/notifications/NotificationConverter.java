@@ -1,24 +1,23 @@
 package com.dotcms.notifications;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.DateUtil.prettyDateSince;
+
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.view.NotificationActionView;
 import com.dotcms.notifications.view.NotificationDataView;
 import com.dotcms.notifications.view.NotificationView;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.Converter;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import java.util.List;
 import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.util.DateUtil.prettyDateSince;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This converter basically tooks a {@link UserNotificationPair} and convert to notification but doing i18n support with the user {@link java.util.Locale} info

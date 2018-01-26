@@ -1,14 +1,13 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.portlets.rules.model.Condition;
-
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Logger;
 import java.util.Map;
 import java.util.function.Function;
+import org.apache.commons.lang.SerializationUtils;
 
 public class ConditionTransform {
     private final ParameterModelTransform parameterModelTransform = new ParameterModelTransform();

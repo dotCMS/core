@@ -14,7 +14,7 @@
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>

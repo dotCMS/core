@@ -4,9 +4,8 @@
 package com.dotmarketing.plugin.model;
 
 import java.io.Serializable;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  * @author Jason Tesser

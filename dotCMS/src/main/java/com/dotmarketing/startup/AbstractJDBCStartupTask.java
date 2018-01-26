@@ -3,6 +3,14 @@ package com.dotmarketing.startup;
 import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -14,16 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Derived classes should avoid use of transactions. MSSQL might have problems

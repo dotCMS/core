@@ -3,21 +3,14 @@ package com.dotmarketing.util.json;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
-
-import com.dotcms.repackage.org.apache.commons.lang.WordUtils;
-import com.dotmarketing.portlets.rules.model.Rule;
-import org.apache.velocity.tools.view.ImportSupport;
-import org.apache.velocity.tools.view.tools.ViewTool;
-import org.apache.velocity.tools.view.tools.ImportTool;
-
-import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.WordUtils;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its

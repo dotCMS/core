@@ -3,18 +3,6 @@
  */
 package com.dotmarketing.business;
 
-import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.business.RoleCache.UserRoleCacheHelper;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -26,8 +14,17 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * @author Jason Tesser

@@ -1,17 +1,14 @@
 package com.dotmarketing.portlets.workflowmessages.struts;
 
 
-import java.util.Date;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.Constants;
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.validator.ValidatorForm;
 
 /** @author Hibernate CodeGenerator */
 public class WorkflowMessageForm extends ValidatorForm {

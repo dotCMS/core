@@ -1,14 +1,6 @@
 package com.dotcms.contenttype.test;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -39,7 +31,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -49,6 +40,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
 import com.dotmarketing.quartz.job.TestJobExecutor;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * 

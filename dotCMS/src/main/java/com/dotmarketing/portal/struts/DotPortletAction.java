@@ -9,23 +9,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -47,7 +34,13 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -57,6 +50,16 @@ import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * Provides utility methods to interact with {@link WebAsset} objects in dotCMS.

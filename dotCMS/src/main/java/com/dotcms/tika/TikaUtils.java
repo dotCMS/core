@@ -27,26 +27,33 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 public class TikaUtils {
 
     private TikaProxyService tikaService;
+    private Boolean osgiInitialized;
 
     public TikaUtils() {
 
-        //Search for the TikaServiceBuilder service instance expose through OSGI
-        TikaServiceBuilder tikaServiceBuilder = OSGIUtil.getInstance()
-                .getService(TikaServiceBuilder.class,
-                        OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
-        if (null == tikaServiceBuilder) {
-            throw new IllegalStateException(
-                    String.format("OSGI Service [%s] not found for bundle [%s]",
-                            TikaServiceBuilder.class,
-                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
-        }
+        osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        if (osgiInitialized) {
 
-        /*
-        Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
-        when the createTikaService method is called a new instance of Tika is also created
-        by the TikaProxyService implementation.
-         */
-        this.tikaService = tikaServiceBuilder.createTikaService();
+            //Search for the TikaServiceBuilder service instance expose through OSGI
+            TikaServiceBuilder tikaServiceBuilder = OSGIUtil.getInstance()
+                    .getService(TikaServiceBuilder.class,
+                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
+            if (null == tikaServiceBuilder) {
+                throw new IllegalStateException(
+                        String.format("OSGI Service [%s] not found for bundle [%s]",
+                                TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+            }
+
+            /*
+            Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
+            when the createTikaService method is called a new instance of Tika is also created
+            by the TikaProxyService implementation.
+             */
+            this.tikaService = tikaServiceBuilder.createTikaService();
+        } else {
+            Logger.error(this.getClass(), "OSGI Framework not initialized");
+        }
     }
 
     /**
@@ -58,6 +65,12 @@ public class TikaUtils {
      * May 31, 2013 - 12:27:19 PM
      */
     public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
+
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file Meta Data, OSGI Framework not initialized");
+            return new HashMap<>();
+        }
 
         this.tikaService.setMaxStringLength(-1);
 
@@ -198,6 +211,12 @@ public class TikaUtils {
      * @throws IOException if the file can not be read
      */
     public String detect(File file) throws IOException {
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file media type, OSGI Framework not initialized");
+            return "";
+        }
+
         return this.tikaService.detect(file);
     }
 

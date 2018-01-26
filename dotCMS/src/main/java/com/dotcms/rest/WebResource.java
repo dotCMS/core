@@ -1,13 +1,11 @@
 package com.dotcms.rest;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
@@ -24,12 +22,12 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.*;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -37,6 +35,7 @@ import java.util.Iterator;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 public  class WebResource {
 

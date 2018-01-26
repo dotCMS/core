@@ -1,11 +1,9 @@
 package com.dotmarketing.comparators;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.Comparator;
 import java.util.Date;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import org.apache.commons.beanutils.PropertyUtils;
 
 /**
  * @author Maria & David (Fat contentlet adaptations)

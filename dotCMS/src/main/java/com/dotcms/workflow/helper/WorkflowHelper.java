@@ -1,10 +1,11 @@
 package com.dotcms.workflow.helper;
 
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
@@ -30,12 +31,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * Helper for Workflow Actions

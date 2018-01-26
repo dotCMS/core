@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
-import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
@@ -10,16 +12,17 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.SerializationUtils;
 
 /**
  * @author Geoff M. Granum

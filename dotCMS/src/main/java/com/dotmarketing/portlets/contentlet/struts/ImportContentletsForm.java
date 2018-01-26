@@ -2,10 +2,9 @@ package com.dotmarketing.portlets.contentlet.struts;
 
 
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.validator.ValidatorForm;
 
 public class ImportContentletsForm extends ValidatorForm {
 

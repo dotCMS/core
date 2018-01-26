@@ -6,16 +6,14 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
-import com.dotmarketing.exception.*;
-import com.dotmarketing.util.*;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-
-import java.io.*;
-import java.util.*;
+import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * A helper for {@link ESContentletAPIImpl}

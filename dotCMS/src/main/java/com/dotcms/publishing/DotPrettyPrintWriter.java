@@ -1,8 +1,7 @@
 package com.dotcms.publishing;
 
-import com.dotcms.repackage.com.thoughtworks.xstream.core.util.QuickWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
-
+import com.thoughtworks.xstream.core.util.QuickWriter;
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
 import java.io.Writer;
 
 /**
@@ -20,7 +19,7 @@ public class DotPrettyPrintWriter extends PrettyPrintWriter {
     }
 	
     /* (non-Javadoc)
-     * @see com.dotcms.repackage.com.thoughtworks.xstream.io.xml.PrettyPrintWriter#writeText(com.dotcms.repackage.com.thoughtworks.xstream.core.util.QuickWriter, java.lang.String)
+     * @see com.thoughtworks.xstream.io.xml.PrettyPrintWriter#writeText(com.thoughtworks.xstream.core.util.QuickWriter, java.lang.String)
      */
     protected void writeText(QuickWriter writer, String text) {
         

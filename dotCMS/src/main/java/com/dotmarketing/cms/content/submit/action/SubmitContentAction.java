@@ -1,22 +1,5 @@
 package com.dotmarketing.cms.content.submit.action;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
@@ -51,6 +34,21 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.UploadServletRequest;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 
 /**
  * This Action manage the submit content save procedure

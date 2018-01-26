@@ -5,18 +5,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Locale Util test.

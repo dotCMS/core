@@ -1,16 +1,26 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -26,17 +36,14 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and

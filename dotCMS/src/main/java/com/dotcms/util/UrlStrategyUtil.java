@@ -1,13 +1,10 @@
 package com.dotcms.util;
 
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-
-import java.util.Locale;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Util class to get the app base URL
