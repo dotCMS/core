@@ -7,6 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -56,14 +57,13 @@ public class RoleResource {
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 * @throws JSONException
 	 */
 
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
@@ -74,55 +74,24 @@ public class RoleResource {
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String roleId = paramsMap.get("id");
 
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-        final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
-		CacheControl cc = new CacheControl();
-        cc.setNoCache( true );
+		try {
+			RoleAPI roleAPI = APILocator.getRoleAPI();
+			final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
+			CacheControl cc = new CacheControl();
+			cc.setNoCache(true);
 
-		if(!UtilMethods.isSet(roleId) || roleId.equals("root")) {  // Loads Root Roles
-			JSONArray jsonRoles = new JSONArray();
-			JSONObject jsonRoleObject = new JSONObject();
-			jsonRoleObject.put("id", "root");
-			jsonRoleObject.put("name", "Roles");
-			jsonRoleObject.put("top", "true");
+			if (!UtilMethods.isSet(roleId) || roleId.equals("root")) {  // Loads Root Roles
+				JSONArray jsonRoles = new JSONArray();
+				JSONObject jsonRoleObject = new JSONObject();
+				jsonRoleObject.put("id", "root");
+				jsonRoleObject.put("name", "Roles");
+				jsonRoleObject.put("top", "true");
 
-			List<Role> rootRoles = roleAPI.findRootRoles();
-			JSONArray jsonChildren = new JSONArray();
+				List<Role> rootRoles = roleAPI.findRootRoles();
+				JSONArray jsonChildren = new JSONArray();
 
-			for(Role r : rootRoles) {
-				if(!workflowRoles.contains(r)) {
-					JSONObject jsonRoleChildObject = new JSONObject();
-					jsonRoleChildObject.put("id", r.getId());
-					jsonRoleChildObject.put("$ref", r.getId());
-					jsonRoleChildObject.put("name", r.getName());
-					jsonRoleChildObject.put("locked", r.isLocked());
-					jsonRoleChildObject.put("children", true);
-
-					jsonChildren.add(jsonRoleChildObject);
-				}
-			}
-			//In order to add a JsonArray to a JsonObject
-			//we need to specify that is an object (API bug)
-			jsonRoleObject.put("children", (Object)jsonChildren);
-			jsonRoles.add(jsonRoleObject);
-
-			return responseResource.response(jsonRoles.toString(), cc);
-
-		} else {  // Loads Children Roles of given Role ID
-			Role role = roleAPI.loadRoleById(roleId);
-
-			JSONObject jsonRoleObject = new JSONObject();
-			jsonRoleObject.put("id", role.getId());
-			jsonRoleObject.put("name", role.getName());
-			jsonRoleObject.put("locked", role.isLocked());
-
-			JSONArray jsonChildren = new JSONArray();
-
-			List<String> children = role.getRoleChildren();
-			if(children != null) {
-				for(String childId : children) {
-					Role r = roleAPI.loadRoleById(childId);
-					if(!workflowRoles.contains(r)) {
+				for (Role r : rootRoles) {
+					if (!workflowRoles.contains(r)) {
 						JSONObject jsonRoleChildObject = new JSONObject();
 						jsonRoleChildObject.put("id", r.getId());
 						jsonRoleChildObject.put("$ref", r.getId());
@@ -133,12 +102,47 @@ public class RoleResource {
 						jsonChildren.add(jsonRoleChildObject);
 					}
 				}
-			}
-			//In order to add a JsonArray to a JsonObject
-			//we need to specify that is an object (API bug)
-			jsonRoleObject.put("children", (Object)jsonChildren);
+				//In order to add a JsonArray to a JsonObject
+				//we need to specify that is an object (API bug)
+				jsonRoleObject.put("children", (Object) jsonChildren);
+				jsonRoles.add(jsonRoleObject);
 
-			return responseResource.response(jsonRoleObject.toString(), cc);
+				return responseResource.response(jsonRoles.toString(), cc);
+
+			} else {  // Loads Children Roles of given Role ID
+				Role role = roleAPI.loadRoleById(roleId);
+
+				JSONObject jsonRoleObject = new JSONObject();
+				jsonRoleObject.put("id", role.getId());
+				jsonRoleObject.put("name", role.getName());
+				jsonRoleObject.put("locked", role.isLocked());
+
+				JSONArray jsonChildren = new JSONArray();
+
+				List<String> children = role.getRoleChildren();
+				if (children != null) {
+					for (String childId : children) {
+						Role r = roleAPI.loadRoleById(childId);
+						if (!workflowRoles.contains(r)) {
+							JSONObject jsonRoleChildObject = new JSONObject();
+							jsonRoleChildObject.put("id", r.getId());
+							jsonRoleChildObject.put("$ref", r.getId());
+							jsonRoleChildObject.put("name", r.getName());
+							jsonRoleChildObject.put("locked", r.isLocked());
+							jsonRoleChildObject.put("children", true);
+
+							jsonChildren.add(jsonRoleChildObject);
+						}
+					}
+				}
+				//In order to add a JsonArray to a JsonObject
+				//we need to specify that is an object (API bug)
+				jsonRoleObject.put("children", (Object) jsonChildren);
+
+				return responseResource.response(jsonRoleObject.toString(), cc);
+			}
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		}
     }
 

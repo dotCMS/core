@@ -10,8 +10,16 @@ public class ForbiddenException extends HttpStatusCodeException {
     private static final long serialVersionUID = 1L;
     private static final String ERROR_KEY = "dotcms.api.error.forbidden";
 
+    public ForbiddenException(String message, String... messageArgs) {
+        super(Response.Status.FORBIDDEN, ERROR_KEY, message, messageArgs);
+    }
+
     public ForbiddenException(Throwable cause, String message, String... messageArgs) {
         super(cause, Response.Status.FORBIDDEN, ERROR_KEY, message, messageArgs);
+    }
+
+    public ForbiddenException(Throwable cause) {
+        super(cause, Response.Status.FORBIDDEN, ERROR_KEY, cause.getMessage());
     }
 }
  

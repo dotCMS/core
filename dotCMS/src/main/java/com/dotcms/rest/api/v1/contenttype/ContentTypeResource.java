@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.exception.ForbiddenException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -43,7 +45,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import com.dotcms.repackage.javax.ws.rs.*;
-import static com.dotcms.util.CollectionsUtils.map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -76,7 +77,7 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response createType(@Context final HttpServletRequest req, final ContentTypeForm form)
-			throws DotDataException, DotSecurityException {
+			throws DotDataException {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
 
@@ -106,7 +107,10 @@ public class ContentTypeResource implements Serializable {
 
 		} catch (DotStateException | DotDataException e) {
 
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
 
@@ -124,7 +128,7 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateType(@PathParam("id") final String id, final ContentTypeForm form,
-							   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+							   @Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -166,6 +170,9 @@ public class ContentTypeResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -181,34 +188,39 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public Response deleteType(@PathParam("id") final String id, @Context final HttpServletRequest req)
-			throws DotDataException, DotSecurityException, JSONException {
+			throws DotDataException, JSONException {
 
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
 
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 
-
-		ContentType type = null;
 		try {
-			type = tapi.find(id);
-		} catch (NotFoundInDbException nfdb) {
+
+			ContentType type = null;
 			try {
 				type = tapi.find(id);
-			} catch (NotFoundInDbException nfdb2) {
-				return Response.status(404).build();
+			} catch (NotFoundInDbException nfdb) {
+				try {
+					type = tapi.find(id);
+				} catch (NotFoundInDbException nfdb2) {
+					return Response.status(404).build();
+				}
 			}
+
+			tapi.delete(type);
+
+			JSONObject joe = new JSONObject();
+			joe.put("deleted", type.id());
+
+			Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
+			return response;
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+		} catch (Exception e) {
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
-		tapi.delete(type);
-
-
-		JSONObject joe = new JSONObject();
-		joe.put("deleted", type.id());
-
-
-		Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
-		return response;
 	}
 
 
@@ -218,7 +230,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
-			throws DotDataException, DotSecurityException {
+			throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -232,6 +244,9 @@ public class ContentTypeResource implements Serializable {
 			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 
 			response = Response.ok(new ResponseEntityView(resultMap)).build();
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		} catch (NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404
 		}
@@ -310,7 +325,9 @@ public class ContentTypeResource implements Serializable {
 		try {
 			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction);
 		} catch (Exception e) {
-
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 			Logger.error(this, e.getMessage(), e);
 		}

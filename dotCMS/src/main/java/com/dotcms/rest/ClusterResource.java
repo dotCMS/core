@@ -21,7 +21,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -49,13 +48,12 @@ public class ClusterResource {
      * @return
      * @throws DotStateException
      * @throws DotDataException
-     * @throws DotSecurityException
      * @throws JSONException
      */
     @GET
     @Path ("/getNodesStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString());
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -196,13 +194,12 @@ public class ClusterResource {
      * @return
      * @throws DotStateException
      * @throws DotDataException
-     * @throws DotSecurityException
      * @throws JSONException
      */
     @GET
     @Path ("/getNodeStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
 
@@ -309,13 +306,12 @@ public class ClusterResource {
      * @return
      * @throws DotStateException
      * @throws DotDataException
-     * @throws DotSecurityException
      * @throws JSONException
      */
     @GET
     @Path ("/getESConfigProperties/{params:.*}")
     @Produces ("application/json")
-    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

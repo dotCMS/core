@@ -20,7 +20,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -141,7 +140,7 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 	@Path("/layout/{params:.*}")
 	@Produces("text/html")
 	public Response getLayout ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam( "params" ) String params )
-			throws DotDataException, DotSecurityException, ServletException, IOException, DotRuntimeException,
+			throws DotDataException, ServletException, IOException, DotRuntimeException,
 			PortalException, SystemException {
 
 		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);

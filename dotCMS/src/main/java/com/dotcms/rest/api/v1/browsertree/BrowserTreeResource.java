@@ -13,11 +13,11 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -96,6 +96,8 @@ public class BrowserTreeResource implements Serializable {
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
                                     "cancel", "Change-Host"))
             ).build(); // 200
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this,"Error handling loadAssetsUnder Get Request", e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -140,6 +142,8 @@ public class BrowserTreeResource implements Serializable {
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
                                     "cancel", "Change-Host"))
             ).build(); // 200
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this,"Error handling loadAssetsUnder Get Request", e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

@@ -10,6 +10,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -43,7 +44,7 @@ public class EnvironmentResource {
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
+	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, LanguageException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
@@ -63,35 +64,41 @@ public class EnvironmentResource {
 
 		jsonEnvironments.add(jsonEnvironmentFirst);
 
-		Role role = APILocator.getRoleAPI().loadRoleById(roleId);
-		User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
-		boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
+		try {
+			Role role = APILocator.getRoleAPI().loadRoleById(roleId);
+			User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
+			boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
 
-		List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(),true);
-		Set<Environment> environments = new HashSet<Environment>();
-		if(isAdmin){
-			List<Environment> app = APILocator.getEnvironmentAPI().findEnvironmentsWithServers();
-			for(Environment e:app)
-				environments.add(e);
+			List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
+			Set<Environment> environments = new HashSet<Environment>();
+			if (isAdmin) {
+				List<Environment> app = APILocator.getEnvironmentAPI()
+						.findEnvironmentsWithServers();
+				for (Environment e : app)
+					environments.add(e);
+			} else
+				for (Role r : roles)
+					environments.addAll(APILocator.getEnvironmentAPI()
+							.findEnvironmentsByRole(r.getId()));
+
+			//For each env, create one json and add it to the array
+			for (Environment e : environments) {
+
+				JSONObject environmentBundle = new JSONObject();
+				environmentBundle.put("id", e.getId());
+				//Escape name for cases like: dotcms's
+				environmentBundle.put("name", StringEscapeUtils.unescapeJava(e.getName()));
+
+				jsonEnvironments.add(environmentBundle);
+			}
+
+			CacheControl cc = new CacheControl();
+			cc.setNoCache(true);
+			return Response.ok(jsonEnvironments.toString(), MediaType.APPLICATION_JSON_TYPE)
+					.cacheControl(cc).build();
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		}
-		else
-			for(Role r: roles)
-				environments.addAll(APILocator.getEnvironmentAPI().findEnvironmentsByRole(r.getId()));
-
-		//For each env, create one json and add it to the array
-		for(Environment e : environments) {
-
-			JSONObject environmentBundle = new JSONObject();
-			environmentBundle.put( "id", e.getId() );
-			//Escape name for cases like: dotcms's
-			environmentBundle.put( "name", StringEscapeUtils.unescapeJava( e.getName() ));
-
-			jsonEnvironments.add(environmentBundle);
-		}
-
-		CacheControl cc = new CacheControl();
-		cc.setNoCache(true);
-		return Response.ok(jsonEnvironments.toString(), MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
 	}
 
 }

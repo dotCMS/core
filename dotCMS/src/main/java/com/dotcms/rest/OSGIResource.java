@@ -10,6 +10,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.rest.exception.ForbiddenException;
 import org.osgi.framework.Bundle;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -74,7 +75,7 @@ public class OSGIResource  {
         User currentUser = initData.getUser();
         try {
             if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "dynamic-plugins", currentUser ) ) {
-                return responseResource.responseError( "User does not have access to the Dynamic Plugins Portlet", HttpStatus.SC_UNAUTHORIZED );
+                throw new ForbiddenException("User does not have access to the Dynamic Plugins Portlet");
             }
         } catch ( DotDataException e ) {
             Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );
