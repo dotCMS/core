@@ -3,13 +3,16 @@ package com.dotcms.rest;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.repackage.javax.ws.rs.HEAD;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -19,6 +22,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
@@ -32,6 +36,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -59,6 +65,9 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import com.dotmarketing.util.Config;
 
 import java.util.ArrayList;
 import org.junit.Assert;
@@ -975,6 +984,99 @@ public class ContentResourceTest {
 
         }
 
+    }
+
+    @Test
+    public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGfalse_shouldSucceed200()
+        throws DotSecurityException, DotDataException, JSONException {
+        final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
+
+        boolean restAPIContentAllowFrontEndSavingValue = Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
+        try {
+            long time = System.currentTimeMillis();
+            final String TITLE_FIELD_VARIABLE = "title"+time;
+            final String CAT_FIELD_VARIABLE = "eventType"+time;
+
+            ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
+
+            Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, true);
+
+            Response response = webTarget.path("/save/1/").request()
+                .put(Entity.entity(new JSONObject()
+                    .put("stInode", type.id())
+                    .put("languageId", 1)
+                    .put(TITLE_FIELD_VARIABLE, "Test content from ContentResourceTest")
+                    .put(CAT_FIELD_VARIABLE, "seminars")
+                    .toString(), MediaType.APPLICATION_JSON_TYPE));
+
+            assertTrue(response.getStatus() == Response.Status.OK.getStatusCode());
+        } finally {
+            Config.setProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", restAPIContentAllowFrontEndSavingValue);
+        }
+    }
+
+    @Test
+    public void testCreateContentWithCats_AnonymousUser_RESTAPICONTENTALLOWFRONTENDSAVINGfalse_shouldFail403()
+        throws DotSecurityException, DotDataException, JSONException {
+        final String REST_API_CONTENT_ALLOW_FRONT_END_SAVING = "REST_API_CONTENT_ALLOW_FRONT_END_SAVING";
+
+        boolean restAPIContentAllowFrontEndSavingValue = Config.getBooleanProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING);
+        try {
+            long time = System.currentTimeMillis();
+            final String TITLE_FIELD_VARIABLE = "title"+time;
+            final String CAT_FIELD_VARIABLE = "eventType"+time;
+
+            ContentType type = createContentTypeWithCatAndTextField(TITLE_FIELD_VARIABLE, CAT_FIELD_VARIABLE);
+
+            Config.setProperty(REST_API_CONTENT_ALLOW_FRONT_END_SAVING, false);
+
+            Response response = webTarget.path("/save/1/").request()
+                .put(Entity.entity(new JSONObject()
+                    .put("stInode", type.id())
+                    .put("languageId", 1)
+                    .put(TITLE_FIELD_VARIABLE, "Test content from ContentResourceTest")
+                    .put(CAT_FIELD_VARIABLE, "seminars")
+                    .toString(), MediaType.APPLICATION_JSON_TYPE));
+
+            assertTrue(response.getStatus() == Response.Status.FORBIDDEN.getStatusCode());
+        } finally {
+            Config.setProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", restAPIContentAllowFrontEndSavingValue);
+        }
+    }
+
+    private ContentType createContentTypeWithCatAndTextField(String textFieldVar, String catFieldVar) throws DotSecurityException, DotDataException {
+        Host demoHost =hostAPI.findByName("demo.dotcms.com", user, false);
+
+        long time = System.currentTimeMillis();
+
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
+            .name("TestCat" + time)
+            .variable("TestCat" + time)
+            .host(demoHost.getIdentifier())
+            .build();
+
+        type = APILocator.getContentTypeAPI(user).save(type);
+
+        com.dotcms.contenttype.model.field.Field titleField = FieldBuilder.builder(TextField.class)
+            .name(textFieldVar)
+            .variable(textFieldVar)
+            .contentTypeId(type.id())
+            .build();
+
+        APILocator.getContentTypeFieldAPI().save(titleField, user);
+
+        Category eventTypesCat = APILocator.getCategoryAPI().findByKey("event", user, false);
+
+        com.dotcms.contenttype.model.field.Field catField = FieldBuilder.builder(CategoryField.class)
+            .name(catFieldVar)
+            .variable(catFieldVar)
+            .values(eventTypesCat.getInode())
+            .contentTypeId(type.id())
+            .build();
+
+        APILocator.getContentTypeFieldAPI().save(catField, user);
+
+        return type;
     }
 
     /**
