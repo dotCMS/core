@@ -196,7 +196,7 @@ public class TikaUtils {
             Logger.error(this,"Unable to add additional metadata to map",e);
         }
         for(Map.Entry<String, Object> entry : additionProps.entrySet()){
-            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString());
+            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString().toLowerCase());
         }
 
         return metaMap;

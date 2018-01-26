@@ -923,6 +923,9 @@ public class ContentResource {
             throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean = false;
+        final boolean ALLOW_FRONT_END_SAVING = Config
+            .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+
         try {
 
             // preparing categories
@@ -937,13 +940,13 @@ public class ContentResource {
                         for (String cat : catValue.split("\\s*,\\s*")) {
                             // take it as catId
                             Category category = APILocator.getCategoryAPI()
-                                    .find(cat, init.getUser(), false);
+                                    .find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
                             if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                                 cats.add(category);
                             } else {
                                 // try it as catKey
                                 category = APILocator.getCategoryAPI()
-                                        .findByKey(cat, init.getUser(), false);
+                                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
                                 if (category != null && InodeUtils
                                         .isSet(category.getCategoryId())) {
                                     cats.add(category);
@@ -1000,17 +1003,14 @@ public class ContentResource {
 
             HibernateUtil.startTransaction();
 
-            boolean allowFrontEndSaving = Config
-                    .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
-
             cats = UtilMethods.isSet(cats)?cats:null;
 
             contentlet = APILocator.getContentletAPI()
-                    .checkin(contentlet, relationships, cats, init.getUser(), allowFrontEndSaving);
+                    .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
 
             if (live) {
                 APILocator.getContentletAPI()
-                        .publish(contentlet, init.getUser(), allowFrontEndSaving);
+                        .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             }
 
             HibernateUtil.closeAndCommitTransaction();
