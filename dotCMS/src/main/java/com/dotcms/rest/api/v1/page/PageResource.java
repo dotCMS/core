@@ -229,8 +229,7 @@ public class PageResource {
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
-                    page.getIdentifier(), "inode", page.getInode()));
+            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "page", page));
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
