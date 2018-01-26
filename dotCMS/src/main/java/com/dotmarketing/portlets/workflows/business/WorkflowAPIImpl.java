@@ -147,7 +147,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
 
-	public WorkflowTask findTaskById(String id) throws DotDataException {
+	public WorkflowTask findTaskById(final String id) throws DotDataException {
 		return workFlowFactory.findWorkFlowTaskById(id);
 	}
 

@@ -1386,7 +1386,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	private Long getLongValue(final Map<String, Object> row, final String key) {
-		return ConversionUtils.toLong(row.get(key), 0l);
+		return ConversionUtils.toLong(row.get(key), 0L);
 	}
 	// christian escalation
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {

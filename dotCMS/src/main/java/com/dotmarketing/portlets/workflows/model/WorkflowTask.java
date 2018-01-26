@@ -143,7 +143,7 @@ public class WorkflowTask  implements Serializable
         return languageId;
     }
 
-    public void setLanguageId(long languageId) {
+    public void setLanguageId(final long languageId) {
         this.languageId = languageId;
     }
 

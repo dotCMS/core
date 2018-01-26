@@ -2,9 +2,6 @@
 
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.*;
-
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -21,6 +18,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This upgrade task will add the column language_id to the workflow_task, set the default language id to all of current records
