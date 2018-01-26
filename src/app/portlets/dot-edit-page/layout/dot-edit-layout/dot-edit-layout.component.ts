@@ -99,11 +99,13 @@ export class DotEditLayoutComponent implements OnInit {
      *
      * @memberof DotEditLayoutComponent
      */
-    saveAsTemplateHandleChange(value: any): void {
+    saveAsTemplateHandleChange(value: boolean): void {
         const titleFormControl = this.form.get('title');
         titleFormControl.markAsUntouched();
         titleFormControl.markAsPristine();
+
         this.saveAsTemplate = value;
+
         if (this.saveAsTemplate) {
             titleFormControl.setValidators(Validators.required);
             /*
@@ -183,7 +185,7 @@ export class DotEditLayoutComponent implements OnInit {
         this.initialFormValue = _.cloneDeep(this.form.value);
         this.isModelUpdated = false;
         this.form.valueChanges.subscribe(() => {
-            this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue.value);
+            this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue);
             // TODO: Set sidebar to null if sidebar location is empty, we're expecting a change in the backend to accept null value
         });
     }

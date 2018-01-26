@@ -195,6 +195,46 @@ describe('DotEditLayoutComponent - Layout (anonymous = true)', () => {
         expect(saveButton.nativeElement.textContent).toEqual('Save');
     });
 
+    it('should have save button disabled by default', () => {
+        fixture.detectChanges();
+        const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+
+        expect(saveButton.nativeElement.disabled).toBe(true);
+    });
+
+    it('should have save button enabled if the model is updated', () => {
+        fixture.detectChanges();
+        const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+
+        component.form.get('layout.header').setValue(true);
+        fixture.detectChanges();
+
+        expect(saveButton.nativeElement.disabled).toBe(false);
+    });
+
+    it('should have save button disabled if the form is not valid', () => {
+        fixture.detectChanges();
+        const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+
+        // This will make the template title required, it's like clicking the "Save as template" checkbox
+        component.saveAsTemplateHandleChange(true);
+        fixture.detectChanges();
+
+        expect(saveButton.nativeElement.disabled).toBe(true);
+    });
+
+    it('should have save button enabled when model is updated and form is valid', () => {
+        fixture.detectChanges();
+        const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+
+        component.saveAsTemplateHandleChange(true);
+        component.form.get('title').setValue('Hello World');
+
+        fixture.detectChanges();
+
+        expect(saveButton.nativeElement.disabled).toBe(false);
+    });
+
     it('should have checkbox to save as template', () => {
         fixture.detectChanges();
         const checkboxSave: DebugElement = fixture.debugElement.query(
