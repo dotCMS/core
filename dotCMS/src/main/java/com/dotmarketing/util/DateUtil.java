@@ -2,6 +2,9 @@ package com.dotmarketing.util;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -15,11 +18,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,

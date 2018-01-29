@@ -1,9 +1,6 @@
 package com.dotmarketing.fixtask.tasks;
 
 
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -17,6 +14,8 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import net.sf.hibernate.HibernateException;
 
 
 public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
@@ -132,7 +132,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.cleanInodeTableData(tableName, type);
 						//FixAssetsProcessStatus.addAError();
 					}
@@ -154,7 +154,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.removeOphanedInodes(tableName, type);
 						
 					}

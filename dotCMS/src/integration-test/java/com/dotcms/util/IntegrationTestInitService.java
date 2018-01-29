@@ -1,17 +1,15 @@
 package com.dotcms.util;
 
 import com.dotcms.config.DotInitializationService;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
-import com.liferay.util.SystemProperties;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
-
+import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.apache.struts.Globals;
+import org.apache.struts.config.ModuleConfig;
+import org.apache.struts.config.ModuleConfigFactory;
 import org.mockito.Mockito;
 
 /**

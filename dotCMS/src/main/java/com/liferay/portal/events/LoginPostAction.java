@@ -22,16 +22,6 @@
 
 package com.liferay.portal.events;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserTracker;
 import com.liferay.portal.struts.Action;
@@ -42,6 +32,13 @@ import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.BrowserSniffer;
 import com.liferay.util.GetterUtil;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
 
 /**
  * <a href="LoginPostAction.java.html"><b><i>View Source</i></b></a>

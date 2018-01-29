@@ -6,10 +6,6 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
@@ -40,14 +36,6 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
-
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -56,6 +44,14 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionDialogMessage;
 import com.liferay.util.servlet.SessionMessages;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Maria
@@ -74,8 +70,8 @@ public class EditTemplateAction extends DotPortletAction implements
 //		}
 //	};
 //
-//	private static com.dotcms.repackage.org.apache.oro.text.regex.Pattern parseContainerPattern;
-//	private static com.dotcms.repackage.org.apache.oro.text.regex.Pattern oldContainerPattern;
+//	private static org.apache.oro.text.regex.Pattern parseContainerPattern;
+//	private static org.apache.oro.text.regex.Pattern oldContainerPattern;
 
 //	public EditTemplateAction() {
 //		Perl5Compiler c = new Perl5Compiler();

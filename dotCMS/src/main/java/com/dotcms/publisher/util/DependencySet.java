@@ -1,19 +1,11 @@
 package com.dotcms.publisher.util;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publishing.PublisherConfiguration;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +15,13 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 public class DependencySet extends HashSet<String> {
 

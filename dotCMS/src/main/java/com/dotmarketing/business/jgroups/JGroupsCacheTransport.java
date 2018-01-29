@@ -2,10 +2,9 @@ package com.dotmarketing.business.jgroups;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.jgroups.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -14,10 +13,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.collections.map.LRUMap;
+import org.apache.struts.Globals;
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.PhysicalAddress;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
 
 /**
  * @author Jonathan Gamba

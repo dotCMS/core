@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>

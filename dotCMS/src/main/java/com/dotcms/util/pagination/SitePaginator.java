@@ -1,15 +1,13 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-
-import java.util.Collection;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Paginator util for Host

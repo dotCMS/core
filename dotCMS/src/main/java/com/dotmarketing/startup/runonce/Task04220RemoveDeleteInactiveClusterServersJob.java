@@ -1,10 +1,9 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This task removes the database information associated to the

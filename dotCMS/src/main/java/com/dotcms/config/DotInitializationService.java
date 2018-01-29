@@ -1,19 +1,22 @@
 package com.dotcms.config;
 
+import static com.dotcms.util.CollectionsUtils.linkSet;
+
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
-import com.dotcms.repackage.org.apache.commons.lang.time.StopWatch;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
-import com.dotmarketing.util.*;
-
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
-
-import static com.dotcms.util.CollectionsUtils.*;
+import org.apache.commons.lang.time.StopWatch;
 
 /**
  * This class is in charge of the Services, Factories or any eager Component to be initialized

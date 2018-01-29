@@ -15,20 +15,17 @@
  */
 package com.dotmarketing.util.diff;
 
-import java.io.IOException;
-
-import com.dotcms.repackage.javax.xml.transform.Templates;
-import com.dotcms.repackage.javax.xml.transform.TransformerConfigurationException;
-import com.dotcms.repackage.javax.xml.transform.TransformerFactory;
-import com.dotcms.repackage.javax.xml.transform.TransformerFactoryConfigurationError;
-import com.dotcms.repackage.javax.xml.transform.sax.SAXResult;
-import com.dotcms.repackage.javax.xml.transform.sax.SAXTransformerFactory;
-import com.dotcms.repackage.javax.xml.transform.sax.TransformerHandler;
-import com.dotcms.repackage.javax.xml.transform.stream.StreamSource;
-
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamSource;
+import org.xml.sax.ContentHandler;
 
 public class XslFilter {
 

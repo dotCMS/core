@@ -25,13 +25,6 @@ package com.liferay.portlet.admin.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredUserException;
@@ -45,6 +38,10 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="DeleteUserAction.java.html"><b><i>View Source</i></b></a>

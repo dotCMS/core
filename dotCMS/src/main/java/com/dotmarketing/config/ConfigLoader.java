@@ -1,17 +1,14 @@
 package com.dotmarketing.config;
 
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.dotcms.repackage.javax.xml.parsers.ParserConfigurationException;
-import com.dotcms.repackage.javax.xml.parsers.SAXParser;
-import com.dotcms.repackage.javax.xml.parsers.SAXParserFactory;
-
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.helpers.DefaultHandler;
-
-import com.dotmarketing.util.Logger;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Loads up either clickstream.xml or clickstream-default.xml and

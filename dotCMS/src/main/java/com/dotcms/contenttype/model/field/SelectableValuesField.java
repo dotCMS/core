@@ -1,14 +1,12 @@
 package com.dotcms.contenttype.model.field;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.immutables.value.Value;
-
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.BooleanUtils;
 import com.dotmarketing.business.DotStateException;
 import com.liferay.util.StringUtil;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.lang.BooleanUtils;
+import org.immutables.value.Value;
 
 public abstract class SelectableValuesField extends Field{
 	

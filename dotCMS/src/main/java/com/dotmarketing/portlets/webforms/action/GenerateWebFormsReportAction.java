@@ -1,19 +1,8 @@
 package com.dotmarketing.portlets.webforms.action;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.portlets.webforms.factories.WebFormFactory;
 import com.dotmarketing.portlets.webforms.model.WebForm;
 import com.dotmarketing.util.Logger;
@@ -21,6 +10,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.servlet.SessionMessages;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 public class GenerateWebFormsReportAction extends PortletAction {
 

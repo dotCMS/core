@@ -34,23 +34,21 @@ import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotcms.repackage.com.bradmcevoy.http.webdav.PropPatchHandler.Fields;
 import com.dotcms.repackage.com.bradmcevoy.io.ReadingException;
 import com.dotcms.repackage.com.bradmcevoy.io.WritingException;
-import com.dotcms.webdav.FileContentService;
-
-
-import java.io.*;
+import com.dotmarketing.util.Logger;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class FsFileResource extends FsResource implements CopyableResource, DeletableResource, GetableResource, MoveableResource, PropFindableResource, PropPatchableResource {
 
-    private static final Logger log = LoggerFactory.getLogger(FsFileResource.class);
-    
     private final FileContentService contentService;
 
     /**
@@ -72,11 +70,7 @@ public class FsFileResource extends FsResource implements CopyableResource, Dele
     @Override
     public String getContentType(String preferredList) {
         String mime = ContentTypeUtils.findContentTypes(this.file);
-        String s = ContentTypeUtils.findAcceptableContentType(mime, preferredList);
-        if (log.isTraceEnabled()) {
-            log.trace("getContentType: preferred: {} mime: {} selected: {}", new Object[]{preferredList, mime, s});
-        }
-        return s;
+        return ContentTypeUtils.findAcceptableContentType(mime, preferredList);
     }
 
     @Override
@@ -88,10 +82,12 @@ public class FsFileResource extends FsResource implements CopyableResource, Dele
     public void sendContent(OutputStream out, Range range, Map<String, String> params, String contentType) throws IOException, NotFoundException {
       try (InputStream in  = contentService.getFileContent(file)){
             if (range != null) {
-                log.debug("sendContent: ranged content: " + file.getAbsolutePath());
+                Logger.debug(this.getClass(),
+                        "sendContent: ranged content: " + file.getAbsolutePath());
                 PartialEntity.writeRange(in, range, out);
             } else {
-                log.debug("sendContent: send whole file " + file.getAbsolutePath());
+                Logger.debug(this.getClass(),
+                        "sendContent: send whole file " + file.getAbsolutePath());
                 IOUtils.copy(in, out);
             }
             out.flush();

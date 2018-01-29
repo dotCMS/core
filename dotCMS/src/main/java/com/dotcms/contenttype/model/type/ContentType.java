@@ -1,22 +1,8 @@
 package com.dotcms.contenttype.model.type;
 
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.elasticsearch.common.Nullable;
-
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
@@ -36,6 +22,17 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.elasticsearch.common.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
 	use = Id.CLASS,

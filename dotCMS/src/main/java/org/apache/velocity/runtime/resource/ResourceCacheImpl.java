@@ -19,16 +19,14 @@ package org.apache.velocity.runtime.resource;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.MapFactory;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * Default implementation of the resource cache for the default

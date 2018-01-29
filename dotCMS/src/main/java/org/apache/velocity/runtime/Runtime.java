@@ -20,23 +20,15 @@ package org.apache.velocity.runtime;
  */
 
 import java.io.Reader;
-
 import java.util.Properties;
-
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.Template;
-
-
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
-
-import org.apache.velocity.runtime.directive.Directive;
-
 import org.apache.velocity.runtime.resource.ContentResource;
-
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.exception.ParseErrorException;
-
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
 /**
  * This is the Runtime system for Velocity. It is the

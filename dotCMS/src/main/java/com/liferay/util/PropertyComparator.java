@@ -22,12 +22,10 @@
 
 package com.liferay.util;
 
+import com.dotmarketing.util.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
-import com.dotmarketing.util.Logger;
+import org.apache.commons.beanutils.PropertyUtils;
 
 /**
  * <a href="PropertyComparator.java.html"><b><i>View Source</i></b></a>

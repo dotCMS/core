@@ -1,7 +1,10 @@
 package com.dotcms.util;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
+import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
+
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -11,15 +14,14 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Utility class to the pagination elements and filter

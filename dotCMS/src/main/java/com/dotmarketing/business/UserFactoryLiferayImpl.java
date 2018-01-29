@@ -1,7 +1,6 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,7 +24,6 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;

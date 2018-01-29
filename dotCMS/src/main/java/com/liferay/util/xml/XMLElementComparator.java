@@ -22,9 +22,8 @@
 
 package com.liferay.util.xml;
 
-import com.dotcms.repackage.org.dom4j.Element;
-
 import com.liferay.util.xml.descriptor.XMLDescriptor;
+import org.dom4j.Element;
 
 /**
  * <a href="XMLElementComparator.java.html"><b><i>View Source</i></b></a>

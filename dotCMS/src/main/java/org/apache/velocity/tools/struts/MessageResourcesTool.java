@@ -17,11 +17,11 @@
 package org.apache.velocity.tools.struts;
 
 import java.util.Locale;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import org.apache.struts.util.MessageResources;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 

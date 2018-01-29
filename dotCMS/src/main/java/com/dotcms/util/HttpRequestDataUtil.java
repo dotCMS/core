@@ -1,5 +1,8 @@
 package com.dotcms.util;
 
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
+import com.dotmarketing.util.UtilMethods;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -8,13 +11,8 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
-import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides quick access to information that can be obtained from the HTTP

@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import static com.dotcms.util.CloseUtils.closeQuietly;
 import static com.dotcms.util.ConversionUtils.toLong;
 
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.common.db.DotConnect;
@@ -20,10 +19,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -38,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
  * 

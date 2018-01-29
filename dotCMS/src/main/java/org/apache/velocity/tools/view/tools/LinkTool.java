@@ -21,14 +21,12 @@ import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.ServletContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * View tool to make building URIs pleasant and fun! 
@@ -91,7 +89,7 @@ public class LinkTool implements ViewTool, Cloneable
     private static Method encode = null;
     
     /* Initialize the encode variable with the 1.4 method if available.
-     * this code was adapted from com.dotcms.repackage.org.apache.struts.utils.RequestUtils */
+     * this code was adapted from org.apache.struts.utils.RequestUtils */
     static
     {
         try

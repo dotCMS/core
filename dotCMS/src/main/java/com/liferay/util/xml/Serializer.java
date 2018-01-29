@@ -22,21 +22,19 @@
 
 package com.liferay.util.xml;
 
+import com.dotmarketing.util.Logger;
+import com.liferay.util.ListUtil;
+import com.liferay.util.lang.ArrayWrapper;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
-
-import com.dotcms.repackage.org.exolab.castor.xml.CastorException;
-import com.dotcms.repackage.org.exolab.castor.xml.MarshalException;
-import com.dotcms.repackage.org.exolab.castor.xml.Marshaller;
-import com.dotcms.repackage.org.exolab.castor.xml.Unmarshaller;
-import com.dotcms.repackage.org.exolab.castor.xml.ValidationException;
-
-import com.dotmarketing.util.Logger;
-import com.liferay.util.ListUtil;
-import com.liferay.util.lang.ArrayWrapper;
+import org.exolab.castor.xml.CastorException;
+import org.exolab.castor.xml.MarshalException;
+import org.exolab.castor.xml.Marshaller;
+import org.exolab.castor.xml.Unmarshaller;
+import org.exolab.castor.xml.ValidationException;
 
 /**
  * <a href="Serializer.java.html"><b><i>View Source</i></b></a>
@@ -53,13 +51,11 @@ public class Serializer {
 		ArrayWrapper aw;
 		try {
 			aw = (ArrayWrapper)Unmarshaller.unmarshal(ArrayWrapper.class, reader);
-		} catch (MarshalException e) {
-			Logger.error(Serializer.class, e.getMessage(), e);
-			throw new CastorException(e.getMessage());
-		} catch (ValidationException e) {
+		} catch (MarshalException | ValidationException e) {
 			Logger.error(Serializer.class, e.getMessage(), e);
 			throw new CastorException(e.getMessage());
 		}
+
 		return aw.getArray();
 	}
 
@@ -70,10 +66,7 @@ public class Serializer {
 		Writer writer = new StringWriter();
 		try {
 			Marshaller.marshal(aw, writer);
-		} catch (MarshalException e) {
-			Logger.error(Serializer.class, e.getMessage(), e);
-			throw new CastorException(e.getMessage());
-		} catch (ValidationException e) {
+		} catch (MarshalException | ValidationException e) {
 			Logger.error(Serializer.class, e.getMessage(), e);
 			throw new CastorException(e.getMessage());
 		}
@@ -98,13 +91,10 @@ public class Serializer {
 
 		Reader reader = new StringReader(xml);
 
-		Object obj = null;
+		Object obj;
 		try {
-			obj = (Object)Unmarshaller.unmarshal(c, reader);
-		} catch (MarshalException e) {
-			Logger.error(Serializer.class, e.getMessage(), e);
-			throw new CastorException(e.getMessage());
-		} catch (ValidationException e) {
+			obj = Unmarshaller.unmarshal(c, reader);
+		} catch (MarshalException | ValidationException e) {
 			Logger.error(Serializer.class, e.getMessage(), e);
 			throw new CastorException(e.getMessage());
 		}
@@ -117,10 +107,7 @@ public class Serializer {
 
 		try {
 			Marshaller.marshal(obj, writer);
-		} catch (MarshalException e) {
-			Logger.error(Serializer.class, e.getMessage(), e);
-			throw new CastorException(e.getMessage());
-		} catch (ValidationException e) {
+		} catch (MarshalException | ValidationException e) {
 			Logger.error(Serializer.class, e.getMessage(), e);
 			throw new CastorException(e.getMessage());
 		}

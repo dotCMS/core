@@ -1,6 +1,5 @@
 package com.dotcms;
 
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -24,6 +23,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.List;
+import net.sf.hibernate.HibernateException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;

@@ -19,7 +19,6 @@ package org.apache.velocity.texen.ant;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +27,7 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;

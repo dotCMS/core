@@ -1,5 +1,5 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>

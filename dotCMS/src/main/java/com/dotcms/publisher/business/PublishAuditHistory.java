@@ -1,14 +1,13 @@
 package com.dotcms.publisher.business;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class PublishAuditHistory implements Serializable {
 	private static final long serialVersionUID = 1L;

@@ -19,19 +19,18 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.    
  */
 
-import java.io.InputStream;
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import org.apache.velocity.exception.VelocityException;
+import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * This is a simple URL-based loader.
@@ -49,7 +48,7 @@ public class URLResourceLoader extends ResourceLoader
     private Method[] timeoutMethods;
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
      */
     public void init(ExtendedProperties configuration)
     {

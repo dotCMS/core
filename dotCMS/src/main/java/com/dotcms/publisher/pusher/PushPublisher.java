@@ -46,7 +46,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.log4j.MDC;
+import com.dotcms.repackage.org.apache.logging.log4j.ThreadContext;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -223,8 +223,8 @@ public class PushPublisher extends Publisher {
 	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
 						//For logging purpose
-						MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
-						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
+						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
+						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
 						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
 	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
@@ -276,8 +276,8 @@ public class PushPublisher extends Publisher {
 						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
 	        		} finally {
 	        			CloseUtils.closeQuietly(bundleStream);
-						MDC.remove(ENDPOINT_NAME);
-						MDC.remove(BUNDLE_ID);
+						ThreadContext.remove(ENDPOINT_NAME);
+						ThreadContext.remove(BUNDLE_ID);
 	        		}
 	        		if (isHistoryEmpty || failedEnvironment) {
 	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);

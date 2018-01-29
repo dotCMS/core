@@ -1,13 +1,13 @@
 package com.dotcms.rest.annotation;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.inject.Singleton;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestFilter;
 import com.dotcms.repackage.javax.ws.rs.container.ResourceInfo;
 import com.dotcms.repackage.javax.ws.rs.ext.Provider;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.repackage.org.glassfish.jersey.server.internal.routing.UriRoutingContext;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -17,16 +17,15 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.inject.Singleton;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
 
 /**
  * This filter decorates the headers in addition to apply Request Commander associated to the annotations.
