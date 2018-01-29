@@ -245,11 +245,9 @@ public class PageResource {
             pageMapBuilder.put("render",html )
                 .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
-                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()))
-                .put("languageId", info.getLang())
-                .put("pageTitle", page.getTitle())
-                .put("identifier", page.getIdentifier())
-                .put("pageUri", page.getURI());
+                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
+            pageMapBuilder.putAll(page.getMap());
+            
             if(lockedBy!=null) {
                 pageMapBuilder.put("lockedOn", info.getLockedOn())
                     .put("lockedBy", lockedBy)
@@ -259,7 +257,6 @@ public class PageResource {
                 pageMapBuilder.put("liveInode", info.getLiveInode())
                 .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
             }
-
             final Response.ResponseBuilder responseBuilder = Response.ok(pageMapBuilder.build());
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
