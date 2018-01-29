@@ -161,6 +161,6 @@ public class TransformerLocator {
     public static TreeTransformer createTreeTransformer(
         List<Map<String, Object>> initList) {
 
-        return DbConnectionFactory.isOracle()?new OracleTreeTransformer(initList):new TreeTransformer(initList);
+        return new TreeTransformer(initList);
     }
 }
