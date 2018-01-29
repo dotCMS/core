@@ -32,6 +32,8 @@ import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
