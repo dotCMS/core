@@ -1,50 +1,17 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.common.model.ContentletSearch;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.util.NumberUtils;
+import com.google.common.collect.ImmutableMap;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -52,6 +19,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
@@ -60,6 +28,7 @@ import com.dotmarketing.business.query.SimpleCriteria;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -86,6 +55,39 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.sort.ScriptSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.util.NumberUtils;
+
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -761,7 +763,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
         SearchResponse response = client.getClient().prepareSearch()
-                .setQuery( builder ).addFields("inode","identifier")
+                .setQuery( builder ).addStoredField("inode").addStoredField("identifier")
                 .setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<Contentlet>();
@@ -851,7 +853,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = request.setIndices((live ? info.live : info.working))
-			        .addFields("inode","identifier").execute().actionGet();
+			        .addStoredField("inode").addStoredField("identifier").execute().actionGet();
 			SearchHits hits = response.getHits();
 			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
 			return contentlet;
@@ -921,7 +923,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		try {
 
 			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
-			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
+			        setSize(limit).setFrom(offset).addStoredField("inode").addStoredField("identifier").execute()
 					.actionGet();
 
 			SearchHits hits = response.getHits();
@@ -1225,11 +1227,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             indexToHit=info.working;
 
         Client client=new ESClient().getClient();
-        QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
-        CountRequestBuilder crb = client.prepareCount();
-        crb.setQuery(qb);
-        crb.setIndices(indexToHit);
-        return crb.execute().actionGet().getCount();
+        QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
+        SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
+        searchRequestBuilder.setQuery(qb);
+        searchRequestBuilder.setIndices(indexToHit);
+        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
 	}
 
     /**
@@ -1260,15 +1262,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if("random".equals(sortBy)){
                 return client.prepareSearch()
                         .setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery(), new RandomScoreFunctionBuilder()))
-                        .setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(query)).cache(true));
+                        .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             } else {
                 return client.prepareSearch()
                         .setQuery(QueryBuilders.matchAllQuery())
-                        .setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(query)).cache(true));
+                        .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             }
 
         } else {
-            return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
+            return client.prepareSearch().setQuery(QueryBuilders.queryStringQuery(query));
         }
     }
 
@@ -1298,7 +1300,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
 
         	srb.setIndices(indexToHit);
-        	srb.addFields("inode","identifier");
+        	srb.addStoredField("inode");
+        	srb.addStoredField("identifier");
 
             if(limit>0)
                 srb.setSize(limit);
@@ -1315,13 +1318,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	        String relName=sortBy.substring(0, ind1);
             	        if((ind1+1)<sortBy.length()) {
                 	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
-                	        if(UtilMethods.isSet(identifier)) {
-                	            srb.addSort(SortBuilders.scriptSort("related", "number")
-                	                                    .lang("native")
-                	                                    .param("relName", relName)
-                	                                    .param("identifier", identifier)
-                	                                    .order(SortOrder.ASC));
-                	        }
+                            if (UtilMethods.isSet(identifier)) {
+                                final Script script = new Script(
+                                    Script.DEFAULT_SCRIPT_TYPE,
+                                    "native",
+                                    "related",
+                                    Collections.emptyMap(),
+                                    ImmutableMap.of("relName", relName, "identifier", identifier));
+
+                                srb.addSort(
+                                    SortBuilders
+                                        .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
+                                        .order(SortOrder.ASC));
+                            }
             	        }
             	    }
             	}
@@ -1360,7 +1369,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
 				if(e.getMessage().contains("dotraw] in order to sort on")){
-					return new InternalSearchHits(InternalSearchHits.EMPTY,0,0);
+					return new SearchHits(SearchHits.EMPTY,0,0);
 				}else{
 					throw e;
 				}

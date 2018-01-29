@@ -58,7 +58,7 @@ public interface SiteSearchAPI {
 
 	SiteSearchResult getFromIndex(String index, String id);
 
-	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException;
+	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException; //TODO: https://github.com/dotcms/core/issues/13492
 
     List<String> listClosedIndices();
 }

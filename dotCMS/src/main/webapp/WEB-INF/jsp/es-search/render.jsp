@@ -28,6 +28,9 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
+<%@ page import="org.elasticsearch.search.aggregations.Aggregations" %>
+<%@ page import="org.elasticsearch.search.aggregations.Aggregation" %>
+<%@ page import="org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator" %>
 
 <%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
@@ -263,7 +266,7 @@ if(query == null){
 		</div>
 	<%} %>
 
-	<%if(cons!= null && cons.getFacets() !=null){ %>
+	<%if(cons!= null && cons.getAggregations() !=null){ %>
 		<table class="listingTable" style="width:90%;">
 			<tr><th colspan="3">
 
@@ -272,10 +275,10 @@ if(query == null){
 				</th></tr>
 				<tr>
 					<td>
-					<%for(Facet f : cons.getFacets()){ %>
-					<%TermsFacet terms = (TermsFacet) f; %>
+					<%for(Aggregation agg : cons.getAggregations()){ %>
+					<%TermsAggregator terms = (TermsAggregator) agg; %>
 					<%int ii=1; %>
-						<%for (TermsFacet.Entry entry : terms) {%>
+						<%for (TermsFacet.Entry entry : agg.get) {%>
 
 							<%=ii++%>. <%=entry.getTerm()%> =
 							<%= entry.getCount()%><br>

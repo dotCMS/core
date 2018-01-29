@@ -118,13 +118,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return lis.actionGet().isAcknowledged();
 	}
 
-	public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
-		new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
-		return true;
-	}
-
-
-
 	/**
 	 * Gets the mapping params for an index and type
 	 * @param index
@@ -140,17 +133,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				.get(index).mapping(type).source().string();
 
 	}
-
-	public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
-
-		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet().getState().metaData().indices()
-
-				.get(index).settings().getAsMap().toString();
-
-	}
-
-
 
 	private Map<String, Object> getDefaultFieldMap() {
 

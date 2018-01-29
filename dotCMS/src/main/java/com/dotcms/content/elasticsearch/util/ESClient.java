@@ -1,6 +1,26 @@
 package com.dotcms.content.elasticsearch.util;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+import com.dotcms.cluster.ClusterUtils;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.util.FileUtil;
+
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.node.Node;
+import org.elasticsearch.node.NodeValidationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,33 +29,9 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import com.dotcms.cluster.ClusterUtils;
-import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ServerAPI;
-
-import org.elasticsearch.indices.IndexMissingException;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.node.Node;
-
-import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.liferay.util.FileUtil;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ESClient {
 
@@ -76,12 +72,16 @@ public class ESClient {
                     shutDownNode();
 
                     String node_id = ConfigUtils.getServerId();
-                    _nodeInstance = nodeBuilder().
-                            settings(
-                                    ImmutableSettings.settingsBuilder().
-                                            put( "name", node_id ).
-                                            put( "script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName() ).build()
-                            ).build().start();
+                    try{
+                        _nodeInstance = new Node(
+                            Settings.builder().
+                                put( "name", node_id ).
+                                put( "script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName() ).build()
+                        ).start();
+                    } catch (NodeValidationException e){
+                        Logger.error(this, "Error validating ES node at start.", e);
+                        //TODO: idk if a throw E is necessary.
+                    }
 
                     try {
 
@@ -93,7 +93,7 @@ public class ESClient {
                                 settingsRequest.get()
                             ).actionGet();
                         }
-                    } catch ( IndexMissingException e ) {
+                    } catch ( IndexNotFoundException e ) {
                         /*
                         Updating settings without Indices will throw this exception but should be only visible on start when the
                         just created node does not have any created indices, for this case call the setReplicasSettings method after the indices creation.
@@ -118,7 +118,12 @@ public class ESClient {
 
     public void shutDownNode () {
         if ( _nodeInstance != null ) {
-            _nodeInstance.close();
+            try {
+                _nodeInstance.close();
+            } catch (IOException e){
+                Logger.error(this, "Error shutDownNode ES.", e);
+                //TODO: idk if a throw E is necessary.
+            }
         }
     }
 

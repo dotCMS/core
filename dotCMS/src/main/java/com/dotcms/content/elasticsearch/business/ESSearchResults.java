@@ -2,7 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.suggest.Suggest;
 
 import java.util.Collection;
@@ -72,8 +72,8 @@ public class ESSearchResults implements List {
 		return response.getSuggest();
 	}
 
-	public Facets getFacets() {
-		return response.getFacets();
+	public Aggregations getAggregations() {
+		return response.getAggregations(); //TODO: https://github.com/dotcms/core/issues/13492
 	}
 
 	final List cons;

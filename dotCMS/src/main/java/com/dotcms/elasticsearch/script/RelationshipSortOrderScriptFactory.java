@@ -8,13 +8,26 @@ import org.elasticsearch.script.NativeScriptFactory;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TODO: NativeScriptFactory is deprecated, maybe s worth to change implementation now?.
+ */
 public class RelationshipSortOrderScriptFactory implements NativeScriptFactory {
     
     @Override
     public ExecutableScript newScript(Map<String, Object> params) {
         return new RelationshipSortOrderScript(params.get("identifier").toString(), params.get("relName").toString());
     }
-    
+
+    @Override
+    public boolean needsScores() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "RelationshipSortOrder";
+    }
+
     public static class RelationshipSortOrderScript extends AbstractLongSearchScript {
         protected final String orderField;
         protected final String orderPrefix;

@@ -1,5 +1,8 @@
 package com.dotcms.vanityurl.business;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -24,14 +27,17 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.elasticsearch.indices.IndexMissingException;
+
+import org.elasticsearch.index.IndexNotFoundException;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -491,7 +497,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 this.checkSiteLanguageVanities
                         (siteId, languageId, includedSystemHostOnLuceneQuery);
             }
-        } catch (IndexMissingException e) {
+        } catch (IndexNotFoundException e) {
             /*
 			 * We catch this exception in order to avoid to stop the
 			 * initialization of dotCMS if for some reason at this point we
@@ -502,7 +508,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
         } catch (Exception e) {
-            if (e.getCause() instanceof IndexMissingException) {
+            if (e.getCause() instanceof IndexNotFoundException) {
                 /*
 				 * We catch this exception in order to avoid to stop the
 				 * initialization of dotCMS if for some reason at this point we

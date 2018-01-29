@@ -1,29 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.sql.Connection;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import com.google.gson.Gson;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.google.gson.Gson;
-
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.index.query.QueryBuilders;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -36,10 +19,35 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
@@ -502,12 +510,14 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    String[] idxsArr=new String[idxs.size()];
 	    idxsArr=idxs.toArray(idxsArr);
 
-	    // deleting those with the specified structure inode
-	    new ESClient().getClient().prepareDeleteByQuery()
-              .setIndices(idxsArr)
-              .setQuery(QueryBuilders.queryString("+structurename:"+structureName))
-              .execute().actionGet();
-	}
+        BulkByScrollResponse response =
+            DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
+                .filter(QueryBuilders.queryStringQuery("+structurename:" + structureName))
+                .source(idxsArr)
+                .get();
+
+        Logger.debug(this, "Records deleted: " + response.getDeleted());
+    }
 
     public void fullReindexAbort() {
         try {
@@ -550,7 +560,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
      */
     public List<String> listDotCMSIndices() {
         Client client=new ESClient().getClient();
-        Map<String,IndexStatus> indices=APILocator.getESIndexAPI().getIndicesAndStatus();
+        Map<String,IndexStats> indices=APILocator.getESIndexAPI().getIndicesAndStatus();
         List<String> indexNames=new ArrayList<String>();
 
         for(String idx : indices.keySet())
