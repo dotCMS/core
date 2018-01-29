@@ -304,7 +304,7 @@ public class ContainerResource implements Serializable {
     @Path("/containerContent/{params:.*}")
     public final Response containerContents(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
-            throws DotDataException, ResourceNotFoundException, IOException {
+            throws DotDataException, IOException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();

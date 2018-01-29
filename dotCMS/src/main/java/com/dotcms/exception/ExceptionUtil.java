@@ -14,7 +14,7 @@ public class ExceptionUtil {
      * @param exceptionClass
      * @return boolean
      */
-    public static boolean causedBy(Throwable e, Class exceptionClass) {
+    public static boolean causedBy(final Throwable e, final Class exceptionClass) {
 
         Throwable t = e;
         while (t != null) {

@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,7 +35,7 @@ public class StructureResource {
                                                    @PathParam("path") String path, @QueryParam("name") String name,
                                                    @PathParam ("type") String type,
                                                    @PathParam ("callback") String callback)
-											throws DotStateException, DotDataException, JSONException {
+											throws DotDataException, JSONException {
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put( "type", type );

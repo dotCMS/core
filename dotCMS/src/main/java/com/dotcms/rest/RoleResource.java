@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -55,7 +54,6 @@ public class RoleResource {
 	 * @param request
 	 * @param params a string containing the URL parameters
 	 * @return
-	 * @throws DotStateException
 	 * @throws DotDataException
 	 * @throws JSONException
 	 */
@@ -64,7 +62,7 @@ public class RoleResource {
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
 	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params)
-			throws DotStateException, DotDataException, JSONException {
+			throws DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
