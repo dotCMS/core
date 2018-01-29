@@ -41,7 +41,8 @@ public class SQLUtil {
 	public static final String _DESC  = " " + DESC;
 	public static final String PARAMETER = "?";
 
-	private static final String SQL_STATE_UNIQUE_CONSTRAINT = "23000";
+	private static final String ORACLE_SQL_STATE_UNIQUE_CONSTRAINT = "23000";
+	private static final String POSTGRE_SQL_STATE_UNIQUE_CONSTRAINT = "23505";
 
     private static final Set<String> EVIL_SQL_CONDITION_WORDS =  ImmutableSet.of( "insert", "delete", "update",
             "replace", "create", "drop", "alter", "truncate", "declare", "exec", "--", "procedure", "pg_", "lock",
@@ -315,9 +316,17 @@ public class SQLUtil {
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
 
+	/**
+	 * Method to check if an exception is a Unique Constraint Exception
+	 * It depends on the database engine. So far only Oracle and postgres has been implemented
+	 * @param ex
+	 * @return
+	 */
 	public static boolean isUniqueConstraintException (DotDataException ex) {
 		if (ex != null && ex.getCause() instanceof SQLException) {
-			return ((SQLException) ex.getCause()).getSQLState().equals(SQL_STATE_UNIQUE_CONSTRAINT);
+			final SQLException sqle =  (SQLException) ex.getCause();
+			return (DbConnectionFactory.isOracle() && sqle.getSQLState().equals(ORACLE_SQL_STATE_UNIQUE_CONSTRAINT)) ||
+					(DbConnectionFactory.isPostgres() && sqle.getSQLState().equals(POSTGRE_SQL_STATE_UNIQUE_CONSTRAINT));
 		}
 		return false;
 	}

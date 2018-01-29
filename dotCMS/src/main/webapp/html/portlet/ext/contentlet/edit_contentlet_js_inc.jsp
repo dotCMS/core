@@ -82,7 +82,7 @@
     function cancelEditCallback(callbackData){
         if (ngEditContentletEvents) {
             ngEditContentletEvents.next({
-                event: 'cancel'
+                name: 'cancel'
             });
         } else {
             if (callbackData.indexOf("referer") != -1) {
@@ -587,8 +587,12 @@
 
         if (ngEditContentletEvents) {
             ngEditContentletEvents.next({
-                event: 'save',
-                data: data
+                name: 'save',
+                data: {
+                    identifier: data.contentletIdentifier,
+                    inode: data.contentletInode,
+                    type: null // Need to get the type of the content here
+                }
             });
             return;
         }

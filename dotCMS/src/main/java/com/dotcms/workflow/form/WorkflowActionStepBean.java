@@ -13,7 +13,10 @@ public class WorkflowActionStepBean extends Validated {
 
     @NotNull
     private final String        stepId;
-
+    
+    @NotNull
+    private final int           order;
+    
     public String getActionId() {
         return actionId;
     }
@@ -21,7 +24,9 @@ public class WorkflowActionStepBean extends Validated {
     public String getStepId() {
         return stepId;
     }
-
+    public int getOrder() {
+        return order;
+    }
     @Override
     public String toString() {
         return "WorkflowActionStepBean{" +
@@ -34,11 +39,13 @@ public class WorkflowActionStepBean extends Validated {
 
         this.actionId           = builder.actionId;
         this.stepId             = builder.stepId;
+        this.order              = builder.order;
         this.checkValid();
     }
 
     public static final class Builder {
-
+        @JsonProperty(required = true)
+        private int        order=0;
         @JsonProperty(required = true)
         private String        actionId;
         @JsonProperty(required = true)
@@ -54,7 +61,10 @@ public class WorkflowActionStepBean extends Validated {
             this.stepId = stepId;
             return this;
         }
-
+        public Builder order(int order) {
+            this.order = order;
+            return this;
+        }
 
         public WorkflowActionStepBean build() {
 

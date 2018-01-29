@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import com.dotmarketing.business.query.GenericQueryFactory;
-import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -657,28 +656,6 @@ public class StructureFactoryTest extends ContentletBaseTest {
 
         //Validations
         assertTrue( fieldList != null && !fieldList.isEmpty() );
-    }
-
-    /**
-     * Testing {@link StructureFactory#DBSearch(com.dotmarketing.business.query.GenericQueryFactory.Query, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws com.dotmarketing.exception.DotDataException
-     *
-     * @see StructureFactory
-     */
-    @Test
-    public void DBSearch () throws DotDataException {
-
-        //Build the query
-        String sql = "SELECT * FROM structure ORDER BY inode";
-        SQLQueryFactory sqlQueryFactory = new SQLQueryFactory( sql );
-        GenericQueryFactory.Query query = sqlQueryFactory.getQuery();
-
-        //Make the search
-        List<Map<String, Serializable>> resultList = StructureFactory.DBSearch( query, user, false );
-
-        //Validations
-        assertTrue( resultList != null && !resultList.isEmpty() );
     }
 
     /**

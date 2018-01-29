@@ -744,7 +744,6 @@ public class RoleAjax {
 	}
 
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
-		User user = getAdminUser();
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 
 		UserAPI userAPI = APILocator.getUserAPI();

@@ -3,15 +3,15 @@ package com.dotmarketing.portlets.workflows.model;
 import static com.dotmarketing.business.APILocator.getRoleAPI;
 import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 
-import java.util.List;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.List;
 public class WorkflowProcessor {
 
 	Contentlet contentlet;
@@ -86,41 +86,49 @@ public class WorkflowProcessor {
 		this.contentlet = contentlet;
 
 		try {
+
 			this.user = firingUser;
+
 			WorkflowStep contentStep = getWorkflowAPI().findStepByContentlet(contentlet);
-			if(null != contentStep) {
+			if (null != contentStep) {
 				scheme = getWorkflowAPI().findScheme(contentStep.getSchemeId());
 			}
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
-			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null !=  scheme){
-				workflowActionId=scheme.getEntryActionId();
+			if (UtilMethods.isSet(workflowActionId)) {
+				action = findAction(contentlet, workflowActionId);
 			}
 
-			if (!UtilMethods.isSet(workflowActionId)) {
-				if (null !=  scheme && scheme.isMandatory() ) {
-					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.mandatory.action.type") + contentlet.getStructure().getName());
+			//If we found and action and we don't have a workflow we can search for it
+			if (null != action && null == scheme) {
+				scheme = getWorkflowAPI().findScheme(action.getSchemeId());
+			}
+
+			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null != scheme) {
+				workflowActionId = scheme.getEntryActionId();
+				if (UtilMethods.isSet(workflowActionId)) {
+					action = findAction(contentlet, workflowActionId);
+				}
+			}
+
+			if (null == action) {
+				if (null != scheme && scheme.isMandatory()) {
+					throw new DotWorkflowException(LanguageUtil
+							.get(user, "message.workflow.error.mandatory.action.type")
+							+ contentlet.getStructure().getName());
 				}
 
 				return;
 			}
 
-
-			try{
-				action = getWorkflowAPI().findAction(workflowActionId, user);
-			}
-			catch(Exception ex){
-				throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.invalid.action") + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY), ex);
-			}
-
-
 			if(action.requiresCheckout()){
-				try{
+				try {
 					APILocator.getContentletAPI().canLock(contentlet, user);
-				}
-				catch(Exception ex){
-					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.content.requires.lock") + contentlet.getStructure().getName(), ex);
+				} catch (Exception ex) {
+					throw new DotWorkflowException(LanguageUtil
+							.get(user, "message.workflow.error.content.requires.lock")
+							+ contentlet.getStructure().getName(), ex);
 				}
 			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
@@ -130,13 +138,10 @@ public class WorkflowProcessor {
 				nextAssign = getRoleAPI().loadRoleById(action.getNextAssign());
 			}
 
-
 			// if the action's next assign is the "System User", we assign to the user executing the workflow
 			if((!UtilMethods.isSet(nextAssign)) || getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())){
 				nextAssign = getRoleAPI().loadRoleByKey(user.getUserId());
 			}
-
-
 
 			if(UtilMethods.isSet(Contentlet.WORKFLOW_COMMENTS_KEY)){
 				workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
@@ -155,8 +160,29 @@ public class WorkflowProcessor {
 			}
 
 		} catch (Exception e) {
-			throw new DotWorkflowException(e.getMessage(), e);
+			throw new DotWorkflowException(e.getMessage(),e);
 		}
+	}
+
+	/**
+	 * Searches and returns a WorkflowAction using a given workflow action id, if the Processor
+	 * already have associated an action the existing action will be returned and no search will be
+	 * executed.
+	 */
+	private WorkflowAction findAction(final Contentlet contentlet, final String workflowActionId)
+			throws LanguageException {
+
+		if (null == action) {
+			try {
+				action = getWorkflowAPI().findAction(workflowActionId, this.user);
+			} catch (Exception ex) {
+				throw new DotWorkflowException(
+						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
+								+ contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY), ex);
+			}
+		}
+
+		return action;
 	}
 
 	public Contentlet getContentlet() {

@@ -48,7 +48,6 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             final String actionName,
             final Class actionClass) throws AlreadyExistException, DotDataException {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-
         final WorkflowScheme scheme = new WorkflowScheme();
         scheme.setName(schemeName);
         scheme.setArchived(false);
@@ -59,18 +58,37 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         scheme.setDefaultScheme(false);
         workflowAPI.saveScheme(scheme);
 
-        final WorkflowStep step = new WorkflowStep();
-        step.setName(stepName);
-        step.setMyOrder(0);
-        step.setResolved(false);
-        step.setCreationDate(new Date());
-        step.setSchemeId(scheme.getId());
-        workflowAPI.saveStep(step);
-
+        final WorkflowStep step = createNewWorkflowStep(stepName, scheme.getId());
         final CreateSchemeStepActionResult result =
                 createActionActionlet(scheme.getId(), step.getId(), actionName, actionClass);
 
         return new CreateSchemeStepActionResult(scheme, step, result.action, result.actionClass);
+    }
+
+
+    protected static WorkflowStep createNewWorkflowStep (final String name, final String schemeId) throws AlreadyExistException, DotDataException {
+
+        final WorkflowAPI  workflowAPI = APILocator.getWorkflowAPI();
+        final WorkflowStep step = new WorkflowStep();
+        step.setName(name);
+        step.setMyOrder(0);
+        step.setResolved(false);
+        step.setCreationDate(new Date());
+        step.setSchemeId(schemeId);
+        workflowAPI.saveStep(step);
+        return step;
+    }
+
+    protected static CreateSchemeStepActionResult createActionActionlet (final String schemeId,
+                                                                         final String stepId,
+                                                                         final String actionName,
+                                                                         final Class  actionClass) throws AlreadyExistException, DotDataException {
+
+        return  createActionActionlet (schemeId,
+                                            stepId,
+                                            actionName,
+                                            actionClass,
+                                            WorkflowAction.CURRENT_STEP);
     }
 
     /**
@@ -86,16 +104,16 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
      * @throws AlreadyExistException
      * @throws DotDataException
      */
-    protected static CreateSchemeStepActionResult createActionActionlet(final String schemeId,
-            final String stepId,
-            final String actionName,
-            final Class actionClass) throws AlreadyExistException, DotDataException {
+    protected static CreateSchemeStepActionResult createActionActionlet (final String schemeId,
+                                                                            final String stepId,
+                                                                            final String actionName,
+                                                                            final Class  actionClass,
+                                                                            final String nextStep) throws AlreadyExistException, DotDataException {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-
         final WorkflowAction action = new WorkflowAction();
         action.setName(actionName);
         action.setSchemeId(schemeId);
-        action.setNextStep(WorkflowAction.CURRENT_STEP);
+        action.setNextStep(nextStep);
         action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
         action.setRequiresCheckout(true);
         action.setCondition("");
@@ -149,7 +167,19 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             workflowAPI.deleteStep(step);
         }
 
+        scheme.setArchived(true);
+        workflowAPI.saveScheme(scheme);
         workflowAPI.deleteScheme(scheme);
+    }
+
+    protected long getEnglishLanguageId() {
+
+        return APILocator.getLanguageAPI().getLanguage("en", "US").getId();
+    }
+
+    protected long getSpanishLanguageId() {
+
+        return APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
     }
 
     /**

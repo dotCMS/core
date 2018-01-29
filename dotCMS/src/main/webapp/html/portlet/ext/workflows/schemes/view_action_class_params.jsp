@@ -80,7 +80,7 @@
 	<%} %>
 		<button dojoType="dijit.form.Button"
 			onClick='dijit.byId("actionClassParamsDia").destroyRecursive()'
-			iconClass="cancelIcon">
+			>
 			<%=LanguageUtil.get(pageContext, "Cancel")%>
 		</button>
 	</div>

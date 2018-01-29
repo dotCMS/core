@@ -96,13 +96,13 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 			}
 		} catch (DotPublisherException e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		} catch (ParseException e){
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		} catch (DotDataException e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
 
 	}

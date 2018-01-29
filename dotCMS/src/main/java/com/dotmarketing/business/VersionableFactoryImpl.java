@@ -243,7 +243,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
 
         if(updateVersionTS) {
@@ -317,7 +317,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         try {
 			BeanUtils.copyProperties(vi, cvInfo);
 		} catch (Exception e) {
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
         if(updateVersionTS){
         	vi.setVersionTs(new Date());

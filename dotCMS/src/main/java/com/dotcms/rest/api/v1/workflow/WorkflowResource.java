@@ -29,6 +29,7 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -622,7 +623,52 @@ public class WorkflowResource {
 
         return response;
     } // deleteAction
+    
+    /**
+     * Change the order of the steps in a scheme
+     * @param request HttpServletRequest
+     * @param stepId  String step id
+     * @param order   int    order for the step
+     * @return Response
+     */
+    @PUT
+    @Path("/reorder/step/{stepId}/order/{order}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response reorderStep(@Context final HttpServletRequest request,
+                                        @PathParam("stepId")   final String stepId, 
+                                        @PathParam("order")    final int order) {
 
+        this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+
+        try {
+
+            Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
+            this.workflowHelper.reorderStep(stepId, order);
+            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on reorderStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on reorderStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // reorderStep
+    
+    
     /**
      * Change the order of an action associated to the step
      * @param request                           HttpServletRequest
@@ -669,4 +715,5 @@ public class WorkflowResource {
 
         return response;
     } // reorderAction
+
 } // E:O:F:WorkflowResource.

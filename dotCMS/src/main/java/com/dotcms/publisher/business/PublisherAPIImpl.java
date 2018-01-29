@@ -578,7 +578,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 		catch(Exception e){
 			Logger.error(PublisherAPIImpl.class, e.getMessage());
-			throw new DotPublisherException(e.getMessage());
+			throw new DotPublisherException(e.getMessage(),e);
 		}
 	}
 

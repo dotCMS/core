@@ -172,7 +172,20 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles,Contentlet returnValue){}
-	
+
+	/**
+	 * Makes a copy of a content.
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void copyContentlet(final Contentlet contentletToCopy,
+						final Host host, final Folder folder, final User user, final String copySuffix,
+						final boolean respectFrontendRoles, Contentlet returnValue) {}
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.

@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
  * @since Jul 13, 2016
  *
  */
+@FunctionalInterface
 public interface VoidDelegate {
 
 	/**

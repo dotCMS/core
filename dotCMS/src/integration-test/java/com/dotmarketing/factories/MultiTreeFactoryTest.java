@@ -1,5 +1,7 @@
 package com.dotmarketing.factories;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -8,9 +10,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
-import com.dotmarketing.util.Logger;
 
 import java.util.List;
 
@@ -179,4 +180,34 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
 
     }
 
+    @Test
+    public void testMultiTreeForContainerStructure() throws Exception {
+
+        //Search for an existing Container Structure (contentlet)
+        final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+
+        //Create a MultiTree and relate it to that Contentlet
+        MultiTree mt = new MultiTree()
+                .setContainer(CONTAINER)
+                .setHtmlPage(PAGE)
+                .setContentlet(contentlet.getIdentifier())
+                .setTreeOrder(1)
+                .setRelationType(RELATION_TYPE);
+        MultiTreeFactory.saveMultiTree( mt );
+
+
+        //Search multitrees for the Contentlet, verify its not empty
+        List<MultiTree> multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        assertNotNull(multiTrees);
+        assertFalse(multiTrees.isEmpty());
+
+        //Delete the multitree
+        MultiTreeFactory.deleteMultiTree(mt);
+
+        //Search again the relationship should be gone.
+        multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        assertTrue(multiTrees.isEmpty());
+
+        MultiTreeFactory.deleteMultiTree(mt);
+    }
 }

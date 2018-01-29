@@ -2331,8 +2331,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			replacements.setAttribute(QueryReplacements.ID_VALUE, "permission_reference_seq.NEXTVAL");
 		}
 
-		String query = upsertCommand.generateSQLQuery(replacements);
-		upsertCommand.execute(dc, query, permissionId, newReference.getPermissionId(), type);
+		upsertCommand.execute(dc, replacements, permissionId, newReference.getPermissionId(), type);
 	}
 
     private List<Permission> filterOnlyNonInheritablePermissions(List<Permission> permissions, String permissionableId) {

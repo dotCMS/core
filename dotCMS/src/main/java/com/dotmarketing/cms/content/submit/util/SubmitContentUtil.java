@@ -391,6 +391,7 @@ public class SubmitContentUtil {
 		changeHist.append("Due Date: " + UtilMethods.dateToHTMLDate(task.getDueDate()) + " -> <br>");
 		task.setDueDate(null);
 		task.setWebasset(contentlet.getInode());
+		task.setLanguageId(contentlet.getLanguageId());
 
 		//HibernateUtil.saveOrUpdate(task);
 

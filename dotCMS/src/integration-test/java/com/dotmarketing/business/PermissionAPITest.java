@@ -1,8 +1,9 @@
 package com.dotmarketing.business;
 
-import com.dotcms.DwrAuthenticationUtil;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;
@@ -53,19 +54,20 @@ import static org.junit.Assert.assertTrue;
  * @since May 14, 2012
  *
  */
-public class PermissionAPITest {
+public class PermissionAPITest extends IntegrationTestBase {
 
-    private static PermissionAPI perm;
+    private static PermissionAPI permissionAPI;
     private static Host host;
     private static User sysuser;
     private static Template template;
-    private static DwrAuthenticationUtil dwrAuthentication = null;
 
     @BeforeClass
     public static void createTestHost() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         
-        perm=APILocator.getPermissionAPI();
+        permissionAPI =APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();
         host.setHostname("testhost.demo.dotcms.com");
@@ -82,21 +84,16 @@ public class PermissionAPITest {
         }
  
         try{
-            perm.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+            permissionAPI.permissionIndividually(host.getParentPermissionable(), host, sysuser);
         }catch(DotDataException e){
             Logger.warn(PermissionAPITest.class, "Host Individual Permissions were already set. Reaplying permissions.");
-            perm.removePermissions(host);
-            perm.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+            permissionAPI.removePermissions(host);
+            permissionAPI.permissionIndividually(host.getParentPermissionable(), host, sysuser);
         }
         template =new Template();
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
-        // User authentication through DWR is required for RoleAjax class
-		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", "dotcms.org.1");
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
     }
 
     @AfterClass
@@ -106,7 +103,6 @@ public class PermissionAPITest {
             APILocator.getHostAPI().archive(host, sysuser, false);
             APILocator.getHostAPI().delete(host, sysuser, false);
         	HibernateUtil.closeAndCommitTransaction();
-        	dwrAuthentication.shutdownWebContext();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(PermissionAPITest.class, e.getMessage());
@@ -124,11 +120,11 @@ public class PermissionAPITest {
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
         p.setInode(host.getIdentifier());
-        perm.save(p, host, sysuser, false);
+        permissionAPI.save(p, host, sysuser, false);
 
-        assertTrue(perm.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT, nrole));
-        assertFalse(perm.doesRoleHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, nrole));
-        assertFalse(perm.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, nrole));
+        assertTrue(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT, nrole));
+        assertFalse(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, nrole));
+        assertFalse(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, nrole));
     }
 
     @Test
@@ -144,16 +140,16 @@ public class PermissionAPITest {
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
         p.setInode(host.getIdentifier());
-        perm.save(p, host, sysuser, false);
+        permissionAPI.save(p, host, sysuser, false);
 
-        assertTrue(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT, user));
-        assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
-        assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
+        assertTrue(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT, user));
+        assertFalse(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
+        assertFalse(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
 
         /*should throw an error if the permissionable is null*/
         boolean throwException = false;
         try{
-        	perm.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user);
+        	permissionAPI.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user);
         }catch(NullPointerException e){
         	throwException=true;
         }
@@ -161,7 +157,7 @@ public class PermissionAPITest {
         
         throwException = false;
         try{
-        	perm.doesUserHaveInheriablePermissions(null, "HTMLPAGES", PermissionAPI.PERMISSION_READ, user);
+        	permissionAPI.doesUserHaveInheriablePermissions(null, "HTMLPAGES", PermissionAPI.PERMISSION_READ, user);
         }catch(NullPointerException e){
         	throwException=true;
         }
@@ -169,7 +165,7 @@ public class PermissionAPITest {
         
         throwException = false;
         try{
-        	perm.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user, false);
+        	permissionAPI.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user, false);
         }catch(NullPointerException e){
         	throwException=true;
         }
@@ -177,7 +173,7 @@ public class PermissionAPITest {
         
         throwException = false;
         try{
-        	perm.doesUserHavePermissions(null, "HTMLPAGES", user, false) ;
+        	permissionAPI.doesUserHavePermissions(null, "HTMLPAGES", user, false) ;
         }catch(NullPointerException e){
         	throwException=true;
         }
@@ -190,15 +186,15 @@ public class PermissionAPITest {
         APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
         Folder f=APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
 
-        assertTrue(perm.isInheritingPermissions(f));
+        assertTrue(permissionAPI.isInheritingPermissions(f));
         assertTrue(f.getParentPermissionable().equals(host));
 
-        perm.permissionIndividually(host, f, sysuser);
-        assertFalse(perm.isInheritingPermissions(f));
+        permissionAPI.permissionIndividually(host, f, sysuser);
+        assertFalse(permissionAPI.isInheritingPermissions(f));
 
-        perm.removePermissions(f);
+        permissionAPI.removePermissions(f);
 
-        assertTrue(perm.isInheritingPermissions(f));
+        assertTrue(permissionAPI.isInheritingPermissions(f));
         assertTrue(f.getParentPermissionable().equals(host));
     }
 
@@ -211,28 +207,28 @@ public class PermissionAPITest {
 
         Role nrole=getRole("TestingRole3");
 
-        perm.permissionIndividually(host, f1, sysuser);
-        perm.permissionIndividually(host, f2, sysuser);
+        permissionAPI.permissionIndividually(host, f1, sysuser);
+        permissionAPI.permissionIndividually(host, f2, sysuser);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f1.getInode());
-        perm.save(p1, f1, sysuser, false);
+        permissionAPI.save(p1, f1, sysuser, false);
 
         Permission p2=new Permission();
         p2.setPermission(PermissionAPI.PERMISSION_WRITE);
         p2.setRoleId(nrole.getId());
         p2.setInode(f1.getInode());
-        perm.save(p2, f1, sysuser, false);
+        permissionAPI.save(p2, f1, sysuser, false);
 
-        perm.copyPermissions(f1, f2);
+        permissionAPI.copyPermissions(f1, f2);
 
-        assertTrue(perm.doesRoleHavePermission(f2, PermissionAPI.PERMISSION_READ, nrole));
-        assertTrue(perm.doesRoleHavePermission(f2, PermissionAPI.PERMISSION_WRITE, nrole));
+        assertTrue(permissionAPI.doesRoleHavePermission(f2, PermissionAPI.PERMISSION_READ, nrole));
+        assertTrue(permissionAPI.doesRoleHavePermission(f2, PermissionAPI.PERMISSION_WRITE, nrole));
 
-        perm.removePermissions(f2);
-        perm.removePermissions(f1);
+        permissionAPI.removePermissions(f2);
+        permissionAPI.removePermissions(f1);
     }
 
     @Test
@@ -241,27 +237,27 @@ public class PermissionAPITest {
 
         APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
-        perm.permissionIndividually(host, f, sysuser, false);
+        permissionAPI.permissionIndividually(host, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
         Permission p2=new Permission();
         p2.setPermission(PermissionAPI.PERMISSION_WRITE);
         p2.setRoleId(nrole.getId());
         p2.setInode(f.getInode());
-        perm.save(p2, f, sysuser, false);
+        permissionAPI.save(p2, f, sysuser, false);
 
         int pp=0;
-        for(Permission p : perm.getPermissions(f,true))
+        for(Permission p : permissionAPI.getPermissions(f,true))
             if(p.getRoleId().equals(nrole.getId()))
                 pp = pp | p.getPermission();
         assertTrue(pp==(PermissionAPI.PERMISSION_READ|PermissionAPI.PERMISSION_WRITE));
 
-        perm.removePermissions(f);
+        permissionAPI.removePermissions(f);
     }
 
     @Test
@@ -270,24 +266,24 @@ public class PermissionAPITest {
 
         APILocator.getFolderAPI().createFolders("/f2/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", host, sysuser, false);
-        perm.permissionIndividually(host, f, sysuser, false);
+        permissionAPI.permissionIndividually(host, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
         Permission p2=new Permission();
         p2.setPermission(PermissionAPI.PERMISSION_EDIT);
         p2.setRoleId(nrole.getId());
         p2.setInode(f.getInode());
-        perm.save(p2, f, sysuser, false);
+        permissionAPI.save(p2, f, sysuser, false);
 
-        assertTrue(perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_READ).contains(nrole));
-        assertTrue(perm.getRolesWithPermission(f, PermissionAPI.PERMISSION_EDIT).contains(nrole));
+        assertTrue(permissionAPI.getRolesWithPermission(f, PermissionAPI.PERMISSION_READ).contains(nrole));
+        assertTrue(permissionAPI.getRolesWithPermission(f, PermissionAPI.PERMISSION_EDIT).contains(nrole));
 
-        perm.removePermissions(f);
+        permissionAPI.removePermissions(f);
     }
 
     @Test
@@ -301,24 +297,24 @@ public class PermissionAPITest {
 
         APILocator.getFolderAPI().createFolders("/f3/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f3/", host, sysuser, false);
-        perm.permissionIndividually(host, f, sysuser, false);
+        permissionAPI.permissionIndividually(host, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
         Permission p2=new Permission();
         p2.setPermission(PermissionAPI.PERMISSION_EDIT);
         p2.setRoleId(nrole.getId());
         p2.setInode(f.getInode());
-        perm.save(p2, f, sysuser, false);
+        permissionAPI.save(p2, f, sysuser, false);
 
-        assertTrue(perm.getUsersWithPermission(f, PermissionAPI.PERMISSION_READ).contains(user));
-        assertTrue(perm.getUsersWithPermission(f, PermissionAPI.PERMISSION_EDIT).contains(user));
+        assertTrue(permissionAPI.getUsersWithPermission(f, PermissionAPI.PERMISSION_READ).contains(user));
+        assertTrue(permissionAPI.getUsersWithPermission(f, PermissionAPI.PERMISSION_EDIT).contains(user));
 
-        perm.removePermissions(f);
+        permissionAPI.removePermissions(f);
     }
 
     @Test
@@ -327,46 +323,46 @@ public class PermissionAPITest {
 
         APILocator.getFolderAPI().createFolders("/f4/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
-        perm.permissionIndividually(host, f, sysuser, false);
+        permissionAPI.permissionIndividually(host, f, sysuser, false);
 
-        ArrayList<Permission> permissions=new ArrayList<Permission>(perm.getPermissions(f));
+        ArrayList<Permission> permissions=new ArrayList<Permission>(permissionAPI.getPermissions(f));
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_READ);
         p.setRoleId(nrole.getId());
         p.setInode(f.getInode());
         permissions.add(p);
-        perm.save(p, f, sysuser, false);
+        permissionAPI.save(p, f, sysuser, false);
 
         p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
         p.setRoleId(nrole.getId());
         p.setInode(f.getInode());
         permissions.add(p);
-        perm.save(p, f, sysuser, false);
+        permissionAPI.save(p, f, sysuser, false);
 
         p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
         p.setInode(f.getInode());
         permissions.add(p);
-        perm.save(p, f, sysuser, false);
+        permissionAPI.save(p, f, sysuser, false);
 
         p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_PUBLISH);
         p.setRoleId(nrole.getId());
         p.setInode(f.getInode());
         permissions.add(p);
-        perm.save(p, f, sysuser, false);
+        permissionAPI.save(p, f, sysuser, false);
 
-        List<Permission> list=perm.getPermissions(f,true);
+        List<Permission> list= permissionAPI.getPermissions(f,true);
         int permV=PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT
                 | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_READ;
         for(Permission x : list)
             if(x.getRoleId().equals(nrole.getId()))
                assertTrue(x.getPermission()==permV);
 
-        perm.removePermissions(f);
+        permissionAPI.removePermissions(f);
     }
 
     @Test
@@ -398,17 +394,17 @@ public class PermissionAPITest {
             CacheLocator.getPermissionCache().clearCache();
 
             // get them into cache
-            perm.getPermissions(f1);
-            perm.getPermissions(f2);
+            permissionAPI.getPermissions(f1);
+            permissionAPI.getPermissions(f2);
 
             Map<String,String> mm=new HashMap<String,String>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
             new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
 
-            assertTrue(perm.findParentPermissionable(f4).equals(hh));
-            assertTrue(perm.findParentPermissionable(f3).equals(hh));
-            assertTrue(perm.findParentPermissionable(f2).equals(hh));
-            assertTrue(perm.findParentPermissionable(f1).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(f4).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(f3).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(f2).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(f1).equals(hh));
         }
         finally {
             try{
@@ -470,12 +466,12 @@ public class PermissionAPITest {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
-            perm.permissionIndividually(perm.findParentPermissionable(f1), f1, sysuser);
-            assertTrue(perm.findParentPermissionable(cont1).equals(f1));
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f1), f1, sysuser);
+            assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f1));
 
-            perm.permissionIndividually(perm.findParentPermissionable(f2), f2, sysuser);
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f2), f2, sysuser);
             CacheLocator.getPermissionCache().clearCache();
-            assertTrue(perm.findParentPermissionable(cont1).equals(f2));
+            assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f2));
         }
         finally {
             try{
@@ -510,7 +506,7 @@ public class PermissionAPITest {
             Folder b = APILocator.getFolderAPI().createFolders("/ax/b/", hh, sysuser, false);
             Folder c = APILocator.getFolderAPI().createFolders("/ax/b/c/", hh, sysuser, false);
 
-            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser);
+            permissionAPI.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser);
 
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
             
@@ -563,25 +559,25 @@ public class PermissionAPITest {
             APILocator.getContentletAPI().isInodeIndexed(cc.getInode());
 
             // get them into cache
-            perm.getPermissions(folderA);   perm.getPermissions(ca);
-            perm.getPermissions(b);   perm.getPermissions(cb);
-            perm.getPermissions(c);   perm.getPermissions(cc);
-            perm.getPermissions(pageAssetFolderA);
-            perm.getPermissions(pb);
-            perm.getPermissions(pc);
+            permissionAPI.getPermissions(folderA);   permissionAPI.getPermissions(ca);
+            permissionAPI.getPermissions(b);   permissionAPI.getPermissions(cb);
+            permissionAPI.getPermissions(c);   permissionAPI.getPermissions(cc);
+            permissionAPI.getPermissions(pageAssetFolderA);
+            permissionAPI.getPermissions(pb);
+            permissionAPI.getPermissions(pc);
 
             // permission individually on folder a
-            perm.permissionIndividually(perm.findParentPermissionable(folderA), folderA, sysuser);
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(folderA), folderA, sysuser);
 
             // everybody should be inheriting from a
-            assertTrue(perm.findParentPermissionable(pageAssetFolderA).equals(folderA));
-            assertTrue(perm.findParentPermissionable(ca).equals(folderA));
-            assertTrue(perm.findParentPermissionable(b).equals(folderA));
-            assertTrue(perm.findParentPermissionable(pb).equals(folderA));
-            assertTrue(perm.findParentPermissionable(cb).equals(folderA));
-            assertTrue(perm.findParentPermissionable(c).equals(folderA));
-            assertTrue(perm.findParentPermissionable(pc).equals(folderA));
-            assertTrue(perm.findParentPermissionable(cc).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(pageAssetFolderA).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(ca).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(b).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(pb).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(cb).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(c).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(pc).equals(folderA));
+            assertTrue(permissionAPI.findParentPermissionable(cc).equals(folderA));
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
@@ -610,7 +606,7 @@ public class PermissionAPITest {
         Contentlet cont1=null;
         try {
             Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
-            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser);
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(a), a, sysuser);
 
             s = new Structure();
             s.setHost(hh.getIdentifier());
@@ -644,12 +640,12 @@ public class PermissionAPITest {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
-            perm.getPermissions(cont1); // to cache
+            permissionAPI.getPermissions(cont1); // to cache
 
             new RoleAjax().saveRolePermission(nrole2.getId(), a.getInode(), mm, false);
 
             boolean found1=false,found2=false;
-            for(Permission p : perm.getPermissions(cont1)) {
+            for(Permission p : permissionAPI.getPermissions(cont1)) {
                 found1 = found1 || p.getRoleId().equals(nrole1.getId());
                 found2 = found2 || p.getRoleId().equals(nrole2.getId());
             }
@@ -674,71 +670,71 @@ public class PermissionAPITest {
     	Folder m2 = APILocator.getFolderAPI().createFolders("/m1/m2/", host, sysuser, false);
     	Folder m3 = APILocator.getFolderAPI().createFolders("/m1/m2/m3/", host, sysuser, false);
 
-    	perm.permissionIndividually(perm.findParentPermissionable(m1), m1, sysuser, false);
-    	perm.permissionIndividually(perm.findParentPermissionable(m2), m2, sysuser, false);
-    	perm.permissionIndividually(perm.findParentPermissionable(m3), m3, sysuser, false);
+    	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m1), m1, sysuser, false);
+    	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m2), m2, sysuser, false);
+    	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m3), m3, sysuser, false);
 
     	Role nrole=getRole("TestingRole");
 
     	Permission p=new Permission(m1.getInode(),nrole.getId(),PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,false);
-    	perm.save(p, m1, sysuser, false);
+    	permissionAPI.save(p, m1, sysuser, false);
 
-    	perm.cascadePermissionUnder(m1, nrole);
+    	permissionAPI.cascadePermissionUnder(m1, nrole);
 
     }
 
     @Test
     public void issue1112() throws Exception {
 
-    	 Host hh = new Host();
-         hh.setHostname("issue1112.demo.dotcms.com");
-         hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        Host hh = new Host();
+        hh.setHostname("issue1112.demo.dotcms.com");
+        hh=APILocator.getHostAPI().save(hh, sysuser, false);
 
-         Role nrole=getRole("TestingRole10");
+        Role nrole=getRole("TestingRole10");
 
-         Map<String,String> mm=new HashMap<String,String>();
-         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
-         RoleAjax roleAjax = new RoleAjax();
-         roleAjax.saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
-         PermissionAPI permAPI = APILocator.getPermissionAPI();
-         List<Permission> perms = permAPI.getPermissionsByRole(nrole, true, true);
+        Map<String,String> mm=new HashMap<String,String>();
+        mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+        RoleAjax roleAjax = new RoleAjax();
+        roleAjax.saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
+        PermissionAPI permAPI = APILocator.getPermissionAPI();
+        List<Permission> perms = permAPI.getPermissionsByRole(nrole, true, true);
 
-          for (Permission p : perms) {
-			if(p!=null) {
-				assertTrue(p.getType().equals(TemplateLayout.class.getCanonicalName()));
-				assertTrue(p.getPermission()==(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
-			}
+        for (Permission p : perms) {
+            if(p!=null) {
+                assertTrue(p.getType().equals(TemplateLayout.class.getCanonicalName()));
+                assertTrue(p.getPermission()==(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+            }
 
-		}
-
-
-         try {
-        	 Template t = new Template();
-        	 t.setBody("\"<html>\\n <head>\\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />\\n </head>\\n <body>\\n  <div id=\"doc3-template\" name=\"globalContainer\">\\n   <div id=\"hd-template\"></div>\\n   <div id=\"bd-template\">\\n    <div id=\"yui-main-template\">\\n     <div class=\"yui-b-template\" id=\"splitBody0\"></div>\\n    </div>\\n   </div>\\n   <div id=\"ft-template\"></div>\\n  </div>\\n </body>\\n</html>\"");
-        	 t.setCountAddContainer(3);
-        	 t.setCountContainers(0);
-        	 t.setDrawed(true);
-        	 t.setDrawedBody("\"<div id=\"doc3-template\" name=\"globalContainer\"><div id=\"hd-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('hd-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Header</h1></div><div id=\"bd-template\"><div id=\"yui-main-template\"><div class=\"yui-b-template\" id=\"splitBody0\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('splitBody0');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Body</h1></div></div></div><div id=\"ft-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('ft-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Footer</h1></div></div>\"");
-        	 t.setiDate(new Date());
-        	 t.setTitle("testTemplate");
-        	 t.setType("template");
-
-        	 APILocator.getTemplateAPI().saveTemplate(t,hh, sysuser, false);
+        }
 
 
-             assertTrue(perm.findParentPermissionable(t).equals(hh));
-         }
-         finally {
-             try{
-             	HibernateUtil.startTransaction();
-                 APILocator.getHostAPI().archive(hh, sysuser, false);
-                 APILocator.getHostAPI().delete(hh, sysuser, false);
-             	HibernateUtil.closeAndCommitTransaction();
-             }catch(Exception e){
-             	HibernateUtil.rollbackTransaction();
-             	Logger.error(PermissionAPITest.class, e.getMessage());
-             }
-         }
+        try {
+            Template t = new Template();
+            t.setBody("\"<html>\\n <head>\\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />\\n </head>\\n <body>\\n  <div id=\"doc3-template\" name=\"globalContainer\">\\n   <div id=\"hd-template\"></div>\\n   <div id=\"bd-template\">\\n    <div id=\"yui-main-template\">\\n     <div class=\"yui-b-template\" id=\"splitBody0\"></div>\\n    </div>\\n   </div>\\n   <div id=\"ft-template\"></div>\\n  </div>\\n </body>\\n</html>\"");
+            t.setCountAddContainer(3);
+            t.setCountContainers(0);
+            t.setDrawed(true);
+            t.setDrawedBody("\"<div id=\"doc3-template\" name=\"globalContainer\"><div id=\"hd-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('hd-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Header</h1></div><div id=\"bd-template\"><div id=\"yui-main-template\"><div class=\"yui-b-template\" id=\"splitBody0\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('splitBody0');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Body</h1></div></div></div><div id=\"ft-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('ft-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Footer</h1></div></div>\"");
+            t.setiDate(new Date());
+            t.setTitle("testTemplate");
+            t.setType("template");
+
+            APILocator.getTemplateAPI().saveTemplate(t,hh, sysuser, false);
+
+
+            assertTrue(permissionAPI.findParentPermissionable(t).equals(hh));
+        }
+        finally {
+            try{
+                HibernateUtil.startTransaction();
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+                HibernateUtil.closeAndCommitTransaction();
+            }catch(Exception e){
+                HibernateUtil.rollbackTransaction();
+                Logger.error(PermissionAPITest.class, e.getMessage());
+            }
+        }
 
     }
 
@@ -760,9 +756,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, null, -1, -1);
+        List<User> users = permissionAPI.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, null, -1, -1);
 
         assertNotNull(users);
         assertTrue(users.size() > 0);
@@ -789,9 +785,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser", -1, -1);
+        List<User> users = permissionAPI.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser", -1, -1);
 
         assertNotNull(users);
         assertTrue(users.size() == 1);
@@ -818,9 +814,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, null);
+        int count = permissionAPI.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, null);
 
         assertTrue(count > 0);
 
@@ -845,9 +841,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser");
+        int count = permissionAPI.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser");
 
         assertTrue(count == 1);
 
@@ -872,9 +868,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser");
+        int count = permissionAPI.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser");
 
         assertTrue(count == 0);
 
@@ -899,9 +895,9 @@ public class PermissionAPITest {
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         p1.setInode(f.getInode());
-        perm.save(p1, f, sysuser, false);
+        permissionAPI.save(p1, f, sysuser, false);
 
-        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser", -1, -1);
+        List<User> users = permissionAPI.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser", -1, -1);
 
         assertNotNull(users);
         assertTrue(users.size() == 0);

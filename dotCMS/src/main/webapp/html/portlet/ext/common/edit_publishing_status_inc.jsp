@@ -81,10 +81,13 @@ function deletePushHistory() {
 	for(PushedAsset pushedAsset: pushedAssets) {
 		Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
 		Bundle bundle = APILocator.getBundleAPI().getBundleById(pushedAsset.getBundleId());
-		User owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
+		User owner = null;
+		if(UtilMethods.isSet(bundle)) {
+			owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
+		}
 %>
 	<tr  >
-		<td><%= owner.getFullName() %></td>
+		<td><%= (owner != null) ? owner.getFullName() : LanguageUtil.get(pageContext, "deleted") %></td>
 		<td><%= UtilMethods.dateToHTMLDate(pushedAsset.getPushDate()) %> - <%= UtilMethods.dateToHTMLTime(pushedAsset.getPushDate()) %></td>
 		 <td><%= (env != null) ? env.getName() : LanguageUtil.get(pageContext, "deleted") %></td>
 		 <td nowrap="nowrap">
