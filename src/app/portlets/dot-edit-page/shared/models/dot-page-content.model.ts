@@ -5,4 +5,5 @@ export interface DotPageContent {
     identifier: string;
     inode: string;
     type?: string;
+    baseType?: string;
 }

@@ -1,12 +1,18 @@
 import { Injectable } from '@angular/core';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 /**
  * Service to generate the markup related with the Toolbars and sub-menu for containers.
  */
 @Injectable()
 export class DotEditContentToolbarHtmlService {
-    constructor(private dotMessageService: DotMessageService) {}
+
+    private dragLabel: string;
+    private removeLabel: string;
+    private editLabel: string;
+
+    constructor(private dotMessageService: DotMessageService, private dotDOMHtmlUtilService: DotDOMHtmlUtilService) {}
 
     addContainerToolbar(doc: any): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -53,6 +59,7 @@ export class DotEditContentToolbarHtmlService {
                                 </ul>
                             </div>
                         `;
+
                         container.parentNode.insertBefore(containerToolbar, container);
                     });
                     resolve();
@@ -83,35 +90,13 @@ export class DotEditContentToolbarHtmlService {
 
                         const contentletToolbar = document.createElement('div');
                         contentletToolbar.classList.add('dotedit-contentlet__toolbar');
-                        contentletToolbar.innerHTML = `
-                            <button type="button" role="button"
-                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
-                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
-                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
-                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
-                                                  class="dotedit-contentlet__drag"
-                                                  aria-label="${res['editpage.content.contentlet.menu.drag']}">
-                                ${res['editpage.content.contentlet.menu.drag']}
-                            </button>
-                            <button type="button" role="button"
-                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
-                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
-                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
-                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
-                                                  class="dotedit-contentlet__edit"
-                                                  aria-label="${res['editpage.content.contentlet.menu.edit']}">
-                                ${res['editpage.content.contentlet.menu.edit']}
-                            </button>
-                            <button type="button" role="button"
-                                                  data-dot-content-identifier="${contentlet.dataset.dotIdentifier}"
-                                                  data-dot-content-inode="${contentlet.dataset.dotInode}"
-                                                  data-dot-container-uuid="${container.dataset.dotUuid}"
-                                                  data-dot-container-identifier="${container.dataset.dotIdentifier}"
-                                                  class="dotedit-contentlet__remove"
-                                                  aria-label="${res['editpage.content.contentlet.menu.remove']}">
-                                ${res['editpage.content.contentlet.menu.remove']}
-                            </button>
-                        `;
+
+                        this.dragLabel = res['editpage.content.contentlet.menu.drag'],
+                        this.editLabel = res['editpage.content.contentlet.menu.edit'],
+                        this.removeLabel = res['editpage.content.contentlet.menu.remove']
+
+                        contentletToolbar.innerHTML = this.getContentButton(contentlet.dataset.dotIdentifier, contentlet.dataset.dotInode);
+
 
                         const contentletContent = document.createElement('div');
                         contentletContent.classList.add('dotedit-contentlet__content');
@@ -129,5 +114,16 @@ export class DotEditContentToolbarHtmlService {
                 reject(error);
             });
         });
+    }
+
+    public getContentButton(identifier, inode): string {
+        const dataset = {
+            'dot-identifier': identifier,
+            'dot-inode': inode
+        };
+
+        return `${this.dotDOMHtmlUtilService.getButtomHTML(this.dragLabel, 'dotedit-contentlet__drag', dataset)}
+            ${this.dotDOMHtmlUtilService.getButtomHTML(this.editLabel, 'dotedit-contentlet__edit', dataset)}
+            ${this.dotDOMHtmlUtilService.getButtomHTML(this.removeLabel, 'dotedit-contentlet__remove', dataset)}`;
     }
 }

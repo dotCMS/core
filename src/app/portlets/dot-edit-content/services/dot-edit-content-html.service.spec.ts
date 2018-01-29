@@ -10,13 +10,28 @@ import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
 import { Config } from 'dotcms-js/core/config.service';
 import { Logger } from 'angular2-logger/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotConfirmationService } from '../../../api/services/dot-confirmation/dot-confirmation.service';
+import { DotPageContent } from '../../dot-edit-page/shared/models/dot-page-content.model';
+import { Observable } from 'rxjs/Observable';
 
 describe('DotEditContentHtmlService', () => {
     const fakeHTML = `
         <html>
-        <head></head>
+        <head>
+            <script>
+                function getDotNgModel() {
+                    return 'testing';
+                }
+            </script>
+        </head>
         <body>
-            <div data-dot-object="container" data-dot-identifier="123">
+            <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456">
+                <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
+                    <div class="large-column"></div>
+                </div>
+            </div>
+
+            <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654">
                 <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
                     <div class="large-column"></div>
                 </div>
@@ -47,6 +62,7 @@ describe('DotEditContentHtmlService', () => {
             Config,
             Logger,
             StringUtils,
+            DotConfirmationService,
             { provide: DotMessageService, useValue: messageServiceMock }
         ]);
         this.dotEditContentHtmlService = this.injector.get(DotEditContentHtmlService);
@@ -88,10 +104,10 @@ describe('DotEditContentHtmlService', () => {
 
     it('should add contentlet', () => {
         spyOn(this.dotEditContentHtmlService, 'renderAddedContentlet');
-        this.dotEditContentHtmlService.currentContainer = {
+        this.dotEditContentHtmlService.setContainterToAppendContentlet( {
             identifier: '123',
             uuid: '456'
-        };
+        });
 
         this.dotEditContentHtmlService.contentletEvents.next({
             name: 'save',
@@ -106,6 +122,11 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should edit contentlet', () => {
+        this.dotEditContentHtmlService.setContainterToEditContentlet( {
+            identifier: '123',
+            uuid: '456'
+        });
+
         spyOn(this.dotEditContentHtmlService, 'renderEditedContentlet');
 
         this.dotEditContentHtmlService.contentletEvents.next({
@@ -133,5 +154,96 @@ describe('DotEditContentHtmlService', () => {
         expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith({
             identifier: '456'
         });
+    });
+
+    it('should render added contentlet', () => {
+        let currentModel;
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        this.dotEditContentHtmlService.currentContainer = currentContainer;
+
+        const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+
+        const contentlet: DotPageContent = {
+            identifier: '67',
+            inode: '89',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => currentModel = model);
+
+        this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
+
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer)
+            .toHaveBeenCalledWith(currentContainer, contentlet);
+
+        expect(this.dotEditContentHtmlService.currentContainer).toBeNull('currentContainer must be null');
+        expect(currentModel).toEqual('testing', 'should tigger model change event');
+    });
+
+    it('should show error message when the content already exists', () => {
+        let currentModel = null;
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        this.dotEditContentHtmlService.currentContainer = currentContainer;
+
+        const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+
+        const dotConfirmationService = this.injector.get(DotConfirmationService);
+        spyOn(dotConfirmationService, 'alert');
+
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => currentModel = model);
+
+        this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
+
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).not.toHaveBeenCalled();
+        expect(this.dotEditContentHtmlService.currentContainer).toBeNull('The current container must be null');
+        expect(currentModel).toBeNull('should not tigger model change event');
+        expect(dotConfirmationService.alert).toHaveBeenCalled();
+    });
+
+    it('should render edit contentlet', () => {
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        const anotherContainer = {
+            identifier: '321',
+            uuid: '654'
+        };
+
+        this.dotEditContentHtmlService.currentContainer = currentContainer;
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+
+        const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+
+        this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
+
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(currentContainer, contentlet);
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(anotherContainer, contentlet);
     });
 });

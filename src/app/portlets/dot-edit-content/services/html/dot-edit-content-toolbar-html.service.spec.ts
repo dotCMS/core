@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 describe('DotEditContentToolbarHtmlService', () => {
     let dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService;
@@ -30,6 +31,7 @@ describe('DotEditContentToolbarHtmlService', () => {
         TestBed.configureTestingModule({
             providers: [
                 DotEditContentToolbarHtmlService,
+                DotDOMHtmlUtilService,
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });

@@ -10,7 +10,13 @@ import { MODEL_VAR_NAME } from './html/iframe-edit-mode.js';
 import { Subject } from 'rxjs/Subject';
 import { DotPageContainer } from '../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../dot-edit-page/shared/models/dot-page-content.model';
+import { DotConfirmationService } from '../../../api/services/dot-confirmation/dot-confirmation.service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 
+enum Action {
+    EDIT,
+    ADD
+}
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents: Subject<any> = new Subject();
@@ -18,21 +24,25 @@ export class DotEditContentHtmlService {
 
     pageModelChange: Subject<any> = new Subject();
 
-    public currentContainer: DotPageContainer;
+    currentContainer: DotPageContainer;
+
+    private currentAction: Action;
 
     constructor(
         private dotContainerContentletService: DotContainerContentletService,
         private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
         private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private loggerService: LoggerService
+        private loggerService: LoggerService,
+        private dotConfirmationService: DotConfirmationService,
+        private dotMessageService: DotMessageService
     ) {
         this.contentletEvents.subscribe((contentletEvent: any) => {
             switch (contentletEvent.name) {
                 case 'save':
-                    if (this.currentContainer) {
+                    if (this.currentAction === Action.ADD) {
                         this.renderAddedContentlet(contentletEvent.data);
-                    } else {
+                    } else if (this.currentAction === Action.EDIT) {
                         this.renderEditedContentlet(contentletEvent.data);
                     }
                     break;
@@ -46,6 +56,14 @@ export class DotEditContentHtmlService {
                     break;
             }
         });
+
+
+        this.dotMessageService
+            .getMessages([
+                'editpage.content.add.already.title',
+                'editpage.content.add.already.message'
+            ])
+            .subscribe();
     }
 
     /**
@@ -90,27 +108,27 @@ export class DotEditContentHtmlService {
      */
     renderEditedContentlet(contentlet: DotPageContent): void {
         const doc = this.getEditPageDocument();
-        const currentContentlet = doc.querySelector(
-            `div[data-dot-object="contentlet"][data-dot-content-identifier="${contentlet.identifier}"]`
-        );
+        const currentContentlets = doc.querySelectorAll(`div[data-dot-identifier="${contentlet.identifier}"]`);
 
-        contentlet.type = currentContentlet.dataset.dotType;
+        currentContentlets.forEach(currentContentlet => {
+            contentlet.type = currentContentlet.dataset.dotType;
 
-        const containerEl = currentContentlet.parentNode;
-        const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
+            const containerEl = currentContentlet.parentNode;
+            const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
 
-        containerEl.replaceChild(contentletEl, currentContentlet);
+            containerEl.replaceChild(contentletEl, currentContentlet);
 
-        const container: DotPageContainer = {
-            identifier: containerEl.dataset.dotIdentifier,
-            uuid: containerEl.dataset.dotUuid
-        };
+            const container: DotPageContainer = {
+                identifier: containerEl.dataset.dotIdentifier,
+                uuid: containerEl.dataset.dotUuid
+            };
 
-        this.dotContainerContentletService
-            .getContentletToContainer(container, contentlet)
-            .subscribe((contentletHtml: string) => {
-                this.renderHTMLToContentlet(contentletEl, contentletHtml);
-            });
+            this.dotContainerContentletService
+                .getContentletToContainer(container, contentlet)
+                .subscribe((contentletHtml: string) => {
+                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
+                });
+        });
     }
 
     /**
@@ -120,20 +138,27 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderAddedContentlet(contentlet: DotPageContent): void {
+
         const doc = this.getEditPageDocument();
         const containerEl = doc.querySelector(
             // tslint:disable-next-line:max-line-length
             `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
-        const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
-        containerEl.insertAdjacentElement('afterbegin', contentletEl);
 
-        this.dotContainerContentletService
-            .getContentletToContainer(this.currentContainer, contentlet)
-            .subscribe((contentletHtml: string) => {
-                this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                this.currentContainer = null;
-            });
+        if (!this.isContentExistInContainer(contentlet, containerEl)) {
+            const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
+            containerEl.insertAdjacentElement('afterbegin', contentletEl);
+
+            this.dotContainerContentletService
+                .getContentletToContainer(this.currentContainer, contentlet)
+                .subscribe((contentletHtml: string) => {
+                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
+                    this.currentContainer = null;
+                });
+        } else {
+            this.showContentAlreadyAddedError();
+        }
+
     }
 
     /**
@@ -144,6 +169,18 @@ export class DotEditContentHtmlService {
      */
     setContainterToAppendContentlet(pageContainer: DotPageContainer): void {
         this.currentContainer = pageContainer;
+        this.currentAction = Action.ADD;
+    }
+
+    /**
+     * Set the container id where a contentlet will be update
+     *
+     * @param {string} identifier
+     * @memberof DotEditContentHtmlService
+     */
+    setContainterToEditContentlet(pageContainer: DotPageContainer): void {
+        this.currentContainer = pageContainer;
+        this.currentAction = Action.EDIT;
     }
 
     /**
@@ -154,6 +191,24 @@ export class DotEditContentHtmlService {
      */
     getContentModel(): any {
         return this.getEditPageIframe().contentWindow.getDotNgModel();
+    }
+
+    private showContentAlreadyAddedError(): void {
+        this.currentContainer = null;
+        this.dotConfirmationService.alert({
+            header: this.dotMessageService.get('editpage.content.add.already.title'),
+            message: this.dotMessageService.get('editpage.content.add.already.message'),
+            footerLabel: {
+                acceptLabel: 'Ok'
+            }
+        });
+    }
+
+    private isContentExistInContainer(contentlet: DotPageContent, containerEL: HTMLElement): boolean {
+        const contentsSelector = `div[data-dot-object="contentlet"]`;
+        const doc = this.getEditPageDocument();
+        const currentContentlets: HTMLElement[] = <HTMLElement[]> Array.from(containerEL.querySelectorAll(contentsSelector).values());
+        return currentContentlets.some(contentElement => contentElement.dataset.dotIdentifier === contentlet.identifier);
     }
 
     private addContentToolBars(): void {
@@ -210,11 +265,14 @@ export class DotEditContentHtmlService {
 
     private bindButtonsEvent(button: HTMLElement, type: string): void {
         button.addEventListener('click', ($event: MouseEvent) => {
-            const target = <HTMLElement>$event.target;
+            const target = <HTMLElement> $event.target;
+            const container = <HTMLElement> target.closest('div[data-dot-object="container"]');
+
             this.contentletEvents.next({
                 name: type,
                 dataset: target.dataset,
-                contentletEvents: this.contentletEvents
+                contentletEvents: this.contentletEvents,
+                container: container ? container.dataset : null
             });
         });
     }
@@ -281,36 +339,16 @@ export class DotEditContentHtmlService {
         dotEditContentletEl.dataset.dotIdentifier = contentlet.identifier;
         dotEditContentletEl.dataset.dotInode = contentlet.inode;
         dotEditContentletEl.dataset.dotType = contentlet.type;
+        dotEditContentletEl.dataset.dotBasetype = contentlet.baseType;
 
         /*
             TODO: we have the method: DotEditContentToolbarHtmlService.addContentletMarkup that does this, we need
             to consolidate this.
         */
+        const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(contentlet.identifier, contentlet.inode);
+
         dotEditContentletEl.innerHTML = `<div class="dotedit-contentlet__toolbar">
-                <button type="button"
-                    data-dot-content-identifier="${contentlet.identifier}"
-                    data-dot-content-inode="${contentlet.inode}"
-                    data-dot-container-uuid="${this.currentContainer.uuid}"
-                    data-dot-container-identifier="${this.currentContainer.identifier}"
-                    class="dotedit-contentlet__drag">
-                    Drag
-                </button>
-                <button type="button"
-                    data-dot-content-identifier="${contentlet.identifier}"
-                    data-dot-content-inode="${contentlet.inode}"
-                    data-dot-container-uuid="${this.currentContainer.uuid}"
-                    data-dot-container-identifier="${this.currentContainer.identifier}"
-                    class="dotedit-contentlet__edit">
-                    Edit
-                </button>
-                <button type="button"
-                    data-dot-content-identifier="${contentlet.identifier}"
-                    data-dot-content-inode="${contentlet.inode}"
-                    data-dot-container-uuid="${this.currentContainer.uuid}"
-                    data-dot-container-identifier="${this.currentContainer.identifier}"
-                    class="dotedit-contentlet__remove">
-                    Remove
-                </button>
+                ${contenToolbarButtons}
             </div>
             <div class="dotedit-contentlet__content"><div class="loader__overlay"><div class="loader"></div></div></div>`;
 
@@ -357,7 +395,6 @@ export class DotEditContentHtmlService {
         // Removing the loading indicator
         contentletContentEl.innerHTML = '';
         this.appendNewContentlets(contentletContentEl, contentletHtml);
-
         // Update the model with the recently added contentlet
         this.pageModelChange.next(this.getContentModel());
     }

@@ -50,4 +50,26 @@ describe('DotDOMHtmlUtilService', () => {
 
         expect(scriptElementCreated.text).toEqual(text);
     });
+
+
+    it('should get a button html code', () => {
+        const label = 'ButtonLabel';
+        const className = 'ButtonClass';
+        const dataset = {
+            a: 'a value',
+            b: 'b value'
+        };
+        const buttonHTML = dotDOMHtmlUtilService.getButtomHTML(label, className, dataset);
+
+        const divElement = document.createElement('div');
+        divElement.innerHTML = buttonHTML;
+        const button = divElement.querySelector('button');
+
+        expect(button.getAttribute('class')).toEqual('ButtonClass', 'button class is wrong');
+        expect(button.getAttribute('type')).toEqual('button', 'button type is wrong');
+        expect(button.getAttribute('role')).toEqual('button', 'button role is wrong');
+        expect(button.getAttribute('aria-label')).toEqual('ButtonLabel', 'button aria-label is wrong');
+        expect(button.dataset['a']).toEqual('a value', 'button datset[a] is wrong');
+        expect(button.dataset['b']).toEqual('b value', 'button datset[a] is wrong');
+    });
 });
