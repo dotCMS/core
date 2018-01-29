@@ -29,6 +29,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.osgi.framework.BundleContext;
 import java.util.*;
+import java.util.stream.IntStream;
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -146,7 +147,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
 
-	public WorkflowTask findTaskById(String id) throws DotDataException {
+	public WorkflowTask findTaskById(final String id) throws DotDataException {
 		return workFlowFactory.findWorkFlowTaskById(id);
 	}
 
@@ -327,30 +328,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException {
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		List<WorkflowStep> steps = null;
+	@Override
+	public void reorderStep(final WorkflowStep step, final int order) throws DotDataException, AlreadyExistException {
+
+		final List<WorkflowStep> steps;
+		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
 
 		try {
-			steps = findSteps(scheme);
+
+			steps  = this.findSteps (scheme);
 		} catch (Exception e) {
-			throw new DotDataException(e.getLocalizedMessage());
-		}
-		List<WorkflowStep> newSteps = new ArrayList<WorkflowStep>();
-		order = (order < 0) ? 0 : (order >= steps.size()) ? (steps.size() - 1) : order;
-		for (int i = 0; i < steps.size(); i++) {
-			WorkflowStep s = steps.get(i);
-			if (s.equals(step)) {
-				continue;
-			}
-			newSteps.add(s);
+			throw new DotDataException(e.getLocalizedMessage(), e);
 		}
 
-		newSteps.add(order, step);
-		int newOrder=0;
-		for(WorkflowStep newStep : newSteps){
-			newStep.setMyOrder(newOrder++);
-			saveStep(newStep);
+		IntStream.range(0, steps.size())
+				.filter(i -> steps.get(i).getId().equals(step.getId()))
+				.boxed()
+				.findFirst()
+				.map(i -> steps.remove((int) i));
+
+		final int newOrder = (order > steps.size()) ? steps.size():order;
+		steps.add(newOrder, step);
+
+		int i = 0;
+		for(final WorkflowStep stepp : steps) {
+			stepp.setMyOrder(i++);
+			this.saveStep(stepp);
 		}
 	}
 
@@ -404,6 +407,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+
+		if (task.getLanguageId() <= 0) {
+
+			Logger.error(this, "The task: " + task.getId() +
+								", does not have language id, setting to the default one");
+			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
 		workFlowFactory.saveWorkflowTask(task);
 	}
 
@@ -1077,6 +1088,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					task.setCreatedBy(r.getId());
 					task.setWebasset(processor.getContentlet().getIdentifier());
+					task.setLanguageId(processor.getContentlet().getLanguageId());
 					if(processor.getWorkflowMessage() != null){
 						task.setDescription(processor.getWorkflowMessage());
 					}

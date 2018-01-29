@@ -5205,6 +5205,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             BeanUtils.copyProperties(task, newTask);
             newTask.setId(null);
             newTask.setWebasset(resultContentlet.getIdentifier());
+            newTask.setLanguageId(resultContentlet.getLanguageId());
+
             APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
 
             for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {

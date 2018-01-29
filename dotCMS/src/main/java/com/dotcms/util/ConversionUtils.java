@@ -119,8 +119,8 @@ public class ConversionUtils implements Serializable {
 
 		try {
 			if (UtilMethods.isSet(input)) {
-				if (input instanceof String) {
-					l = Long.parseLong(String.class.cast(input));
+				if (input instanceof CharSequence) {
+					l = Long.parseLong(input.toString());
 				} else if (input instanceof Number) {
 					l = Number.class.cast(input).longValue();
 				}

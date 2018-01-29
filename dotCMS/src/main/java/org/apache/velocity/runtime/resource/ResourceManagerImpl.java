@@ -456,10 +456,10 @@ public class ResourceManagerImpl
             }
             catch (ResourceNotFoundException rnfe)
             {
-                /*
-                 *  that's ok - it's possible to fail in
-                 *  multi-loader environment
-                 */
+                // throw if no data and we are at the last loader
+                if(!it.hasNext()) {
+                    throw rnfe;
+                }
             }
         }
 

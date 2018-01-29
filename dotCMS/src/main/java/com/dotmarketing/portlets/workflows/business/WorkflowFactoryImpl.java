@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.business;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -580,6 +581,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				final DotConnect db = new DotConnect();
 				db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
 				db.addParam(contentlet.getIdentifier());
+				db.addParam(contentlet.getLanguageId());
 
 				dbResults = db.loadObjectResults();
                 step      = (WorkflowStep) this.convertListToObjects
@@ -639,16 +641,23 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
+	public WorkflowTask findTaskByContentlet(final Contentlet contentlet) throws DotDataException {
 
 
-		if(cache.is404(contentlet)) return new WorkflowTask();
+		if(cache.is404(contentlet)) {
+			return new WorkflowTask();
+		}
+
 		WorkflowTask task = cache.getTask(contentlet);
+
 		if (task == null) {
 			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
-			hu.setQuery("from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ?");
+			hu.setQuery(
+					"from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ? and language_id = ?");
 			hu.setParam(contentlet.getIdentifier());
+			hu.setParam(contentlet.getLanguageId());
 			task = (WorkflowTask) hu.load();
+
 			if (task != null && task.getId()!=null) {
 				cache.addTask(contentlet, task);
 			}
@@ -656,6 +665,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				cache.add404Task(contentlet);
 			}
 		}
+
 		return task;
 	}
 
@@ -1366,6 +1376,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			wt.setDescription(getStringValue(row, "description"));
 			wt.setStatus(getStringValue(row, "status"));
 			wt.setWebasset(getStringValue(row, "webasset"));
+			wt.setLanguageId(getLongValue(row, "language_id"));
 			wfTasks.add(wt);
 		}
 
@@ -1375,6 +1386,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private String getStringValue(Map<String, Object> row, String key) {
 		Object value = row.get(key);
 		return (value == null) ? "" : value.toString();
+	}
+
+	private Long getLongValue(final Map<String, Object> row, final String key) {
+		return ConversionUtils.toLong(row.get(key), 0L);
 	}
 	// christian escalation
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {

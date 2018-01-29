@@ -613,7 +613,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             '<span id="' + folder.inode + '-TreeSignREF"><span class="' + signIMG + '" id="' + folder.inode + '-TreeSignIMG"></span></span>\n' +
             '<a class="' + folderClass + '" onmouseover="addClass(\'' + folder.inode + '-TreeREF\', \'underline\');" onmouseout="removeClass(\'' + folder.inode + '-TreeREF\', \'underline\'); return false;" id="' + folder.inode + '-TreeREF">\n' +
             '   <span class="' + folderIMG + '" id="' + folder.inode + '-TreeFolderIMG"></span>\n' +
-            '   <span id="' + folder.inode + '-TreeFolderName">' + shortenString(folderName, 25) + '</span>' +
+            '   <span id="' + folder.inode + '-TreeFolderName" title="' + folderName + '">' + shortenString(folderName, 25) + '</span>' +
             '</a>\n' +
             '<ul id="' + folder.inode + '-TreeChildrenUL"></ul>\n');
         $(parent + '-TreeChildrenUL').appendChild(folderLI);
@@ -809,7 +809,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
                     '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                     '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN">' + shortenString(asset.name, 30) + '</span>\n' +
+                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + shortenString(asset.name, 30) + '</span>\n' +
                     '    </a>\n' +
                     '    </td>\n' +
                     '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -872,6 +872,8 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 var assetPrettyDate = getPrettyDate(asset.modDate);
 
+                var assetFullName = name;
+
                 //processing asset description and name to avoid long words that break the column width
                 name = shortenLongWords(name, 30)
                 name = shortenString(name, 30)
@@ -891,7 +893,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                         '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -901,7 +903,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
