@@ -26,6 +26,7 @@ public class WorkflowTask  implements Serializable
     String description;
     String status;
     String webasset;
+    long languageId;
     
     public WorkflowTask(){
     	creationDate = new Date();
@@ -138,6 +139,13 @@ public class WorkflowTask  implements Serializable
         this.title = title;
     }
 
+    public long getLanguageId() {
+        return languageId;
+    }
+
+    public void setLanguageId(final long languageId) {
+        this.languageId = languageId;
+    }
 
     public String getWebasset() {
         return webasset;
@@ -164,6 +172,7 @@ public class WorkflowTask  implements Serializable
         oMap.put("modDate", this.getModDate());
         oMap.put("title", this.getTitle());
         oMap.put("status", this.getStatus());
+        oMap.put("languageId", this.getLanguageId());
         oMap.put("id",this.id);
         return oMap;
     }
