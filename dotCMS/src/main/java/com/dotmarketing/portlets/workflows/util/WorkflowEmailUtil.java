@@ -127,7 +127,7 @@ public class WorkflowEmailUtil {
                 mail.sendMessage();
             }
         } catch (Exception e) {
-            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage());
+            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage(), e);
         }
 
     }
