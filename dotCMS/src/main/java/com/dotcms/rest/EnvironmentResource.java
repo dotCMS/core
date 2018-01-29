@@ -44,7 +44,8 @@ public class EnvironmentResource {
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, LanguageException, JSONException {
+	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params)
+			throws DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
@@ -76,10 +77,12 @@ public class EnvironmentResource {
 						.findEnvironmentsWithServers();
 				for (Environment e : app)
 					environments.add(e);
-			} else
-				for (Role r : roles)
+			} else {
+				for (Role r : roles) {
 					environments.addAll(APILocator.getEnvironmentAPI()
 							.findEnvironmentsByRole(r.getId()));
+				}
+			}
 
 			//For each env, create one json and add it to the array
 			for (Environment e : environments) {

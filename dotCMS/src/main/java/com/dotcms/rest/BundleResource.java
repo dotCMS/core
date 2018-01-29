@@ -41,7 +41,8 @@ public class BundleResource {
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
+    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params )
+            throws DotStateException, DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);

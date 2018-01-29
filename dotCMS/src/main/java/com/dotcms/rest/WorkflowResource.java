@@ -17,7 +17,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -48,8 +47,7 @@ public class WorkflowResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response fireWorkflow(@Context HttpServletRequest request,
-			String json) throws JsonProcessingException, IOException,
-			DotContentletStateException, DotDataException {
+			String json) throws JsonProcessingException, IOException, DotDataException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonParams = mapper.readTree(json);
         String callback = null, 

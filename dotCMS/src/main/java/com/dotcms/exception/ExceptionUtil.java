@@ -6,6 +6,8 @@ package com.dotcms.exception;
  */
 public class ExceptionUtil {
 
+    private ExceptionUtil () {}
+
     /**
      * Returns true if the Throwable is instance or contains a cause of the specified ExceptionClass
      * @param e

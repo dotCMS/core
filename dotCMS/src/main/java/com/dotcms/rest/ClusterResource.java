@@ -53,7 +53,8 @@ public class ClusterResource {
     @GET
     @Path ("/getNodesStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
+    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString());
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -199,7 +200,8 @@ public class ClusterResource {
     @GET
     @Path ("/getNodeStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
+    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
 
@@ -311,7 +313,8 @@ public class ClusterResource {
     @GET
     @Path ("/getESConfigProperties/{params:.*}")
     @Produces ("application/json")
-    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, JSONException {
+    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

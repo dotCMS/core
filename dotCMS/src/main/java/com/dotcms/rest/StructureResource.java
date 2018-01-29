@@ -35,7 +35,8 @@ public class StructureResource {
 	public Response getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response,
                                                    @PathParam("path") String path, @QueryParam("name") String name,
                                                    @PathParam ("type") String type,
-                                                   @PathParam ("callback") String callback) throws DotStateException, DotDataException, JSONException {
+                                                   @PathParam ("callback") String callback)
+											throws DotStateException, DotDataException, JSONException {
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put( "type", type );
@@ -72,7 +73,7 @@ public class StructureResource {
 				List<Structure> allStructures = StructureFactory
 						.getStructures("structuretype,upper(name)", -1);
 				for (Structure st : allStructures) {
-					if (st.isArchived() == false && (nameFilter.isEmpty() || (st.getName()
+					if (!st.isArchived() && (nameFilter.isEmpty() || (st.getName()
 							.toLowerCase().startsWith(nameFilter)))) {
 						for (Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
 							if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {

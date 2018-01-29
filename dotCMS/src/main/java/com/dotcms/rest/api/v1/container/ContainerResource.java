@@ -57,7 +57,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.beust.jcommander.internal.Maps;
@@ -149,7 +148,7 @@ public class ContainerResource implements Serializable {
     @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
-            @PathParam("uuid") final String uuid) throws DotDataException, ParseErrorException,
+            @PathParam("uuid") final String uuid) throws DotDataException,
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
@@ -243,7 +242,7 @@ public class ContainerResource implements Serializable {
     public final Response removeContentletFromContainer(@Context final HttpServletRequest req,
             @Context final HttpServletResponse res, @PathParam("containerId") final String containerId,
             @PathParam("contentletId") final String contentletId, @QueryParam("order") final long order,
-            @PathParam("uid") final String uid) throws DotDataException, ParseErrorException,
+            @PathParam("uid") final String uid) throws DotDataException,
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
@@ -305,8 +304,7 @@ public class ContainerResource implements Serializable {
     @Path("/containerContent/{params:.*}")
     public final Response containerContents(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
-            throws DotDataException, ParseErrorException, MethodInvocationException,
-            ResourceNotFoundException, IOException {
+            throws DotDataException, ResourceNotFoundException, IOException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();

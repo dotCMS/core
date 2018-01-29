@@ -140,7 +140,7 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 	@Path("/layout/{params:.*}")
 	@Produces("text/html")
 	public Response getLayout ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam( "params" ) String params )
-			throws DotDataException, ServletException, IOException, DotRuntimeException,
+			throws DotDataException, ServletException, IOException,
 			PortalException, SystemException {
 
 		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);

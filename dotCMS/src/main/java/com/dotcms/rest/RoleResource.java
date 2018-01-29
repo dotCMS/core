@@ -63,7 +63,8 @@ public class RoleResource {
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, JSONException {
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params)
+			throws DotStateException, DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
