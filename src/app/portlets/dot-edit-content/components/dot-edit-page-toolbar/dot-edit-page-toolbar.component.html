@@ -2,20 +2,21 @@
     <div class="ui-toolbar-group-left">
         <div class="edit-page-toolbar__header">
             <div class="edit-page-toolbar__page-url-wrapper">
-                <h2 class="edit-page-toolbar__page-url">{{pageUrl}}</h2>
-                <button pButton icon="fa-clone"></button>
+                <h2 class="edit-page-toolbar__page-url">{{page.pageUri}}</h2>
+                <button pButton icon="fa-clone" class="edit-page-toolbar__copy-url" (click)="copyUrlToClipboard($event)"></button>
             </div>
-            <h3 class="edit-page-toolbar__page-title">{{pageTitle}}</h3>
+            <h3 class="edit-page-toolbar__page-title">{{page.pageTitle}}</h3>
         </div>
     </div>
 
     <div class="ui-toolbar-group-center">
-        <p-inputSwitch class="edit-page-toolbar__locker" [(ngModel)]="pageLocked" (onChange)="lockPageHandler($event)"></p-inputSwitch>
+        <p-inputSwitch class="edit-page-toolbar__locker" [(ngModel)]="page.locked" (onChange)="lockPageHandler($event)"></p-inputSwitch>
         <p-selectButton flat class="edit-page-toolbar__state-selector" [(ngModel)]="stateSelected" (onChange)="stateSelectorHandler($event.value)" [options]="states"></p-selectButton>
     </div>
 
     <div class="ui-toolbar-group-right">
-        <button pButton flat class="edit-page-toolbar__save" [disabled]="!canSave" [label]="dotMessageService.get('editpage.toolbar.primary.action')" (click)="save.emit($event)"></button>
+        <!-- Only show the button in edit mode -->
+        <button pButton flat class="edit-page-toolbar__save" *ngIf="stateSelected === 'EDIT_MODE'" [disabled]="!canSave" [label]="dotMessageService.get('editpage.toolbar.primary.action')" (click)="save.emit($event)"></button>
         <p-splitButton flat *ngIf="workflowsActions.length" class="edit-page-toolbar__actions" [label]="dotMessageService.get('editpage.toolbar.primary.workflow.actions')" [model]="workflowsActions" #actionsButton></p-splitButton>
     </div>
 </p-toolbar>

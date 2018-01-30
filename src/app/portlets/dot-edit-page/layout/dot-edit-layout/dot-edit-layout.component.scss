@@ -59,7 +59,9 @@
 }
 
 .dot-edit-layout__toolbar-add {
+    align-self: flex-end;
     margin-bottom: $basic-padding;
+    width: $field-height;
 }
 
 .dot-edit-layout__toolbar-template-name {

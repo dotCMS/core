@@ -40,17 +40,4 @@ export class PageViewService {
             url: `v1/page/${pageIdentifier}/layout`
         }).pluck('entity');
     }
-
-    /**
-     * Lock a page given the identifier
-     *
-     * @param {string} pageIdentifier
-     * @returns {Observable<any>}
-     * @memberof PageViewService
-     */
-    lock(pageIdentifier: string): Observable<any> {
-        return Observable.of({
-            lock: true
-        }).delay(1000);
-    }
 }

@@ -19,7 +19,7 @@ export const EDIT_PAGE_CSS = `
     }
 
     [data-dot-object="contentlet"] {
-        margin: 36px 20px 20px 20px;
+        margin: 40px 16px 16px;
         position: relative;
         padding-top: 25px;
         min-height: 60px;
@@ -97,9 +97,9 @@ export const EDIT_PAGE_CSS = `
     }
 
     .dotedit-container__toolbar {
-        position:relative;
-        margin:0 0 -26px 8px;
-        display: table;
+        position: relative;
+        margin: -20px 8px 0 0;
+        float: right;
     }
 
     .dotedit-container__toolbar button,
@@ -138,6 +138,10 @@ export const EDIT_PAGE_CSS = `
 
      .dotedit-contentlet__toolbar button {
         margin-right: 8px;
+     }
+
+     .dotedit-contentlet__toolbar button:last-child {
+        margin-right: 0;
      }
 
     .dotedit-container__add,

@@ -1,10 +1,8 @@
 <dot-edit-page-toolbar
-    (lockPage)="lockPageHandler($event)"
-    (pageState)="statePageHandler($event)"
+    (changeState)="statePageHandler($event)"
     (save)="saveContent()"
+    [page]="page"
     [canSave]="isModelUpdated"
-    [pageTitle]="pageTitle"
-    [pageUrl]="pageUrl"
     [pageWorkflows]="pageWorkFlows | async"
     class="dot-edit__toolbar"
     #toolbar>

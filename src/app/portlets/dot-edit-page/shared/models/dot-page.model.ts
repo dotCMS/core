@@ -1,30 +1,49 @@
 import { ContentType } from './../../../content-types/shared/content-type.model';
 
+// TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {
     archived?: boolean;
+    cacheTTL?: number;
     categoryId?: string;
     content?: boolean;
     contentType: ContentType;
     contentTypeId?: string;
+    disabledWysiwyg?: Array<boolean>;
+    fileAsset: boolean;
     folder?: string;
     friendlyName: string;
     host: string;
     htmlpage?: boolean;
     httpsRequired?: boolean;
     identifier: string;
+    inode: string;
     keyValue?: boolean;
     languageId?: number;
+    lastReview?: Date;
+    live?: boolean;
     locked?: boolean;
+    lowIndexPriority?: boolean;
+    menuOrder?: number;
+    metadata?: string;
     modDate?: Date;
+    modUser?: string;
     name: string;
+    new?: boolean;
+    nextReview?: string;
     owner?: string;
     pageUrl?: string;
+    parentPermissionable?: any;
     permissionId?: string;
     permissionType?: string;
+    redirect?: string;
+    reviewInterval?: string;
     seoDescription?: string;
     seoKeywords?: string;
     showOnMenu?: boolean;
     sortOrder?: number;
+    structure?: any;
+    structureInode?: string;
+    systemHost: false;
     templateId?: string;
     title?: string;
     type: string;
@@ -32,4 +51,5 @@ export interface DotPage {
     vanityUrl?: boolean;
     versionId?: string;
     versionType: string;
+    working?: boolean;
 }

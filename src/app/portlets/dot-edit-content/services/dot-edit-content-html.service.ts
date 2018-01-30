@@ -67,6 +67,29 @@ export class DotEditContentHtmlService {
     }
 
     /**
+     * Load code into iframe
+     *
+     * @param {string} editPageHTML
+     * @param {ElementRef} iframeEl
+     * @returns {Promise<any>}
+     * @memberof DotEditContentHtmlService
+     */
+    renderPage(editPageHTML: string, iframeEl: ElementRef): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.iframe = iframeEl;
+            this.loadCodeIntoIframe(editPageHTML);
+
+            const iframeElement = this.getEditPageIframe();
+            iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModelChange;
+            iframeElement.contentWindow.contentletEvents = this.contentletEvents;
+
+            iframeElement.addEventListener('load', () => {
+                resolve(true);
+            });
+        });
+    }
+
+    /**
      * Initalize edit content mode
      *
      * @param {string} editPageHTML
@@ -74,14 +97,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     initEditMode(editPageHTML: string, iframeEl: ElementRef): void {
-        this.iframe = iframeEl;
-        this.loadCodeIntoIframe(editPageHTML);
-
-        const iframeElement = this.getEditPageIframe();
-        iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModelChange;
-        iframeElement.contentWindow.contentletEvents = this.contentletEvents;
-
-        iframeElement.addEventListener('load', () => {
+        this.renderPage(editPageHTML, iframeEl).then(() => {
             this.setEditMode();
         });
     }
