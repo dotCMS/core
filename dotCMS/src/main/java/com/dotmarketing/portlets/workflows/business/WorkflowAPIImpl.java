@@ -699,7 +699,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         final WorkflowAction action = workFlowFactory.findAction(id);
 
-        DotPreconditions.isTrue(
+        DotPreconditions.isTrue(null != action &&
                 APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow",user),
                 () -> "User " + user + " cannot read action " + action.getName(),
                 DotSecurityException.class);
