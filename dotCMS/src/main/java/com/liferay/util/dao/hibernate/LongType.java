@@ -25,9 +25,9 @@ package com.liferay.util.dao.hibernate;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import net.sf.hibernate.Hibernate;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.UserType;
+import com.dotcms.repackage.net.sf.hibernate.Hibernate;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.UserType;
 
 /**
  * <a href="LongType.java.html"><b><i>View Source</i></b></a>

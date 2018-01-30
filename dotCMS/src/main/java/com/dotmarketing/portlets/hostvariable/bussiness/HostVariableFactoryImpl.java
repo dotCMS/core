@@ -8,7 +8,7 @@ import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.InodeUtils;
 import java.util.ArrayList;
 import java.util.List;
-import net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import org.apache.commons.beanutils.BeanUtils;
 
 public class HostVariableFactoryImpl extends HostVariableFactory{

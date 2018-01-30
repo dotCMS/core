@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
 
 public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
@@ -132,7 +132,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.cleanInodeTableData(tableName, type);
 						//FixAssetsProcessStatus.addAError();
 					}
@@ -154,7 +154,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.removeOphanedInodes(tableName, type);
 						
 					}

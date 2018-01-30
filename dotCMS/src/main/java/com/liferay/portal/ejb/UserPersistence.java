@@ -38,11 +38,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.ObjectNotFoundException;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.ScrollableResults;
-import net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.Query;
+import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
+import com.dotcms.repackage.net.sf.hibernate.Session;
 
 /**
  * <a href="UserPersistence.java.html"><b><i>View Source</i></b></a>

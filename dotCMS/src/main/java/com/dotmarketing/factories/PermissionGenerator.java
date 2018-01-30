@@ -1,8 +1,8 @@
 package com.dotmarketing.factories;
 
 import java.io.Serializable;
-import net.sf.hibernate.engine.SessionImplementor;
-import net.sf.hibernate.id.IdentifierGenerator;
+import com.dotcms.repackage.net.sf.hibernate.engine.SessionImplementor;
+import com.dotcms.repackage.net.sf.hibernate.id.IdentifierGenerator;
 
 
 /** 

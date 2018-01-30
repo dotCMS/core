@@ -25,18 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import net.sf.hibernate.CallbackException;
-import net.sf.hibernate.FlushMode;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Interceptor;
-import net.sf.hibernate.MappingException;
-import net.sf.hibernate.ObjectNotFoundException;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.SessionFactory;
-import net.sf.hibernate.cfg.Configuration;
-import net.sf.hibernate.cfg.Mappings;
-import net.sf.hibernate.type.Type;
+import com.dotcms.repackage.net.sf.hibernate.CallbackException;
+import com.dotcms.repackage.net.sf.hibernate.FlushMode;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.Interceptor;
+import com.dotcms.repackage.net.sf.hibernate.MappingException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.Query;
+import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
+import com.dotcms.repackage.net.sf.hibernate.type.Type;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -641,27 +641,27 @@ public class HibernateUtil {
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Id",cfg);
-				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.MySQLDialect");
+				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.MySQLDialect");
 			} else if (DbConnectionFactory.isPostgres()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
-				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.PostgreSQLDialect");
+				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.PostgreSQLDialect");
 			} else if (DbConnectionFactory.isMsSql()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Id",cfg);
-				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.SQLServerDialect");
+				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.SQLServerDialect");
 			} else if (DbConnectionFactory.isOracle()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
-				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.OracleDialect");
+				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect");
 			} else if (DbConnectionFactory.isH2()) {
 			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
                 cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
                 getPluginsHBM("Id",cfg);
-                cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.HSQLDialect");
+                cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.HSQLDialect");
 			}
 
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());

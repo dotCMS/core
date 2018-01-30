@@ -13,7 +13,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import junit.framework.Assert;
-import net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

@@ -29,8 +29,8 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.SystemProperties;
 import com.liferay.util.dao.hibernate.SessionConfiguration;
 import java.io.InputStream;
-import net.sf.hibernate.cfg.Configuration;
-import net.sf.hibernate.mapping.Table;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.mapping.Table;
 
 /**
  * <a href="HibernateConfiguration.java.html"><b><i>View Source</i></b></a>

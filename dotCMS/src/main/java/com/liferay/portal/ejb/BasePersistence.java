@@ -24,9 +24,9 @@ package com.liferay.portal.ejb;
 
 import com.liferay.portal.util.HibernateConfiguration;
 import com.liferay.portal.util.HibernateUtil;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.dialect.Dialect;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
 
 
 /**

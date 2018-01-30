@@ -66,8 +66,8 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.persister.AbstractEntityPersister;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills

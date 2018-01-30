@@ -27,8 +27,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import javax.sql.DataSource;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.connection.ConnectionProvider;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.connection.ConnectionProvider;
 
 /**
  * <a href="DSConnectionProvider.java.html"><b><i>View Source</i></b></a>

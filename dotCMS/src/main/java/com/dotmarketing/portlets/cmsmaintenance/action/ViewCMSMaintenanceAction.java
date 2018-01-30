@@ -602,9 +602,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				//http://jira.dotmarketing.net/browse/DOTCMS-6059
 				if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.Set.class, java.util.Set.class);
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.List.class, java.util.List.class);
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.Map.class, java.util.Map.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Set.class, java.util.Set.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.List.class, java.util.List.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Map.class, java.util.Map.class);
 					Mapper mapper = _xstream.getMapper();
 					_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 					_xstream.registerConverter(new HibernateMapConverter(mapper));
