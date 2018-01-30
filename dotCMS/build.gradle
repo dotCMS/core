@@ -884,6 +884,7 @@ task copyNodeModules(type: Copy) {
     finalizedBy 'cleanNodeModules'
 }
 
+// reference:  https://github.com/palantir/gradle-docker
 docker {
     name "dotcms/devtest:$dotcmsReleaseVersion"
     tags 'latest'
