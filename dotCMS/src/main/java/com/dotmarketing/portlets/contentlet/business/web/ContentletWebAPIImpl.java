@@ -405,7 +405,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(UtilMethods.isSet(wfActionId)){
 				WorkflowAction action = null;
 				try{
-					action = APILocator.getWorkflowAPI().findAction(wfActionId, currentContentlet, user);
+					action = APILocator.getWorkflowAPI().findActionValidatingPermissions(wfActionId, currentContentlet, user);
 				}
 				catch(Exception e){
 

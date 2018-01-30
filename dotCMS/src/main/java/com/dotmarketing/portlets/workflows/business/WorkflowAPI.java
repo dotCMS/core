@@ -262,7 +262,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public WorkflowAction findAction(String id, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
+	public WorkflowAction findActionValidatingPermissions(String id, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Finds an action associated to the steps and user permissions over the workflow portlet.
@@ -287,7 +287,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public WorkflowAction findAction(String actionId, String stepId, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
+	public WorkflowAction findActionValidatingPermissions(String actionId, String stepId, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give

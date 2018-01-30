@@ -677,7 +677,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
     @CloseDBIfOpened
-    public WorkflowAction findAction(final String id, final Permissionable permissionable,
+    public WorkflowAction findActionValidatingPermissions(final String id, final Permissionable permissionable,
             final User user) throws DotDataException, DotSecurityException {
 
         final WorkflowAction action = workFlowFactory.findAction(id);
@@ -708,7 +708,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
     @CloseDBIfOpened
-    public WorkflowAction findAction(final String actionId,
+    public WorkflowAction findActionValidatingPermissions(final String actionId,
             final String stepId, final Permissionable permissionable,
             final User user) throws DotDataException, DotSecurityException {
 
