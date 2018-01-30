@@ -13,8 +13,10 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredLayoutException;
@@ -136,6 +138,8 @@ public class AuthenticationResource implements Serializable {
             } catch (LanguageException e1) {
                 // Quiet
             }
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());

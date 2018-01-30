@@ -50,7 +50,7 @@ public class ContentletTransformer implements DBTransformer {
         disabledWysiwyg.add(map.get("disabled_wysiwyg"));
         contentlet.setDisabledWysiwyg(disabledWysiwyg);
         contentlet.setIdentifier((String) map.get("identifier"));
-        contentlet.setLanguageId((Long) map.get("language_id"));
+        contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
 
         String key;
         List<String> ignoredFields = new ArrayList<>();

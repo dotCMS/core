@@ -13,6 +13,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -82,7 +83,7 @@ public class MenuResource implements Serializable {
 	@AccessControlAllowOrigin
 	@InitRequestRequired
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getMenus(@Context final HttpServletRequest httpServletRequest) throws DotSecurityException, LanguageException, ClassNotFoundException
+	public Response getMenus(@Context final HttpServletRequest httpServletRequest) throws LanguageException, ClassNotFoundException
 	{
 
 		this.webResource.init(true, httpServletRequest, true);
@@ -93,15 +94,17 @@ public class MenuResource implements Serializable {
 
 		try {
 
-			final User user = this.userAPI.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
+			final User user = this.userAPI
+					.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
 			final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
 			final MenuContext menuContext = new MenuContext(httpServletRequest, user);
 
 			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
 
-				Layout layout = layouts.get( layoutIndex );
+				Layout layout = layouts.get(layoutIndex);
 				String tabName = LanguageUtil.get(user, layout.getName());
-				String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils.escapeJavaScript(LanguageUtil.get(user, layout.getDescription())));
+				String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils
+						.escapeJavaScript(LanguageUtil.get(user, layout.getDescription())));
 				List<String> portletIds = layout.getPortletIds();
 
 				if (null != portletIds && portletIds.size() > 0) {
@@ -121,6 +124,8 @@ public class MenuResource implements Serializable {
 			}
 
 			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		} catch (DotDataException | NoSuchUserException e) {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

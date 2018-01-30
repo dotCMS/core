@@ -1,5 +1,6 @@
 package com.dotmarketing.beans.transform;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Tree;
 
@@ -35,7 +36,7 @@ public class TreeTransformer implements DBTransformer<Tree> {
         tree.setParent((String)map.getOrDefault("parent", null));
         tree.setChild((String)map.getOrDefault("child", null));
         tree.setRelationType((String)map.getOrDefault("relation_type", null));
-        tree.setTreeOrder((Integer)map.getOrDefault("tree_order", 0));
+        tree.setTreeOrder(ConversionUtils.toInt(map.getOrDefault("tree_order", 0), 0));
         
         return tree;
     }

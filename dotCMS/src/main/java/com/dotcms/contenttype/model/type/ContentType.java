@@ -227,22 +227,20 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @JsonIgnore
   @Value.Lazy
   public Permissionable getParentPermissionable() {
-    try {
-
-      PermissionableProxy pp = new PermissionableProxy();
-
-      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
-        pp.setIdentifier(this.host());
-        pp.setInode(this.host());
-        pp.setType(Host.class.getCanonicalName());
-      } else {
-        pp.setIdentifier(this.folder());
-        pp.setInode(this.folder());
-        pp.setType(Folder.class.getCanonicalName());
+    try{
+      if (!FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+        Folder folder = new Folder();
+        folder.setIdentifier(this.host());
+        folder.setInode(this.host());
+        return folder;
+      } else{
+        Host host = new Host();
+        host.setIdentifier(this.folder());
+        host.setInode(this.folder());
+        return host;
       }
 
-      return pp;
-    } catch (Exception e) {
+    }catch (Exception e) {
       throw new DotRuntimeException(e.getMessage(), e);
     }
   }

@@ -10,6 +10,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
 import com.dotcms.util.CollectionsUtils;
@@ -186,8 +187,11 @@ public  class WebResource {
 
         if (this.isLoggedAsUser(session)){
             try {
-                user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
-            } catch (DotDataException|DotSecurityException e) {
+                user = this.userAPI.loadUserById(
+                        (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+            } catch (DotSecurityException e) {
+                throw new ForbiddenException(e);
+            } catch (DotDataException e) {
                 throw new RuntimeException(e);
             }
         }else {

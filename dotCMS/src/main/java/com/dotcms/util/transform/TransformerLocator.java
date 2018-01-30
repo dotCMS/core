@@ -5,7 +5,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.beans.transform.MultiTreeTransformer;
-import com.dotmarketing.beans.transform.OracleTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -161,6 +160,6 @@ public class TransformerLocator {
     public static TreeTransformer createTreeTransformer(
         List<Map<String, Object>> initList) {
 
-        return DbConnectionFactory.isOracle()?new OracleTreeTransformer(initList):new TreeTransformer(initList);
+        return new TreeTransformer(initList);
     }
 }

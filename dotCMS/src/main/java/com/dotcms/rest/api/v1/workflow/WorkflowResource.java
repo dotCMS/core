@@ -18,6 +18,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
@@ -502,6 +503,8 @@ public class WorkflowResource {
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
             response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
