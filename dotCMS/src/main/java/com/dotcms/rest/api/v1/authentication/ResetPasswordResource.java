@@ -14,6 +14,7 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
@@ -97,7 +98,7 @@ public class ResetPasswordResource {
                     "please-enter-a-valid-login");
         } catch (DotSecurityException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,"Error resetting password. "+e.getMessage());
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ForbiddenException(e);
         } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
             	SecurityLogger.logInfo(ResetPasswordResource.class,

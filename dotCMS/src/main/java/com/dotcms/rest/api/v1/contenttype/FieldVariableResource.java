@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.rest.exception.ForbiddenException;
 import java.io.Serializable;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response createFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
-			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -94,6 +95,9 @@ public class FieldVariableResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -109,7 +113,7 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response createFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
-			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -143,6 +147,9 @@ public class FieldVariableResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
 
@@ -229,7 +236,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getFieldVariableByFieldId(@PathParam("typeId") final String typeId,
 			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
@@ -269,7 +276,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
 			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
@@ -311,7 +318,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
 			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
-	) throws DotDataException, DotSecurityException {
+	) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -355,6 +362,9 @@ public class FieldVariableResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -371,7 +381,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
 			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
-	) throws DotDataException, DotSecurityException {
+	) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -415,6 +425,9 @@ public class FieldVariableResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -431,7 +444,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response deleteFieldVariableByFieldId(@PathParam("typeId") final String typeId,
 			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -474,7 +487,7 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response deleteFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
 			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();

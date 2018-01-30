@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.rest.exception.ForbiddenException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,7 +109,7 @@ public class ContentResource {
             @PathParam("offset") int offset,
             @PathParam("type") String type,
             @PathParam("callback") String callback)
-            throws DotSecurityException, DotDataException, JSONException {
+            throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
@@ -118,16 +119,20 @@ public class ContentResource {
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
-                .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
-        JSONArray array = new JSONArray();
-        for (ContentletSearch cs : searchIndex) {
-            array.put(new JSONObject()
-                    .put("inode", cs.getInode())
-                    .put("identifier", cs.getIdentifier()));
-        }
+        try {
+            List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
+                    .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
+            JSONArray array = new JSONArray();
+            for (ContentletSearch cs : searchIndex) {
+                array.put(new JSONObject()
+                        .put("inode", cs.getInode())
+                        .put("identifier", cs.getIdentifier()));
+            }
 
-        return responseResource.response(array.toString());
+            return responseResource.response(array.toString());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+        }
     }
 
     /**
@@ -147,7 +152,7 @@ public class ContentResource {
     public Response indexCount(@Context HttpServletRequest request,
             @PathParam("query") String query,
             @PathParam("type") String type,
-            @PathParam("callback") String callback) throws DotDataException, DotSecurityException {
+            @PathParam("callback") String callback) throws DotDataException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
@@ -157,8 +162,12 @@ public class ContentResource {
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        return responseResource.response(Long.toString(
-                APILocator.getContentletAPI().indexCount(query, initData.getUser(), true)));
+        try {
+            return responseResource.response(Long.toString(
+                    APILocator.getContentletAPI().indexCount(query, initData.getUser(), true)));
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+        }
     }
 
 
@@ -168,7 +177,7 @@ public class ContentResource {
 
     public Response lockContent(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
-            throws DotDataException, DotSecurityException, JSONException {
+            throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
@@ -196,37 +205,41 @@ public class ContentResource {
             }
         }
 
-        Contentlet contentlet = (inode != null)
-                ? APILocator.getContentletAPI().find(inode, user, live)
-                : APILocator.getContentletAPI()
-                        .findContentletByIdentifier(id, live, lang, user, live);
-        if (contentlet == null || contentlet.getIdentifier() == null) {
-            jo.append("message", "contentlet not found");
-            jo.append("return", 404);
+        try {
+            Contentlet contentlet = (inode != null)
+                    ? APILocator.getContentletAPI().find(inode, user, live)
+                    : APILocator.getContentletAPI()
+                            .findContentletByIdentifier(id, live, lang, user, live);
+            if (contentlet == null || contentlet.getIdentifier() == null) {
+                jo.append("message", "contentlet not found");
+                jo.append("return", 404);
 
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
-            return responseBuilder.entity(jo).build();
-        } else {
-            if (!UtilMethods.isSet(inode)) {
-                inode = contentlet.getInode();
-            }
-            if (!UtilMethods.isSet(id)) {
-                id = contentlet.getIdentifier();
+                Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+                return responseBuilder.entity(jo).build();
+            } else {
+                if (!UtilMethods.isSet(inode)) {
+                    inode = contentlet.getInode();
+                }
+                if (!UtilMethods.isSet(id)) {
+                    id = contentlet.getIdentifier();
+                }
+
+                APILocator.getContentletAPI().lock(contentlet, user, live);
+
+                if (UtilMethods.isSet(callback)) {
+                    jo.put("callback", callback);
+                }
+                jo.put("inode", inode);
+                jo.put("id", id);
+                jo.put("message", "locked");
+                jo.put("return", 200);
+                //Creating an utility response object
             }
 
-            APILocator.getContentletAPI().lock(contentlet, user, live);
-
-            if (UtilMethods.isSet(callback)) {
-                jo.put("callback", callback);
-            }
-            jo.put("inode", inode);
-            jo.put("id", id);
-            jo.put("message", "locked");
-            jo.put("return", 200);
-            //Creating an utility response object
+            return responseResource.response(jo.toString());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         }
-
-        return responseResource.response(jo.toString());
     }
 
 
@@ -235,7 +248,7 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response canLockContent(@Context HttpServletRequest request,
             @PathParam("params") String params)
-            throws DotDataException, DotSecurityException, JSONException {
+            throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
@@ -263,52 +276,56 @@ public class ContentResource {
             }
         }
 
-        Contentlet contentlet = (inode != null)
-                ? APILocator.getContentletAPI().find(inode, user, live)
-                : APILocator.getContentletAPI()
-                        .findContentletByIdentifier(id, live, lang, user, live);
-        if (contentlet == null || contentlet.getIdentifier() == null) {
-            jo.append("message", "contentlet not found");
-            jo.append("return", 404);
+        try {
+            Contentlet contentlet = (inode != null)
+                    ? APILocator.getContentletAPI().find(inode, user, live)
+                    : APILocator.getContentletAPI()
+                            .findContentletByIdentifier(id, live, lang, user, live);
+            if (contentlet == null || contentlet.getIdentifier() == null) {
+                jo.append("message", "contentlet not found");
+                jo.append("return", 404);
 
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
-            return responseBuilder.entity(jo).build();
-        } else {
-            if (!UtilMethods.isSet(inode)) {
-                inode = contentlet.getInode();
-            }
-            if (!UtilMethods.isSet(id)) {
-                id = contentlet.getIdentifier();
+                Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+                return responseBuilder.entity(jo).build();
+            } else {
+                if (!UtilMethods.isSet(inode)) {
+                    inode = contentlet.getInode();
+                }
+                if (!UtilMethods.isSet(id)) {
+                    id = contentlet.getIdentifier();
+                }
+
+                boolean canLock = false;
+                try {
+                    canLock = APILocator.getContentletAPI().canLock(contentlet, user);
+                } catch (DotLockException e) {
+                    canLock = false;
+                }
+                jo.put("canLock", canLock);
+                jo.put("locked", contentlet.isLocked());
+                ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(id, contentlet.getLanguageId());
+                if (contentlet.isLocked()) {
+                    jo.put("lockedBy", cvi.getLockedBy());
+                    jo.put("lockedOn", cvi.getLockedOn());
+                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
+
+
+                }
+
+                if (UtilMethods.isSet(callback)) {
+                    jo.put("callback", callback);
+                }
+                jo.put("inode", inode);
+                jo.put("id", id);
+                jo.put("return", 200);
+                //Creating an utility response object
             }
 
-            boolean canLock = false;
-            try {
-                canLock = APILocator.getContentletAPI().canLock(contentlet, user);
-            } catch (DotLockException e) {
-                canLock = false;
-            }
-            jo.put("canLock", canLock);
-            jo.put("locked", contentlet.isLocked());
-            ContentletVersionInfo cvi = APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(id, contentlet.getLanguageId());
-            if (contentlet.isLocked()) {
-                jo.put("lockedBy", cvi.getLockedBy());
-                jo.put("lockedOn", cvi.getLockedOn());
-                jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
-
-
-            }
-
-            if (UtilMethods.isSet(callback)) {
-                jo.put("callback", callback);
-            }
-            jo.put("inode", inode);
-            jo.put("id", id);
-            jo.put("return", 200);
-            //Creating an utility response object
+            return responseResource.response(jo.toString());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         }
-
-        return responseResource.response(jo.toString());
     }
 
     @PUT
@@ -317,7 +334,7 @@ public class ContentResource {
 
     public Response unlockContent(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
-            throws DotDataException, DotSecurityException, JSONException {
+            throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
 
@@ -344,36 +361,40 @@ public class ContentResource {
             }
         }
 
-        Contentlet contentlet = (inode != null)
-                ? APILocator.getContentletAPI().find(inode, user, live)
-                : APILocator.getContentletAPI()
-                        .findContentletByIdentifier(id, live, lang, user, live);
-        if (contentlet == null || contentlet.getIdentifier() == null) {
-            jo.append("message", "contentlet not found");
-            jo.append("return", 404);
+        try {
+            Contentlet contentlet = (inode != null)
+                    ? APILocator.getContentletAPI().find(inode, user, live)
+                    : APILocator.getContentletAPI()
+                            .findContentletByIdentifier(id, live, lang, user, live);
+            if (contentlet == null || contentlet.getIdentifier() == null) {
+                jo.append("message", "contentlet not found");
+                jo.append("return", 404);
 
 
-        } else {
-            if (!UtilMethods.isSet(inode)) {
-                inode = contentlet.getInode();
+            } else {
+                if (!UtilMethods.isSet(inode)) {
+                    inode = contentlet.getInode();
+                }
+                if (!UtilMethods.isSet(id)) {
+                    id = contentlet.getIdentifier();
+                }
+
+                APILocator.getContentletAPI().unlock(contentlet, user, live);
+
+                if (UtilMethods.isSet(callback)) {
+                    jo.put("callback", callback);
+                }
+                jo.put("inode", inode);
+                jo.put("id", id);
+                jo.put("message", "unlocked");
+                jo.put("return", 200);
+                //Creating an utility response object
             }
-            if (!UtilMethods.isSet(id)) {
-                id = contentlet.getIdentifier();
-            }
 
-            APILocator.getContentletAPI().unlock(contentlet, user, live);
-
-            if (UtilMethods.isSet(callback)) {
-                jo.put("callback", callback);
-            }
-            jo.put("inode", inode);
-            jo.put("id", id);
-            jo.put("message", "unlocked");
-            jo.put("return", 200);
-            //Creating an utility response object
+            return responseResource.response(jo.toString());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         }
-
-        return responseResource.response(jo.toString());
     }
 
 
@@ -439,7 +460,7 @@ public class ContentResource {
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
-            status = Optional.of(Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
@@ -681,7 +702,7 @@ public class ContentResource {
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
             FormDataMultiPart multipart, @PathParam("params") String params)
-            throws URISyntaxException, DotDataException, DotSecurityException {
+            throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
 
@@ -692,13 +713,13 @@ public class ContentResource {
     public Response multipartPOST(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
             FormDataMultiPart multipart, @PathParam("params") String params)
-            throws URISyntaxException, DotDataException, DotSecurityException {
+            throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
 
     private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
             FormDataMultiPart multipart, String params, String method)
-            throws URISyntaxException, DotDataException, DotSecurityException {
+            throws URISyntaxException, DotDataException {
 
         InitDataObject init = webResource.init(params, true, request, false, null);
         Contentlet contentlet = new Contentlet();
@@ -749,6 +770,8 @@ public class ContentResource {
                             .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
+                } catch (DotSecurityException e) {
+                    throw new ForbiddenException(e);
                 }
             } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name
                     .equals("xml")) {
@@ -830,6 +853,8 @@ public class ContentResource {
                             .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
+                } catch (DotSecurityException e) {
+                    throw new ForbiddenException(e);
                 }
             }
         }
@@ -877,7 +902,7 @@ public class ContentResource {
                     SecurityLogger.logInfo(this.getClass(),
                             "Invalid XML POSTED to ContentTypeResource from " + request
                                     .getRemoteAddr());
-                    throw new DotSecurityException("");
+                    throw new ForbiddenException(se);
                 }
             } else if (request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
                 if (method.equals("PUT")) {
@@ -1020,10 +1045,7 @@ public class ContentResource {
         } catch (DotSecurityException e) {
 
             Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_FORBIDDEN);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
+            throw new ForbiddenException(e);
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
             return Response.serverError().build();

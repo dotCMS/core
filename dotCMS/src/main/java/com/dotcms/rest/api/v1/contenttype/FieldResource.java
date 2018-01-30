@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.rest.exception.ForbiddenException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +79,9 @@ public class FieldResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (DotSecurityException e) {
 
+			throw new ForbiddenException(e);
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -121,6 +124,9 @@ public class FieldResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -151,6 +157,9 @@ public class FieldResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
 
@@ -268,6 +277,9 @@ public class FieldResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -320,6 +332,9 @@ public class FieldResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -356,6 +371,10 @@ public class FieldResource implements Serializable {
 			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
 			response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
 					"fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
 		}catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -387,6 +406,9 @@ public class FieldResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
 
@@ -421,6 +443,9 @@ public class FieldResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
 

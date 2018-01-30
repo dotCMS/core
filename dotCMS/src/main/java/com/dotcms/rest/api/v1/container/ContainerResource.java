@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
 import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -17,12 +16,12 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
@@ -58,7 +57,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.beust.jcommander.internal.Maps;
@@ -150,7 +148,7 @@ public class ContainerResource implements Serializable {
     @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
-            @PathParam("uuid") final String uuid) throws DotDataException, DotSecurityException, ParseErrorException,
+            @PathParam("uuid") final String uuid) throws DotDataException,
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
@@ -176,59 +174,63 @@ public class ContainerResource implements Serializable {
             });
 
 
+        try {
 
-        final Contentlet contentlet = (contentShorty.type == ShortType.IDENTIFIER) ? APILocator.getContentletAPI()
-            .findContentletByIdentifier(contentShorty.longId, mode.showLive, landId.getId(), user, mode.respectAnonPerms)
-                : APILocator.getContentletAPI()
-                    .find(contentShorty.longId, user, mode.respectAnonPerms);
+            final Contentlet contentlet =
+                    (contentShorty.type == ShortType.IDENTIFIER) ? APILocator.getContentletAPI()
+                            .findContentletByIdentifier(contentShorty.longId, mode.showLive,
+                                    landId.getId(), user, mode.respectAnonPerms)
+                            : APILocator.getContentletAPI()
+                                    .find(contentShorty.longId, user, mode.respectAnonPerms);
 
-        if (contentlet.getContentType()
-            .baseType() == BaseContentType.WIDGET) {
+            if (contentlet.getContentType()
+                    .baseType() == BaseContentType.WIDGET) {
+                Map<String, String> response = new HashMap<>();
+                response.put("render", WidgetResource.parseWidget(req, res, contentlet));
+
+                return Response.ok(response)
+                        .build();
+
+
+            }
+
+            ShortyId containerShorty = APILocator.getShortyAPI()
+                    .getShorty(containerId)
+                    .orElseGet(() -> {
+                        throw new ResourceNotFoundException("Can't find Container:" + containerId);
+                    });
+
+            Container container = (containerShorty.type != ShortType.IDENTIFIER)
+                    ? APILocator.getContainerAPI()
+                    .find(containerId, user, mode.showLive)
+                    : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                            .findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
+                            : (Container) APILocator.getVersionableAPI()
+                                    .findWorkingVersion(containerShorty.longId, user,
+                                            mode.respectAnonPerms);
+
+            org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+
+            context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
+            context.put("contentletList" + container.getIdentifier() + uuid,
+                    Lists.newArrayList(contentlet.getIdentifier()));
+            StringWriter out = new StringWriter();
+
+            VelocityUtil.getEngine()
+                    .mergeTemplate(
+                            mode.name() + File.separator + container.getIdentifier() + "/" + uuid
+                                    + "."
+                                    + VelocityType.CONTAINER.fileExtension, context, out);
+
             Map<String, String> response = new HashMap<>();
-            response.put("render", WidgetResource.parseWidget(req, res, contentlet));
+            response.put("render", out.toString());
 
             return Response.ok(response)
-                .build();
+                    .build();
 
-
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         }
-
-        ShortyId containerShorty = APILocator.getShortyAPI()
-            .getShorty(containerId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find Container:" + containerId);
-            });
-
-        Container container = (containerShorty.type != ShortType.IDENTIFIER)
-                ? APILocator.getContainerAPI()
-                    .find(containerId, user, mode.showLive)
-                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                    .findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
-                        : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
-
-
-
-        org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-
-
-        context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
-        context.put("contentletList" + container.getIdentifier() + uuid, Lists.newArrayList(contentlet.getIdentifier()));
-        StringWriter out = new StringWriter();
-
-
-
-
-        VelocityUtil.getEngine()
-            .mergeTemplate(mode.name() + File.separator + container.getIdentifier() + "/" + uuid + "."
-                    + VelocityType.CONTAINER.fileExtension, context, out);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("render", out.toString());
-
-        return Response.ok(response)
-            .build();
-
     }
 
     @DELETE
@@ -240,7 +242,7 @@ public class ContainerResource implements Serializable {
     public final Response removeContentletFromContainer(@Context final HttpServletRequest req,
             @Context final HttpServletResponse res, @PathParam("containerId") final String containerId,
             @PathParam("contentletId") final String contentletId, @QueryParam("order") final long order,
-            @PathParam("uid") final String uid) throws DotDataException, DotSecurityException, ParseErrorException,
+            @PathParam("uid") final String uid) throws DotDataException,
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
@@ -248,49 +250,53 @@ public class ContainerResource implements Serializable {
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
         
-        
-        final Language id = WebAPILocator.getLanguageWebAPI()
-            .getLanguage(req);
+        try {
+            final Language id = WebAPILocator.getLanguageWebAPI()
+                    .getLanguage(req);
 
-        ShortyId contentShorty = APILocator.getShortyAPI()
-            .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
-        final Contentlet contentlet = (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
-            .find(contentShorty.longId, user, !mode.isAdmin)
-                : APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, !mode.isAdmin);
+            ShortyId contentShorty = APILocator.getShortyAPI()
+                    .getShorty(contentletId)
+                    .orElseGet(() -> {
+                        throw new ResourceNotFoundException(
+                                "Can't find contentlet:" + contentletId);
+                    });
+            final Contentlet contentlet =
+                    (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
+                            .find(contentShorty.longId, user, !mode.isAdmin)
+                            : APILocator.getContentletAPI()
+                                    .findContentletByIdentifier(contentShorty.longId, mode.showLive,
+                                            id.getId(), user, !mode.isAdmin);
 
+            ShortyId containerShorty = APILocator.getShortyAPI()
+                    .getShorty(containerId)
+                    .orElseGet(() -> {
+                        throw new ResourceNotFoundException("Can't find Container:" + containerId);
+                    });
+            Container container =
+                    (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
+                            .find(containerId, user, !mode.isAdmin)
+                            : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                                    .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
+                                    : (Container) APILocator.getVersionableAPI()
+                                            .findWorkingVersion(containerShorty.longId, user,
+                                                    !mode.isAdmin);
 
+            APILocator.getPermissionAPI()
+                    .checkPermission(contentlet, PermissionLevel.READ, user);
+            APILocator.getPermissionAPI()
+                    .checkPermission(container, PermissionLevel.EDIT, user);
 
-        ShortyId containerShorty = APILocator.getShortyAPI()
-            .getShorty(containerId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find Container:" + containerId);
-            });
-        Container container = (containerShorty.subType == ShortType.CONTAINER) ? APILocator.getContainerAPI()
-            .find(containerId, user, !mode.isAdmin)
-                : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                    .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
-                        : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
+            MultiTree mt = new MultiTree().setContainer(containerId)
+                    .setContentlet(contentletId)
+                    .setRelationType(uid);
 
+            MultiTreeFactory.deleteMultiTree(mt);
 
-        APILocator.getPermissionAPI()
-            .checkPermission(contentlet, PermissionLevel.READ, user);
-        APILocator.getPermissionAPI()
-            .checkPermission(container, PermissionLevel.EDIT, user);
-
-        MultiTree mt = new MultiTree().setContainer(containerId)
-            .setContentlet(contentletId)
-            .setRelationType(uid);
-
-
-        MultiTreeFactory.deleteMultiTree(mt);
-
-        return Response.ok("ok")
-            .build();
+            return Response.ok("ok")
+                    .build();
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+        }
     }
 
 
@@ -298,61 +304,59 @@ public class ContainerResource implements Serializable {
     @Path("/containerContent/{params:.*}")
     public final Response containerContents(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
             @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
-            throws DotDataException, DotSecurityException, ParseErrorException, MethodInvocationException,
-            ResourceNotFoundException, IOException {
+            throws DotDataException, IOException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
 
-        Language id = WebAPILocator.getLanguageWebAPI()
-            .getLanguage(req);
+        try {
+            Language id = WebAPILocator.getLanguageWebAPI()
+                    .getLanguage(req);
 
-        PageMode mode = PageMode.get(req);
+            PageMode mode = PageMode.get(req);
 
-        Container container = APILocator.getContainerAPI()
-            .find(containerId, user, !mode.isAdmin);
+            Container container = APILocator.getContainerAPI()
+                    .find(containerId, user, !mode.isAdmin);
 
-        org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-        Contentlet contentlet = APILocator.getContentletAPI()
-            .find(contentInode, user, !mode.isAdmin);
-        ContainerStructure cStruct = APILocator.getContainerAPI()
-            .getContainerStructures(container)
-            .stream()
-            .filter(cs -> contentlet.getStructureInode()
-                .equals(cs.getStructureId()))
-            .findFirst()
-            .orElse(null);
+            org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+            Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(contentInode, user, !mode.isAdmin);
+            ContainerStructure cStruct = APILocator.getContainerAPI()
+                    .getContainerStructures(container)
+                    .stream()
+                    .filter(cs -> contentlet.getStructureInode()
+                            .equals(cs.getStructureId()))
+                    .findFirst()
+                    .orElse(null);
 
-        StringWriter in = new StringWriter();
-        StringWriter out = new StringWriter();
-        in.append("#set ($contentletList")
-            .append(container.getIdentifier())
-            .append(" = [")
-            .append(contentlet.getIdentifier())
-            .append("] )")
-            .append("#set ($totalSize")
-            .append(container.getIdentifier())
-            .append("=")
-            .append("1")
-            .append(")")
-            .append("#parseContainer(\"")
-            .append(container.getIdentifier())
-            .append("\")");
+            StringWriter in = new StringWriter();
+            StringWriter out = new StringWriter();
+            in.append("#set ($contentletList")
+                    .append(container.getIdentifier())
+                    .append(" = [")
+                    .append(contentlet.getIdentifier())
+                    .append("] )")
+                    .append("#set ($totalSize")
+                    .append(container.getIdentifier())
+                    .append("=")
+                    .append("1")
+                    .append(")")
+                    .append("#parseContainer(\"")
+                    .append(container.getIdentifier())
+                    .append("\")");
 
+            VelocityUtil.getEngine()
+                    .evaluate(context, out, this.getClass()
+                            .getName(), IOUtils.toInputStream(in.toString()));
 
+            Map<String, String> response = new HashMap<>();
+            response.put("render", out.toString());
 
-        VelocityUtil.getEngine()
-            .evaluate(context, out, this.getClass()
-                .getName(), IOUtils.toInputStream(in.toString()));
+            final Response.ResponseBuilder responseBuilder = Response.ok(response);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("render", out.toString());
-
-        final Response.ResponseBuilder responseBuilder = Response.ok(response);
-
-
-
-        return responseBuilder.build();
-
+            return responseBuilder.build();
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+        }
     }
 }

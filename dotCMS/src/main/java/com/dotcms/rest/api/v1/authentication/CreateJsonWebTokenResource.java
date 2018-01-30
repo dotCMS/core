@@ -13,10 +13,12 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -143,12 +145,16 @@ public class CreateJsonWebTokenResource implements Serializable {
                         (Arrays.asList(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
                                         "your-account-is-not-active",
-                                        new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")},
+                                        new LanguageWrapper[]{
+                                                new LanguageWrapper("<b><i>", userId, "</i></b>")},
                                         false)
                         )))).build();
             } catch (LanguageException e1) {
                 // Quiet
             }
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as "

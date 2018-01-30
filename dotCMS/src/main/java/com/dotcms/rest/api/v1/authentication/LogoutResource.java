@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -14,6 +15,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -73,6 +75,10 @@ public class LogoutResource implements Serializable {
             	SecurityLogger.logInfo(this.getClass(), "User " + user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
             }
             res = Response.ok(new ResponseEntityView("Logout successfully")).build(); // 200
+
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+
         } catch (Exception e) {
 
             this.log.error("Error doing the logout", e);
