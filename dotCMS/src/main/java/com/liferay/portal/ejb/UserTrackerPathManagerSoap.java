@@ -42,7 +42,7 @@ public class UserTrackerPathManagerSoap {
 			return (com.liferay.portal.model.UserTrackerPath[])returnValue.toArray(new com.liferay.portal.model.UserTrackerPath[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }

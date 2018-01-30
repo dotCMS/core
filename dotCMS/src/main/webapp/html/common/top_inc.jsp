@@ -26,6 +26,7 @@ THIS FILE AND ITS INCLUDES
 
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:bi="urn:bi" xmlns:csp="urn:csp">
 <head>
+	<script src="/html/js/dragula-3.7.2/dragula.min.js"></script>
 	<meta http-equiv="x-ua-compatible" content="IE=edge" >
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 

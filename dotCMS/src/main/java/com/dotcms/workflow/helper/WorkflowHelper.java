@@ -150,6 +150,35 @@ public class WorkflowHelper {
         }
     }  // reorderAction.
 
+
+    /**
+     * Reorder the action associated to the scheme.
+     * @param stepId  String step id
+     * @param order   int    order for the step
+     */
+    @WrapInTransaction
+    public void reorderStep(final String stepId,
+                            final int order)  {
+
+        final WorkflowStep       step;
+
+        try {
+
+            Logger.debug(this, "Looking for the stepId: " + stepId);
+            step   = this.workflowAPI.findStep  (stepId);
+
+            Logger.debug(this, "Reordering the stepId: "  + stepId +
+                            ", order: " + order);
+            this.workflowAPI.reorderStep(step, order);
+        } catch (DotDataException | AlreadyExistException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+    }  // reorderAction.
+
+
     /**
      * Deletes the step
      * @param stepId String
@@ -593,10 +622,23 @@ public class WorkflowHelper {
     } // save.
 
     @WrapInTransaction
-    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) {
+    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
 
+        WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
+        if(action!=null) {
+            WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
+            .actionId(workflowActionStepForm.getActionId()).stepId(workflowActionStepForm.getStepId())
+            .order(workflowActionStepForm.getOrder()).build();
+
+            this.reorderAction(bean, user);
+            
+        }else {
+        
+        
+        
         this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
-                workflowActionStepForm.getStepId(), user);
+                workflowActionStepForm.getStepId(), user, workflowActionStepForm.getOrder());
+        }
     } // addActionToStep.
 
 

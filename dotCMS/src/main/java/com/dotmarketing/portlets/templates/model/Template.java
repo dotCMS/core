@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
@@ -192,7 +193,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * @return
 	 */
 	public Boolean isDrawed() {
-		return drawed;
+		return (this.drawed==null) ? UtilMethods.isSet(drawedBody) : this.drawed;
 	}
 
 	/**

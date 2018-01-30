@@ -222,7 +222,7 @@ public class ViewStructureAction extends DotPortletAction {
 			Logger.error(this,
 					String.format("An error occurred when retrieving Content types: type=[%d], query=[%s] : ",
 							contentTypeBaseType, query) + e.getMessage(), e);
-            throw new Exception(e.getMessage());
+            throw new Exception(e.getMessage(),e);
         }
     }
 

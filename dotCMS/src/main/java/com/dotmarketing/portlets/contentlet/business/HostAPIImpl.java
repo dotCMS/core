@@ -24,7 +24,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
-import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -308,22 +307,7 @@ public class HostAPIImpl implements HostAPI {
         Host host  = hostCache.get(id);
 
         if(host ==null){
-
-            final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
-                    "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
-
-            if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
-
-                User systemUser = APILocator.systemUser();
-
-                String hostInode=vinfo.getWorkingInode();
-                final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
-                final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
-                if(cont.getStructureInode().equals(type.inode())) {
-                    host=new Host(cont);
-                    hostCache.add(host);
-                }
-            }
+            host = DBSearch(id,user,respectFrontendRoles);
         }
 
         if(host != null){
@@ -884,50 +868,22 @@ public class HostAPIImpl implements HostAPI {
         if (!UtilMethods.isSet(id))
             return null;
 
-        final String languageIdColumn = "language_id";
-        final String isDefaultColumn = "isDefault";
+        Host host = null;
 
+        final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
+                "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
 
-        List<Field> fields = hostType().fields();
+        if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
 
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT inode," + languageIdColumn);
-        for (Field field: fields) {
-            if (field.dataType() != DataTypes.SYSTEM) {
-                sql.append(", " + field.variable());
+            User systemUser = APILocator.systemUser();
+
+            String hostInode=vinfo.getWorkingInode();
+            final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
+            final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
+            if(cont.getStructureInode().equals(type.inode())) {
+                host=new Host(cont);
+                hostCache.add(host);
             }
-        }
-        sql.append(" FROM host ");
-        sql.append("WHERE identifier='" + id + "'");
-        
-        SQLQueryFactory sqlQueryFactory = new SQLQueryFactory(sql.toString());
-        Query query = sqlQueryFactory.getQuery();
-
-        List<Map<String, Serializable>> list = APILocator.getContentletAPI().DBSearch(query, user, respectFrontendRoles);
-        if (1 < list.size())
-            Logger.error(this, "More of one working version of host match the same identifier " + id + "!!");
-        else if (list.size() == 0)
-            return null;
-
-        Host host = new Host();
-        
-        for (String key: list.get(0).keySet()) {
-            Object value = list.get(0).get(key);
-            if ( key.equals(languageIdColumn) ) {
-                if ( value instanceof Number){ //Hibernate maps Oracle NUMBER to BigDecimal.
-                    host.setProperty(Contentlet.LANGUAGEID_KEY, ((Number) value).longValue());
-                } else {
-                    host.setProperty(Contentlet.LANGUAGEID_KEY, value);
-                }
-            } if (key.equals(isDefaultColumn)) { 
-                host.setProperty(Host.IS_DEFAULT_KEY, DbConnectionFactory.isDBTrue(value.toString()));
-            } else {
-                host.setProperty(key, value);
-            }
-        }
-        host.setProperty(Contentlet.MOD_DATE_KEY, new Date());//We don't really need this value for the system host but to avoid problems casting that field....
-        if (Host.SYSTEM_HOST.equals(id)) {
-            host.setProperty(Host.SYSTEM_HOST_KEY, true);
         }
 
         return host;

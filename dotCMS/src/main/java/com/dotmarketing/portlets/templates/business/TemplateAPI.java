@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
@@ -105,13 +104,16 @@ public interface TemplateAPI {
 	/**
 	 * Return the list of container identifiers used in a template body.
 	 *
-	 * @param body
-	 * @return List<Identifier>
+	 * @param template
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List<Container>
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
+	 *
 	 */
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
 
 	/**
 	 * Retrieves the template associated to a host

@@ -111,7 +111,7 @@ public class TwitterActionlet extends WorkFlowActionlet {
 			
 		} catch (Exception e) {
 			Logger.error(TwitterActionlet.class,e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		
 		}
 		

@@ -320,6 +320,7 @@ public class ContentResource {
             throws DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, false, null);
+
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -705,6 +706,9 @@ public class ContentResource {
 
         Map<String, Object> map = new HashMap<String, Object>();
         List<String> usedBinaryFields = new ArrayList<String>();
+        String binaryFieldsInput = null;
+        List<String> binaryFields = new ArrayList<>();
+
         for (BodyPart part : multipart.getBodyParts()) {
             ContentDisposition cd = part.getContentDisposition();
             String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
@@ -714,6 +718,21 @@ public class ContentResource {
                     .equals("json")) {
                 try {
                     processJSON(contentlet, part.getEntityAs(InputStream.class));
+                    try {
+                        binaryFieldsInput =
+                            webResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields")
+                                .toString();
+                    } catch (NullPointerException npe) {
+                    }
+                    if (UtilMethods.isSet(binaryFieldsInput)) {
+                        if (!binaryFieldsInput.contains(",")) {
+                            binaryFields.add(binaryFieldsInput);
+                        } else {
+                            for (String binaryFieldSplit : binaryFieldsInput.split(",")) {
+                                binaryFields.add(binaryFieldSplit.trim());
+                            }
+                        }
+                    }
                 } catch (JSONException e) {
 
                     Logger.error(this.getClass(), "Error processing JSON for Stream", e);
@@ -794,7 +813,11 @@ public class ContentResource {
                         String fieldName = ff.getFieldContentlet();
                         if (fieldName.startsWith("binary")
                                 && !usedBinaryFields.contains(fieldName)) {
-                            contentlet.setBinary(ff.getVelocityVarName(), tmp);
+                            String fieldVarName = ff.getVelocityVarName();
+                            if (binaryFields.size() > 0) {
+                                fieldVarName = binaryFields.remove(0);
+                            }
+                            contentlet.setBinary(fieldVarName, tmp);
                             usedBinaryFields.add(fieldName);
                             break;
                         }
@@ -888,6 +911,9 @@ public class ContentResource {
             throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean = false;
+        final boolean ALLOW_FRONT_END_SAVING = Config
+            .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+
         try {
 
             // preparing categories
@@ -902,13 +928,13 @@ public class ContentResource {
                         for (String cat : catValue.split("\\s*,\\s*")) {
                             // take it as catId
                             Category category = APILocator.getCategoryAPI()
-                                    .find(cat, init.getUser(), false);
+                                    .find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
                             if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                                 cats.add(category);
                             } else {
                                 // try it as catKey
                                 category = APILocator.getCategoryAPI()
-                                        .findByKey(cat, init.getUser(), false);
+                                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
                                 if (category != null && InodeUtils
                                         .isSet(category.getCategoryId())) {
                                     cats.add(category);
@@ -965,17 +991,14 @@ public class ContentResource {
 
             HibernateUtil.startTransaction();
 
-            boolean allowFrontEndSaving = Config
-                    .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
-
             cats = UtilMethods.isSet(cats)?cats:null;
 
             contentlet = APILocator.getContentletAPI()
-                    .checkin(contentlet, relationships, cats, init.getUser(), allowFrontEndSaving);
+                    .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
 
             if (live) {
                 APILocator.getContentletAPI()
-                        .publish(contentlet, init.getUser(), allowFrontEndSaving);
+                        .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             }
 
             HibernateUtil.closeAndCommitTransaction();

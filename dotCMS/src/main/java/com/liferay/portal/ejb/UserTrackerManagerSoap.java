@@ -38,7 +38,7 @@ public class UserTrackerManagerSoap {
 			UserTrackerManagerUtil.deleteUserTracker(userTrackerId);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 
@@ -51,7 +51,7 @@ public class UserTrackerManagerSoap {
 			return (com.liferay.portal.model.UserTracker[])returnValue.toArray(new com.liferay.portal.model.UserTracker[0]);
 		}
 		catch (Exception e) {
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(e.getMessage(),e);
 		}
 	}
 }

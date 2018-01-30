@@ -33,7 +33,7 @@ public class WorkflowEmailUtil {
 	 * This method will take an email address and a {@link WorkflowProcessor}
 	 * and send a generic workflow email to them. If subject is null, it will be
 	 * intelligently inferred, and if the email text is null, the system will
-	 * try send the file: "static/workflow/workflow_email_template.html".
+	 * try send the file: "static/workflow/workflow_email_template.vtl".
 	 *
 	 * Both the subject and the emailBody will be parsed by Velocity with an
 	 * $workflow object in their context This object is the
@@ -108,7 +108,7 @@ public class WorkflowEmailUtil {
 
 
             if (!UtilMethods.isSet(emailText)) {
-                emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
+                emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.vtl", ctx);
                 isHTML = true;
             } else {
                 emailText = VelocityUtil.eval(emailText, ctx);
@@ -127,7 +127,7 @@ public class WorkflowEmailUtil {
                 mail.sendMessage();
             }
         } catch (Exception e) {
-            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage());
+            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage(), e);
         }
 
     }
@@ -138,7 +138,7 @@ public class WorkflowEmailUtil {
 	 * to a group of people that belong to the next assign role. If subject is
 	 * null, it will be intelligently inferred, and if the email text is null,
 	 * the system will try send the file:
-	 * "static/workflow/workflow_email_template.html". Both the subject and the
+	 * "static/workflow/workflow_email_template.vtl". Both the subject and the
 	 * emailBody will be parsed by Velocity with an $workflow object in their
 	 * context This object is the {@link WorkflowProcessor} object that has
 	 * access to every aspect of the workflow task.
@@ -186,7 +186,7 @@ public class WorkflowEmailUtil {
 
 		} catch (Exception e) {
 
-			throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage());
+			throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage(), e);
 		}
 	}
 

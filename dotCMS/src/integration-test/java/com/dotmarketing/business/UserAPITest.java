@@ -7,6 +7,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -41,6 +42,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -213,15 +216,15 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add users with role
 		 */
-		String newUserName = "user"+id;
-		User newUser = userAPI.createUser( newUserName + "@test.com", newUserName + "@test.com" );
-		newUser.setFirstName( newUserName );
-		newUser.setLastName( "TestUser" );
-		userAPI.save( newUser, systemUser, false );
+		String userToDeleteId = "user"+id;
+		User userToDelete = userAPI.createUser( userToDeleteId + "@test.com", userToDeleteId + "@test.com" );
+		userToDelete.setFirstName( userToDeleteId );
+		userToDelete.setLastName( "TestUser" );
+		userAPI.save( userToDelete, systemUser, false );
 
-		roleAPI.addRoleToUser(newRole, newUser);
+		roleAPI.addRoleToUser(newRole, userToDelete);
 
-		Role newUserUserRole = roleAPI.loadRoleByKey(newUser.getUserId());
+		Role newUserUserRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
 
 		String replacementUserName = "replacementuser"+id;
 		User replacementUser = userAPI.createUser( replacementUserName + "@test.com", replacementUserName + "@test.com" );
@@ -236,9 +239,9 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
-		testFolder.setOwner(newUser.getUserId());
-		folderAPI.save(testFolder, newUser, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, userToDelete, false);
+		testFolder.setOwner(userToDelete.getUserId());
+		folderAPI.save(testFolder, userToDelete, false);
 
 		/**
 		 * Create workflow scheme
@@ -286,22 +289,23 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step1
 		 */
 		WorkflowAction newAction = new WorkflowAction();
+		newAction.setSchemeId(ws.getId());
 		newAction.setName("Edit");
 		newAction.setAssignable(true);
 		newAction.setCommentable(true);
 		newAction.setIcon("workflowIcon");
 		newAction.setNextStep(workflowStep2.getId());
-		newAction.setStepId(workflowStep1.getId());
 		newAction.setCondition("");
 		newAction.setRequiresCheckout(false);
 		newAction.setRoleHierarchyForAssign(false);
 		newAction.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction = new ArrayList<>();
 		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction, permissionsNewAction);
-		
+		workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
+
 		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
 		Assert.assertTrue(actions1.size()==1);
 		WorkflowAction action1 = actions1.get(0);
@@ -310,21 +314,22 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add action to scheme step2
 		 */
 		WorkflowAction newAction2 = new WorkflowAction();
+		newAction2.setSchemeId(ws.getId());
 		newAction2.setName("Publish");
 		newAction2.setAssignable(true);
 		newAction2.setCommentable(true);
 		newAction2.setIcon("workflowIcon");
 		newAction2.setNextStep(workflowStep2.getId());
-		newAction2.setStepId(workflowStep2.getId());
 		newAction2.setCondition("");
 		newAction2.setRequiresCheckout(false);
 		newAction2.setRoleHierarchyForAssign(false);
 		newAction2.setNextAssign(newUserUserRole.getId());
 
-		List<Permission> permissionsNewAction2 = new ArrayList<Permission>();
+		List<Permission> permissionsNewAction2 = new ArrayList<>();
 		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
 		workflowAPI.saveAction(newAction2, permissionsNewAction2);
+		workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
 
 		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);
 		Assert.assertTrue(actions2.size()==1);
@@ -338,7 +343,7 @@ public class UserAPITest extends IntegrationTestBase {
 		st.setFolder(testFolder.getInode());
 		st.setName("structure"+id);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
-		st.setOwner(newUser.getUserId());
+		st.setOwner(userToDelete.getUserId());
 		st.setVelocityVarName("structure"+id);
 		StructureFactory.saveStructure(st);
 		CacheLocator.getContentTypeCache().add(st);
@@ -365,7 +370,7 @@ public class UserAPITest extends IntegrationTestBase {
 		String containerName="container"+id;
 		container.setFriendlyName(containerName);
 		container.setTitle(containerName);
-		container.setOwner(newUser.getUserId());
+		container.setOwner(userToDelete.getUserId());
 		container.setMaxContentlets(5);
 		container.setPreLoop("preloop code");
 		container.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
@@ -376,8 +381,8 @@ public class UserAPITest extends IntegrationTestBase {
 		cs.setStructureId(st.getInode());
 		cs.setCode(container.getCode());
 		csList.add(cs);
-		container = containerAPI.save(container, csList, host, newUser, false);
-		PublishFactory.publishAsset(container,newUser, false, false);
+		container = containerAPI.save(container, csList, host, userToDelete, false);
+		PublishFactory.publishAsset(container,userToDelete, false, false);
 
 		/**
 		 * Add template
@@ -388,9 +393,10 @@ public class UserAPITest extends IntegrationTestBase {
 		Template template=new Template();
 		template.setTitle(templateTitle);
 		template.setBody(templateBody);
-		template.setOwner(newUser.getUserId());
-		template = templateAPI.saveTemplate(template, host, newUser, false);
-		PublishFactory.publishAsset(template, newUser, false, false);
+		template.setOwner(userToDelete.getUserId());
+		template.setDrawedBody(templateBody);
+		template = templateAPI.saveTemplate(template, host, userToDelete, false);
+		PublishFactory.publishAsset(template, userToDelete, false, false);
 
 		/**
 		 * Add page
@@ -407,8 +413,8 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset.setLanguageId(langId);
 		contentAsset.setFolder(testFolder.getInode());
-		contentAsset=conAPI.checkin(contentAsset, newUser, false);
-		conAPI.publish(contentAsset, newUser, false);
+		contentAsset=conAPI.checkin(contentAsset, userToDelete, false);
+		conAPI.publish(contentAsset, userToDelete, false);
 
 		/**
 		 * Add content
@@ -421,8 +427,8 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
 		contentAsset2.setFolder(testFolder.getInode());
-		contentAsset2=conAPI.checkin(contentAsset2, newUser, false);
-		conAPI.publish(contentAsset2, newUser, false);
+		contentAsset2=conAPI.checkin(contentAsset2, userToDelete, false);
+		conAPI.publish(contentAsset2, userToDelete, false);
 
 		/**
 		 * Test that delete is not possible for step2
@@ -431,12 +437,12 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setStringProperty("wfActionId", action1.getId());
 		contentAsset2.setStringProperty("wfActionComments", "step1");
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
 
 		contentAsset2.setStringProperty("wfActionId", action2.getId());
 		contentAsset2.setStringProperty("wfActionComments", "step2");
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
 		assertNotNull(currentStep);
@@ -458,8 +464,8 @@ public class UserAPITest extends IntegrationTestBase {
 		link.setFriendlyName(linkStr);
 		link.setParent(testFolder.getInode());
 		link.setTarget("_blank");
-		link.setOwner(newUser.getUserId());
-		link.setModUser(newUser.getUserId());
+		link.setOwner(userToDelete.getUserId());
+		link.setModUser(userToDelete.getUserId());
 		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 
 		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
@@ -473,23 +479,23 @@ public class UserAPITest extends IntegrationTestBase {
 		}
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
-		WebAssetFactory.createAsset(link, newUser.getUserId(), testFolder);
+		WebAssetFactory.createAsset(link, userToDelete.getUserId(), testFolder);
 		versionableAPI.setLive(link);
 
 		/**
 		 * validation of current user and references
 		 */
-		assertTrue(userAPI.userExistsWithEmail(newUser.getEmailAddress()));
-		assertNotNull(roleAPI.loadRoleByKey(newUser.getUserId()));
+		assertTrue(userAPI.userExistsWithEmail(userToDelete.getEmailAddress()));
+		assertNotNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
 
-		assertTrue(link.getOwner().equals(newUser.getUserId()));
-		assertTrue(link.getModUser().equals(newUser.getUserId()));
+		assertTrue(link.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(link.getModUser().equals(userToDelete.getUserId()));
 
-		assertTrue(contentAsset2.getOwner().equals(newUser.getUserId()));
-		assertTrue(contentAsset2.getModUser().equals(newUser.getUserId()));
+		assertTrue(contentAsset2.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(contentAsset2.getModUser().equals(userToDelete.getUserId()));
 
-		assertTrue(contentAsset.getOwner().equals(newUser.getUserId()));
-		assertTrue(contentAsset.getModUser().equals(newUser.getUserId()));
+		assertTrue(contentAsset.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(contentAsset.getModUser().equals(userToDelete.getUserId()));
 
 		WorkflowTask task = workflowAPI.findTaskByContentlet(contentAsset2);
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
@@ -505,18 +511,18 @@ public class UserAPITest extends IntegrationTestBase {
 			assertTrue(comm.getPostedBy().equals(newUserUserRole.getId()));
 		}
 
-		assertTrue(container.getOwner().equals(newUser.getUserId()));
-		assertTrue(container.getModUser().equals(newUser.getUserId()));
+		assertTrue(container.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(container.getModUser().equals(userToDelete.getUserId()));
 
-		assertTrue(template.getOwner().equals(newUser.getUserId()));
-		assertTrue(template.getModUser().equals(newUser.getUserId()));
+		assertTrue(template.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(template.getModUser().equals(userToDelete.getUserId()));
 
-		assertTrue(testFolder.getOwner().equals(newUser.getUserId()));
+		assertTrue(testFolder.getOwner().equals(userToDelete.getUserId()));
 
 		//Verify we have the proper user set in the HTMLPage
 		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
-		assertTrue(page.getOwner().equals(newUser.getUserId()));
-		assertTrue(page.getModUser().equals(newUser.getUserId()));
+		assertTrue(page.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(page.getModUser().equals(userToDelete.getUserId()));
 
 		/*
 		 * delete user and replace its references with the replacement user, this delete method
@@ -524,21 +530,30 @@ public class UserAPITest extends IntegrationTestBase {
 		 * of the modified contentlets to finish processing.
 		 */
 
-		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), false);
 		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
 
-		userAPI.delete(newUser, replacementUser, systemUser,false);
+		final StringBuilder luceneQuery = new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
+		final int limit = 0;
+		final int offset = -1;
+		final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
+			(luceneQuery.toString(), limit, offset, null, systemUser, false);
 
-		waitForDeleteCompletedNotification();
+		Logger.info(this, "ES query: " + luceneQuery.toString());
+		Logger.info(this, "contentlets.size: " + contentlets.size());
+
+		userAPI.delete(userToDelete, replacementUser, systemUser,false);
+
+		waitForDeleteCompletedNotification(userToDelete);
 		/*
 		 * Validate that the user was deleted and if its references were updated
 		 */
 		try {
-			assertNull(userAPI.loadByUserByEmail(newUser.getEmailAddress(),systemUser,false));			
+			assertNull(userAPI.loadByUserByEmail(userToDelete.getEmailAddress(),systemUser,false));
 		}catch(com.dotmarketing.business.NoSuchUserException e){
 			//enter here if the user doesn't exist as is expected
 		}
-		assertNull(roleAPI.loadRoleByKey(newUser.getUserId()));
+		assertNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
 
 		assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(),systemUser,false));
 
@@ -547,6 +562,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
 
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+		Logger.info(this, "Page inode:" + page.getInode());
+		Logger.info(this, "Page identifier:" + page.getIdentifier());
 		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
@@ -583,9 +600,9 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
 	}
 
-	private void waitForDeleteCompletedNotification() throws DotDataException, InterruptedException {
+	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
 
-		final int MAX_TIME = 10000;
+		final int MAX_TIME = 20000;
 		final int WAIT_TIME = 1000;
 
 		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
@@ -599,14 +616,21 @@ public class UserAPITest extends IntegrationTestBase {
 				Logger.error(this, "Unable to get notifications. ", e);
 			}
 
-			for (Notification notification : notifications) {
-				String notificationKey = notification.getMessage().getKey();
-				if (notificationKey.contains("Reindexing of updated related content after deleting user")
-					&& notification.getMessage().getKey().contains("has finished successfully")) {
+			for (final Notification notification : notifications) {
+				final String notificationKey = notification.getMessage().getKey();
+				final String expectedKey = "notification.contentapi.reindex.related.content.success";
+				final Object[] notificationArgs = notification.getNotificationData().getMessage().getArguments();
+                final Object[] expectedArgs = {userToDelete.getUserId() + "/" + userToDelete.getFullName()};
+                final String notificationArg = UtilMethods.isSet(notificationArgs)?(String)notificationArgs[0]:"notArg";
+                final String expectedArg = UtilMethods.isSet(expectedArgs)?(String)expectedArgs[0]:"expectedArg";
+
+				if (notificationKey.equals(expectedKey) && notificationArg.equals(expectedArg)) {
 					isReindexFinished = true;
+					break;
 				}
 			}
 
+			Logger.info(this, "waitForDeleteCompletedNotification isReindexFinished:" + isReindexFinished);
 			return isReindexFinished;
 
 		});

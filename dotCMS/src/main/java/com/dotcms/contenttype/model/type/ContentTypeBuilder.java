@@ -49,7 +49,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder owner(String variable);
 
-	ContentTypeBuilder host(String variable);
+	ContentTypeBuilder host(String hostIdentifier);
 
 	ContentTypeBuilder folder(String variable);
 	

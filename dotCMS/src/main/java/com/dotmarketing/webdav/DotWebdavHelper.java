@@ -217,10 +217,10 @@ public class DotWebdavHelper {
 				host = hostAPI.findByName(hostName, user, false);
 			} catch (DotDataException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new IOException(e.getMessage());
+				throw new IOException(e.getMessage(),e);
 			} catch (DotSecurityException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new IOException(e.getMessage());
+				throw new IOException(e.getMessage(),e);
 			}
 			if (host != null && InodeUtils.isSet(host.getInode())) {
 				String path = getPath(uriAux);
@@ -238,7 +238,7 @@ public class DotWebdavHelper {
 						folder = folderAPI.findFolderByPath(path, host,user,false);
 					} catch (Exception e) {
 						Logger.debug(this, "unable to find folder " + path );
-						//throw new IOException(e.getMessage());
+						//throw new IOException(e.getMessage(),e);
 					}
 					if (InodeUtils.isSet(folder.getInode())) {
 						returnValue = true;
@@ -264,10 +264,10 @@ public class DotWebdavHelper {
 			host = hostAPI.findByName(hostName, user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 
 		if(host == null){
@@ -283,7 +283,7 @@ public class DotWebdavHelper {
 			folder = folderAPI.findFolderByPath(folderName, host, user,false);
 		} catch (Exception e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 		if(folder!=null && InodeUtils.isSet(folder.getInode())) {
     		// FileName
@@ -312,10 +312,10 @@ public class DotWebdavHelper {
 			host = hostAPI.findByName(hostName, user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 
 		IFileAsset f =null;
@@ -347,10 +347,10 @@ public class DotWebdavHelper {
 			folder = folderAPI.findFolderByPath(url, host,user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 
 		return folder;
@@ -680,10 +680,10 @@ public class DotWebdavHelper {
 			host = hostAPI.findByName(hostName, user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 
 		Folder folder = new Folder();
@@ -865,10 +865,10 @@ public class DotWebdavHelper {
 			host = hostAPI.findByName(hostName, user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 
 		// CheckPermission
@@ -883,7 +883,7 @@ public class DotWebdavHelper {
 				hasPermission = perAPI.doesUserHavePermission(parentFolder,	PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (Exception e) {
 				Logger.error(DotWebdavHelper.class,e.getMessage(),e);
-				throw new IOException(e.getMessage());
+				throw new IOException(e.getMessage(),e);
 			}
 		} else {
 			if (host != null && InodeUtils.isSet(host.getInode())) {
@@ -898,7 +898,7 @@ public class DotWebdavHelper {
 				hasPermission = perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (DotDataException e) {
 				Logger.error(DotWebdavHelper.class,e.getMessage(),e);
-				throw new IOException(e.getMessage());
+				throw new IOException(e.getMessage(),e);
 			}
 		}
 
@@ -932,10 +932,10 @@ public class DotWebdavHelper {
 		    toParentFolder = folderAPI.findFolderByPath(toParentPath,host,user,false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 		if (isResource(resourceFromPath,user)) {
 			try {
@@ -1067,7 +1067,7 @@ public class DotWebdavHelper {
 					}
 				} catch (DotDataException e) {
 					Logger.error(DotWebdavHelper.class,e.getMessage(),e);
-					throw new IOException(e.getMessage());
+					throw new IOException(e.getMessage(),e);
 				}
 				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
 					try{
@@ -1107,10 +1107,10 @@ public class DotWebdavHelper {
 			host = hostAPI.findByName(hostName, user, false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 		Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
 		if (isResource(resourceUri,user)) {
@@ -1359,10 +1359,10 @@ public class DotWebdavHelper {
 					host = hostAPI.findByName(hostName, user, false);
 				} catch (DotDataException e) {
 					Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-					throw new IOException(e.getMessage());
+					throw new IOException(e.getMessage(),e);
 				} catch (DotSecurityException e) {
 					Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-					throw new IOException(e.getMessage());
+					throw new IOException(e.getMessage(),e);
 				}
 				String path = getPath(folderUriAux);
 				if (path.equals("") || path.equals("/")) {
@@ -1485,10 +1485,10 @@ public class DotWebdavHelper {
 			folder = folderAPI.findFolderByPath(folderName, host,user,false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		} catch (DotSecurityException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
+			throw new IOException(e.getMessage(),e);
 		}
 		if (host != null && InodeUtils.isSet(host.getInode()) && InodeUtils.isSet(folder.getInode())) {
             InputStream is = null;
