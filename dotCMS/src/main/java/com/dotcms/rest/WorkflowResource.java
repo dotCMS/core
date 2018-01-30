@@ -137,7 +137,7 @@ public class WorkflowResource {
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		WorkflowAction action = null;
 		try {
-			action = wapi.findActionValidatingPermissions(wfAction, contentlet, user);
+			action = wapi.findActionRespectingPermissions(wfAction, contentlet, user);
 			if (action == null) {
 				throw new ServletException("No such workflow action");
 			}
