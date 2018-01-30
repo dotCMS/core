@@ -174,7 +174,7 @@ public class WorkflowProcessor {
 
 		if (null == action) {
 			try {
-				action = getWorkflowAPI().findAction(workflowActionId, this.user);
+				action = getWorkflowAPI().findAction(workflowActionId, contentlet, this.user);
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
 						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
