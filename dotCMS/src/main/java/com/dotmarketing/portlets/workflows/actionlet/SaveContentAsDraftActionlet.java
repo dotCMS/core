@@ -83,7 +83,7 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 		} catch (Exception e) {
 
 			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
 	}
 

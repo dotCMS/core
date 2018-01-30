@@ -221,6 +221,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04315UpdateMultiTreePK.class);
 		ret.add(Task04320WorkflowActionRemoveNextStepConstraint.class);
 		ret.add(Task04325RemoveFKFromWorkflowTaskTable.class);
+		ret.add(Task04330WorkflowTaskAddLanguageIdColumn.class);
 
 		return ret;
 	}

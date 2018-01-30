@@ -2047,7 +2047,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         c1.setDateProperty(fieldExpDate.getVelocityVarName(), d2);
         c1.setLanguageId(deflang);
         c1=APILocator.getContentletAPI().checkin(c1, user, false);
-        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
+        boolean isC1Indexed = APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
+
+        Logger.info(this, "IsC1Indexed: " + isC1Indexed);
+        Identifier idenFromCache = APILocator.getIdentifierAPI().loadFromCache(c1.getIdentifier());
+        Logger.info(this, "IdentifierFromCache:" + idenFromCache);
 
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertNotNull(ident.getSysPublishDate());

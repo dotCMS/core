@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -18,7 +15,18 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * This class provides access to all the information related to Workflows in dotCMS. Workflows
+ * allow content authors to specify the different phases that a content must go through when being
+ * published. This class provides methods to access information about the workflow assigned to a
+ * contentlet, and all the data that is generated during its execution.
+ *
+ * @author root
+ * @since Mar 22, 2012.
+ */
 public interface WorkFlowFactory {
 
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
@@ -70,6 +78,15 @@ public interface WorkFlowFactory {
 
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
 
+	/**
+	 * Saves a given WorkflowTask, if the task does not exist it will create a new one and if does exist
+	 * it will update the existing record.
+	 * <br/>
+	 * If the record does not exist and the given task have set an id the new record will be created with that id.
+	 *
+	 * @param task
+	 * @throws DotDataException
+	 */
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
@@ -149,7 +166,6 @@ public interface WorkFlowFactory {
 	 */
 	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException;
 
-
 	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
@@ -175,7 +191,6 @@ public interface WorkFlowFactory {
 	 * @throws AlreadyExistException
 	 */
 	void deleteActions(WorkflowStep step) throws DotDataException, AlreadyExistException;
-
 
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 	
@@ -205,42 +220,42 @@ public interface WorkFlowFactory {
 
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme scheme) throws DotDataException;
 
-	// christian escalation
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
 	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException;
-	// christian escalation
 
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
 
     public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException;
 
     public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException;
-    
-    /**
-	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
-	 * with the replacement user id 
-	 * @param userId User Identifier
-	 * @param userRoleId The role id of the user
-	 * @param replacementUserId The user id of the replacement user
+
+	/**
+	 * Method will replace user references of the given userId in workflow, workflow_ action task
+	 * and workflow comments with the replacement user id.
+	 *
+	 * @param userId                User Identifier
+	 * @param userRoleId            The role id of the user
+	 * @param replacementUserId     The user id of the replacement user
 	 * @param replacementUserRoleId The role Id of the replacemente user
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+	 *
+	 * @throws DotDataException     There is a data inconsistency
+	 * @throws DotStateException    There is a data inconsistency
+	 * @throws DotSecurityException
 	 */
 	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException;
 
 	/**
-	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
-	 * with the replacement step id 
-	 * @param stepId Step Identifier
+	 * Method will replace step references of the given stepId in workflow, workflow_action task and
+	 * contentlets with the replacement step id.
+	 *
+	 * @param stepId            Step Identifier
 	 * @param replacementStepId The step id of the replacement step
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+	 *
+	 * @throws DotDataException     There is a data inconsistency
+	 * @throws DotStateException    There is a data inconsistency
+	 * @throws DotSecurityException
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
-
-
 
 }

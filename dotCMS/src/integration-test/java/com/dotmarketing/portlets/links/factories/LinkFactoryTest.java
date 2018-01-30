@@ -120,6 +120,7 @@ public class LinkFactoryTest extends IntegrationTestBase {
             template.setTitle(templateTitle);
             template.setBody(templateBody);
             template.setOwner(systemUser.getUserId());
+            template.setDrawedBody(templateBody);
             template = templateAPI.saveTemplate(template, host, systemUser, false);
             PublishFactory.publishAsset(template, systemUser, false, false);
 
@@ -170,10 +171,6 @@ public class LinkFactoryTest extends IntegrationTestBase {
             Assert.assertEquals(link.getInode(), result.getInode());
             Assert.assertTrue(link.getOwner() != null && link.getOwner().equals(result.getOwner()));
         } finally {
-            if (ftest != null) {
-                folderAPI.delete(ftest, systemUser, false);
-            }
-
             if (container != null && container.getInode() != null) {
                 containerAPI.delete(container, systemUser, false);
             }
@@ -184,6 +181,10 @@ public class LinkFactoryTest extends IntegrationTestBase {
 
             if (contentAsset != null && contentAsset.getInode() != null) {
                 contentletAPI.delete(contentAsset, systemUser, false);
+            }
+
+            if (ftest != null) {
+                folderAPI.delete(ftest, systemUser, false);
             }
         }
 

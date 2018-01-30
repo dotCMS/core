@@ -100,15 +100,17 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 	
 	protected void remove(WorkflowTask task) {
-		cache.remove(task.getWebasset(), TASK_GROUP);
-		cache.remove(task.getWebasset(), STEP_GROUP);
-		cache.remove(task.getId(), TASK_GROUP);
+		cache.remove(this.getKey(task.getWebasset(), task.getLanguageId()), TASK_GROUP); // remove the task id.
+		cache.remove(task.getWebasset(), 									STEP_GROUP);
+		cache.remove(task.getId(), 											TASK_GROUP); // remove the task.
 	}
 	
-	protected void remove(Contentlet contentlet) {
+	protected void remove(final Contentlet contentlet) {
+
 		if (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())) {
-			cache.remove(contentlet.getIdentifier(), STEP_GROUP);
-			cache.remove(contentlet.getIdentifier(), TASK_GROUP);
+
+			cache.remove(contentlet.getIdentifier(),   STEP_GROUP);
+			cache.remove(this.getKey(contentlet), TASK_GROUP);
 		}
 	}
 	public WorkflowScheme getDefaultScheme() {
@@ -147,31 +149,33 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		
 	}
 
-	protected boolean is404(Contentlet contentlet){
-		String taskId=null;
+	protected boolean is404(final Contentlet contentlet) {
+
+		String taskId = null;
+
 		try {
-			taskId = (String) cache.get(contentlet.getIdentifier(), TASK_GROUP);
+
+			taskId = (String) cache.get(this.getKey(contentlet), TASK_GROUP);
 		} catch (DotCacheException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}
-		return (FOUR_OH_FOUR_TASK.equals(taskId));
 
-		
+		return (FOUR_OH_FOUR_TASK.equals(taskId));
 	}
 	
-	 protected WorkflowTask getTask(Contentlet contentlet){
+	 protected WorkflowTask getTask(final Contentlet contentlet){
 		
-			WorkflowTask task = null;
-			try {
-				String taskId = (String) cache.get(contentlet.getIdentifier(), TASK_GROUP);
-				
+		WorkflowTask task = null;
+		try {
 
-				task = (WorkflowTask) cache.get(taskId, TASK_GROUP);
-			} catch (Exception e) {
-				Logger.debug(this.getClass(), e.getMessage());
-			}
-			return task;
+			final String taskId = (String) cache.get(this.getKey(contentlet), TASK_GROUP);
+			task			    = (WorkflowTask) cache.get(taskId, 			  TASK_GROUP);
+		} catch (Exception e) {
+			Logger.debug(this.getClass(), e.getMessage());
+		}
+		return task;
 	 }
+
 	 protected List<WorkflowStep> getSteps(Contentlet contentlet){
 			
 		 List<WorkflowStep> steps = null;
@@ -193,7 +197,8 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return step;
 	}
 	 
-	protected WorkflowTask addTask(WorkflowTask task) {
+	protected WorkflowTask addTask(final WorkflowTask task) {
+
 		 if(task ==null || !UtilMethods.isSet(task.getId()) ){
 			 return null;
 		 }
@@ -213,29 +218,44 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 
 		// Add the Step id as a string to the cache
-		cache.put(contentlet.getIdentifier(), steps, STEP_GROUP);
+		cache.put(this.getKey(contentlet), steps, STEP_GROUP);
 		return steps;
 
 
 	}
 	@Override
-	protected void add404Task(Contentlet contentlet) {
+	protected void add404Task(final Contentlet contentlet) {
 		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())){
 			 return;
 		 }
 		// Add the key to the cache
-		cache.put(contentlet.getIdentifier(), FOUR_OH_FOUR_TASK, TASK_GROUP);
+		cache.put(this.getKey(contentlet), FOUR_OH_FOUR_TASK, TASK_GROUP);
 		return;
 	}
 	 
-	protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task) {
+	protected WorkflowTask addTask(final Contentlet contentlet, final WorkflowTask task) {
+
 		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())
-				 || task ==null || !UtilMethods.isSet(task.getId()) ){
+				 || task ==null || !UtilMethods.isSet(task.getId()) ) {
+
 			 return null;
 		 }
+
 		// Add the key to the cache
-		cache.put(contentlet.getIdentifier(), task.getId(), TASK_GROUP);
+		cache.put(this.getKey(contentlet),
+				task.getId(), TASK_GROUP);
 		return addTask(task);
+	}
+
+	private String getKey (final Contentlet contentlet) {
+
+	 	return this.getKey(contentlet.getIdentifier(), contentlet.getLanguageId());
+	}
+
+	private String getKey (final String assetId, final long languageId) {
+
+		return new StringBuilder(assetId)
+				.append("_").append(languageId).toString();
 	}
 
 	@Override

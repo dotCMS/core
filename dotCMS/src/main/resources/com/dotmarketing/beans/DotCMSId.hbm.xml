@@ -507,6 +507,9 @@
 			<property name="webasset" type="string" length="36">
 				<column name="webasset" index="idx_workflow_4" />
 			</property>
+			<property name="languageId" type="long">
+				<column name="language_id" index="idx_workflow_6" />
+			</property>
 		</class>
 
 		<class name="com.dotmarketing.portlets.workflows.model.WorkflowComment" table="workflow_comment">
