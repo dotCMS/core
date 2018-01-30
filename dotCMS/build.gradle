@@ -886,7 +886,7 @@ task copyNodeModules(type: Copy) {
 
 docker {
     name "dotcms/devtest:$dotcmsReleaseVersion"
-    tags 'devTestTag1', 'devTestTag2'
+    tags 'latest'
     dockerfile file('Dockerfile')
     copySpec.from(tgzTask.archivePath).into('.').rename(tgzTask.archiveName, 'dotcms.tar.gz')
     pull true
