@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -8,7 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,7 +34,8 @@ public class StructureResource {
 	public Response getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response,
                                                    @PathParam("path") String path, @QueryParam("name") String name,
                                                    @PathParam ("type") String type,
-                                                   @PathParam ("callback") String callback) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+                                                   @PathParam ("callback") String callback)
+											throws DotDataException, JSONException {
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put( "type", type );
@@ -65,24 +66,30 @@ public class StructureResource {
 			beginItem = Integer.valueOf(range.substring(0, range.indexOf("-")));
 			endItem = Integer.valueOf(range.substring(range.indexOf("-") + 1));
 		}
-		
-		if(inodeFilter.isEmpty()) {
-			List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
-			for(Structure st : allStructures) {
-				if(st.isArchived() == false && (nameFilter.isEmpty() || (st.getName().toLowerCase().startsWith(nameFilter)))) {
-					for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
-						if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-							structures.add(st);
-							break;
+
+		try {
+			if (inodeFilter.isEmpty()) {
+				List<Structure> allStructures = StructureFactory
+						.getStructures("structuretype,upper(name)", -1);
+				for (Structure st : allStructures) {
+					if (!st.isArchived() && (nameFilter.isEmpty() || (st.getName()
+							.toLowerCase().startsWith(nameFilter)))) {
+						for (Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
+							if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+								structures.add(st);
+								break;
+							}
 						}
 					}
 				}
+			} else {
+				Structure specificStructure = CacheLocator.getContentTypeCache()
+						.getStructureByInode(inodeFilter);
+				if (specificStructure != null)
+					structures.add(specificStructure);
 			}
-		}
-		else {
-			Structure specificStructure = CacheLocator.getContentTypeCache().getStructureByInode(inodeFilter);
-			if(specificStructure != null)
-				structures.add(specificStructure);
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		}
 		
 		JSONArray jsonStructures = new JSONArray();

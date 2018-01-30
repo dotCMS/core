@@ -2,6 +2,9 @@ package com.dotcms.rest.api.v1.site;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -102,6 +105,9 @@ public class SiteResource implements Serializable {
             Host currentSite = siteHelper.getCurrentSite(req, user);
             response = Response.ok( new ResponseEntityView(currentSite) ).build();
         } catch (Exception e) {
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             // Unknown error, so we report it as a 500
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -136,6 +142,9 @@ public class SiteResource implements Serializable {
                     map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
                             SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -183,7 +192,9 @@ public class SiteResource implements Serializable {
                     Response.status(Response.Status.NOT_FOUND).build();
 
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e,
                     Response.Status.INTERNAL_SERVER_ERROR);
         }

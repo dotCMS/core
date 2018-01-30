@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.rest.exception.ForbiddenException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +53,7 @@ public class ESIndexResource {
 
     private final WebResource webResource = new WebResource();
 
-    protected InitDataObject auth(String params,HttpServletRequest request) throws DotSecurityException, DotDataException {
+    protected InitDataObject auth(String params,HttpServletRequest request) throws DotDataException, DotSecurityException {
         InitDataObject init= webResource.init(params, true, request, true, null);
         if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", init.getUser()))
             throw new DotSecurityException("unauthorized");
@@ -190,7 +191,7 @@ public class ESIndexResource {
             
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on restoreIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on restore index. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -217,7 +218,7 @@ public class ESIndexResource {
             
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on downloadIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -240,7 +241,7 @@ public class ESIndexResource {
             return Response.ok(indexName).build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on createIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on createIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -259,7 +260,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on clearIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on clearIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -278,7 +279,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on deleteIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on deleteIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -297,7 +298,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on activate from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on activate. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -316,7 +317,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on deactivateIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on deactivateIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -335,7 +336,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on updateReplica from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         }catch(DotDataException dt){
         	Logger.error(this, dt.getMessage());
         	throw new BadRequestException(dt, dt.getMessage());
@@ -356,7 +357,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on closeIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on closeIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -374,7 +375,7 @@ public class ESIndexResource {
             return Response.ok().build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on openIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on openIndex. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -394,7 +395,7 @@ public class ESIndexResource {
             return responseResource.response( APILocator.getContentletIndexAPI().getActiveIndexName( init.getParamsMap().get( "type" ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getActive from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on getActive. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -415,7 +416,7 @@ public class ESIndexResource {
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on getDocumentCount. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
@@ -435,7 +436,7 @@ public class ESIndexResource {
             return responseResource.response( new Gson().toJson( APILocator.getContentletIndexAPI().listDotCMSIndices() ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on indexList from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            throw new ForbiddenException(sec);
         } catch (Exception de) {
             Logger.error(this, "Error on indexList. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();

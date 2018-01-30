@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v2.user;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -9,9 +10,11 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.UserPaginator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -61,7 +64,9 @@ public class UserResource {
         try {
             response = this.paginationUtil.getPage( request, user, filter, page, perPage );
         } catch (Exception e) {
-
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
             Logger.error(this, e.getMessage(), e);
         }
