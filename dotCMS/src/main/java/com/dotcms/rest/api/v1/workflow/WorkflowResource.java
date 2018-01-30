@@ -642,7 +642,6 @@ public class WorkflowResource {
     public final Response reorderStep(@Context final HttpServletRequest request,
                                         @PathParam("stepId")   final String stepId, 
                                         @PathParam("order")    final int order) {
-
         this.webResource.init
                 (null, true, request, true, null);
         Response response;
@@ -667,7 +666,6 @@ public class WorkflowResource {
                     ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-
         return response;
     } // reorderStep
     
