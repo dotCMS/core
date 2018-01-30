@@ -14,6 +14,7 @@ buildscript {
 
 plugins {
     id "com.moowork.node" version "1.2.0"
+    id "com.palantir.docker" version "0.17.2"
 }
 
 project.ext {
@@ -135,7 +136,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20171206', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20180119', ext: 'zip'
 
     profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
 
@@ -371,7 +372,7 @@ clonePullTomcatDist.group='dotCMS Util'
 clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
 //Creates the final distribution files for dotCMS.
-task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
+task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
 
     doLast {
         copy {
@@ -421,9 +422,11 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
     }
 
 }
-createDist.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
-createDist.group='dotCMS Development'
-createDist.description='Creates the final distribution files for dotCMS.'
+createDistPrep.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
+task createDist(dependsOn: 'createDistPrep') {
+    group 'dotCMS Development'
+    description 'Creates the final distribution files for dotCMS.'
+}
 
 //Task used to create a .zip file from the distribution
 task zip(type: Zip) {
@@ -459,7 +462,7 @@ task removeDistFolder(type: Delete){
 removeDistFolder.group='dotCMS Util'
 removeDistFolder.description='Removes the distribution folder.'
 
-removeDistFolder.mustRunAfter 'zip', 'tgzTask'
+removeDistFolder.mustRunAfter 'zip', 'tgzTask', 'docker'
 
 javadoc {
 
@@ -880,3 +883,14 @@ task copyNodeModules(type: Copy) {
 
     finalizedBy 'cleanNodeModules'
 }
+
+docker {
+    name "dotcms/devtest:$dotcmsReleaseVersion"
+    println '******** ' + name + ' *********'
+    tags 'devTestTag1', 'devTestTag2'
+    dockerfile file('Dockerfile')
+    copySpec.from(tgzTask.archivePath).into('.').rename(tgzTask.archiveName, 'dotcms.tar.gz')
+    pull true
+    noCache false
+}
+docker.dependsOn createDist
