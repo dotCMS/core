@@ -250,6 +250,9 @@ dependencies {
     compile (group: 'org.glassfish.hk2.external', name: 'javax.inject', version: '2.4.0-b10'){
         transitive = false
     }
+    compile (group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'){
+        transitive = false
+    }
 
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
@@ -257,7 +260,6 @@ dependencies {
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
-    compile group: 'com.dotcms.lib', name: 'dot.javassist', version:'3.18.1-GA_2'
     compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version:'1.0_2'
@@ -420,8 +422,7 @@ dependencies {
     compileOnly "org.immutables:value:2.3.3:annotations"
     compile 'org.immutables:gson:2.3.3'
 
-    	compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
-    
-    	compile group: 'io.bit3', name: 'jsass', version: '5.5.4'
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
+    compile group: 'io.bit3', name: 'jsass', version: '5.5.4'
     	
 }
