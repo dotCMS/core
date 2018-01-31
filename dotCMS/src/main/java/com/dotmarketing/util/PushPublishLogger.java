@@ -10,7 +10,23 @@ public class PushPublishLogger {
     private static String filename = "dotcms-pushpublish.log";
 
     public enum PushPublishHandler {
-        CATEGORY("Category");
+        CATEGORY("Category"),
+        CONTAINER("Container"),
+        CONTENT("Content"),
+        CONTENT_TYPE("Content Type"),
+        CONTENT_WORKFLOW("Content Workflow"),
+        FOLDER("Folder"),
+        HOST("Host"),
+        LANGUAGE("Language"),
+        LANGUAGE_VARIABLE("Language Messages"),
+        LINK("Link"),
+        OSGI("OSGI"),
+        RELATIONSHIP("Relationship"),
+        RULE("Rule"),
+        STRUCTURE("Structure"),
+        TEMPLATE("Template"),
+        USER("User"),
+        WORKFLOW("Workflow");
 
         private final String handler;
 
