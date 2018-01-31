@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import java.util.function.Supplier;
 
@@ -11,14 +12,13 @@ public class TimeUtil {
 
         int addedTime = 0;
         while (addedTime<maxTime) {
-
+            Logger.info(TimeUtil.class, "addedTime: " + addedTime);
             if (breakCondition.get()) {
                 break;
             }
 
             Thread.sleep(waitTime);
             addedTime+=waitTime;
-
         }
     }
 }

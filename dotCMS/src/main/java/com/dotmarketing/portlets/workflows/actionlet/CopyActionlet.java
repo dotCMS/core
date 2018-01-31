@@ -101,7 +101,7 @@ public class CopyActionlet extends WorkFlowActionlet {
 
         Contentlet copyContentlet = null;
 
-        if (contentlet.isFileAsset()) {
+        if (contentlet.isFileAsset() || contentlet.isHTMLPage()) {
 
             final Identifier contIdentifier = APILocator.getIdentifierAPI().find(contentlet);
             Host             host           = this.hostAPI.find(contentlet.getHost(), user, false);

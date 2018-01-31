@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -75,7 +74,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static WorkflowStep workflowScheme1Step1;
     private static String workflowScheme1Step1Name;
     private static WorkflowAction workflowScheme1Step1Action1;
-    private static String workflowScheme1Step1Action1Name;
+    private static String workflowScheme1Step1ActionIntranetName;
 
     private static WorkflowStep workflowScheme1Step2;
     private static String workflowScheme1Step2Name;
@@ -88,7 +87,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static WorkflowStep workflowScheme2Step1;
     private static String workflowScheme2Step1Name;
     private static WorkflowAction workflowScheme2Step1Action1;
-    private static String workflowScheme2Step1Action1Name;
+    private static String workflowScheme2Step1ActionReviewerName;
 
     private static WorkflowStep workflowScheme2Step2;
     private static String workflowScheme2Step2Name;
@@ -103,7 +102,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static String workflowScheme3Step1Name;
 
     private static WorkflowAction workflowScheme3Step1Action1;
-    private static String workflowScheme3Step1Action1Name;
+    private static String workflowScheme3Step1ActionPublisherName;
 
     private static WorkflowStep workflowScheme3Step2;
 
@@ -213,9 +212,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
         /* Mandatory Workflow */
         workflowSchemeName1 = "WorkflowSchemeTest1" + time;
         workflowScheme1Step1Name = "WorkflowScheme1Step1_" + time;
-        workflowScheme1Step1Action1Name = "WorkflowScheme1Step1Action1_" + time;
+        workflowScheme1Step1ActionIntranetName = "WorkflowScheme1Step1ActionIntranet_" + time;
         workflowScheme1Step2Name = "WorkflowScheme1Step2_" + time;
-        workflowScheme1Step2Action1Name = "WorkflowScheme1Step2Action1_" + time;
+        workflowScheme1Step2Action1Name = "WorkflowScheme1Step2ActionReviewer_" + time;
         workflowScheme1 = addWorkflowScheme(workflowSchemeName1, true);
 
         /* Generate scheme steps */
@@ -229,17 +228,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme1Step2Action1 = addWorkflowAction(workflowScheme1Step2Action1Name, 2,
                 workflowScheme1Step2.getId(), true, workflowScheme1Step2.getId(), reviewer, workflowScheme1.getId());
 
-        workflowScheme1Step1Action1 = addWorkflowAction(workflowScheme1Step1Action1Name, 1,
-                workflowScheme1Step2.getId(), true, workflowScheme1Step1.getId(), contributor, workflowScheme1.getId());
+        workflowScheme1Step1Action1 = addWorkflowAction(workflowScheme1Step1ActionIntranetName, 1,
+                workflowScheme1Step2.getId(), true, workflowScheme1Step1.getId(), intranet, workflowScheme1.getId());
 
 
 
         /* not Mandatory Workflows */
         workflowSchemeName2 = "WorkflowSchemeTest2_" + time;
         workflowScheme2Step1Name = "WorkflowScheme2Step1_" + time;
-        workflowScheme2Step1Action1Name = "WorkflowScheme2Step1Action1_" + time;
+        workflowScheme2Step1ActionReviewerName = "WorkflowScheme2Step1ActionReviewer_" + time;
         workflowScheme2Step2Name = "WorkflowScheme2Step2_" + time;
-        workflowScheme2Step2Action1Name = "WorkflowScheme2Step2Action1_" + time;
+        workflowScheme2Step2Action1Name = "WorkflowScheme2Step2ActionReviewer_" + time;
         workflowScheme2 = addWorkflowScheme(workflowSchemeName2, false);
 
         /* Generate scheme steps */
@@ -251,11 +250,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         /* Generate actions */
         workflowScheme2Step2Action1 = addWorkflowAction(workflowScheme2Step2Action1Name, 2,
-                workflowScheme2Step2.getId(), true, workflowScheme2Step2.getId(), reviewer,
+                workflowScheme2Step2.getId(), true, workflowScheme2Step2.getId(), contributor,
                 workflowScheme2.getId());
 
-        workflowScheme2Step1Action1 = addWorkflowAction(workflowScheme2Step1Action1Name, 1,
-                workflowScheme2Step2.getId(), true, workflowScheme2Step1.getId(), contributor,
+        workflowScheme2Step1Action1 = addWorkflowAction(workflowScheme2Step1ActionReviewerName, 1,
+                workflowScheme2Step2.getId(), true, workflowScheme2Step1.getId(), reviewer,
                 workflowScheme2.getId());
 
 
@@ -263,10 +262,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
         /* not Mandatory Workflows */
         workflowSchemeName3 = "WorkflowSchemeTest3_" + time;
         workflowScheme3Step1Name = "WorkflowScheme3Step1_" + time;
-        workflowScheme3Step1Action1Name = "WorkflowScheme3Step1Action1_" + time;
+        workflowScheme3Step1ActionPublisherName = "WorkflowScheme3Step1ActionPublisher_" + time;
         workflowScheme3Step2Name = "WorkflowScheme3Step2_" + time;
-        workflowScheme3Step2Action1Name = "WorkflowScheme2Step2Action1_" + time;
-        workflowScheme3Step2Action2Name = "WorkflowScheme2Step2Action2_" + time;
+        workflowScheme3Step2Action1Name = "WorkflowScheme2Step2ActionReviewer_" + time;
+        workflowScheme3Step2Action2Name = "WorkflowScheme2Step2ActionPublisher_" + time;
         workflowScheme3 = addWorkflowScheme(workflowSchemeName3, false);
 
         /* Generate scheme steps */
@@ -282,11 +281,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowScheme3.getId());
 
         workflowScheme3Step2Action2 = addWorkflowAction(workflowScheme3Step2Action2Name, 3,
-                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), publisher,
+                workflowScheme3Step2.getId(), true, workflowScheme3Step2.getId(), contributor,
                 workflowScheme3.getId());
 
-        workflowScheme3Step1Action1 = addWorkflowAction(workflowScheme3Step1Action1Name, 1,
-                workflowScheme3Step2.getId(), true, workflowScheme3Step1.getId(), contributor,
+        workflowScheme3Step1Action1 = addWorkflowAction(workflowScheme3Step1ActionPublisherName, 1,
+                workflowScheme3Step2.getId(), true, workflowScheme3Step1.getId(), publisher,
                 workflowScheme3.getId());
 
         //fourth Workflow Scheme
@@ -294,25 +293,25 @@ public class WorkflowAPITest extends IntegrationTestBase {
         /* Mandatory Workflow */
         workflowSchemeName4 = "WorkflowSchemeTest4" + time;
         workflowScheme4Step1Name = "WorkflowScheme4Step1_" + time;
-        workflowScheme4Step1ActionViewName = "WorkflowScheme4Step1Action1_" + time;
-        workflowScheme4Step1ActionEditName = "WorkflowScheme4Step1Action2_" + time;
-        workflowScheme4Step1ActionPublishName = "WorkflowScheme4Step1Action3_" + time;
-        workflowScheme4Step1ActionEditPermissionsName = "WorkflowScheme4Step1Action4_" + time;
-        workflowScheme4Step1ActionContributorName = "WorkflowScheme4Step1Action5_" + time;
+        workflowScheme4Step1ActionViewName = "WorkflowScheme4Step1ActionView_" + time;
+        workflowScheme4Step1ActionEditName = "WorkflowScheme4Step1ActionEdit_" + time;
+        workflowScheme4Step1ActionPublishName = "WorkflowScheme4Step1ActionPublish_" + time;
+        workflowScheme4Step1ActionEditPermissionsName = "WorkflowScheme4Step1ActionEditPermissions_" + time;
+        workflowScheme4Step1ActionContributorName = "WorkflowScheme4Step1ActionContributor_" + time;
 
         workflowScheme4Step2Name = "WorkflowScheme4Step2_" + time;
-        workflowScheme4Step2ActionViewName = "WorkflowScheme4Step2Action1_" + time;
-        workflowScheme4Step2ActionEditName = "WorkflowScheme4Step2Action2_" + time;
-        workflowScheme4Step2ActionPublishName = "WorkflowScheme4Step2Action3_" + time;
-        workflowScheme4Step2ActionEditPermissionsName = "WorkflowScheme4Step2Action4_" + time;
-        workflowScheme4Step2ActionReviewerName = "WorkflowScheme4Step2Action5_" + time;
+        workflowScheme4Step2ActionViewName = "WorkflowScheme4Step2ActionView_" + time;
+        workflowScheme4Step2ActionEditName = "WorkflowScheme4Step2ActionEdit_" + time;
+        workflowScheme4Step2ActionPublishName = "WorkflowScheme4Step2ActionPublish_" + time;
+        workflowScheme4Step2ActionEditPermissionsName = "WorkflowScheme4Step2ActionEditPermissions_" + time;
+        workflowScheme4Step2ActionReviewerName = "WorkflowScheme4Step2ActionReviewer_" + time;
 
         workflowScheme4Step3Name = "WorkflowScheme4Step3_" + time;
-        workflowScheme4Step3ActionViewName = "WorkflowScheme4Step3Action1_" + time;
-        workflowScheme4Step3ActionEditName = "WorkflowScheme4Step3Action2_" + time;
-        workflowScheme4Step3ActionPublishName = "WorkflowScheme4Step3Action3_" + time;
-        workflowScheme4Step3ActionEditPermissionsName = "WorkflowScheme4Step3Action4_" + time;
-        workflowScheme4Step3ActionPublisherName = "WorkflowScheme4Step3Action5_" + time;
+        workflowScheme4Step3ActionViewName = "WorkflowScheme4Step3ActionView_" + time;
+        workflowScheme4Step3ActionEditName = "WorkflowScheme4Step3ActionEdit_" + time;
+        workflowScheme4Step3ActionPublishName = "WorkflowScheme4Step3ActionPublish_" + time;
+        workflowScheme4Step3ActionEditPermissionsName = "WorkflowScheme4Step3ActionEditPermissions_" + time;
+        workflowScheme4Step3ActionPublisherName = "WorkflowScheme4Step3ActionPublisher_" + time;
 
         /**
          * Generate ContentType
@@ -346,10 +345,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme4Step3ActionPublish = addWorkflowAction(workflowScheme4Step3ActionPublishName, 3,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(), anyWhoPublish,
                 workflowScheme4.getId());
-        workflowScheme4Step3ActionEditPermissions = addWorkflowAction(workflowScheme4Step2ActionEditPermissionsName, 4,
+        workflowScheme4Step3ActionEditPermissions = addWorkflowAction(workflowScheme4Step3ActionEditPermissionsName, 4,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(),
                 anyWhoEditPermissions, workflowScheme4.getId());
-        workflowScheme4Step3ActionPublisher = addWorkflowAction(workflowScheme4Step2ActionReviewerName, 5,
+        workflowScheme4Step3ActionPublisher = addWorkflowAction(workflowScheme4Step3ActionPublisherName, 5,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(), publisher,
                 workflowScheme4.getId());
 
@@ -668,19 +667,19 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .findAvailableActions(testContentlet, billIntranet);
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
-            assertEquals(foundActions.size(), 3);
+            assertEquals(foundActions.size(), 4);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, janeReviewer);
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
-            assertEquals(foundActions.size(), 3);
+            assertEquals(foundActions.size(), 4);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, chrisPublisher);
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
-            assertEquals(foundActions.size(), 4);
+            assertEquals(foundActions.size(), 6);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, joeContributor);
@@ -876,6 +875,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         contentTypeAPI.delete(contentType);
         try {
+            //Deleting workflow 1
             workflowAPI.deleteAction(workflowScheme1Step1Action1);
             workflowAPI.deleteAction(workflowScheme1Step2Action1);
 
@@ -886,7 +886,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.saveScheme(workflowScheme1);
             workflowAPI.deleteScheme(workflowScheme1);
 
-
+            //Deleting workflow 2
             workflowAPI.deleteAction(workflowScheme2Step1Action1);
             workflowAPI.deleteAction(workflowScheme2Step2Action1);
             workflowAPI.deleteStep(workflowScheme2Step1);
@@ -896,6 +896,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.saveScheme(workflowScheme2);
             workflowAPI.deleteScheme(workflowScheme2);
 
+            //Deleting workflow 3
             workflowAPI.deleteAction(workflowScheme3Step1Action1);
             workflowAPI.deleteAction(workflowScheme3Step2Action1);
             workflowAPI.deleteAction(workflowScheme3Step2Action2);
@@ -906,6 +907,33 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowScheme3.setArchived(true);
             workflowAPI.saveScheme(workflowScheme3);
             workflowAPI.deleteScheme(workflowScheme3);
+
+            //Deleting workflow 4
+            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionView);
+
+            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionView);
+
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionView);
+
+            workflowAPI.deleteStep(workflowScheme4Step1);
+            workflowAPI.deleteStep(workflowScheme4Step2);
+            workflowAPI.deleteStep(workflowScheme4Step3);
+
+            workflowScheme4.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme4);
+            workflowAPI.deleteScheme(workflowScheme4);
 
         }catch (AlreadyExistException e){
 

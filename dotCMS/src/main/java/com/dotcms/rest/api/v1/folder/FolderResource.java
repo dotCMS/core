@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -10,11 +11,13 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -97,6 +100,9 @@ public class FolderResource implements Serializable {
                     )).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error handling Save Folder Post Request", e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;
@@ -118,6 +124,9 @@ public class FolderResource implements Serializable {
             response = Response.ok( new ResponseEntityView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error gettign folder for URI", e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;

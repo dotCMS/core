@@ -17,7 +17,30 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,6 +52,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.osgi.framework.BundleContext;
 import java.util.*;
+import java.util.stream.IntStream;
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -60,6 +84,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				UnarchiveContentActionlet.class,
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
+				FourEyeApproverActionlet.class,
 				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
@@ -146,7 +171,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
 	}
 
-	public WorkflowTask findTaskById(String id) throws DotDataException {
+	public WorkflowTask findTaskById(final String id) throws DotDataException {
 		return workFlowFactory.findWorkFlowTaskById(id);
 	}
 
@@ -293,12 +318,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Checking for Next Step references
 			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 
-				for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+				/*
+				Verify we are not validating the next step is the step we want to delete.
+				Remember the step can point to itself and that should not be a restriction when deleting.
+				 */
+				if (!otherStep.getId().equals(step.getId())) {
+					for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 
-					if(action.getNextStep().equals(step.getId())) {
-						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
-								" Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
-					}
+                        if(action.getNextStep().equals(step.getId())) {
+                            throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" +
+                                    " Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
+                        }
+                    }
 				}
 			}
 			
@@ -321,30 +352,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException {
-		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		List<WorkflowStep> steps = null;
+	@Override
+	public void reorderStep(final WorkflowStep step, final int order) throws DotDataException, AlreadyExistException {
+
+		final List<WorkflowStep> steps;
+		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
 
 		try {
-			steps = findSteps(scheme);
+
+			steps  = this.findSteps (scheme);
 		} catch (Exception e) {
-			throw new DotDataException(e.getLocalizedMessage());
-		}
-		List<WorkflowStep> newSteps = new ArrayList<WorkflowStep>();
-		order = (order < 0) ? 0 : (order >= steps.size()) ? (steps.size() - 1) : order;
-		for (int i = 0; i < steps.size(); i++) {
-			WorkflowStep s = steps.get(i);
-			if (s.equals(step)) {
-				continue;
-			}
-			newSteps.add(s);
+			throw new DotDataException(e.getLocalizedMessage(), e);
 		}
 
-		newSteps.add(order, step);
-		int newOrder=0;
-		for(WorkflowStep newStep : newSteps){
-			newStep.setMyOrder(newOrder++);
-			saveStep(newStep);
+		IntStream.range(0, steps.size())
+				.filter(i -> steps.get(i).getId().equals(step.getId()))
+				.boxed()
+				.findFirst()
+				.map(i -> steps.remove((int) i));
+
+		final int newOrder = (order > steps.size()) ? steps.size():order;
+		steps.add(newOrder, step);
+
+		int i = 0;
+		for(final WorkflowStep stepp : steps) {
+			stepp.setMyOrder(i++);
+			this.saveStep(stepp);
 		}
 	}
 
@@ -398,6 +431,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+
+		if (task.getLanguageId() <= 0) {
+
+			Logger.error(this, "The task: " + task.getId() +
+								", does not have language id, setting to the default one");
+			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
 		workFlowFactory.saveWorkflowTask(task);
 	}
 
@@ -1071,6 +1112,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					task.setCreatedBy(r.getId());
 					task.setWebasset(processor.getContentlet().getIdentifier());
+					task.setLanguageId(processor.getContentlet().getLanguageId());
 					if(processor.getWorkflowMessage() != null){
 						task.setDescription(processor.getWorkflowMessage());
 					}

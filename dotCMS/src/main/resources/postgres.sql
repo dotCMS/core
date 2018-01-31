@@ -1075,6 +1075,7 @@ create table workflow_task (
    description text,
    status varchar(255),
    webasset varchar(255),
+   language_id INT8,
    primary key (id)
 );
 create table tag_inode (
@@ -1540,6 +1541,7 @@ create index idx_user_clickstream13 on clickstream (first_page_id);
 create index idx_user_clickstream14 on clickstream (operating_system);
 create index idx_user_clickstream17 on clickstream (remote_address);
 create index idx_multitree_1 on multi_tree (relation_type);
+create index idx_workflow_6 on workflow_task (language_id);
 create index idx_workflow_4 on workflow_task (webasset);
 create index idx_workflow_5 on workflow_task (created_by);
 create index idx_workflow_2 on workflow_task (belongs_to);
@@ -2207,6 +2209,7 @@ delete from workflow_history;
 delete from workflow_comment;
 delete from workflowtask_files;
 delete from workflow_task;
+alter table workflow_task add constraint FK_workflow_task_language foreign key (language_id) references language(id);
 alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);

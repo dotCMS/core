@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -29,12 +30,14 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -204,6 +207,9 @@ public class IntegrityResource {
         } catch (Exception e) {
             Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP);
             Logger.error(IntegrityResource.class,e.getMessage(),e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
         }
 
 
@@ -289,6 +295,9 @@ public class IntegrityResource {
 
         } catch (Exception e) {
             Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP, e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
 
@@ -354,8 +363,11 @@ public class IntegrityResource {
                 return response( jsonResponse.toString(), false );
             }
         } catch(JSONException e) {
-            Logger.error(IntegrityResource.class, "Error setting return message in JSON response", e);
-            return response( "Error setting return message in JSON response" , true );
+            Logger.error(IntegrityResource.class, "Error setting return message in JSON response",
+                    e);
+            return response("Error setting return message in JSON response", true);
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch(Exception e) {
             Logger.error(IntegrityResource.class, "Error checking existence of integrity data", e);
             return response( "Error checking existence of integrity data" , true );
@@ -435,7 +447,7 @@ public class IntegrityResource {
                                 	HibernateUtil.startTransaction();
                                 	integrityUtil.completeDiscardConflicts(endpointId);
                                     HibernateUtil.commitTransaction();
-                                    
+
                                     HibernateUtil.startTransaction();
                                     conflictPresent = integrityUtil.completeCheckIntegrity(endpointId);
                                     HibernateUtil.commitTransaction();
@@ -520,6 +532,10 @@ public class IntegrityResource {
             jsonResponse.put( "message", "Integrity Checking Initialized..." );
 
         } catch(Exception e) {
+
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
 
             //Special handling if the thread was interrupted
             if ( e instanceof InterruptedException || e.getCause() instanceof InterruptedException ) {
@@ -635,6 +651,9 @@ public class IntegrityResource {
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             return response( "Error checking the integrity process status for End Point server: [" + endpointId + "]", true );
         }
 
@@ -702,6 +721,9 @@ public class IntegrityResource {
 
         } catch ( Exception e ) {
             Logger.error( IntegrityResource.class, "Error caused by remote call of: " + remoteIP, e );
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             return response( "Error interrupting checking process on End Point server ( " + remoteIP + "). [" + e.getMessage() + "]", true );
         }
 
@@ -778,6 +800,9 @@ public class IntegrityResource {
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             return response( "Error checking the integrity process status for End Point server: [" + endpointId + "]" , true );
         }
 
@@ -902,6 +927,9 @@ public class IntegrityResource {
             responseMessage.append( jsonResponse.toString() );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error generating the integrity result for End Point server: [" + endpointId + "]", e );
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             return response( "Error generating the integrity result for End Point server: [" + endpointId + "]" , true );
         }
 
@@ -949,6 +977,9 @@ public class IntegrityResource {
             responseMessage.append( jsonResponse.toString() );
 
         } catch ( Exception e ) {
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
         	Logger.error(this.getClass(), "ERROR: Table "
 					+ IntegrityType.valueOf(type.toUpperCase()).getResultsTableName()
 					+ " could not be cleared on end-point [" + endpointId
@@ -985,18 +1016,21 @@ public class IntegrityResource {
         try {
             String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
             remoteIP = request.getRemoteHost();
-            if(!UtilMethods.isSet(remoteIP))
+            if (!UtilMethods.isSet(remoteIP))
                 remoteIP = request.getRemoteAddr();
 
             requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
+            if (!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
             HibernateUtil.startTransaction();
-            integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
+            integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(),
+                    IntegrityType.valueOf(type.toUpperCase()));
             HibernateUtil.commitTransaction();
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch ( Exception e ) {
             try {
                 HibernateUtil.rollbackTransaction();
@@ -1072,64 +1106,77 @@ public class IntegrityResource {
         IntegrityUtil integrityUtil = new IntegrityUtil();
 		IntegrityType integrityTypeToFix = IntegrityType.valueOf(type.toUpperCase());
         try {
-            if(whereToFix.equals("local")) {
+            if (whereToFix.equals("local")) {
 
-            	HibernateUtil.startTransaction();
+                HibernateUtil.startTransaction();
                 integrityUtil.fixConflicts(endpointId, integrityTypeToFix);
                 HibernateUtil.commitTransaction();
-                jsonResponse.put( "success", true );
-                jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
+                jsonResponse.put("success", true);
+                jsonResponse.put("message", "Conflicts fixed in Local Endpoint");
 
                 IntegrityType[] types = IntegrityType.values();
                 boolean isThereAnyConflict = false;
                 // Check if we still have other conflicts
                 for (IntegrityType integrityType : types) {
-					if (!integrityType.equals(integrityTypeToFix)) {
-	                	List<Map<String, Object>> results = integrityUtil.getIntegrityConflicts(endpointId, integrityType);
-	                	if(!results.isEmpty()) {
-	                		isThereAnyConflict = true;
-	                		break;
-	                	}
-                	}
+                    if (!integrityType.equals(integrityTypeToFix)) {
+                        List<Map<String, Object>> results = integrityUtil
+                                .getIntegrityConflicts(endpointId, integrityType);
+                        if (!results.isEmpty()) {
+                            isThereAnyConflict = true;
+                            break;
+                        }
+                    }
                 }
 
-                if(!isThereAnyConflict)
-                	clearStatus( request, endpointId );
+                if (!isThereAnyConflict)
+                    clearStatus(request, endpointId);
 
-            } else  if(whereToFix.equals("remote")) {
+            } else if (whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
 
                 final Client client = RestClientBuilder.newClient();
 
-                PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
+                PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI()
+                        .findEndPointById(endpointId);
                 String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
-                File bundle = new File(outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
+                File bundle = new File(
+                        outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
 
                 FormDataMultiPart form = new FormDataMultiPart();
                 form.field("AUTH_TOKEN",
                         PushPublisher.retriveKeyString(
-                                PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+                                PublicEncryptionFactory
+                                        .decryptString(endpoint.getAuthKey().toString())));
 
                 form.field("TYPE", type);
-                form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-                String url = endpoint.toURL()+"/api/integrity/fixconflictsfromremote/";
+                form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle,
+                        MediaType.MULTIPART_FORM_DATA_TYPE));
+                String url = endpoint.toURL() + "/api/integrity/fixconflictsfromremote/";
                 WebTarget webTarget = client.target(url);
-                Response response = webTarget.request(MediaType.TEXT_PLAIN_TYPE).post(Entity.entity(form, form.getMediaType()));
+                Response response = webTarget.request(MediaType.TEXT_PLAIN_TYPE)
+                        .post(Entity.entity(form, form.getMediaType()));
 
-                if(response.getStatus() == HttpStatus.SC_OK) {
-                    jsonResponse.put( "success", true );
-                    jsonResponse.put( "message", "Fix Conflicts Process successfully started at Remote." );
-                    clearStatus( request, endpointId );
+                if (response.getStatus() == HttpStatus.SC_OK) {
+                    jsonResponse.put("success", true);
+                    jsonResponse.put("message",
+                            "Fix Conflicts Process successfully started at Remote.");
+                    clearStatus(request, endpointId);
                 } else {
-					Logger.error(this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase()
-							+ " (" + response.getStatus() + ") Error trying to fix conflicts on " + whereToFix
-							+ " end-point [" + endpointId + "].");
-                    return Response.status( HttpStatus.SC_BAD_REQUEST ).entity("Endpoint with id: " + endpointId + " returned server error." ).build();
+                    Logger.error(this.getClass(),
+                            "Response indicating a " + response.getStatusInfo().getReasonPhrase()
+                                    + " (" + response.getStatus()
+                                    + ") Error trying to fix conflicts on " + whereToFix
+                                    + " end-point [" + endpointId + "].");
+                    return Response.status(HttpStatus.SC_BAD_REQUEST)
+                            .entity("Endpoint with id: " + endpointId + " returned server error.")
+                            .build();
                 }
             } else {
-                return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' has an invalid value.").build();
+                return Response.status(HttpStatus.SC_BAD_REQUEST)
+                        .entity("Error: 'whereToFix' has an invalid value.").build();
             }
-
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch ( Exception e ) {
         	try {
                 HibernateUtil.rollbackTransaction();

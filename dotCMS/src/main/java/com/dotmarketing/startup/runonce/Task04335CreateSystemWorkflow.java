@@ -23,12 +23,11 @@ import java.util.stream.Collectors;
 /**
  * This upgrade task will creates the system workflow
  *
- * @author Jose Orsini
- * @version 4.3.0
- * @since Jan 11, 2018
+ * @author jsanca
+ * @version 5.0
  *
  */
-public class Task04330CreateSystemWorkflow implements StartupTask {
+public class Task04335CreateSystemWorkflow implements StartupTask {
 
 
     public    static final String SYSTEMWORKFLOW_JSON_PATH = "com/dotmarketing/startup/runonce/json/systemworkflow.json";

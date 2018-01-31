@@ -18,11 +18,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.repackage.org.glassfish.jersey.servlet.internal.ThreadLocalInvoker;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -89,17 +85,11 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 	private String getJspResponse ( HttpServletRequest request, HttpServletResponse response, String portletId, String jspName ) throws ServletException,
 			IOException {
 
-		@SuppressWarnings("rawtypes")
-		InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
-
-		DotResponseProxy responseProxy = (DotResponseProxy) Proxy.newProxyInstance(DotResponseProxy.class.getClassLoader(),
-				new Class[] { DotResponseProxy.class }, dotInvocationHandler);
-
 		jspName = (!UtilMethods.isSet(jspName)) ? "render" : jspName;
 
 		String path = "/WEB-INF/jsp/" + portletId.toLowerCase() + "/" + jspName + ".jsp";
 
-		HttpServletResponseWrapper responseWrapper = new ResponseWrapper( responseProxy );
+		HttpServletResponseWrapper responseWrapper = new ResponseWrapper(response);
 
 		Logger.debug(this.getClass(), "trying: " + path);
 
@@ -149,7 +139,7 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 	@Path("/layout/{params:.*}")
 	@Produces("text/html")
 	public Response getLayout ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam( "params" ) String params )
-			throws DotDataException, DotSecurityException, ServletException, IOException, DotRuntimeException,
+			throws DotDataException, ServletException, IOException,
 			PortalException, SystemException {
 
 		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);

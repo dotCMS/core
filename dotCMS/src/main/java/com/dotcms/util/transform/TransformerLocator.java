@@ -1,9 +1,10 @@
 package com.dotcms.util.transform;
 
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.transform.IdentifierTransformer;
-import com.dotmarketing.beans.transform.OracleTreeTransformer;
+import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -45,6 +46,7 @@ public class TransformerLocator {
         transformerMapping.put (Template.class, TransformerLocator::createTemplateTransformer);
         transformerMapping.put (Container.class, TransformerLocator::createContainerTransformer);
         transformerMapping.put (Link.class, TransformerLocator::createLinkTransformer);
+        transformerMapping.put (MultiTree.class, TransformerLocator::createMultiTreeTransformer);
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
         transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
         transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
@@ -121,6 +123,15 @@ public class TransformerLocator {
     }
 
     /**
+     * Creates a DBTransformer for MultiTree objects
+     * @param initList List of DB results to be transformed
+     */
+    public static MultiTreeTransformer createMultiTreeTransformer(
+            List<Map<String, Object>> initList) {
+        return new MultiTreeTransformer(initList);
+    }
+
+    /**
      * Creates a DBTransformer for Link objects
      * @param initList List of DB results to be transformed
      * @return
@@ -149,6 +160,6 @@ public class TransformerLocator {
     public static TreeTransformer createTreeTransformer(
         List<Map<String, Object>> initList) {
 
-        return DbConnectionFactory.isOracle()?new OracleTreeTransformer(initList):new TreeTransformer(initList);
+        return new TreeTransformer(initList);
     }
 }
