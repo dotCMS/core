@@ -136,7 +136,7 @@ public class DependencySet extends HashSet<String> {
 		return addOrClean( assetId, assetModDate, true);
 	}
 
-	private boolean addOrClean ( final String assetId, Date assetModDate, Boolean cleanForUnpublish) {
+	private boolean addOrClean ( final String assetId, final Date assetModDate, Boolean cleanForUnpublish) {
 
 		if ( !isPublish ) {
 
@@ -227,7 +227,7 @@ public class DependencySet extends HashSet<String> {
 		return false;
 	}
 
-    private void savePushedAsset(String assetId, Environment env) {
+    private void savePushedAsset(final String assetId, final Environment env) {
         try {
             //Insert the new pushed asset indicating to which endpoints will be sent and with what publisher class
             final PushedAsset
