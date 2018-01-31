@@ -31,7 +31,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-dbcp', version:'1.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-fileupload', version:'1.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version:'3.1_2'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version:'3.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.commons-io', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-core', version:'1.0.406301_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-eclipse', version:'3.2.0.666_2'
