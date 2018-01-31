@@ -41,7 +41,8 @@ public class DependencySet extends HashSet<String> {
 	private static final String ENDPOINTS_SUFFIX = "_endpointIds";
 	private static final String PUBLISHER_SUFFIX = "_publisher";
 
-	public DependencySet(String bundleId, String assetType, boolean isDownload, boolean isPublish, boolean isStatic) {
+	public DependencySet(final String bundleId, final String assetType, final boolean isDownload,
+						 final boolean isPublish, final boolean isStatic) {
 		super();
 		cache = CacheLocator.getPushedAssetsCache();
 		this.assetType = assetType;
@@ -56,8 +57,8 @@ public class DependencySet extends HashSet<String> {
 		}
 		try {
 			for (Environment env : envs) {
-				String endpointIds = null;
-				String publisher = null;
+				String endpointIds;
+				String publisher;
 
 				List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(env.getId());
 				List<String> endpoints = new ArrayList<>();
@@ -87,10 +88,9 @@ public class DependencySet extends HashSet<String> {
 				publisher = StringUtils.join(publishers,",");
 				//comma separated string with the list of endpoint ids
 				endpointIds = StringUtils.join(endpoints,",");
-				if(!env.getPushToAll()) {
-					if(endpointIds != null && endpointIds.contains(",")){
-						endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
-					}
+
+				if(!env.getPushToAll() && endpointIds != null && endpointIds.contains(",")){
+					endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
 				}
 
 				//Add environment endpoints and publisher to map
@@ -99,7 +99,7 @@ public class DependencySet extends HashSet<String> {
 
 			}
 			//Search and remove all the environments that are not going to be used by this dependencySet
-			List<Environment> removeEnvironmentsList = new ArrayList<Environment>();
+			List<Environment> removeEnvironmentsList = new ArrayList<>();
 			for (Environment env : envs) {
 				if(StringUtils.isEmpty(environmentsEndpointsAndPublisher.get(env.getId()+ENDPOINTS_SUFFIX))){
 					removeEnvironmentsList.add(env);
@@ -119,7 +119,7 @@ public class DependencySet extends HashSet<String> {
 		}
 	}
 
-	public boolean add(String assetId, Date assetModDate) {
+	public boolean add(final String assetId, final Date assetModDate) {
 		return addOrClean( assetId, assetModDate, false);
 	}
 
@@ -132,11 +132,11 @@ public class DependencySet extends HashSet<String> {
 	 * @param assetModDate
 	 * @return
 	 */
-	public boolean addOrClean ( final String assetId, Date assetModDate) {
+	public boolean addOrClean ( final String assetId, final Date assetModDate) {
 		return addOrClean( assetId, assetModDate, true);
 	}
 
-	private boolean addOrClean ( final String assetId, final Date assetModDate, Boolean cleanForUnpublish) {
+	private boolean addOrClean ( final String assetId, final Date assetModDate, final Boolean cleanForUnpublish) {
 
 		if ( !isPublish ) {
 
