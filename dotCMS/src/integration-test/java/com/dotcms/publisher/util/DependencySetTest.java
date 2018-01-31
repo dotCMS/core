@@ -48,10 +48,10 @@ public class DependencySetTest {
     @Test
     @UseDataProvider("dataProviderForcePush")
     public void addOrClean_shouldCreatePushedAssetEntry(final boolean forcePush) throws DotSecurityException, DotDataException {
-        Environment environment = createTestEnviroment();
-        PublishingEndPoint endPoint = createTestEndpoint(environment.getId());
+        final Environment environment = createTestEnviroment();
+        final PublishingEndPoint endPoint = createTestEndpoint(environment.getId());
 
-        Bundle testBundle = createTestBundle(forcePush, Collections.singletonList(environment));
+        final Bundle testBundle = createTestBundle(forcePush, Collections.singletonList(environment));
 
         final boolean IS_DOWNLOADING = false;
         final boolean IS_PUBLISHING = true;
@@ -65,7 +65,7 @@ public class DependencySetTest {
 
         dependencySet.add(contentlet.getIdentifier(), new Date());
 
-        PushedAsset pushedAsset = APILocator.getPushedAssetsAPI().getLastPushForAsset(contentlet.getIdentifier(),
+        final PushedAsset pushedAsset = APILocator.getPushedAssetsAPI().getLastPushForAsset(contentlet.getIdentifier(),
             environment.getId(), endPoint.getId());
 
         assertNotNull(pushedAsset);
@@ -73,7 +73,7 @@ public class DependencySetTest {
 
     private Bundle createTestBundle(final boolean forcePush, final List<Environment> environments)
         throws DotDataException {
-        Bundle bundle = new Bundle();
+        final Bundle bundle = new Bundle();
         bundle.setName("testBundle"+System.currentTimeMillis());
         bundle.setForcePush(forcePush);
         bundle.setPublishDate(new Date());
@@ -83,7 +83,7 @@ public class DependencySetTest {
     }
 
     private Environment createTestEnviroment() throws DotDataException, DotSecurityException {
-        Environment environment = new Environment();
+        final Environment environment = new Environment();
         environment.setName("testEnvironment"+System.currentTimeMillis());
         environment.setPushToAll(true);
         APILocator.getEnvironmentAPI().saveEnvironment(environment, null);
@@ -91,7 +91,7 @@ public class DependencySetTest {
     }
 
     private PublishingEndPoint createTestEndpoint(final String environmentId) throws DotDataException {
-        PublishingEndPoint publishingEndPoint = new PushPublishingEndPoint();
+        final PublishingEndPoint publishingEndPoint = new PushPublishingEndPoint();
         publishingEndPoint.setGroupId(environmentId);
         publishingEndPoint.setServerName(new StringBuilder("testEndpoint").append(System.currentTimeMillis()));
         publishingEndPoint.setAddress("x.x.x.x");

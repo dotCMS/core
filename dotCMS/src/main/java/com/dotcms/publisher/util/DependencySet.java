@@ -132,11 +132,11 @@ public class DependencySet extends HashSet<String> {
 	 * @param assetModDate
 	 * @return
 	 */
-	public boolean addOrClean ( String assetId, Date assetModDate) {
+	public boolean addOrClean ( final String assetId, Date assetModDate) {
 		return addOrClean( assetId, assetModDate, true);
 	}
 
-	private boolean addOrClean ( String assetId, Date assetModDate, Boolean cleanForUnpublish) {
+	private boolean addOrClean ( final String assetId, Date assetModDate, Boolean cleanForUnpublish) {
 
 		if ( !isPublish ) {
 
