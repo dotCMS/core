@@ -25,10 +25,10 @@ public class PushPublishLogger {
     }
 
     public enum PushPublishAction {
-        PUBLISH("Published"),
-        PUBLISH_CREATE("Published (new)"),
-        PUBLISH_UPDATE("Published (updated)"),
-        UNPUBLISH("Unpublished");
+        PUBLISH("published"),
+        PUBLISH_CREATE("published (new)"),
+        PUBLISH_UPDATE("published (updated)"),
+        UNPUBLISH("unpublished");
 
         private final String action;
 
@@ -76,14 +76,14 @@ public class PushPublishLogger {
         builder.append(" ");
         builder.append(action.toString());
         if (InodeUtils.isSet(id)) {
-            builder.append(" ID: " + id);
+            builder.append(", ID: " + id);
         }
         if (InodeUtils.isSet(inode)) {
             if (!inode.equals(id)) {
-                builder.append(" Inode: " + inode);
+                builder.append(", Inode: " + inode);
             }
         }
-        builder.append(" Name: " + name);
+        builder.append(", Name: " + name);
         log(cl, builder.toString(), bundleId);
     }
 }
