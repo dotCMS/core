@@ -17,7 +17,7 @@ public class ContentletDependencies {
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
 
-    private ContentletDependencies(ContentletDependencies.Builder builder) {
+    private ContentletDependencies(final ContentletDependencies.Builder builder) {
 
         this.modUser                     = builder.modUser;
         this.relationships               = builder.relationships;
@@ -77,42 +77,42 @@ public class ContentletDependencies {
             return new ContentletDependencies(this);
         }
 
-        public ContentletDependencies.Builder modUser(User user) {
+        public ContentletDependencies.Builder modUser(final User user) {
             this.modUser = user;
             return this;
         }
 
-        public ContentletDependencies.Builder relationships(ContentletRelationships relationships) {
+        public ContentletDependencies.Builder relationships(final ContentletRelationships relationships) {
             this.relationships = relationships;
             return this;
         }
 
-        public ContentletDependencies.Builder workflowActionId(String workflowActionId) {
+        public ContentletDependencies.Builder workflowActionId(final String workflowActionId) {
             this.workflowActionId = workflowActionId;
             return this;
         }
 
-        public ContentletDependencies.Builder workflowActionComments(String workflowActionComments) {
+        public ContentletDependencies.Builder workflowActionComments(final String workflowActionComments) {
             this.workflowActionComments = workflowActionComments;
             return this;
         }
 
-        public ContentletDependencies.Builder workflowAssignKey(String workflowAssignKey) {
+        public ContentletDependencies.Builder workflowAssignKey(final String workflowAssignKey) {
             this.workflowAssignKey = workflowAssignKey;
             return this;
         }
 
-        public ContentletDependencies.Builder categories(ArrayList<Category> categories) {
+        public ContentletDependencies.Builder categories(final ArrayList<Category> categories) {
             this.categories = categories;
             return this;
         }
 
-        public ContentletDependencies.Builder respectAnonymousPermissions(boolean respectAnonymousPermissions) {
+        public ContentletDependencies.Builder respectAnonymousPermissions(final boolean respectAnonymousPermissions) {
             this.respectAnonymousPermissions = respectAnonymousPermissions;
             return this;
         }
 
-        public ContentletDependencies.Builder generateSystemEvent(boolean generateSystemEvent) {
+        public ContentletDependencies.Builder generateSystemEvent(final boolean generateSystemEvent) {
             this.generateSystemEvent = generateSystemEvent;
             return this;
         }

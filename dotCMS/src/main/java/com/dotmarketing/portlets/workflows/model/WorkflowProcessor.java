@@ -34,7 +34,7 @@ public class WorkflowProcessor {
 		return contentletDependencies;
 	}
 
-	public void setContentletDependencies(ContentletDependencies contentletDependencies) {
+	public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
 		this.contentletDependencies = contentletDependencies;
 	}
 
