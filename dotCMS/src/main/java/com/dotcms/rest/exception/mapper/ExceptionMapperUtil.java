@@ -43,11 +43,23 @@ public final class ExceptionMapperUtil {
      * @param entity JSON as String.
      * @return Response with Status 400 and Media Type JSON.
      */
-    public static Response createResponse(String entity, String message){
+    public static Response createResponse(final String entity, final String message){
 
         //Return 4xx message to the client.
+        return createResponse(entity, message, Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Creates an error response with a specific status.
+     * @param entity JSON as String.
+     * @return Response with Status 400 and Media Type JSON.
+     */
+    public static Response createResponse(final String entity,
+                                          final String message,
+                                          final Response.Status status){
+
         return Response
-                .status(Response.Status.BAD_REQUEST)
+                .status(status)
                 .entity(entity)
                 .header("error-message", message)
                 .type(MediaType.APPLICATION_JSON)

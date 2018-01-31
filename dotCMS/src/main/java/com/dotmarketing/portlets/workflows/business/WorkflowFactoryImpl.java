@@ -9,6 +9,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -610,8 +611,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(id);
 				scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
 				cache.add(scheme);
+			} catch (final IndexOutOfBoundsException e) {
+				throw new DoesNotExistException(e.getMessage(), e);
 			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage(),e);
+				throw new DotDataException(e.getMessage(), e);
 			}
 		}
 		return scheme;

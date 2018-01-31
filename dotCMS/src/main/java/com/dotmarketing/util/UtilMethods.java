@@ -353,6 +353,17 @@ public class UtilMethods {
     }
 
     /**
+     * Determines if a map of objects is different from {@code null} and is not empty.
+     *
+     * @param map - The {@link Collection} to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Map<?,?> map) {
+        return null != map && !map.isEmpty();
+    }
+
+    /**
      * Determines if an array of objects is different from {@code null} and is not empty.
      *
      * @param array - The {@link Object} array to check.
