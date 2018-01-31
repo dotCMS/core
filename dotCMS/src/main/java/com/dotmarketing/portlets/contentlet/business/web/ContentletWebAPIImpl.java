@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -69,13 +70,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -342,15 +337,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private void _saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
-		/**
-		System.out.println("----------------------------from form-------------------------");
-		for(String x: contentletFormData.keySet()){
-			System.out.println(x +":" + contentletFormData.get(x));
-		}
-		 **/
-
-
-		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
+		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
 		Set contentletFormKeys = contentletFormData.keySet();//To replace req.getParameterValues()
 
 		// Getting the contentlets variables to work
@@ -361,10 +348,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(!InodeUtils.isSet(currentContentlet.getInode())){
 			isNew = true;
 		}
-
-
-
-
 
 		/***
 		 *
@@ -388,30 +371,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
 		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
 
-
-
-
-
-
-
-
-
-
 		if(!isNew){
 
-
-			WorkflowAPI wapi = APILocator.getWorkflowAPI();
 			String wfActionId = (String) contentletFormData.get("wfActionId");
-			if(UtilMethods.isSet(wfActionId)){
+			if(UtilMethods.isSet(wfActionId)) {
+
 				WorkflowAction action = null;
-				try{
+				try {
 					action = APILocator.getWorkflowAPI().findAction(wfActionId, user);
-				}
-				catch(Exception e){
+				} catch(Exception e){
 
 				}
 				if(action != null
-						&& ! action.requiresCheckout()
+						&& ! action.requiresCheckout() // no modifies the db
 						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
 
 				    if(currentContentlet.isLocked())
@@ -421,29 +393,20 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						currentContentlet = APILocator.getWorkflowAPI().fireWorkflowNoCheckin(currentContentlet,user).getContentlet();
 						contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
 						contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
-						SessionMessages.add(req, "message", "Workflow-executed");
+						SessionMessages.add(request, "message", "Workflow-executed");
 
 						return;
 				}
 			}
 
-
-
-
-
-
-
-
-
 			try{
 				currentContentlet = conAPI.checkout(currentContentlet.getInode(), user, false);
-			}
-			catch(DotLockException dle){
-				SessionMessages.add(req, "message", "message.cannot.unlock.content.for.editing");
+			} catch(DotLockException dle) {
+				SessionMessages.add(request, "message", "message.cannot.unlock.content.for.editing");
 				throw new DotLockException("User cannot lock contentlet : ", dle);
-			}catch (DotSecurityException dse) {
+			} catch (DotSecurityException dse) {
 				if(!isAutoSave)
-					SessionMessages.add(req, "message", "message.insufficient.permissions.to.save");
+					SessionMessages.add(request, "message", "message.insufficient.permissions.to.save");
 
 				throw new DotSecurityException("User cannot checkout contentlet : ", dse);
 			}
@@ -524,7 +487,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if(host == null)
 					host = new Host();
 				if(!perAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
-					SessionMessages.add(req, "message", "User needs 'Add Children' Permissions on selected host");
+					SessionMessages.add(request, "message", "User needs 'Add Children' Permissions on selected host");
 					throw new DotSecurityException("User has no Add Children Permissions on selected host");
 				}
 				currentContentlet.setHost(hostId);
@@ -536,7 +499,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				String folderInode = contentletFormData.get(elementName).toString();
 				folder = fldrAPI.find(folderInode, user, true);
 				if(isNew && !perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
-					SessionMessages.add(req, "message", "User needs 'Add Children Permissions' on selected folder");
+					SessionMessages.add(request, "message", "User needs 'Add Children Permissions' on selected folder");
 					throw new DotSecurityException("User has no Add Children Permissions on selected folder");
 				}
 				currentContentlet.setHost(folder.getHostId());
@@ -602,58 +565,45 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					throw new DotRuntimeException(msg);
 				}
 			}
-			
-			if(!isAutoSave){
+
+			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
+				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
+						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
+								.modUser(user)
+								.relationships(contRel)
+								.workflowActionId((String) contentletFormData.get("wfActionId"))
+								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
+								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
+								.categories(cats)
+								.generateSystemEvent(generateSystemEvent).build());
+			} else { // todo: remove this as soon as all actions are workflow actions
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false,generateSystemEvent);
-
-
-			}else{
-				 // Existing contentlet auto save
-				Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-				List<Relationship> rels = FactoryLocator.getRelationshipFactory()
-											.byContentType( currentContentlet
-                                                    .getStructure() );
-				for (Relationship r : rels) {
-					if (!contentRelationships.containsKey(r)) {
-						contentRelationships
-								.put( r, new ArrayList<Contentlet>() );
-					}
-					List<Contentlet> cons = conAPI.getRelatedContent(
-							currentContentlet, r, user, true);
-					for (Contentlet co : cons) {
-						List<Contentlet> l2 = contentRelationships.get(r);
-						l2.add(co);
-					}
-				}
-				currentContentlet = conAPI.checkinWithoutVersioning(
-											currentContentlet, contentRelationships, cats,
-											perAPI.getPermissions(currentContentlet, false, true), user, false);
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats,
+						null, user, false,generateSystemEvent);
 			}
+		} catch(DotContentletValidationException ve) {
 
-
-		}catch(DotContentletValidationException ve) {
-				throw ve;
+			Logger.error(this, ve.getMessage(), ve);
+			throw ve;
 		}
+
 		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
 		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
-
 
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 
-
 		if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS") && !isNew && !isAutoSave)
-			_sendContentletPublishNotification(currentContentlet, req);
+			_sendContentletPublishNotification(currentContentlet, request);
 
 		if(!isAutoSave)
-		    SessionMessages.add(req, "message", "message.contentlet.save");
+		    SessionMessages.add(request, "message", "message.contentlet.save");
 
         if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
             APILocator.getVersionableAPI().setLive(currentContentlet);
             if(!isAutoSave)
-                SessionMessages.add(req, "message", "message.contentlet.published");
+                SessionMessages.add(request, "message", "message.contentlet.published");
         }
 	}
 

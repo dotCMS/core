@@ -6,6 +6,7 @@ import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -27,6 +28,15 @@ public class WorkflowProcessor {
 	List<WorkflowHistory> history;
 	String workflowMessage;
 	List<WorkflowActionClass> actionClasses;
+	ContentletDependencies    contentletDependencies;
+
+	public ContentletDependencies getContentletDependencies() {
+		return contentletDependencies;
+	}
+
+	public void setContentletDependencies(ContentletDependencies contentletDependencies) {
+		this.contentletDependencies = contentletDependencies;
+	}
 
 	public List<WorkflowActionClass> getActionClasses() {
 		return actionClasses;
