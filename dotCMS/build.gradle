@@ -14,6 +14,7 @@ buildscript {
 
 plugins {
     id "com.moowork.node" version "1.2.0"
+    id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
 }
 
 project.ext {
@@ -382,7 +383,7 @@ clonePullTomcatDist.group='dotCMS Util'
 clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
 //Creates the final distribution files for dotCMS.
-task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
+task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
 
     doLast {
         copy {
@@ -432,9 +433,11 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
     }
 
 }
-createDist.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
-createDist.group='dotCMS Development'
-createDist.description='Creates the final distribution files for dotCMS.'
+createDistPrep.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
+task createDist(dependsOn: 'createDistPrep') {
+    group 'dotCMS Development'
+    description 'Creates the final distribution files for dotCMS.'
+}
 
 //Task used to create a .zip file from the distribution
 task zip(type: Zip) {
@@ -470,7 +473,7 @@ task removeDistFolder(type: Delete){
 removeDistFolder.group='dotCMS Util'
 removeDistFolder.description='Removes the distribution folder.'
 
-removeDistFolder.mustRunAfter 'zip', 'tgzTask'
+removeDistFolder.mustRunAfter 'zip', 'tgzTask', 'docker'
 
 javadoc {
 
@@ -891,3 +894,14 @@ task copyNodeModules(type: Copy) {
 
     finalizedBy 'cleanNodeModules'
 }
+
+// reference:  https://github.com/palantir/gradle-docker
+docker {
+    name "dotcms/devtest:$dotcmsReleaseVersion"
+    tags 'latest'
+    dockerfile file('Dockerfile')
+    copySpec.from(tgzTask.archivePath).into('.').rename(tgzTask.archiveName, 'dotcms.tar.gz')
+    pull true
+    noCache false
+}
+docker.dependsOn createDist
