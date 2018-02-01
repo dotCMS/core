@@ -15,6 +15,7 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
@@ -108,6 +109,14 @@ public class AuthenticationResource implements Serializable {
                 final Map<String, Object> userMap = user.toMap();
 
                 userMap.put("loggedInDate", new Date());
+
+                Identifier editModeId = (Identifier) request.getSession().getAttribute("LOGIN_TO_EDIT_MODE");
+
+                if (editModeId != null) {
+                    userMap.put("editModeUrl", editModeId.getURI());
+                    request.getSession().removeAttribute("LOGIN_TO_EDIT_MODE");
+                }
+
                 res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
