@@ -20,7 +20,7 @@ public class PushPublishLogger {
         LANGUAGE("Language"),
         LANGUAGE_FILE("Language File"),
         LINK("Link"),
-        OSGI("OSGI"),
+        OSGI("OSGI Bundle"),
         RELATIONSHIP("Relationship"),
         RULE("Rule"),
         STRUCTURE("Structure"),
