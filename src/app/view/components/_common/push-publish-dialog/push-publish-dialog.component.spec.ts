@@ -24,11 +24,10 @@ class PushPublishServiceMock {
 
 @Component({
     selector: 'test-host-component',
-    template: '<dot-push-publish-dialog [show]="showDialog" [assetIdentifier]="pushPublishIdentifier"></dot-push-publish-dialog>'
+    template: '<dot-push-publish-dialog [assetIdentifier]="pushPublishIdentifier"></dot-push-publish-dialog>'
 })
 class TestHostComponent {
     pushPublishIdentifier: string;
-    showDialog = false;
 }
 
 describe('PushPublishContentTypesDialogComponent', () => {
@@ -75,8 +74,6 @@ describe('PushPublishContentTypesDialogComponent', () => {
         de = fixture.debugElement.query(By.css('dot-push-publish-dialog'));
         comp = de.componentInstance;
         el = de.nativeElement;
-
-        fixture.componentInstance.showDialog = true;
     });
 
     it('should have a form', () => {

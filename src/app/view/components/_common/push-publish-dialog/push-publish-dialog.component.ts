@@ -16,10 +16,8 @@ import { LoggerService } from 'dotcms-js/dotcms-js';
 export class PushPublishContentTypesDialogComponent implements OnInit {
     form: FormGroup;
     pushActions: SelectItem[];
-    submitted = false;
     dateFieldMinDate = new Date();
 
-    @Input() show: boolean;
     @Input() assetIdentifier: string;
     @Output() cancel = new EventEmitter<boolean>();
     @ViewChild('formEl') formEl: HTMLFormElement;
@@ -74,7 +72,6 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     close(): void {
         this.cancel.emit(true);
         this.initForm();
-        this.submitted = false;
     }
 
     /**
@@ -84,7 +81,6 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
      * @memberof PushPublishContentTypesDialogComponent
      */
     submitPushAction($event): void {
-        this.submitted = true;
         if (this.form.valid) {
             this.pushPublishService.pushPublishContent(this.assetIdentifier, this.form.value).subscribe((result: any) => {
                 if (!result.errors) {

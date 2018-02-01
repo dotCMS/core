@@ -37,6 +37,7 @@ export class ContentTypesPortletComponent implements OnInit {
     public actionHeaderOptions: ActionHeaderOptions;
     public rowActions: DotDataTableAction[];
     public pushPublishIdentifier: string;
+    public addToBundleIdentifier: string;
 
     private i18nKeys = [
         'contenttypes.fieldname.structure.name',
@@ -59,6 +60,7 @@ export class ContentTypesPortletComponent implements OnInit {
         'contenttypes.action.delete',
         'contenttypes.action.cancel',
         'contenttypes.content.push_publish',
+        'contenttypes.content.add_to_bundle',
         'Content-Type'
     ];
 
@@ -90,10 +92,9 @@ export class ContentTypesPortletComponent implements OnInit {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
                 delete: true,
-                pushPublish: !res[2] && res[3]
+                pushPublish: !res[2] && res[3],
+                addToBundle: !res[2]
             };
-
-            console.log(res[3]);
 
             this.actionHeaderOptions = {
                 primary: {
@@ -133,6 +134,15 @@ export class ContentTypesPortletComponent implements OnInit {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
                     command: item => this.pushPublishContentType(item)
+                }
+            });
+        }
+
+        if (rowActionsMap.addToBundle) {
+            listingActions.push({
+                menuItem: {
+                    label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                    command: item => this.addToBundleContentType(item)
                 }
             });
         }
@@ -230,11 +240,11 @@ export class ContentTypesPortletComponent implements OnInit {
         });
     }
 
-    private closeDialog(): void {
-        this.pushPublishIdentifier = null;
-    }
-
     private pushPublishContentType(item: any) {
         this.pushPublishIdentifier = item.id;
+    }
+
+    private addToBundleContentType(item: any) {
+        this.addToBundleIdentifier = item.id;
     }
 }

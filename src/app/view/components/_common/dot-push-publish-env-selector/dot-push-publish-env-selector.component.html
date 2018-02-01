@@ -4,7 +4,7 @@
      Also there is a problem here, when the field is invalid this multiselect should have the invalid class
 -->
 <p-multiSelect 
-    [options]="pushEnvironments | async" 
+    [options]="pushEnvironments$ | async" 
     [(ngModel)]="selectedEnvironments" 
     optionLabel="name" 
     defaultLabel="Select environment" 

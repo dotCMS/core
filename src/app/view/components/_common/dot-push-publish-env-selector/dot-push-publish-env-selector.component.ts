@@ -22,14 +22,20 @@ import { Observable } from 'rxjs/Observable';
 
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
     @Input() assetIdentifier: string;
-    pushEnvironments: Observable<any>;
+    pushEnvironments$: Observable<any>;
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];
 
     constructor(private pushPublishService: PushPublishService, public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.pushEnvironments = this.pushPublishService.getEnvironments();
+        this.pushEnvironments$ = this.pushPublishService.getEnvironments();
+
+        this.pushPublishService.getEnvironments().subscribe(environments => {
+            if (environments.length === 1) {
+                this.selectedEnvironments = environments;
+            }
+        });
 
         this.dotMessageService.getMessages([
             'contenttypes.content.push_publish.select_environment'

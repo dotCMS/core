@@ -7,6 +7,7 @@ import { AjaxActionResponseView } from '../../../shared/models/ajax-action-respo
 import { DotCurrentUser } from '../../../shared/models/dot-current-user/dot-current-user';
 import { PushPublishData } from '../../../shared/models/push-publish-data/push-publish-data';
 import * as moment from 'moment';
+import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
 /**
  * Provide method to push publish to content types
@@ -23,7 +24,7 @@ export class PushPublishService {
     */
     private publishUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
 
-    constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService) {}
+    constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService, private currentUser: DotCurrentUserService) { }
 
     /**
      * Get push publish environments.
@@ -31,12 +32,13 @@ export class PushPublishService {
      * @memberof PushPublishService
      */
     getEnvironments(): Observable<DotEnvironment[]> {
-        return this.getCurrentUser().mergeMap(user => {
+        return this.currentUser.getCurrentUser().mergeMap(user => {
             return this.coreWebService.requestView({
                 method: RequestMethod.Get,
                 url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
-            }).map((res: any) => JSON.parse(res.response._body));
+            });
         })
+        .pluck('bodyJsonObject')
         .flatMap((environments: DotEnvironment[]) => environments)
         .filter(environment => environment.name !== '')
         .toArray();
@@ -57,19 +59,6 @@ export class PushPublishService {
             },
             method: RequestMethod.Post,
             url: this.publishUrl
-        });
-    }
-
-    // TODO: We need to update the LoginService to get the roleid in the User object
-    /**
-     * Get logged user and role id.
-     * @returns {Observable<DotCurrentUser>}
-     * @memberof PushPublishService
-     */
-    getCurrentUser(): Observable<DotCurrentUser> {
-        return this.coreWebService.request({
-            method: RequestMethod.Get,
-            url: this.currentUsersUrl
         });
     }
 

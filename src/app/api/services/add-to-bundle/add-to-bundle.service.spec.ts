@@ -1,56 +1,59 @@
 import { Observable } from 'rxjs';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { PushPublishService } from './push-publish.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { AddToBundleService } from './add-to-bundle.service';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
-describe('PushPublishService', () => {
+describe('AddToBundleService', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([
-            PushPublishService,
+            AddToBundleService,
             DotCurrentUserService
         ]);
 
-        this.pushPublishService =  this.injector.get(PushPublishService);
+        this.addToBundleService =  this.injector.get(AddToBundleService);
         this.dotCurrentUserService =  this.injector.get(DotCurrentUserService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => this.lastConnection = connection);
     });
 
-    it('should get push publish environments', fakeAsync(() => {
+    it('should get bundle list', fakeAsync(() => {
         spyOn(this.dotCurrentUserService, 'getCurrentUser').and.returnValue(Observable.of({
-            roleId: '1234'
+            userId: '1234'
         }));
 
-        const mockResponse = [
+        const mockBundleItems = [
             {
-                name: '',
-                id: '0'
+                name: 'My bundle',
+                id: '1234'
             },
             {
-                name: 'environment1',
+                name: 'My bundle 2',
                 id: '1sdf5-23fs-dsf2-sf3oj23p4p42d'
-            },
-            {
-                name: 'environment2',
-                id: '1s24z-23fs-d232-sf334fdf4p42d'
             }
         ];
 
+        const mockResponse = {
+            idenfitier: 'id',
+            items: mockBundleItems,
+            label: 'name',
+            numRows: 2
+        };
+
         let result: any;
-        this.pushPublishService.getEnvironments().subscribe(items => result = items);
+        this.addToBundleService.getBundles().subscribe(items => result = items);
         this.lastConnection.mockRespond(new Response(new ResponseOptions({
             body: JSON.stringify(mockResponse)
         })));
 
         tick();
-        expect(this.lastConnection.request.url).toContain('api/environment/loadenvironments/roleId/1234/name=0');
-        expect(result).toEqual(mockResponse.splice(1));
+        expect(this.lastConnection.request.url).toContain('api/bundle/getunsendbundles/userid/1234');
+        expect(result).toEqual(mockBundleItems);
     }));
 
-    it('should do a post request and push publish an asset', fakeAsync(() => {
+    it('should do a post request and add to bundle', fakeAsync(() => {
         let result: any;
         const mockResponse = {
             'errorMessages': [],
@@ -59,15 +62,12 @@ describe('PushPublishService', () => {
             'errors': 0
         };
 
-        const mockFormValue = {
-            pushActionSelected: 'publish',
-            publishdate: new Date,
-            expiredate: new Date,
-            environment: 'env1',
-            forcePush: true
+        const mockBundleData = {
+            id: '1234',
+            name: 'my bundle'
         };
 
-        this.pushPublishService.pushPublishContent('1234567890', mockFormValue).subscribe(res => {
+        this.addToBundleService.addToBundle('1234567890', mockBundleData).subscribe(res => {
             result = res._body;
         });
         this.lastConnection.mockRespond(new Response(new ResponseOptions({
@@ -75,7 +75,8 @@ describe('PushPublishService', () => {
         })));
 
         tick();
-        expect(this.lastConnection.request.url).toContain('DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish');
+        // tslint:disable-next-line:max-line-length
+        expect(this.lastConnection.request.url).toContain('DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle');
         expect(result).toEqual(mockResponse);
     }));
 });

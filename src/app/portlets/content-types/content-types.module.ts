@@ -55,6 +55,7 @@ import { DotTextareaContentModule } from '../../view/components/_common/dot-text
 import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';
 import { WorkflowService } from '../../api/services/workflow/workflow.service';
 import { PushPublishContentTypesDialogModule } from '../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
+import { DotAddToBundleModule } from '../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 
 @NgModule({
     declarations: [
@@ -117,7 +118,8 @@ import { PushPublishContentTypesDialogModule } from '../../view/components/_comm
         SplitButtonModule,
         TabViewModule,
         DotTextareaContentModule,
-        MultiSelectModule
+        MultiSelectModule,
+        DotAddToBundleModule
     ],
     providers: [
         ContentTypesInfoService,

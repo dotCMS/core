@@ -38,6 +38,10 @@
     .ui-dialog-content &:last-child {
         padding-bottom: 0;
     }
+
+    .ui-dropdown {
+        width: 100%;
+    }
 }
 
 .form__group-hint {

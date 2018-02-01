@@ -123,7 +123,7 @@ describe('PushPublishEnvSelectorComponent', () => {
 
     it('should get environments from PushPublishService', () => {
         fixture.detectChanges();
-        comp.pushEnvironments.subscribe(environments => {
+        comp.pushEnvironments$.subscribe(environments => {
             expect(environments).toEqual([
                 {
                     id: '22e332',

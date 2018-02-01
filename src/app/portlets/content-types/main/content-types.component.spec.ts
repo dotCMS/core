@@ -20,6 +20,7 @@ import { DotContentletService } from '../../../api/services/dot-contentlet.servi
 import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
 import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
+import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 
 @Injectable()
 class MockDotContentletService {
@@ -71,7 +72,8 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.content.variable': 'Variable Name',
             'mod_date': 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
-            'contenttypes.content.push_publish': 'Push Publish'
+            'contenttypes.content.push_publish': 'Push Publish',
+            'contenttypes.content.add_to_bundle': 'Add to bundle'
         });
 
         DOTTestBed.configureTestingModule({
@@ -80,7 +82,8 @@ describe('ContentTypesPortletComponent', () => {
                 RouterTestingModule.withRoutes([{ path: 'test', component: ContentTypesPortletComponent }]),
                 BrowserAnimationsModule,
                 ListingDataTableModule,
-                PushPublishContentTypesDialogModule
+                PushPublishContentTypesDialogModule,
+                DotAddToBundleModule
             ],
             providers: [
                 ContentTypesInfoService,
@@ -177,9 +180,9 @@ describe('ContentTypesPortletComponent', () => {
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
     });
 
-    it('should have remove and push publish action to the list item', () => {
+    it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish']);
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
     });
 
     it('should have ONLY remove action because is community license', () => {
@@ -200,19 +203,11 @@ describe('ContentTypesPortletComponent', () => {
         }]);
     });
 
-    it('should have ONLY remove action because no publish environments are created', () => {
+    it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
         spyOn(pushPublishService, 'getEnvironments').and.returnValue(Observable.of([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map(action => {
-            return {
-                label: action.menuItem.label,
-                icon: action.menuItem.icon
-            };
-        })).toEqual([{
-            label: 'Delete',
-            icon: 'fa-trash'
-        }]);
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
     });
 
     it('should open push publish dialog', () => {
@@ -230,12 +225,37 @@ describe('ContentTypesPortletComponent', () => {
             system: false
         };
         expect(comp.pushPublishIdentifier).not.toBeDefined();
+        expect(de.query(By.css('p-dialog'))).toBeNull();
 
         comp.rowActions[1].menuItem.command(mockContentType);
         fixture.detectChanges();
 
         expect(de.query(By.css('p-dialog'))).toBeDefined();
         expect(comp.pushPublishIdentifier).toEqual(mockContentType.id);
+    });
+
+    it('should open add to bundle dialog', () => {
+        fixture.detectChanges();
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+        expect(comp.addToBundleIdentifier).not.toBeDefined();
+        expect(de.query(By.css('p-dialog'))).toBeNull();
+
+        comp.rowActions[2].menuItem.command(mockContentType);
+        fixture.detectChanges();
+
+        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
     });
 
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
