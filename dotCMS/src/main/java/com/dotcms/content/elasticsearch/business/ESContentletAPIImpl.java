@@ -73,6 +73,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -5855,6 +5856,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                               boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
+    }
+
+    @Override
+    public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
+
+        return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
+                contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());
     }
 
     /**

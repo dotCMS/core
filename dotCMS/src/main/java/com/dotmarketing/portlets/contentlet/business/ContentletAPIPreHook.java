@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -857,6 +858,11 @@ public interface ContentletAPIPreHook {
 	public default boolean checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles){
       return true;
     }
+
+	default boolean checkin(Contentlet contentlet, ContentletDependencies contentletDependencies) {
+
+		return true;
+	}
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -1698,5 +1704,7 @@ public interface ContentletAPIPreHook {
     public default boolean getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
       return true;
     }
-	
+
+
+
 }

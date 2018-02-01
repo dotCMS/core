@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.hook.HTMLPageHook;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -156,6 +157,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPostHook post : postHooks ) {
 			post.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, c);
 		}
+		return c;
+	}
+
+	@Override
+	public Contentlet checkin(final Contentlet contentlet,
+							  final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
+
+		for ( ContentletAPIPreHook pre : preHooks ) {
+			boolean preResult = pre.checkin(contentlet, contentletDependencies);
+			if ( !preResult ) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		Contentlet c = conAPI.checkin(contentlet, contentletDependencies);
+		for ( ContentletAPIPostHook post : postHooks ) {
+			post.checkin(contentlet, contentletDependencies, c);
+		}
+
 		return c;
 	}
 

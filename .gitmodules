@@ -2,3 +2,4 @@
 	path = dotCMS/src/main/enterprise
 	url = git@github.com:dotCMS/enterprise-2.x.git
         branch = master
+	ignore = dirty
