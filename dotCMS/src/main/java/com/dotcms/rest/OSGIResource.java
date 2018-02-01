@@ -43,15 +43,19 @@ public class OSGIResource  {
     List<String> systemBundles = Arrays.asList(
             "org.apache.felix.http.bundle",
             "org.apache.felix.gogo.shell",
-            "org.apache.felix.framework",
             "org.apache.felix.bundlerepository",
+            "org.apache.felix.framework",
             "org.apache.felix.fileinstall",
             "org.apache.felix.gogo.command",
             "org.apache.felix.gogo.runtime",
-            "org.easymock",
-            "org.objenesis",
             "osgi.cmpn",
-            "osgi.core"
+            "osgi.core",
+            "org.apache.tika.core",
+            "org.apache.tika.bundle",
+            "slf4j.simple",
+            "slf4j.api",
+            "jcl.over.slf4j",
+            "com.dotcms.tika"
     );
 
     private final WebResource webResource = new WebResource();
