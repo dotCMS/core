@@ -376,12 +376,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			String wfActionId = (String) contentletFormData.get("wfActionId");
 			if(UtilMethods.isSet(wfActionId)) {
 
-				WorkflowAction action = null;
-				try {
-					action = APILocator.getWorkflowAPI().findAction(wfActionId, user);
-				} catch(Exception e){
+				WorkflowAction action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
 
-				}
 				if(action != null
 						&& ! action.requiresCheckout() // no modifies the db
 						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
@@ -1088,7 +1084,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	/**
 	 * Returns the relationships associated to the current contentlet
 	 *
-	 * @param		req ActionRequest.
+	 * @param		contentletFormData Contentlet form map.
 	 * @param		user User.
 	 * @return		ContentletRelationships.
 	 */
