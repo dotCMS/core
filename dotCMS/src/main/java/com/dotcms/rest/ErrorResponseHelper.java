@@ -28,7 +28,8 @@ public class ErrorResponseHelper implements Serializable {
      */
     public Response getErrorResponse(final Response.Status status,
                                      final Locale locale,
-                                     final String messageKey) {
+                                     final String messageKey,
+                                     final Object... arguments) {
 
         try {
 
@@ -36,7 +37,7 @@ public class ErrorResponseHelper implements Serializable {
                     (new ResponseEntityView
                             (Arrays.asList(new ErrorEntity(messageKey,
                                     LanguageUtil.get(locale,
-                                            messageKey))))).build();
+                                            messageKey, arguments))))).build();
 
 
         } catch (LanguageException e1) {

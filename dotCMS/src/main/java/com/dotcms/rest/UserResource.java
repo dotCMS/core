@@ -11,7 +11,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -45,7 +44,7 @@ public class UserResource {
 	@Path("/getloggedinuser/{params:.*}")
 	@Produces("application/json")
 	@Deprecated
-	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException,
+	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
         InitDataObject initData = webResource.init(params, true, request, true, null);

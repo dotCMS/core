@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -444,6 +445,14 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException,DotWorkflowException;
+
+	/**
+	 * Fires a workflow for a contentlet with a contentlet dependencies, returning the final contentlet processed.
+	 * @param contentlet {@link Contentlet}
+	 * @param dependencies {@link ContentletDependencies}
+	 * @return Contentlet
+	 */
+	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
