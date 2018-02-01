@@ -7,9 +7,9 @@ import { DotEditPageState } from '../../../../shared/models/dot-edit-page-state/
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
 
 export enum PageMode {
-    EDIT = 'EDIT_MODE',
-    PREVIEW = 'PREVIEW_MODE',
-    LIVE = 'LIVE_MODE'
+    EDIT,
+    PREVIEW,
+    LIVE
 }
 
 @Component({
@@ -81,7 +81,7 @@ export class DotEditPageToolbarComponent implements OnInit {
         txtArea.style.top = '0';
         txtArea.style.left = '0';
         txtArea.style.opacity = '0';
-        txtArea.value = this.page.pageUri;
+        txtArea.value = this.page.pageURI;
         document.body.appendChild(txtArea);
         txtArea.select();
 

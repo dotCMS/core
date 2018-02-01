@@ -40,12 +40,18 @@ class WorkflowServiceMock {
     }
 }
 
-const fakePageRendered = {
-    pageTitle: 'A title',
-    pageUri: 'A url',
+const fakePageRendered: DotRenderedPage = {
+    canLock: false,
     identifier: '123',
+    languageId: 1,
     liveInode: '456',
-    render: '<html></html>'
+    locked: false,
+    pageURI: 'A url',
+    render: '<html></html>',
+    shortyLive: '',
+    shortyWorking: '',
+    title: 'A title',
+    workingInode: ''
 };
 
 describe('DotEditContentComponent', () => {
@@ -130,8 +136,8 @@ describe('DotEditContentComponent', () => {
 
     it('should pass data to the toolbar', () => {
         fixture.detectChanges();
-        expect(component.toolbar.page.pageTitle).toEqual('A title', 'toolbar have title');
-        expect(component.toolbar.page.pageUri).toEqual('A url', 'toolbar have url');
+        expect(component.toolbar.page.title).toEqual('A title', 'toolbar have title');
+        expect(component.toolbar.page.pageURI).toEqual('A url', 'toolbar have url');
         expect(component.toolbar.pageWorkflows).toEqual([
             { name: 'Workflow 1', id: 'one' },
             { name: 'Workflow 2', id: 'two' },
@@ -265,8 +271,8 @@ describe('DotEditContentComponent', () => {
             identifier: '123',
             languageId: 1,
             liveInode: '456',
-            pageTitle: 'Hello World',
-            pageUri: 'url',
+            title: 'Hello World',
+            pageURI: 'url',
             render: '<html></html>',
             shortyLive: '000',
             shortyWorking: '000',
@@ -290,8 +296,8 @@ describe('DotEditContentComponent', () => {
             identifier: '123',
             languageId: 1,
             liveInode: '456',
-            pageTitle: 'Hello World',
-            pageUri: 'url',
+            title: 'Hello World',
+            pageURI: 'url',
             render: '<html></html>',
             shortyLive: '000',
             shortyWorking: '000',

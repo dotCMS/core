@@ -10,8 +10,8 @@ export interface DotRenderedPage {
     lockedBy?: string;
     lockedByName?: string;
     lockedOn?: Date;
-    pageTitle: string;
-    pageUri: string;
+    title: string;
+    pageURI: string;
     render: string;
     shortyLive: string;
     shortyWorking: string;

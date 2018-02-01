@@ -92,7 +92,7 @@ export class EditPageService {
      */
     setPageState(page: DotRenderedPage, state: DotEditPageState): Observable<DotRenderedPageState> {
         const lockUnlock: Observable<string> = this.getLockMode(page.liveInode, state.locked);
-        const pageMode: Observable<DotRenderedPage> = state.mode !== undefined ? this.getPageMode(state.mode)(page.pageUri) : null;
+        const pageMode: Observable<DotRenderedPage> = state.mode !== undefined ? this.getPageMode(state.mode)(page.pageURI) : null;
 
         return this.getStateRequest(lockUnlock, pageMode);
     }
@@ -101,7 +101,7 @@ export class EditPageService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/page/renderHTML/${url.replace(/^\//, '')}?mode=${mode}`
+                url: `v1/page/renderHTML/${url.replace(/^\//, '')}?mode=${this.getPageModeString(mode)}`
             })
             .pluck('bodyJsonObject')
             .map((dotRenderedPage: DotRenderedPage) => {
@@ -157,5 +157,14 @@ export class EditPageService {
                 };
             });
         }
+    }
+
+    private getPageModeString(pageMode: PageMode): string {
+        const pageModeString = {};
+        pageModeString[PageMode.EDIT] = 'EDIT_MODE';
+        pageModeString[PageMode.PREVIEW] = 'PREVIEW_MODE';
+        pageModeString[PageMode.LIVE] = 'LIVE_MODE';
+
+        return pageModeString[pageMode];
     }
 }

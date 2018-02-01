@@ -77,8 +77,8 @@ describe('DotEditPageToolbarComponent', () => {
             languageId: 1,
             liveInode: '456',
             locked: false,
-            pageTitle: '',
-            pageUri: '',
+            title: '',
+            pageURI: '',
             render: '',
             shortyLive: '',
             shortyWorking: '',
@@ -93,7 +93,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should set page title', () => {
-        component.page.pageTitle = 'Hello World';
+        component.page.title = 'Hello World';
         const pageTitleEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-title')).nativeElement;
         fixture.detectChanges();
 
@@ -101,7 +101,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should set page url', () => {
-        component.page.pageUri = '/test/test';
+        component.page.pageURI = '/test/test';
         const pageUrlEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-url')).nativeElement;
         fixture.detectChanges();
 
