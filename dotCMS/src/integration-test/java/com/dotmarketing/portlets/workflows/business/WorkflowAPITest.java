@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
