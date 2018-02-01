@@ -18,7 +18,7 @@ public class PushPublishLogger {
         FOLDER("Folder"),
         HOST("Host"),
         LANGUAGE("Language"),
-        LANGUAGE_VARIABLE("Language Messages"),
+        LANGUAGE_FILE("Language File"),
         LINK("Link"),
         OSGI("OSGI"),
         RELATIONSHIP("Relationship"),
