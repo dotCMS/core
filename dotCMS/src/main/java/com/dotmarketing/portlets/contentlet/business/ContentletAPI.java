@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -992,7 +993,21 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData,
 							  List<Category> cats, List<Permission> selectedPermissions, User user,
 							  boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException;
-	
+
+	/**
+	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
+	 * This version of checkin contains a might include dependencies such as the relationship in order
+	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
+	 * in that case you have to specify if the role of the content is the parent of the child of the relationship.
+	 * Note that the contentlet argument must be obtained using checkout methods.
+	 *
+	 * @param contentlet    - The inode of your contentlet must be 0.
+	 * @param contentletDependencies {@link ContentletDependencies}
+	 *            include the categories, relationships, modUser, respectAnonymousPermissions and generates system event (in order to generate a system event for this checking operation)
+	 * @return Contentlet
+	 */
+	Contentlet checkin(final Contentlet contentlet, ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
 	 * Note that the contentlet argument must be obtained using checkout methods.
@@ -1624,5 +1639,7 @@ public interface ContentletAPI {
 
 	
 	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
+
+
 
 }
