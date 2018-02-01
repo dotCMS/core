@@ -376,13 +376,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			String wfActionId = (String) contentletFormData.get("wfActionId");
 			if(UtilMethods.isSet(wfActionId)) {
 
-				WorkflowAction action = null;
+				WorkflowAction action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
 
-				try{
-					action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
-				} catch(DotSecurityException e){
-					Logger.debug(this, e.getMessage(), e);
-				}
 				if(action != null
 						&& ! action.requiresCheckout() // no modifies the db
 						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
