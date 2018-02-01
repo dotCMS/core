@@ -295,4 +295,12 @@ describe('ListingDataTableComponent', () => {
 
         expect(spy).toHaveBeenCalled();
     });
+
+    it('should show the loading indicator while the data is received', () => {
+        expect(comp.loading).toEqual(true);
+        spyOn(this.paginatorService, 'getCurrentPage').and.returnValue(Observable.of(this.items));
+        comp.columns = this.columns;
+        comp.loadCurrentPage();
+        expect(comp.loading).toEqual(false);
+    });
 });

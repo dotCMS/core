@@ -2,23 +2,24 @@
     <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="filter"/>
 </action-header>
 
-<p-dataTable [value]="items" 
-             [rows]="paginatorService.paginationPerPage" 
-             [paginator]="true" 
-             [pageLinks]="paginatorService.maxLinksPage" 
+<p-dataTable [value]="items"
+             [rows]="paginatorService.paginationPerPage"
+             [paginator]="true"
+             [pageLinks]="paginatorService.maxLinksPage"
              [lazy]="true"
              [totalRecords]="paginatorService.totalRecords"
              (onLazyLoad)="loadDataPaginationEvent($event)"
              [(selection)]="selectedItems"
              (onRowClick)="handleRowClick($event)"
              [globalFilter]="gf"
-             [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1">
+             [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+             [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin">
 
-    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column> 
+    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
 
     <ng-template ngFor let-col [ngForOf]="columns">
-        <p-column 
-            [field]="col.fieldName" 
+        <p-column
+            [field]="col.fieldName"
             [header]="col.header"
             [sortable]="col.sortable"
             [style]="{'width': col.width, 'text-align': getAlign(col)}">
@@ -32,9 +33,9 @@
     <p-column *ngIf="actions && actions.length > 0" styleClass="listing-datatable__action-column" [style]="{'width': '5%'}">
         <ng-template pTemplate="header"></ng-template>
         <ng-template let-item="rowData" pTemplate="body">
-            <action-menu-button  
+            <action-menu-button
                 class="listing-datatable__action-button"
-                [actions]="actions" 
+                [actions]="actions"
                 [item]="item">
             </action-menu-button>
         </ng-template>

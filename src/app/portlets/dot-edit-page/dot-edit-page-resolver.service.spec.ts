@@ -14,7 +14,7 @@ const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnaps
 ]);
 activatedRouteSnapshotMock.queryParams = {};
 
-describe('ContentTypeResolver', () => {
+describe('PageViewResolver', () => {
     let router: ActivatedRouteSnapshot;
     let pageViewResolver: PageViewResolver;
     let pageViewService: PageViewService;

@@ -16,7 +16,7 @@ import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
 import { FieldService, FieldDragDropService, FieldPropertyService } from './fields/service';
 import { ContentTypeFieldsAddRowModule } from './fields/content-type-fields-add-row';
-import { ContentTypeResolver } from './content-types-resolver.service';
+import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
 
 import {
     ContentTypeFieldsDropZoneComponent,
@@ -126,7 +126,7 @@ import { PushPublishContentTypesDialogModule } from '../../view/components/_comm
         FieldPropertyService,
         FieldService,
         FormatDateService,
-        ContentTypeResolver,
+        ContentTypeEditResolver,
         WorkflowService
     ]
 })

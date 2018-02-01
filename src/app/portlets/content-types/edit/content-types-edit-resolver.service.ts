@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
-import { CrudService } from '../../api/services/crud';
-import { ContentType } from './shared/content-type.model';
-import { ContentTypesInfoService } from '../../api/services/content-types-info';
+import { CrudService } from '../../../api/services/crud';
+import { ContentType } from '../shared/content-type.model';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from '../../api/services/dot-router-service';
+import { DotRouterService } from '../../../api/services/dot-router-service';
 
 /**
  * With the url return a content type by id or a default content type
  *
  * @export
- * @class ContentTypeResolver
+ * @class ContentTypeEditResolver
  * @implements {Resolve<ContentType>}
  */
 @Injectable()
-export class ContentTypeResolver implements Resolve<ContentType> {
+export class ContentTypeEditResolver implements Resolve<ContentType> {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,

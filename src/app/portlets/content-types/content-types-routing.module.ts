@@ -2,7 +2,7 @@ import { ContentTypesEditComponent } from './edit';
 import { ContentTypesPortletComponent } from './main';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { ContentTypeResolver } from './content-types-resolver.service';
+import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
 
 const contentTypesRoutes: Routes = [
     {
@@ -17,7 +17,7 @@ const contentTypesRoutes: Routes = [
         component: ContentTypesEditComponent,
         path: 'create/:type',
         resolve: {
-            contentType: ContentTypeResolver
+            contentType: ContentTypeEditResolver
         }
     },
     {
@@ -28,7 +28,7 @@ const contentTypesRoutes: Routes = [
         component: ContentTypesEditComponent,
         path: 'edit/:id',
         resolve: {
-            contentType: ContentTypeResolver
+            contentType: ContentTypeEditResolver
         }
     }
 ];

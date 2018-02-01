@@ -1,14 +1,13 @@
-import { ContentTypeResolver } from './content-types-resolver.service';
+import { ContentTypeEditResolver } from './content-types-edit-resolver.service';
 import { TestBed, async } from '@angular/core/testing';
-import { ContentTypesInfoService } from '../../api/services/content-types-info';
-import { CrudService } from '../../api/services/crud';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+import { CrudService } from '../../../api/services/crud';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
-import { LoginServiceMock } from '../../test/login-service.mock';
+import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { inject } from '@angular/core/testing';
-import { DotRouterService } from '../../api/services/dot-router-service';
+import { DotRouterService } from '../../../api/services/dot-router-service';
 
 class CrudServiceMock {
     getDataById() {}
@@ -23,17 +22,17 @@ const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnaps
 ]);
 activatedRouteSnapshotMock.paramMap = {};
 
-describe('ContentTypeResolver', () => {
+describe('ContentTypeEditResolver', () => {
     let crudService: CrudService;
     let router: ActivatedRouteSnapshot;
-    let contentTypeResolver: ContentTypeResolver;
+    let contentTypeEditResolver: ContentTypeEditResolver;
     let dotRouterService: DotRouterService;
 
     beforeEach(
         async(() => {
             TestBed.configureTestingModule({
                 providers: [
-                    ContentTypeResolver,
+                    ContentTypeEditResolver,
                     ContentTypesInfoService,
                     {
                         provide: DotRouterService,
@@ -50,7 +49,7 @@ describe('ContentTypeResolver', () => {
             });
             crudService = TestBed.get(CrudService);
             router = TestBed.get(ActivatedRouteSnapshot);
-            contentTypeResolver = TestBed.get(ContentTypeResolver);
+            contentTypeEditResolver = TestBed.get(ContentTypeEditResolver);
             dotRouterService = TestBed.get(DotRouterService);
         })
     );
@@ -64,7 +63,7 @@ describe('ContentTypeResolver', () => {
             })
         );
 
-        contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
             expect(fakeContentType).toEqual({
                 fake: 'content-type',
                 object: 'right?'
@@ -82,7 +81,7 @@ describe('ContentTypeResolver', () => {
             Observable.throw({})
         );
 
-        contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
             expect(fakeContentType).toEqual(null);
         });
 
@@ -94,7 +93,7 @@ describe('ContentTypeResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
         spyOn(dotRouterService, 'gotoPortlet');
         spyOn(crudService, 'getDataById').and.returnValue(Observable.of(false));
-        contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
             expect(res).toBeNull();
         });
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
@@ -107,7 +106,7 @@ describe('ContentTypeResolver', () => {
         };
         spyOn(dotRouterService, 'gotoPortlet');
         spyOn(crudService, 'getDataById').and.returnValue(Observable.of(false));
-        contentTypeResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
             expect(res).toEqual({
                 clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
