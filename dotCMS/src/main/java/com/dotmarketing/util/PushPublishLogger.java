@@ -41,10 +41,10 @@ public class PushPublishLogger {
     }
 
     public enum PushPublishAction {
-        PUBLISH("published"),
-        PUBLISH_CREATE("published (new)"),
-        PUBLISH_UPDATE("published (updated)"),
-        UNPUBLISH("unpublished");
+        PUBLISH("publish"),
+        PUBLISH_CREATE("publish (new)"),
+        PUBLISH_UPDATE("publish (update)"),
+        UNPUBLISH("unpublish");
 
         private final String action;
 
@@ -86,11 +86,43 @@ public class PushPublishLogger {
         }
     }
 
-    public static void log (Class cl, PushPublishHandler handler, PushPublishAction action, String id, String inode, String name, String bundleId) {
+    public static void error ( Class cl, String msg, String bundleId ) {
+
+        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
+            Logger.error( PushPublishLogger.class, cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
+        }
+    }
+
+    /**
+     * Method to log Push Publishing information
+     * @param cl class
+     * @param handler The PushPublish IHandler instance executing the publish action
+     * @param action Publish action type
+     * @param id Id of the object being published
+     * @param bundleId Bundle ID containing the object being published
+     */
+    public static void log (final Class cl, final PushPublishHandler handler, final PushPublishAction action,
+                            final String id, final String bundleId) {
+        log(cl, handler, action, id, null, null, bundleId);
+    }
+
+    /**
+     * Method to log Push Publishing information
+     * @param cl class
+     * @param handler The PushPublish IHandler instance executing the publish action
+     * @param action Publish action type
+     * @param id Id of the object being published
+     * @param inode Inode of the object being published
+     * @param name Name of the object being published
+     * @param bundleId Bundle ID containing the object being published
+     */
+    public static void log (Class cl, final PushPublishHandler handler, final PushPublishAction action,
+                            final String id, final String inode, final String name, final String bundleId) {
         StringBuilder builder = new StringBuilder();
         builder.append(handler.toString());
         builder.append(" ");
         builder.append(action.toString());
+        builder.append(" success");
         if (InodeUtils.isSet(id)) {
             builder.append(", ID: " + id);
         }
@@ -99,7 +131,48 @@ public class PushPublishLogger {
                 builder.append(", Inode: " + inode);
             }
         }
-        builder.append(", Name: " + name);
+        if (StringUtils.isSet(name)) {
+            builder.append(", Name: " + name);
+        }
         log(cl, builder.toString(), bundleId);
+    }
+
+    /**
+     * Method to log Push Publishing Errors
+     * @param cl class
+     * @param handler The PushPublish IHandler instance executing the publish action
+     * @param action Publish action type
+     * @param id Id of the object being published
+     * @param inode Inode of the object being published
+     * @param name Name of the object being published
+     * @param bundleId Bundle ID containing the object being published
+     * @param errorMessage Custom error message to be logged
+     * @param ex Exception if any
+     */
+    public static void error (Class cl, final PushPublishHandler handler, final PushPublishAction action,
+            final String id, final String inode, final String name, final String bundleId, String errorMessage, Throwable ex) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Failed to ");
+        builder.append(action.toString());
+        builder.append(" ");
+        builder.append(handler.toString());
+        if (InodeUtils.isSet(id)) {
+            builder.append(", ID: " + id);
+        }
+        if (InodeUtils.isSet(inode)) {
+            if (!inode.equals(id)) {
+                builder.append(", Inode: " + inode);
+            }
+        }
+        if (StringUtils.isSet(name)) {
+            builder.append(", Name: " + name);
+        }
+        if (StringUtils.isSet(errorMessage)) {
+            builder.append(", Error: " + errorMessage);
+        }
+        if (null != ex) {
+            builder.append(", " + ex.getMessage());
+        }
+        error(cl, builder.toString(), bundleId);
     }
 }
