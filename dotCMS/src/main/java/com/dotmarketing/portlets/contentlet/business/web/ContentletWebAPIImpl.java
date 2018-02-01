@@ -380,7 +380,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				try{
 					action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
-				} catch(Exception e){
+				} catch(DotSecurityException e){
 					Logger.debug(this, e.getMessage(), e);
 				}
 				if(action != null
