@@ -655,7 +655,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		DotPreconditions.isTrue(
                 null != action &&
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow",user),
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
 				()-> "User " + user + " cannot read action " + action.getName(), DotSecurityException.class);
 
 		return action;
@@ -670,7 +670,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
 		if (null != action) {
 
-			DotPreconditions.isTrue(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow",user),
+			DotPreconditions.isTrue(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
 						()-> "User " + user + " cannot read action " + action.getName(),
 						DotSecurityException.class);
 		}
