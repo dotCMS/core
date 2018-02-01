@@ -381,8 +381,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				try{
 					action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
 				} catch(Exception e){
-
-
+					Logger.debug(this, e.getMessage(), e);
 				}
 				if(action != null
 						&& ! action.requiresCheckout() // no modifies the db
