@@ -1,26 +1,10 @@
 package com.dotcms.contenttype.model.type;
 
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.elasticsearch.common.Nullable;
-
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -28,6 +12,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -39,6 +24,17 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.elasticsearch.common.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
         use = Id.CLASS,
@@ -234,36 +230,52 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public Permissionable getParentPermissionable() {
     try{
-     /* if (Host.SYSTEM_HOST.equals(this.host())) {
-        Folder folder = new Folder();
-        folder.setIdentifier(this.folder());
-        folder.setInode(this.folder());
-        folder.setHostId(this.host());
-        return folder;
-      } else{
+/*
+      // Error con login
+      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
         Host host = new Host();
         host.setIdentifier(this.host());
         host.setInode(this.host());
-        host.setHost(Host.SYSTEM_HOST);
         return host;
+      } else {
+        Folder folder = new Folder();
+        DotConnect dc = new DotConnect();
+        dc.setSQL("select identifier from folder where inode = ?");
+        dc.addParam(this.folder());
+        folder.setIdentifier(dc.loadObjectResults().get(0).get("identifier").toString());
+        folder.setInode(this.folder());
+        return folder;
       }*/
 
-      if(!this.folder().equals("SYSTEM_FOLDER")){
-
-
-        Folder folder = new Folder();
-        folder.setIdentifier(this.folder());
-        folder.setInode(this.folder());
-        folder.setHostId(this.host());
-        return folder;
-
-      }else {
-        Host host = new Host();
+      //Error con login
+      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+        PermissionableProxy host = new PermissionableProxy();
         host.setIdentifier(this.host());
         host.setInode(this.host());
-        host.setHost(Host.SYSTEM_HOST);
         return host;
+      } else {
+        Folder folder = new Folder();
+        DotConnect dc = new DotConnect();
+        dc.setSQL("select identifier from folder where inode = ?");
+        dc.addParam(this.folder());
+        folder.setIdentifier(dc.loadObjectResults().get(0).get("identifier").toString());
+        folder.setInode(this.folder());
+        return folder;
       }
+      /*
+      //Funciona el login
+      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+        PermissionableProxy host = new PermissionableProxy();
+        host.setIdentifier(this.host());
+        host.setInode(this.host());
+        return host;
+      } else {
+        PermissionableProxy folder = new PermissionableProxy();
+        folder.setIdentifier(this.folder());
+        folder.setInode(this.folder());
+        return folder;
+      }*/
+
     }catch (Exception e) {
       throw new DotRuntimeException(e.getMessage(), e);
     }
