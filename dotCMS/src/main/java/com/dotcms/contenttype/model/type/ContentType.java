@@ -4,7 +4,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
