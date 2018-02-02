@@ -14,7 +14,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.abdera-i18n', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-parser', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-server', version:'0.4.0-incubating_2'
-    compile group: 'com.dotcms.lib', name: 'dot.antlr', version:'3.1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.apache-solr-core', version:'1.4.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.apache-solr-solrj', version:'1.4.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.asm', version:'3.1_2'
@@ -54,7 +53,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.gif89', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.google', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.groovy-all', version:'2.3.2_2'
+    compile group: 'com.dotcms.lib', name: 'dot.groovy-all', version:'2.3.2_3'
     compile group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version:'0.20.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version:'0.20.3_2'
@@ -249,6 +248,9 @@ dependencies {
         transitive = false
     }
     compile (group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'){
+        transitive = false
+    }
+    compile (group: 'org.antlr', name: 'antlr', version: '3.1.1'){
         transitive = false
     }
 
