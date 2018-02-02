@@ -1,4 +1,5 @@
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
+<portlet:defineObjects />
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>

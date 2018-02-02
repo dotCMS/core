@@ -7,7 +7,6 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -35,6 +34,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This conditionlet will allow CMS users to check whether a user has already

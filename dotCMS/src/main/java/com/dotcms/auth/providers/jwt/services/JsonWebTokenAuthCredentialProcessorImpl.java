@@ -2,19 +2,16 @@ package com.dotcms.auth.providers.jwt.services;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.rest.exception.SecurityException;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Default implementation

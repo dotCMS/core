@@ -1,18 +1,9 @@
 package com.dotmarketing.quartz.job;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Date;
-import java.util.List;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.quartz.JobExecutionException;
-
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -29,6 +20,12 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobExecutionException;
 
 /**
  * This class will test routines related to deleting fields from Content Types

@@ -22,15 +22,13 @@
 
 package com.liferay.portal.model;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
+import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * <a href="AddressModel.java.html"><b><i>View Source</i></b></a>

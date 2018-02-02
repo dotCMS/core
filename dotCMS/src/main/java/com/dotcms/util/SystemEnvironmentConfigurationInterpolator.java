@@ -1,12 +1,11 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.apache.commons.configuration.Configuration;
-import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotmarketing.util.StringUtils;
-
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Iterator;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  * If you required to interpolate System properties or Environment variables you can use this implementations.
@@ -156,11 +155,11 @@ public class SystemEnvironmentConfigurationInterpolator implements Configuration
 
 
         private  String envKeyUnWrap(String key) {
-            return com.dotcms.repackage.org.apache.commons.lang.StringUtils.replace(key, ENV_PREFIX, com.dotcms.repackage.org.apache.commons.lang.StringUtils.EMPTY);
+            return org.apache.commons.lang.StringUtils.replace(key, ENV_PREFIX, org.apache.commons.lang.StringUtils.EMPTY);
         }
 
         private  String systemKeyUnWrap(String key) {
-            return com.dotcms.repackage.org.apache.commons.lang.StringUtils.replace(key, SYS_PREFIX, com.dotcms.repackage.org.apache.commons.lang.StringUtils.EMPTY);
+            return org.apache.commons.lang.StringUtils.replace(key, SYS_PREFIX, org.apache.commons.lang.StringUtils.EMPTY);
         }
     } // SystemEnvironmentMapDecorator.
 } // E:O:F:SystemEnvironmentConfigurationInterpolator.

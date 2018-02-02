@@ -1,6 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.repackage.org.apache.commons.collections.map.MultiKeyMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -12,12 +11,12 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.collections.map.MultiKeyMap;
 
 /**
  * This class updates the contentlets tag fields references

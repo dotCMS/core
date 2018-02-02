@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.structure.model;
 
-import java.util.Date;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.util.UtilMethods;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
 /**
  * 
  * @deprecated use {@link com.dotcms.contenttype.model.field.Field}
@@ -54,7 +52,9 @@ public class Field extends Inode implements  FieldIf
     	BINARY("binary"), // http://jira.dotmarketing.net/browse/DOTCMS-1073
 		CUSTOM_FIELD("custom_field"), // http://jira.dotmarketing.net/browse/DOTCMS-2869
 		HOST_OR_FOLDER("host or folder"),// http://jira.dotmarketing.net/browse/DOTCMS-3232
-		KEY_VALUE("key_value");
+		KEY_VALUE("key_value"),
+	  	ROW("row"),
+	  	COLUMN("column");
 
 		private String value;
 

@@ -24,39 +24,31 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
     compile 'net.bytebuddy:byte-buddy:1.6.12'
     compile 'net.bytebuddy:byte-buddy-agent:1.6.12'
-    compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_2'
+    compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_3'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
-    compile group: 'com.dotcms.lib', name: 'dot.castor', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.cglib-nodep', version:'2.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.com.dotmarketing.jhlabs.images.filters', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-beanutils', version:'1.6.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version:'1.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-collections', version:'3.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-configuration', version:'1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-dbcp', version:'1.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-digester', version:'1.7_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-fileupload', version:'1.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version:'3.1_2'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version:'3.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.commons-io', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-core', version:'1.0.406301_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-eclipse', version:'3.2.0.666_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-lang', version:'2.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-net', version:'3.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-pool', version:'1.5.4_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-validator', version:'1.1.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.compression-filter', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.concurrent', version:'1.3.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.core-renderer-modified', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.cos', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.counter-ejb', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_2'
+    compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.drools-compiler', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.drools-core', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.drools-decisiontables', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.drools-jsr94', version:'3.0.5_2'
-    compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_2'
+    compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
     compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.7.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
@@ -67,7 +59,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version:'0.20.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version:'0.20.3_2'
     compile group: 'com.hazelcast', name: 'hazelcast-all', version: '3.9.2'
-    compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_2'
+    compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpcore', version:'4.2.2_2'
@@ -83,9 +75,9 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jamm', version:'0.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version:'3.5.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.javacsv', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxb-api', version:'2.2.7_3'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_3'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_3'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-api', version:'2.2.7_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxen', version:'1.1.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
@@ -95,19 +87,18 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jcaptcha-mod', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.jep', version:'2.4.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-client', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-common', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet-core', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-guava', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-jaxb', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-multipart', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-json-jackson', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-server', version:'2.22.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jersey-entity-filtering', version:'2.22.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-client', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-common', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet-core', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-guava', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-jaxb', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-multipart', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-json-jackson', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-server', version:'2.22.1_4'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-entity-filtering', version:'2.22.1_4'
     compile group: 'com.dotcms.lib', name: 'dot.jettison', version:'1.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jfreechart', version:'1.0.13_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jgroups', version:'3.6.1.Final_2'
     compile group: 'com.dotcms.lib', name: 'dot.jid3lib', version:'0.5.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.JLinkPointTxn', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.json-jspellchecker-dep', version:'ukv_2'
@@ -119,11 +110,10 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_3'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-1.2-api', version:'2.3_1'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-api', version:'2.3_1'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-jcl', version:'2.3_1'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_2'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-api', version:'2.3_2'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_3'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-jcl', version:'2.3_2'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_3'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-expressions', version:'4.10.4_1'
@@ -135,21 +125,20 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version:'4.10.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version:'4.10.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.mail-ejb', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.milton-api', version:'1.8.1.4_2'
-    compile group: 'com.dotcms.lib', name: 'dot.milton-servlet', version:'1.8.1.4_2'
+    compile group: 'com.dotcms.lib', name: 'dot.milton-api', version:'1.8.1.4_3'
+    compile group: 'com.dotcms.lib', name: 'dot.milton-servlet', version:'1.8.1.4_3'
     compile group: 'com.dotcms.lib', name: 'dot.mime-util', version:'2.1.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.mimepull', version:'1.6_2'
     compile group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.nekohtml', version:'1.9.17_2'
-    compile group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_2'
+    compile group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.mediawiki.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.textile.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.tracwiki.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.twiki.core', version:'1.8.0.I20120918-1109_2'
-    compile group: 'com.dotcms.lib', name: 'dot.oro', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.platform', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.portlet', version:'1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.quartz-all', version:'1.8.6_2'
@@ -157,53 +146,132 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.secure-filter', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.simplecaptcha', version:'1.2.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.snappy-java', version:'1.0.4.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.sslext', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.stax2-api', version:'3.1.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.struts', version:'1.2.4_2'
-    compile group: 'com.dotcms.lib', name: 'dot.stxx', version:'1.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.tagsoup', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.Tidy', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.trove', version:'1.0.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.twitter4j-core', version:'3.0.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.urlrewritefilter', version:'4.0.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.util-taglib', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.Verisign', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.wbmp', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.werken-xpath', version:'0.9.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version:'4.2.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.xalan', version:'2.7.0_2'
-    compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version:'1.1.3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
-    compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
-    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_3'
+    compile (group: 'xerces', name: 'xercesImpl', version: '2.11.0'){
+        transitive = false
+    }
+    compile (group: 'org.apache.commons', name: 'commons-compress', version: '1.15'){
+        transitive = false
+    }
+    compile (group: 'commons-digester', name: 'commons-digester', version: '2.1'){
+        transitive = false
+    }
+    compile (group: 'commons-validator', name: 'commons-validator', version: '1.6'){
+        transitive = false
+    }
+    compile (group: 'commons-collections', name: 'commons-collections', version: '3.2.2'){
+        transitive = false
+    }
+    compile (group: 'commons-configuration', name: 'commons-configuration', version: '1.10'){
+        transitive = false
+    }
+    compile (group: 'commons-lang', name: 'commons-lang', version: '2.6'){
+        transitive = false
+    }
+    compile (group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'){
+        transitive = false
+    }
+    compile (group: 'commons-beanutils', name: 'commons-beanutils', version: '1.6.1'){
+        transitive = false
+    }
+    compile (group: 'org.jdom', name: 'jdom', version: '1.1.3'){
+        transitive = false
+    }
+    compile (group: 'dom4j', name: 'dom4j', version: '1.6.1'){
+        transitive = false
+    }
+    compile (group: 'org.apache.poi', name: 'poi', version: '3.17'){
+        transitive = false
+    }
+    compile (group: 'com.googlecode.juniversalchardet', name: 'juniversalchardet', version: '1.0.3'){
+        transitive = false
+    }
+    compile (group: 'org.ccil.cowan.tagsoup', name: 'tagsoup', version: '1.2.1'){
+        transitive = false
+    }
+    compile (group: 'org.codehaus.castor', name: 'castor-core', version: '1.4.1'){
+        transitive = false
+    }
+    compile (group: 'org.codehaus.castor', name: 'castor-xml', version: '1.4.1'){
+        transitive = false
+    }
+    compile (group: 'werken-xpath', name: 'werken-xpath', version: '0.9.4'){
+        transitive = false
+    }
+    compile (group: 'org.jgroups', name: 'jgroups', version: '3.6.1.Final'){
+        transitive = false
+    }
+    compile (group: 'org.tuckey', name: 'urlrewritefilter', version: '4.0.4'){
+        transitive = false
+    }
+    compile (group: 'struts', name: 'struts', version: '1.2.4'){
+        transitive = false
+    }
+    compile (group: 'stxx', name: 'stxx', version: '1.3'){
+        transitive = false
+    }
+    compile (group: 'oro', name: 'oro', version: '2.0.8'){
+        transitive = false
+    }
+    compile (group: 'sslext', name: 'sslext', version: '1.2-0'){
+        transitive = false
+    }
+    compile (group: 'cglib', name: 'cglib-nodep', version: '3.2.6'){
+        transitive = false
+    }
+    compile (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.8'){
+        transitive = false
+    }
+    compile (group: 'xmlpull', name: 'xmlpull', version: '1.1.3.1'){
+        transitive = false
+    }
+    compile (group: 'org.glassfish.hk2', name: 'hk2-locator', version: '2.4.0'){
+        transitive = false
+    }
+    compile (group: 'org.glassfish.hk2', name: 'hk2-utils', version: '2.4.0'){
+        transitive = false
+    }
+    compile (group: 'org.glassfish.hk2', name: 'hk2-api', version: '2.4.0'){
+        transitive = false
+    }
+    compile (group: 'org.glassfish.hk2.external', name: 'javax.inject', version: '2.4.0-b10'){
+        transitive = false
+    }
+    compile (group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'){
+        transitive = false
+    }
+
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
-    
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version:'2.4.0-b10_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hk2-locator', version:'2.4.0-b10_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hk2-utils', version:'2.4.0-b10_2'
-    compile group: 'com.dotcms.lib', name: 'dot.javassist', version:'3.18.1-GA_2'
     compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.javax.inject', version:'2.4.0-b10_2'
     compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version:'1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.validation-api', version:'1.1.0.Final_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
+    compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_3'
     compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
     compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
     compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
 
     // AWS Libraries
-    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-core', version:'1.11.66_1'
-    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-kms', version:'1.11.66_1'
-    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-s3', version:'1.11.66_1'
-    compile group: 'com.dotcms.lib', name: 'dot.jmespath-java', version:'1.11.66_1'
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-core', version:'1.11.66_2'
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-kms', version:'1.11.66_2'
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-s3', version:'1.11.66_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jmespath-java', version:'1.11.66_2'
 
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
@@ -245,6 +313,7 @@ dependencies {
     }
     compile group: 'com.dotcms.lib', name: 'compass-gems', version:'1.0.3_1'
     compile group: 'org.jruby', name: 'jruby-complete', version:'1.7.19'
+
     compile group: 'com.h2database', name: 'h2', version:'1.3.176'
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 
@@ -352,4 +421,6 @@ dependencies {
     compile 'org.immutables:gson:2.3.3'
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
+    compile group: 'io.bit3', name: 'jsass', version: '5.5.4'
+    	
 }

@@ -1,11 +1,5 @@
 package com.dotmarketing.portlets.containers.model;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -24,6 +18,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** @author Hibernate CodeGenerator */
 public class Container extends WebAsset implements Serializable {

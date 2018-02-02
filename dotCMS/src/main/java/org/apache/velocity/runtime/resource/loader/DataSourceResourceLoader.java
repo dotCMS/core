@@ -19,6 +19,7 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -29,14 +30,12 @@ import java.sql.Timestamp;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.ExceptionUtils;
 import org.apache.velocity.util.StringUtils;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * <P>This is a simple template file loader that loads templates
@@ -138,7 +137,7 @@ public class DataSourceResourceLoader extends ResourceLoader
     private DataSource dataSource;
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
      */
     public void init(ExtendedProperties configuration)
     {
@@ -220,7 +219,7 @@ public class DataSourceResourceLoader extends ResourceLoader
     public synchronized InputStream getResourceStream(final String name)
         throws ResourceNotFoundException
     {
-        if (com.dotcms.repackage.org.apache.commons.lang.StringUtils.isEmpty(name))
+        if (org.apache.commons.lang.StringUtils.isEmpty(name))
         {
             throw new ResourceNotFoundException("DataSourceResourceLoader: Template name was empty or null");
         }

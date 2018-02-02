@@ -22,20 +22,17 @@
 
 package com.liferay.portal.ejb;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-
 import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.SyncMap;
 import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Image;
 import com.liferay.portal.util.ImageKey;
 import com.liferay.portal.util.PropsUtil;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import org.apache.commons.collections.map.LRUMap;
 
 /**
  * <a href="ImageLocalUtil.java.html"><b><i>View Source</i></b></a>

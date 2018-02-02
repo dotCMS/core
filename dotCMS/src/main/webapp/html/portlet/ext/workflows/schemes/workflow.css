@@ -207,6 +207,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	-webkit-box-flex: 1;
 	-ms-flex-positive: 1;
 	flex-grow: 1;
+	padding:10px;
 }
 .board {
 	-webkit-user-select: none;
@@ -234,10 +235,9 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	display: inline-block;
 	vertical-align: top;
 	white-space: nowrap;
+	margin-bottom:20px;
 }
-.list-wrapper:first-child {
-	margin-left: 20px;
-}
+
 .list-item {
 	background: #Fff;
 	-webkit-box-sizing: border-box;

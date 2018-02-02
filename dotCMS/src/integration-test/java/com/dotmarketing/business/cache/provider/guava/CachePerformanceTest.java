@@ -2,25 +2,21 @@ package com.dotmarketing.business.cache.provider.guava;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderEmbedded;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Test;
-
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderClient;
-import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderEmbedded;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-
 
 public class CachePerformanceTest {
 
@@ -35,7 +31,6 @@ public class CachePerformanceTest {
   final int numberOfThreads = 20;
   final int numberOfGroups = 10;
   final int maxCharOfObjects = 50000;
-  private static final Logger LOGGER = Logger.getLogger("ROOT");
 
   private final long startTime = System.currentTimeMillis();
 //  Class provider = GuavaCache.class;
@@ -44,10 +39,6 @@ public class CachePerformanceTest {
 
   @Test
   public void testInit() throws Exception {
-    LOGGER.info("INFO TEST");
-    LOGGER.debug("DEBUG TEST");
-    LOGGER.error("ERROR TEST");
-    
 
     CacheProvider cache =(CacheProvider) provider.newInstance();
     cache.init();
@@ -102,23 +93,31 @@ public class CachePerformanceTest {
 
     // test causing an error and recovering
 
-    LOGGER.info("Total Memory Available : " +  UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory()));
-    LOGGER.info("Memory Allocated : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory()));
-    LOGGER.info("Filled Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ));
-    LOGGER.info("Free Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() ));
+    Logger.info(this.getClass(), "Total Memory Available : " + UtilMethods
+            .prettyByteify(Runtime.getRuntime().maxMemory()));
+    Logger.info(this.getClass(),
+            "Memory Allocated : " + UtilMethods.prettyByteify(Runtime.getRuntime().totalMemory()));
+    Logger.info(this.getClass(), "Filled Memory : " + UtilMethods
+            .prettyByteify(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+    Logger.info(this.getClass(),
+            "Free Memory : " + UtilMethods.prettyByteify(Runtime.getRuntime().freeMemory()));
 
     testMultithreaded(cache, numberOfThreads, false, true, false);
 
-    LOGGER.info("Total Memory Available : " +  UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory()));
-    LOGGER.info("Memory Allocated : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory()));
-    LOGGER.info("Filled Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ));
-    LOGGER.info("Free Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() ));
+    Logger.info(this.getClass(), "Total Memory Available : " + UtilMethods
+            .prettyByteify(Runtime.getRuntime().maxMemory()));
+    Logger.info(this.getClass(),
+            "Memory Allocated : " + UtilMethods.prettyByteify(Runtime.getRuntime().totalMemory()));
+    Logger.info(this.getClass(), "Filled Memory : " + UtilMethods
+            .prettyByteify(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+    Logger.info(this.getClass(),
+            "Free Memory : " + UtilMethods.prettyByteify(Runtime.getRuntime().freeMemory()));
 
     CacheProviderStats pStats = cache.getStats();
     Set<String> columns = pStats.getStatColumns();
     for (CacheStats cs :pStats.getStats()) {
       for(String col : columns){
-        LOGGER.info(col + " : " + cs.getStatValue(col));
+        Logger.info(this.getClass(), col + " : " + cs.getStatValue(col));
       }
     }
 

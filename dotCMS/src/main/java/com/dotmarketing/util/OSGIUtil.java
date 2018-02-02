@@ -26,6 +26,7 @@ import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
@@ -235,6 +236,10 @@ public class OSGIUtil {
      */
     public BundleContext getBundleContext() {
         return felixFramework.getBundleContext();
+    }
+
+    public Boolean isInitialized() {
+        return null != felixFramework;
     }
 
     /**
@@ -528,4 +533,68 @@ public class OSGIUtil {
 
         return baseDirectory;
     }
+
+    /**
+     * Finds a bundle by bundle name
+     *
+     * @param bundleName Name of the bundle to search for
+     */
+    public Bundle findBundle(final String bundleName) {
+
+        Bundle foundBundle = null;
+
+        //Get the list of existing bundles
+        Bundle[] bundles = OSGIUtil.getInstance().getBundleContext().getBundles();
+        for (Bundle bundle : bundles) {
+            if (bundleName.equalsIgnoreCase(bundle.getSymbolicName())) {
+                foundBundle = bundle;
+                break;
+            }
+        }
+
+        return foundBundle;
+    }
+
+    /**
+     * Returns an instance of a given service registered through OSGI
+     *
+     * @param serviceClass Registered service class
+     * @param bundleName Bundle name of the Bundle where the service is registered
+     * @return Instance of the requested service
+     */
+    public <T> T getService(final Class<T> serviceClass, final String bundleName) {
+
+        Bundle foundBundle = findBundle(bundleName);
+        if (null == foundBundle) {
+            throw new IllegalStateException(
+                    String.format("[%s] OSGI bundle NOT FOUND.", bundleName));
+        }
+
+        BundleContext bundleContext = foundBundle.getBundleContext();
+        if (null == bundleContext) {
+            throw new IllegalStateException(
+                    String.format("OSGI bundle context NOT FOUND for bundle [%s]", bundleName));
+        }
+
+        //Getting the requested OSGI service reference
+        ServiceReference serviceReference = bundleContext
+                .getServiceReference(serviceClass.getName());
+        if (null == serviceReference) {
+            throw new IllegalStateException(String.format(
+                    "[%s] Service Reference NOT FOUND.",
+                    serviceClass.getName()));
+        }
+
+        T osgiBundleService;
+        try {
+            //Service reference instance exposed through OSGI
+            osgiBundleService = (T) bundleContext.getService(serviceReference);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    String.format("Error reading [%s] Service.", serviceClass.getName()), e);
+        }
+
+        return osgiBundleService;
+    }
+
 }

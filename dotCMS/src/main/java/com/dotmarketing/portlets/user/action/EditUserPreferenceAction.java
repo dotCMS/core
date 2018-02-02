@@ -1,14 +1,8 @@
 package com.dotmarketing.portlets.user.action;
 
-import java.net.URLDecoder;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.user.factories.UserPreferencesFactory;
@@ -18,6 +12,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
+import java.net.URLDecoder;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author David Torres 

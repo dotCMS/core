@@ -17,35 +17,29 @@
 package org.apache.velocity.tools.struts;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.commons.validator.Field;
-import com.dotcms.repackage.org.apache.commons.validator.Form;
-import com.dotcms.repackage.org.apache.commons.validator.ValidatorAction;
-import com.dotcms.repackage.org.apache.commons.validator.ValidatorResources;
-import com.dotcms.repackage.org.apache.commons.validator.util.ValidatorUtils;
-import com.dotcms.repackage.org.apache.commons.validator.Var;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-import com.dotcms.repackage.org.apache.struts.util.ModuleUtils;
-import com.dotcms.repackage.org.apache.struts.validator.Resources;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorPlugIn;
-
+import org.apache.commons.validator.Field;
+import org.apache.commons.validator.Form;
+import org.apache.commons.validator.ValidatorAction;
+import org.apache.commons.validator.ValidatorResources;
+import org.apache.commons.validator.Var;
+import org.apache.struts.Globals;
+import org.apache.struts.config.ActionConfig;
+import org.apache.struts.config.ModuleConfig;
+import org.apache.struts.util.MessageResources;
+import org.apache.struts.util.ModuleUtils;
+import org.apache.struts.validator.Resources;
+import org.apache.struts.validator.ValidatorPlugIn;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import java.util.StringTokenizer;
 
 /**
  * <p>View tool that works with Struts Validator to

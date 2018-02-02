@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.enterprise.LicenseService;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -10,14 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
-
-import com.dotcms.enterprise.LicenseService;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * A helper for {@link ESIndexAPI}

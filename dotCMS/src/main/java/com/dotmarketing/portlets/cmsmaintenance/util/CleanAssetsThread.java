@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.cmsmaintenance.util;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * Created by Jonathan Gamba

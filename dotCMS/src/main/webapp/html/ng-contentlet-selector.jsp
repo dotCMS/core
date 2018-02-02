@@ -1,3 +1,6 @@
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.BaseContentType"%>
 
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -5,6 +8,56 @@
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
+
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="java.util.*" %>
+
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
+<%@ page import="com.dotmarketing.business.Layout" %>
+
+<%
+    String containerIdentifier = request.getParameter("container_id");
+    User user = PortalUtil.getUser(request);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+
+    List<ContentType> contentTypes = null;
+    String baseTypeToAdd = request.getParameter("add");
+
+    if (BaseContentType.WIDGET.name().equalsIgnoreCase(baseTypeToAdd)) {
+        contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.WIDGET);
+    } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
+        contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
+    } else {
+        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
+
+    }
+    contentTypes = new ArrayList<>(contentTypes);
+
+    contentTypes.addAll(APILocator.getContentTypeAPI(user).findByType(BaseContentType.WIDGET));
+    Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
+
+    String containerStructures = "[";
+    Integer count = 1;
+
+    for (ContentType contentType: contentTypes) {
+        containerStructures = containerStructures + "{";
+        containerStructures = containerStructures + "\"inode\":" + "\"" + contentType.id() + "\",";
+        containerStructures = containerStructures + "\"name\":" + "\"" + contentType.name() + "\",";
+        containerStructures = containerStructures + "\"baseType\":" + "\"" + contentType.baseType() + "\",";
+        containerStructures = containerStructures + "\"variable\":" + "\"" + contentType.variable() + "\"";
+        containerStructures = containerStructures + "}";
+
+        if (count < contentTypes.size()) {
+            containerStructures = containerStructures + ',';
+        }
+        count++;
+    }
+
+    containerStructures = containerStructures + "]";
+%>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,9 +81,27 @@
             width: 100%;
             height: 100%;
         }
+
+        .portlet-sidebar-wrapper {
+            width: 200px;
+            margin-right: 16px;
+        }
+
+        .portlet-toolbar__add-contentlet {
+            margin-left: auto;
+        }
     </style>
 
     <script type="text/javascript">
+    
+    var _dotSelectedStructure = '<%=contentTypes.get(0).id()%>';
+        function addNewContentlet() {
+            var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
+            href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
+            href += "&selectedStructure=" + _dotSelectedStructure + "&lang=1";
+            window.location = href;
+        }
+
         function contentSelected(content) {
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
@@ -38,15 +109,27 @@
                     data: {
                         inode: content.inode,
                         identifier: content.identifier,
-                        type: content.type
+                        type: content.typeVariable,
+                        baseType: content.baseType
                     }
                 })
             }
         }
 
+        function displayStructure(structureInode) {
+            contentSelector.displayStructureFields(structureInode);
+            _dotSelectedStructure = structureInode;
+        }
+
+        function getSelectedLanguageId () {
+            var obj = dijit.byId("langcombo+1");
+            return obj && obj.value;
+        }
+
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
         }
+
 
         djConfig = {
             parseOnLoad: true,
@@ -71,38 +154,17 @@
     <script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
     <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
-    <%
-        String containerIdentifier = (String) request.getParameter("container_id");
-        User user = PortalUtil.getUser(request);
-        Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
-        List<Structure> structuresInContainer = APILocator.getContainerAPI().getStructuresInContainer(container);
-    %>
 
     <script type="text/javascript">
         dojo.require("dotcms.dijit.form.ContentSelector");
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-            contentSelector.containerStructures = [
-                <%
-                    for (Structure structure: structuresInContainer) {
-                %>
-                {
-                    "inode": '<%=structure.id()%>',
-                    "name": '<%=structure.getName()%>'
-                },
-                <%
-                    }
-                %>
-            ];
-
-            contentSelector._fillStructures();
         })
-
 
     </script>
 </head>
 <body>
-<div jsId="contentSelector" onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
+<div jsId="contentSelector" containerStructures='<%=containerStructures%>' onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
 </body>
 </html>

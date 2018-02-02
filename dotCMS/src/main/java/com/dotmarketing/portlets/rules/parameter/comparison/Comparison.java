@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.rules.parameter.comparison;
 
-import com.dotcms.repackage.com.google.common.base.Objects;
-import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotmarketing.portlets.rules.conditionlet.Location;
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
+import com.dotcms.repackage.com.google.common.base.Objects;
+import com.dotmarketing.portlets.rules.conditionlet.Location;
 import java.util.Collection;
+import org.apache.commons.lang.NotImplementedException;
 
 public class Comparison<T> {
 

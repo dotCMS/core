@@ -14,7 +14,7 @@ public class XMLUtils {
 	 */
 	public static String xmlEscape(String str) {
 
-	        return com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeXml(str);
+	        return org.apache.commons.lang.StringEscapeUtils.escapeXml(str);
 	   
 	}
 }

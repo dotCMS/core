@@ -22,7 +22,7 @@
 
 package com.liferay.util.mail;
 
-import com.dotcms.repackage.org.apache.commons.lang.exception.NestableException;
+import org.apache.commons.lang.exception.NestableException;
 
 /**
  * <a href="MailEngineException.java.html"><b><i>View Source</i></b></a>

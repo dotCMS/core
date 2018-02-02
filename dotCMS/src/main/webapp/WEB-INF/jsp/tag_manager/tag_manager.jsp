@@ -33,8 +33,8 @@
 
 <%@page import="java.lang.Exception"%>
 
-<%@ page import="com.dotcms.repackage.org.apache.struts.action.ActionForm"%>
-<%@ page import="com.dotcms.repackage.org.apache.struts.action.ActionMapping"%>
+<%@ page import="org.apache.struts.action.ActionForm"%>
+<%@ page import="org.apache.struts.action.ActionMapping"%>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 

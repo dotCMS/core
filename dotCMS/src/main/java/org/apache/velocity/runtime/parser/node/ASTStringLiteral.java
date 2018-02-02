@@ -17,11 +17,12 @@ package org.apache.velocity.runtime.parser.node;
  * the License.
  */
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-
-import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
+import org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
@@ -30,9 +31,6 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 
 /**
  * ASTStringLiteral support. Will interpolate!

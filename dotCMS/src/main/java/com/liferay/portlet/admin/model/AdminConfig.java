@@ -22,11 +22,10 @@
 
 package com.liferay.portlet.admin.model;
 
-import com.dotcms.repackage.org.exolab.castor.xml.CastorException;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
 import com.liferay.util.xml.Serializer;
+import org.exolab.castor.xml.CastorException;
 
 /**
  * <a href="AdminConfig.java.html"><b><i>View Source</i></b></a>

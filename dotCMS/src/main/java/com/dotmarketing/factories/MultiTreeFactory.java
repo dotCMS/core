@@ -54,7 +54,7 @@ public class MultiTreeFactory {
     static final String INSERT_SQL =
             "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
-    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? ";
+    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
     static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     static final String SELECT_ALL = "select * from multi_tree  ";
     static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
@@ -158,7 +158,7 @@ public class MultiTreeFactory {
         DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
             .addParam(parentInode)
             .addParam(parentInode);
-
+            
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }

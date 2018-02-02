@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.repackage.org.apache.commons.lang.math.NumberUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -16,10 +15,15 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.velocity.tools.view.context.ViewContext;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
  * Implementation class for the {@link LanguageAPI}.

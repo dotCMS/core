@@ -1,6 +1,5 @@
 package com.dotmarketing.cms.myaccount.action;
 
-import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotmarketing.cms.SecureAction;
 
 

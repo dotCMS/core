@@ -14,7 +14,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +47,7 @@ public class VelocityEditMode extends VelocityModeHandler {
     }
 
 
-    public void serve(Writer out) throws DotDataException, IOException, DotSecurityException {
+    public void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
 
         // Getting the user to check the permissions
         User user = WebAPILocator.getUserWebAPI().getUser(request);
@@ -65,17 +68,16 @@ public class VelocityEditMode extends VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 
-
-        this.getTemplate(htmlPage, mode).merge(context, out);
+        try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
+            this.getTemplate(htmlPage, mode).merge(context, outStr);
+        }
 
 
     }
 
     @Override
     public void serve() throws DotDataException, IOException, DotSecurityException {
-        serve(response.getWriter());
-
-
+        serve(response.getOutputStream());
     }
 
 

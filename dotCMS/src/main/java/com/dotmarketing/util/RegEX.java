@@ -1,20 +1,18 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
-import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
-import com.dotcms.repackage.org.apache.oro.text.regex.PatternMatcherInput;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Substitution;
-import com.dotcms.repackage.org.apache.oro.text.regex.Util;
-
-import com.dotmarketing.exception.DotRuntimeException;
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.MatchResult;
+import org.apache.oro.text.regex.Pattern;
+import org.apache.oro.text.regex.PatternMatcherInput;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.oro.text.regex.Perl5Substitution;
+import org.apache.oro.text.regex.Util;
 
 public class RegEX {
 
@@ -33,7 +31,7 @@ public class RegEX {
 	private static RegEX instance;
 	private Perl5Compiler compiler;
 	
-	private Map<String, com.dotcms.repackage.org.apache.oro.text.regex.Pattern> patterns = new HashMap<String, com.dotcms.repackage.org.apache.oro.text.regex.Pattern>();
+	private Map<String, org.apache.oro.text.regex.Pattern> patterns = new HashMap<String, org.apache.oro.text.regex.Pattern>();
 	
 	private RegEX() {
 		compiler = new Perl5Compiler();

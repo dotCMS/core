@@ -2,7 +2,6 @@ package com.dotcms.publishing;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
-import com.dotcms.repackage.org.apache.commons.collections.map.CompositeMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -30,6 +29,7 @@ import java.util.Properties;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.collections.map.CompositeMap;
 
 public abstract class Publisher implements IPublisher {
 

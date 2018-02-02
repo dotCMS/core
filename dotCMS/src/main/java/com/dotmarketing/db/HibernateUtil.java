@@ -1,17 +1,5 @@
 package com.dotmarketing.db;
 
-import com.dotcms.repackage.net.sf.hibernate.CallbackException;
-import com.dotcms.repackage.net.sf.hibernate.FlushMode;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.Interceptor;
-import com.dotcms.repackage.net.sf.hibernate.MappingException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
-import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -37,6 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import com.dotcms.repackage.net.sf.hibernate.CallbackException;
+import com.dotcms.repackage.net.sf.hibernate.FlushMode;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.Interceptor;
+import com.dotcms.repackage.net.sf.hibernate.MappingException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.Query;
+import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
+import com.dotcms.repackage.net.sf.hibernate.type.Type;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with

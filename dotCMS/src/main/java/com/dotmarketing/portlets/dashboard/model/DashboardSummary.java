@@ -2,10 +2,7 @@ package com.dotmarketing.portlets.dashboard.model;
 
 import java.io.Serializable;
 import java.util.Date;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
-
-import com.dotmarketing.beans.Host;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 public class DashboardSummary implements Serializable {
    

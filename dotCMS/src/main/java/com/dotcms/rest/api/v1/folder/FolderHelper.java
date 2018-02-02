@@ -1,12 +1,9 @@
 package com.dotcms.rest.api.v1.folder;
 
-import com.dotcms.repackage.net.sf.hibernate.expression.Example;
-import com.dotcms.repackage.org.apache.commons.collections.map.HashedMap;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,7 +12,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

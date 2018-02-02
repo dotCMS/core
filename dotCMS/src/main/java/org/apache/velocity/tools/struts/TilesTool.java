@@ -16,27 +16,22 @@
 
 package org.apache.velocity.tools.struts;
 
-import java.util.Stack;
-import java.util.Map;
+import com.dotmarketing.util.Config;
 import java.util.Iterator;
-
+import java.util.Map;
+import java.util.Stack;
 import javax.servlet.http.HttpSession;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.dotcms.repackage.org.apache.struts.tiles.ComponentContext;
-import com.dotcms.repackage.org.apache.struts.tiles.ComponentDefinition;
-import com.dotcms.repackage.org.apache.struts.tiles.AttributeDefinition;
-import com.dotcms.repackage.org.apache.struts.tiles.DirectStringAttribute;
-import com.dotcms.repackage.org.apache.struts.tiles.DefinitionAttribute;
-import com.dotcms.repackage.org.apache.struts.tiles.DefinitionNameAttribute;
-import com.dotcms.repackage.org.apache.struts.tiles.PathAttribute;
-import com.dotcms.repackage.org.apache.struts.tiles.TilesUtil;
-import com.dotcms.repackage.org.apache.struts.tiles.DefinitionsFactoryException;
-import com.dotcms.repackage.org.apache.struts.tiles.Controller;
-import com.dotmarketing.util.Config;
-
+import org.apache.struts.tiles.AttributeDefinition;
+import org.apache.struts.tiles.ComponentContext;
+import org.apache.struts.tiles.ComponentDefinition;
+import org.apache.struts.tiles.Controller;
+import org.apache.struts.tiles.DefinitionAttribute;
+import org.apache.struts.tiles.DefinitionNameAttribute;
+import org.apache.struts.tiles.DefinitionsFactoryException;
+import org.apache.struts.tiles.DirectStringAttribute;
+import org.apache.struts.tiles.TilesUtil;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.context.ViewContext;

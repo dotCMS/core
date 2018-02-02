@@ -1,17 +1,14 @@
 package com.dotcms.tika;
 
-import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
-import com.dotcms.repackage.org.apache.tika.Tika;
-import com.dotcms.repackage.org.apache.tika.io.TikaInputStream;
-import com.dotcms.repackage.org.apache.tika.metadata.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -25,9 +22,39 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 public class TikaUtils {
 
+    private TikaProxyService tikaService;
+    private Boolean osgiInitialized;
+
+    public TikaUtils() {
+
+        osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        if (osgiInitialized) {
+
+            //Search for the TikaServiceBuilder service instance expose through OSGI
+            TikaServiceBuilder tikaServiceBuilder = OSGIUtil.getInstance()
+                    .getService(TikaServiceBuilder.class,
+                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
+            if (null == tikaServiceBuilder) {
+                throw new IllegalStateException(
+                        String.format("OSGI Service [%s] not found for bundle [%s]",
+                                TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+            }
+
+            /*
+            Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
+            when the createTikaService method is called a new instance of Tika is also created
+            by the TikaProxyService implementation.
+             */
+            this.tikaService = tikaServiceBuilder.createTikaService();
+        } else {
+            Logger.error(this.getClass(), "OSGI Framework not initialized");
+        }
+    }
 
     /**
      * Right now the method use the Tika facade directly for parse the document without any kind of restriction about the parser because the
@@ -38,14 +65,20 @@ public class TikaUtils {
      * May 31, 2013 - 12:27:19 PM
      */
     public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
-        Map<String, String> metaMap = new HashMap<String, String>();
+
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file Meta Data, OSGI Framework not initialized");
+            return new HashMap<>();
+        }
+
+        this.tikaService.setMaxStringLength(-1);
+
+        Map<String, String> metaMap = new HashMap<>();
 
         // store content metadata on disk
         File contentM = APILocator.getFileAssetAPI().getContentMetadataFile(inode);
 
-        Tika t = new Tika();
-        Metadata met = new Metadata();
-        t.setMaxStringLength(-1);
         Reader fulltext = null;
         InputStream is = null;
 
@@ -59,34 +92,19 @@ public class TikaUtils {
 
             if (forceMemory) {
                 // no worry about the limit and less time to process.
-                final String content = t.parseToString(Files.newInputStream(binFile.toPath()), met);
-                metaMap = new HashMap<String, String>();
-                for (int i = 0; i < met.names().length; i++) {
-                    String name = met.names()[i];
-                    if (UtilMethods.isSet(name) && met.get(name) != null) {
-                        // we will want to normalize our metadata for searching
-                        String[] x = translateKey(name);
-                        for (String y : x) {
-                            metaMap.put(y, met.get(name));
-                        }
-                    }
-                }
+                final String content = this.tikaService
+                        .parseToString(Files.newInputStream(binFile.toPath()));
+
+                //Creating the meta data map to use by our content
+                metaMap = buildMetaDataMap();
                 metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
             } else {
 
-                is = TikaInputStream.get(binFile);
-                fulltext = t.parse(is, met);
-                metaMap = new HashMap<String, String>();
-                for (int i = 0; i < met.names().length; i++) {
-                    String name = met.names()[i];
-                    if (UtilMethods.isSet(name) && met.get(name) != null) {
-                        // we will want to normalize our metadata for searching
-                        String[] x = translateKey(name);
-                        for (String y : x) {
-                            metaMap.put(y, met.get(name));
-                        }
-                    }
-                }
+                is = this.tikaService.tikaInputStreamGet(binFile);
+                fulltext = this.tikaService.parse(is);
+
+                //Creating the meta data map to use by our content
+                metaMap = buildMetaDataMap();
 
                 buf = new char[1024];
                 bytes = new byte[1024];
@@ -119,7 +137,7 @@ public class TikaUtils {
                             numOfChunks--;
                         } while ((count = fulltext.read(buf)) > 0 && numOfChunks > 0);
                     } catch (IOException ioExc) {
-                        Logger.debug(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
+                        Logger.error(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
                     } finally {
                         if (out != null) {
                             try {
@@ -142,11 +160,12 @@ public class TikaUtils {
                     }
                 }
             }
-	} catch (IOException ioExc) {
-		Logger.debug(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
-	} catch (Exception e) {
+        } catch (IOException ioExc) {
+            Logger.error(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
+        } catch (Exception e) {
             Logger.error(this.getClass(),
-                "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + e.getMessage());
+                    "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". "
+                            + e.getMessage());
         } finally {
             if (null != fulltext) {
                 IOUtils.closeQuietly(fulltext);
@@ -158,9 +177,11 @@ public class TikaUtils {
                 metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
             } catch (Exception ex) {
                 Logger.error(this.getClass(),
-                    "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + ex.getMessage());
+                        "Could not parse file metadata for file : " + binFile.getAbsolutePath()
+                                + ". " + ex.getMessage());
             }
         }
+
         User systemUser = null;
         try {
             systemUser = APILocator.getUserAPI().getSystemUser();
@@ -181,79 +202,78 @@ public class TikaUtils {
         return metaMap;
     }
 
-	/**
-	 * This method takes a file and uses tika to parse the metadata from it. It
-	 * returns a Map of the metadata
-	 *
-	 * @param binFile
-	 * @return
-	 */
-	public Map<String, String> getMetaDataMap(String inode,File binFile, boolean forceMemory) {
-		return getMetaDataMap(inode,binFile, null, forceMemory);
-	}
+    /**
+     * Detects the media type of the given file. The type detection is
+     * based on the document content and a potential known file extension.
+     *
+     * @param file the file
+     * @return detected media type
+     * @throws IOException if the file can not be read
+     */
+    public String detect(File file) throws IOException {
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file media type, OSGI Framework not initialized");
+            return "";
+        }
 
-//	/**
-//	 *
-//	 * @param binFile
-//	 * @return
-//	 */
-//	private Parser getParser(File binFile) {
-//		String mimeType = new MimetypesFileTypeMap().getContentType(binFile);
-//		return getParser(binFile, mimeType);
-//	}
+        return this.tikaService.detect(file);
+    }
 
+    private Map<String, String> buildMetaDataMap() {
 
-//	private Parser getParser(File binFile, String mimeType) {
-//		String[] mimeTypes = Config.getStringArrayProperty("CONTENT_PARSERS_MIMETYPES");
-//		String[] parsers = Config.getStringArrayProperty("CONTENT_PARSERS");
-//		int index = Arrays.binarySearch(mimeTypes, mimeType);
-//		if (index > -1 && parsers.length > 0) {
-//			String parserClassName = parsers[index];
-//			Class<Parser> parserClass;
-//			try {
-//				parserClass = (Class<Parser>) Class.forName(parserClassName);
-//				return parserClass.newInstance();
-//			} catch (Exception e) {
-//				Logger.warn(this.getClass(), "A content parser for mime type " + mimeType
-//						+ " was found but could not be instantiated, using default content parser.");
-//			}
-//		}
-//		return new AutoDetectParser();
-//	}
+        Map<String, String> metaMap = new HashMap<>();
+        for (int i = 0; i < this.tikaService.metadataNames().length; i++) {
+            String name = this.tikaService.metadataNames()[i];
+            if (UtilMethods.isSet(name) && this.tikaService.metadataGetName(name) != null) {
+                // we will want to normalize our metadata for searching
+                String[] x = translateKey(name);
+                for (String y : x) {
+                    metaMap.put(y, this.tikaService.metadataGetName(name));
+                }
+            }
+        }
 
+        return metaMap;
+    }
 
+    /**
+     * This method takes a file and uses tika to parse the metadata from it. It
+     * returns a Map of the metadata
+     */
+    public Map<String, String> getMetaDataMap(String inode, File binFile, boolean forceMemory) {
+        return getMetaDataMap(inode, binFile, null, forceMemory);
+    }
 
+    /**
+     * normalize metadata from various filetypes this method will return an
+     * array of metadata keys that we can use to normalize the values in our
+     * fileAsset metadata For example, tiff:ImageLength = "height" for image
+     * files, so we return {"tiff:ImageLength", "height"} and both metadata are
+     * written to our metadata field
+     */
+    private String[] translateKey(String key) {
+        String[] x = getTranslationMap().get(key);
+        if (x == null) {
+            x = new String[]{StringUtils.camelCaseLower(key)};
+        }
+        return x;
+    }
 
-	/**
-	 * normalize metadata from various filetypes this method will return an
-	 * array of metadata keys that we can use to normalize the values in our
-	 * fileAsset metadata For example, tiff:ImageLength = "height" for image
-	 * files, so we return {"tiff:ImageLength", "height"} and both metadata are
-	 * written to our metadata field
-	 *
-	 * @param key
-	 * @return
-	 */
-	private String[] translateKey(String key) {
-		String[] x = getTranslationMap().get(key);
-		if (x == null) {
-			x = new String[] { StringUtils.camelCaseLower(key) };
-		}
-		return x;
-	}
+    private Map<String, String[]> translateMeta = null;
 
-	private Map<String, String[]> translateMeta = null;
+    private Map<String, String[]> getTranslationMap() {
+        if (translateMeta == null) {
+            synchronized ("translateMeta".intern()) {
+                if (translateMeta == null) {
+                    translateMeta = new HashMap<String, String[]>();
+                    translateMeta.put("tiff:ImageWidth", new String[]{"tiff:ImageWidth", "width"});
+                    translateMeta
+                            .put("tiff:ImageLength", new String[]{"tiff:ImageLength", "height"});
+                }
+            }
+        }
+        return translateMeta;
+    }
 
-	private Map<String, String[]> getTranslationMap() {
-		if (translateMeta == null) {
-			synchronized ("translateMeta".intern()) {
-				if (translateMeta == null) {
-					translateMeta = new HashMap<String, String[]>();
-					translateMeta.put("tiff:ImageWidth", new String[] { "tiff:ImageWidth", "width" });
-					translateMeta.put("tiff:ImageLength", new String[] { "tiff:ImageLength", "height" });
-				}
-			}
-		}
-		return translateMeta;
-	}
 }

@@ -5,13 +5,16 @@ import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
 import com.dotmarketing.util.StringUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * it is block that can contain {@link com.dotmarketing.portlets.containers.model.Container}
  */
-public class ContainerHolder {
+public class ContainerHolder implements Serializable{
 
     private static final String PARSE_CONTAINER_STATEMENT =  "#parseContainer('%s', '%s')";
     private boolean preview;
@@ -51,6 +54,14 @@ public class ContainerHolder {
         }
 
         return sb.toString();
+    }
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
     }
 }
 

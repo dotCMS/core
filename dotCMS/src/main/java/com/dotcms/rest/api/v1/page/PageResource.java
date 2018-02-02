@@ -1,8 +1,16 @@
 package com.dotcms.rest.api.v1.page;
 
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -11,31 +19,40 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.WebKeys;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
+import com.liferay.portal.model.User;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -208,10 +225,39 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-            final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+
+            final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ? (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms)  : this.pageResourceHelper.getPage(request, user, uri, mode);
+            
+            
+            final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
+            final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
+            final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
+            final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
+            final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
+            
+
+            Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
+            
+            request.setAttribute(WebKeys.CURRENT_HOST, host);
+            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
+            final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("render",html, "identifier",
-                    page.getIdentifier(), "inode", page.getInode()));
+            pageMapBuilder.put("render",html )
+                .put("canLock", canLock)
+                .put("workingInode", info.getWorkingInode())
+                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
+            pageMapBuilder.putAll(page.getMap());
+            
+            if(lockedBy!=null) {
+                pageMapBuilder.put("lockedOn", info.getLockedOn())
+                    .put("lockedBy", lockedBy)
+                    .put("lockedByName", lockedUserName);
+            }
+            if(info.getLiveInode()!=null) {
+                pageMapBuilder.put("liveInode", info.getLiveInode())
+                .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
+            }
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageMapBuilder.build());
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
@@ -251,7 +297,9 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, @PathParam("pageId") final String pageId,
+    public Response saveLayout(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("pageId") final String pageId,
                                final PageForm form) {
 
         final InitDataObject auth = webResource.init(false, request, true);
@@ -260,9 +308,14 @@ public class PageResource {
         Response res = null;
 
         try {
+            IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
+            this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final Template templateSaved = this.pageResourceHelper.saveTemplate(user, pageId, form);
-            res = Response.ok(new ResponseEntityView(templateSaved)).build();
+            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request, response, user,
+                    page.getURI(), false);
+            final String json = this.pageResourceHelper.asJson(pageView);
+
+            res = Response.ok(new ResponseEntityView(json)).build();
 
         } catch (DotSecurityException e) {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
@@ -369,12 +422,12 @@ public class PageResource {
         Response res = null;
 
         try {
-            final Contentlet page = pageResourceHelper.getPage(user, pageId);
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
             if (page == null) {
                 return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
             }
 
-            pageResourceHelper.checkPagePermission(user, page);
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
             pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
 
             res = Response.ok(new ResponseEntityView("ok")).build();

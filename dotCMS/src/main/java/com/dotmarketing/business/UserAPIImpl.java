@@ -1,17 +1,11 @@
 package com.dotmarketing.business;
 
-import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.bundle.business.BundleAPI;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -38,6 +32,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User

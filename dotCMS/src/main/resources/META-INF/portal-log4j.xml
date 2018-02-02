@@ -80,7 +80,7 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="net.sf.hibernate">
+	<category name="com.dotcms.repackage.net.sf.hibernate">
 		<priority value="WARN" />
 	</category>
 

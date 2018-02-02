@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -123,11 +125,11 @@ public class VTLLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath) {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
         try {
-            return streamFile(filePath);
+            return streamFile(key.path);
         } catch (IOException e) {
-            throw new ResourceNotFoundException("cannot find resource:" + filePath);
+            throw new ResourceNotFoundException("cannot find resource:" + key.path);
         }
     }
 

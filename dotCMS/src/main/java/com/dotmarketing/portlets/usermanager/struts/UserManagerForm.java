@@ -1,18 +1,15 @@
 package com.dotmarketing.portlets.usermanager.struts;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
-
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 
 /**
  * 

@@ -1,8 +1,9 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+
 
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;

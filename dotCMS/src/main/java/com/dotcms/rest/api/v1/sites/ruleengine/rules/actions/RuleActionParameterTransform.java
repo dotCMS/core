@@ -1,11 +1,10 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
-import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
-import com.dotmarketing.business.ApiProvider;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-
 import java.util.function.Function;
+import org.apache.commons.lang.SerializationUtils;
 
 public class RuleActionParameterTransform {
     private final RulesAPI rulesAPI;

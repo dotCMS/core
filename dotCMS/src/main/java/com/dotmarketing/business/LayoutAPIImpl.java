@@ -142,5 +142,9 @@ public class LayoutAPIImpl implements LayoutAPI {
 		});
 		return layouts;	
 	}
+
+	public Layout findLayoutByName(String name) throws DotDataException {
+		return layoutFactory.findLayoutByName(name);
+	}
 	
 }

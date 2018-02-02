@@ -23,8 +23,7 @@
 package com.liferay.util.xml;
 
 import java.util.Comparator;
-
-import com.dotcms.repackage.org.dom4j.Attribute;
+import org.dom4j.Attribute;
 
 /**
  * <a href="AttributeComparator.java.html"><b><i>View Source</i></b></a>

@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -74,9 +75,10 @@ public class ContentletLoader implements DotLoader {
         this.categoryAPI = categoryAPI;
     }
 
+    private final long defualtLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 
-    public InputStream buildVelocity(Contentlet content, Identifier identifier, PageMode mode, String filePath)
+    public InputStream buildVelocity(Contentlet content, PageMode mode, String filePath)
             throws DotDataException, DotSecurityException {
         StringBuilder sb = new StringBuilder();
 
@@ -88,45 +90,34 @@ public class ContentletLoader implements DotLoader {
 
 
 
-
-
         // CONTENTLET CONTROLS BEGIN
         sb.append("#if($EDIT_MODE)");
-        sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
-            .append(identifier.getId())
-            .append(")");
+        sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION").append(content.getIdentifier()).append(")");
         sb.append("#end");
 
         sb.append("#set($CONTENT_INODE='")
             .append(content.getInode())
             .append("' )")
             .append("#set($IDENTIFIER_INODE='")
-            .append(identifier.getId())
-            .append("' )");
-        
-        sb.append("#set($CONTENT_TYPE='")
-            .append(content.getContentType().variable())
+            .append(content.getIdentifier())
             .append("' )");
 
-        sb.append("#set($CONTENT_BASE_TYPE='")
-        .append(content.getContentType().baseType())
-        .append("' )");
-        
-        sb.append("#set($CONTENT_LANGUAGE='")
-        .append(content.getLanguageId())
-        .append("' )");
-        
-        
+        sb.append("#set($CONTENT_TYPE='").append(content.getContentType().variable()).append("' )");
+
+        sb.append("#set($CONTENT_BASE_TYPE='").append(content.getContentType().baseType()).append("' )");
+
+        sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
+
+
         // set all properties from the contentlet
         sb.append("#set($ContentInode='")
             .append(content.getInode())
             .append("' )")
             .append("#set($ContentIdentifier='")
-            .append(identifier.getId())
+            .append(content.getIdentifier())
             .append("' )")
             .append("#set($ContentletTitle=\"")
-            .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI()
-                .getSystemUser(), true)))
+            .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)))
             .append("\" )");
         String modDateStr = UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
         sb.append("#set($ContentLastModDate= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"")
@@ -136,9 +127,7 @@ public class ContentletLoader implements DotLoader {
             .append(content.getModUser())
             .append("\")");
         if (content.getOwner() != null)
-            sb.append("#set($ContentOwnerId= \"")
-                .append(content.getOwner())
-                .append("\")");
+            sb.append("#set($ContentOwnerId= \"").append(content.getOwner()).append("\")");
 
         // Structure fields
 
@@ -156,12 +145,10 @@ public class ContentletLoader implements DotLoader {
             Object contFieldValueObject = null;
             String velPath = mode.name() + "/";
             if (field instanceof HiddenField || field instanceof ConstantField) {
-                if (field.variable()
-                    .equals("widgetPreexecute")) {
+                if (field.variable().equals("widgetPreexecute")) {
                     continue;
                 }
-                if (field.variable()
-                    .equals("widgetCode")) {
+                if (field.variable().equals("widgetCode")) {
                     widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" + velPath + content.getInode()
                             + File.separator + field.inode() + "." + VelocityType.FIELD.fileExtension + "\"))";
                     continue;
@@ -182,8 +169,7 @@ public class ContentletLoader implements DotLoader {
                         sb.append("#set($")
                             .append(field.variable())
                             .append("= \"")
-                            .append(UtilMethods.espaceForVelocity(fieldValues)
-                                .trim())
+                            .append(UtilMethods.espaceForVelocity(fieldValues).trim())
                             .append("\")");
                     }
                     continue;
@@ -214,8 +200,7 @@ public class ContentletLoader implements DotLoader {
                         sb.append("#set($")
                             .append(field.variable())
                             .append("=\"")
-                            .append(UtilMethods.espaceForVelocity(contFieldValue)
-                                .trim())
+                            .append(UtilMethods.espaceForVelocity(contFieldValue).trim())
                             .append("\")");
                     }
                 }
@@ -232,33 +217,21 @@ public class ContentletLoader implements DotLoader {
                         .append("'," + mode.showLive + ",")
                         .append(content.getLanguageId())
                         .append(" ))");
-    
+
                     if (field instanceof ImageField) {
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImageInode=$!{")
-                            .append(field.variable())
-                            .append("Object.getInode()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageInode=$!{").append(field.variable()).append(
+                                "Object.getInode()} )");
                         sb.append("#set($")
                             .append(field.variable())
                             .append("ImageIdentifier=$!{")
                             .append(field.variable())
                             .append("Object.getIdentifier()} )");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImageWidth=$!{")
-                            .append(field.variable())
-                            .append("Object.getWidth()} )");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImageHeight=$!{")
-                            .append(field.variable())
-                            .append("Object.getHeight()} )");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImageExtension=$!{")
-                            .append(field.variable())
-                            .append("Object.getExtension()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageWidth=$!{").append(field.variable()).append(
+                                "Object.getWidth()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageHeight=$!{").append(field.variable()).append(
+                                "Object.getHeight()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageExtension=$!{").append(field.variable()).append(
+                                "Object.getExtension()} )");
                         sb.append("#set($")
                             .append(field.variable())
                             .append("ImageURI=$filetool.getURI($!{")
@@ -276,34 +249,19 @@ public class ContentletLoader implements DotLoader {
                             .append("ImageFriendlyName=$UtilMethods.espaceForVelocity($!{")
                             .append(field.variable())
                             .append("Object.getFriendlyName()}) )");
-    
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImagePath=$!{")
-                            .append(field.variable())
-                            .append("Object.getPath()})");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("ImageName=$!{")
-                            .append(field.variable())
-                            .append("Object.getFileName()})");
-    
+
+                        sb.append("#set($").append(field.variable()).append("ImagePath=$!{").append(field.variable()).append(
+                                "Object.getPath()})");
+                        sb.append("#set($").append(field.variable()).append("ImageName=$!{").append(field.variable()).append(
+                                "Object.getFileName()})");
+
                     } else {
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("FileInode=$!{")
-                            .append(field.variable())
-                            .append("Object.getInode()} )");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("FileIdentifier=$!{")
-                            .append(field.variable())
-                            .append("Object.getIdentifier()} )");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("FileExtension=$!{")
-                            .append(field.variable())
-                            .append("Object.getExtension()} )");
+                        sb.append("#set($").append(field.variable()).append("FileInode=$!{").append(field.variable()).append(
+                                "Object.getInode()} )");
+                        sb.append("#set($").append(field.variable()).append("FileIdentifier=$!{").append(field.variable()).append(
+                                "Object.getIdentifier()} )");
+                        sb.append("#set($").append(field.variable()).append("FileExtension=$!{").append(field.variable()).append(
+                                "Object.getExtension()} )");
                         sb.append("#set($")
                             .append(field.variable())
                             .append("FileURI=$filetool.getURI($!{")
@@ -311,17 +269,14 @@ public class ContentletLoader implements DotLoader {
                             .append("Object}, ")
                             .append(content.getLanguageId())
                             .append(" ))");
-                        sb.append("#set($")
-                            .append(field.variable())
-                            .append("FileTitle=$!{")
-                            .append(field.variable())
-                            .append("Object.getTitle()} )");
+                        sb.append("#set($").append(field.variable()).append("FileTitle=$!{").append(field.variable()).append(
+                                "Object.getTitle()} )");
                         sb.append("#set($")
                             .append(field.variable())
                             .append("FileFriendlyName=$UtilMethods.espaceForVelocity($!{")
                             .append(field.variable())
                             .append("Object.getFriendlyName()} ))");
-    
+
                         sb.append("#set($")
                             .append(field.variable())
                             .append("FilePath=$UtilMethods.espaceForVelocity($!{")
@@ -332,12 +287,10 @@ public class ContentletLoader implements DotLoader {
                             .append("FileName=$UtilMethods.espaceForVelocity($!{")
                             .append(field.variable())
                             .append("Object.getFileName()} ))");
-                        }
+                    }
 
                 } else {
-                    sb.append("#set($")
-                        .append(field.variable())
-                        .append("Object= $filetool.getNewFile())");
+                    sb.append("#set($").append(field.variable()).append("Object= $filetool.getNewFile())");
                 }
             } // http://jira.dotmarketing.net/browse/DOTCMS-2178
             else if (field instanceof BinaryField) {
@@ -369,34 +322,24 @@ public class ContentletLoader implements DotLoader {
                         ? UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + content.getIdentifier() + "/"
                                 + field.variable() + "/" + content.getInode())
                         : "";
-                sb.append("#set($")
-                    .append(field.variable())
-                    .append("BinaryFileURI=\"")
-                    .append(binaryFileURI)
-                    .append("\" )");
+                sb.append("#set($").append(field.variable()).append("BinaryFileURI=\"").append(binaryFileURI).append("\" )");
             } else if (field instanceof SelectField) {
                 sb.append("#set($")
                     .append(field.variable())
                     .append("SelectLabelsValues=\"")
-                    .append(field.values()
-                        .replaceAll("\\r\\n", " ")
-                        .replaceAll("\\n", " "))
+                    .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
                     .append("\")");
             } else if (field instanceof RadioField) {
                 sb.append("#set($")
                     .append(field.variable())
                     .append("RadioLabelsValues=\"")
-                    .append(field.values()
-                        .replaceAll("\\r\\n", " ")
-                        .replaceAll("\\n", " "))
+                    .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
                     .append("\" )");
             } else if (field instanceof CheckboxField) {
                 sb.append("#set($")
                     .append(field.variable())
                     .append("CheckboxLabelsValues=\"")
-                    .append(field.values()
-                        .replaceAll("\\r\\n", " ")
-                        .replaceAll("\\n", " "))
+                    .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
                     .append("\" )");
             } else if (field instanceof DateField) {
                 String shortFormat = "";
@@ -405,36 +348,18 @@ public class ContentletLoader implements DotLoader {
                     shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
                     dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
                 }
-                sb.append("#set($")
-                    .append(field.variable())
-                    .append("=$date.toDate(\"yyyy-MM-dd\", \"")
-                    .append(dbFormat)
-                    .append("\"))");
-                sb.append("#set($")
-                    .append(field.variable())
-                    .append("ShortFormat=\"")
-                    .append(shortFormat)
-                    .append("\" )");
-                sb.append("#set($")
-                    .append(field.variable())
-                    .append("DBFormat=\"")
-                    .append(dbFormat)
-                    .append("\" )");
+                sb.append("#set($").append(field.variable()).append("=$date.toDate(\"yyyy-MM-dd\", \"").append(dbFormat).append(
+                        "\"))");
+                sb.append("#set($").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set($").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
             } else if (field instanceof TimeField) {
                 String shortFormat = "";
                 if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
                     shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
                 }
-                sb.append("#set( $")
-                    .append(field.variable())
-                    .append("ShortFormat=\"")
-                    .append(shortFormat)
-                    .append("\" )");
-                sb.append("#set( $")
-                    .append(field.variable())
-                    .append("= $date.toDate(\"H:mm:ss\", \"")
-                    .append(shortFormat)
-                    .append("\"))");
+                sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("= $date.toDate(\"H:mm:ss\", \"").append(shortFormat).append(
+                        "\"))");
             } else if (field instanceof DateTimeField) {
                 String shortFormat = "";
                 String longFormat = "";
@@ -449,21 +374,9 @@ public class ContentletLoader implements DotLoader {
                     .append("= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"")
                     .append(dbFormat)
                     .append("\"))");
-                sb.append("#set( $")
-                    .append(field.variable())
-                    .append("ShortFormat=\"")
-                    .append(shortFormat)
-                    .append("\" )");
-                sb.append("#set( $")
-                    .append(field.variable())
-                    .append("LongFormat=\"")
-                    .append(longFormat)
-                    .append("\" )");
-                sb.append("#set( $")
-                    .append(field.variable())
-                    .append("DBFormat=\"")
-                    .append(dbFormat)
-                    .append("\" )");
+                sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("LongFormat=\"").append(longFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
             } // http://jira.dotmarketing.net/browse/DOTCMS-2869
               // else if (field.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString())){
               // sb.append("#set( $" + field.variable() + "Code=\"" +
@@ -471,13 +384,9 @@ public class ContentletLoader implements DotLoader {
               // }//http://jira.dotmarketing.net/browse/DOTCMS-3232
             else if (field instanceof HostFolderField) {
                 if (InodeUtils.isSet(content.getFolder())) {
-                    sb.append("#set( $ConHostFolder='")
-                        .append(content.getFolder())
-                        .append("' )");
+                    sb.append("#set( $ConHostFolder='").append(content.getFolder()).append("' )");
                 } else {
-                    sb.append("#set( $ConHostFolder='")
-                        .append(content.getHost())
-                        .append("' )");
+                    sb.append("#set( $ConHostFolder='").append(content.getHost()).append("' )");
                 }
             }
 
@@ -497,8 +406,7 @@ public class ContentletLoader implements DotLoader {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         Category cat = (Category) categoryTree.get(k);
                         for (Category categ : selectedCategories) {
-                            if (categ.getInode()
-                                .equalsIgnoreCase(cat.getInode())) {
+                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
                                 categoryList.add(cat);
                             }
                         }
@@ -510,9 +418,7 @@ public class ContentletLoader implements DotLoader {
                     Iterator<Category> it = categoryList.iterator();
                     while (it.hasNext()) {
                         Category cat = (Category) it.next();
-                        catbuilder.append("\"")
-                            .append(cat.getInode())
-                            .append("\"");
+                        catbuilder.append("\"").append(cat.getInode()).append("\"");
                         if (it.hasNext()) {
                             catbuilder.append(",");
                         }
@@ -534,32 +440,18 @@ public class ContentletLoader implements DotLoader {
                         .append("CategoriesNames=$categories.fetchCategoriesNames($")
                         .append(field.variable())
                         .append("FilteredCategories))");
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("=$")
-                        .append(field.variable())
-                        .append("Categories)");
+                    sb.append("#set( $").append(field.variable()).append("=$").append(field.variable()).append("Categories)");
                     sb.append("#set( $")
                         .append(field.variable())
                         .append("CategoriesKeys=$categories.fetchCategoriesKeys($")
                         .append(field.variable())
                         .append("FilteredCategories))");
                 } else {
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("FilteredCategories=$contents.getEmptyList())");
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("Categories=$contents.getEmptyList())");
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("CategoriesNames=$contents.getEmptyList())");
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("=$contents.getEmptyList())");
-                    sb.append("#set( $")
-                        .append(field.variable())
-                        .append("CategoriesKeys=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("FilteredCategories=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("Categories=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("CategoriesNames=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("CategoriesKeys=$contents.getEmptyList())");
                 }
             } else if (field instanceof TagField) {
                 content.setTags();
@@ -567,8 +459,7 @@ public class ContentletLoader implements DotLoader {
                 sb.append("#set($")
                     .append(field.variable())
                     .append("=\"")
-                    .append(UtilMethods.espaceForVelocity(value)
-                        .trim())
+                    .append(UtilMethods.espaceForVelocity(value).trim())
                     .append("\")");
             }
         }
@@ -582,9 +473,7 @@ public class ContentletLoader implements DotLoader {
             Iterator<Category> it = categoryList.iterator();
             while (it.hasNext()) {
                 Category category = (Category) it.next();
-                catbuilder.append("\"")
-                    .append(category.getInode())
-                    .append("\"");
+                catbuilder.append("\"").append(category.getInode()).append("\"");
                 if (it.hasNext()) {
                     catbuilder.append(",");
                 }
@@ -618,52 +507,28 @@ public class ContentletLoader implements DotLoader {
         // WEB-INF/velocity/static/preview/content_controls.vtl
 
         if (PageMode.EDIT_MODE == mode) {
-            sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION")
-                .append(identifier.getId())
-                .append(" )");
+            sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION").append(content.getIdentifier()).append(" )");
         }
 
-        sb.append("#set( $CONTENT_INODE=\"")
-            .append(content.getInode())
-            .append("\" )");
-        sb.append("#set( $IDENTIFIER_INODE=\"")
-            .append(identifier.getId())
-            .append("\" )");
+        sb.append("#set( $CONTENT_INODE=\"").append(content.getInode()).append("\" )");
+        sb.append("#set( $IDENTIFIER_INODE=\"").append(content.getIdentifier()).append("\" )");
 
-        sb.append("#set( $ContentInode=\"")
-            .append(content.getInode())
-            .append("\" )");
-        sb.append("#set( $ContentIdentifier=\"")
-            .append(identifier.getId())
-            .append("\" )");
+        sb.append("#set( $ContentInode=\"").append(content.getInode()).append("\" )");
+        sb.append("#set( $ContentIdentifier=\"").append(content.getIdentifier()).append("\" )");
         sb.append("#set( $ContentletTitle=\"")
-            .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI()
-                .getSystemUser(), true)))
+            .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)))
             .append("\" )");
-        sb.append("#set( $ContentletStructure=\"")
-            .append(content.getContentTypeId())
-            .append("\" )");
-        sb.append("#set( $ContentletContentType=\"")
-            .append(content.getContentTypeId())
-            .append("\" )");
+        sb.append("#set( $ContentletStructure=\"").append(content.getContentTypeId()).append("\" )");
+        sb.append("#set( $ContentletContentType=\"").append(content.getContentTypeId()).append("\" )");
         if (type.baseType() == BaseContentType.WIDGET) {
-            sb.append("#set( $isWidget= \"")
-                .append(true)
-                .append("\")");
-            if (type.name()
-                .equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
-                sb.append("#set($isFormWidget= \"")
-                    .append(true)
-                    .append("\")");
+            sb.append("#set( $isWidget= \"").append(true).append("\")");
+            if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
+                sb.append("#set($isFormWidget= \"").append(true).append("\")");
             } else {
-                sb.append("#set($isFormWidget= \"")
-                    .append(false)
-                    .append("\")");
+                sb.append("#set($isFormWidget= \"").append(false).append("\")");
             }
         } else {
-            sb.append("#set($isWidget= \"")
-                .append(false)
-                .append("\")");
+            sb.append("#set($isWidget= \"").append(false).append("\")");
         }
 
         return writeOutVelocity(filePath, sb.toString());
@@ -696,16 +561,15 @@ public class ContentletLoader implements DotLoader {
         ContentletAPI conAPI = APILocator.getContentletAPI();
         int limit = 500;
         int offset = 0;
-        List<Contentlet> contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI()
-            .getSystemUser(), false, limit, offset);
+        List<Contentlet> contentlets =
+                conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
         int size = contentlets.size();
         while (size > 0) {
             for (Contentlet contentlet : contentlets) {
                 invalidate(contentlet);
             }
             offset += limit;
-            contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI()
-                .getSystemUser(), false, limit, offset);
+            contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
             size = contentlets.size();
         }
     }
@@ -713,118 +577,53 @@ public class ContentletLoader implements DotLoader {
 
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath) {
-        try {
+    public InputStream writeObject(final VelocityResourceKey key)
+            throws DotStateException, DotDataException, DotSecurityException {
 
-            Identifier identifier = APILocator.getIdentifierAPI()
-                .find(id1);
-            Contentlet contentlet = null;
-            if (CacheLocator.getVeloctyResourceCache()
-                .isMiss(filePath)) {
-                if (LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
-                    LanguageAPI langAPI = APILocator.getLanguageAPI();
-                    language = Long.toString(langAPI.getDefaultLanguage()
-                        .getId());
-                } else {
-                    throw new ResourceNotFoundException("Contentlet is a miss in the cache");
-                }
-            }
-
-            try {
-                contentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifier(identifier.getId(), mode.showLive, new Long(language), APILocator.getUserAPI()
-                        .getSystemUser(), true);
-            } catch (DotContentletStateException e) {
-                contentlet = null;
-            }
-
-            if (contentlet == null || !InodeUtils.isSet(contentlet.getInode()) || contentlet.isArchived()) {
-
-                LanguageAPI langAPI = APILocator.getLanguageAPI();
-                long lid = langAPI.getDefaultLanguage()
-                    .getId();
-                if (lid != Long.parseLong(language)) {
-                    Contentlet cc = APILocator.getContentletAPI()
-                        .findContentletByIdentifier(identifier.getId(), mode.showLive, lid, APILocator.getUserAPI()
-                            .getSystemUser(), true);
-                    if (cc != null && UtilMethods.isSet(cc.getInode()) && !cc.isArchived()
-                            && LanguageWebAPI.canApplyToAllLanguages(cc)) {
-                        contentlet = cc;
-                    } else {
-                        CacheLocator.getVeloctyResourceCache()
-                            .addMiss(filePath);
-                        throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
-                    }
-                }
-            }
-
-            Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
-            return buildVelocity(contentlet, identifier, mode, filePath);
-
-        } catch (Exception e) {
-            throw new ResourceNotFoundException("Contentlet Velocity file not found:" + filePath);
+        long language = new Long(key.language);
+        ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
+        if (info == null && language != defualtLang && LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
+            info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defualtLang);
         }
-    }
 
+        if (info == null || key.mode.showLive && info.getLiveInode() == null) {
+            throw new ResourceNotFoundException("cannot find content for: " + key);
+        }
+        Contentlet contentlet =
+                (key.mode.showLive) ? APILocator.getContentletAPI().find(info.getLiveInode(), APILocator.systemUser(), false)
+                        : APILocator.getContentletAPI().find(info.getWorkingInode(), APILocator.systemUser(), false);
+
+        Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
+        if (null == contentlet) {
+            throw new ResourceNotFoundException("cannot find content for: " + key);
+        }
+        return buildVelocity(contentlet, key.mode, key.path);
+
+
+    }
 
 
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
         Contentlet asset = (Contentlet) obj;
-        CacheLocator.getContentletCache()
-            .remove(asset.getInode());
 
-        String folderPath = mode.name() + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
+        VelocityResourceKey key = new VelocityResourceKey(asset, mode, asset.getLanguageId());
+        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+        vc.remove(key);
 
-        Set<Long> langs = new HashSet<Long>();
-        langs.add(asset.getLanguageId());
-        if (LanguageWebAPI.canApplyToAllLanguages(asset)) {
-            for (Language ll : APILocator.getLanguageAPI()
-                .getLanguages()) {
-                langs.add(ll.getId());
-            }
-        }
-        for (Long langId : langs) {
-            String filePath = folderPath + asset.getIdentifier() + "_" + langId + "." + VelocityType.CONTENT.fileExtension;
-            java.io.File f = new java.io.File(velocityRootPath + filePath);
-            f.delete();
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
-        }
         List<Field> fields;
-        try {
-            fields = asset.getContentType()
-                .fields();
-            for (Field field : fields) {
-                new FieldLoader().invalidate(field, asset, mode);
-            }
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotStateException(e);
+
+        fields = asset.getContentType().fields();
+        for (Field field : fields) {
+            new FieldLoader().invalidate(field, asset);
         }
 
 
-        try {
-            if (asset.getContentType()
-                .baseType() == BaseContentType.HTMLPAGE) {
-                new PageLoader().invalidate(asset, mode);
-            }
-
-            if (asset != null && asset.isVanityUrl()) {
-                // remove from cache
-                VanityUrlServices.getInstance()
-                    .invalidateVanityUrl(asset);
-            }
-            if (asset != null && asset.isKeyValue()) {
-                // remove from cache
-                CacheLocator.getKeyValueCache()
-                    .remove(asset);
-            }
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotStateException(e);
+        if (asset.getContentType().baseType() == BaseContentType.HTMLPAGE) {
+            new PageLoader().invalidate(asset, mode);
         }
+
     }
 
 }

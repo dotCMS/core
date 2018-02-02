@@ -9,10 +9,8 @@ package com.dotmarketing.portal.struts;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-
 import com.liferay.portal.model.User;
+import org.apache.struts.action.ActionForm;
 
 /**
  * @author Maria

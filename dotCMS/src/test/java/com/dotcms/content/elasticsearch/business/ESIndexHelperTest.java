@@ -8,18 +8,16 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.UnitTestBase;
+import com.dotcms.enterprise.LicenseService;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.enterprise.license.LicenseLevel;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
-
-import com.dotcms.UnitTestBase;
-import com.dotcms.enterprise.LicenseService;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 
 public class ESIndexHelperTest extends UnitTestBase {
 

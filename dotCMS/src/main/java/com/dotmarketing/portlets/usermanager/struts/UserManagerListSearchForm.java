@@ -1,19 +1,16 @@
 package com.dotmarketing.portlets.usermanager.struts;
 
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.Constants;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.StringTokenizer;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.validator.ValidatorForm;
 
 /**
  * 

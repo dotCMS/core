@@ -1,24 +1,19 @@
 package com.dotcms.contenttype.transform.field;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
-import org.elasticsearch.common.Nullable;
-
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldIf;
-import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import org.elasticsearch.common.Nullable;
 
 
 public class LegacyFieldTransformer implements FieldTransformer {

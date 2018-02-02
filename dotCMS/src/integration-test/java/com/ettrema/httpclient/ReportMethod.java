@@ -1,16 +1,16 @@
 package com.ettrema.httpclient;
 
 
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.jdom.Document;
-import com.dotcms.repackage.org.jdom.JDOMException;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.jdom.Document;
+import org.jdom.JDOMException;
 
 /**
  *

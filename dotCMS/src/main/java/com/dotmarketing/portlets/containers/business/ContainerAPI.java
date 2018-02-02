@@ -253,4 +253,7 @@ public interface ContainerAPI {
 
 	public List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
 
+    List<ContentType> getContentTypesInContainer(Container container)
+            throws DotStateException, DotDataException, DotSecurityException;
+
 }

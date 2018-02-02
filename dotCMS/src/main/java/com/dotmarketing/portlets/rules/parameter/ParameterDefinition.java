@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.rules.parameter;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.display.Input;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
+import org.apache.commons.lang.StringUtils;
 
 public class ParameterDefinition<T extends DataType> {
 
