@@ -86,7 +86,7 @@ public class PushPublishLogger {
         }
     }
 
-    public static void error ( Class cl, String msg, String bundleId ) {
+    public static void error ( final Class cl, final String msg, final String bundleId ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
             Logger.error( PushPublishLogger.class, cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
@@ -150,7 +150,7 @@ public class PushPublishLogger {
     public static void error (final Class cl, final PushPublishHandler handler, final PushPublishAction action,
                                 final String id, final String inode, final String name, final String bundleId,
                                 final String errorMessage, final Throwable ex) {
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         builder.append("Failed to ")
             .append(action.toString())
             .append(' ')
