@@ -22,7 +22,6 @@
 
 package com.liferay.util;
 
-import com.dotcms.repackage.org.apache.commons.codec.digest.DigestUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -55,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import javax.servlet.ServletContext;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>

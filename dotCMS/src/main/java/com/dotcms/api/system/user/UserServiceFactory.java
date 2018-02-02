@@ -1,6 +1,10 @@
 package com.dotcms.api.system.user;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toBoolean;
+import static com.dotcms.util.ConversionUtils.toInt;
+
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotcms.util.MessageAPI;
@@ -23,14 +27,15 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
-
 import java.io.Serializable;
-import java.util.*;
-
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toBoolean;
-import static com.dotcms.util.ConversionUtils.toInt;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This factory creates a singleton instance of the {@link UserService} class.

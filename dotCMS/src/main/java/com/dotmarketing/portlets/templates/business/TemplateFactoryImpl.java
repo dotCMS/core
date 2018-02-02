@@ -2,9 +2,7 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.transform.TransformerLocator;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.APILocator;
@@ -20,13 +18,19 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.Body;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +44,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 	static TemplateCache templateCache = CacheLocator.getTemplateCache();
@@ -107,12 +110,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void save(Template template) throws DotDataException {
-		if(!UtilMethods.isSet(template.getIdentifier())){
-			throw new DotStateException("Cannot save a template without an Identifier");
-		}
-		HibernateUtil.save(template);
+
+
 		
-		new TemplateLoader().invalidate(template);
+		save(template, UUIDGenerator.generateUuid());
+		
 
 	}
 	
@@ -120,14 +122,27 @@ public class TemplateFactoryImpl implements TemplateFactory {
         if(!UtilMethods.isSet(template.getIdentifier())){
             throw new DotStateException("Cannot save a tempalte without an Identifier");
         }
+        
+        if(UtilMethods.isSet(template.getDrawedBody())) {
+            template.setDrawed(true);
+        }else {
+            template.setDrawedBody((String)null);
+            template.setDrawed(false);
+        }
+        
+        
+        
+        
+        
         HibernateUtil.saveWithPrimaryKey(template, existingId);
         templateCache.add(template.getInode(), template);
         new TemplateLoader().invalidate(template);
 
     }
 
-	public void deleteFromCache(Template template) throws DotDataException {
+	public void deleteFromCache(final Template template) throws DotDataException {
 		templateCache.remove(template.getInode());
+		new TemplateLoader().invalidate(template);
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
 	}
 

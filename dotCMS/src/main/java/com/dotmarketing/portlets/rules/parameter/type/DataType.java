@@ -2,10 +2,10 @@ package com.dotmarketing.portlets.rules.parameter.type;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
 import java.util.Collections;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Geoff M. Granum

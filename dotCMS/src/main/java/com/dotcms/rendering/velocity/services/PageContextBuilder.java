@@ -233,11 +233,16 @@ public class PageContextBuilder {
 
                         }
                     }
+
+                    
+                    
+                    String[] contentlist = contentlets.stream()
+                            .map(con -> con.getIdentifier())
+                            .toArray(size -> new String[size]);
                     // sets contentletlist with all the files to load per
                     // container
-                    ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlets.stream()
-                        .map(con -> con.getIdentifier())
-                        .toArray(size -> new String[size]));
+                    ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlist);
+                    
                     ctxMap.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }

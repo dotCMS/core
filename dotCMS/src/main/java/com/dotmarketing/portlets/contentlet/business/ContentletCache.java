@@ -9,9 +9,9 @@ public abstract class ContentletCache implements Cachable {
     public static final String EMPTY_METADATA = "**~~||%%EMPTY_METADATA%%||~~**";
     public static final String CACHED_METADATA = "**~~||%%CACHED_METADATA%%||~~**";
 
-	public abstract com.dotmarketing.portlets.contentlet.model.Contentlet add(String key,com.dotmarketing.portlets.contentlet.model.Contentlet content);
-
-	public abstract com.dotmarketing.portlets.contentlet.model.Contentlet get(String key);
+	public abstract Contentlet add(String inode,Contentlet content);
+    public abstract Contentlet add(Contentlet content);
+	public abstract Contentlet get(String inode);
 
 	public abstract void clearCache();
 
@@ -26,4 +26,7 @@ public abstract class ContentletCache implements Cachable {
     public abstract String getMetadata(String key);
 
     public abstract void addMetadata(String key, String metadata);
+    
+    
+    public abstract void remove(Contentlet contentlet);
 }

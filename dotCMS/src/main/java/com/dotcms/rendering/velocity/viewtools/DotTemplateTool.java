@@ -114,7 +114,7 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
         final String key = themeInode + isPreview;
         if (!UtilMethods.isSet(themeInode)) {
-            throw new IllegalArgumentException("the themeInode is null");
+            return null;
         }
 
         TemplateLayout layout = layoutCache.getIfPresent(key);
@@ -131,7 +131,7 @@ public class DotTemplateTool implements ViewTool {
         final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
 
         if (!template.isDrawed()){
-            throw new DotDataException("Template with inode: " + themeInode + " is not drawed");
+            throw new RuntimeException("Template with inode: " + themeInode + " is not drawed");
         }
 
         return new DrawedBody(template.getTitle(), template.getDrawedBody());
@@ -183,7 +183,7 @@ public class DotTemplateTool implements ViewTool {
 
         final String drawedBodyAsString = drawedBody.getDrawedBody();
         if (!UtilMethods.isSet(drawedBodyAsString)){
-            throw new DotDataException("Template with inode: " + themeInode + " has not drawedBody");
+            throw new RuntimeException("Template with inode: " + themeInode + " has not drawedBody");
         }
 
         try {
@@ -324,6 +324,7 @@ public class DotTemplateTool implements ViewTool {
         themeMap.put( "path", themePath );
         themeMap.put( "templatePath", themeTemplatePath );
         themeMap.put( "htmlHead", haveHtmlHead );
+        themeMap.put( "title", themeFolder.getName());
         cache.put(key, themeMap);
       }
         return themeMap;

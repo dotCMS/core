@@ -1,3 +1,7 @@
+
+<%@page import="com.dotcms.contenttype.model.field.ColumnField"%>
+<%@page import="com.dotcms.contenttype.model.field.RowField"%>
+<%@page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer"%>
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
@@ -41,26 +45,34 @@
 }
 </style>
 
+
+
+
+
+
+
+
+
+
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
-	String inode=request.getParameter("inode");
-	if(!UtilMethods.isSet(inode)){
-		inode="0";
-	}
 	Contentlet contentlet = (Contentlet) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT);
-	contentlet = (contentlet != null ? contentlet : conAPI.find(request.getParameter("inode"),user,false));
+	String inode=request.getParameter("inode");
+
+	contentlet = (contentlet != null) ? contentlet : (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
 
 	ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-
+	if(contentletForm==null)contentletForm=new ContentletForm();
 	String copyOptions = ((String) request.getParameter("copyOptions"))==null?"":(String) request.getParameter("copyOptions");
 	if(copyOptions == ""){
 		copyOptions = ((String) request.getParameter("_copyOptions"))==null?"":(String) request.getParameter("_copyOptions");
 	}
 	//Content structure or user selected structure
 	Structure structure = contentletForm.getStructure();
-
-
+	if(structure==null){
+	    structure=new StructureTransformer( APILocator.getContentTypeAPI(user).findDefault()).asStructure();
+	}
 	// if host, set this to the current viewing host
 	if(structure!= null && UtilMethods.isSet(structure.getInode()) && structure.getVelocityVarName().equals("Host")) {
 		if(contentlet != null && UtilMethods.isSet(contentlet.getIdentifier()))
@@ -90,7 +102,7 @@
 	//Contentlet relationships
 	ContentletRelationships contentletRelationships = (ContentletRelationships)
 		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = contentletRelationships.getRelationshipsRecords();
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 
 	//Contentlet references
 	List<Map<String, Object>> references = null;
@@ -187,6 +199,19 @@
 
 <script language='javascript' type='text/javascript'>
 var editButtonRow="editContentletButtonRow";
+
+
+
+dojo.addOnLoad(function () { 
+
+	dojo.query(".ui-dialog-title", window.parent.document).forEach(function(node, index, arr){
+	      node.innerHTML = "<%=UtilMethods.javaScriptify(contentlet.getTitle())%>";
+	  });
+
+});
+
+
+
 </script>
 
 
@@ -206,62 +231,12 @@ var editButtonRow="editContentletButtonRow";
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 
-	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
+
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 	<div dojoAttachPoint="cmsFileBrowserFile" currentView="list" jsId="cmsFileBrowserFile" onFileSelected="addFileCallback" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 
-	<% if(structure.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT){ %>
-		<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-contentlet\") %>" />
-	<%} else { %>
-		<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-widget\") %>" />
-	<%} %>
 
-	<%if(!UtilMethods.isSet(structure.getInode())){ %>
-		<div dojoType="dijit.Dialog" id="selectStructureDiv" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
-			<table style="margin:20px">
-				<tr>
-				  <td align="center"><%=LanguageUtil.get(pageContext, "Select-type") %>:</td>
-					<td align="center">
-					<select name="selectedStructAux" id="selectedStructAux" onChange="updateSelectedStructAux" dojoType="dijit.form.FilteringSelect">
-						<option = ""></option>
-						<%for(Structure struc : structures) {%>
-							<option value="<%=struc.getInode() %>"><%=struc.getName() %></option>
-						<%} %>
-				    	</select>
-				    </td>
-				</tr>
-			</table>
-		</div>
-		<script>
-			dojo.ready(function(){
-				dijit.byId("selectStructureDiv").show();
-			});
 
-			function updateSelectedStructAux(){
-				var newloc = window.location.href;
-				console.log(newloc);
-				var struc = dijit.byId("selectedStructAux").getValue();
-				if(newloc.indexOf("selectedStructure=") > -1){
-					var s = newloc.indexOf("selectedStructure=");
-					var e = newloc.indexOf("&", s);
-					if(e>-1){
-						var val = newloc.substring(s + "selectedStructure=".length, e);
-						newloc = newloc.replace("selectedStructure=" + val, "selectedStructure=" + struc);
-					}
-					else{
-						newloc = newloc.replace("selectedStructure=", "selectedStructure=" + struc);
-
-					}
-				}
-				else{
-					newloc = newloc+ "&selectedStructure=" + struc;
-				}
-				console.log(newloc);
-				window.location=newloc;
-			}
-
-		</script>
-	<%} %>
 	<!--  START TABS -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
@@ -298,11 +273,16 @@ var editButtonRow="editContentletButtonRow";
             <% boolean fieldSetOpen = false;
                 int fieldCounter =0;
                 for (Field f : fields) {
+                    com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
+                    if(fieldCounter ==0 &&(newField instanceof RowField || newField instanceof ColumnField)){
+                        continue;
+                    }
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
                         fieldSetOpen = false;%>
                     <%}%>
+
                     <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
@@ -311,6 +291,7 @@ var editButtonRow="editContentletButtonRow";
                         </div>
                         <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="wrapperRight">
+
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
@@ -562,12 +543,12 @@ var editButtonRow="editContentletButtonRow";
 
 	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
-</liferay:box>
+
 
 </html:form>
 
 <%-- http://jira.dotmarketing.net/browse/DOTCMS-2273 --%>
-<!-- To show lightbox effect "Saving Content.."  -->
+
 <div id="savingContentDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-content") %>" style="display: none;">
 	<div id="maxSizeFileAlert" style="color:red; font-weight:bold; width: 200px; margin-bottom: 8px"></div>
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>

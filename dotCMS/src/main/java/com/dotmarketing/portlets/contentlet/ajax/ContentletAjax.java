@@ -19,7 +19,11 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -397,7 +401,7 @@ public class ContentletAjax {
 
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
 	}
-
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost, page, orderBy, modDateFrom, modDateTo, true);
@@ -421,6 +425,7 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	@CloseDB
 	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom,
@@ -461,6 +466,7 @@ public class ContentletAjax {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@CloseDB
 	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException {
 		FormAJAXProxy fp = new FormAJAXProxy();
 		return fp.searchFormWidget(formStructureInode);
@@ -866,8 +872,9 @@ public class ContentletAjax {
 				}
 
 				searchResult = new HashMap<String, String>();
-				Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-
+				ContentType type = con.getContentType();
+				searchResult.put("typeVariable", type.variable());
+				searchResult.put("baseType",type.baseType().name());
 				for (String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
@@ -896,8 +903,8 @@ public class ContentletAjax {
 
 					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
 					if (("url").equals(fieldContentlet) &&
-							s != null &&
-							s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
+							type != null &&
+							type  instanceof PageContentType &&
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
@@ -912,19 +919,19 @@ public class ContentletAjax {
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
-				String spanClass = (s.getStructureType() ==1)
+				String spanClass = (type.baseType().ordinal() ==1)
 						? "contentIcon"
-								:  (s.getStructureType() ==2)
+								:  (type.baseType().ordinal() ==2)
 								? "gearIcon"
-										:  (s.getStructureType() ==3)
+										:  (type.baseType().ordinal() ==3)
 										? "formIcon"
-											:  (s.getStructureType() ==4)
+											:  (type.baseType().ordinal() ==4)
 											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-												:  (s.getStructureType() ==5)
+												:  (type.baseType().ordinal() ==5)
 												? "pageIcon"
 														: "personaIcon";
 
-				String typeStringToShow = s.getName() ;
+				String typeStringToShow = type.name();
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
@@ -1079,7 +1086,7 @@ public class ContentletAjax {
 
 		return results;
 	}
-
+	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
 													  final Contentlet contentlet) throws DotDataException {
@@ -1141,7 +1148,7 @@ public class ContentletAjax {
 		return wfActionMapList;
 	}
 
-
+	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		ArrayList<String[]> list = new ArrayList<String[]>(15);
 
@@ -1174,6 +1181,7 @@ public class ContentletAjax {
 	 * @param languageId if set to 0 will publish for all languages
 	 * @return
 	 */
+	@CloseDB
 	public List<Map<String, Object>> publishContentlets(List<String> identifiersList, boolean isPublish, long languageId) {
 		List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1241,6 +1249,7 @@ public class ContentletAjax {
 	 * @throws LanguageException
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
+	@CloseDB
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
 	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
 	  Map<String,Object> callbackData = new HashMap<String,Object>();
@@ -1427,6 +1436,8 @@ public class ContentletAjax {
 				callbackData.put("contentletInode", contentlet.getInode());
 				callbackData.put("contentletLocked", contentlet.isLocked());
                 callbackData.put("isHtmlPage", contentlet.isHTMLPage());
+				callbackData.put("contentletType", contentlet.getContentType().variable());
+				callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
 
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
@@ -1768,9 +1779,10 @@ public class ContentletAjax {
 			}
 		}
 		callbackData.put("referer", referer);
+
 		return callbackData;
 	}
-
+	@CloseDB
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
 
@@ -1811,7 +1823,7 @@ public class ContentletAjax {
 		return referer;
 	}
 
-
+	@CloseDB
 	public Map<String,Object> saveContentProperties(String inode, List<String> formData, boolean isAutoSave,boolean isCheckin,boolean isPublish) throws PortalException, SystemException, DotDataException, DotSecurityException{
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
@@ -2003,7 +2015,7 @@ public class ContentletAjax {
 		return callbackData;
 
 	}
-
+	@CloseDB
 	public void removeSiblingBinaryFromSession(String fieldContentlet){
 		//http://jira.dotmarketing.net/browse/DOTCMS-5802
 		if(UtilMethods.isSet(fieldContentlet)){
@@ -2011,7 +2023,7 @@ public class ContentletAjax {
 			req.getSession().removeAttribute(fieldContentlet+"-sibling");
 		}
 	}
-
+	@CloseDB
 	public String unrelateContent(String contentletIdentifier,  String identifierToUnrelate, String relationshipInode){
 
 		// User info
@@ -2087,7 +2099,7 @@ public class ContentletAjax {
 	}
 
 
-
+	@CloseDB
 	public Map<String, String> unlockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();

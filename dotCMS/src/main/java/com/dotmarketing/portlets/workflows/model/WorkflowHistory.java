@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class WorkflowHistory  implements Serializable
 {

@@ -15,15 +15,14 @@
  */
 package com.dotmarketing.util.diff.html.ancestor.tagtostring;
 
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
 import com.dotmarketing.util.diff.html.ancestor.ChangeText;
 import com.dotmarketing.util.diff.html.ancestor.TagChangeSematic;
 import com.dotmarketing.util.diff.html.dom.TagNode;
 import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange;
 import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange.Type;
-import com.dotcms.repackage.org.xml.sax.Attributes;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import org.xml.sax.Attributes;
 
 public class TagToString {
 

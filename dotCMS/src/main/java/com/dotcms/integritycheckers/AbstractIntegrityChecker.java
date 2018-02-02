@@ -1,5 +1,14 @@
 package com.dotcms.integritycheckers;
 
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,17 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Base class for all the integrity checkers implementation

@@ -44,8 +44,6 @@ catch(Exception e){
 
 
 
-
-
 <%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 
 		<%if(contentEditable){ %>
@@ -96,7 +94,7 @@ catch(Exception e){
 <%}else if(!isContLocked) {%>
 
 
-	<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+	<%if((null != scheme && scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 
 
 
@@ -138,9 +136,16 @@ catch(Exception e){
 	<%if(contentlet.hasVersion()) {%>
 		<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
 		<span class="<%=action.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
-                    APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
-                    +" )</small>"%>
+		
+		
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName()))%>
+			
+			 <%if(wfTask ==null || wfTask.getTitle()==null && schemes!=null && schemes.size()>1){ %>
+			  	<br/><small>
+               		<%=APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName() %>
+                </small>
+              <%}%>
+
 		</a>
 	<%} %>
 <%} %>

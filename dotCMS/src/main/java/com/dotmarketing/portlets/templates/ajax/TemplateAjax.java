@@ -147,9 +147,11 @@ public class TemplateAjax {
 		if(parentHost != null) {
 			templateMap.put("hostName", parentHost.getHostname());
 			templateMap.put("hostId", parentHost.getIdentifier());
-			templateMap.put("fullTitle", parentHost.getHostname() + " " + templateMap.get("title"));
+			templateMap.put("fullTitle",   templateMap.get("title") + " (" + parentHost.getHostname() + ")" );
+			templateMap.put("htmlTitle",  "<div><div style='float:left'>" + templateMap.get("title") + "</div><div style='float:right'>" + parentHost.getHostname() + "</div></div>" );
 		} else {
 			templateMap.put("fullTitle", templateMap.get("title"));
+			templateMap.put("htmlTitle", templateMap.get("title"));
 		}
 		return templateMap;
 	}

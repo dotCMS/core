@@ -1,8 +1,8 @@
 package com.dotcms.rest.validation;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Simple Precondition checks, influenced heavily by Google's version of same.

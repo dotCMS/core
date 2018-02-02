@@ -19,14 +19,13 @@ package org.apache.velocity.util.introspection;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
-import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
+import org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.util.MapFactory;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * A cache of introspection information for a specific class instance.

@@ -1,14 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools.cache;
-import java.util.Date;
 
 import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
-import com.dotcms.repackage.org.bouncycastle.crypto.digests.SHA1Digest;
-import com.dotcms.repackage.org.bouncycastle.util.encoders.Base64;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
+import java.util.Date;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.util.encoders.Base64;
 
 
 

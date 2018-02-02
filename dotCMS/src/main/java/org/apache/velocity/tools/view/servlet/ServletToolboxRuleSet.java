@@ -16,11 +16,9 @@
 
 package org.apache.velocity.tools.view.servlet;
 
-import com.dotcms.repackage.org.apache.commons.digester.Digester;
-import com.dotcms.repackage.org.apache.commons.digester.Rule;
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.Rule;
 import org.apache.velocity.tools.view.ToolboxRuleSet;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.apache.velocity.tools.view.servlet.ServletToolInfo;
 
 /**
  * <p>The set of Digester rules required to parse a toolbox

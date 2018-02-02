@@ -1,17 +1,25 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
+import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotcms.rendering.velocity.services.SiteLoader;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -127,7 +135,24 @@ public class ContentletCacheImpl extends ContentletCache {
 			cache.flushGroup(group);
 		}
 	}
+    public void remove(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet){
+        remove(contentlet.getInode());
 
+        if(contentlet.getContentType() instanceof PageContentType ) {
+            new PageLoader().invalidate(contentlet);
+            
+            
+        }
+        if ("host".equalsIgnoreCase(contentlet.getContentType().variable())) {
+            new SiteLoader().invalidate(new Host(contentlet));
+        }
+            
+
+        
+        
+        
+        
+    }
 	/* (non-Javadoc)
      * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
      */
@@ -167,4 +192,9 @@ public class ContentletCacheImpl extends ContentletCache {
 	public String getPrimaryGroup() {
 		return primaryGroup;
 	}
+
+    @Override
+    public Contentlet add(Contentlet content) {
+        return add(content.getInode(), content);
+    }
 }

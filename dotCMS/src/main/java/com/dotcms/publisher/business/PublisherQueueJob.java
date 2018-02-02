@@ -22,7 +22,7 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.org.apache.log4j.MDC;
+import com.dotcms.repackage.org.apache.logging.log4j.ThreadContext;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -134,7 +134,7 @@ public class PublisherQueueJob implements StatefulJob {
 						+ ". Publish Date: " + publishDate);
 
 					tempBundleId = (String) bundle.get("bundle_id");
-					MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
+					ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
 
 					try {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
@@ -195,7 +195,7 @@ public class PublisherQueueJob implements StatefulJob {
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
 					} finally {
-						MDC.remove(BUNDLE_ID);
+						ThreadContext.remove(BUNDLE_ID);
 					}
 				}
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
@@ -230,7 +230,7 @@ public class PublisherQueueJob implements StatefulJob {
 		List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle audit
  		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
-			MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
+			ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
 
 			try {
 				PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
@@ -248,8 +248,8 @@ public class PublisherQueueJob implements StatefulJob {
 					pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
 				}
 			} finally {
-				MDC.remove(BUNDLE_ID);
-				MDC.remove(ENDPOINT_NAME);
+				ThreadContext.remove(BUNDLE_ID);
+				ThreadContext.remove(ENDPOINT_NAME);
 			}
 		}
 	}
@@ -267,7 +267,7 @@ public class PublisherQueueJob implements StatefulJob {
                 PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
 
                 if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
-                    MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
+					ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
                     // Don't poll status for static publishing
                     if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
                             && !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {

@@ -7,7 +7,6 @@ import com.dotcms.repackage.javax.portlet.PortletRequest;
 import com.dotcms.repackage.javax.portlet.PortletResponse;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -32,6 +31,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.apache.struts.action.ActionForm;
 
 public class UserManagerPropertiesFactory {
 

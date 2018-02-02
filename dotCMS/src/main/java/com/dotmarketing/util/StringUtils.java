@@ -1,19 +1,18 @@
 package com.dotmarketing.util;
 
-import java.util.function.Supplier;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
+import static org.apache.commons.lang.StringUtils.split;
 
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.util.StringPool;
-
-import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public class StringUtils {
 

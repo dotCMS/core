@@ -1,12 +1,12 @@
 package com.ettrema.httpclient;
 
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import com.dotcms.repackage.org.jdom.Document;
-import com.dotcms.repackage.org.jdom.Element;
-import com.dotcms.repackage.org.jdom.JDOMException;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
 
 /**
  *

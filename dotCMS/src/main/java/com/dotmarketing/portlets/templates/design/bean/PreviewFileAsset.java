@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-public class PreviewFileAsset {
+import java.io.Serializable;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class PreviewFileAsset implements Serializable{
 	
 	private String inode;
 	private String parent;
@@ -38,5 +43,13 @@ public class PreviewFileAsset {
 	public void setRealFileSystemPath(String realFileSystemPath) {
 		this.realFileSystemPath = realFileSystemPath;
 	}	
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
+        }
+    }
 	
 }

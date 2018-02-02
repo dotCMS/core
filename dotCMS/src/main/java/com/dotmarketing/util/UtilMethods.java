@@ -1,9 +1,6 @@
 package com.dotmarketing.util;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.org.apache.struts.Globals;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -23,7 +20,8 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,20 +57,17 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.struts.Globals;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
-
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
 
 /**
  * Provides several widely used routines that handle, verify or format many data structures, such as
@@ -350,6 +345,17 @@ public class UtilMethods {
      */
     public static final boolean isSet(final Collection<?> collection) {
         return null != collection && !collection.isEmpty();
+    }
+
+    /**
+     * Determines if a map of objects is different from {@code null} and is not empty.
+     *
+     * @param map - The {@link Collection} to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Map<?,?> map) {
+        return null != map && !map.isEmpty();
     }
 
     /**

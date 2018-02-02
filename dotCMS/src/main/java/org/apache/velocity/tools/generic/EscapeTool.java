@@ -16,7 +16,7 @@
 
 package org.apache.velocity.tools.generic;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Tool for working with escaping in Velocity templates.

@@ -15,10 +15,10 @@
  */
 package com.dotmarketing.util.diff.helper;
 
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.Locator;
-import com.dotcms.repackage.org.xml.sax.Attributes;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
 
 class MergeCharacterEventsHandler implements ContentHandler {
     private ContentHandler consumer;

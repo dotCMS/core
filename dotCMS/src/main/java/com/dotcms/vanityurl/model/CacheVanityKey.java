@@ -1,8 +1,7 @@
 package com.dotcms.vanityurl.model;
 
-import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
-
 import java.io.Serializable;
+import org.apache.commons.collections.keyvalue.MultiKey;
 
 /**
  * Encapsulates the keys for cache vanities.

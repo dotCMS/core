@@ -1,21 +1,19 @@
 package com.dotcms.contenttype.transform.field;
 
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.commons.lang.time.DateUtils;
 import org.elasticsearch.common.Nullable;
-
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.StringUtils;
 
 public class DbFieldTransformer implements FieldTransformer {
 

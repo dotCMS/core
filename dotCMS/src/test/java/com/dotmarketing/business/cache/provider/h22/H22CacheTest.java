@@ -1,10 +1,8 @@
 package com.dotmarketing.business.cache.provider.h22;
 
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.liferay.util.FileUtil;
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,8 +13,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Test;
 
 public class H22CacheTest {
 
@@ -36,15 +34,10 @@ public class H22CacheTest {
 	final int numberOfThreads = 40;
 	final int numberOfGroups = 100;
 	final int maxCharOfObjects = 100;
-	private static final Logger LOGGER = Logger.getLogger(H22CacheTest.class);
-	
-
 
 	@Test
 	public void testInit() throws Exception {
-		  LOGGER.info("INFO TEST");
-	       LOGGER.debug("DEBUG TEST");
-	       LOGGER.error("ERROR TEST");
+
 		// File dir = Files.createTempDir();
 		File dir = new File("/tmp/h2cachetest");
 		dir.delete();

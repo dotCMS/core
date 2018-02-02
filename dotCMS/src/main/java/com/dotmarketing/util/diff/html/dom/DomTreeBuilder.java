@@ -17,9 +17,9 @@ package com.dotmarketing.util.diff.html.dom;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class DomTreeBuilder extends DefaultHandler implements DomTree {
 

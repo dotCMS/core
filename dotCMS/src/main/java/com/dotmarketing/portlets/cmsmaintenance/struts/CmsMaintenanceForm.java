@@ -1,10 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.struts;
 
-import java.util.List;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-
-import com.dotmarketing.portlets.structure.model.Structure;
+import org.apache.struts.action.ActionForm;
 /**
  *  This class form is created to manipulate the maintenance task
  *  of the CMS Maintenance portlet

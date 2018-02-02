@@ -1,14 +1,13 @@
 package com.dotmarketing.filters;
 
 import com.dotmarketing.util.Config;
-import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Conf;
-import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
-import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
-
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
 import java.lang.reflect.Field;
 import java.util.List;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import org.tuckey.web.filters.urlrewrite.Conf;
+import org.tuckey.web.filters.urlrewrite.Rule;
+import org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
 
 /**
  * Created by Jonathan Gamba

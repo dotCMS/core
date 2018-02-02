@@ -80,5 +80,13 @@ public interface LayoutAPI {
 	 * @author David H Torres
 	 */
 	public List<Layout> findAllLayouts() throws DotDataException;
-	
+
+	/**
+	 * Find layout by name
+	 *
+	 * @param name
+	 * @return
+	 * @throws DotDataException throw when a error occur
+	 */
+	public Layout findLayoutByName(String name) throws DotDataException;
 }

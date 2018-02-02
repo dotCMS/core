@@ -5,9 +5,17 @@
  */
 package com.dotmarketing.filters;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ServletResponseCharacterEncoding;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import java.io.IOException;
 import java.util.Locale;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -17,21 +25,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ServletResponseCharacterEncoding;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.Xss;
+import org.apache.struts.Globals;
 
 /**
  * Ensures the proper encoding 

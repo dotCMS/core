@@ -701,7 +701,7 @@
                     selected = "SELECTED";
                 }
         %>
-        <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+        <option value="<%=org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
         <%
             }
         %>
@@ -739,7 +739,7 @@
                 }
             }
             %>
-            <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+            <option value="<%=org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
             <%
         }
     %>

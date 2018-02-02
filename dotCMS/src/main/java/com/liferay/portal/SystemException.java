@@ -22,7 +22,7 @@
 
 package com.liferay.portal;
 
-import com.dotcms.repackage.org.apache.commons.lang.exception.NestableException;
+import org.apache.commons.lang.exception.NestableException;
 
 /**
  * <a href="SystemException.java.html"><b><i>View Source</i></b></a>

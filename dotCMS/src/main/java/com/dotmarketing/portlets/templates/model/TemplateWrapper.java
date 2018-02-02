@@ -1,14 +1,12 @@
 package com.dotmarketing.portlets.templates.model;
 
-import java.lang.reflect.InvocationTargetException;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class TemplateWrapper extends Template{
 	

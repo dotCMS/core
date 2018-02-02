@@ -22,16 +22,6 @@
 
 package com.liferay.portal.events;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.liferay.portal.NoSuchUserException;
@@ -46,6 +36,13 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.ListUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
 
 /**
  * <a href="ServicePreAction.java.html"><b><i>View Source</i></b></a>

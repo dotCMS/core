@@ -37,7 +37,7 @@ public interface DotLoader {
         }
     }
 
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
+    public InputStream writeObject(VelocityResourceKey key)
             throws DotDataException, DotSecurityException;
 
     default void invalidate(Object obj) {

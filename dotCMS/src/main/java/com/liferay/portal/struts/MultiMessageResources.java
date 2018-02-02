@@ -23,8 +23,6 @@
 package com.liferay.portal.struts;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
-import com.dotcms.repackage.com.oroad.stxx.util.PropertyMessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -33,15 +31,20 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.ServletContext;
+import com.oroad.stxx.util.PropertyMessageResources;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import javax.servlet.ServletContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.struts.util.MessageResourcesFactory;
 
 /**
  * <a href="MultiMessageResources.java.html"><b><i>View Source </i></b></a>

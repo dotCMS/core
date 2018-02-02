@@ -7,10 +7,8 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.tika.Tika;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -47,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -582,7 +581,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         //Subtracting 1024 Bytes (buffer size)
         metadataLimitInBytes = metadataLimitInBytes - 1024;
 
-        String type=new Tika().detect(metadataFile);
+		String type = new TikaUtils().detect(metadataFile);
 
         InputStream input= Files.newInputStream(metadataFile.toPath());
 

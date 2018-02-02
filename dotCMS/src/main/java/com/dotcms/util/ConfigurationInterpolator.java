@@ -1,8 +1,7 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.apache.commons.configuration.Configuration;
-
 import java.io.Serializable;
+import org.apache.commons.configuration.Configuration;
 
 /**
  * Defines an interpolator for a Configuration.

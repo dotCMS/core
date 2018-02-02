@@ -62,20 +62,23 @@
     Iterator<Contentlet> versionsIt = versions.iterator();
 	boolean isAlreadyLocked = false;
 	while (versionsIt.hasNext()) {
-		Contentlet ver = versionsIt.next();
-		Contentlet c = (Contentlet) ver;
-		ContentletVersionInfo verinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, c.getLanguageId());
-		Language langV=APILocator.getLanguageAPI().getLanguage(c.getLanguageId());
-		boolean working = c.getInode().equals(verinfo.getWorkingInode());
-		boolean live = c.getInode().equals(verinfo.getLiveInode());
+		Contentlet ver = versionsIt.next();		
 		String vinode = ver.getInode();
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
 		Date modDate = ver.getModDate();
+		ContentletVersionInfo verinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, ver.getLanguageId());
+		if(verinfo==null){
+			continue;
+		}
+		Language langV=APILocator.getLanguageAPI().getLanguage(ver.getLanguageId());
+		boolean working = ver.getInode().equals(verinfo.getWorkingInode());
+		boolean live = ver.getInode().equals(verinfo.getLiveInode());
+
 %>
 	<tr>
 		<td nowrap="nowrap" width="50" align="center">
-			<%=UtilHTML.getVersionStatusIcons(c) %>
+			<%=UtilHTML.getVersionStatusIcons(ver) %>
 		</td>
 		<td nowrap="nowrap">
 		<% if (!working) {  %>

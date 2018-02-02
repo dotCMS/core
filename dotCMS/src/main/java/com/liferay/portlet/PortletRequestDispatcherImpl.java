@@ -22,28 +22,25 @@
 
 package com.liferay.portlet;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletRequestDispatcher;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.struts.StrutsURLEncoder;
 import com.liferay.util.ServerDetector;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.DynamicServletRequest;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.struts.Globals;
 
 /**
  * <a href="PortletRequestDispatcherImpl.java.html"><b><i>View Source</i></b>

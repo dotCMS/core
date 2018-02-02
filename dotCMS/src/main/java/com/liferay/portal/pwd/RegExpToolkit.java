@@ -22,13 +22,7 @@
 
 package com.liferay.portal.pwd;
 
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.org.apache.oro.text.perl.Perl5Util;
-import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
@@ -38,6 +32,9 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.PwdGenerator;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.oro.text.perl.Perl5Util;
 
 /**
  * <a href="RegExpToolkit.java.html"><b><i>View Source</i></b></a>

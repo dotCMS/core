@@ -1,8 +1,8 @@
 package com.dotmarketing.util;
 
+import com.thoughtworks.xstream.converters.collections.MapConverter;
+import com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.net.sf.hibernate.collection.Map;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.collections.MapConverter;
-import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 
 public class HibernateMapConverter extends MapConverter {
 

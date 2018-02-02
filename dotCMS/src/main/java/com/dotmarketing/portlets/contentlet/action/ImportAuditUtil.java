@@ -1,20 +1,17 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.collections.map.LRUMap;
 
 public class ImportAuditUtil {
 

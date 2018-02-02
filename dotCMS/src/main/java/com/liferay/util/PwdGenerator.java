@@ -22,7 +22,7 @@
 
 package com.liferay.util;
 
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.RandomStringUtils;
 
 /**
  * <a href="PwdGenerator.java.html"><b><i>View Source</i></b></a>
