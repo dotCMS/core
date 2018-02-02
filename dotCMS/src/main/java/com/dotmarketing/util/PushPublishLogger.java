@@ -30,7 +30,7 @@ public class PushPublishLogger {
 
         private final String handler;
 
-        PushPublishHandler(String handler) {
+        PushPublishHandler(final String handler) {
             this.handler = handler;
         }
 
@@ -48,7 +48,7 @@ public class PushPublishLogger {
 
         private final String action;
 
-        PushPublishAction(String action) {
+        PushPublishAction(final String action) {
             this.action = action;
         }
 
@@ -116,23 +116,21 @@ public class PushPublishLogger {
      * @param name Name of the object being published
      * @param bundleId Bundle ID containing the object being published
      */
-    public static void log (Class cl, final PushPublishHandler handler, final PushPublishAction action,
+    public static void log (final Class cl, final PushPublishHandler handler, final PushPublishAction action,
                             final String id, final String inode, final String name, final String bundleId) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(handler.toString());
-        builder.append(" ");
-        builder.append(action.toString());
-        builder.append(" success");
+        final StringBuilder builder = new StringBuilder();
+        builder.append(handler.toString())
+            .append(' ')
+            .append(action.toString())
+            .append(" success");
         if (InodeUtils.isSet(id)) {
-            builder.append(", ID: " + id);
+            builder.append(", ID: ").append(id);
         }
-        if (InodeUtils.isSet(inode)) {
-            if (!inode.equals(id)) {
-                builder.append(", Inode: " + inode);
-            }
+        if (InodeUtils.isSet(inode) && !inode.equals(id)) {
+            builder.append(", Inode: ").append(inode);
         }
         if (StringUtils.isSet(name)) {
-            builder.append(", Name: " + name);
+            builder.append(", Name: ").append(name);
         }
         log(cl, builder.toString(), bundleId);
     }
@@ -149,29 +147,28 @@ public class PushPublishLogger {
      * @param errorMessage Custom error message to be logged
      * @param ex Exception if any
      */
-    public static void error (Class cl, final PushPublishHandler handler, final PushPublishAction action,
-            final String id, final String inode, final String name, final String bundleId, String errorMessage, Throwable ex) {
+    public static void error (final Class cl, final PushPublishHandler handler, final PushPublishAction action,
+                                final String id, final String inode, final String name, final String bundleId,
+                                final String errorMessage, final Throwable ex) {
         StringBuilder builder = new StringBuilder();
-        builder.append("Failed to ");
-        builder.append(action.toString());
-        builder.append(" ");
-        builder.append(handler.toString());
+        builder.append("Failed to ")
+            .append(action.toString())
+            .append(' ')
+            .append(handler.toString());
         if (InodeUtils.isSet(id)) {
-            builder.append(", ID: " + id);
+            builder.append(", ID: ").append(id);
         }
-        if (InodeUtils.isSet(inode)) {
-            if (!inode.equals(id)) {
-                builder.append(", Inode: " + inode);
-            }
+        if (InodeUtils.isSet(inode) && !inode.equals(id)) {
+            builder.append(", Inode: ").append(inode);
         }
         if (StringUtils.isSet(name)) {
-            builder.append(", Name: " + name);
+            builder.append(", Name: ").append(name);
         }
         if (StringUtils.isSet(errorMessage)) {
-            builder.append(", Error: " + errorMessage);
+            builder.append(", Error: ").append(errorMessage);
         }
         if (null != ex) {
-            builder.append(", " + ex.getMessage());
+            builder.append(", ").append(ex.getMessage());
         }
         error(cl, builder.toString(), bundleId);
     }
