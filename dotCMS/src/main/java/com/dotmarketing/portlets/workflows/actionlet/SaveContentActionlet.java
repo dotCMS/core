@@ -64,8 +64,9 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			checkoutContentlet.setInode(inode);
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-			final Contentlet contentletNew = this.contentletAPI.checkin
-					(checkoutContentlet, processor.getContentletDependencies());
+			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
+					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
+					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
 
 			processor.setContentlet(contentletNew);
 
