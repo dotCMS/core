@@ -230,52 +230,14 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public Permissionable getParentPermissionable() {
     try{
-/*
-      // Error con login
-      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
-        Host host = new Host();
-        host.setIdentifier(this.host());
-        host.setInode(this.host());
-        return host;
-      } else {
-        Folder folder = new Folder();
-        DotConnect dc = new DotConnect();
-        dc.setSQL("select identifier from folder where inode = ?");
-        dc.addParam(this.folder());
-        folder.setIdentifier(dc.loadObjectResults().get(0).get("identifier").toString());
-        folder.setInode(this.folder());
-        return folder;
-      }*/
-
-      //Error con login
       if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
         PermissionableProxy host = new PermissionableProxy();
         host.setIdentifier(this.host());
         host.setInode(this.host());
         return host;
       } else {
-        Folder folder = new Folder();
-        DotConnect dc = new DotConnect();
-        dc.setSQL("select identifier from folder where inode = ?");
-        dc.addParam(this.folder());
-        folder.setIdentifier(dc.loadObjectResults().get(0).get("identifier").toString());
-        folder.setInode(this.folder());
-        return folder;
+        return APILocator.getFolderAPI().find(this.folder(), APILocator.systemUser(), false);
       }
-      /*
-      //Funciona el login
-      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
-        PermissionableProxy host = new PermissionableProxy();
-        host.setIdentifier(this.host());
-        host.setInode(this.host());
-        return host;
-      } else {
-        PermissionableProxy folder = new PermissionableProxy();
-        folder.setIdentifier(this.folder());
-        folder.setInode(this.folder());
-        return folder;
-      }*/
-
     }catch (Exception e) {
       throw new DotRuntimeException(e.getMessage(), e);
     }
