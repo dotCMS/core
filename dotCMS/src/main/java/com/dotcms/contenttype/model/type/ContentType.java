@@ -1,8 +1,25 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.elasticsearch.common.Nullable;
+
+import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
@@ -22,38 +39,27 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.common.Nullable;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
-	use = Id.CLASS,
-	include = JsonTypeInfo.As.PROPERTY,
-	property = "clazz"
+        use = Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "clazz"
 )
 @JsonSubTypes({
-	@Type(value = FileAssetContentType.class),
-	@Type(value = FormContentType.class),
-	@Type(value = PageContentType.class),
-	@Type(value = PersonaContentType.class),
-	@Type(value = SimpleContentType.class),
-	@Type(value = WidgetContentType.class),
-	@Type(value = VanityUrlContentType.class),
-	@Type(value = KeyValueContentType.class),
+        @Type(value = FileAssetContentType.class),
+        @Type(value = FormContentType.class),
+        @Type(value = PageContentType.class),
+        @Type(value = PersonaContentType.class),
+        @Type(value = SimpleContentType.class),
+        @Type(value = WidgetContentType.class),
+        @Type(value = VanityUrlContentType.class),
+        @Type(value = KeyValueContentType.class),
 })
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 
   @Value.Check
   protected void check() {
-	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+    Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
     if (!(this instanceof UrlMapable)) {
       Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
@@ -217,10 +223,10 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Override
   public List<PermissionSummary> acceptedPermissions() {
     return ImmutableList.of(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ),
-        new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE),
-        new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH),
-        new PermissionSummary("edit-permissions", "edit-permissions-permission-description",
-            PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+            new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE),
+            new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH),
+            new PermissionSummary("edit-permissions", "edit-permissions-permission-description",
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 
   }
 
@@ -228,18 +234,36 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public Permissionable getParentPermissionable() {
     try{
-      if (!FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+     /* if (Host.SYSTEM_HOST.equals(this.host())) {
         Folder folder = new Folder();
-        folder.setIdentifier(this.host());
-        folder.setInode(this.host());
+        folder.setIdentifier(this.folder());
+        folder.setInode(this.folder());
+        folder.setHostId(this.host());
         return folder;
       } else{
         Host host = new Host();
-        host.setIdentifier(this.folder());
-        host.setInode(this.folder());
+        host.setIdentifier(this.host());
+        host.setInode(this.host());
+        host.setHost(Host.SYSTEM_HOST);
+        return host;
+      }*/
+
+      if(!this.folder().equals("SYSTEM_FOLDER")){
+
+
+        Folder folder = new Folder();
+        folder.setIdentifier(this.folder());
+        folder.setInode(this.folder());
+        folder.setHostId(this.host());
+        return folder;
+
+      }else {
+        Host host = new Host();
+        host.setIdentifier(this.host());
+        host.setInode(this.host());
+        host.setHost(Host.SYSTEM_HOST);
         return host;
       }
-
     }catch (Exception e) {
       throw new DotRuntimeException(e.getMessage(), e);
     }
