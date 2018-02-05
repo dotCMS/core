@@ -176,18 +176,6 @@ public class StructureAjax {
 			}
 		}
 
-		try {
-			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(struct);
-			for(WorkflowScheme scheme : schemes) {
-				if (scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())) {
-					allowImport = false;
-					break;
-				}
-			}
-		} catch (DotDataException e) {
-			Logger.error(this, e.getMessage());
-		}
-
 		result.put("keyStructureFields",searchableFields);
 		result.put("allowImport", allowImport);
 

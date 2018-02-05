@@ -126,11 +126,7 @@ function cancel() {
                             scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
                         }
 
-                        if(con != null && null != scheme && scheme.isMandatory()){
-                    %>
-                        <span style="color:red"><%= LanguageUtil.get(pageContext, "Cannot-Publish-In-A-Workflow") %></span>
-                    
-                    <%} else if(con != null && !APILocator.getPermissionAPI().doesUserHavePermission(con, APILocator.getPermissionAPI().PERMISSION_PUBLISH, user)){%>
+                        if(con != null && !APILocator.getPermissionAPI().doesUserHavePermission(con, APILocator.getPermissionAPI().PERMISSION_PUBLISH, user)){%>
                         <span style="color:red"><%= LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %></span>
                     
                     <%}else{ %>

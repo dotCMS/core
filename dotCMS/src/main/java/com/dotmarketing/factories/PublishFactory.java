@@ -320,12 +320,10 @@ public class PublishFactory {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     Contentlet contentlet = (Contentlet) asset;
-                    WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
 
-                    if (null != step && !APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).isMandatory() ) {
-                    	contentletAPI.publish( (Contentlet) asset, user, false );
-                    	new ContentletLoader().invalidate(asset);
-                    }
+                    contentletAPI.publish( (Contentlet) asset, user, false );
+                    new ContentletLoader().invalidate(asset);
+
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
                     Logger.debug( PublishFactory.class, "publish html page: User has no permission to publish the content inode = " + ((Contentlet) asset).getInode() + " in the page, skipping it." );

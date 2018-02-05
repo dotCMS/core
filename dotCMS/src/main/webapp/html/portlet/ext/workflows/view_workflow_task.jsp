@@ -243,7 +243,7 @@
 	                <%--Start workflow tasks --%>
 					<%boolean hasAction = false; %>
 					<%if(canEdit) {%>
-						<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+						<%if( wfActionsAll != null && wfActionsAll.size() > 0 ){ %>
 							<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: doEdit">
 								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Content")) %>
 							</div>

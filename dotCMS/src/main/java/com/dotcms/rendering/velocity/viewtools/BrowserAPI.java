@@ -153,10 +153,7 @@ public class BrowserAPI {
                                 hasPushPublishActionlet);
                         wfActionMapList.add(wfActionMap);
                     }
-                    if (wfScheme != null && wfScheme.isMandatory()) {
-                        permissions.remove(new Integer(
-                                PermissionAPI.PERMISSION_PUBLISH));
-                    }
+
                 }
             }
             catch(Exception ex) {
@@ -328,7 +325,7 @@ public class BrowserAPI {
 					pageMap.put("isContentlet", page instanceof Contentlet);
 					
 					if(wfdata!=null ) {
-    		            pageMap.put("wfMandatoryWorkflow", null != wfdata.wfScheme?wfdata.wfScheme.isMandatory():false);
+    		            pageMap.put("wfMandatoryWorkflow", false);
     		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
     	                pageMap.put("contentEditable", wfdata.contentEditable);
 					}
@@ -423,7 +420,7 @@ public class BrowserAPI {
 					fileAsset.getVersionId());
 
 			WorkflowScheme wfScheme = wfdata!=null ? wfdata.wfScheme : null;
-			fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
+			fileMap.put("wfMandatoryWorkflow", false);
 			fileMap.put("permissions", permissions);
 			fileMap.put("mimeType", APILocator.getFileAssetAPI()
 					.getMimeType(fileAsset.getFileName()));
