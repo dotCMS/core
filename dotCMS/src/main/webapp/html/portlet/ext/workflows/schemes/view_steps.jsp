@@ -21,7 +21,7 @@
 	final List<WorkflowAction> schemaActions =
 			wapi.findActions(scheme, APILocator.getUserAPI().getSystemUser());
 	WorkflowAction entryAction = null;
-	if(scheme.isMandatory() && UtilMethods.isSet(scheme.getEntryActionId())){
+	if( UtilMethods.isSet(scheme.getEntryActionId())){
 		try{
 			entryAction = wapi.findAction(scheme.getEntryActionId(), APILocator.getUserAPI().getSystemUser());
 	

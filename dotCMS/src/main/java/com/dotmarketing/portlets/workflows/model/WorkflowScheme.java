@@ -85,10 +85,12 @@ public class WorkflowScheme implements Serializable {
 		this.archived = archived;
 	}
 
+	@Deprecated
 	public boolean isMandatory() {
 		return mandatory;
 	}
 
+	@Deprecated
 	public void setMandatory(boolean mandatory) {
 		this.mandatory = mandatory;
 	}

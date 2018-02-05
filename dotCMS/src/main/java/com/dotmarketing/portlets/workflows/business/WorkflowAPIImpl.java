@@ -1067,12 +1067,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return processor;
 		}
 
-		if(processor.getScheme() != null && processor.getScheme().isMandatory()){
-			if(!UtilMethods.isSet(processor.getAction())){
-				throw new DotWorkflowException("A workflow action in workflow : " + processor.getScheme().getName() + " must be executed"  );
-			}
-		}
-
 		List<WorkflowActionClass> actionClasses = processor.getActionClasses();
 		if(actionClasses != null){
 			for(WorkflowActionClass actionClass : actionClasses){

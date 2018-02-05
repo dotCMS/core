@@ -122,15 +122,8 @@ public class WorkflowProcessor {
 				}
 			}
 
-			if (null == action) {
-				if (null != scheme && scheme.isMandatory()) {
-					throw new DotWorkflowException(LanguageUtil
-							.get(user, "message.workflow.error.mandatory.action.type")
-							+ contentlet.getStructure().getName());
-				}
-
+			if (null == action)
 				return;
-			}
 
 			if(action.requiresCheckout()){
 				try {

@@ -31,6 +31,7 @@
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
 	<input type="hidden" name="cmd" value="save">
 	<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
+	<input type="hidden" name="schemeMandatory" id="schemeMandatory" value="false">
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
 		<dl>
@@ -78,23 +79,9 @@
 				</dd>
 			</dl>
 		<%} %>
-		<dl>
-			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Mandatory")%>:</label>
-			</dt>
-			<dd>
-				<%if(firstStep !=null){ %>
-					<input type="checkbox" name="schemeMandatory"
-					id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
-					<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction"
-					<%=(scheme.isMandatory()) ? "checked='true'" : ""%>>
-				<%}else{ %>
-						<%=LanguageUtil.get(pageContext, "Add-Workflow-Step") %>
-				<%} %>	
-			</dd>
-		</dl>
+
 		<%if(firstStep !=null){ %>
-			<dl <%=(!scheme.isMandatory()) ? "style='display:none;'" : ""%> id="forceInitialAction">
+			<dl id="forceInitialAction">
 				<dt>
 					<label for=""><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</label>
 				</dt>

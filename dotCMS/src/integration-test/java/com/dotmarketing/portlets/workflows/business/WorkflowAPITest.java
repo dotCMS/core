@@ -224,13 +224,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
          * Generate workflow schemes
          */
 
-        /* Mandatory Workflow */
+        /*  Workflow 1 */
         workflowSchemeName1 = "WorkflowSchemeTest1" + time;
         workflowScheme1Step1Name = "WorkflowScheme1Step1_" + time;
         workflowScheme1Step1ActionIntranetName = "WorkflowScheme1Step1ActionIntranet_" + time;
         workflowScheme1Step2Name = "WorkflowScheme1Step2_" + time;
         workflowScheme1Step2Action1Name = "WorkflowScheme1Step2ActionReviewer_" + time;
-        workflowScheme1 = addWorkflowScheme(workflowSchemeName1, true);
+        workflowScheme1 = addWorkflowScheme(workflowSchemeName1);
 
         /* Generate scheme steps */
         workflowScheme1Step1 = addWorkflowStep(workflowScheme1Step1Name, 1, false, false,
@@ -254,7 +254,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme2Step1ActionReviewerName = "WorkflowScheme2Step1ActionReviewer_" + time;
         workflowScheme2Step2Name = "WorkflowScheme2Step2_" + time;
         workflowScheme2Step2Action1Name = "WorkflowScheme2Step2ActionReviewer_" + time;
-        workflowScheme2 = addWorkflowScheme(workflowSchemeName2, false);
+        workflowScheme2 = addWorkflowScheme(workflowSchemeName2);
 
         /* Generate scheme steps */
         workflowScheme2Step1 = addWorkflowStep(workflowScheme2Step1Name, 1, false, false,
@@ -281,7 +281,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme3Step2Name = "WorkflowScheme3Step2_" + time;
         workflowScheme3Step2Action1Name = "WorkflowScheme2Step2ActionReviewer_" + time;
         workflowScheme3Step2Action2Name = "WorkflowScheme2Step2ActionPublisher_" + time;
-        workflowScheme3 = addWorkflowScheme(workflowSchemeName3, false);
+        workflowScheme3 = addWorkflowScheme(workflowSchemeName3);
 
         /* Generate scheme steps */
         workflowScheme3Step1 = addWorkflowStep(workflowScheme3Step1Name, 1, false, false,
@@ -338,7 +338,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         /**
          * Generate workflow schemes
          */
-        workflowScheme4 = addWorkflowScheme(workflowSchemeName4, true);
+        workflowScheme4 = addWorkflowScheme(workflowSchemeName4);
 
         /* Generate scheme steps */
         workflowScheme4Step1 = addWorkflowStep(workflowScheme4Step1Name, 1, false, false,
@@ -415,7 +415,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme5Step1ActionPublishName = "WorkflowScheme5Step1ActionPublish_" + time;
         workflowScheme5Step1Action1SubAction1Name="Publish content";
 
-        workflowScheme5 = addWorkflowScheme(workflowSchemeName5, false);
+        workflowScheme5 = addWorkflowScheme(workflowSchemeName5);
 
         /* Generate scheme steps */
         workflowScheme5Step1 = addWorkflowStep(workflowScheme5Step1Name, 1, false, false,
@@ -967,8 +967,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @param schemeName Name of the new Scheme
      * @return the new Scheme
      */
-    protected static WorkflowScheme addWorkflowScheme(final String schemeName,
-            final boolean isMandatory)
+    protected static WorkflowScheme addWorkflowScheme(final String schemeName)
             throws DotDataException, DotSecurityException {
         WorkflowScheme scheme = null;
         try {
@@ -976,7 +975,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             scheme.setName(schemeName);
             scheme.setDescription("testing workflows " + schemeName);
             scheme.setCreationDate(new Date());
-            scheme.setMandatory(isMandatory);
+            scheme.setMandatory(false);
             workflowAPI.saveScheme(scheme);
         } catch (AlreadyExistException e) {
             //scheme already exist

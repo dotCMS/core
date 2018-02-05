@@ -63,7 +63,6 @@
 							<%}else{ %>
 								<strike><%=scheme.getName()%></strike>
 							<%} %>
-							<%if(scheme.isMandatory()){ %>(<%=LanguageUtil.get(pageContext, "Mandatory")%>)<%} %>
 							<div style="font-weight:normal;font-size:12px;"><%=UtilMethods.webifyString(scheme.getDescription())%></div>
 						</div>
 						<ol class="wfStepsList">
