@@ -1,7 +1,14 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -13,8 +20,13 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -25,15 +37,16 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.Beta;
-import com.liferay.portal.model.User;
-import com.liferay.util.LocaleUtil;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.IntStream;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.google.common.annotations.Beta;
+import com.liferay.portal.model.User;
+import com.liferay.util.LocaleUtil;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -638,9 +651,15 @@ public class WorkflowResource {
     /**
      * Todo: change the signature to be align with the rest implementation such as: reorderAction
      * Change the order of the steps in a scheme
+<<<<<<< HEAD
+     * @param request                           HttpServletRequest
+     * @param stepId                            String stepid to reorder
+     * @param order                             int    order
+=======
      * @param request HttpServletRequest
      * @param stepId  String step id
      * @param order   int    order for the step
+>>>>>>> origin/master
      * @return Response
      */
     @PUT
@@ -773,4 +792,5 @@ public class WorkflowResource {
 
         return response;
     } // exportScheme.
+
 } // E:O:F:WorkflowResource.

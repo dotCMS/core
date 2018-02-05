@@ -1,18 +1,17 @@
 package com.dotmarketing.logConsole.business;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.util.Logger;
-
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 

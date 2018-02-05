@@ -2,8 +2,8 @@ package com.dotcms.publisher.util;
 
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

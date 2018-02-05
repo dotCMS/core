@@ -26,11 +26,6 @@ import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.action.Action;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
@@ -39,7 +34,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.SendPasswordException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserIdException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerFactory;
@@ -54,13 +55,17 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
-
+import java.util.List;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
-import java.util.List;
-import java.util.Locale;
+import org.apache.struts.Globals;
+import org.apache.struts.action.Action;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>

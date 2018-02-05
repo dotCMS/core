@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.util.transform.TransformerLocator;
 
@@ -37,11 +38,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
 
@@ -243,7 +246,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 	    VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getWorkingInode(), user, respectFrontendRoles);
+		return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
 
 	}
 
@@ -308,14 +311,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				}
 				
 				//Add the list to the cache.
-				//CacheLocator.getContainerCache().clearCache();
-				CacheLocator.getContainerCache().remove(containerIdentifier);
-				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
+                final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerIdentifier);
+				CacheLocator.getContainerCache().remove(info);
+
 			} catch(DotHibernateException e){
 				throw new DotDataException(e.getMessage(),e);
 
 			}
 		}
+		
 	}
 
 	@CloseDBIfOpened
@@ -344,20 +348,27 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		
 		return containerStructures;
 	}
+	
+    @CloseDBIfOpened
+    @Override
+    public List<ContentType> getContentTypesInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
-	@CloseDBIfOpened
-	@Override
+        List<ContainerStructure> csList =  getContainerStructures(container);
+        List<ContentType> cTypeList = new ArrayList<ContentType>();
+
+        for (ContainerStructure cs : csList) {
+            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(cs.getStructureId());
+            if(type==null) continue;
+            cTypeList.add(type);
+        }
+        
+        return cTypeList.stream().sorted(Comparator.comparing(ContentType::name)).collect(Collectors.toList());
+    }
+    
+    @Deprecated
 	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+        return new StructureTransformer(getContentTypesInContainer(container)).asStructureList();
 
-		List<ContainerStructure> csList =  getContainerStructures(container);
-		List<Structure> structureList = new ArrayList<Structure>();
-
-		for (ContainerStructure cs : csList) {
-			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-			structureList.add(st);
-		}
-
-		return structureList;
 	}
 
 	@CloseDBIfOpened

@@ -28,8 +28,6 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.logging.log4j.Level;
 import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
 import com.dotcms.repackage.org.apache.logging.log4j.core.Logger;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.struts.PortletAction;
@@ -40,9 +38,10 @@ import com.liferay.portal.util.ShutdownUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Time;
 import com.liferay.util.servlet.SessionErrors;
-
-import javax.servlet.jsp.PageContext;
 import java.util.Enumeration;
+import javax.servlet.jsp.PageContext;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="ServerAction.java.html"><b><i>View Source</i></b></a>

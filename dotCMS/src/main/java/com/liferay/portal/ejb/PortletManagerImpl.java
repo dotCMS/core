@@ -22,31 +22,7 @@
 
 package com.liferay.portal.ejb;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.repackage.javax.portlet.PreferencesValidator;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentException;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.NoSuchPortletException;
 import com.liferay.portal.PortalException;
@@ -66,6 +42,27 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.ListUtil;
 import com.liferay.util.SimpleCachePool;
 import com.liferay.util.Validator;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 /**
  * <a href="PortletManagerImpl.java.html"><b><i>View Source</i></b></a>

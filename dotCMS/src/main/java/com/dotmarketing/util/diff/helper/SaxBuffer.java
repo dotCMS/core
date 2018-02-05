@@ -15,19 +15,18 @@
  */
 package com.dotmarketing.util.diff.helper;
 
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.Locator;
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.ext.LexicalHandler;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Collections;
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.ext.LexicalHandler;
 
 /**
  * A class that can record SAX events and replay them later.
@@ -381,7 +380,7 @@ public class SaxBuffer implements ContentHandler, LexicalHandler, Serializable {
             this.namespaceURI = namespaceURI;
             this.localName = localName;
             this.qName = qName;
-            this.attrs = new com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl(attrs);
+            this.attrs = new org.xml.sax.helpers.AttributesImpl(attrs);
         }
 
         public void send(ContentHandler contentHandler) throws SAXException {

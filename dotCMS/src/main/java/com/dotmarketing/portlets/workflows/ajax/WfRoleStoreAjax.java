@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -15,12 +13,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.*;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class WfRoleStoreAjax extends WfBaseAction {
 

@@ -1,18 +1,29 @@
 package com.dotcms.concurrent;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import static com.dotcms.util.CollectionsUtils.*;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}

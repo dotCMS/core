@@ -2,12 +2,6 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,7 +9,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletURL;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.javax.portlet.WindowStateException;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -27,6 +20,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Utility class for the {@link ContentTypeResource} end-point and other Content

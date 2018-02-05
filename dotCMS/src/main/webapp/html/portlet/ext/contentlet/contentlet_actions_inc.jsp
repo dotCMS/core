@@ -44,8 +44,6 @@ catch(Exception e){
 
 
 
-
-
 <%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 
 		<%if(contentEditable){ %>
@@ -96,7 +94,7 @@ catch(Exception e){
 <%}else if(!isContLocked) {%>
 
 
-	<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+	<%if((null != scheme && scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 
 
 
@@ -141,6 +139,7 @@ catch(Exception e){
 				APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
 				+" )</small>"%>
 	</a>
+
 <%} %>
 
 

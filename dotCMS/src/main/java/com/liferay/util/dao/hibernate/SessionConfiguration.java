@@ -27,7 +27,6 @@ import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
 import com.dotcms.repackage.net.sf.hibernate.impl.SessionFactoryImpl;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

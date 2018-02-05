@@ -19,10 +19,11 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import java.lang.reflect.InvocationTargetException;
-
-import com.dotcms.repackage.org.apache.commons.lang.ArrayUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.event.EventHandlerUtil;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -35,9 +36,6 @@ import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.VelMethod;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 
 /**
  *  ASTMethod.java

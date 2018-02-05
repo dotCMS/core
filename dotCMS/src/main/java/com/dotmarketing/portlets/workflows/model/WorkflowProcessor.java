@@ -6,6 +6,7 @@ import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -27,6 +28,15 @@ public class WorkflowProcessor {
 	List<WorkflowHistory> history;
 	String workflowMessage;
 	List<WorkflowActionClass> actionClasses;
+	ContentletDependencies    contentletDependencies;
+
+	public ContentletDependencies getContentletDependencies() {
+		return contentletDependencies;
+	}
+
+	public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
+		this.contentletDependencies = contentletDependencies;
+	}
 
 	public List<WorkflowActionClass> getActionClasses() {
 		return actionClasses;
@@ -174,7 +184,7 @@ public class WorkflowProcessor {
 
 		if (null == action) {
 			try {
-				action = getWorkflowAPI().findAction(workflowActionId, this.user);
+				action = getWorkflowAPI().findActionRespectingPermissions(workflowActionId, contentlet, this.user);
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
 						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")

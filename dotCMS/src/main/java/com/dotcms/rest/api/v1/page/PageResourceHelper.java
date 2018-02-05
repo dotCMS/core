@@ -2,10 +2,12 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDB;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
-
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -19,6 +21,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -26,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -33,9 +37,14 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.URLUtils;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,12 +55,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.model.User;
-
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -77,7 +81,7 @@ public class PageResourceHelper implements Serializable {
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
 
-    private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
+
 
     /**
      * Private constructor
@@ -86,7 +90,11 @@ public class PageResourceHelper implements Serializable {
 
     }
 
+    @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
+
+        MultiTreeFactory.deleteMultiTreeByParent(pageId);
+
         final List<MultiTree> multiTres = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -189,9 +197,8 @@ public class PageResourceHelper implements Serializable {
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
                                   final HttpServletResponse response, final User user, final PageMode mode) throws Exception {
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+
+        final Host site =resolveSite(request, user);
 
         if(null==page) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -201,16 +208,13 @@ public class PageResourceHelper implements Serializable {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
         }
 
-        return VelocityUtil.eval(mode, request, response, page.getURI(), site);
+        return VelocityModeHandler.modeHandler(mode, request, response, page.getURI(), site).eval();
     }
 
     public HTMLPageAsset getPage(final HttpServletRequest request, final User user,
                                  final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
-
+        final Host site =resolveSite(request, user);
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
         return  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
@@ -234,12 +238,14 @@ public class PageResourceHelper implements Serializable {
 
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        final Host site = this.hostWebAPI.resolveHostName(siteName, user, RESPECT_FE_ROLES);
+        final Host site =resolveSite(request, user);
+        
 
-        final String pageUri = (uri.length()>0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
-        final HTMLPageAsset page =  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
+        
+
+        
+        final HTMLPageAsset page = (UUIDUtil.isUUID(pageUri)) ?  (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
         final Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
@@ -250,21 +256,25 @@ public class PageResourceHelper implements Serializable {
         final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
 
         if (isRendered) {
-            renderContainer(mappedContainers, velocityContext);
+
+            renderContainer(mappedContainers, velocityContext, mode);
+
         }
 
         return new PageView(site, template, mappedContainers, page, layout);
     }
 
-    private void renderContainer(final Map<String, ContainerView> containers, final Context velocityContext )
-            throws DotDataException {
+
+    private void renderContainer(final Map<String, ContainerView> containers, final Context velocityContext, PageMode mode )
+            throws DotSecurityException, DotDataException {
+
 
         for (final ContainerView containerView : containers.values()) {
             final Container container = containerView.getContainer();
-
+            VelocityResourceKey key = new VelocityResourceKey(container, mode);
             try {
-                final String rendered = VelocityUtil.mergeTemplate("/live/" + container.getIdentifier() +
-                        ".container", velocityContext);
+                
+                final String rendered = VelocityUtil.mergeTemplate(key.path, velocityContext);
                 containerView.setRendered(rendered);
             } catch (Exception e) {
                 throw new DotDataException(String.format("Container '%s' could not be " +
@@ -272,6 +282,8 @@ public class PageResourceHelper implements Serializable {
             }
         }
     }
+
+
 
     private Map<String, ContainerView> getMappedContainers(final Template template, final User user)
             throws DotSecurityException, DotDataException {
@@ -299,25 +311,22 @@ public class PageResourceHelper implements Serializable {
         return objectWriter.writeValueAsString(pageView);
     }
 
-    public Template saveTemplate(final User user, final String pageId, final PageForm pageForm)
+
+    public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
+
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
-        final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
-                langAPI.getDefaultLanguage().getId(), user, false);
-
-        if (page == null) {
-            throw new NotFoundException("An error occurred when proccessing the JSON request");
-        }
-
         try {
-            Template templateSaved = this.saveTemplate(page, user, pageForm);
+            
+            
+            Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
 
-            String templateId = page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            String templateId = htmlPageAsset.getTemplateId();
 
             if (!templateId.equals( templateSaved.getIdentifier() )) {
-                page.setStringProperty(Contentlet.INODE_KEY, null);
-                page.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, templateSaved.getIdentifier());
-                this.contentletAPI.checkin(page, user, false);
+                htmlPageAsset.setInode(null);
+                htmlPageAsset.setTemplateId(templateSaved.getIdentifier());
+                this.contentletAPI.checkin((HTMLPageAsset)htmlPageAsset, user, false);
             }
 
             return templateSaved;
@@ -326,19 +335,29 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    public Contentlet getPage(final User user, final String pageId) throws DotSecurityException, DotDataException {
-        return this.contentletAPI.findContentletByIdentifier(pageId, false,
+
+
+    @NotNull
+    public IHTMLPage getPage(User user, String pageId) throws DotDataException, DotSecurityException {
+        final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
                 langAPI.getDefaultLanguage().getId(), user, false);
+
+        if (page == null) {
+            throw new NotFoundException("An error occurred when proccessing the JSON request");
+        }
+
+        return this.htmlPageAssetAPI.fromContentlet(page);
+
     }
 
-    public Template saveTemplate(final Contentlet page, final User user, final PageForm pageForm)
+    public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException, IOException {
 
         
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);
-
+            template.setDrawed(true);
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -350,26 +369,19 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(Contentlet page, User user, PageForm form) throws DotDataException, DotSecurityException {
+    private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
 
-        Template result = null;
-        String templateId = page != null ? page.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD) : null;
+        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        Template saveTemplate = new Template();
 
-        if (UtilMethods.isSet(templateId)) {
-            result = this.templateAPI.findWorkingTemplate(templateId, user, false);
+        if (UtilMethods.isSet(oldTemplate) && !UtilMethods.isSet(form.getTitle()) && oldTemplate.isAnonymous()) {
+            saveTemplate=oldTemplate;
+        } 
+        saveTemplate.setTitle(form.getTitle());
+        saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
+        saveTemplate.setDrawedBody(form.getLayout());
 
-            if (!UtilMethods.isSet(form.getTitle()) && !result.isAnonymous()) {
-                result = new Template();
-            }
-        } else {
-            result = new Template();
-        }
-
-        result.setTitle(form.getTitle());
-        result.setTheme(form.getThemeId());
-        result.setDrawedBody(form.getLayout());
-
-        return result;
+        return saveTemplate;
     }
 
     private Host getHost(final String hostId, final User user) {
@@ -415,8 +427,21 @@ public class PageResourceHelper implements Serializable {
                 .checkPermission(container, PermissionLevel.EDIT, user);
     }
 
-    public void checkPagePermission(final User user, final Contentlet htmlPageAsset) throws DotSecurityException {
-        APILocator.getPermissionAPI()
-                .checkPermission(htmlPageAsset, PermissionLevel.EDIT, user);
+
+    
+    private Host resolveSite(HttpServletRequest request, User user) throws DotDataException, DotSecurityException {
+        PageMode mode = PageMode.get(request);
+        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+        Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
+
+        if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
+            site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
+        }
+        return site;
+        
     }
+    
+    
+    
 }

@@ -7,6 +7,8 @@ import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 import com.ettrema.cache.Cache;
 import com.ettrema.httpclient.PropFindMethod.Response;
 import java.io.FileNotFoundException;
@@ -17,9 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *

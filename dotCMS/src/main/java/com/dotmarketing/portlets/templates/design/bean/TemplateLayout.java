@@ -1,10 +1,25 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_100_PERCENT;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_750;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_950;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_975;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.LAYOUT_WIDTH_CLASS_RESPONSIVE;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T1;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T2;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_LEFT_CLASS_T3;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T4;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T5;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_LAYOUT_RIGHT_CLASS_T6;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -12,7 +27,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  * @author Graziano Aliberti - Engineering Ingegneria Informatica
  * @date Apr 20, 2012
  */
-public class TemplateLayout {
+public class TemplateLayout implements Serializable{
 
     private String pageWidth;
     private String width;
@@ -145,35 +160,21 @@ public class TemplateLayout {
             widthPercent = 40;
         }
 
-        this.sidebar = new Sidebar(containers, location, 0, widthPercent);
+        this.sidebar = new Sidebar(containers, location, null, widthPercent);
         this.sidebar.setPreview( isPreview );
 
     }
 
-    public List<String> getContainersId() {
-        final List<String> containerIdentifiers = new ArrayList<>();
-        final List<TemplateLayoutRow> rows = this.body.getRows();
 
-        for (final TemplateLayoutRow row : rows) {
-            final List<TemplateLayoutColumn> columns = row.getColumns();
 
-            for (final TemplateLayoutColumn column : columns) {
-                final List<ContainerUUID> columnContainers = column.getContainers();
-                containerIdentifiers.addAll(
-                        columnContainers.stream()
-                                .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
-                                .collect(Collectors.toList()));
-            }
+    @Override
+    public String toString() {
+       try {
+           return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return super.toString();
         }
-
-        if (this.sidebar != null && this.sidebar.getContainers() != null) {
-            containerIdentifiers.addAll(
-                    this.sidebar.getContainers().stream()
-                            .map((ContainerUUID containerUUID) -> containerUUID.getIdentifier())
-                            .collect(Collectors.toList()));
-        }
-
-        return containerIdentifiers;
     }
+
 
 }

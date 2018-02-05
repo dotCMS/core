@@ -1,6 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -8,10 +7,10 @@ import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
-
-import java.awt.*;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field

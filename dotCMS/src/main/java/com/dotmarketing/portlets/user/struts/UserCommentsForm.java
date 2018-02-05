@@ -1,10 +1,8 @@
 package com.dotmarketing.portlets.user.struts;
 
-import java.sql.Date;
-
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
 import com.dotmarketing.util.InodeUtils;
+import java.sql.Date;
+import org.apache.struts.validator.ValidatorForm;
 
 public class UserCommentsForm extends ValidatorForm 
 {

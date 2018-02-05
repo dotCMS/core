@@ -1,15 +1,21 @@
 package com.dotcms.notifications.business;
 
-import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.notifications.bean.*;
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationAction;
+import com.dotcms.notifications.bean.NotificationData;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -18,19 +24,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Concrete implementation of the {@link NotificationAPI} class.

@@ -1,22 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -24,7 +7,8 @@ import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.publish.AddedToQueueEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -45,6 +29,20 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Provides utility methods to interact with asset information added to the

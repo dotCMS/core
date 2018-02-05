@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
@@ -20,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Actionlet to add Key/Value to the Request.

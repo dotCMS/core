@@ -15,8 +15,8 @@
  */
 package com.dotmarketing.util.diff.html.dom;
 
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Represents an image in HTML. Even though images do not contain any text they

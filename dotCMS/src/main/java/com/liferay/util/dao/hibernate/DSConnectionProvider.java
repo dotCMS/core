@@ -22,16 +22,13 @@
 
 package com.liferay.util.dao.hibernate;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import javax.sql.DataSource;
-
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.connection.ConnectionProvider;
-
-import com.dotmarketing.db.DbConnectionFactory;
 
 /**
  * <a href="DSConnectionProvider.java.html"><b><i>View Source</i></b></a>

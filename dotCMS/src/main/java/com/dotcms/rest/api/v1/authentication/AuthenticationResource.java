@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -19,7 +18,11 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -29,15 +32,15 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.Globals;
 
 /**
  * This resource does the authentication, if the authentication is successfully

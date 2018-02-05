@@ -1,10 +1,9 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.apache.commons.lang.time.StopWatch;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-
 import java.util.function.Supplier;
+import org.apache.commons.lang.time.StopWatch;
 
 /**
  * This util logs the total time for a calling delegate method.

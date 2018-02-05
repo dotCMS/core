@@ -23,20 +23,19 @@
 package com.liferay.portal.action;
 
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.org.apache.struts.action.Action;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.struts.action.Action;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="LogoutAction.java.html"><b><i>View Source</i></b></a>

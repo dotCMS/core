@@ -1,15 +1,8 @@
 package com.dotmarketing.portlets.folders.action;
 
-import java.net.URLDecoder;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -21,6 +14,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+import java.net.URLDecoder;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Maria

@@ -1,11 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -17,6 +11,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class UserProxyFactoryImpl extends UserProxyFactory {
 

@@ -3,20 +3,10 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
-
-import com.dotmarketing.tag.model.Tag;
-import org.apache.velocity.Template;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -30,13 +20,26 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.velocity.Template;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 
 /**
  * The purpose of this object is to provide an easy way on the frontend of dotCMS

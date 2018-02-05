@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.fileUpload.model;
 
-import java.io.Serializable;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.util.InodeUtils;
+import java.io.Serializable;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** @author Hibernate CodeGenerator */
 public class FileUpload extends Inode implements Serializable {

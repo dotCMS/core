@@ -22,12 +22,11 @@
 
 package com.liferay.portal.ejb;
 
+import com.liferay.portal.util.HibernateConfiguration;
+import com.liferay.portal.util.HibernateUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
-
-import com.liferay.portal.util.HibernateConfiguration;
-import com.liferay.portal.util.HibernateUtil;
 
 
 /**

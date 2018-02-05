@@ -910,15 +910,16 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 
 	addSelectedToWhoCanUse : function(){
-		var select = dijit.byId("whoCanUseSelect");
+		var selectWho = dijit.byId("whoCanUseSelect");
 
-		var user = select.getValue();
-		var userName = select.attr('displayedValue');
+		var user = selectWho.getValue();
+		var userName = selectWho.attr('displayedValue');
 
         if (actionAdmin.isSet(user) && actionAdmin.isSet(userName)) {
             actionAdmin.addToWhoCanUse(user, userName);
             actionAdmin.refreshWhoCanUse();
             actionAdmin.doChange();
+
         }
 	},
 
@@ -1017,10 +1018,11 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 		var clazz = select.getValue();
 		var name = select.attr('displayedValue');
-        if(clazz.length>0)
+        if(clazz.length>0){
 		   this.addActionClass(clazz, name);
-        else
-           showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "Workflow-please-choose-actionlet") %>");
+		   select.setValue("");
+		}
+
 	},
     /**
      * Add subaction into the system (using ajax) and table
@@ -1046,7 +1048,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
                             actionClassAdmin.actionClasses.push(entry);
 
                             actionClassAdmin.refreshActionClasses();
-                            showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
+                            //showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
                         }
                     } else {
                         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-save-subaction")%>", true);

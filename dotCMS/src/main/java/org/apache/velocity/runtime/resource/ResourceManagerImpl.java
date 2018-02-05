@@ -19,13 +19,13 @@ package org.apache.velocity.runtime.resource;
  * under the License.
  */
 
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-
-import com.dotcms.rendering.velocity.services.DotResourceLoader;
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
@@ -35,8 +35,6 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
-
-import com.dotmarketing.util.Logger;
 
 
 
@@ -157,7 +155,7 @@ public class ResourceManagerImpl
 
         Object cacheObject = null;
 
-        if (com.dotcms.repackage.org.apache.commons.lang.StringUtils.isNotEmpty(cacheClassName))
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(cacheClassName))
         {
             try
             {
@@ -289,7 +287,7 @@ public class ResourceManagerImpl
          * (static content from #include) with a Template.
          */
 
-        String resourceKey = resourceType + resourceName;
+        final String resourceKey = resourceType + resourceName;
         Resource resource = globalCache.get(resourceKey);
 
         if (resource != null)
@@ -456,10 +454,10 @@ public class ResourceManagerImpl
             }
             catch (ResourceNotFoundException rnfe)
             {
-                /*
-                 *  that's ok - it's possible to fail in
-                 *  multi-loader environment
-                 */
+                // throw if no data and we are at the last loader
+                if(!it.hasNext()) {
+                    throw rnfe;
+                }
             }
         }
 
@@ -531,7 +529,7 @@ public class ResourceManagerImpl
              *  this strikes me as bad...
              */
 
-            if (!com.dotcms.repackage.org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding))
+            if (!org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding))
             {
                 Logger.warn(this,"Declared encoding for template '" +
                              resource.getName() +

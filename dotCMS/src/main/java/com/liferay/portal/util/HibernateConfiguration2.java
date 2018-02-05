@@ -22,12 +22,10 @@
 
 package com.liferay.portal.util;
 
-import java.io.InputStream;
-
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.util.dao.hibernate.SessionConfiguration;
+import java.io.InputStream;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 
 /**
  * <a href="HibernateConfiguration2.java.html"><b><i>View Source</i></b></a>

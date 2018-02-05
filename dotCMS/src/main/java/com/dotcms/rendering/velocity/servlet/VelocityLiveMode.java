@@ -24,7 +24,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Optional;
@@ -48,8 +51,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
     private final Host host;
 
 
-    
-    
+
     public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
         this.request = request;
         this.response = response;
@@ -64,12 +66,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     @Override
     public final void serve() throws DotDataException, IOException, DotSecurityException {
-
-        serve(response.getWriter());
-
+        serve(response.getOutputStream());
     }
+
     @Override
-    public final void serve(final Writer out) throws DotDataException, IOException, DotSecurityException {
+    public final void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
 
         LicenseUtil.startLiveMode();
         try {
@@ -148,45 +149,40 @@ public class VelocityLiveMode extends VelocityModeHandler {
             if (v.isPresent() && v.get().getPersona() != null) {
                 persona = v.get().getPersona().getKeyTag();
             }
+            final Context context = VelocityUtil.getWebContext(request, response);
 
-
-            PageCacheParameters cacheParameters =
+            final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
 
 
             String key = VelocityUtil.getPageCacheKey(request, htmlPage);
             if (key != null) {
                 String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
-                if (cachedPage != null ){
+                if (cachedPage != null) {
                     // have cached response and are not refreshing, send it
-                    response.getWriter().write(cachedPage);
+                    out.write(cachedPage.getBytes());
                     return;
                 }
             }
 
-            Writer tmpOut = (key!=null) ? new StringWriter(4096) : new VelocityFilterWriter(out);
-            Context context = VelocityUtil.getWebContext(request, response);
 
+            try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
 
-            this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
-
-            if (key!=null) {
-                String trimmedPage = tmpOut.toString().trim();
-                out.write(trimmedPage);
-                out.close();
-                synchronized (key.intern()) {
-                    CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
+                if (key != null) {
+                    String trimmedPage = tmpOut.toString().trim();
+                    out.write(trimmedPage.getBytes());
+                    synchronized (key.intern()) {
+                        CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
+                    }
                 }
-            } else {
-                out.close();
             }
+
         } finally {
+
             LicenseUtil.stopLiveMode();
         }
-
     }
-
-
 
 }

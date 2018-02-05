@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
@@ -10,6 +11,9 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.Logger;
 
 import java.util.LinkedHashSet;
@@ -25,7 +29,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final User systemUser = APILocator.systemUser();
-
+    final TemplateAPI templateAPI = APILocator.getTemplateAPI();
 
     public void saveMultiTrees(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
         Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, multiTrees));
@@ -70,20 +74,34 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
              };
 
         }
-        
+
+        this.addEmptyContainers(page, pageContents, liveMode);
+
         return pageContents;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+    private void addEmptyContainers(final IHTMLPage page, Table<String, String, Set<String>> pageContents,
+                                    final boolean liveMode) throws DotDataException, DotSecurityException {
+
+        try {
+            TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
+
+            for (ContainerUUID containerUUID : containersUUID) {
+
+                final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(containerUUID.getIdentifier(),
+                        systemUser, false)
+                        : (Container) versionableAPI.findWorkingVersion(containerUUID.getIdentifier(), systemUser, false);
+                if(container==null && ! liveMode) {
+                    continue;
+                }
+
+                if (!pageContents.contains(containerUUID.getIdentifier(), containerUUID.getUUID())) {
+                    pageContents.put(containerUUID.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
+                }
+            }
+        } catch (RuntimeException e) {
+
+        }
+    }
 }

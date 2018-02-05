@@ -40,16 +40,12 @@ public interface KeyValueAPI {
         if (null == contentlet) {
             throw new DotStateException("The contentlet cannot be null.");
         }
-        try {
-            if (!contentlet.getContentType().baseType().equals(BaseContentType.KEY_VALUE)) {
-                throw new DotStateException(String.format("The contentlet with ID '%s' is not a KeyValue content.",
-                                contentlet.getIdentifier()));
-            }
-        } catch (DotSecurityException | DotDataException e) {
-            throw new DotStateException(
-                            String.format("The contentlet with ID '%s' could not be identified as a KeyValue content.",
-                                            contentlet.getIdentifier()), e);
+
+        if (!contentlet.getContentType().baseType().equals(BaseContentType.KEY_VALUE)) {
+            throw new DotStateException(String.format("The contentlet with ID '%s' is not a KeyValue content.",
+                            contentlet.getIdentifier()));
         }
+
         DefaultKeyValue keyValue;
         final String key = contentlet.getMap().get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR).toString();
         final long langId = contentlet.getLanguageId();

@@ -272,17 +272,16 @@ public class ContentTypeLoader implements DotLoader {
     }
 
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, String filePath)
-            throws DotDataException, DotSecurityException {
+    public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(sysUser());
 
 
         // Search for the given ContentType inode
-        ContentType foundContentType = contentTypeAPI.find(id1);
+        ContentType foundContentType = contentTypeAPI.find(key.id1);
 
 
-        return buildVelocity(foundContentType,  filePath, mode);
+        return buildVelocity(foundContentType,  key.path, key.mode);
 
     }
 

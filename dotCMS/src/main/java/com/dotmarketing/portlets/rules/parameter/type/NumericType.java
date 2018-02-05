@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.parameter.type.constraint.StandardConstraints;
 import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Geoff M. Granum

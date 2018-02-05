@@ -47,7 +47,7 @@ public class DotParse extends DotDirective {
   @Override
   String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,final String[] arguments) {
       
-      final String argument = arguments[0];
+    final String argument = arguments[0];
     String templatePath = argument;
     Host host = params.currentHost;
     User user = params.user;
@@ -70,7 +70,7 @@ public class DotParse extends DotDirective {
       //Verify if we found a resource with the given path
       if ( null == id || !UtilMethods.isSet(id.getId()) ) {
 
-        String errorMessage = String.format("No resource found for [%s]", templatePath);
+        String errorMessage = String.format("No resource found for [%s]",  arguments[0]);
 
         /*
         In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to

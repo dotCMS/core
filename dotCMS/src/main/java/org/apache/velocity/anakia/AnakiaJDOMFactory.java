@@ -19,9 +19,9 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.jdom.Element;
-import com.dotcms.repackage.org.jdom.Namespace;
-import com.dotcms.repackage.org.jdom.DefaultJDOMFactory;
+import org.jdom.DefaultJDOMFactory;
+import org.jdom.Element;
+import org.jdom.Namespace;
 
 /**
  * A customized JDOMFactory for Anakia that produces {@link AnakiaElement}
@@ -40,7 +40,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see com.dotcms.repackage.org.jdom.DefaultJDOMFactory#element(java.lang.String, com.dotcms.repackage.org.jdom.Namespace)
+     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, org.jdom.Namespace)
      */
     public Element element(String name, Namespace namespace)
     {
@@ -48,7 +48,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see com.dotcms.repackage.org.jdom.DefaultJDOMFactory#element(java.lang.String)
+     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String)
      */
     public Element element(String name)
     {
@@ -56,7 +56,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see com.dotcms.repackage.org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String)
+     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String)
      */
     public Element element(String name, String uri)
     {
@@ -64,7 +64,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see com.dotcms.repackage.org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String, java.lang.String)
+     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String, java.lang.String)
      */
     public Element element(String name, String prefix, String uri)
     {

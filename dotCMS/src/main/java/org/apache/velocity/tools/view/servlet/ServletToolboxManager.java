@@ -18,9 +18,19 @@
 package org.apache.velocity.tools.view.servlet;
 
 
-import com.dotcms.repackage.org.apache.commons.digester.RuleSet;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.WebKeys;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
@@ -28,13 +38,6 @@ import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.XMLToolboxManager;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.osgi.framework.BundleContext;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
 
 
 /**

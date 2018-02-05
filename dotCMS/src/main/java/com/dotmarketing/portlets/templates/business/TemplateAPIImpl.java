@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -27,23 +28,24 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import com.liferay.portal.model.User;
+
 
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
@@ -115,16 +117,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		newTemplate.setModDate(new Date());
 		newTemplate.setModUser(user.getUserId());
 
-
-		newTemplate.setBody(replaceWithNewContainerIds(newTemplate.getBody(), containerMappings));
-		newTemplate.setDrawedBody(replaceWithNewContainerIds(newTemplate.getDrawedBody(), containerMappings));
-
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
 			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newTemplate, destination);
-			Logger.debug(TemplateFactory.class, "Parent newIdentifier=" + newIdentifier.getInode());
+			Logger.debug(TemplateFactory.class, "Parent newIdentifier=" + newIdentifier.getId());
 
-			newTemplate.setIdentifier(newIdentifier.getInode());
+			newTemplate.setIdentifier(newIdentifier.getId());
 			// persists the webasset
 			save(newTemplate);
 
@@ -196,6 +194,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
 		}
+	    
+	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
+	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
+	        
+	    }
+	    
+	    
 
 	    if(UtilMethods.isSet(template.getInode())) {
     	    try {
@@ -231,6 +236,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		Identifier identifier = null;
 		if (oldTemplate != null) {
 			templateFactory.deleteFromCache(oldTemplate);
+
 			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
 		}
 		else{
@@ -258,142 +264,78 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     @CloseDBIfOpened
     @Override
-	public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
+    public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        final List<Container> containers = new ArrayList<>();
 
-	    if (template.isDrawed()){
-            final TemplateLayout layout     = DotTemplateTool.themeLayout(template.getInode());
-            final List<String> containersId = layout.getContainersId();
-
+        final Set<Container> containers = new HashSet<>();
+        if(template.isDrawed()) {
+            final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+            final List<String> containersId = this.getContainersId(layout);
+    
             for (final String cont : containersId) {
                 final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
-
-                if (container == null) {
+    
+                if(container==null) {
                     continue;
                 }
-
+    
                 containers.add(container);
             }
         }
-
         // this is a light weight search for pages that use this template
-        List<ContentletSearch> pages = APILocator.getContentletAPIImpl()
-            .searchIndex("+_all:" + template.getIdentifier()
-                + " +baseType:" + BaseContentType.HTMLPAGE.getType(),
-                100, 0, null, user, respectFrontendRoles);
+        List<ContentletSearch> pages= APILocator.getContentletAPIImpl().searchIndex("+_all:" + template.getIdentifier() + " +baseType:"
+                + BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,respectFrontendRoles);
 
         for (ContentletSearch page : pages) {
-            Set<String> containersId =
-                MultiTreeFactory.getMultiTrees(page.getIdentifier())
+            Set<String> containerId =
+                    MultiTreeFactory.getMultiTrees(page.getIdentifier())
                     .stream()
                     .map(MultiTree::getContainer)
                     .collect(Collectors.toSet());
 
-            for (final String cont : containersId) {
-                final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
 
-                if (container == null) {
+            for (String cont : containerId) {
+                Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+                if(container==null) {
                     continue;
                 }
-
                 containers.add(container);
             }
         }
-        return new ArrayList<>(containers);
+        return new ArrayList<Container>(containers);
+
     }
 
-	private String replaceWithNewContainerIds(String body, List<ContainerRemapTuple> containerMappings) {
-		if(body ==null) return body;
-		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s]+)\\s*\\)");
-		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
+	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
+		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
+		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
-		StringBuffer newBody = new StringBuffer();
-		Matcher matcher = oldContainerReferencesRegex.matcher(body);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			for(ContainerRemapTuple tuple : containerMappings) {
-				if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-					matcher.appendReplacement(newBody, "#parseContainer('" + tuple.getDestinationContainer().getIdentifier() +"')");
-				}
+		for (final TemplateLayoutRow row : rows) {
+			final List<TemplateLayoutColumn> columns = row.getColumns();
+
+
+			for (final TemplateLayoutColumn column : columns) {
+				final List<ContainerUUID> columnContainers = column.getContainers();
+				containerUUIDS.addAll(columnContainers);
 			}
 		}
-		matcher.appendTail(newBody);
 
-		body = newBody.toString();
-		newBody = new StringBuffer();
-		matcher = newContainerReferencesRegex.matcher(body);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			for(ContainerRemapTuple tuple : containerMappings) {
-				if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-					matcher.appendReplacement(newBody, "#parseContainer('" + tuple.getDestinationContainer().getIdentifier() +"')");
-					break;
-				}
-			}
-		}
-		matcher.appendTail(newBody);
+		Sidebar sidebar = layout.getSidebar();
 
-
-		// if we are updating container references
-		if(containerMappings != null && containerMappings.size() > 0){
-			Pattern uuid = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
-
-
-			body = newBody.toString();
-			newBody = new StringBuffer();
-			matcher = uuid.matcher(body);
-			while(matcher.find()) {
-				String containerId = matcher.group(0);
-				for(ContainerRemapTuple tuple : containerMappings) {
-					if(tuple.getSourceContainer().getIdentifier().equals(containerId)) {
-						matcher.appendReplacement(newBody,  tuple.getDestinationContainer().getIdentifier() );
-						break;
-					}
-				}
-			}
-			matcher.appendTail(newBody);
+		if (sidebar != null && sidebar.getContainers() != null) {
+			containerUUIDS.addAll(sidebar.getContainers());
 		}
 
-
-
-
-
-
-		return newBody.toString();
+		return containerUUIDS;
 	}
 
+	private List<String> getContainersId(TemplateLayout layout) {
 
-	@SuppressWarnings("unchecked")
-	private String getCopyTemplateName(String templateName, Host host) throws DotDataException {
-		String result = new String(templateName);
-
-		List<Template> templates = findTemplatesAssignedTo(host);
-
-		boolean isValidTemplateName = false;
-
-		for (; !isValidTemplateName;) {
-			isValidTemplateName = true;
-
-			for (Template template: templates) {
-				if (template.getTitle().equals(result)) {
-					isValidTemplateName = false;
-
-					break;
-				}
-			}
-
-			if (!isValidTemplateName)
-				result += " (COPY)";
-		}
-
-		return result;
+		return this.getContainersUUID(layout).stream()
+				.map(ContainerUUID::getIdentifier)
+				.collect(Collectors.toList());
 	}
-
-
-
-
 
 	public Host getTemplateHost(Template template) throws DotDataException {
 

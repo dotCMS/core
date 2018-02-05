@@ -22,10 +22,9 @@ package org.apache.velocity.convert;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import com.dotcms.repackage.org.apache.oro.text.perl.Perl5Util;
-import org.apache.velocity.util.StringUtils;
+import org.apache.oro.text.perl.Perl5Util;
 import org.apache.tools.ant.DirectoryScanner;
+import org.apache.velocity.util.StringUtils;
 
 /**
  * This is deprecated without replacement.

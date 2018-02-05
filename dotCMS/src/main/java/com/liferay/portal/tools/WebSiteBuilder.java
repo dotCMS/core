@@ -22,10 +22,6 @@
 
 package com.liferay.portal.tools;
 
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentException;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 import com.liferay.util.GetterUtil;
@@ -40,6 +36,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 
 /**
  * <a href="WebSiteBuilder.java.html"><b><i>View Source</i></b></a>

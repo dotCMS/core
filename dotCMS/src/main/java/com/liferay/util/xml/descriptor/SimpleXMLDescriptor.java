@@ -22,11 +22,10 @@
 
 package com.liferay.util.xml.descriptor;
 
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.Element;
-
 import com.liferay.util.xml.ElementComparator;
 import com.liferay.util.xml.ElementIdentifier;
+import org.dom4j.Document;
+import org.dom4j.Element;
 
 /**
  * <a href="SimpleXMLDescriptor.java.html"><b><i>View Source</i></b></a>

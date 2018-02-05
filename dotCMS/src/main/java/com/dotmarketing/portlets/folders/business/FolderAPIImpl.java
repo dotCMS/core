@@ -1,17 +1,17 @@
 package com.dotmarketing.portlets.folders.business;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Collectors;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
 
-import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -45,8 +45,19 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 public class FolderAPIImpl implements FolderAPI  {
 

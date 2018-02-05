@@ -6,10 +6,6 @@ import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Clickstream;
@@ -64,6 +60,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.mapper.Mapper;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -84,6 +83,7 @@ import java.util.Set;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import org.quartz.JobExecutionContext;
 
 /**

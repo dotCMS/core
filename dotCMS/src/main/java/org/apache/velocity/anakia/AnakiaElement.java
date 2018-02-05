@@ -19,10 +19,10 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.jdom.Element;
-import com.dotcms.repackage.org.jdom.Namespace;
-import com.dotcms.repackage.org.jdom.output.XMLOutputter;
 import java.util.List;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.output.XMLOutputter;
 
 /**
  * A JDOM {@link Element} that is tailored for Anakia needs. It has
@@ -158,10 +158,10 @@ public class AnakiaElement extends Element
      *
      * @return a <code>List</code> containing the mixed content of the
      *         element: may contain <code>String</code>,
-     *         <code>{@link Element}</code>, <code>{@link com.dotcms.repackage.org.jdom.Comment}</code>,
-     *         <code>{@link com.dotcms.repackage.org.jdom.ProcessingInstruction}</code>,
-     *         <code>{@link com.dotcms.repackage.org.jdom.CDATA}</code>, and
-     *         <code>{@link com.dotcms.repackage.org.jdom.EntityRef}</code> objects.
+     *         <code>{@link Element}</code>, <code>{@link org.jdom.Comment}</code>,
+     *         <code>{@link org.jdom.ProcessingInstruction}</code>,
+     *         <code>{@link org.jdom.CDATA}</code>, and
+     *         <code>{@link org.jdom.EntityRef}</code> objects.
      */
     public List getContent()
     {

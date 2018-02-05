@@ -22,21 +22,19 @@
 
 package com.liferay.util.xml;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentException;
-import com.dotcms.repackage.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.xml.descriptor.XMLDescriptor;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 /**
  * <a href="XMLMergerRunner.java.html"><b><i>View Source</i></b></a>

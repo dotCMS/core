@@ -22,24 +22,11 @@
 
 package com.liferay.portal.events;
 
-import com.dotcms.repackage.org.apache.logging.log4j.Level;
-import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
-import com.dotcms.repackage.org.apache.logging.log4j.core.Appender;
-import com.dotcms.repackage.org.apache.logging.log4j.core.Logger;
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.SAXReader;
-import com.dotmarketing.loggers.Log4jUtil;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.struts.SimpleAction;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.ServerDetector;
 import com.liferay.util.SystemProperties;
 import com.liferay.util.Validator;
-
-import java.net.URL;
-import java.util.*;
+import java.util.Locale;
 
 /**
  * <a href="InitAction.java.html"><b><i>View Source</i></b></a>

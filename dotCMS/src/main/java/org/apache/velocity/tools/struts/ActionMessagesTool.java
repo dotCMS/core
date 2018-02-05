@@ -21,10 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import org.apache.velocity.tools.struts.StrutsUtils;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.apache.struts.util.MessageResources;
 
 /**
  * <p>View tool to work with the Struts action messages.</p>

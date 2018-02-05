@@ -41,12 +41,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	public void save(Container container) throws DotDataException {
 		HibernateUtil.save(container);
-		containerCache.remove(container.getInode());
+		containerCache.remove(container);
 	}
 
 	public void save(Container container, String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
-		containerCache.remove(container.getInode());
+		containerCache.remove(container);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -376,12 +376,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
                String identifier = ident.get("identifier");
                if (UtilMethods.isSet(identifier)) {
 
-				   final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(identifier);
-
-				   if (null != info && UtilMethods.isSet(info.getLiveInode())) {
-
-					   CacheLocator.getContainerCache().remove(info.getLiveInode());
-				   }
+        			   final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(identifier);
+        			   CacheLocator.getContainerCache().remove(info);
 
 			   }
            }

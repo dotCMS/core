@@ -1,10 +1,5 @@
 package com.dotmarketing.listeners;
 
-import com.dotcms.repackage.org.dom4j.Document;
-import com.dotcms.repackage.org.dom4j.DocumentHelper;
-import com.dotcms.repackage.org.dom4j.Element;
-import com.dotcms.repackage.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.org.dom4j.io.XMLWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,6 +15,11 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;

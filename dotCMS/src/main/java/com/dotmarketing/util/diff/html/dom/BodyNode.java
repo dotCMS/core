@@ -17,8 +17,7 @@ package com.dotmarketing.util.diff.html.dom;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Represents the root of a HTML document.

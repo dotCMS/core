@@ -14,7 +14,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,12 +53,12 @@ public class VelocityPreviewMode extends VelocityModeHandler {
     @Override
     public void serve() throws DotDataException, IOException, DotSecurityException {
 
-        serve(response.getWriter());
+        serve(response.getOutputStream());
 
     }
 
     @Override
-    public void serve(Writer out) throws DotDataException, IOException, DotSecurityException {
+    public void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
 
 
         // Getting the user to check the permissions
@@ -78,8 +81,10 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);
+        try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
+            this.getTemplate(htmlPage, mode).merge(context, outStr);
+        }
 
-        this.getTemplate(htmlPage, mode).merge(context, out);
 
 
     }

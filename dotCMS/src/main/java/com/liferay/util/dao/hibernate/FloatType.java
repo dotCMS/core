@@ -25,7 +25,6 @@ package com.liferay.util.dao.hibernate;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import com.dotcms.repackage.net.sf.hibernate.Hibernate;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.UserType;

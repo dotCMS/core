@@ -19,14 +19,13 @@ package org.apache.velocity.app.event.implement;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.apache.oro.text.perl.MalformedPerl5PatternException;
-import com.dotcms.repackage.org.apache.oro.text.perl.Perl5Util;
+import com.dotmarketing.util.Logger;
+import org.apache.oro.text.perl.MalformedPerl5PatternException;
+import org.apache.oro.text.perl.Perl5Util;
 import org.apache.velocity.app.event.ReferenceInsertionEventHandler;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * Base class for escaping references.  To use it, override the following methods:

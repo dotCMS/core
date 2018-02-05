@@ -22,14 +22,13 @@
 
 package com.liferay.util.xml;
 
-import com.dotcms.repackage.org.dom4j.Document;
-
 import com.liferay.util.xml.descriptor.PortletAppDescriptor;
 import com.liferay.util.xml.descriptor.StrictXMLDescriptor;
 import com.liferay.util.xml.descriptor.StrutsConfigDescriptor;
 import com.liferay.util.xml.descriptor.TilesDefsDescriptor;
 import com.liferay.util.xml.descriptor.WebXMLDescriptor;
 import com.liferay.util.xml.descriptor.XMLDescriptor;
+import org.dom4j.Document;
 
 /**
  * <a href="XMLTypeDetector.java.html"><b><i>View Source</i></b></a>

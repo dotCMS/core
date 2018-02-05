@@ -3,7 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import com.google.common.base.CharMatcher;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 public class ESUtils {
 
@@ -27,6 +27,5 @@ public class ESUtils {
 
 		return escapedText;
 	}
-
-
+	
 }
