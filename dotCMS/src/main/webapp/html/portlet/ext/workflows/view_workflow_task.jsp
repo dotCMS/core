@@ -20,7 +20,7 @@
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 
     //Search for the contentlet (Using the same way the view_tasks_list use to find the contentlet on each WorkflowTask and show it in the list)
-    Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier: " + task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true ).get( 0 );
+    Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier: " + task.getWebasset() + " +languageId:" + task.getLanguageId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true ).get( 0 );
     if ( contentlet == null ) {
         out.println( LanguageUtil.get( pageContext, "the-selected-content-cannot-be-found" ) );
         return;
