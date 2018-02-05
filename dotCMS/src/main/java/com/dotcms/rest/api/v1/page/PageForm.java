@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -52,6 +53,10 @@ class PageForm {
      */
     public String getHostId() {
         return hostId;
+    }
+
+    public boolean isAnonymousLayout() {
+        return !UtilMethods.isSet(this.title);
     }
 
     /**

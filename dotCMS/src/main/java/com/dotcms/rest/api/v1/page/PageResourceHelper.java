@@ -374,9 +374,10 @@ public class PageResourceHelper implements Serializable {
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
         Template saveTemplate = new Template();
 
-        if (UtilMethods.isSet(oldTemplate) && !UtilMethods.isSet(form.getTitle()) && oldTemplate.isAnonymous()) {
-            saveTemplate=oldTemplate;
-        } 
+        if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
+            saveTemplate = oldTemplate;
+        }
+
         saveTemplate.setTitle(form.getTitle());
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
         saveTemplate.setDrawedBody(form.getLayout());
