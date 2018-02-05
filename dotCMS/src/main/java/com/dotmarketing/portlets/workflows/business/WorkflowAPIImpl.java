@@ -566,16 +566,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-		final List<WorkflowAction> unfilteredActions =
-				isNew ? findActions(steps, user, contentlet.getContentType()):
-						findActions(steps, user, contentlet);
 
 		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
 								+ ", isNew: "    + isNew
 								+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
 
 
-		return this.doFilterActions(actions, canLock, isLocked, unfilteredActions);
+		return isNew? this.doFilterActions(actions, canLock, true, findActions(steps, user, contentlet.getContentType())):
+				this.doFilterActions(actions, canLock, isLocked, findActions(steps, user, contentlet));
 	}
 
 	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
