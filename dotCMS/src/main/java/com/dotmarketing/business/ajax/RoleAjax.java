@@ -1,7 +1,7 @@
 package com.dotmarketing.business.ajax;
 
 import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
-import static com.dotmarketing.business.ajax.DwrUtil.validateUsersPortletPermissions;
+import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
