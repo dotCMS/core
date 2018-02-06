@@ -14,7 +14,6 @@ import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -35,6 +34,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.elasticsearch.index.IndexNotFoundException;
 
 import java.util.ArrayList;

@@ -1,15 +1,13 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.google.common.collect.ImmutableMap;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.util.I18NMessage;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -53,6 +51,7 @@ import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -63,31 +62,13 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.util.NumberUtils;
-
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -104,22 +85,6 @@ import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
-
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class

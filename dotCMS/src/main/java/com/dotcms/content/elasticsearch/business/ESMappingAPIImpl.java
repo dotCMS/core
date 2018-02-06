@@ -4,20 +4,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -28,11 +14,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.CollectionsUtils;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -79,7 +60,7 @@ import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
@@ -587,7 +568,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
 				//re-indexation and the list of new dependencies no re-indexed yet
-				dependenciesToReindex.addAll(CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
+				dependenciesToReindex.addAll(
+						CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
 			}
 		}
 		return dependenciesToReindex;

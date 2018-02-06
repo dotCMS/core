@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import org.apache.commons.collections.keyvalue.MultiKey;
-import org.elasticsearch.indices.IndexMissingException;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
