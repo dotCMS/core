@@ -1146,7 +1146,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// quiet
 		}
 
-		return "Unable to execute Step, the contentlet should be saved before to continue with this action";
+		return "Unable to apply the workflow step, the contentlet should be saved in order to execute this workflow action";
 	}
 	private void saveWorkflowTask(final WorkflowProcessor processor) throws DotDataException {
 
