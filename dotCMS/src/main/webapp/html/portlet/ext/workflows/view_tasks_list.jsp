@@ -29,13 +29,6 @@
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 
 	List<WorkflowTask> tasks = searcher.findTasks();
-	List<Long> langs = new ArrayList<Long>();
-	for(Language l : APILocator.getLanguageAPI().getLanguages()){
-		langs.add(l.getId());
-	}
-	Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-	langs.remove(defaultLang.getId());
-	langs.add(0, defaultLang.getId());
 
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] { "/ext/workflows/view_workflow_tasks" });
@@ -157,7 +150,7 @@
 			</td>
 		</tr>
 	<%} %>
-	<%for(WorkflowTask task : tasks){ %>
+	<%for(WorkflowTask task : tasks) { %>
 		<%
             Role assignedRole = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
             String assignedRoleName = "";
@@ -166,20 +159,17 @@
             }
         %>
 		<%Contentlet contentlet = new Contentlet();
-			for(Long lang : langs){
+
 				try{
-				 	contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,lang, APILocator.getUserAPI().getSystemUser(), true);
+				 	contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, task.getLanguageId(), APILocator.getUserAPI().getSystemUser(), true);
 				 	//contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true).get(0);
 				}
 				catch(Exception e){
 					Logger.debug(this.getClass(), e.getMessage());	
 				}
-				if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
-					break;
+				if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())){
+					continue;
 				}
-			}
-			
-			
 		%>
 		<%WorkflowStep step = APILocator.getWorkflowAPI().findStep(task.getStatus()); %>
 		<tr class="alternate_1">
@@ -205,9 +195,7 @@
 		  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
 		        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
 		   		<%} %>
-				
-				
-				
+
 			</td>
 
 				
@@ -222,7 +210,9 @@
 			
 
 		</tr>
-	<%} %>
+	<%
+		}
+	%>
 	</table>
 
     <table width="95%" align="center" style="margin:10px;">
