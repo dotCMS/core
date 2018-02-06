@@ -51,17 +51,17 @@
 
 
 
-<h3>Facet on the news.tags field</h3>
+<h3>Aggregation on the news.tags field</h3>
 <pre><code>
 {
     "query" : {
         "match_all" : {  }
     },
-    "facets" : {
+    "aggs" : {
         "tag" : {
             "terms" : {
                 "field" : "news.tags",
-                "size" : 100   //the number of facets to return
+                "size" : 100   //the number of aggregations to return
             }
         }
     },
@@ -162,11 +162,11 @@ $results.response&lt;br&gt;
     }
 }'
 </code></pre>
-<p>curl for facets (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
+<p>curl for aggregations (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
 <pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/raw -d '
     {
         "query" : { "query_string" : {"query" : "gas*"} },
-        "facets" : {
+        "aggs" : {
             "tags" : { "terms" : {"field" : "news.tags"} }
         }
     }

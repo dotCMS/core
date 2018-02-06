@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -32,7 +31,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotcms.util.CollectionsUtils;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
@@ -100,7 +99,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
 
-		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
 		return lis.actionGet().isAcknowledged();
 	}
 
@@ -114,7 +113,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws IOException
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
 		return lis.actionGet().isAcknowledged();
 	}
 

@@ -23,7 +23,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -839,18 +838,18 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         Client client = new ESClient().getClient();
         SearchResponse resp;
         try {
-            QueryStringQueryBuilder qb = QueryBuilders.queryString( qq );
+            QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery( qq );
             SearchRequestBuilder srb = client.prepareSearch();
             srb.setQuery( qb );
 
             srb.setIndices( indexName );
-            srb.addFields( "id" );
+            srb.addStoredField( "id" );
 
             try {
                 resp = srb.execute().actionGet();
             } catch ( SearchPhaseExecutionException e ) {
                 if ( e.getMessage().contains( "dotraw] in order to sort on" ) ) {
-                    return new InternalSearchHits( InternalSearchHits.EMPTY, 0, 0 );
+                    return new SearchHits( SearchHits.EMPTY, 0, 0 );
                 } else {
                     throw e;
                 }

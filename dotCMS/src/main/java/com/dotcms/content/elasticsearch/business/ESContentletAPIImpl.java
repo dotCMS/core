@@ -797,7 +797,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<ContentletSearch>();
         list.setTotalResults(lc.getTotalHits());
 
-        for (SearchHit sh : lc.hits()) {
+        for (SearchHit sh : lc.getHits()) {
             try{
                 Map<String, Object> hm = new HashMap<String, Object>();
                 ContentletSearch conwrapper= new ContentletSearch();

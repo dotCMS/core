@@ -3,9 +3,7 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
 <%@ page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
 <%@page import="org.elasticsearch.search.suggest.term.TermSuggestion"%>
-<%@page import="org.elasticsearch.search.suggest.Suggest.Suggestion"%>
-<%@page import="org.elasticsearch.search.facet.terms.TermsFacet"%>
-<%@page import="org.elasticsearch.search.facet.Facet"%>
+<%@page import="org.elasticsearch.search.suggest.Suggest"%>
 
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
 <%@page import="java.util.List"%>
@@ -28,9 +26,10 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
-<%@ page import="org.elasticsearch.search.aggregations.Aggregations" %>
 <%@ page import="org.elasticsearch.search.aggregations.Aggregation" %>
-<%@ page import="org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator" %>
+<%@ page import="org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation" %>
+<%@ page import="org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket" %>
+
 
 <%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
@@ -271,17 +270,17 @@ if(query == null){
 			<tr><th colspan="3">
 
 
-					<h2>Facets</h2>
+					<h2>Aggregations</h2>
 				</th></tr>
 				<tr>
 					<td>
 					<%for(Aggregation agg : cons.getAggregations()){ %>
-					<%TermsAggregator terms = (TermsAggregator) agg; %>
+					<%MultiBucketsAggregation multiBuckets = (MultiBucketsAggregation) agg; %>
 					<%int ii=1; %>
-						<%for (TermsFacet.Entry entry : agg.get) {%>
+						<%for (Bucket entry : multiBuckets.getBuckets()) {%>
 
-							<%=ii++%>. <%=entry.getTerm()%> =
-							<%= entry.getCount()%><br>
+							<%=ii++%>. <%=entry.getKey()%> =
+							<%= entry.getDocCount()%><br>
 
 						<% } %>
 					<%} %>

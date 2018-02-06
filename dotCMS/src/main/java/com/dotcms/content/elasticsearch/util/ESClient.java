@@ -18,6 +18,7 @@ import com.liferay.util.FileUtil;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeValidationException;
@@ -75,8 +76,11 @@ public class ESClient {
                     try{
                         _nodeInstance = new Node(
                             Settings.builder().
-                                put( "name", node_id ).
-                                put( "script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName() ).build()
+                                put( "cluster.name", Config.getStringProperty("es.cluster.name")).
+                                put( "node.name", node_id ).
+                                put("path.home", "WEB-INF/elastic_search").
+                                put("path.data", Config.getStringProperty(DATA_PATH)).
+                                    put("path.repo", Config.getStringProperty(REPO_PATH)).build()
                         ).start();
                     } catch (NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
@@ -181,8 +185,7 @@ public class ESClient {
                     .field("auto_expand_replicas", false)
                     .field("number_of_replicas", serverCount - 1)
                     .endObject()
-                    .endObject().string()
-                );
+                    .endObject().string(), XContentType.JSON);
 
                 return Optional.of(settingsRequest);
             }

@@ -79,7 +79,7 @@ public class ESSearchResults implements List {
 	final List cons;
 
 	public long getCount() {
-		return response.getHits().hits().length;
+		return response.getHits().getHits().length;
 	}
 
 	public String getQuery() {
@@ -104,7 +104,7 @@ public class ESSearchResults implements List {
 	}
 
 	public long getQueryTook() {
-		return response.getTookInMillis();
+		return response.getTook().getMillis();
 	}
 
 	public long getPopulationTook() {

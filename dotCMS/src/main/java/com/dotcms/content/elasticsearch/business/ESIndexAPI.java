@@ -63,6 +63,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
@@ -219,7 +220,7 @@ public class ESIndexAPI {
 				for (SearchHit hit : scrollResp.getHits()) {
 					bw.write(hit.getId());
 					bw.write(JSON_RECORD_DELIMITER);
-					bw.write(hit.sourceAsString());
+					bw.write(hit.getSourceAsString());
 					bw.newLine();
 					hitsRead = true;
 				}
@@ -508,8 +509,7 @@ public class ESIndexAPI {
                         .field("number_of_replicas",0)
                         .field("routing.allocation.include._name",nodeName)
                      .endObject()
-               .endObject().string()
-        )).actionGet();
+               .endObject().string(), XContentType.JSON)).actionGet();
     }
 
 	/**
@@ -546,8 +546,7 @@ public class ESIndexAPI {
                         .field("number_of_replicas",nreplicas)
                         .field("routing.allocation.include._name","*")
                      .endObject()
-               .endObject().string()
-        )).actionGet();
+               .endObject().string(), XContentType.JSON)).actionGet();
     }
 
     /**
@@ -649,7 +648,7 @@ public class ESIndexAPI {
 
 
         // create actual index
-		iac.prepareCreate(indexName).setSettings(settings).addMapping(type, mapping).execute();
+		iac.prepareCreate(indexName).setSettings(settings, XContentType.JSON).addMapping(type, mapping).execute();
 
         AdminLogger.log(this.getClass(), "createIndex",
                 "Index created: " + indexName + " with shards: " + shards);
