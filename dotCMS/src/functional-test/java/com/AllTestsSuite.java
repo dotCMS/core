@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletFTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionletFTest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIFTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.webdav.WebDavTest;
 
@@ -79,7 +78,6 @@ import org.junit.runners.Suite;
     RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
 
     URLMapTest.class,
-    WorkflowAPIFTest.class,
     SiteSearchAjaxActionTest.class,
     WebDavTest.class
 })

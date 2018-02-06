@@ -1833,7 +1833,6 @@
                 var popupMenusDiv = dojo.byId("results_table_popup_menus");
                 var popupMenu = "";
                 var popupMenu2 = "";
-                var workflowMandatory;
                 var wfActionMapList;
                 var structure_id;
                 var contentStructureType;
@@ -1913,7 +1912,6 @@
                         read = userHasReadPermission (cellData, userId)?"1":"0";
                         write = userHasWritePermission (cellData, userId)?"1":"0";
                         publish = userHasPublishPermission (cellData, userId)?"1":"0";
-                        workflowMandatory = cellData["workflowMandatory"];
                         contentStructureType = cellData["contentStructureType"];
                         structure_id = cellData["structureInode"];
                         hasLiveVersion = cellData["hasLiveVersion"];
@@ -1977,7 +1975,7 @@
 							}
 						}
 
-						if (!live && (publish=="1") && (!deleted) && workflowMandatory=="false"){
+						if (!live && (publish=="1") && (!deleted) ){
                           if(structure_id == '<%=calendarEventSt.getInode() %>'){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
                           }else{
@@ -1985,7 +1983,7 @@
                           }
                         }
 
-                        if (working && publish=='1' && !deleted && workflowMandatory=="false") {
+                        if (working && publish=='1' && !deleted ) {
 				    		if(live) {
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"republishIcon\" onClick=\"_publishAsset('" + cellData.inode  + "');\"><%=LanguageUtil.get(pageContext, "Republish") %></div>";
 							} else {
@@ -1994,13 +1992,13 @@
 						}
 
 
-						if(enterprise && sendingEndpoints && workflowMandatory=="false") {
+						if(enterprise && sendingEndpoints ) {
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>', " + deleted + ");\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
 
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
 
-						if (cellData.allowUnpublishOfLiveVersion=="true" && workflowMandatory=="false"){
+						if (cellData.allowUnpublishOfLiveVersion=="true" ){
                           if(structure_id == '<%=calendarEventSt.getInode() %>'){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }else{
@@ -2008,7 +2006,7 @@
                           }
                         }
 
-						if (live && (publish=="1") && workflowMandatory=="false"){
+						if (live && (publish=="1")){
                           if(structure_id == '<%=calendarEventSt.getInode() %>'){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }else{
@@ -2019,7 +2017,7 @@
 						// END NEW CONTEXT MENU
 
 
-                        if ((!live) && working && (publish=="1") && workflowMandatory=="false" && hasLiveVersion!="true") {
+                        if ((!live) && working && (publish=="1") && hasLiveVersion!="true") {
                            if(structure_id == '<%=calendarEventSt.getInode() %>'){
                              if (!deleted){
                                     popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"_archiveAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
@@ -2034,7 +2032,7 @@
                             }
                            }
                         }
-                        if ((live || working) && (write=="1") && (!deleted) && workflowMandatory=="false"){
+                        if ((live || working) && (write=="1") && (!deleted)){
                           if(structure_id == '<%=calendarEventSt.getInode() %>'){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
                           }else{
@@ -2042,7 +2040,7 @@
                           }
                         }
 
-                        if (locked && (write=="1") && workflowMandatory=="false"){
+                        if (locked && (write=="1")){
                           if(structure_id == '<%=calendarEventSt.getInode() %>'){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }else{
@@ -2252,10 +2250,7 @@
 
         function userHasPublishPermission (contentlet, userId) {
 
-        		//disallow publishing if workflow is mandatory
-       	 		if(contentlet["workflowMandatory"] && contentlet["workflowMandatory"]!= "false"){
-       	 			return false;
-       	 		}
+
                 <%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
                         return true;
                 <%} %>

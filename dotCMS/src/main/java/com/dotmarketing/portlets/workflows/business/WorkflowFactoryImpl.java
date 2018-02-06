@@ -1288,7 +1288,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(scheme.getName());
 				db.addParam(scheme.getDescription());
 				db.addParam(scheme.isArchived());
-				db.addParam(scheme.isMandatory());
+				db.addParam(false);
 				db.addParam(scheme.getEntryActionId());
 				db.addParam(scheme.isDefaultScheme());
 				db.addParam(scheme.getModDate());
@@ -1298,7 +1298,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(scheme.getName());
 				db.addParam(scheme.getDescription());
 				db.addParam(scheme.isArchived());
-				db.addParam(scheme.isMandatory());
+				db.addParam(false);
 				db.addParam(scheme.getEntryActionId());
 				db.addParam(scheme.getModDate());
 				db.addParam(scheme.getId());

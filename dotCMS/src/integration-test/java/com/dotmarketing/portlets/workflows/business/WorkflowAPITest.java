@@ -9,13 +9,16 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,6 +26,8 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -31,11 +36,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -884,6 +893,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 action = APILocator.getWorkflowAPI()
                         .findAction(workflowScheme5Step1Action1.getId(),
                                 workflowScheme5Step1.getId(), billIntranet);
+                //the code shoud never get to this point
+                assertTrue(false);
             }catch (Exception e){
                 assertTrue(e instanceof DotSecurityException);
             }
@@ -899,6 +910,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 action = APILocator.getWorkflowAPI()
                         .findAction(workflowScheme5Step1Action1.getId(),
                                 workflowScheme5Step1.getId(), billIntranet);
+                //the code shoud never get to this point
+                assertTrue(false);
             }catch (Exception e){
                 assertTrue(e instanceof DotSecurityException);
             }
@@ -908,6 +921,197 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentletAPI.delete(testContentlet, user, false);
         }
 
+    }
+
+    /**
+     * This Test validate that a workflow step could not be deleted if depends of another step or
+     * has a contentlet related
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void issue5197() throws DotDataException, IOException, DotSecurityException{
+        WorkflowScheme ws = null;
+        WorkflowStep step1 = null;
+        WorkflowStep step2 = null;
+        WorkflowAction action1 = null;
+        WorkflowAction action2 = null;
+        ContentType st = null;
+        Contentlet contentlet1 = null;
+
+        try {
+            User adminUser = APILocator.getUserAPI()
+                    .loadByUserByEmail("admin@dotcms.com", user, false);
+            Role role = roleAPI.getUserRole(adminUser);
+
+            User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            Role anonymousRole = roleAPI.getUserRole(anonymousUser);
+
+		    /*
+		     * Create workflow scheme
+		     */
+            String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss");
+            addWorkflowScheme(schemeName);
+
+            ws = workflowAPI.findSchemeByName(schemeName);
+            Assert.assertTrue(UtilMethods.isSet(ws));
+
+            /*
+		     * Create scheme step1
+		     */
+            addWorkflowStep("Edit", 1, false, false, ws.getId());
+
+            List<WorkflowStep> steps = workflowAPI.findSteps(ws);
+            Assert.assertTrue(steps.size() == 1);
+            step1 = steps.get(0);
+
+            /*
+		     * Create scheme step2
+		     */
+            addWorkflowStep("Publish", 2, true, false, ws.getId());
+            steps = workflowAPI.findSteps(ws);
+            Assert.assertTrue(steps.size() == 2);
+            step2 = steps.get(1);
+
+            /*
+		     * Add action to scheme step1
+		     */
+            addWorkflowAction("Edit", 1,
+                    step2.getId(), false, step1.getId(), anonymousRole,
+                    ws.getId());
+
+            List<WorkflowAction> actions1 = workflowAPI.findActions(step1, user);
+            Assert.assertTrue(actions1.size() == 1);
+            action1 = actions1.get(0);
+
+		    /*
+		     * Add action to scheme step2
+		     */
+            addWorkflowAction("Publish", 1,
+                    step2.getId(), false, step2.getId(), anonymousRole,
+                    ws.getId());
+
+            List<WorkflowAction> actions2 = workflowAPI.findActions(step2, user);
+            Assert.assertTrue(actions2.size() == 1);
+            action2 = actions2.get(0);
+
+		    /*
+		     * Create structure and add workflow scheme
+		     */
+            st = insertContentType("Issue5197Structure",BaseContentType.CONTENT);
+            Structure contentTypeSt = new StructureTransformer(ContentType.class.cast(st))
+                    .asStructure();
+            Permission p = new Permission();
+            p.setInode(st.getPermissionId());
+            p.setRoleId(roleAPI.loadCMSAnonymousRole().getId());
+            p.setPermission(PermissionAPI.PERMISSION_READ);
+            permissionAPI.save(p, st, user, true);
+
+            p = new Permission();
+            p.setInode(st.getPermissionId());
+            p.setRoleId(roleAPI.loadCMSAnonymousRole().getId());
+            p.setPermission(PermissionAPI.PERMISSION_EDIT);
+            permissionAPI.save(p, st, user, true);
+
+            p = new Permission();
+            p.setInode(st.getPermissionId());
+            p.setRoleId(roleAPI.loadCMSAnonymousRole().getId());
+            p.setPermission(PermissionAPI.PERMISSION_PUBLISH);
+            permissionAPI.save(p, st, user, true);
+
+
+            List<WorkflowScheme> schemes = new ArrayList<>();
+            schemes.add(ws);
+            workflowAPI.saveSchemesForStruct(contentTypeSt, schemes);
+
+            /*
+		     * Create test content and set it up in scheme step
+		     */
+            contentlet1 = new Contentlet();
+            contentlet1.setContentTypeId(st.id());
+            contentlet1.setHost(defaultHost.getIdentifier());
+            contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet1.setStringProperty("title",
+                    "test5197-1" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+
+            contentlet1 = contentletAPI.checkin(contentlet1, user, false);
+            if (permissionAPI.doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_PUBLISH,user))
+                APILocator.getVersionableAPI().setLive(contentlet1);
+
+		    /*
+		     * Test that delete is not possible for step2
+		     * while has associated step or content
+		     */
+            contentlet1.setStringProperty("wfActionId", action1.getId());
+            contentlet1.setStringProperty("wfActionComments", "step1");
+            contentlet1.setStringProperty("wfActionAssign", role.getId());
+            workflowAPI.fireWorkflowNoCheckin(contentlet1, user);
+
+            contentlet1.setStringProperty("wfActionId", action2.getId());
+            contentlet1.setStringProperty("wfActionComments", "step2");
+            contentlet1.setStringProperty("wfActionAssign", role.getId());
+            workflowAPI.fireWorkflowNoCheckin(contentlet1, user);
+
+            WorkflowStep currentStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertNotNull(currentStep);
+            Assert.assertTrue(currentStep.getId().equals(step2.getId()));
+
+		    /*
+		     * Validate that step2 could not be deleted
+		     */
+            try {
+                workflowAPI.deleteStep(step2);
+            } catch (Exception e) {
+			/*
+			 * Should enter here with this exception
+			 * </br> <b> Step : 'Publish' is being referenced by </b> </br></br> Step : 'Edit' ->  Action : 'Edit' </br></br>
+			 */
+            }
+            Assert.assertTrue(UtilMethods.isSet(workflowAPI.findStep(step2.getId())));
+		    /*
+		     * Validate correct deletion of step1
+		     */
+            workflowAPI.deleteStep(step1);
+
+		    /*
+		     * Validate that the step 1 was deleted from the scheme
+		     */
+            steps = workflowAPI.findSteps(ws);
+            Assert.assertTrue(steps.size() == 1);
+            Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
+
+		    /*
+		     * Validate that step2 could not be deleted
+		     */
+            try {
+                workflowAPI.deleteStep(step2);
+            } catch (Exception e) {
+			/*
+			 * Should enter here with this exception
+			 * </br> <b> Step : 'Publish' is being referenced by: X Contentlet(s) </br></br>
+			 */
+            }
+            currentStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertNotNull(currentStep);
+            Assert.assertTrue(currentStep.getId().equals(step2.getId()));
+
+		    /*
+		     * Validate that step2 is not deleted
+		     */
+            steps = workflowAPI.findSteps(ws);
+            Assert.assertTrue(steps.size() == 1);
+            Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
+
+        }finally {
+		    /*
+		     * Clean test
+		     */
+            APILocator.getContentletAPI().delete(contentlet1, user, false);
+            contentTypeAPI.delete(st);
+            workflowAPI.deleteStep(step2);
+            workflowAPI.deleteScheme(ws);
+        }
     }
 
     /**
@@ -1090,7 +1294,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         contentTypeAPI.delete(contentType);
         contentTypeAPI.delete(contentType2);
-        //contentTypeAPI.delete(contentType3);
+        contentTypeAPI.delete(contentType3);
         try {
             //Deleting workflow 1
             workflowAPI.deleteAction(workflowScheme1Step1Action1);
