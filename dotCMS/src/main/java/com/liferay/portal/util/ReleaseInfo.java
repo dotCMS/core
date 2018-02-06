@@ -26,10 +26,7 @@ import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import com.liferay.util.GetterUtil;
 
@@ -45,7 +42,7 @@ public final class ReleaseInfo {
 
 
 
-    private final Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "codename",
+    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "codename",
             "UNVERSIONED", "build", "0", "date", "March 6 2009");
 
     protected ReleaseInfo() {
@@ -55,7 +52,7 @@ public final class ReleaseInfo {
     private void load() {
 
 
-        Properties props = new Properties();
+        final Properties props = new Properties();
 
         try {
             URL url = this.getClass().getClassLoader().getResource("release.properties");
@@ -63,12 +60,17 @@ public final class ReleaseInfo {
         } catch (IOException e) {
             Logger.error(ReleaseInfo.class, "IOException: " + e.getMessage(), e);
         }
+
+        final Map<String, String> tempValuesMap = new HashMap<>(values);
+
         for (String key : values.keySet()) {
             String value = props.getProperty("dotcms.release." + key);
             if (value != null && !value.startsWith("${")) {
-                values.put(key, value);
+                tempValuesMap.put(key, value);
             }
         }
+
+        values = ImmutableMap.copyOf(tempValuesMap);
     }
 
     private final static ReleaseInfo instance = new ReleaseInfo();
