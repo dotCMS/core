@@ -192,6 +192,8 @@ public class SiteSearchWebAPI implements ViewTool {
     /**
      * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
      * Search.
+     *
+     * @deprecated use ES Aggregations instead
      */
     public class InternalWrapperCountDateHistogramFacet extends Facet {
 
@@ -234,6 +236,8 @@ public class SiteSearchWebAPI implements ViewTool {
     /**
      * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
      * Search.
+     *
+     * @deprecated use ES Aggregations instead
      */
     public class InternalWrapperStringTermsFacet extends Facet {
 
@@ -274,6 +278,9 @@ public class SiteSearchWebAPI implements ViewTool {
         }
     }
 
+    /**
+     * @deprecated use ES Aggregations instead
+     */
     public class Facet {
 
         private String name;
