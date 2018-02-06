@@ -1,12 +1,11 @@
 package com.dotmarketing.cms.myaccount.struts;
 
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotmarketing.util.UtilMethods;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 
 @Deprecated
 public class MyAccountForm extends ActionForm

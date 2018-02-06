@@ -5,7 +5,9 @@ import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -27,6 +29,15 @@ public class WorkflowProcessor {
 	List<WorkflowHistory> history;
 	String workflowMessage;
 	List<WorkflowActionClass> actionClasses;
+	ContentletDependencies    contentletDependencies;
+
+	public ContentletDependencies getContentletDependencies() {
+		return contentletDependencies;
+	}
+
+	public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
+		this.contentletDependencies = contentletDependencies;
+	}
 
 	public List<WorkflowActionClass> getActionClasses() {
 		return actionClasses;
@@ -112,15 +123,8 @@ public class WorkflowProcessor {
 				}
 			}
 
-			if (null == action) {
-				if (null != scheme && scheme.isMandatory()) {
-					throw new DotWorkflowException(LanguageUtil
-							.get(user, "message.workflow.error.mandatory.action.type")
-							+ contentlet.getStructure().getName());
-				}
-
+			if (null == action)
 				return;
-			}
 
 			if(action.requiresCheckout()){
 				try {
@@ -147,12 +151,17 @@ public class WorkflowProcessor {
 				workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
 			}
 
+			if (null == contentStep) {
+
+				contentStep = this.findFirstStepByScheme (action.getSchemeId());
+			}
+
 			nextStep      = (action.isNextStepCurrentStep())?
 					contentStep:getWorkflowAPI().findStep(action.getNextStep());
 			step          = contentStep;
 			actionClasses = getWorkflowAPI().findActionClasses(action);
 			if(null == scheme) {
-                scheme = getWorkflowAPI().findScheme(step.getSchemeId());
+                scheme = getWorkflowAPI().findScheme(action.getSchemeId());
             }
 
 			if(task != null && UtilMethods.isSet(task.getId())){
@@ -162,6 +171,11 @@ public class WorkflowProcessor {
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
 		}
+	}
+
+	private WorkflowStep findFirstStepByScheme(final String schemeId) throws DotDataException {
+
+		return getWorkflowAPI().findSteps(getWorkflowAPI().findScheme(schemeId)).stream().findFirst().orElse(null);
 	}
 
 	/**
@@ -174,7 +188,7 @@ public class WorkflowProcessor {
 
 		if (null == action) {
 			try {
-				action = getWorkflowAPI().findAction(workflowActionId, this.user);
+				action = getWorkflowAPI().findActionRespectingPermissions(workflowActionId, contentlet, this.user);
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
 						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")

@@ -15,13 +15,12 @@
  */
 package com.dotmarketing.util.diff.html.ancestor.tagtostring;
 
-import java.util.ResourceBundle;
-
 import com.dotmarketing.util.diff.html.ancestor.ChangeText;
 import com.dotmarketing.util.diff.html.ancestor.TagChangeSematic;
 import com.dotmarketing.util.diff.html.dom.TagNode;
-import com.dotcms.repackage.org.xml.sax.Attributes;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import java.util.ResourceBundle;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class AnchorToString extends TagToString {
 

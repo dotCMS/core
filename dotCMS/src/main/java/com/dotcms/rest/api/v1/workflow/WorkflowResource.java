@@ -1,7 +1,14 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -11,9 +18,15 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,15 +34,19 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.google.common.annotations.Beta;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.IntStream;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -37,9 +54,10 @@ import java.util.stream.IntStream;
 public class WorkflowResource {
 
     private final WorkflowHelper workflowHelper;
-    private final WebResource webResource;
-    private final WorkflowAPI workflowAPI;
-    private final ResponseUtil responseUtil;
+    private final WebResource    webResource;
+    private final WorkflowAPI    workflowAPI;
+    private final ResponseUtil   responseUtil;
+    private final WorkflowImportExportUtil workflowImportExportUtil;
 
 
     /**
@@ -49,6 +67,7 @@ public class WorkflowResource {
         this(WorkflowHelper.getInstance(),
                 APILocator.getWorkflowAPI(),
                 ResponseUtil.INSTANCE,
+                WorkflowImportExportUtil.getInstance(),
                 new WebResource());
     }
 
@@ -56,12 +75,15 @@ public class WorkflowResource {
     protected WorkflowResource(final WorkflowHelper workflowHelper,
                                final WorkflowAPI workflowAPI,
                                final ResponseUtil responseUtil,
+                               final WorkflowImportExportUtil workflowImportExportUtil,
                                final WebResource webResource) {
 
-        this.workflowHelper = workflowHelper;
-        this.webResource    = webResource;
-        this.responseUtil   = responseUtil;
-        this.workflowAPI    = workflowAPI;
+        this.workflowHelper           = workflowHelper;
+        this.webResource              = webResource;
+        this.responseUtil             = responseUtil;
+        this.workflowAPI              = workflowAPI;
+        this.workflowImportExportUtil = workflowImportExportUtil;
+
     }
 
     /**
@@ -481,6 +503,8 @@ public class WorkflowResource {
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
             response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -625,10 +649,17 @@ public class WorkflowResource {
     } // deleteAction
     
     /**
+     * Todo: change the signature to be align with the rest implementation such as: reorderAction
      * Change the order of the steps in a scheme
+<<<<<<< HEAD
+     * @param request                           HttpServletRequest
+     * @param stepId                            String stepid to reorder
+     * @param order                             int    order
+=======
      * @param request HttpServletRequest
      * @param stepId  String step id
      * @param order   int    order for the step
+>>>>>>> origin/master
      * @return Response
      */
     @PUT
@@ -639,7 +670,6 @@ public class WorkflowResource {
     public final Response reorderStep(@Context final HttpServletRequest request,
                                         @PathParam("stepId")   final String stepId, 
                                         @PathParam("order")    final int order) {
-
         this.webResource.init
                 (null, true, request, true, null);
         Response response;
@@ -664,7 +694,6 @@ public class WorkflowResource {
                     ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-
         return response;
     } // reorderStep
     
@@ -715,5 +744,53 @@ public class WorkflowResource {
 
         return response;
     } // reorderAction
+
+
+    /**
+     * Returns a set of actions associated to the schemeId
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @GET
+    @Path("/schemes/{schemeId}/export")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response exportScheme(@Context final HttpServletRequest request,
+                                              @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        WorkflowSchemeImportExportObject exportObject;
+        WorkflowScheme                   scheme;
+        Locale                           locale;
+
+        try {
+
+            Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
+            scheme       = this.workflowAPI.findScheme(schemeId);
+            exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
+            response     = Response.ok(new ResponseEntityView(exportObject)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "The Scheme does not exist, id: " + schemeId, e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-does-not-exists-scheme-id", schemeId);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findActionsByScheme, schemeId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // exportScheme.
 
 } // E:O:F:WorkflowResource.

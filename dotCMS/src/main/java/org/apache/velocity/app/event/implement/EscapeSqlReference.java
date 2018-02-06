@@ -19,7 +19,7 @@ package org.apache.velocity.app.event.implement;
  * under the License.    
  */
 
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Escapes the characters in a String to be suitable to pass to an SQL query.

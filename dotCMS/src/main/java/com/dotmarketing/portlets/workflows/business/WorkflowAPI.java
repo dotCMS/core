@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -241,10 +242,31 @@ public interface WorkflowAPI {
 
 
 
+	/**
+	 * Finds an action by Id and checking the user permissions over the workflow portlet.
+	 * The action will be validated against the user permissions.
+	 * @param id String action id
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Finds an action associated to the steps.
+	 * Finds an action by Id and checking the user permissions over the permissionable.
+	 * The action will be validated against the user permissions.
+	 * @param id String action id
+	 * @param permissionable   Permissionable Content/Content Type against who is going to be validated the permissions
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public WorkflowAction findActionRespectingPermissions(String id, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds an action associated to the steps and user permissions over the workflow portlet.
 	 * The action will be validated against the user permissions.
 	 * @param actionId String action id
 	 * @param stepId   String step  id
@@ -254,6 +276,19 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds an action associated to the steps and the user permissions over the permissionable.
+	 * The action will be validated against the user permissions.
+	 * @param actionId String action id
+	 * @param stepId   String step  id
+	 * @param permissionable Permissionable Content/Content Type against who is going to be validated the permissions
+	 * @param user     User   the user that makes the request
+	 * @return WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public WorkflowAction findActionRespectingPermissions(String actionId, String stepId, Permissionable permissionable, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
@@ -410,6 +445,14 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException,DotWorkflowException;
+
+	/**
+	 * Fires a workflow for a contentlet with a contentlet dependencies, returning the final contentlet processed.
+	 * @param contentlet {@link Contentlet}
+	 * @param dependencies {@link ContentletDependencies}
+	 * @return Contentlet
+	 */
+	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;

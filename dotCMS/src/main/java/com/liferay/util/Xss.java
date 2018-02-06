@@ -22,14 +22,12 @@
 
 package com.liferay.util;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
+import java.util.HashSet;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * <a href="Xss.java.html"><b><i>View Source</i></b></a>

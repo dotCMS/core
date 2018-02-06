@@ -1,16 +1,9 @@
 package com.dotmarketing.portlets.structure.action;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -21,7 +14,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
-
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -34,6 +26,12 @@ import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 public class EditRelationshipAction extends DotPortletAction {
 	

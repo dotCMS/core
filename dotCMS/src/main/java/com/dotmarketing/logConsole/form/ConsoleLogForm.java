@@ -1,6 +1,6 @@
 package com.dotmarketing.logConsole.form;
 
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
+import org.apache.struts.validator.ValidatorForm;
 
 public class ConsoleLogForm extends ValidatorForm{
     

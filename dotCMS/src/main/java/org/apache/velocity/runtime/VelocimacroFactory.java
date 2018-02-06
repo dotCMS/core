@@ -19,16 +19,15 @@ package org.apache.velocity.runtime;
  * under the License.    
  */
 
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotmarketing.util.Logger;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import java.util.ArrayList;
-
-import com.dotcms.rendering.velocity.services.DotResourceLoader;
-import com.dotcms.repackage.bsh.This;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
@@ -37,8 +36,6 @@ import org.apache.velocity.runtime.directive.Macro;
 import org.apache.velocity.runtime.directive.VelocimacroProxy;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.Node;
-
-import com.dotmarketing.util.Logger;
 
 
 /**

@@ -1,16 +1,6 @@
 package com.dotmarketing.db;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import junit.framework.Assert;
-import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -20,6 +10,14 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import junit.framework.Assert;
+import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class HibernateUtilTest {
     

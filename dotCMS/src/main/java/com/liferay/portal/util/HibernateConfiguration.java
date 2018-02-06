@@ -22,17 +22,15 @@
 
 package com.liferay.portal.util;
 
-import java.io.InputStream;
-
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.mapping.Table;
-
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.LowercaseNamingStrategy;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringUtil;
 import com.liferay.util.SystemProperties;
 import com.liferay.util.dao.hibernate.SessionConfiguration;
+import java.io.InputStream;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.mapping.Table;
 
 /**
  * <a href="HibernateConfiguration.java.html"><b><i>View Source</i></b></a>

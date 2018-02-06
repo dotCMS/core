@@ -19,16 +19,14 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
 import java.io.InputStream;
-
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.ExceptionUtils;
-
-import com.dotmarketing.util.Logger;
 
 /**
  *  ClasspathResourceLoader is a simple loader that will load

@@ -41,9 +41,10 @@ public class ResponseUtil implements Serializable {
                                      final Response.Status status,
                                      final Locale locale,
                                      final String userId,
-                                     final String messageKey) {
+                                     final String messageKey,
+                                     final Object... arguments) {
 
-        return ErrorResponseHelper.INSTANCE.getErrorResponse(status, locale, messageKey);
+        return ErrorResponseHelper.INSTANCE.getErrorResponse(status, locale, messageKey, arguments);
     }
 
     /**

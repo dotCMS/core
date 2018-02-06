@@ -30,6 +30,9 @@
                 <div dojoAttachPoint="contentWrapper">
                     <div class="portlet-toolbar">
                         <div dojoAttachPoint="matchingResultsDiv" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
+                        <div dojoAttachPoint="addContentletButton" class="portlet-toolbar__add-contentlet" style="display: none">
+                            <button dojoType="dijit.form.Button" onClick="addNewContentlet()"><%= LanguageUtil.get(pageContext, "Add-New-Content") %></button>
+                        </div>
                         <div dojoAttachPoint="relateDiv">
                             <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
                         </div>

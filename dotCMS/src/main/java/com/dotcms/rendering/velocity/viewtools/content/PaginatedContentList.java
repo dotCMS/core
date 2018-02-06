@@ -1,7 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.content;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.util.PaginatedArrayList;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class PaginatedContentList<E> extends PaginatedArrayList<E> {
 

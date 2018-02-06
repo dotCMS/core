@@ -2,11 +2,7 @@ package com.dotcms.rest.api.v1.site;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import java.io.Serializable;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.PUT;
@@ -17,21 +13,31 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+
+import java.io.Serializable;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+
 import com.liferay.portal.model.User;
 
 /**
@@ -102,6 +108,9 @@ public class SiteResource implements Serializable {
             Host currentSite = siteHelper.getCurrentSite(req, user);
             response = Response.ok( new ResponseEntityView(currentSite) ).build();
         } catch (Exception e) {
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             // Unknown error, so we report it as a 500
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -136,6 +145,9 @@ public class SiteResource implements Serializable {
                     map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
                             SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -183,7 +195,9 @@ public class SiteResource implements Serializable {
                     Response.status(Response.Status.NOT_FOUND).build();
 
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
             response = ExceptionMapperUtil.createResponse(e,
                     Response.Status.INTERNAL_SERVER_ERROR);
         }

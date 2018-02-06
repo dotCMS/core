@@ -1,8 +1,6 @@
 package com.dotmarketing.common.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -26,6 +24,8 @@ import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Util class for sanitize, tokenize, etc

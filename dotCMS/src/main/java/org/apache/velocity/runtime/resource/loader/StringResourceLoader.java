@@ -19,14 +19,15 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.
  */
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import com.dotmarketing.util.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
@@ -34,8 +35,6 @@ import org.apache.velocity.runtime.resource.util.StringResource;
 import org.apache.velocity.runtime.resource.util.StringResourceRepository;
 import org.apache.velocity.runtime.resource.util.StringResourceRepositoryImpl;
 import org.apache.velocity.util.ClassUtils;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * Resource loader that works with Strings. Users should manually add
@@ -208,7 +207,7 @@ public class StringResourceLoader extends ResourceLoader
 
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
      */
     public void init(final ExtendedProperties configuration)
     {

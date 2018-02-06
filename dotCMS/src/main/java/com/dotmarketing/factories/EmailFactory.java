@@ -1,7 +1,6 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -54,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;

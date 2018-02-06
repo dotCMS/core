@@ -11,7 +11,7 @@
    referenced in the struts-config.xml under the plug-in element
    for the ValidatorPlugIn.
 
-      <plug-in className="com.dotcms.repackage.org.apache.struts.validator.ValidatorPlugIn">
+      <plug-in className="org.apache.struts.validator.ValidatorPlugIn">
         <set-property property="pathnames" value="/WEB-INF/validator-rules.xml,
                                                   /WEB-INF/validation.xml"/>
       </plug-in>
@@ -52,84 +52,84 @@
    <global>
 
       <validator name="required"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateRequired"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
                   msg="errors.required"/>
 
       <validator name="requiredif"
-                 classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+                 classname="org.apache.struts.validator.FieldChecks"
                  method="validateRequiredIf"
                  methodParams="java.lang.Object,
-                               com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                               com.dotcms.repackage.org.apache.commons.validator.Field,
-                               com.dotcms.repackage.org.apache.struts.action.ActionMessages,
-                               com.dotcms.repackage.org.apache.commons.validator.Validator,
+                               org.apache.commons.validator.ValidatorAction,
+                               org.apache.commons.validator.Field,
+                               org.apache.struts.action.ActionMessages,
+                               org.apache.commons.validator.Validator,
                                javax.servlet.http.HttpServletRequest"
                  msg="errors.required"/>
 
       <validator name="validwhen"
           msg="errors.required"
-                 classname="com.dotcms.repackage.org.apache.struts.validator.validwhen.ValidWhen"
+                 classname="org.apache.struts.validator.validwhen.ValidWhen"
                  method="validateValidWhen"
                  methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
-                       com.dotcms.repackage.org.apache.commons.validator.Validator,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.Validator,
                        javax.servlet.http.HttpServletRequest"/>
 
 
       <validator name="minlength"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateMinLength"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.minlength"
-           jsFunction="com.dotcms.repackage.org.apache.commons.validator.javascript.validateMinLength"/>
+           jsFunction="org.apache.commons.validator.javascript.validateMinLength"/>
 
 
       <validator name="maxlength"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateMaxLength"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.maxlength"
-           jsFunction="com.dotcms.repackage.org.apache.commons.validator.javascript.validateMaxLength"/>
+           jsFunction="org.apache.commons.validator.javascript.validateMaxLength"/>
 
 
 
       <validator name="mask"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateMask"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.invalid"/>
 
 
       <validator name="byte"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateByte"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.byte"
@@ -137,12 +137,12 @@
 
 
       <validator name="short"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateShort"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.short"
@@ -150,12 +150,12 @@
 
 
       <validator name="integer"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateInteger"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.integer"
@@ -164,48 +164,48 @@
 
 
       <validator name="long"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateLong"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.long"/>
 
 
       <validator name="float"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateFloat"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.float"
        jsFunctionName="FloatValidations"/>
 
       <validator name="double"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateDouble"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.double"/>
 
 
       <validator name="date"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateDate"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.date"
@@ -213,59 +213,59 @@
 
 
       <validator name="intRange"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateIntRange"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends="integer"
                   msg="errors.range"/>
 
 
       <validator name="floatRange"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateFloatRange"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends="float"
                   msg="errors.range"/>
 
 
       <validator name="creditCard"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateCreditCard"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.creditcard"/>
 
 
       <validator name="email"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateEmail"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.email"/>
 
       <validator name="url"
-            classname="com.dotcms.repackage.org.apache.struts.validator.FieldChecks"
+            classname="org.apache.struts.validator.FieldChecks"
                method="validateUrl"
          methodParams="java.lang.Object,
-                       com.dotcms.repackage.org.apache.commons.validator.ValidatorAction,
-                       com.dotcms.repackage.org.apache.commons.validator.Field,
-                       com.dotcms.repackage.org.apache.struts.action.ActionMessages,
+                       org.apache.commons.validator.ValidatorAction,
+                       org.apache.commons.validator.Field,
+                       org.apache.struts.action.ActionMessages,
                        javax.servlet.http.HttpServletRequest"
               depends=""
                   msg="errors.url"/>
@@ -280,7 +280,7 @@
          methodParams=""
               depends=""
                   msg=""
-           jsFunction="com.dotcms.repackage.org.apache.commons.validator.javascript.validateUtilities"/>
+           jsFunction="org.apache.commons.validator.javascript.validateUtilities"/>
 
    </global>
 

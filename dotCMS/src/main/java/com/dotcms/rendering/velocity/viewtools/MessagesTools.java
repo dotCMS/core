@@ -1,8 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
+
 import java.util.List;
 import java.util.Locale;
-
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import org.apache.struts.util.MessageResources;
 import org.apache.velocity.tools.struts.MessageResourcesTool;
 
 /**

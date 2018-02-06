@@ -1,24 +1,11 @@
 package com.dotmarketing.portlets.files.struts;
 
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
@@ -26,6 +13,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.apache.struts.validator.ValidatorForm;
 
 /** @author Hibernate CodeGenerator */
 public class FileForm extends ValidatorForm {

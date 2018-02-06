@@ -1,5 +1,16 @@
 package com.dotmarketing.business.cache.provider.h22;
 
+import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
+import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -19,30 +30,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
-import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotcms.util.CloseUtils;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import org.apache.commons.collections.map.LRUMap;
 
 public class H22Cache extends CacheProvider {
 

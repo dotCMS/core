@@ -24,7 +24,6 @@ package com.liferay.util;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.company.CompanyAPI;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -39,14 +38,13 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.WebKeys;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
+import java.util.Locale;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Locale;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.struts.Globals;
 
 /**
  * <a href="LocaleUtil.java.html"><b><i>View Source</i></b></a>

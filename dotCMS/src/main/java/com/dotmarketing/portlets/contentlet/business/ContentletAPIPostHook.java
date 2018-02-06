@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -726,7 +727,9 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles,Contentlet returnValue){}
-	
+
+	public default void checkin(Contentlet contentlet, ContentletDependencies contentletDependencies, Contentlet c) {}
+
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
 	 * @param contentlet - The inode of your contentlet must be 0. 
@@ -1426,5 +1429,6 @@ public interface ContentletAPIPostHook {
 	 * @throws DotDataException
 	 */
 	public default void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{}
+
 
 }

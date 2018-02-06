@@ -1,22 +1,20 @@
 package com.dotcms.uuid.shorty;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList.Builder;
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Integration tests for the Shorty ID API class.

@@ -1,27 +1,31 @@
 package com.dotcms.contenttype.model.field;
 
-import java.io.Serializable;
-import java.util.*;
-
-import org.elasticsearch.common.Nullable;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Derived;
-
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.elasticsearch.common.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Derived;
 
 
 @JsonTypeInfo(
@@ -55,6 +59,8 @@ import com.google.common.collect.ImmutableMap;
 	@Type(value = TextField.class),
 	@Type(value = TimeField.class),
 	@Type(value = WysiwygField.class),
+    @Type(value = RowField.class),
+    @Type(value = ColumnField.class),
 })
 public abstract class Field implements FieldIf, Serializable {
 

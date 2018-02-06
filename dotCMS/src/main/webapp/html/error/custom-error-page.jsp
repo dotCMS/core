@@ -9,8 +9,8 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-
 <%
+  out.clear();
   int status = response.getStatus();
   String title = LanguageUtil.get(pageContext, status + "-page-title");
   String body = LanguageUtil.get(pageContext, status + "-body1");

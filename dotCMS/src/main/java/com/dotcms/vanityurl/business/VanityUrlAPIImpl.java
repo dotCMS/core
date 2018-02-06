@@ -2,13 +2,17 @@ package com.dotcms.vanityurl.business;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import static com.dotcms.util.VanityUrlUtil.isValidRegex;
+import static com.dotcms.util.VanityUrlUtil.processExpressions;
+import static java.util.stream.IntStream.rangeClosed;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
@@ -39,12 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
-import static com.dotcms.util.VanityUrlUtil.isValidRegex;
-import static com.dotcms.util.VanityUrlUtil.processExpressions;
-import static java.util.stream.IntStream.rangeClosed;
+import org.apache.commons.collections.keyvalue.MultiKey;
+import org.elasticsearch.indices.IndexMissingException;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.

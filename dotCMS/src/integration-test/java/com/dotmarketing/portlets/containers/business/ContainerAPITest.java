@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.HibernateUtil;
@@ -20,6 +19,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
 public class ContainerAPITest extends ContentletBaseTest {

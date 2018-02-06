@@ -2,42 +2,74 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.util.ConversionUtils;
-import com.dotmarketing.business.*;
+
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class WorkflowFactoryImpl implements WorkFlowFactory {
+import org.apache.commons.beanutils.BeanUtils;
 
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
+
+
+/**
+ * Implementation class for the {@link WorkFlowFactory}.
+ *
+ * @author root
+ * @since Mar, 22, 2012
+ */
+
+public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
 
+	/**
+	 * Creates an instance of the {@link WorkFlowFactory}.
+	 */
 	public WorkflowFactoryImpl() {
-
 		this.sql   = WorkflowSQL.getInstance();
 		this.cache = CacheLocator.getWorkFlowCache();
 	}
 
+	@Override
 	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException {
 		final WorkFlowTaskFiles taskFile = new WorkFlowTaskFiles();
 		taskFile.setWorkflowtaskId(task.getId());
@@ -45,11 +77,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		HibernateUtil.save(taskFile);
 	}
 
+	/**
+	 *
+	 * @param obj
+	 * @param map
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private Object convert(Object obj, Map<String, Object> map) throws IllegalAccessException, InvocationTargetException {
 		BeanUtils.copyProperties(obj, map);
 		return obj;
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowAction convertAction(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowAction action = new WorkflowAction();
 		row.put("schemeId", row.get("scheme_id"));
@@ -65,7 +112,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return action;
 	}
 
-
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowActionClass convertActionClass(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowActionClass actionClass = new WorkflowActionClass();
 
@@ -77,6 +130,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actionClass;
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowActionClassParameter convertActionClassParameter(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowActionClassParameter param = new WorkflowActionClassParameter();
 		row.put("actionClassId", row.get("workflow_action_class_id"));
@@ -84,6 +144,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return param;
 	}
 
+	/**
+	 *
+	 * @param rs
+	 * @param clazz
+	 * @return
+	 * @throws DotDataException
+	 */
 	private List convertListToObjects(List<Map<String, Object>> rs, Class clazz) throws DotDataException {
 		final List ret = new ArrayList();
 		try {
@@ -97,6 +164,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return ret;
 	}
 
+	/**
+	 *
+	 * @param map
+	 * @param clazz
+	 * @return
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
 
 		final Object obj = clazz.newInstance();
@@ -118,6 +194,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowScheme convertScheme(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowScheme scheme = new WorkflowScheme();
 		row.put("entryActionId", row.get("entry_action_id"));
@@ -129,6 +212,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowStep convertStep(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowStep step = new WorkflowStep();
 		row.put("myOrder", row.get("my_order"));
@@ -141,6 +231,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
 	private WorkflowHistory convertHistory(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowHistory scheme = new WorkflowHistory();
 		row.put("actionId", row.get("workflow_action_id"));
@@ -150,27 +247,33 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+	@Override
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep step) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
 	}
 
+	@Override
 	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction action) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
 	}
 
+	@Override
 	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass actionClass) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
 	}
 
+	@Override
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme scheme) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
 	}
 
+	@Override
 	public int countTasks(WorkflowSearcher searcher) throws DotDataException {
 		DotConnect dc = getWorkflowSqlQuery(searcher, true);
 		return dc.getInt("mycount");
 	}
 
+	@Override
 	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
 
 		Logger.debug(this,
@@ -208,6 +311,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	@Override
 	public void deleteAction(final WorkflowAction action, final WorkflowStep step) throws DotDataException, AlreadyExistException {
 
 		Logger.debug(this, "Deleting the action: " + action.getId() +
@@ -241,6 +345,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	} // deleteActions.
 
+	@Override
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		String actionId = actionClass.getActionId();
 		final DotConnect db = new DotConnect();
@@ -258,6 +363,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	/**
+	 *
+	 * @param action
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws AlreadyExistException
+	 */
 	public void deleteActionClassByAction(WorkflowAction action) throws DotDataException, DotSecurityException, AlreadyExistException {
 
 		new DotConnect().setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION).addParam(action.getId()).loadResult();
@@ -267,6 +379,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	@Override
 	public void deleteComment(WorkflowComment comment) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL("delete from workflow_comment where id = ?");
@@ -274,6 +387,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
+	@Override
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 		String schemeId = step.getSchemeId();
 		final DotConnect db = new DotConnect();
@@ -297,6 +411,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	@Override
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
 		int amount = 0;
 		final DotConnect db = new DotConnect();
@@ -309,6 +424,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return amount;
 	}
 
+	@Override
 	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
@@ -322,6 +438,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL("delete from workflow_history where id = ?");
@@ -329,6 +446,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
+	@Override
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();
 
@@ -377,6 +495,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public WorkflowAction findAction(String id) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION);
@@ -388,6 +507,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public WorkflowAction findAction(final String actionId,
 									 final String stepId) throws DotDataException {
 
@@ -402,6 +522,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public WorkflowActionClass findActionClass(String id) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASS);
@@ -414,6 +535,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION);
@@ -428,6 +550,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (WorkflowActionClassParameter) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class).get(0);
 	}
 
+	@Override
 	public List<WorkflowAction> findActions(final WorkflowStep step) throws DotDataException {
 
 		List<WorkflowAction> actions = cache.getActions(step);
@@ -443,6 +566,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actions;
 	}
 
+	@Override
 	public List<WorkflowAction> findActions(final WorkflowScheme scheme) throws DotDataException {
 
 		List<WorkflowAction> actions = cache.getActions(scheme);
@@ -463,6 +587,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actions;
 	} // findActions.
 
+	@Override
 	public WorkflowScheme findDefaultScheme() throws DotDataException {
 		WorkflowScheme scheme = cache.getDefaultScheme();
 		if (scheme == null) {
@@ -484,6 +609,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+	@Override
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
@@ -498,6 +624,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public WorkflowScheme findScheme(String id) throws DotDataException {
 		WorkflowScheme scheme = cache.getScheme(id);
 		if (scheme == null) {
@@ -507,13 +634,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(id);
 				scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
 				cache.add(scheme);
+			} catch (final IndexOutOfBoundsException e) {
+				throw new DoesNotExistException(e.getMessage(), e);
 			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage(),e);
+				throw new DotDataException(e.getMessage(), e);
 			}
 		}
 		return scheme;
 	}
 
+	@Override
 	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
@@ -545,6 +675,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_SCHEMES);
@@ -553,6 +684,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
 	}
 
+	@Override
 	public WorkflowStep findStep(String id) throws DotDataException {
 		WorkflowStep step = cache.getStep(id);
 		if (step == null) {
@@ -565,6 +697,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
+	@Override
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
         List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
@@ -619,6 +752,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return steps;
 	}
 
+	@Override
 	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
 	    boolean exist = false;
 	    for(WorkflowScheme scheme : schemes){
@@ -630,6 +764,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         return exist;
     }
 
+	@Override
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_STEPS_BY_SCHEME);
@@ -638,10 +773,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public WorkflowTask findTaskByContentlet(final Contentlet contentlet) throws DotDataException {
-
-
-		if(cache.is404(contentlet)) {
+		if (!UtilMethods.isSet(contentlet.getIdentifier()) || cache.is404(contentlet)) {
 			return new WorkflowTask();
 		}
 
@@ -666,6 +800,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return task;
 	}
 
+	@Override
 	public WorkflowComment findWorkFlowCommentById(String id) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowComment.class);
 		hu.setQuery("from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment where id = ?");
@@ -673,6 +808,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (WorkflowComment) hu.load();
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowComment.class);
@@ -681,6 +817,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (List<WorkflowComment>) hu.list();
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowHistory.class);
@@ -689,6 +826,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (List<WorkflowHistory>) hu.list();
 	}
 
+	@Override
 	public WorkflowHistory findWorkFlowHistoryById(String id) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowHistory.class);
 		hu.setQuery("from workflow_history in class com.dotmarketing.portlets.workflows.model.WorkflowHistory where id = ?");
@@ -696,6 +834,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (WorkflowHistory) hu.load();
 	}
 
+	@Override
 	public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
 		hu.setQuery("from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where id = ?");
@@ -726,6 +865,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return contents;
 	}
 
+	/**
+	 *
+	 * @param searcher
+	 * @param counting
+	 * @return
+	 * @throws DotDataException
+	 */
 	private DotConnect getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
 		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
@@ -847,6 +993,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException {
 		final String query = "delete from workflowtask_files where workflowtask_id = ? and file_inode = ?";
 		final DotConnect dc = new DotConnect();
@@ -857,6 +1004,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	/**
+	 *
+	 * @param actionId
+	 * @return
+	 */
 	public boolean existsAction (final String actionId) {
 
 		boolean exists = false;
@@ -871,12 +1023,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return exists;
 	} // existsAction.
 
+	@Override
 	public void saveAction(final WorkflowAction workflowAction,
 						   final WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException {
 
 		this.saveAction(workflowAction, workflowStep, 0);
 	} // saveAction
 
+	@Override
 	public void saveAction(final WorkflowAction workflowAction,
 						   final WorkflowStep workflowStep,
 						   final int order)  throws DotDataException,AlreadyExistException {
@@ -900,6 +1054,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	} // saveAction.
 
+	@Override
 	public void updateOrder(final WorkflowAction workflowAction,
 							final WorkflowStep workflowStep,
 							final int order)  throws DotDataException,AlreadyExistException {
@@ -923,12 +1078,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	} // updateOrder.
 
+	/**
+	 *
+	 * @param workflowAction
+	 * @return
+	 */
 	private String getNextStep (final WorkflowAction workflowAction) {
 
 		return (!UtilMethods.isSet(workflowAction.getNextStep()))?
 				WorkflowAction.CURRENT_STEP: workflowAction.getNextStep();
 	}
 
+	@Override
 	public void saveAction(final WorkflowAction action) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
@@ -989,6 +1150,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	/**
+	 *
+	 * @param action
+	 * @return
+	 * @throws DotDataException
+	 */
 	private List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
 
 		final ImmutableList.Builder<WorkflowStep> stepsBuilder =
@@ -1007,6 +1174,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return stepsBuilder.build();
 	}
 
+	/**
+	 *
+	 * @param stepId
+	 * @return
+	 */
 	private WorkflowStep buildProxyWorkflowStep (final String stepId) {
 
 		final WorkflowStep proxyWorkflowStep =
@@ -1017,7 +1189,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return proxyWorkflowStep;
 	}
 
-
+	@Override
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
@@ -1061,6 +1233,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	@Override
 	public void saveComment(WorkflowComment comment) throws DotDataException {
 		if(InodeUtils.isSet(comment.getId())) {
 			boolean update=false;
@@ -1083,6 +1256,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
@@ -1137,6 +1311,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public void deleteSchemeForStruct(String struc) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
@@ -1153,6 +1328,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			return;
@@ -1190,6 +1366,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
 	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException {
 		List<String> ids = schemes.stream()
 				.map(scheme -> scheme.getId())
@@ -1198,6 +1375,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		this.saveSchemeIdsForContentType(contentTypeInode, ids);
 	}
 
+	@Override
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
@@ -1259,6 +1437,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
@@ -1301,6 +1480,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	@Override
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
 		if(InodeUtils.isSet(history.getId())) {
 			boolean update=false;
@@ -1322,15 +1502,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	/**
-	 * Saves a given WorkflowTask, if the task does not exist it will create a new one and if does exist
-	 * it will update the existing record.
-	 * <br/>
-	 * If the record does not exist and the given task have set an id the new record will be created with that id.
-	 *
-	 * @param task
-	 * @throws DotDataException
-	 */
+	@Override
 	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
 
 		if ( task.isNew() ) {
@@ -1353,6 +1525,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		cache.remove( task );
 	}
 
+	@Override
 	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
 		DotConnect dc = getWorkflowSqlQuery(searcher, false);
 		dc.setStartRow(searcher.getCount() * searcher.getPage());
@@ -1380,15 +1553,28 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return wfTasks;
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @param key
+	 * @return
+	 */
 	private String getStringValue(Map<String, Object> row, String key) {
 		Object value = row.get(key);
 		return (value == null) ? "" : value.toString();
 	}
 
+	/**
+	 *
+	 * @param row
+	 * @param key
+	 * @return
+	 */
 	private Long getLongValue(final Map<String, Object> row, final String key) {
 		return ConversionUtils.toLong(row.get(key), 0L);
 	}
-	// christian escalation
+
+	@Override
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
 
 		final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
@@ -1404,6 +1590,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
+	@Override
 	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
 
 		final DotConnect db = new DotConnect();
@@ -1419,7 +1606,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return (WorkflowHistory) this.convertListToObjects(db.loadObjectResults(), WorkflowHistory.class).get(0);
 
 	}
-	// christian escalation
 
 	@Override
 	public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
@@ -1471,17 +1657,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
-	/**
-	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
-	 * with the replacement user id 
-	 * @param userId User Identifier
-	 * @param userRoleId The role id of the user
-	 * @param replacementUserId The user id of the replacement user
-	 * @param replacementUserRoleId The role Id of the replacemente user
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
-	 */
+	@Override
 	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
 
@@ -1543,15 +1719,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	/**
-	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
-	 * with the replacement step id 
-	 * @param stepId Step Identifier
-	 * @param replacementStepId The step id of the replacement step
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
-	 */
+	@Override
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException {
 		DotConnect dc = new DotConnect();
 
@@ -1601,4 +1769,5 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
+
 }

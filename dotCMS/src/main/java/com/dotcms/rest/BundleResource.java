@@ -8,11 +8,9 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -22,6 +20,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringEscapeUtils;
 
 
 @Path("/bundle")
@@ -37,13 +36,13 @@ public class BundleResource {
      * @return
      * @throws DotStateException
      * @throws DotDataException
-     * @throws DotSecurityException
      * @throws JSONException
      */
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params )
+            throws DotDataException, JSONException {
 
 
         InitDataObject initData = webResource.init(params, true, request, true, null);

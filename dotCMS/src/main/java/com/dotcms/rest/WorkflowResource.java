@@ -13,10 +13,10 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -47,8 +47,7 @@ public class WorkflowResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response fireWorkflow(@Context HttpServletRequest request,
-			String json) throws JsonProcessingException, IOException,
-			DotContentletStateException, DotDataException, DotSecurityException {
+			String json) throws JsonProcessingException, IOException, DotDataException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonParams = mapper.readTree(json);
         String callback = null, 
@@ -124,8 +123,15 @@ public class WorkflowResource {
 			}
 		}
 
-		Contentlet contentlet = (inode != null) ? APILocator.getContentletAPI().find(inode, user, false) : APILocator.getContentletAPI()
-				.findContentletByIdentifier(id, false, lang, user, false);
+		Contentlet contentlet = null;
+		try {
+			contentlet =
+					(inode != null) ? APILocator.getContentletAPI().find(inode, user, false)
+							: APILocator.getContentletAPI()
+									.findContentletByIdentifier(id, false, lang, user, false);
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+		}
 
 		if (contentlet == null || contentlet.getIdentifier() == null) {
 			jsonResponse.put("message", "contentlet not found");
@@ -137,10 +143,12 @@ public class WorkflowResource {
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		WorkflowAction action = null;
 		try {
-			action = wapi.findAction(wfAction, user);
+			action = wapi.findActionRespectingPermissions(wfAction, contentlet, user);
 			if (action == null) {
 				throw new ServletException("No such workflow action");
 			}
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			jsonResponse.put("message", "error:" + e.getMessage());
@@ -192,8 +200,9 @@ public class WorkflowResource {
 				Logger.debug(this.getClass(), npe.getMessage(), npe);
 			}
 			jsonResponse.put("return", 200);
-			
-			
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 			
 		} catch (Exception e) {
 			if (UtilMethods.isSet(callback)) {

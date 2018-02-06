@@ -23,9 +23,8 @@
 package com.liferay.portal.struts;
 
 import javax.servlet.ServletException;
-
-import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import org.apache.struts.action.ActionServlet;
+import org.apache.struts.config.ModuleConfig;
 
 /**
  * <a href="StxxPlugin.java.html"><b><i>View Source</i></b></a>
@@ -34,7 +33,7 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
  * @version $Revision: 1.4 $
  *
  */
-public class StxxPlugin extends com.dotcms.repackage.com.oroad.stxx.plugin.StxxPlugin {
+public class StxxPlugin extends com.oroad.stxx.plugin.StxxPlugin {
 
 	public void init(ActionServlet servlet, ModuleConfig config)
 		throws ServletException {

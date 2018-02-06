@@ -11,7 +11,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -33,8 +32,8 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityType;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -78,7 +77,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -105,6 +103,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -2013,6 +2012,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void testPubExpDatesFromIdentifier() throws Exception {
+        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         // set up a structure with pub/exp variables
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
@@ -2057,9 +2057,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
 
-        assertTrue(d1
-                .equals(ident.getSysPublishDate()));
-        assertTrue(d2.equals(ident.getSysExpireDate()));
+        assertTrue(dateFormat.format(d1)
+                .equals(dateFormat.format(ident.getSysPublishDate())));
+        assertTrue(dateFormat.format(d2).equals(dateFormat.format(ident.getSysExpireDate())));
 
 
         // if we save another language version for the same identifier
@@ -2078,15 +2078,15 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
 
-        assertTrue(d3
-                .equals(ident2.getSysPublishDate()));
-        assertTrue(d4
-                .equals(ident2.getSysExpireDate()));
+        assertTrue(dateFormat.format(d3)
+                .equals(dateFormat.format(ident2.getSysPublishDate())));
+        assertTrue(dateFormat.format(d4)
+                .equals(dateFormat.format(ident2.getSysExpireDate())));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(d3.equals(c11.getDateProperty(fieldPubDate.getVelocityVarName())));
-        assertTrue(d4.equals(c11.getDateProperty(fieldExpDate.getVelocityVarName())));
+        assertTrue(dateFormat.format(d3).equals(dateFormat.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
+        assertTrue(dateFormat.format(d4).equals(dateFormat.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
 
 
         Thread.sleep(2000); // wait a bit for the index

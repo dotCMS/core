@@ -16,12 +16,11 @@
 
 package com.dotmarketing.util.diff;
 
-import java.io.IOException;
-
 import com.dotmarketing.util.diff.helper.NekoHtmlParser;
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.InputSource;
-import com.dotcms.repackage.org.xml.sax.SAXException;
+import java.io.IOException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 public class HtmlCleaner {
 

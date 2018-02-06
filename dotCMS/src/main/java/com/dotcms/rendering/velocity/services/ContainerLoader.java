@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -13,6 +12,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.felix.framework.resolver.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
@@ -31,34 +32,35 @@ public class ContainerLoader implements DotLoader {
 
 public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
     @Override
-    public InputStream writeObject(String id1, String id2, PageMode mode, String language, final String filePath)
+    public InputStream writeObject(final VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
         VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         Container container = null;
-        if (mode.showLive) {
-            container = (Container) versionableAPI.findLiveVersion(id1, sysUser(), true);
+        if (key.mode.showLive) {
+            container = (Container) versionableAPI.findLiveVersion(key.id1, sysUser(), true);
         } else {
-            container = (Container) versionableAPI.findWorkingVersion(id1, sysUser(), true);
+            container = (Container) versionableAPI.findWorkingVersion(key.id1, sysUser(), true);
+        }
+        if(null==container) {
+            throw new DotStateException("cannot find container for : " +  key);
         }
 
         Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
 
-        return this.buildVelocity(container, id2, mode, filePath);
+        return this.buildVelocity(container, key.id2, key.mode, key.path);
     }
 
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
         Container container = (Container) obj;
-        String folderPath = mode.name() + java.io.File.separator;
-        String velocityRootPath = VelocityUtil.getVelocityRootPath();
-        velocityRootPath += java.io.File.separator;
-        String filePath = folderPath + container.getIdentifier() + "." + VelocityType.CONTAINER.fileExtension;
-        java.io.File f = new java.io.File(velocityRootPath + filePath);
-        f.delete();
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath);
+
+
+          VelocityResourceKey key = new VelocityResourceKey(container, mode);
+            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+            vc.remove(key);
+
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {
@@ -154,14 +156,13 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     try {
                         ContentType t = typeAPI.find(struct.getStructureId());
                         editWrapperDiv.append(t.variable());
-                        if(it.hasNext()) {
-                            editWrapperDiv.append(",");
-                        }
-                        editWrapperDiv.append("WIDGET,FORM");
+                        editWrapperDiv.append(",");
                     } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this.getClass(), "unable to find content type:" + struct);
                     }
                 }
+
+                editWrapperDiv.append("WIDGET,FORM");
                 editWrapperDiv.append("\">");
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(editWrapperDiv);
@@ -229,6 +230,10 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$CONTENT_BASE_TYPE\"")
                     .append(" data-dot-lang=")
                     .append("\"$CONTENT_LANGUAGE\"")
+                    .append(" data-dot-title=")
+                    .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
+                    
+                    
                     .append(">");
 
 

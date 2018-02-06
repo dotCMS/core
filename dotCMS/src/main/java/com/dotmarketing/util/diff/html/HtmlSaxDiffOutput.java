@@ -15,9 +15,6 @@
  */
 package com.dotmarketing.util.diff.html;
 
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.diff.html.dom.ImageNode;
 import com.dotmarketing.util.diff.html.dom.Node;
@@ -26,6 +23,9 @@ import com.dotmarketing.util.diff.html.dom.TextNode;
 import com.dotmarketing.util.diff.html.modification.Modification;
 import com.dotmarketing.util.diff.html.modification.ModificationType;
 import com.dotmarketing.util.diff.output.DiffOutput;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Takes a branch root and creates an HTML file for it.

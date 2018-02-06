@@ -22,9 +22,12 @@
 
 package com.liferay.util.dao.hibernate;
 
+import com.dotmarketing.util.Logger;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.dao.DataAccess;
+import com.liferay.util.dao.DriverInfo;
 import java.sql.Connection;
 import java.util.Enumeration;
-
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.MappingException;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Environment;
@@ -40,14 +43,8 @@ import com.dotcms.repackage.net.sf.hibernate.exception.SQLExceptionConverter;
 import com.dotcms.repackage.net.sf.hibernate.exception.ViolatedConstraintNameExtracter;
 import com.dotcms.repackage.net.sf.hibernate.sql.CaseFragment;
 import com.dotcms.repackage.net.sf.hibernate.sql.JoinFragment;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.dotmarketing.util.Logger;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.dao.DataAccess;
-import com.liferay.util.dao.DriverInfo;
 
 /**
  * <a href="DynamicDialect.java.html"><b><i>View Source</i></b></a>

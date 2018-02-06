@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.rules.parameter.type.constraint;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.parameter.comparison.MatcherCheck;
 import java.util.function.Function;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
 
 /**

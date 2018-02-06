@@ -44,8 +44,6 @@ catch(Exception e){
 
 
 
-
-
 <%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 
 		<%if(contentEditable){ %>
@@ -73,12 +71,10 @@ catch(Exception e){
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 			</a>
 		<%} else { %>
-			<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 				<span class="saveIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 			</a>
-			<%} %>
 		<%}%>
 	<%} else if (InodeUtils.isSet(contentlet.getInode())) {%>
 		<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
@@ -87,16 +83,14 @@ catch(Exception e){
 		</a>
 	<%} %>
 <%}else if(!InodeUtils.isSet(contentlet.getInode())) {%>
-	<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
 			<a onClick="saveContent(false);">
 			<span class="saveIcon"></span>
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 		</a>
-	<%} %>
 <%}else if(!isContLocked) {%>
 
 
-	<%if((null != scheme && !scheme.isMandatory()) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+	<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 
 
 
@@ -109,7 +103,7 @@ catch(Exception e){
 <%}%>
 
 
-<%if(null == scheme || (null != scheme && !scheme.isMandatory())){ %>
+
 	<%
 	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
 	if (canPublish) {
@@ -123,7 +117,7 @@ catch(Exception e){
 			<%= savePublishButtonTitle %>
 		</a>
 	<% } %>
-<% } %>
+
 
 <%--Start workflow tasks --%>
 <%for(WorkflowAction action : wfActions){ %>
@@ -135,14 +129,13 @@ catch(Exception e){
 		<% } %>
 	<% } %>
 	
-	<%if(contentlet.hasVersion()) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-		<span class="<%=action.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
-                    APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
-                    +" )</small>"%>
-		</a>
-	<%} %>
+	<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+	<span class="<%=action.getIcon()%>"></span>
+		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) +"<br/><small>( "+
+				APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName()
+				+" )</small>"%>
+	</a>
+
 <%} %>
 
 

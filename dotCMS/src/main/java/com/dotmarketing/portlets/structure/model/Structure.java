@@ -1,18 +1,10 @@
 package com.dotmarketing.portlets.structure.model;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -26,6 +18,11 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 

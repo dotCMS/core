@@ -1,8 +1,16 @@
 package com.dotcms.listeners;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
@@ -11,13 +19,6 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-
-import com.dotcms.api.system.event.*;
-import com.dotcms.repackage.org.exolab.castor.types.Date;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 
 /**
  * Listener that keeps track of logged in users by monitoring for USER_ID

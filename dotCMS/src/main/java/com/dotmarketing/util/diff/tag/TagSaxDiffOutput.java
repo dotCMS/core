@@ -16,9 +16,9 @@
 package com.dotmarketing.util.diff.tag;
 
 import com.dotmarketing.util.diff.output.TextDiffOutput;
-import com.dotcms.repackage.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.org.xml.sax.SAXException;
-import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Outputs the diff result as HTML elements to a SAX ContentHandler. The

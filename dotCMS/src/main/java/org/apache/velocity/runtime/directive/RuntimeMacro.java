@@ -19,13 +19,13 @@ package org.apache.velocity.runtime.directive;
  * under the License.
  */
 
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
-import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
-import com.dotmarketing.business.CacheLocator;
+import org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -41,8 +41,6 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 
 /**
  * This class acts as a proxy for potential macros.  When the AST is built

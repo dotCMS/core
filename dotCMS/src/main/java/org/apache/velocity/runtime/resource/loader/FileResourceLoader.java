@@ -19,7 +19,6 @@ package org.apache.velocity.runtime.resource.loader;
  * under the License.
  */
 
-import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import com.dotmarketing.util.Logger;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -32,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.io.UnicodeInputStream;
@@ -67,7 +67,7 @@ public class FileResourceLoader extends ResourceLoader
     private boolean unicode = false;
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
      */
     public void init( ExtendedProperties configuration)
     {
@@ -118,7 +118,7 @@ public class FileResourceLoader extends ResourceLoader
         /*
          * Make sure we have a valid templateName.
          */
-        if (com.dotcms.repackage.org.apache.commons.lang.StringUtils.isEmpty(templateName))
+        if (org.apache.commons.lang.StringUtils.isEmpty(templateName))
         {
             /*
              * If we don't get a properly formed templateName then

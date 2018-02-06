@@ -22,8 +22,7 @@ package org.apache.velocity.anakia;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-
-import com.dotcms.repackage.org.jdom.Element;
+import org.jdom.Element;
 
 /**
  * This class allows you to walk a tree of JDOM Element objects.

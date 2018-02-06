@@ -1,7 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -9,8 +7,8 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import org.osgi.framework.Bundle;
+import com.dotcms.rest.exception.ForbiddenException;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -19,14 +17,21 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.model.User;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.framework.Bundle;
+
+import com.liferay.portal.model.User;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * @author Jonathan Gamba
@@ -38,15 +43,19 @@ public class OSGIResource  {
     List<String> systemBundles = Arrays.asList(
             "org.apache.felix.http.bundle",
             "org.apache.felix.gogo.shell",
-            "org.apache.felix.framework",
             "org.apache.felix.bundlerepository",
+            "org.apache.felix.framework",
             "org.apache.felix.fileinstall",
             "org.apache.felix.gogo.command",
             "org.apache.felix.gogo.runtime",
-            "org.easymock",
-            "org.objenesis",
             "osgi.cmpn",
-            "osgi.core"
+            "osgi.core",
+            "org.apache.tika.core",
+            "org.apache.tika.bundle",
+            "slf4j.simple",
+            "slf4j.api",
+            "jcl.over.slf4j",
+            "com.dotcms.tika"
     );
 
     private final WebResource webResource = new WebResource();
@@ -74,7 +83,7 @@ public class OSGIResource  {
         User currentUser = initData.getUser();
         try {
             if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "dynamic-plugins", currentUser ) ) {
-                return responseResource.responseError( "User does not have access to the Dynamic Plugins Portlet", HttpStatus.SC_UNAUTHORIZED );
+                throw new ForbiddenException("User does not have access to the Dynamic Plugins Portlet");
             }
         } catch ( DotDataException e ) {
             Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );

@@ -1,12 +1,11 @@
 package com.dotmarketing.beans;
 
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** 
  * 	@author Hibernate CodeGenerator

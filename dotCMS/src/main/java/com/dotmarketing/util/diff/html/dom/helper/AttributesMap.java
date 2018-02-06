@@ -2,8 +2,8 @@ package com.dotmarketing.util.diff.html.dom.helper;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import org.xml.sax.Attributes;
 
-import com.dotcms.repackage.org.xml.sax.Attributes;
 /**
  * Map is used to store DOM tag attribute names and values. 
  * This map pays no attention to sequence of attributes.

@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -21,6 +22,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -123,6 +125,10 @@ public class LoginFormResource implements Serializable {
                 .companyEmail("@" + defaultCompany.getMx());
 
             res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
+
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e);
+
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();

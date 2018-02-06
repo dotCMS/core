@@ -1,45 +1,33 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.util.GeoIp2CityDbUtil;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
-import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
-import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
-import com.dotmarketing.portlets.rules.parameter.display.TextInput;
-import com.dotmarketing.portlets.rules.parameter.type.NumericType;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
 
 public class PersonaConditionlet extends Conditionlet<PersonaConditionlet.Instance>{
 

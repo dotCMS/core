@@ -22,13 +22,6 @@ String selectedStructure = (request.getParameter("selectedStructure") != null &&
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
 List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(s);
-boolean isWfMandatory = false;
-for(WorkflowScheme scheme : schemes){
-    if(scheme.isMandatory()){
-		isWfMandatory=true;
-        break;
-	}
-}
 
 boolean hasExplicitRequiredFields = false;//GIT-191
 List<Field> fields = FieldsCache.getFieldsByStructureInode(selectedStructure);
@@ -162,8 +155,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                         <% } %>
 					</script>
                 </button>
-                <%if(!isWfMandatory) {%>
-           		<button dojoType="dijit.form.Button" id="savePublishButton" type="button">
+                <button dojoType="dijit.form.Button" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">
 
@@ -177,7 +169,6 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                         <% } %>
 					</script>
                 </button>
-                <%} %>
              <%} else if (canUserWriteToFile) { %>
                 <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>

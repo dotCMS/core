@@ -22,9 +22,8 @@
 
 package com.liferay.util.xml.descriptor;
 
-import com.dotcms.repackage.org.dom4j.Document;
-
 import com.liferay.util.xml.ElementIdentifier;
+import org.dom4j.Document;
 
 /**
  * <a href="TilesDefsDescriptor.java.html"><b><i>View Source</i></b></a>
