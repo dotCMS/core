@@ -183,17 +183,6 @@ public class ContainerResource implements Serializable {
                             : APILocator.getContentletAPI()
                                     .find(contentShorty.longId, user, mode.respectAnonPerms);
 
-            if (contentlet.getContentType()
-                    .baseType() == BaseContentType.WIDGET) {
-                Map<String, String> response = new HashMap<>();
-                response.put("render", WidgetResource.parseWidget(req, res, contentlet));
-
-                return Response.ok(response)
-                        .build();
-
-
-            }
-
             ShortyId containerShorty = APILocator.getShortyAPI()
                     .getShorty(containerId)
                     .orElseGet(() -> {
