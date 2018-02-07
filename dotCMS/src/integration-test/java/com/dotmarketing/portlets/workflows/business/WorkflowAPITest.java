@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -934,21 +933,21 @@ public class WorkflowAPITest extends IntegrationTestBase {
         Contentlet contentlet1 = null;
 
         try {
-            User adminUser = APILocator.getUserAPI()
+            final User adminUser = APILocator.getUserAPI()
                     .loadByUserByEmail("admin@dotcms.com", user, false);
             Role role = roleAPI.getUserRole(adminUser);
 
-            User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
-            Role anonymousRole = roleAPI.getUserRole(anonymousUser);
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            final Role anonymousRole = roleAPI.getUserRole(anonymousUser);
 
 		    /*
 		     * Create workflow scheme
 		     */
-            String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss");
+            final String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss");
             addWorkflowScheme(schemeName);
 
             ws = workflowAPI.findSchemeByName(schemeName);
-            Assert.assertTrue(UtilMethods.isSet(ws));
+            assertTrue(UtilMethods.isSet(ws));
 
             /*
 		     * Create scheme step1
@@ -956,7 +955,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             addWorkflowStep("Edit", 1, false, false, ws.getId());
 
             List<WorkflowStep> steps = workflowAPI.findSteps(ws);
-            Assert.assertTrue(steps.size() == 1);
+            assertTrue(steps.size() == 1);
             step1 = steps.get(0);
 
             /*
@@ -964,7 +963,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     */
             addWorkflowStep("Publish", 2, true, false, ws.getId());
             steps = workflowAPI.findSteps(ws);
-            Assert.assertTrue(steps.size() == 2);
+            assertTrue(steps.size() == 2);
             step2 = steps.get(1);
 
             /*
@@ -974,8 +973,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     step2.getId(), false, step1.getId(), anonymousRole,
                     ws.getId());
 
-            List<WorkflowAction> actions1 = workflowAPI.findActions(step1, user);
-            Assert.assertTrue(actions1.size() == 1);
+            final List<WorkflowAction> actions1 = workflowAPI.findActions(step1, user);
+            assertTrue(actions1.size() == 1);
             action1 = actions1.get(0);
 
 		    /*
@@ -985,15 +984,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     step2.getId(), false, step2.getId(), anonymousRole,
                     ws.getId());
 
-            List<WorkflowAction> actions2 = workflowAPI.findActions(step2, user);
-            Assert.assertTrue(actions2.size() == 1);
+            final List<WorkflowAction> actions2 = workflowAPI.findActions(step2, user);
+            assertTrue(actions2.size() == 1);
             action2 = actions2.get(0);
 
 		    /*
 		     * Create structure and add workflow scheme
 		     */
             st = insertContentType("Issue5197Structure",BaseContentType.CONTENT);
-            Structure contentTypeSt = new StructureTransformer(ContentType.class.cast(st))
+            final Structure contentTypeSt = new StructureTransformer(ContentType.class.cast(st))
                     .asStructure();
             Permission p = new Permission();
             p.setInode(st.getPermissionId());
@@ -1047,8 +1046,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.fireWorkflowNoCheckin(contentlet1, user);
 
             WorkflowStep currentStep = workflowAPI.findStepByContentlet(contentlet1);
-            Assert.assertNotNull(currentStep);
-            Assert.assertTrue(currentStep.getId().equals(step2.getId()));
+            assertNotNull(currentStep);
+            assertTrue(currentStep.getId().equals(step2.getId()));
 
 		    /*
 		     * Validate that step2 could not be deleted
@@ -1061,7 +1060,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 			 * </br> <b> Step : 'Publish' is being referenced by </b> </br></br> Step : 'Edit' ->  Action : 'Edit' </br></br>
 			 */
             }
-            Assert.assertTrue(UtilMethods.isSet(workflowAPI.findStep(step2.getId())));
+            assertTrue(UtilMethods.isSet(workflowAPI.findStep(step2.getId())));
 		    /*
 		     * Validate correct deletion of step1
 		     */
@@ -1071,8 +1070,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that the step 1 was deleted from the scheme
 		     */
             steps = workflowAPI.findSteps(ws);
-            Assert.assertTrue(steps.size() == 1);
-            Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
+            assertTrue(steps.size() == 1);
+            assertTrue(steps.get(0).getId().equals(step2.getId()));
 
 		    /*
 		     * Validate that step2 could not be deleted
@@ -1086,15 +1085,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
 			 */
             }
             currentStep = workflowAPI.findStepByContentlet(contentlet1);
-            Assert.assertNotNull(currentStep);
-            Assert.assertTrue(currentStep.getId().equals(step2.getId()));
+            assertNotNull(currentStep);
+            assertTrue(currentStep.getId().equals(step2.getId()));
 
 		    /*
 		     * Validate that step2 is not deleted
 		     */
             steps = workflowAPI.findSteps(ws);
-            Assert.assertTrue(steps.size() == 1);
-            Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
+            assertTrue(steps.size() == 1);
+            assertTrue(steps.get(0).getId().equals(step2.getId()));
 
         }finally {
 		    /*
