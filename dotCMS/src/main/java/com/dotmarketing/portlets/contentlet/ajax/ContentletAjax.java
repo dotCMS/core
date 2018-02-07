@@ -1009,7 +1009,6 @@ public class ContentletAjax {
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
 				WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
-				searchResult.put("workflowMandatory", "false");
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions
