@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -123,8 +124,10 @@ public class WorkflowProcessor {
 				}
 			}
 
-			if (null == action)
+			if (null == action) {
+				Logger.error(this,"Contentlet Identifier ("+contentlet.getIdentifier()+") should not have a null workflow action");
 				return;
+			}
 
 			if(action.requiresCheckout()){
 				try {

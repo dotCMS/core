@@ -31,7 +31,6 @@
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
 	<input type="hidden" name="cmd" value="save">
 	<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
-	<input type="hidden" name="schemeMandatory" id="schemeMandatory" value="false">
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
 		<dl>

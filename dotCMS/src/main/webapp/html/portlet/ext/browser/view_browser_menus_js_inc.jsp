@@ -437,83 +437,82 @@
 
 		strHTML += wfActionsMenu(objId, file);
 		
-		
-		if(!file.wfMandatoryWorkflow) {
-			if (working && publish && !archived ) {
-				strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	    		if (live) {
-	            	strHTML += '<span class="republishIcon"></span>';
-					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
-	           } else {
-	            	strHTML += '<span class="publishIcon"></span>';
-					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
-				}
-				strHTML += '</a>';
-	
-	            if (enterprise) {
-	                if (sendingEndpoints) {
-	                    strHTML += '<a class="context-menu__item" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-	                        strHTML += '<span class="sServerIcon"></span>';
-	                        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
-	                    strHTML += '</a>';
-	                }
-	
-					strHTML += '<a class="context-menu__item" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-						strHTML += '<span class="bundleIcon"></span>';
-						strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
-					strHTML += '</a>';
-				}
+
+		if (working && publish && !archived ) {
+			strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+	    	if (live) {
+	            strHTML += '<span class="republishIcon"></span>';
+				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
+	        } else {
+	            strHTML += '<span class="publishIcon"></span>';
+				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			}
-			
-			// If archived, only display the "Remove" option in the Push Dialog
-			if (archived) {
-				if (enterprise) {
-                    if (sendingEndpoints) {
-                        strHTML += '<a class="context-menu__item" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-                            strHTML += '<span class="sServerIcon"></span>';
-                            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
-                        strHTML += '</a>';
-                    }
-				}
-			}
-			
-			if ((live || hasLiveVersion) && publish) {
-				strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-                strHTML += '<span class="unpublishIcon"></span>';
-                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
-				strHTML += '</a>';
-			}
+			strHTML += '</a>';
 	
-			if (!live && working && publish && !hasLiveVersion) {
-				if (!archived) {
-					strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-		   				strHTML += '<span class="archiveIcon"></span>';
-		            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
-					strHTML += '</a>';
-				}
-				else {
-					strHTML += '<a  href="javascript: unarchiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	   					strHTML += '<span class="unarchiveIcon"></span>';
-	               		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
-					strHTML += '</a>';
-				}
-			}
+	        if (enterprise) {
+	             if (sendingEndpoints) {
+	                strHTML += '<a class="context-menu__item" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+	                strHTML += '<span class="sServerIcon"></span>';
+	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+	                strHTML += '</a>';
+	            }
 	
-			if (locked && write) {
-				strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-		    		strHTML += '<span class="keyIcon"></span>';
-		        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
-				strHTML += '</a>';
-			}
-	
-			if (write && archived)
-			{
-				strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-			    	strHTML += '<span class="stopIcon"></span>';
-		    	   	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-File")) %>';
+				strHTML += '<a class="context-menu__item" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				strHTML += '<span class="bundleIcon"></span>';
+				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
 		}
+			
+		// If archived, only display the "Remove" option in the Push Dialog
+		if (archived) {
+			if (enterprise) {
+                if (sendingEndpoints) {
+                    strHTML += '<a class="context-menu__item" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                    strHTML += '<span class="sServerIcon"></span>';
+                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+                    strHTML += '</a>';
+                }
+			}
+		}
+			
+		if ((live || hasLiveVersion) && publish) {
+			strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+            strHTML += '<span class="unpublishIcon"></span>';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
+			strHTML += '</a>';
+		}
+	
+		if (!live && working && publish && !hasLiveVersion) {
+			if (!archived) {
+				strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+		   		strHTML += '<span class="archiveIcon"></span>';
+		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
+				strHTML += '</a>';
+			}
+			else {
+				strHTML += '<a  href="javascript: unarchiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+	   			strHTML += '<span class="unarchiveIcon"></span>';
+	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
+				strHTML += '</a>';
+			}
+		}
+	
+		if (locked && write) {
+			strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+		    strHTML += '<span class="keyIcon"></span>';
+		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
+			strHTML += '</a>';
+		}
+	
+		if (write && archived)
+		{
+			strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+			strHTML += '<span class="stopIcon"></span>';
+		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-File")) %>';
+			strHTML += '</a>';
+		}
+
 		
 		if (write && !archived)  {
 			
@@ -730,7 +729,7 @@
             strHTML += wfActionsMenu(objId, page);
         }
         
-        if(!page.isContentlet || !page.wfMandatoryWorkflow) {
+        if(!page.isContentlet) {
 			if (working && !archived && publish) {
 				strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	if(live) {

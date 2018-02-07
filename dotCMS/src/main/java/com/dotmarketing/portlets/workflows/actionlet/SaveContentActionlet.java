@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -56,12 +57,17 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			Logger.debug(this,
 					"Saving the content of the contentlet: " + contentlet.getIdentifier());
 
-			final Contentlet checkoutContentlet = this.contentletAPI.checkout
-					(contentlet.getInode(), processor.getUser(), false);
-			final String     inode              = checkoutContentlet.getInode();
+			final boolean    isNew              = this.isNew (contentlet);
+			final Contentlet checkoutContentlet = isNew? contentlet:
+					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
 
-			this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
-			checkoutContentlet.setInode(inode);
+			if (!isNew) {
+
+				final String inode = checkoutContentlet.getInode();
+				this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+				checkoutContentlet.setInode(inode);
+			}
+
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
 			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
@@ -77,6 +83,10 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
+	}
+
+	private boolean isNew(final Contentlet contentlet) {
+		return !UtilMethods.isSet(contentlet.getIdentifier()) || contentlet.isNew();
 	}
 
 	public WorkflowStep getNextStep() {
