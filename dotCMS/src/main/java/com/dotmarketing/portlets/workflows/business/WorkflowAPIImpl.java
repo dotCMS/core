@@ -1148,6 +1148,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return "Unable to apply the workflow step, the contentlet should be saved in order to execute this workflow action";
 	}
+
 	private void saveWorkflowTask(final WorkflowProcessor processor) throws DotDataException {
 
 		final WorkflowTask task = processor.getTask();
@@ -1157,6 +1158,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
             	DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
 						() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()), DotWorkflowException.class);
+
                 task.setCreatedBy(r.getId());
                 task.setWebasset(processor.getContentlet().getIdentifier());
                 task.setLanguageId(processor.getContentlet().getLanguageId());
