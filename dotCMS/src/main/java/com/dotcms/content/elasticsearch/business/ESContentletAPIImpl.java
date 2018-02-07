@@ -3872,8 +3872,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     {
                         if(checkIsUnique && field.isUnique())
                         {
-                            String dataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet().replaceAll("[0-9]*", "") : "";
-                            value = value + " (COPY)";
+                            value = value +
+                                new StringBuilder(" (COPY_")
+                                        .append(System.currentTimeMillis()).append(')').toString();
                         }
                         contentlet.setStringProperty(conVariable, value != null ? (String)value : null);
                     }else if(isFieldTypeBoolean(field)){
