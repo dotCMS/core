@@ -27,14 +27,17 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -68,19 +71,24 @@ public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
+    private final TemplateAPI templateAPI;
+    private final PermissionAPI permissionAPI;
 
     /**
      * Creates an instance of this REST end-point.
      */
     public PageResource() {
-        this(PageResourceHelper.getInstance(), new WebResource());
+        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getTemplateAPI(),
+                APILocator.getPermissionAPI());
     }
 
     @VisibleForTesting
-    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource
-            webResource) {
+    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource,
+                           TemplateAPI templateAPI, PermissionAPI permissionAPI) {
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
+        this.templateAPI = templateAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -226,8 +234,11 @@ public class PageResource {
         try {
 
 
-            final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ? (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms)  : this.pageResourceHelper.getPage(request, user, uri, mode);
-            
+            final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ?
+                    (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
+                    this.pageResourceHelper.getPage(request, user, uri, mode);
+
+            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
             
             final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
             final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
@@ -240,14 +251,28 @@ public class PageResource {
             
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-            final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
+
+            boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
+
             pageMapBuilder.put("render",html )
                 .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
                 .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
-            pageMapBuilder.putAll(page.getMap());
-            
+
+            Map<String, Object> pageMap = new HashMap(page.getMap());
+            String templateIdentifier = (String) pageMap.get(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            pageMap.remove(HTMLPageAssetAPI.TEMPLATE_FIELD);
+
+            pageMapBuilder.putAll(pageMap);
+
+            final ImmutableMap<Object, Object> templateMap = ImmutableMap.builder().put("drawed", template.isDrawed())
+                    .put("canEdit", editPermission)
+                    .put("id", templateIdentifier)
+                    .build();
+
+            pageMapBuilder.put("template", templateMap);
+
             if(lockedBy!=null) {
                 pageMapBuilder.put("lockedOn", info.getLockedOn())
                     .put("lockedBy", lockedBy)
