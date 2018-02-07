@@ -1138,6 +1138,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	private String getWorkflowContentNeedsBeSaveMessage (final User user) {
+
+		try {
+			return LanguageUtil.get(user, "Workflow-Content-Needs-Be-Saved");
+		} catch (LanguageException e) {
+			// quiet
+		}
+
+		return "Unable to apply the workflow step, the contentlet should be saved in order to execute this workflow action";
+	}
+
 	private void saveWorkflowTask(final WorkflowProcessor processor) throws DotDataException {
 
 		final WorkflowTask task = processor.getTask();
@@ -1145,8 +1156,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             Role r = roleAPI.getUserRole(processor.getUser());
             if(task.isNew()){
 
-            	DotPreconditions.notNull(processor.getContentlet().getIdentifier(),
-						()-> "Workflow-Content-Needs-Be-Saved", DotWorkflowException.class);
+            	DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
+						() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()), DotWorkflowException.class);
+
                 task.setCreatedBy(r.getId());
                 task.setWebasset(processor.getContentlet().getIdentifier());
                 task.setLanguageId(processor.getContentlet().getLanguageId());
