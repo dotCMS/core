@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +15,8 @@ import java.util.List;
  */
 public class Task04340TemplateShowOnMenu extends AbstractJDBCStartupTask {
 
-    private static final String UPDATE_TEMPLATE = "UPDATE Template SET show_on_menu = true WHERE TITLE NOT LIKE 'anonymous_layout_%'";
+    private static final String UPDATE_TEMPLATE = "UPDATE Template SET show_on_menu = " + DbConnectionFactory.getDBTrue()
+            + " WHERE TITLE NOT LIKE 'anonymous_layout_%'";
 
     @Override
     public boolean forceRun() {
