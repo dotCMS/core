@@ -24,8 +24,11 @@ import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
 
 @Path("/v1/languages")
 public class LanguagesResource {
@@ -99,5 +102,40 @@ public class LanguagesResource {
 
         return res;
     } // getI18nmessages.
+
+    @GET
+    @JSONP
+    @NoCache
+    @Path("/messages")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getMessages(@Context HttpServletRequest request) {
+
+        try {
+            URL[] urls = new URL[]{new File(System.getProperty("user.dir") + "/WEB-INF/messages").toURI().toURL()};
+
+            URLClassLoader urlClassLoader = new URLClassLoader(urls);
+
+            Map<String, String> messagesMap = new HashMap<>();
+            final Locale locale = LocaleUtil.getLocale(request);
+
+            ResourceBundle defaultLanguage = ResourceBundle.getBundle("Language", Locale.US, urlClassLoader);
+            ResourceBundle localeLanguage = ResourceBundle.getBundle("Language",locale, urlClassLoader);
+
+
+            Set<String> defaultLanguageKeys = defaultLanguage.keySet();
+
+            for (String key : defaultLanguageKeys) {
+                String value = localeLanguage.containsKey(key) ?
+                        localeLanguage.getString(key) :
+                        defaultLanguage.getString(key);
+
+                messagesMap.put(key, value);
+            }
+
+            return Response.ok(new ResponseEntityView(null, messagesMap)).build();
+        } catch (MalformedURLException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }
+    }
 
 } // E:O:F:LanguagesResource.
