@@ -1,5 +1,9 @@
 @import "variables";
 
+:host {
+    display: block;
+}
+
 .action-header {
     align-items: flex-end;
     display: flex;

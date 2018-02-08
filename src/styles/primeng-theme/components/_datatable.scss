@@ -39,6 +39,25 @@
         border-bottom: $datatable-cell-border;
     }
 
+    .ui-datatable-loading {
+        background-color: $black;
+        opacity: 0.075;
+    }
+
+    .ui-datatable-loading-content {
+        align-items: center;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        left: 0;
+        right: 0;
+        top: 0;
+
+        .fa {
+            opacity: 0.5;
+        }
+    }
+
     .ui-sortable-column {
         .fa-sort:before {
             content: "";
