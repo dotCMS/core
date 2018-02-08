@@ -43,13 +43,23 @@
 		    return target ==document.getElementById('wfStepInDragContainer');
 		  },
 		  direction: 'horizontal',             // Y axis is considered when determining where an element would be dropped
-		  revertOnSpill: false,              // spilling will put the element back where it was dragged from, if this is true
+		  revertOnSpill: true,              // spilling will put the element back where it was dragged from, if this is true
 		  ignoreInputTextSelection: true     // allows users to select input text, see details below
 		}).on('drop', function (el) {
-		  	var stepID = el.id.split("stepID").join("");
-			let sibblings = el.parentNode.children
-			let index = Array.from(sibblings).indexOf(el)
-		  	console.log("moving: " + stepID + " to " + index);
+
+			let stepID = el.id.split("stepID").join("");
+			let sibblings = el.parentNode.children;
+			let index = Array.from(sibblings).indexOf(el);
+
+			try {
+				if (sibblings && ((sibblings.length - 1) - index === 0)) {
+					this.cancel();
+					return;
+				}
+			} catch (e) {
+				console.error(e);
+			}
+
 			stepAdmin.reorderStep(stepID, index);
 		 });
 	
