@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -303,6 +304,50 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
             if (newTemplate != null) {
                 templateAPI.delete(newTemplate, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testFindTemplatesNoLayout () throws Exception {
+        Template template = null;
+        Template layout = null;
+        try {
+
+            template = new Template();
+            template.setTitle("Template Title");
+            template.setBody("<html><body> Empty Template </body></html>");
+            template = templateAPI.saveTemplate(template, host, user, false);
+
+            layout = new Template();
+            //No title, this is a layout
+            layout.setBody("<html><body> Empty Layout </body></html>");
+            layout = templateAPI.saveTemplate(layout, host, user, false);
+
+            //This method should only return Templates, no Layouts
+            List<Template> templates = APILocator.getTemplateAPI().findTemplates(user, false, null, null, null,
+                                                        null, null, 0, 1000, null);
+
+            assertFalse(templates.isEmpty());
+            for (Template temp : templates) {
+                assertTrue(temp.isTemplate());
+            }
+
+            //This method should only return Templates, no Layouts
+            templates = PermissionedWebAssetUtil.findTemplatesForLimitedUser(null, null, false, "title",
+                                                        0, 1000, 0, user, false);
+
+            assertFalse(templates.isEmpty());
+            for (Template temp : templates) {
+                assertTrue(temp.isTemplate());
+            }
+
+        } finally {
+            if (template != null) {
+                templateAPI.delete(template, user, false);
+            }
+            if (layout != null) {
+                templateAPI.delete(layout, user, false);
             }
         }
     }
