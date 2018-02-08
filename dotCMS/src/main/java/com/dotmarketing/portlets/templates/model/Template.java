@@ -92,7 +92,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		return this.isShowOnMenu();
 	}
 
-	public void setIsTemplate(boolean isTemplate) {
+	public void setIsTemplate(final boolean isTemplate) {
 		this.setShowOnMenu(isTemplate);
 	}
 

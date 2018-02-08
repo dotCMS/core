@@ -329,7 +329,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                                                         null, null, 0, 1000, null);
 
             assertFalse(templates.isEmpty());
-            for (Template temp : templates) {
+            for (final Template temp : templates) {
                 assertTrue(temp.isTemplate());
             }
 
@@ -338,7 +338,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                                                         0, 1000, 0, user, false);
 
             assertFalse(templates.isEmpty());
-            for (Template temp : templates) {
+            for (final Template temp : templates) {
                 assertTrue(temp.isTemplate());
             }
 
