@@ -897,10 +897,11 @@ task copyNodeModules(type: Copy) {
 
 // reference:  https://github.com/palantir/gradle-docker
 docker {
-    name "dotcms/devtest:$dotcmsReleaseVersion"
+    name "dotcms/dotcms:$dotcmsReleaseVersion-$dotcmsReleaseBuild"
     tags 'latest'
-    dockerfile file('Dockerfile')
-    copySpec.from(tgzTask.archivePath).into('.').rename(tgzTask.archiveName, 'dotcms.tar.gz')
+    dockerfile file('docker/Dockerfile')
+    println 'archivePath=' + tgzTask.archivePath
+    files 'docker/entrypoint.sh', tgzTask.archivePath, 'docker/log4j2.xml'
     pull true
     noCache false
 }
