@@ -3,6 +3,7 @@
 const animation = '100ms ease-in';
 const mdShadow1 = '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';
 const mdShadow3 = '0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23)';
+const white =  '#fff';
 
 export const EDIT_PAGE_CSS = `
     [data-dot-object="container"] {
@@ -34,6 +35,7 @@ export const EDIT_PAGE_CSS = `
     .dotedit-contentlet__content {
         min-height: 100px;
         position: relative;
+        display: inline-block;
     }
 
     .loader,
@@ -138,6 +140,7 @@ export const EDIT_PAGE_CSS = `
 
      .dotedit-contentlet__toolbar button {
         margin-right: 8px;
+        background-color: ${white}; 
      }
 
      .dotedit-contentlet__toolbar button:last-child {

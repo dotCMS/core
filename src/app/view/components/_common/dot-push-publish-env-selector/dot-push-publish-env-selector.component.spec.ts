@@ -11,6 +11,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 class PushPublishServiceMock {
+    _lastEnvironmentPushed: string[];
+
+
     pushPublishContent(contentTypeId: string, formValue: any): Observable<any> {
         return Observable.of([]);
     }
@@ -27,11 +30,15 @@ class PushPublishServiceMock {
             }
         ]);
     }
+
+    get lastEnvironmentPushed(): string[] {
+        return this._lastEnvironmentPushed;
+    }
 }
 
 @Component({
     selector: 'dot-test-host-component',
-    template:   `<form [formGroup]="group">
+    template: `<form [formGroup]="group">
                     <dot-push-publish-env-selector formControlName="environment" ></dot-push-publish-env-selector>
                 </form>`
 })
@@ -64,7 +71,7 @@ describe('PushPublishEnvSelectorComponent', () => {
             providers: [
                 PushPublishService,
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock}
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -78,10 +85,12 @@ describe('PushPublishEnvSelectorComponent', () => {
         expect(comp.selectedEnvironmentIds).toEqual([]);
 
         spyOn(comp, 'propagateChange');
-        comp.valueChange(new Event('MouseEvent'), [{
-            id: '22e332',
-            name: 'my environment'
-        }]);
+        comp.valueChange(new Event('MouseEvent'), [
+            {
+                id: '22e332',
+                name: 'my environment'
+            }
+        ]);
 
         expect(comp.selectedEnvironmentIds).toEqual(['22e332']);
         expect(comp.propagateChange).toHaveBeenCalled();
@@ -93,7 +102,7 @@ describe('PushPublishEnvSelectorComponent', () => {
             { id: '832l', name: 'my environment 2' },
             { id: 'se232', name: 'my environment 3' }
         ];
-        comp.removeEnvironmentItem({id: '832l', name: 'my environment 2'});
+        comp.removeEnvironmentItem({ id: '832l', name: 'my environment 2' });
 
         expect(comp.selectedEnvironmentIds).toEqual(['22e332', 'se232']);
     });
@@ -135,5 +144,36 @@ describe('PushPublishEnvSelectorComponent', () => {
                 }
             ]);
         });
+    });
+
+    it('should populate the environments if there is just one option', () => {
+        const environment = [
+            {
+                id: '22e332',
+                name: 'my environment'
+            }
+        ];
+        spyOn(pushPublishServiceMock, 'getEnvironments').and.returnValue(Observable.of(environment));
+        spyOn(comp, 'propagateChange');
+        comp.ngOnInit();
+        expect(comp.selectedEnvironments).toEqual(environment);
+        expect(comp.propagateChange).toHaveBeenCalled();
+    });
+
+    it('should populate the environments previously selected by the user', () => {
+        spyOnProperty(pushPublishServiceMock, 'lastEnvironmentPushed', 'get').and.returnValue(['22e332', 'joa08']);
+        spyOn(comp, 'propagateChange');
+        comp.ngOnInit();
+        expect(comp.selectedEnvironments).toEqual([
+            {
+                id: '22e332',
+                name: 'my environment'
+            },
+            {
+                id: 'joa08',
+                name: 'my environment 2'
+            }
+        ]);
+        expect(comp.propagateChange).toHaveBeenCalled();
     });
 });

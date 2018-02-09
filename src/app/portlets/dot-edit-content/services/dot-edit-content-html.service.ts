@@ -163,8 +163,7 @@ export class DotEditContentHtmlService {
 
         if (!this.isContentExistInContainer(contentlet, containerEl)) {
             const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
-            containerEl.insertAdjacentElement('afterbegin', contentletEl);
-
+            containerEl.insertAdjacentElement('beforeend', contentletEl);
             this.dotContainerContentletService
                 .getContentletToContainer(this.currentContainer, contentlet)
                 .subscribe((contentletHtml: string) => {

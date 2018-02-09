@@ -6,7 +6,7 @@
     [responsive]="true"
     [resizable]="false"
     [draggable]="false"
-    (onHide)="close($event)"> 
+    (onHide)="close($event)">
 
     <p-header>
         {{dotMessageService.get('contenttypes.content.push_publish')}}
@@ -44,7 +44,6 @@
             <field-validation-message message="{{dotMessageService.get('contenttypes.content.push_publish.push_to_errormsg')}}" [field]="form.get('environment')"></field-validation-message>
         </div>
     </form>
-
     <p-footer>
         <button pButton type="button" (click)="close($event)" label="{{dotMessageService.get('contenttypes.content.push_publish.form.cancel')}}" class="push-publish-dialog__form-cancel"></button>
         <button pButton type="submit" (click)="submitForm()" label="{{dotMessageService.get('contenttypes.content.push_publish.form.push')}}" [disabled]="!form.valid"></button>

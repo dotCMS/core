@@ -131,19 +131,23 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      * @memberof DotEditLayoutGridComponent
      */
     onRemoveContainer(index: number): void {
-        this.dotConfirmationService.confirm({
-            accept: () => {
-                this.removeContainer(index);
-            },
-            header: this.dotMessageService.get('editpage.confirm.header'),
-            message: `${this.dotMessageService.get('editpage.confirm.message.delete')} <span>${this.dotMessageService.get(
-                'editpage.confirm.message.delete.warning'
-            )}</span>`,
-            footerLabel: {
-                acceptLabel: this.dotMessageService.get('editpage.action.delete'),
-                rejectLabel: this.dotMessageService.get('editpage.action.cancel')
-            }
-        });
+        if (this.grid[index].containers.length) {
+            this.dotConfirmationService.confirm({
+                accept: () => {
+                    this.removeContainer(index);
+                },
+                header: this.dotMessageService.get('editpage.confirm.header'),
+                message: `${this.dotMessageService.get(
+                    'editpage.confirm.message.delete'
+                )} <span>${this.dotMessageService.get('editpage.confirm.message.delete.warning')}</span>`,
+                footerLabel: {
+                    acceptLabel: this.dotMessageService.get('editpage.action.delete'),
+                    rejectLabel: this.dotMessageService.get('editpage.action.cancel')
+                }
+            });
+        } else {
+            this.removeContainer(index);
+        }
     }
 
     propagateChange = (_: any) => {};
@@ -247,10 +251,6 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     }
 
     private isHaveRows(): boolean {
-        return !!(
-            this.value &&
-            this.value.rows &&
-            this.value.rows.length
-        );
+        return !!(this.value && this.value.rows && this.value.rows.length);
     }
 }

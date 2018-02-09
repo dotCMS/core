@@ -1,10 +1,9 @@
-import { CoreWebService, ApiRoot, ResponseView } from 'dotcms-js/dotcms-js';
+import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotEnvironment } from '../../../shared/models/dot-environment/dot-environment';
 import { AjaxActionResponseView } from '../../../shared/models/ajax-action-response/ajax-action-response';
-import { DotCurrentUser } from '../../../shared/models/dot-current-user/dot-current-user';
 import { PushPublishData } from '../../../shared/models/push-publish-data/push-publish-data';
 import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
@@ -16,15 +15,21 @@ import { DotCurrentUserService } from '../dot-current-user/dot-current-user.serv
  */
 @Injectable()
 export class PushPublishService {
-    private pushEnvironementsUrl= 'environment/loadenvironments/roleId';
+    private pushEnvironementsUrl = 'environment/loadenvironments/roleId';
     private currentUsersUrl = 'v1/users/current/';
+    private _lastEnvironmentPushed: string[];
     /*
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
-    private publishUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishUrl = `${this._apiRoot
+        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
 
-    constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService, private currentUser: DotCurrentUserService) { }
+    constructor(
+        public _apiRoot: ApiRoot,
+        private coreWebService: CoreWebService,
+        private currentUser: DotCurrentUserService
+    ) {}
 
     /**
      * Get push publish environments.
@@ -32,16 +37,18 @@ export class PushPublishService {
      * @memberof PushPublishService
      */
     getEnvironments(): Observable<DotEnvironment[]> {
-        return this.currentUser.getCurrentUser().mergeMap(user => {
-            return this.coreWebService.requestView({
-                method: RequestMethod.Get,
-                url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
-            });
-        })
-        .pluck('bodyJsonObject')
-        .flatMap((environments: DotEnvironment[]) => environments)
-        .filter(environment => environment.name !== '')
-        .toArray();
+        return this.currentUser
+            .getCurrentUser()
+            .mergeMap(user => {
+                return this.coreWebService.requestView({
+                    method: RequestMethod.Get,
+                    url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
+                });
+            })
+            .pluck('bodyJsonObject')
+            .flatMap((environments: DotEnvironment[]) => environments)
+            .filter(environment => environment.name !== '')
+            .toArray();
     }
 
     /**
@@ -52,6 +59,7 @@ export class PushPublishService {
      * @memberof PushPublishService
      */
     pushPublishContent(assetIdentifier: string, pushPublishData: PushPublishData): Observable<AjaxActionResponseView> {
+        this._lastEnvironmentPushed = pushPublishData.environment;
         return this.coreWebService.request({
             body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
             headers: {
@@ -75,5 +83,9 @@ export class PushPublishService {
         result += '&bundleSelect=';
         result += `&forcePush=${pushPublishData.forcePush}`;
         return result;
+    }
+
+    get lastEnvironmentPushed(): string[] {
+        return this._lastEnvironmentPushed;
     }
 }
