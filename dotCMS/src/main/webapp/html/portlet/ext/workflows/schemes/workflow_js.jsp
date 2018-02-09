@@ -431,7 +431,6 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-reorder-Step")%>", true);
 						return false;
 					} else {
-						console.log("worked");
 						return false;
 					}
 				} else {
@@ -632,7 +631,6 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 
 		var movedId = dojo.attr(nodes[0],"id");
-		//console.log(movedId);
 		var stepId = movedId.split("_")[2];
 		var actionId = movedId.split("_")[1];
 		var i=0;
@@ -837,10 +835,6 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 				actions[i].parentNode.removeChild(actions[i]);
 			}
 		}
-		console.log(actionDiv);
-		console.log(actionId);
-		
-		
 
 		var xhrArgs = {
 		url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=addActionToStep&stepId=" + stepId + "&actionId=" + actionId + "&order=" + order,
@@ -1162,8 +1156,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 			i++;
 
 		})
-		console.log("id:" + actionClassId);
-		console.log("order:" + order);
 
 		var xhrArgs = {
 				 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=reorder&actionClassId=" + actionClassId + "&order=" + order,
