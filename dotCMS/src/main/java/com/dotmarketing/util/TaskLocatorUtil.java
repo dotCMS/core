@@ -223,6 +223,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04325RemoveFKFromWorkflowTaskTable.class);
 		ret.add(Task04330WorkflowTaskAddLanguageIdColumn.class);
 		ret.add(Task04335CreateSystemWorkflow.class);
+		ret.add(Task04340TemplateShowOnMenu.class);
 
 
 		return ret;
