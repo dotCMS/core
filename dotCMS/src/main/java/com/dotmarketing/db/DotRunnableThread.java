@@ -19,11 +19,26 @@ public class DotRunnableThread extends Thread {
     @Override
     public void run() {
       try {
-        Thread.sleep(Config.getLongProperty("NETWORK_CACHE_FLUSH_DELAY", 3000));
+        if (!isCacheAdministrator()) {
+          Thread.sleep(Config.getLongProperty("NETWORK_CACHE_FLUSH_DELAY", 3000));
+        }
       } catch (InterruptedException e) {
         Logger.warn(this.getClass(), e.getMessage());
       }
       flushers.forEach(runner -> runner.run());
+    }
+
+    //If this Flusher is a cache admin or indicies factory, should not be delayed
+    private boolean isCacheAdministrator () {
+      for (final DotRunnable runnable : flushers) {
+        if (runnable.getClass().toString().contains("ChainableCacheAdministratorImpl")) {
+          return true;
+        }
+        if (runnable.getClass().toString().contains("IndiciesFactoryImpl")) {
+          return true;
+        }
+      }
+      return false;
     }
   };
 
