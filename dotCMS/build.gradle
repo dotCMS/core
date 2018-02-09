@@ -900,7 +900,6 @@ docker {
     name "dotcms/dotcms:$dotcmsReleaseVersion-$dotcmsReleaseBuild"
     tags 'latest'
     dockerfile file('docker/Dockerfile')
-    println 'archivePath=' + tgzTask.archivePath
     files 'docker/entrypoint.sh', tgzTask.archivePath, 'docker/log4j2.xml'
     pull true
     noCache false
