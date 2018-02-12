@@ -11,18 +11,14 @@
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 	String schemeId = request.getParameter("schemeId");
-	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
 	WorkflowScheme scheme = new WorkflowScheme();
 
-	List<WorkflowStep> steps = null;
+	List<WorkflowStep> steps;
 	WorkflowStep firstStep = null;
-	List<WorkflowAction> actions = null;
 	try {
 		scheme = wapi.findScheme(schemeId);
 		steps = wapi.findSteps(scheme);
 		firstStep = steps.get(0);
-		actions =wapi.findActions(firstStep, APILocator.getUserAPI().getSystemUser());
-
 	} catch (Exception e) {
 	}
 %>
@@ -79,25 +75,6 @@
 			</dl>
 		<%} %>
 
-		<%if(firstStep !=null){ %>
-			<dl id="forceInitialAction">
-				<dt>
-					<label for=""><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</label>
-				</dt>
-				<dd>
-					<%if(!actions.isEmpty()) {%>
-						<select name="schemeEntryAction" dojoType="dijit.form.FilteringSelect" style="width:250px;">
-							<option value=""><%=LanguageUtil.get(pageContext, "None") %></option>
-							<%for(WorkflowAction action : actions){ %>
-								<option value="<%=action.getId()%>" <%=(!action.isNew() && action.getId().equals(scheme.getEntryActionId())) ? "selected='true'" :"" %>><%=action.getName() %></option>
-							<%} %>
-						</select>
-					<%}else{ %>
-						<%=LanguageUtil.get(pageContext, "Create-Actions-First") %>
-					<%} %>
-				</dd>
-			</dl>
-		<%} %>
 	</div>
 			
 	<div class="buttonRow" style="margin-top: 20px;">
