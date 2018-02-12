@@ -545,7 +545,6 @@ public class ContentResourceTest {
 
         // a mandatory scheme to test
         WorkflowScheme scheme = new WorkflowScheme();
-        scheme.setMandatory(true);
         scheme.setName("Rest Mandatory Workflow "+salt);
         scheme.setDescription("testing rest save content");
         scheme.setCreationDate(new Date());
@@ -617,9 +616,6 @@ public class ContentResourceTest {
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
         APILocator.getWorkflowAPI().saveAction(escalate.getId(), step1.getId(),user);
-
-        //Set mandatory workflow default action
-        scheme.setEntryActionId(saveDraft.getId());
         APILocator.getWorkflowAPI().saveScheme(scheme);
 
         // Send for review Step1 -> Step2
