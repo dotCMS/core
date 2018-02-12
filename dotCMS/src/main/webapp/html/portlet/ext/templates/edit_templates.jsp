@@ -94,6 +94,7 @@
 	dojo.require('dotcms.dojo.data.ContainerReadStore');
 
 	var referer = '<%=referer%>';
+    var isNg = '<%=request.getParameter("ng") %>' === 'true';
 
 	function submitfm(form,subcmd) {
 		window.onbeforeunload=true;
@@ -107,8 +108,20 @@
 		}
 		form.cmd.value = '<%=Constants.ADD%>';
 		form.subcmd.value = subcmd;
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
-		submitForm(form);
+
+        if (isNg) {
+            submitForm(form, './', null, function() {
+                var customEvent = document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "advanced-template-saved",
+                    data: {}
+                });
+                document.dispatchEvent(customEvent);
+            });
+        } else {
+            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
+            submitForm(form);
+        }
 	}
 
 	var copyAsset = false;
@@ -254,7 +267,6 @@
 </script>
 
 <script language="JavaScript" src="/html/js/cms_ui_utils.js"></script>
-
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-template\") %>" />
 
@@ -457,9 +469,11 @@
 			</a>
 		<% } %>
 	
-		<a onClick="cancelEdit()" >
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</a>
+        <% if (request.getParameter("ng") == null) { %>
+            <a onClick="cancelEdit()" >
+                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+            </a>
+        <% } %>
 	</div>
 	</div>
 </div>
