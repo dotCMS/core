@@ -1,3 +1,7 @@
 export interface DotLayoutSideBar {
-    location: string;
+    location?: string;
+    containers?: Array<string>;
+    width?: string;
+    widthPercent?: number;
+    preview?: boolean;
 }

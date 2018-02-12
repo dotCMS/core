@@ -4,8 +4,6 @@ import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model'
 import { DotLayoutRow } from '../../shared/models/dot-layout-row.model';
 import { DotLayoutColumn } from '../../shared/models/dot-layout-column.model';
 import * as _ from 'lodash';
-import { DotPageView } from '../../shared/models/dot-page-view.model';
-import { NgGridItemConfig } from 'angular2-grid';
 import { DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE } from '../../shared/models/dot-layout.const';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotPageContainer } from '../models/dot-page-container.model';

@@ -11,7 +11,6 @@ import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
-import { EditContentResolver } from './services/dot-edit-content-resolver.service';
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
 import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { WorkflowService } from '../../api/services/workflow/workflow.service';
@@ -19,10 +18,7 @@ import { WorkflowService } from '../../api/services/workflow/workflow.service';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
-        path: '',
-        resolve: {
-            renderedPage: EditContentResolver
-        }
+        path: ''
     }
 ];
 
@@ -42,7 +38,6 @@ const routes: Routes = [
         DotDragDropAPIHtmlService,
         DotEditContentHtmlService,
         DotEditContentToolbarHtmlService,
-        EditContentResolver,
         EditPageService,
         WorkflowService
     ]

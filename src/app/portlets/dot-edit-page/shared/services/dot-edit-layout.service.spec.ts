@@ -1,6 +1,5 @@
 import { DotEditLayoutService } from './dot-edit-layout.service';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';

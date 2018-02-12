@@ -21,6 +21,8 @@ import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
 import { DotGlobalMessageService } from '../view/components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageService } from '../api/services/dot-messages-service';
+import { FormatDateService } from '../api/services/format-date-service';
 
 @Component({
     selector: 'p-confirmDialog',
@@ -48,7 +50,9 @@ export class DOTTestBed {
             StringUtils,
             UserModel,
             DotEventsService,
-            DotGlobalMessageService
+            DotGlobalMessageService,
+            DotMessageService,
+            FormatDateService
         ]
     };
 
