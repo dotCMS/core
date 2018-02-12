@@ -178,7 +178,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final DistributedJournalAPI<String> distributedJournalAPI;
     private final TagAPI tagAPI;
 
-    private int MAX_LIMIT = 100000;
+    private int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + java.io.File.separator + "contentlets";
 
@@ -787,7 +787,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!isAdmin)
             addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
 
-        int originalLimit = limit;
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
@@ -795,15 +794,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             limit = MAX_LIMIT;
         }
         SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-        PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<ContentletSearch>();
+        PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
         list.setTotalResults(lc.getTotalHits());
 
         for (SearchHit sh : lc.getHits()) {
             try{
-                Map<String, Object> hm = new HashMap<String, Object>();
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
                 ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setIdentifier(sh.field("identifier").getValue().toString());
-                conwrapper.setInode(sh.field("inode").getValue().toString());
+
+                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                conwrapper.setInode(sourceMap.get("inode").toString());
                 conwrapper.setScore(sh.getScore());
 
                 list.add(conwrapper);
@@ -825,7 +825,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        final List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreesByChild(identifier.getId());
+        final List<MultiTree> multitrees = MultiTreeFactory.getMultiTreesByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {

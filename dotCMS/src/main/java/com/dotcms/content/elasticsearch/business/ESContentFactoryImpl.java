@@ -760,14 +760,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
         SearchResponse response = client.getClient().prepareSearch()
-                .setQuery( builder ).addStoredField("inode").addStoredField("identifier")
+                .setQuery( builder )
                 .setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.getHits();
-        List<Contentlet> cons = new ArrayList<Contentlet>();
+        List<Contentlet> cons = new ArrayList<>();
 
         for ( SearchHit hit : hits ) {
             try {
-                cons.add( find( hit.field("inode").getValue().toString() ) );
+                Map<String, Object> sourceMap = hit.getSourceAsMap();
+                cons.add( find( sourceMap.get("inode").toString()) );
             } catch ( Exception e ) {
                 throw new ElasticsearchException( e.getMessage(), e );
             }
@@ -850,9 +851,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = request.setIndices((live ? info.live : info.working))
-			        .addStoredField("inode").addStoredField("identifier").execute().actionGet();
+			        .execute().actionGet();
 			SearchHits hits = response.getHits();
-			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
+			Contentlet contentlet = find(hits.getAt(0).getSourceAsMap().get("inode").toString());
 			return contentlet;
 		}
 		// if we don't have the con in this language
@@ -920,15 +921,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		try {
 
 			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
-			        setSize(limit).setFrom(offset).addStoredField("inode").addStoredField("identifier").execute()
+			        setSize(limit).setFrom(offset).execute()
 					.actionGet();
 
 			SearchHits hits = response.getHits();
 
-			List<Contentlet> cons = new ArrayList<Contentlet>();
+			List<Contentlet> cons = new ArrayList<>();
 			for (int i = 0; i < hits.getHits().length; i++) {
 				try {
-					cons.add(find(hits.getAt(i).field("inode").getValue().toString()));
+					cons.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
 				} catch (Exception e) {
 					throw new ElasticsearchException(e.getMessage(),e);
 				}
@@ -941,7 +942,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    List<Contentlet> cons = new ArrayList<Contentlet>();
+	    List<Contentlet> cons = new ArrayList<>();
         StringBuilder queryBuffer = new StringBuilder();
         queryBuffer.append("select {contentlet.*} ")
                    .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
@@ -974,7 +975,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException {
-	    List<Contentlet> result = new ArrayList<Contentlet>();
+	    List<Contentlet> result = new ArrayList<>();
 
         try {
             Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
@@ -1297,8 +1298,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
 
         	srb.setIndices(indexToHit);
-        	srb.addStoredField("inode");
-        	srb.addStoredField("identifier");
 
             if(limit>0)
                 srb.setSize(limit);
