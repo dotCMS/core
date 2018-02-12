@@ -197,7 +197,7 @@ ext {
     homeFolder = serverFolder + webAppRootFolder
     dotcmsHome = serverFolder + webAppRootFolder
 
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
         try {
             git = org.ajoberstar.grgit.Grgit.open(file('..'))
             dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
@@ -897,10 +897,10 @@ task copyNodeModules(type: Copy) {
 
 // reference:  https://github.com/palantir/gradle-docker
 docker {
-    name "dotcms/devtest:$dotcmsReleaseVersion"
+    name "dotcms/dotcms:base-$dotcmsReleaseVersion-$dotcmsReleaseBuild"
     tags 'latest'
-    dockerfile file('Dockerfile')
-    copySpec.from(tgzTask.archivePath).into('.').rename(tgzTask.archiveName, 'dotcms.tar.gz')
+    dockerfile file('docker/Dockerfile')
+    files 'docker/entrypoint.sh', tgzTask.archivePath, 'docker/log4j2.xml'
     pull true
     noCache false
 }

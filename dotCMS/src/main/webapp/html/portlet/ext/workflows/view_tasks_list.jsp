@@ -204,7 +204,8 @@
 					final Language language = APILocator.getLanguageAPI()
 							.getLanguage(contentlet.getLanguageId());
 
-					final String langIcon = language.getLanguageCode() + "_" + language.getCountryCode();
+					final String langIcon = UtilMethods.isSet(language.getCountryCode())?
+							language.getLanguageCode() + "_" + language.getCountryCode():language.getLanguageCode();
 				%>
 				<img src="/html/images/languages/<%=langIcon%>.gif" width="16px" height="11px" style="margin-top:4px;float:left;">
 				<span>&nbsp;(<%=langIcon%>)</span>
