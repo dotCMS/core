@@ -202,11 +202,6 @@ public class ESIndexResource {
     }
 
     public static long indexDocumentCount(String indexName) {
-        //TODO: Test and remove old code below.
-	    /*ESIndexAPI esapi = APILocator.getESIndexAPI();
-        Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-        IndexStatus status = indexInfo.get(indexName);
-        return (status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): 0;*/
 
         Client client = new ESClient().getClient();
         final IndicesStatsResponse indicesStatsResponse =

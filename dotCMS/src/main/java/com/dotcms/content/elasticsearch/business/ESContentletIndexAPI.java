@@ -31,6 +31,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
@@ -133,9 +134,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 				throw new ElasticsearchException("index timed out creating");
 			}
 		}
-
-
-
 
 		mappingAPI.putMapping(indexName, "content", mapping);
 
@@ -364,10 +362,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                     
                     if(!reindexOnly)
                         req.add(new IndexRequest(info.working, "content", id)
-                                    .source(mapping));
+                                    .source(mapping, XContentType.JSON));
                     if(info.reindex_working!=null)
                         req.add(new IndexRequest(info.reindex_working, "content", id)
-                                    .source(mapping));
+                                    .source(mapping, XContentType.JSON));
                 }
     
                 if(con.isLive()) {
@@ -376,10 +374,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                     
                     if(!reindexOnly)
                         req.add(new IndexRequest(info.live, "content", id)
-                                .source(mapping));
+                                .source(mapping, XContentType.JSON));
                     if(info.reindex_live!=null)
                         req.add(new IndexRequest(info.reindex_live, "content", id)
-                                .source(mapping));
+                                .source(mapping, XContentType.JSON));
                 }
             }
             catch(DotMappingException ex) {

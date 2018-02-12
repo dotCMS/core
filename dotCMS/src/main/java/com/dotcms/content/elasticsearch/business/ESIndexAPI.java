@@ -587,6 +587,7 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
+		map.put("index.mapping.total_fields.limit", 2000);
 
 		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;

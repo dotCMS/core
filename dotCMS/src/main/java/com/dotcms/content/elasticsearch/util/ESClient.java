@@ -4,7 +4,6 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
