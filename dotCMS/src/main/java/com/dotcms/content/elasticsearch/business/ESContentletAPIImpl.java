@@ -2957,6 +2957,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 boolean priority = contentlet.isLowIndexPriority();
                 Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
+                Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
+
                 boolean isNewContent = false;
                 if(!InodeUtils.isSet(workingContentletInode)){
                     isNewContent = true;
@@ -3159,6 +3161,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //set again the don't validate me property if this was set
                 if(dontValidateMe != null){
                     contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
+                }
+
+                if(disableWorkflow != null){
+                    contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
                 }
 
 
