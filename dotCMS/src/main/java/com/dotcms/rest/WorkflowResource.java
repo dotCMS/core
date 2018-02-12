@@ -160,7 +160,7 @@ public class WorkflowResource {
 				c.setStringProperty("wfActionComments", wfComments);
 				c.setStringProperty("wfActionAssign", wfAssign);
 
-				contentlet = APILocator.getContentletAPI().checkin(c, user, false);
+				contentlet = APILocator.getContentletAPI().checkin(c, user, false, null);
 			} else {
 				contentlet.setStringProperty("wfActionId", action.getId());
 				contentlet.setStringProperty("wfActionComments", wfComments);
