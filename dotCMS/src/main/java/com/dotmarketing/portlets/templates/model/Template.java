@@ -84,6 +84,18 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		return getTitle().startsWith(ANONYMOUS_PREFIX);
 	}
 
+	/**
+	 * Returns true if this is a Template or false if its a Layout
+	 * @return
+	 */
+	public boolean isTemplate() {
+		return this.isShowOnMenu();
+	}
+
+	public void setIsTemplate(final boolean isTemplate) {
+		this.setShowOnMenu(isTemplate);
+	}
+
     public String getURI(Folder folder) {
     	String folderPath = "";
 		try {

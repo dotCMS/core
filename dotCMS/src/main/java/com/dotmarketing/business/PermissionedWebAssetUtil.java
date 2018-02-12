@@ -107,10 +107,11 @@ public class PermissionedWebAssetUtil {
 		        "identifier.id",
 		        "template.identifier = identifier.id and inode.inode = template.inode and " +
 		            "identifier.id=template_version_info.identifier and template_version_info.working_inode=template.inode and " +
-		            "template_version_info.deleted="+DbConnectionFactory.getDBFalse() 
+		            "template_version_info.deleted="+DbConnectionFactory.getDBFalse() +
+					" and template.show_on_menu = "+DbConnectionFactory.getDBTrue()
 				+ (
-						UtilMethods.isSet(searchString) ? 
-						" and (lower(template.title) LIKE '%" + searchString.toLowerCase() + "%'" 
+						UtilMethods.isSet(searchString) ?
+						" and (lower(template.title) LIKE '%" + searchString.toLowerCase() + "%'"
 						+(UtilMethods.isSet(hostQuery)? " AND (" + hostQuery + ")":"") + ")":
 						(UtilMethods.isSet(hostQuery)? " AND (" + hostQuery + ")":"")
 			      ) , columnsToOrderBy, offset, limit, permission, respectFrontEndPermissions, user);

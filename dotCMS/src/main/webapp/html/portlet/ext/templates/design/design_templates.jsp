@@ -342,7 +342,7 @@
 	dojo.addOnLoad(function() {
 		drawDefault(<%=overrideBody%>,'<%=LanguageUtil.get(pageContext, "Add-Container")%>','<%=LanguageUtil.get(pageContext, "Remove-Container")%>','<%=containersStr.toString()%>',<%=containerSize%>);
 		//setTimeout('codeMirrorArea()',1);
-		dojo.byId("titleField").focus(true);
+		//dojo.byId("titleField").focus(true);
 	});
 
 /*	var editor;

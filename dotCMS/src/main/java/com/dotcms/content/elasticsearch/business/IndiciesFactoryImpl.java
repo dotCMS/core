@@ -108,7 +108,7 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
         
         cache.clearCache();
         
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+        HibernateUtil.addSyncCommitListener(new FlushCacheRunnable() {
             public void run() {
                 cache.clearCache();
             }
