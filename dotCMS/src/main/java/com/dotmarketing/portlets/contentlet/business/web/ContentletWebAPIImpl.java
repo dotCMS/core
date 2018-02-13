@@ -9,24 +9,14 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -38,7 +28,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -52,28 +41,22 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.commons.collections.CollectionUtils;
+
+import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.collections.CollectionUtils;
+import java.util.*;
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -85,7 +68,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private ContentletAPI conAPI;
 	private FieldAPI fAPI;
 	private HostWebAPI hostAPI;
-	private FolderAPI fldrAPI;
+
 	private UserAPI userAPI;
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
@@ -101,7 +84,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		conAPI = APILocator.getContentletAPI();
 		fAPI = APILocator.getFieldAPI();
 		hostAPI = WebAPILocator.getHostWebAPI();
-		fldrAPI = APILocator.getFolderAPI();
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
@@ -335,71 +317,22 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
-		Set contentletFormKeys = contentletFormData.keySet();//To replace req.getParameterValues()
+		final Set contentletFormKeys     = contentletFormData.keySet();//To replace req.getParameterValues()
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-		String currentContentident = currentContentlet.getIdentifier();
-		boolean isNew = false;
-
-		if(!InodeUtils.isSet(currentContentlet.getInode())){
-			isNew = true;
-		}
+		final String currentContentident = currentContentlet.getIdentifier();
+		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		/***
-		 *
 		 * Workflow
-		 *
 		 */
 		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
 		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
 		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
 
 		/**
-		 *
 		 * Push Publishing Actionlet
-		 *
-		 */
-		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
-		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
-		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
-		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
-		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
-		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
-		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
-
-		/*
-		If it is an existing content we need to checkout in order to set the
-		values we have in the edit content form.
-		 */
-		if(!isNew){
-
-			try{
-				currentContentlet = conAPI.checkout(currentContentlet.getInode(), user, false);
-			} catch(DotLockException dle) {
-				SessionMessages.add(request, "message", "message.cannot.unlock.content.for.editing");
-				throw new DotLockException("User cannot lock contentlet : ", dle);
-			} catch (DotSecurityException dse) {
-				if(!isAutoSave)
-					SessionMessages.add(request, "message", "message.insufficient.permissions.to.save");
-
-				throw new DotSecurityException("User cannot checkout contentlet : ", dse);
-			}
-		}
-
-		/***
-		 *
-		 * Workflow
-		 *
-		 */
-		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
-		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
-
-		/**
-		 *
-		 * Push Publishing Actionlet
-		 *
 		 */
 		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
 		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
@@ -425,9 +358,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			throw new DotContentletValidationException(ve.getMessage());
 		}
 
-		String subcmd = "";
-		if(UtilMethods.isSet(contentletFormData.get("subcmd")))
-			subcmd = (String) contentletFormData.get("subcmd");
+		final String subCommand = UtilMethods.isSet(contentletFormData.get("subcmd"))?
+				(String) contentletFormData.get("subcmd"): StringPool.BLANK;
 
 		//Saving interval review properties
 		if (contentletFormData.get("reviewContent") != null && contentletFormData.get("reviewContent").toString().equalsIgnoreCase("true")) {
@@ -443,24 +375,30 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			currentContentlet.setNextReview(conAPI.getNextReview(currentContentlet, user, false));
 		}
 
-		ArrayList<Category> cats = new ArrayList<Category>();
+		final ArrayList<Category> categories   = new ArrayList<Category>();
 		// Getting categories that come from the entity
-		ArrayList<String> categoriesList = new ArrayList<String>();
+		final ArrayList<String> categoriesList = new ArrayList<String>();
 		Host host =null;
 		Folder folder = null;
-		for (Iterator iterator = contentletFormKeys.iterator(); iterator.hasNext();) {
-			String elementName = (String) iterator.next();
-			if(elementName.startsWith("categories") && elementName.endsWith("_")){
+
+		for (final Iterator iterator = contentletFormKeys.iterator(); iterator.hasNext();) {
+
+			final String elementName = (String) iterator.next();
+			if(elementName.startsWith("categories") && elementName.endsWith("_")) {
+
 				categoriesList.add((String)contentletFormData.get(elementName));
 			}
 
 			//http://jira.dotmarketing.net/browse/DOTCMS-3232
-			if(elementName.equalsIgnoreCase("hostId") &&
-					InodeUtils.isSet(contentletFormData.get(elementName).toString())){
-				String hostId = contentletFormData.get(elementName).toString();
-				 host = hostAPI.find(hostId, user, false);
-				if(host == null)
+			if("hostId".equalsIgnoreCase(elementName) &&
+					InodeUtils.isSet(contentletFormData.get(elementName).toString())) {
+
+				final String hostId = contentletFormData.get(elementName).toString();
+				host = hostAPI.find(hostId, user, false);
+				if(host == null) {
 					host = new Host();
+				}
+
 				if(!perAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
 					SessionMessages.add(request, "message", "User needs 'Add Children' Permissions on selected host");
 					throw new DotSecurityException("User has no Add Children Permissions on selected host");
@@ -469,57 +407,58 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				currentContentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
 			}
 
-			if(elementName.equalsIgnoreCase("folderInode") &&
-					InodeUtils.isSet(contentletFormData.get(elementName).toString())){
-				String folderInode = contentletFormData.get(elementName).toString();
-				folder = fldrAPI.find(folderInode, user, true);
-				if(isNew && !perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)){
+			if("folderInode".equalsIgnoreCase(elementName) &&
+					InodeUtils.isSet(contentletFormData.get(elementName).toString())) {
+
+				final String folderInode = contentletFormData.get(elementName).toString();
+				folder = this.folderAPI.find(folderInode, user, true);
+
+				if(isNew && !perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)) {
 					SessionMessages.add(request, "message", "User needs 'Add Children Permissions' on selected folder");
 					throw new DotSecurityException("User has no Add Children Permissions on selected folder");
 				}
 				currentContentlet.setHost(folder.getHostId());
 				currentContentlet.setFolder(folderInode);
 			}
-
-
 		 }
 
 		if (categoriesList != null && categoriesList.size() > 0) {
-			for (Iterator iterator = categoriesList.iterator(); iterator
-					.hasNext();) {
-				String tmpString = (String) iterator.next();
-				cats.add(catAPI.find(tmpString, user, false));
+			for (final Iterator iterator = categoriesList.iterator(); iterator.hasNext();) {
+
+				final String tmpString = (String) iterator.next();
+				categories.add(catAPI.find(tmpString, user, false));
 			}
 		}
 
-		try{
-			ContentletRelationships contRel = retrieveRelationshipsData(currentContentlet,user, contentletFormData );
+		try {
+
+			final ContentletRelationships contentletRelationships =
+					retrieveRelationshipsData(currentContentlet,user, contentletFormData );
 
 			// http://jira.dotmarketing.net/browse/DOTCMS-65
 			// Coming from other contentlet to relate it automatically
-			String relateWith = null;
-			if(UtilMethods.isSet(contentletFormData.get("relwith")))
-				relateWith = (String) contentletFormData.get("relwith");
+			final String relateWith   = (UtilMethods.isSet(contentletFormData.get("relwith")))?
+				(String) contentletFormData.get("relwith"): null;
 
-			String relationType = null;
-			if(UtilMethods.isSet(contentletFormData.get("reltype")))
-				relationType = (String) contentletFormData.get("reltype");
+			final String relationType = (UtilMethods.isSet(contentletFormData.get("reltype")))?
+				(String) contentletFormData.get("reltype"): null;
 
-			String relationHasParent = null;
-			relationHasParent = (String) contentletFormData.get("relisparent");
+			final String relationHasParent = (String) contentletFormData.get("relisparent");
 			if(relateWith != null){
 				try {
 
-					List<ContentletRelationshipRecords> recordsList = contRel.getRelationshipsRecords();
-					for(ContentletRelationshipRecords records : recordsList) {
-						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
-							continue;
-						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
-								((!records.isHasParent() && relationHasParent.equals("no")) ||
-								 (records.isHasParent() && relationHasParent.equals("yes"))))
-							continue;
-						records.getRecords().add(conAPI.find(relateWith, user, false));
+					final List<ContentletRelationshipRecords> recordsList =
+							contentletRelationships.getRelationshipsRecords();
+					for(final ContentletRelationshipRecords records : recordsList) {
 
+						if ((!records.getRelationship().getRelationTypeValue().equals(relationType)) ||
+							(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
+								((!records.isHasParent() && relationHasParent.equals("no")) ||
+								 (records.isHasParent() && relationHasParent.equals("yes"))))) {
+							continue;
+						}
+
+						records.getRecords().add(conAPI.find(relateWith, user, false));
 					}
 
 
@@ -528,35 +467,35 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-			if("publish".equals(subcmd)){
+			if(com.dotmarketing.util.Constants.PUBLISH.equals(subCommand)) {
 				currentContentlet.setBoolProperty("live", true);
 			}
 
 			// Perform some validations before saving it
 			if (currentContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
-				String status = validateNewContentPage(currentContentlet);
+
+				final String status = validateNewContentPage(currentContentlet);
 				if (UtilMethods.isSet(status)) {
-					String msg = LanguageUtil.get(user, status);
+					final String msg = LanguageUtil.get(user, status);
 					throw new DotRuntimeException(msg);
 				}
 			}
 
 			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
+
 				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
 								.modUser(user)
-								.relationships(contRel)
+								.relationships(contentletRelationships)
 								.workflowActionId((String) contentletFormData.get("wfActionId"))
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
-								.categories(cats)
+								.categories(categories)
 								.generateSystemEvent(generateSystemEvent).build());
-			} else { // todo: remove this as soon as all actions are workflow actions
+			} else {
 
-				currentContentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats,
-						null, user, false,generateSystemEvent);
+				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
+								", without an action.");
 			}
 		} catch(DotContentletValidationException ve) {
 
@@ -565,21 +504,28 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 
 		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
+		currentContentlet.setStringProperty("wfActionAssign",   (String) contentletFormData.get("wfActionAssign"));
 
-		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
+		contentletFormData.put(WebKeys.CONTENTLET_EDIT,      currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 
-		if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS") && !isNew && !isAutoSave)
+		if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS", false) && !isNew && !isAutoSave) {
+
 			_sendContentletPublishNotification(currentContentlet, request);
+		}
 
-		if(!isAutoSave)
-		    SessionMessages.add(request, "message", "message.contentlet.save");
+		if(!isAutoSave) {
 
-        if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
+			SessionMessages.add(request, "message", "message.contentlet.save");
+		}
+
+        if ((subCommand != null) && com.dotmarketing.util.Constants.PUBLISH.equals(subCommand)) {
+
             APILocator.getVersionableAPI().setLive(currentContentlet);
-            if(!isAutoSave)
-                SessionMessages.add(request, "message", "message.contentlet.published");
+            if(!isAutoSave) {
+
+				SessionMessages.add(request, "message", "message.contentlet.published");
+			}
         }
 	}
 

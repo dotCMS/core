@@ -282,7 +282,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveScheme(final WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
-		
+
+		if (null != scheme && SYSTEM_WORKFLOW_ID.equals(scheme.getId())
+				&& scheme.isArchived()) {
+
+			Logger.warn(this, "Can not archive the system workflow");
+			throw new DotWorkflowException("Can not archive the system workflow");
+		}
+
 		workFlowFactory.saveScheme(scheme);
 
 	}
