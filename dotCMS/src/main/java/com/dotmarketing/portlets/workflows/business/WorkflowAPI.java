@@ -524,6 +524,29 @@ public interface WorkflowAPI {
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Return the list of available default workflow actions associated to a Content type. All the
+	 * Workflow Actions are part of the first step of the Workflow Schemes associted to the Content
+	 * Type
+	 *
+	 * @param contentType ContentType to be processed
+	 * @param user The current User
+	 * @return List<WorkflowAction>
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Return the list of available default workflow actions associated to a List of Workflow schemes.
+	 * All the Workflow Actions are part of the first step of the given Workflow Schemes.
+	 *
+	 * @param schemes List of workflowScheme to be processes
+	 * @param user The current User
+	 * @return List<WorkflowAction>
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findAvailableDefaultActionsBySchemes(List<WorkflowScheme> schemes, User user) throws DotDataException, DotSecurityException;
 
 }
