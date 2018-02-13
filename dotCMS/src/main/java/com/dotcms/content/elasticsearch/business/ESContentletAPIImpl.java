@@ -1316,10 +1316,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                     return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable look up related content",ex);
+                    throw new DotDataException("Unable to look up related content",ex);
                 }
             }
-            throw new DotDataException("Unable look up related content",e);
+            throw new DotDataException("Unable to look up related content",e);
         }
     }
 
@@ -1375,10 +1375,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                     return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable look up related content",ex);
+                    throw new DotDataException("Unable to look up related content",ex);
                 }
             }
-            throw new DotDataException("Unable look up related content",e);
+            throw new DotDataException("Unable to look up related content",e);
         }
 
     }
