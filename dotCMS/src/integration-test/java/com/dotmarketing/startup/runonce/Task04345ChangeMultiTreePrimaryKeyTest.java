@@ -31,10 +31,10 @@ public class Task04345ChangeMultiTreePrimaryKeyTest  {
 
     @Test
     public void testCreatePrimaryKey() throws DotDataException, SQLException {
-        List primaryKeysColumns = new ArrayList();
-        DotConnect dc = new DotConnect();
+        final List primaryKeysColumns = new ArrayList();
+        final DotConnect dc = new DotConnect();
 
-        Task04345ChangeMultiTreePrimaryKey task04345ChangeMultiTreePrimaryKey = new Task04345ChangeMultiTreePrimaryKey();
+        final Task04345ChangeMultiTreePrimaryKey task04345ChangeMultiTreePrimaryKey = new Task04345ChangeMultiTreePrimaryKey();
         String sql = null;
 
 
@@ -55,11 +55,11 @@ public class Task04345ChangeMultiTreePrimaryKeyTest  {
         dc.setSQL(sql);
         dc.loadResult();
 
-        DatabaseMetaData metaData = DbConnectionFactory.getConnection().getMetaData();
-        ResultSet multi_tree = metaData.getPrimaryKeys(null, null, "multi_tree");
+        final DatabaseMetaData metaData = DbConnectionFactory.getConnection().getMetaData();
+        final ResultSet multi_tree = metaData.getPrimaryKeys(null, null, "multi_tree");
 
         while(multi_tree.next()){
-            String columnName = multi_tree.getString(4);
+            final String columnName = multi_tree.getString(4);
             primaryKeysColumns.add(columnName);
         }
 
