@@ -1,10 +1,11 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,8 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
-import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
@@ -36,6 +38,10 @@ import org.osgi.framework.launch.Framework;
  * Date: 9/17/12
  */
 public class OSGIUtil {
+
+    //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
+    private List<String> dotCMSJarPrefixes = ImmutableList
+            .copyOf(CollectionsUtils.list("dotcms", "ee-"));
 
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
@@ -68,7 +74,7 @@ public class OSGIUtil {
     }
 
     private static Framework felixFramework;
-    private ServletContextEvent servletContextEvent;
+    private ServletContext servletContext;
 
     /**
      * Initializes the OSGi framework
@@ -76,8 +82,8 @@ public class OSGIUtil {
      * @return Framework
      */
     public Framework initializeFramework() {
-        if (servletContextEvent != null) {
-            return initializeFramework(servletContextEvent);
+        if (servletContext != null) {
+            return initializeFramework(servletContext);
         }
 
         throw new IllegalArgumentException("In order to initialize the OSGI framework a ServletContextEvent must be set.");
@@ -111,7 +117,7 @@ public class OSGIUtil {
 
         // Create host activator;
         HostActivator hostActivator = HostActivator.instance();
-        hostActivator.setServletContext(servletContextEvent.getServletContext());
+        hostActivator.setServletContext(servletContext);
         felixProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, ImmutableList.of(hostActivator));
 
         return felixProps;
@@ -123,11 +129,14 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return Framework
      */
-    public Framework initializeFramework (ServletContextEvent context) {
-        servletContextEvent = context;
+    public Framework initializeFramework(ServletContext context) {
+
+        long start = System.currentTimeMillis();
+
+        servletContext = context;
 
         if (null == Config.CONTEXT) {
-            Config.setMyApp(servletContextEvent.getServletContext());
+            Config.setMyApp(servletContext);
         }
 
         // load all properties and set base directory
@@ -187,6 +196,10 @@ public class OSGIUtil {
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
         }
+
+        System.setProperty(WebKeys.OSGI_ENABLED, "true");
+        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI,
+                String.valueOf(System.currentTimeMillis() - start));
 
         return felixFramework;
     }
@@ -311,7 +324,7 @@ public class OSGIUtil {
         File f = new File(FELIX_EXTRA_PACKAGES_FILE);
         if (!f.exists()) {
             StringBuilder bob = new StringBuilder();
-            final Collection<String> list = ResourceCollectorUtil.getResources();
+            final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
             for (final String name : list) {
                 if(name.startsWith("/")) continue;
                 if(name.contains(":")) continue;
@@ -332,7 +345,6 @@ public class OSGIUtil {
                     "org.osgi.service.startlevel," +
                     "org.osgi.service.url," +
                     "org.osgi.util.tracker," +
-                    "org.osgi.service.http," +
                     "javax.inject.Qualifier," +
                     "javax.servlet.resources," +
                     "javax.servlet;javax.servlet.http;version=3.1.0"
@@ -455,7 +467,7 @@ public class OSGIUtil {
      * @param props The properties
      * @param context The servlet context
      */
-    private void verifyBundles(Properties props, ServletContextEvent context) {
+    private void verifyBundles(Properties props, ServletContext context) {
         String bundlePath = props.getProperty(AUTO_DEPLOY_DIR_PROPERTY);
         String baseDirectory = getBaseDirectory(context);
 
@@ -496,10 +508,10 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return String
      */
-    public String getBaseDirectory(ServletContextEvent context) {
+    public String getBaseDirectory(ServletContext context) {
         String baseDirectory = null;
         if (context != null) {
-            baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+            baseDirectory = context.getRealPath("/WEB-INF");
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {

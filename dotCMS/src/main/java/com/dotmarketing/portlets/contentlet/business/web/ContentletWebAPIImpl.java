@@ -368,29 +368,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
 		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
 
+		/*
+		If it is an existing content we need to checkout in order to set the
+		values we have in the edit content form.
+		 */
 		if(!isNew){
-
-			String wfActionId = (String) contentletFormData.get("wfActionId");
-			if(UtilMethods.isSet(wfActionId)) {
-
-				WorkflowAction action = APILocator.getWorkflowAPI().findActionRespectingPermissions(wfActionId, currentContentlet, user);
-
-				if(action != null
-						&& ! action.requiresCheckout() // no modifies the db
-						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
-
-				    if(currentContentlet.isLocked())
-				        APILocator.getContentletAPI().unlock(currentContentlet, user, false);
-
-						currentContentlet.setModUser(user.getUserId());
-						currentContentlet = APILocator.getWorkflowAPI().fireWorkflowNoCheckin(currentContentlet,user).getContentlet();
-						contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
-						contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
-						SessionMessages.add(request, "message", "Workflow-executed");
-
-						return;
-				}
-			}
 
 			try{
 				currentContentlet = conAPI.checkout(currentContentlet.getInode(), user, false);
@@ -571,6 +553,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.generateSystemEvent(generateSystemEvent).build());
 			} else { // todo: remove this as soon as all actions are workflow actions
 
+				currentContentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 				currentContentlet.setInode(null);
 				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats,
 						null, user, false,generateSystemEvent);

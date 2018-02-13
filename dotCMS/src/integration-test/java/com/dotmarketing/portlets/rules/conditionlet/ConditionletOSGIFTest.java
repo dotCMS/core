@@ -34,8 +34,7 @@ public class ConditionletOSGIFTest {
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
-        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT); 
-        OSGIUtil.getInstance().initializeFramework(context);
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
     }
 
     @Test

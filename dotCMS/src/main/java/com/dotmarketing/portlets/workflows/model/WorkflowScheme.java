@@ -30,10 +30,12 @@ public class WorkflowScheme implements Serializable {
 	}
 	String entryActionId;
 
+	@Deprecated
 	public String getEntryActionId() {
 		return entryActionId;
 	}
 
+	@Deprecated
 	public void setEntryActionId(String entryActionId) {
 		this.entryActionId = entryActionId;
 	}
