@@ -122,7 +122,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return list;
     }
     @Override
-    public  Relationship byTypeValue(String typeValue) {
+    public  Relationship byTypeValue(final String typeValue) {
+        if(typeValue==null) {
+            return null;
+        }
 		Relationship rel = null;
 		try {
 			rel = cache.getRelationshipByName(typeValue);
@@ -132,8 +135,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
 		}
 
-		rel = (Relationship) InodeFactory.getInodeOfClassByCondition(Relationship.class, "relation_type_value = '"
-                + typeValue + "'");
+		rel = (Relationship) InodeFactory.getInodeOfClassByCondition(Relationship.class, "lower(relation_type_value) = '"
+                + typeValue.toLowerCase() + "'");
 		if(rel!= null && InodeUtils.isSet(rel.getInode()))
 			cache.putRelationshipByInode(rel);
 		return rel;
