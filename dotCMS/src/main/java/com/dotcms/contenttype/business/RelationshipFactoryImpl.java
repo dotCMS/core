@@ -92,12 +92,12 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
         return list;
     }
-    
+    @Override
     public  List<Relationship> dbAll() throws DotHibernateException {
-        String orderBy = "inode";
+        String orderBy = "relationship.inode";
         return dbAll(orderBy,"all");
     }
-
+    @Override
     @SuppressWarnings("unchecked")
     public  List<Relationship> dbAll(String orderBy, String contentTypeInode) throws DotHibernateException {
         List<Relationship> list = new ArrayList<Relationship>();
