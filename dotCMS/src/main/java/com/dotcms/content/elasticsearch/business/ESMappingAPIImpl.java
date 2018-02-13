@@ -264,13 +264,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
 					lcasev = ((String) lcasev).toLowerCase();
+					if (!lcasek.endsWith(TEXT)){
+						mlowered.put(lcasek + "_dotraw", lcasev);
+					}else{
+						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
+					}
 				}
 
 				mlowered.put(lcasek, lcasev);
-
-				if (!lcasek.endsWith(TEXT)){
-					mlowered.put(lcasek + "_dotraw", lcasev);
-				}
 			}
 
 			if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {

@@ -1,27 +1,46 @@
 {
     "content": {
-        "date_detection": false,
+        "date_detection": true,
         "_source": {
             "excludes": [
                 "metadata.*"
             ]
         },
+        "dynamic_date_formats": [
+            "MMM d, yyyy hh:mm:ss aaa"
+        ],
         "dynamic_templates": [
             {
                 "template_1": {
                     "match": "*_dotraw",
                     "mapping": {
                         "type":  "keyword",
-                        "ignore_above": 8191,
-                        "fields": {
-                            "_all": {
-                                "type": "text",
-                                "analyzer": "whitespace",
-                                "search_analyzer": "whitespace",
-                                "store": "false"
-                            }
-                        }
+                        "ignore_above": 8191
                     }
+                }
+            },
+            {
+                "textmapping": {
+                    "match": "*_text",
+                    "mapping": {
+                        "type": "text"
+                    }
+                }
+            },
+            {
+                "ordermapping": {
+                    "match": "*-order",
+                    "mapping": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            {
+                "datemapping": {
+                    "mapping": {
+                        "ignore_malformed": true
+                    },
+                    "match_mapping_type": "date"
                 }
             },
             {
@@ -51,6 +70,17 @@
 		                "doc_values": false 	
 					}
 	            }
+            },
+            {
+                "textmapping": {
+                    "match_mapping_type": "string",
+                    "mapping": {
+                        "analyzer": "whitespace",
+                        "search_analyzer": "whitespace",
+                        "store": "false",
+                        "type": "text"
+                    }
+                }
             }
         ]
     }
