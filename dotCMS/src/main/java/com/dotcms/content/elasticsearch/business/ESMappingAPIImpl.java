@@ -258,6 +258,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				throw new DotRuntimeException(urlMap, e);
 			}
 
+			StringWriter sw = new StringWriter();
 			for(Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lcasek=entry.getKey().toLowerCase();
 				Object lcasev = entry.getValue();
@@ -272,7 +273,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 
 				mlowered.put(lcasek, lcasev);
+
+				if(lcasev!=null) {
+					sw.append(lcasev.toString());
+					sw.append(' ');
+				}
 			}
+
+
 
 			if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 				// see if we have content metadata
@@ -284,6 +292,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
 
 					mlowered.put(lvar+".metadata.content", contentData);
+					sw.append(contentData);
+					sw.append(' ');
 				}
 			}
 
@@ -291,7 +301,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
 				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
+				sw.append(ident.getAssetName());
 			}
+
+			mlowered.put("catchall", sw.toString());
 
 			return mlowered;
 		} catch (Exception e) {

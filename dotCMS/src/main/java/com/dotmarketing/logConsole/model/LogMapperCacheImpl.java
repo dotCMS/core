@@ -18,7 +18,7 @@ public class LogMapperCacheImpl implements LogMapperCache {
     protected final String primaryGroup = "LogMapperCache";
     protected final String[] groupNames = { primaryGroup };
 
-    private final String KEY_LOGS = primaryGroup + "_ALL";
+    private final String KEY_LOGS = primaryGroup + "CATCHALL";
 
     public LogMapperCacheImpl () {
         cache = CacheLocator.getCacheAdministrator();

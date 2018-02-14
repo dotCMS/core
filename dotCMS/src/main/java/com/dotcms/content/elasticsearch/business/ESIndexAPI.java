@@ -1105,7 +1105,7 @@ public class ESIndexAPI {
 	 *            path to repository, this should be within the repo.path
 	 *            location
 	 * @param repositoryName
-	 *            repository name, if empty "_all" in used by ES
+	 *            repository name, if empty "catchall" in used by ES
 	 * @param compress
 	 *            if the repository should be compressed
 	 * @throws IllegalArgumentException

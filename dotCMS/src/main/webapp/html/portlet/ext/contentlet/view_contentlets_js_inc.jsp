@@ -717,7 +717,7 @@
 			if(structureInode == undefined || structureInode==""){
         		structureInode = dijit.byId('structure_inode').value;
         	}
-			if(structureInode == undefined || structureInode == "_all"){
+			if(structureInode == undefined || structureInode == "catchall"){
 				dijit.byId("selectStructureDiv").show();
 				return;
 			}
@@ -787,7 +787,7 @@
 				var allField = dijit.byId("allFieldTB").getValue();
 				if (allField != undefined && allField.length>0 ) {
 
-                        fieldsValues[fieldsValues.length] = "_all";
+                        fieldsValues[fieldsValues.length] = "catchall";
                         fieldsValues[fieldsValues.length] = allField + "*";
 				}
 
@@ -864,7 +864,7 @@
 
                 var allField = dijit.byId("allFieldTB").getValue();
                 if (allField != undefined && allField.length>0 ) {
-                    fieldsValues[fieldsValues.length] = "_all";
+                    fieldsValues[fieldsValues.length] = "catchall";
                     fieldsValues[fieldsValues.length] = allField + "*";
                 }
 
@@ -1499,7 +1499,7 @@
 
 				if (allField != undefined && allField.length>0 ) {
 
-                        fieldsValues[fieldsValues.length] = "_all";
+                        fieldsValues[fieldsValues.length] = "catchall";
                         fieldsValues[fieldsValues.length] = allField + "*";
 				}
                 for (var j = 0; j < currentStructureFields.length; j++) {
@@ -1649,7 +1649,7 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-                if(isInodeSet(structureInode) || "_all" == structureInode){
+                if(isInodeSet(structureInode) || "catchall" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
                         if((document.getElementById("lastModDateFrom").value!="")){
@@ -2293,7 +2293,7 @@
                         var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
-                        if (num > 0 && structureInode != "_all") {
+                        if (num > 0 && structureInode != "catchall") {
                             if (!donwloadToExcelMenuItem) {
                                 actionPrimaryMenu.addChild(new dijit.MenuItem({
                                     label: "<%= LanguageUtil.get(pageContext, "Export") %>",

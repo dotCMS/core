@@ -1317,7 +1317,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                             if (UtilMethods.isSet(identifier)) {
                                 final Script script = new Script(
                                     Script.DEFAULT_SCRIPT_TYPE,
-                                    "native",
+                                    "expert_scripts",
                                     "related",
                                     Collections.emptyMap(),
                                     ImmutableMap.of("relName", relName, "identifier", identifier));

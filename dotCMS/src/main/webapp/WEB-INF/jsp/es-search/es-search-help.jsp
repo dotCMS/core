@@ -39,7 +39,7 @@
         "bool": {
             "must": {
                 "term": {
-                    "_all": "gas"
+                    "catchall": "gas"
                 }
             }
         }
@@ -155,7 +155,7 @@ $results.response&lt;br&gt;
         "bool": {
             "must": {
                 "term": {
-                    "_all": "gas"
+                    "catchall": "gas"
                 }
             }
         }
