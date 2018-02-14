@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -117,9 +118,10 @@ public class ContentletUtil {
 
 						final Category parentCategory        = APILocator.getCategoryAPI().find(f.getValues(), user, true);
 						final List<Category> childCategories = new ArrayList<>();
+						final boolean allowFrontEnd = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 						for (Category category : cats) {
 
-							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user)) {
+							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,allowFrontEnd)) {
 
 								childCategories.add(category);
 							}
