@@ -1,11 +1,11 @@
 import { FieldUtil } from '../util/field-util';
 import { FieldColumn } from './field-column.model';
-import { Field } from './field.model';
+import { ContentTypeField } from './field.model';
 
 export class FieldRow {
 
     columns: FieldColumn[];
-    lineDivider: Field;
+    lineDivider: ContentTypeField;
 
     constructor(nColumns?: number) {
         this.columns = [];
@@ -47,10 +47,10 @@ export class FieldRow {
      * It will be create two FieldColumn the first one with two fields (id:2 and id:3) and the second one
      * with one field (id:5).
      * Algo the lineDivider attribute will be set to the first field(id:1)
-     * @param {Field[]} fields fields to add
+     * @param {ContentTypeField[]} fields fields to add
      * @memberof FieldRow
      */
-    addFields(fields:  Field[]): void {
+    addFields(fields:  ContentTypeField[]): void {
         let offset = 0;
 
         if (fields[0] && FieldUtil.isRow(fields[0])) {
@@ -58,7 +58,7 @@ export class FieldRow {
             offset = 1;
         }
 
-        const fieldsSplitByTabDivider: Field[][] = FieldUtil.splitFieldsByTabDivider(fields.splice(offset));
+        const fieldsSplitByTabDivider: ContentTypeField[][] = FieldUtil.splitFieldsByTabDivider(fields.splice(offset));
         fieldsSplitByTabDivider.forEach(tabDividerFields =>  {
             this.columns.push(new FieldColumn(tabDividerFields));
         });

@@ -18,25 +18,34 @@
         .ui-button {
             @extend #button-flat;
 
-            &[disabled] {
-                @extend #button-flat-disabled;
+            &.cancel {
+                .ui-button-text {
+                    color: $gray;
+                }
+        
+                &:hover {
+                    background-color: rgba($gray, 0.1);
+        
+                    .ui-button-text {
+                        color: $gray-darker;
+                    }
+                }
             }
         }
     }
 
     .ui-dialog-footer {
+        border-top: solid 1px $gray-lighter;
         padding: $dialog-padding-footer;
     }
 
     .ui-dialog-content,
-    .ui-dialog-titlebar,
     &.ui-confirmdialog .ui-dialog-content {
         margin: 0;
-        padding: $dialog-padding;
+        padding: 0 $dialog-padding $dialog-padding;
     }
 
     .ui-dialog-content {
-        overflow: inherit;
 
         & > .fa {
             display: none;
@@ -62,7 +71,7 @@
     }
 
     .ui-dialog-titlebar {
-        padding-bottom: 0;
+        padding: $dialog-padding;
     }
 
     .ui-dialog-titlebar-close,

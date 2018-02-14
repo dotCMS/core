@@ -1,12 +1,13 @@
-import { Field } from '../fields/index';
+import { ContentTypeField } from '../fields/index';
 
 export interface ContentType {
+    baseType?: string;
     clazz: string;
     defaultType: boolean;
     description?: string;
     detailPage?: string;
     expireDateVar?: string;
-    fields?: Array<Field>;
+    fields?: Array<ContentTypeField>;
     fixed: boolean;
     folder: string;
     host: string;

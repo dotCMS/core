@@ -1,87 +1,45 @@
-import { trigger, state, style, transition, animate } from '@angular/animations';
-import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    OnInit,
-    OnChanges,
-    ElementRef,
-    ViewChild,
-    AfterViewInit,
-    OnDestroy
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+
+import { Observable } from 'rxjs/Observable';
 
 import * as _ from 'lodash';
 import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { SelectItem } from 'primeng/primeng';
-import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+import { Workflow } from '../../../shared/models/workflow/workflow.model';
+import { WorkflowService } from '../../../api/services/workflow/workflow.service';
 
 // TODO: move this to models
-import { Field } from '../fields';
-import { WorkflowService } from '../../../api/services/workflow/workflow.service';
-import { Workflow } from '../../../shared/models/workflow/workflow.model';
-import { Observable } from 'rxjs/Observable';
+import { ContentTypeField } from '../fields';
 
 /**
-  * Form component to create or edit content types
-  *
-  * @export
-  * @class ContentTypesFormComponent
-  * @extends {BaseComponent}
-  * @implements {OnInit}
-  * @implements {OnChanges}
-  * @implements {AfterViewInit}
-  * @implements {OnDestroy}
-  */
+ * Form component to create or edit content types
+ *
+ * @export
+ * @class ContentTypesFormComponent
+ * @implements {OnInit}
+ */
 @Component({
-    animations: [
-        trigger('enterAnimation', [
-            state(
-                'expanded',
-                style({
-                    height: '*',
-                    overflow: 'visible'
-                })
-            ),
-            state(
-                'collapsed',
-                style({
-                    height: '0px',
-                    overflow: 'hidden'
-                })
-            ),
-            transition('expanded <=> collapsed', animate('250ms ease-in-out'))
-        ])
-    ],
     providers: [SiteSelectorComponent],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html'
 })
-export class ContentTypesFormComponent extends BaseComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class ContentTypesFormComponent implements OnInit {
     @ViewChild('name') name: ElementRef;
+
     @Input() data: any;
-    @Input() fields: Field[];
+    @Input() fields: ContentTypeField[];
     @Output() onSubmit: EventEmitter<any> = new EventEmitter();
 
+    canSave = false;
     dateVarOptions: SelectItem[] = [];
     form: FormGroup;
-    formState = 'collapsed';
-    isButtonDisabled = true;
-    placeholder: string;
-    submitAttempt = false;
-    templateInfo = {
-        icon: '',
-        placeholder: '',
-        action: ''
-    };
+    nameFieldLabel: string;
     workflowOptions: Observable<SelectItem[]>;
 
     private originalValue: any;
@@ -89,94 +47,46 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
     constructor(
         private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
-        private contentTypesInfoService: ContentTypesInfoService,
-        public dotMessageService: DotMessageService,
-        private hotkeysService: HotkeysService,
-        private workflowService: WorkflowService
+        private workflowService: WorkflowService,
+        public dotMessageService: DotMessageService
     ) {
-        super(
-            [
-                'contenttypes.form.field.detail.page',
-                'contenttypes.form.field.expire.date.field',
-                'contenttypes.form.field.host_folder.label',
-                'contenttypes.form.identifier',
-                'contenttypes.form.message.no.date.fields.defined',
-                'contenttypes.form.label.publish.date.field',
-                'contenttypes.hint.URL.map.pattern.hint1',
-                'contenttypes.form.label.URL.pattern',
-                'contenttypes.content.variable',
-                'contenttypes.form.label.workflow',
-                'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
-                'contenttypes.form.label.description',
-                'contenttypes.form.name',
-                'contenttypes.action.save',
-                'contenttypes.action.update',
-                'contenttypes.action.edit',
-                'contenttypes.action.delete',
-                'contenttypes.form.name.error.required',
-                'contenttypes.action.form.cancel',
-                'contenttypes.content.fileasset',
-                'contenttypes.content.content',
-                'contenttypes.content.form',
-                'contenttypes.content.persona',
-                'contenttypes.content.widget',
-                'contenttypes.content.htmlpage',
-                'contenttypes.content.key_value',
-                'contenttypes.content.vanity_url'
-            ],
-            dotMessageService
-        );
+        dotMessageService.getMessages([
+            'contenttypes.action.create',
+            'contenttypes.action.delete',
+            'contenttypes.action.edit',
+            'contenttypes.action.form.cancel',
+            'contenttypes.action.save',
+            'contenttypes.action.update',
+            'contenttypes.content.content',
+            'contenttypes.content.fileasset',
+            'contenttypes.content.form',
+            'contenttypes.content.htmlpage',
+            'contenttypes.content.key_value',
+            'contenttypes.content.persona',
+            'contenttypes.content.vanity_url',
+            'contenttypes.content.variable',
+            'contenttypes.content.widget',
+            'contenttypes.form.field.detail.page',
+            'contenttypes.form.field.expire.date.field',
+            'contenttypes.form.field.host_folder.label',
+            'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
+            'contenttypes.form.identifier',
+            'contenttypes.form.label.URL.pattern',
+            'contenttypes.form.label.description',
+            'contenttypes.form.label.publish.date.field',
+            'contenttypes.form.label.workflow',
+            'contenttypes.form.message.no.date.fields.defined',
+            'contenttypes.form.name',
+            'contenttypes.hint.URL.map.pattern.hint1',
+            'dot.common.message.field.required'
+        ]).subscribe();
     }
 
     ngOnInit(): void {
         this.initFormGroup();
         this.initWorkflowField();
-        this.setTemplateInfo();
         this.bindActionButtonState();
-        this.bindKeyboardEvents();
-
-        if (!this.isEditMode()) {
-            this.toggleForm();
-        }
-    }
-
-    ngAfterViewInit() {
-        if (!this.isEditMode()) {
-            this.name.nativeElement.focus();
-        }
-    }
-
-    ngOnChanges(changes): void {
-        if (changes.fields && !changes.fields.firstChange) {
-            this.setDateVarFieldsState();
-        }
-    }
-
-    ngOnDestroy() {
-        this.hotkeysService.remove(this.hotkeysService.get('esc'));
-    }
-
-    /**
-     * Cancel the editing of the the form and collapsed
-     *
-     * @memberof ContentTypesFormComponent
-     */
-    cancelForm(): void {
-        this.toggleForm();
-        this.name.nativeElement.blur();
-
-        if (this.isEditMode() && this.isFormValueUpdated()) {
-            this.form.patchValue(this.originalValue);
-        }
-    }
-
-    /**
-     * Set the form in edit mode, expand it and focus the first field
-     *
-     * @memberof ContentTypesFormComponent
-     */
-    editForm(): void {
-        this.toggleForm();
+        this.setNameFieldLabel();
         this.name.nativeElement.focus();
     }
 
@@ -191,84 +101,41 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
     }
 
     /**
-     * Reset from to basic state
+     * Set the form field name label
      *
      * @memberof ContentTypesFormComponent
      */
-    resetForm(): void {
-        this.formState = 'collapsed';
-        this.submitAttempt = false;
-        this.originalValue = this.form.value;
-        this.setButtonState();
-    }
-
-    /**
-     * Set the icon, labels and placeholder in the template
-     *
-     * @memberof ContentTypesFormComponent
-     */
-    setTemplateInfo(): void {
+    setNameFieldLabel(): void {
         this.dotMessageService.messageMap$.subscribe(() => {
             const type = this.data.baseType.toLowerCase();
 
-            this.templateInfo = {
-                icon: this.contentTypesInfoService.getIcon(type),
-                placeholder: `${this.i18nMessages[`contenttypes.content.${type}`]} ${this.i18nMessages[
-                    'contenttypes.form.name'
-                ]} *`,
-                action: this.isEditMode()
-                    ? this.i18nMessages['contenttypes.action.update']
-                    : this.i18nMessages['contenttypes.action.save']
-            };
+            this.nameFieldLabel = `${this.dotMessageService.get(`contenttypes.content.${type}`)}
+            ${this.dotMessageService.get('contenttypes.form.name')} *`;
         });
     }
 
     /**
-     * Set the variable property base on the name and sbmit the form if it's valid
+     * If form is valid emit form submit event
      *
      * @memberof ContentTypesFormComponent
      */
-    submitContent($event): void {
-        if (!this.submitAttempt) {
-            this.submitAttempt = true;
-        }
-
+    submitForm(): void {
         if (this.form.valid) {
             this.onSubmit.emit(this.form.value);
         }
     }
 
-    /**
-     * Toggle the variable that expand or collapse the form
-     *
-     * @memberof ContentTypesFormComponent
-     */
-    toggleForm(): void {
-        this.formState = this.formState === 'collapsed' ? 'expanded' : 'collapsed';
-    }
-
     private bindActionButtonState(): void {
         this.form.valueChanges.subscribe(() => {
-            this.setButtonState();
+            this.setSaveState();
         });
     }
 
-    private setButtonState() {
-        this.isButtonDisabled = this.isEditMode() ? !this.form.valid || !this.isFormValueUpdated() : !this.form.valid;
+    private setSaveState() {
+        this.canSave = this.isEditMode() ? this.form.valid && this.isFormValueUpdated() : this.form.valid;
     }
 
-    private bindKeyboardEvents(): void {
-        this.hotkeysService.add(
-            new Hotkey(['esc'], (event: KeyboardEvent, combo: string): boolean => {
-                if (this.formState === 'expanded' && this.isEditMode()) {
-                    this.cancelForm();
-                }
-                return false;
-            })
-        );
-    }
-
-    private getDateVarFieldOption(field: Field): SelectItem {
+    private getDateVarFieldOption(field: ContentTypeField): SelectItem {
         return {
             label: field.name,
             value: field.variable
@@ -277,8 +144,8 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
 
     private getDateVarOptions(): SelectItem[] {
         const dateVarOptions = this.fields
-            .filter((field: Field) => this.isDateVarField(field))
-            .map((field: Field) => this.getDateVarFieldOption(field));
+            .filter((field: ContentTypeField) => this.isDateVarField(field))
+            .map((field: ContentTypeField) => this.getDateVarFieldOption(field));
 
         if (dateVarOptions.length) {
             dateVarOptions.unshift({
@@ -311,7 +178,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             name: [this.data.name || '', [Validators.required]],
             publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
             workflow: [
-                { value: this.data.workflows ? this.data.workflows.map(workflow => workflow.id) : [], disabled: true }
+                { value: this.data.workflows ? this.data.workflows.map((workflow) => workflow.id) : [], disabled: true }
             ],
             defaultType: this.data.defaultType,
             fixed: this.data.fixed,
@@ -336,7 +203,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         this.dotcmsConfig
             .getConfig()
             .take(1)
-            .subscribe(res => {
+            .subscribe((res) => {
                 this.updateWorkflowFormControl(res.license);
             });
     }
@@ -360,7 +227,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
         return this.data && this.data.baseType === 'CONTENT';
     }
 
-    private isDateVarField(field: Field): boolean {
+    private isDateVarField(field: ContentTypeField): boolean {
         return field.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' && field.indexed;
     }
 
@@ -405,7 +272,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             }
         }
 
-        this.setButtonState();
+        this.setSaveState();
     }
 
     private updateWorkflowFormControl(license): void {
@@ -417,7 +284,7 @@ export class ContentTypesFormComponent extends BaseComponent implements OnInit, 
             if (this.originalValue) {
                 this.originalValue.workflow = workflowControl.value;
             }
-            this.setButtonState();
+            this.setSaveState();
         }
     }
 }

@@ -61,6 +61,7 @@
     border-radius: 50%;
     border: solid 1px;
     color: $gray;
+    cursor: pointer;
     margin-left: $basic-padding * 2;
     text-align: center;
     width: 15px;
@@ -70,6 +71,7 @@
         position: absolute;
         right: 0;
         top: 32px;
+        z-index: 1;;
     }
 
     .form__group:first-child &:first-child {

@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, SimpleChange, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
-import { Field, FieldRow } from '../';
+import { ContentTypeField, FieldRow } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
@@ -26,8 +26,8 @@ import { FieldService } from '../service/field.service';
 })
 class TestContentTypeFieldsRow {
     @Input() fieldRow: FieldRow;
-    @Output() editField: EventEmitter<Field> = new EventEmitter();
-    @Output() removeField: EventEmitter<Field> = new EventEmitter();
+    @Output() editField: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
 }
 
 @Component({
@@ -36,7 +36,7 @@ class TestContentTypeFieldsRow {
 })
 class TestContentTypeFieldsPropertiesForm {
     @Output() saveField: EventEmitter<any> = new EventEmitter();
-    @Input() formFieldData: Field;
+    @Input() formFieldData: ContentTypeField;
 }
 
 @Component({
@@ -156,7 +156,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     }));
 
     it('should emit removeFields event when a Row is removed', fakeAsync(() => {
-        let fieldsToRemove: Field[];
+        let fieldsToRemove: ContentTypeField[];
 
         const fieldRow: FieldRow = new FieldRow();
         const field = {
@@ -296,7 +296,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         it('should display dialog if a drop event happen from source', fakeAsync(() => {
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
 
             comp.ngOnInit();
@@ -320,7 +320,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             const testFields = [...this.fields.slice(6, 9), ...this.fields.slice(0, 6)];
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, testFields, true),
+                fields: new SimpleChange(null, testFields, true)
             });
 
             spyOn(comp.saveFields, 'emit');
@@ -342,7 +342,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             const testFields = [...this.fields.slice(0, 5), this.fields[8], ...this.fields.slice(5, 8)];
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, testFields, true),
+                fields: new SimpleChange(null, testFields, true)
             });
 
             spyOn(comp.saveFields, 'emit');
@@ -368,7 +368,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             becomeNewField(this.fields[8]);
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
             comp.ngOnInit();
 
@@ -393,7 +393,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             let saveFields;
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
             comp.ngOnInit();
             comp.editField(this.fields[8]);
@@ -419,13 +419,13 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         it('should handler removeField event', () => {
             const field = {
                 clazz: 'classField',
-                name: 'nameField',
+                name: 'nameField'
             };
 
             const spy = spyOn(comp, 'removeField');
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
 
             fixture.detectChanges();

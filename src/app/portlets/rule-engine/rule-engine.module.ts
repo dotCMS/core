@@ -36,6 +36,7 @@ import {
     VisitorsLocationComponent,
     VisitorsLocationContainer
 } from 'dotcms-rules-engine/dotcms-rules-engine';
+import { DotDirectivesModule } from '../../shared/dot-directives.module';
 
 const routes: Routes = [{
     component: AppRulesComponent,
@@ -49,7 +50,8 @@ const routes: Routes = [{
         FormsModule,
         HttpModule,
         ReactiveFormsModule,
-        RouterModule.forChild(routes)
+        RouterModule.forChild(routes),
+        DotDirectivesModule
     ],
     declarations: [
         AddToBundleDialogComponent,

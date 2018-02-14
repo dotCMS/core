@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
-import { Field, FieldType, FieldRow } from '../shared';
+import { ContentTypeField, FieldType, FieldRow } from '../shared';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldUtil } from '../util/field-util';
@@ -25,11 +25,11 @@ export class FieldService {
     /**
      * Save fields.
      * @param {string} contentTypeId Content Type'id
-     * @param {Field[]} fields fields to add
+     * @param {ContentTypeField[]} fields fields to add
      * @returns {Observable<any>}
      * @memberof FieldService
      */
-    saveFields(contentTypeId: string, fields: Field[]): Observable<any> {
+    saveFields(contentTypeId: string, fields: ContentTypeField[]): Observable<any> {
         fields.forEach((field, index) => {
             field.contentTypeId = contentTypeId;
 
@@ -54,7 +54,7 @@ export class FieldService {
      * @param contentTypeId content types's id that contains the fields
      * @param fields Fields to delete
      */
-    deleteFields(contentTypeId: string, fields: Field[]): Observable<{fields: Field[], deletedIds: string[]}> {
+    deleteFields(contentTypeId: string, fields: ContentTypeField[]): Observable<{fields: ContentTypeField[], deletedIds: string[]}> {
         return this.coreWebService.requestView({
             body: fields.map(field => field.id),
             method: RequestMethod.Delete,

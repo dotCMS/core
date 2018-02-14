@@ -20,6 +20,7 @@ import {
     DotTreeableDetailModule
 } from 'dotcms-js/dotcms-js';
 import { Routes, RouterModule } from '@angular/router';
+import { DotDirectivesModule } from '../../shared/dot-directives.module';
 
 const routes: Routes = [
     {
@@ -50,7 +51,8 @@ const routes: Routes = [
         DialogModule,
         FileUploadModule,
         ReactiveFormsModule,
-        RouterModule.forChild(routes)
+        RouterModule.forChild(routes),
+        DotDirectivesModule
     ],
     exports: [],
     providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }]

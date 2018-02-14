@@ -48,10 +48,10 @@ export class DotMessageService {
      * @returns {string}
      * @memberof DotMessageService
      */
-    get(key: string): string {
-        if (arguments && arguments.length > 1) {
+    get(key: string, ...args: string[]): string {
+        if (args.length) {
             return this.messagesLoaded[key]
-                ? this.formatMessage(this.messagesLoaded[key], Array.from(arguments).slice(1))
+                ? this.formatMessage(this.messagesLoaded[key], args)
                 : key;
         } else {
             return this.messagesLoaded[key] || key;
@@ -89,7 +89,7 @@ export class DotMessageService {
     }
 
     // Replace {n} in the string with the strings in the args array
-    private formatMessage(message: string, args: Array<string>): string {
+    private formatMessage(message: string, args: string[]): string {
         return message.replace(/{(\d+)}/g, (match, number) => {
             return typeof args[number] !== 'undefined' ? args[number] : match;
         });

@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
 import { FIELD_ICONS } from './content-types-fields-icon-map';
-import { Field, FieldType } from '../';
+import { ContentTypeField, FieldType } from '../';
 
 /**
  * Show all the Field Types
@@ -17,7 +17,7 @@ import { Field, FieldType } from '../';
     templateUrl: './content-types-fields-list.component.html'
 })
 export class ContentTypesFieldsListComponent implements  OnInit {
-    fieldTypes: Field[];
+    fieldTypes: ContentTypeField[];
 
     constructor(public fieldService: FieldService) {
 

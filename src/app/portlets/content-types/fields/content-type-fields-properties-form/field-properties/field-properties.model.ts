@@ -1,7 +1,7 @@
-import { Field } from '../../index';
+import { ContentTypeField } from '../../index';
 
 export interface FieldProperty {
     name: string;
     value: any;
-    field: Field;
+    field: ContentTypeField;
 }

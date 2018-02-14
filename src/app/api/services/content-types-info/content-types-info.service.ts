@@ -58,7 +58,7 @@ export class ContentTypesInfoService {
      *
      * @memberof ContentTypesInfoService
      */
-    public getIcon(type: string): string {
+    getIcon(type: string): string {
         return this.getItem(type, 'icon');
     }
 
@@ -67,10 +67,9 @@ export class ContentTypesInfoService {
      *
      * @param {string} type
      * @returns {string}
-     *
      * @memberof ContentTypesInfoService
      */
-    public getClazz(type: string): string {
+    getClazz(type: string): string {
         return this.getItem(type, 'clazz');
     }
 
@@ -79,10 +78,9 @@ export class ContentTypesInfoService {
      *
      * @param {string} type
      * @returns {string}
-     *
      * @memberof ContentTypesInfoService
      */
-    public getLabel(type: string): string {
+    getLabel(type: string): string {
         return this.getItem(type, 'label');
     }
 

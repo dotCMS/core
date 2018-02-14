@@ -1,11 +1,23 @@
-<dot-content-type-layout [contentTypeId]="data?.id">
-    <dot-content-types-form
-        #form
-        [fields]="fields"
-        [data]="data"
-        (onSubmit)="handleFormSubmit($event)">
-    </dot-content-types-form>
-
+<dot-content-type-layout [contentTypeId]="data?.id" *ngIf="isEditMode()">
+    <div class="content-type__edit-header container-fluid" id="content-type-edit-header">
+        <div class="content-type__form-header-left">
+            <div class="content-type__edit-title-icon">
+                <i class="fa" [ngClass]="templateInfo.icon"></i>
+            </div>
+            <div class="content-type__edit-title">
+                <h4>{{ data.name }} </h4>
+                <div class="content-type__edit-subtitle">
+                    <span class="content-type__edit-variable">
+                        {{ dotMessageService.get('contenttypes.content.variable') }}: {{ data.variable }} 
+                        <span class="content-type__edit-dot-separator">•</span> {{ dotMessageService.get('contenttypes.form.identifier') }}: {{ data.id }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="content-type__edit-actions">
+            <button type="button" pButton flat label="Edit" (click)="show = true" icon="fa-edit" id="form-edit-button"></button>
+        </div>
+    </div>
     <dot-content-type-fields-drop-zone
         *ngIf="data.id"
         [fields]="fields"
@@ -13,3 +25,28 @@
         (removeFields)="removeFields($event)">
     </dot-content-type-fields-drop-zone>
 </dot-content-type-layout>
+
+<p-dialog
+    *ngIf="show"
+    modal="modal"
+    width="500"
+    [(visible)]="show"
+    [responsive]="true"
+    [resizable]="false"
+    [draggable]="false"
+    [closable]="isEditMode()"> 
+    
+    <p-header>{{templateInfo.header}}</p-header>
+
+    <dot-content-types-form
+        #form
+        [fields]="fields"
+        [data]="data"
+        (onSubmit)="handleFormSubmit($event)">
+    </dot-content-types-form>
+
+    <p-footer>
+        <button type="button" pButton label="Cancel" class="content-type__cancel cancel" (click)="cancelForm()"></button>
+        <button type="button" pButton class="content-type__save" [label]="isEditMode() ? dotMessageService.get('contenttypes.action.update') : dotMessageService.get('contenttypes.action.create')" [disabled]="!form.canSave" (click)="form.submitForm()"></button>
+    </p-footer>
+</p-dialog>

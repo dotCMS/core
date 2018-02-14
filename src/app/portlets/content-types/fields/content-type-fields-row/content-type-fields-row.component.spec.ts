@@ -4,7 +4,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService  } from '../service';
-import { Field, FieldRow, FieldColumn } from '../';
+import { ContentTypeField, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -17,9 +17,9 @@ import { DotConfirmationService } from '../../../../api/services/dot-confirmatio
     template: ''
 })
 class TestContentTypeFieldDraggableItemComponent {
-    @Input() field: Field;
-    @Output() remove: EventEmitter<Field> = new EventEmitter();
-    @Output() edit: EventEmitter<Field> = new EventEmitter();
+    @Input() field: ContentTypeField;
+    @Output() remove: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output() edit: EventEmitter<ContentTypeField> = new EventEmitter();
 }
 
 describe('ContentTypeFieldsRowComponent', () => {
@@ -54,7 +54,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 FieldDragDropService,
                 DotConfirmationService,
                 { provide: DotMessageService, useValue: messageServiceMock }
-            ],
+            ]
         });
 
         fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);

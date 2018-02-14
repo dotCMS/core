@@ -17,6 +17,7 @@ import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
 
 import {HotkeyModule} from 'angular2-hotkeys';
+import { DotDirectivesModule } from './shared/dot-directives.module';
 
 /**
  * `AppModule` is the main entry point into Angular2's bootstraping process
@@ -36,6 +37,7 @@ import {HotkeyModule} from 'angular2-hotkeys';
         SharedModule.forRoot(),
         AppRoutingModule,
         HotkeyModule.forRoot(),
+        DotDirectivesModule
     ],
     providers: [
         ENV_PROVIDERS

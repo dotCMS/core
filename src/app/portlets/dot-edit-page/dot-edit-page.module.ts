@@ -11,6 +11,7 @@ import { TemplateContainersCacheService } from './template-containers-cache.serv
 import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-main.module';
 import { EditContentResolver } from '../dot-edit-content/services/dot-edit-content-resolver.service';
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
+import { DotDirectivesModule } from '../../shared/dot-directives.module';
 
 @NgModule({
     imports: [
@@ -18,7 +19,8 @@ import { EditPageService } from '../../api/services/edit-page/edit-page.service'
         DotEditLayoutModule,
         DotEditPageMainModule,
         DotEditPageRoutingModule,
-        DotTemplateAdditionalActionsModule
+        DotTemplateAdditionalActionsModule,
+        DotDirectivesModule
     ],
     declarations: [],
     providers: [

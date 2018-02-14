@@ -6,14 +6,14 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { Field } from '../index';
+import { ContentTypeField } from '../index';
 
 @Directive({
-    selector: '[dynamicFieldProperty]',
+    selector: '[dynamicFieldProperty]'
   })
 class TestDynamicFieldPropertyDirective {
     @Input() propertyName: string;
-    @Input() field: Field;
+    @Input() field: ContentTypeField;
     @Input() group: FormGroup;
 }
 
@@ -71,7 +71,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         'Decimal': 'Decimal',
         'Whole-Number': 'Whole-Number',
         'Large-Block-of-Text': 'Large-Block-of-Text',
-        'System-Field': 'System-Field',
+        'System-Field': 'System-Field'
     });
 
     beforeEach(async(() => {
@@ -87,7 +87,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 ComponentFactoryResolver,
                 FieldPropertyService,
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
-                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -105,7 +105,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(async(() => {
             this.field = {
                 clazz: 'field.class',
-                name: 'fieldName',
+                name: 'fieldName'
             };
 
             comp.formFieldData = this.field;
@@ -116,7 +116,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             const spyMethod = spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['property1', 'property2', 'property3']);
 
             comp.ngOnChanges({
-                formFieldData: new SimpleChange(null, this.field, true),
+                formFieldData: new SimpleChange(null, this.field, true)
             });
 
             expect(spyMethod).toHaveBeenCalledWith(this.field.clazz);
@@ -129,7 +129,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
         it('should init field proeprties', () => {
             comp.ngOnChanges({
-                formFieldData: new SimpleChange(null, this.field, true),
+                formFieldData: new SimpleChange(null, this.field, true)
             });
 
             expect('property1').toBe(comp.fieldProperties[0]);

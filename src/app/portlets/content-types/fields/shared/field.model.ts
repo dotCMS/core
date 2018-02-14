@@ -1,5 +1,5 @@
 
-export interface Field {
+export interface ContentTypeField {
     clazz?: string;
     contentTypeId?: string;
     fixed?: boolean;

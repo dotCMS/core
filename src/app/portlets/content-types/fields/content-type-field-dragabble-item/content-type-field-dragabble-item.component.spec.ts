@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 import { By } from '@angular/platform-browser';
-import { Field } from '../';
+import { ContentTypeField } from '../';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -95,7 +95,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             expect(button).not.toBeNull();
             expect(button.attributes['icon']).toEqual('fa-trash');
 
-            let resp: Field;
+            let resp: ContentTypeField;
             comp.remove.subscribe(field => (resp = field));
             button.nativeElement.click();
 
@@ -144,7 +144,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             expect(button).not.toBeNull();
             expect(button.attributes['icon']).toEqual('fa-edit');
 
-            let resp: Field;
+            let resp: ContentTypeField;
             comp.edit.subscribe(field => (resp = field));
             button.nativeElement.click();
 
@@ -168,7 +168,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        let resp: Field;
+        let resp: ContentTypeField;
         comp.edit.subscribe(field => (resp = field));
 
         de.nativeElement.click();

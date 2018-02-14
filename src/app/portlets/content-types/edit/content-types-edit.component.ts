@@ -6,40 +6,99 @@ import { BaseComponent } from '../../../view/components/_common/_base/base-compo
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
 import { CrudService } from '../../../api/services/crud';
-import { Field } from '../fields/index';
+import { ContentTypeField } from '../fields/index';
 import { FieldService } from '../fields/service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+import { DotRouterService } from '../../../api/services/dot-router-service';
 
 /**
  * Portlet component for edit content types
  *
  * @export
  * @class ContentTypesEditComponent
- * @extends {BaseComponent}
+ * @implements {OnInit}
  */
 @Component({
     selector: 'dot-content-types-edit',
-    templateUrl: './content-types-edit.component.html'
+    templateUrl: './content-types-edit.component.html',
+    styleUrls: ['./content-types-edit.component.scss']
 })
 export class ContentTypesEditComponent implements OnInit {
     @ViewChild('form') form: ContentTypesFormComponent;
 
     data: ContentType;
-    fields: Field[];
+    fields: ContentTypeField[];
+    show: boolean;
+    templateInfo = {
+        icon: '',
+        header: ''
+    };
 
     constructor(
+        private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
+        private dotRouterService: DotRouterService,
         private fieldService: FieldService,
         private location: Location,
         private route: ActivatedRoute,
+        public dotMessageService: DotMessageService,
         public router: Router
     ) {}
 
     ngOnInit(): void {
         this.route.data.pluck('contentType').subscribe((contentType: ContentType) => {
             this.data = contentType;
+
             if (contentType.fields) {
                 this.fields = contentType.fields;
             }
+        });
+
+        this.dotMessageService.getMessages([
+            'contenttypes.action.form.cancel',
+            'contenttypes.action.edit',
+            'contenttypes.action.create',
+            'contenttypes.action.update',
+            'contenttypes.content.variable',
+            'contenttypes.content.edit.contenttype',
+            'contenttypes.content.create.contenttype',
+            'contenttypes.form.identifier'
+
+        ]).subscribe();
+
+        this.setTemplateInfo();
+
+        this.show = !this.isEditMode();
+    }
+
+    /**
+     * Handle cancel button in dialog
+     *
+     * @memberof ContentTypesEditComponent
+     */
+    cancelForm(): void {
+        this.show = false;
+
+        if (!this.isEditMode()) {
+            this.dotRouterService.gotoPortlet('/content-types-angular');
+        }
+    }
+
+    /**
+     * Set the icon, labels and placeholder in the template
+     * @memberof ContentTypesEditComponent
+     */
+    setTemplateInfo(): void {
+        this.dotMessageService.messageMap$.subscribe(() => {
+            const type = this.contentTypesInfoService.getPrettyName(this.data.baseType);
+
+            this.templateInfo = {
+                icon: this.contentTypesInfoService.getIcon(type),
+                header: this.isEditMode()
+                    ? this.dotMessageService.get('contenttypes.content.edit.contenttype', type)
+                    : this.dotMessageService.get('contenttypes.content.create.contenttype', type)
+            };
         });
     }
 
@@ -50,6 +109,7 @@ export class ContentTypesEditComponent implements OnInit {
      * @memberof ContentTypesEditComponent
      */
     handleFormSubmit(value: any): void {
+        this.show = false;
         this.isEditMode() ? this.updateContentType(value) : this.createContentType(value);
     }
 
@@ -57,7 +117,7 @@ export class ContentTypesEditComponent implements OnInit {
      * Check if the component is in edit mode
      *
      * @returns {boolean}
-     * @memberof ContentTypesFormComponent
+     * @memberof ContentTypesEditComponent
      */
     isEditMode(): boolean {
         return !!(this.data && this.data.id);
@@ -67,11 +127,11 @@ export class ContentTypesEditComponent implements OnInit {
      * Remove fields from the content type
      * @param fieldsToDelete Fields to be removed
      */
-    removeFields(fieldsToDelete: Field[]): void {
+    removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
             .pluck('fields')
-            .subscribe((fields: Field[]) => {
+            .subscribe((fields: ContentTypeField[]) => {
                 this.fields = fields;
             });
     }
@@ -80,8 +140,8 @@ export class ContentTypesEditComponent implements OnInit {
      * Save fields to the content type
      * @param fieldsToSave Fields to be save
      */
-    saveFields(fieldsToSave: Field[]): void {
-        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe((fields: Field[]) => {
+    saveFields(fieldsToSave: ContentTypeField[]): void {
+        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe((fields: ContentTypeField[]) => {
             this.fields = fields;
         });
     }
@@ -94,8 +154,8 @@ export class ContentTypesEditComponent implements OnInit {
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
                 this.fields = this.data.fields;
-                this.form.resetForm();
                 this.location.replaceState(`/content-types-angular/edit/${this.data.id}`);
+                this.show = false;
             });
     }
 
@@ -104,7 +164,7 @@ export class ContentTypesEditComponent implements OnInit {
 
         this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe((contentType: ContentType) => {
             this.data = contentType;
-            this.form.resetForm();
+            this.show = false;
         });
     }
 }

@@ -2,37 +2,11 @@
 @import "variables";
 
 :host {
-    display: block
-}
+    display: block;
 
-.content-type__form-header {
-    margin: $basic-padding * 3 0;
-    position: relative;
-}
-
-.content-type__form-title {
-    padding-left: $basic-padding * 3;
-
-    .fa {
-        left: 0;
-        position: absolute;
-        top: 10px;
+    ::ng-deep { 
+        .ui-multiselect, searchable-dropdown .ui-button {
+            width: 100%;
+        }
     }
-
-    .ui-inputtext {
-        font-size: $font-size-large;
-    }
-}
-
-.content-type__full-form {
-    margin: 0 $basic-padding * 3;
-
-    &--expanded {
-        margin-bottom: $basic-padding * 3;
-    }
-}
-
-.content-type__form-actions {
-    display: flex;
-    justify-content: flex-end;
 }

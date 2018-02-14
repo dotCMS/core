@@ -2,7 +2,7 @@
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Component, SimpleChanges, Input, Output, EventEmitter, OnInit, OnChanges, ViewChild } from '@angular/core';
 import { FieldDragDropService } from '../service';
-import { FieldRow, Field, FieldType } from '../shared';
+import { FieldRow, ContentTypeField, FieldType } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
@@ -22,14 +22,14 @@ import { FieldPropertyService } from '../service/field-properties.service';
 export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements OnInit, OnChanges {
     displayDialog = false;
     fieldRows: FieldRow[] = [];
-    formData: Field;
+    formData: ContentTypeField;
     currentFieldType: FieldType;
 
     @ViewChild('fieldPropertiesForm') propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
-    @Input() fields: Field[];
-    @Output() saveFields = new EventEmitter<Field[]>();
-    @Output() removeFields = new EventEmitter<Field[]>();
+    @Input() fields: ContentTypeField[];
+    @Output() saveFields = new EventEmitter<ContentTypeField[]>();
+    @Output() removeFields = new EventEmitter<ContentTypeField[]>();
 
     constructor(
         dotMessageService: DotMessageService,
@@ -75,10 +75,10 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
 
     /**
      * Emit the saveField event
-     * @param {Field} fieldToSave
+     * @param {ContentTypeField} fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    saveFieldsHandler(fieldToSave: Field): void {
+    saveFieldsHandler(fieldToSave: ContentTypeField): void {
         const fields = this.getFieldsToSave(fieldToSave);
         this.saveFields.emit(fields);
         this.toggleDialog();
@@ -86,10 +86,10 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
 
     /**
      * Get the field to be edited
-     * @param {Field} fieldToEdit
+     * @param {ContentTypeField} fieldToEdit
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    editField(fieldToEdit: Field): void {
+    editField(fieldToEdit: ContentTypeField): void {
         const fields = this.getFields();
         this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
@@ -142,7 +142,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      * Tigger the removeFields event with fieldToDelete
      * @param fieldToDelete
      */
-    removeField(fieldToDelete: Field): void {
+    removeField(fieldToDelete: ContentTypeField): void {
         this.removeFields.emit([fieldToDelete]);
     }
 
@@ -152,7 +152,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      */
     removeFieldRow(fieldRow: FieldRow): void {
         this.fieldRows.splice(this.fieldRows.indexOf(fieldRow), 1);
-        const fieldsToDelete: Field[] = [];
+        const fieldsToDelete: ContentTypeField[] = [];
 
         fieldsToDelete.push(fieldRow.lineDivider);
         fieldRow.columns.forEach(fieldColumn => {
@@ -177,13 +177,13 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         this.saveFields.emit(fields);
     }
 
-    private getFieldsToSave(fieldToSave: Field): Field[] {
+    private getFieldsToSave(fieldToSave: ContentTypeField): ContentTypeField[] {
         return this.formData.id ? [this.getUpdatedField(fieldToSave)] : this.getNewFields(fieldToSave);
     }
 
-    private getUpdatedField(fieldToSave: Field): Field {
+    private getUpdatedField(fieldToSave: ContentTypeField): ContentTypeField {
         const fields = this.getFields();
-        let result: Field;
+        let result: ContentTypeField;
 
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i];
@@ -197,9 +197,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         return result;
     }
 
-    private getNewFields(fieldToSave: Field): Field[] {
+    private getNewFields(fieldToSave: ContentTypeField): ContentTypeField[] {
         const fields = this.getFields();
-        const result: Field[] = [];
+        const result: ContentTypeField[] = [];
 
         fields.forEach((field, index) => {
             if (FieldUtil.isNewField(field)) {
@@ -216,9 +216,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         this.displayDialog = !this.displayDialog;
     }
 
-    private getRowFields(fields: Field[]): FieldRow[] {
+    private getRowFields(fields: ContentTypeField[]): FieldRow[] {
         let fieldRows: FieldRow[] = [];
-        const splitFields: Field[][] = FieldUtil.splitFieldsByLineDivider(fields);
+        const splitFields: ContentTypeField[][] = FieldUtil.splitFieldsByLineDivider(fields);
 
         fieldRows = splitFields.map(fieldsByLineDivider => {
             const fieldRow: FieldRow = new FieldRow();
@@ -229,8 +229,8 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         return fieldRows;
     }
 
-    private getFields(): Field[] {
-        const fields: Field[] = [];
+    private getFields(): ContentTypeField[] {
+        const fields: ContentTypeField[] = [];
 
         this.fieldRows.forEach((fieldRow, rowIndex) => {
             fields.push(fieldRow.lineDivider);

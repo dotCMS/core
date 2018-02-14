@@ -7,7 +7,7 @@ import {
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { Field } from '../shared/field.model';
+import { ContentTypeField } from '../shared/field.model';
 
 describe('FieldService', () => {
     beforeEach(() => {
@@ -28,7 +28,7 @@ describe('FieldService', () => {
                 helpText: 'helpText',
                 id: 'text',
                 label: 'Text',
-                properties: [],
+                properties: []
             }]
         };
 
@@ -52,7 +52,7 @@ describe('FieldService', () => {
                 },
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                },
+                }
             ];
 
             this.fieldService.saveFields('1', this.mockData).subscribe(res => this.response = JSON.parse(res));
@@ -90,7 +90,7 @@ describe('FieldService', () => {
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
                     id: '2'
-                },
+                }
             ];
 
             this.fieldService.deleteFields('1', this.mockData).subscribe(res => this.response = res);

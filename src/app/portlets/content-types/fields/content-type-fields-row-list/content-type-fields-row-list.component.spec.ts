@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { ContentTypeFieldsRowListComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
-import { Field } from '../';
+import { ContentTypeField } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
 

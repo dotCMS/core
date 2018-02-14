@@ -1,4 +1,4 @@
-import { Field } from '../';
+import { ContentTypeField } from '../';
 
 const TAB_DIVIDER = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
@@ -11,57 +11,57 @@ const LINE_DIVIDER = {
 export class FieldUtil {
     /**
      * Verify if the Field already exist
-     * @param {Field} field
+     * @param {ContentTypeField} field
      * @returns {Boolean}
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isNewField(field: Field): Boolean {
+    static isNewField(field: ContentTypeField): Boolean {
         return !field.id;
     }
 
-    static isRowOrColumn(field: Field) {
+    static isRowOrColumn(field: ContentTypeField) {
         return this.isRow(field) || this.isColumn(field);
     }
 
     /**
      * Verify if the Field is a row
-     * @param {Field} field
+     * @param {ContentTypeField} field
      * @returns {Boolean}
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isRow(field: Field): Boolean {
+    static isRow(field: ContentTypeField): Boolean {
         return field.clazz === LINE_DIVIDER.clazz;
     }
 
     /**
      * Verify if the Field is a column
-     * @param {Field} field
+     * @param {ContentTypeField} field
      * @returns {Boolean}
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isColumn(field: Field): Boolean {
+    static isColumn(field: ContentTypeField): Boolean {
         return field.clazz === TAB_DIVIDER.clazz;
     }
 
-    static createLineDivider(): Field {
+    static createLineDivider(): ContentTypeField {
         return Object.assign({}, LINE_DIVIDER);
     }
 
-    static createTabDivider(): Field {
+    static createTabDivider(): ContentTypeField {
         return Object.assign({}, TAB_DIVIDER);
     }
 
-    static splitFieldsByLineDivider(fields: Field[]): Field[][] {
+    static splitFieldsByLineDivider(fields: ContentTypeField[]): ContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, LINE_DIVIDER.clazz);
     }
 
-    static splitFieldsByTabDivider(fields: Field[]): Field[][] {
+    static splitFieldsByTabDivider(fields: ContentTypeField[]): ContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, TAB_DIVIDER.clazz);
     }
 
-    static splitFieldsBy(fields: Field[], fieldClass: string): Field[][] {
-        const result: Field[][] = [];
-        let currentFields: Field[];
+    static splitFieldsBy(fields: ContentTypeField[], fieldClass: string): ContentTypeField[][] {
+        const result: ContentTypeField[][] = [];
+        let currentFields: ContentTypeField[];
 
         fields.forEach(field => {
             if (field.clazz === fieldClass) {

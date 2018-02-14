@@ -9,6 +9,7 @@ import { LoginContainerComponent } from './login-container.component';
 import { LoginComponent } from './login.component';
 
 import { SharedModule} from '../../../../shared/shared.module';
+import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
 
 const routes: Routes = [
     {
@@ -27,7 +28,8 @@ const routes: Routes = [
         DropdownModule,
         InputTextModule,
         SharedModule,
-        DotLoadingIndicatorModule
+        DotLoadingIndicatorModule,
+        DotDirectivesModule
     ],
     declarations: [
         LoginContainerComponent,

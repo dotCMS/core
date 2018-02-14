@@ -15,7 +15,7 @@ import {
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
-import { Field } from '../shared';
+import { ContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
 
 
@@ -28,7 +28,7 @@ import { FieldPropertyService } from '../service/';
 
 export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent implements OnChanges, OnInit {
     @Output() saveField: EventEmitter<any> = new EventEmitter();
-    @Input() formFieldData: Field;
+    @Input() formFieldData: ContentTypeField;
 
     @ViewChild('properties') propertiesContainer;
 
@@ -72,7 +72,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
                 'contenttypes.field.properties.validation_regex.values.numbers_only',
                 'contenttypes.field.properties.validation_regex.values.email',
                 'contenttypes.field.properties.validation_regex.values.alphanumeric',
-                'contenttypes.field.properties.validation_regex.values.url_pattern',
+                'contenttypes.field.properties.validation_regex.values.url_pattern'
             ],
             dotMessageService
         );

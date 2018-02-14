@@ -5,7 +5,7 @@ import { DynamicFieldPropertyDirective } from './dynamic-field-property.directiv
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
-import { Field } from '../../../';
+import { ContentTypeField } from '../../../';
 import { By } from '@angular/platform-browser';
 
 @Component({
@@ -63,7 +63,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         dynamicFieldPropertyDirective.group = this.group;
 
         dynamicFieldPropertyDirective.ngOnChanges({
-            field: new SimpleChange(null, this.field, true),
+            field: new SimpleChange(null, this.field, true)
         });
     });
 
@@ -77,7 +77,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         expect(this.component.property).toEqual({
             field: this.field,
             name: this.propertyName,
-            value: 'FieldName',
+            value: 'FieldName'
         });
         expect(this.component.group).toEqual(this.group);
     });

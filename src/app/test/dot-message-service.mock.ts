@@ -31,8 +31,20 @@ export class MockDotMessageService {
         return Observable.of(this.messages);
     }
 
-    get(key: string): string {
-        return this.messages[key];
+    get(key: string, ...args: string[]): string {
+        if (args.length) {
+            return this.messages[key]
+                ? this.formatMessage(this.messages[key], args)
+                : key;
+        } else {
+            return this.messages[key] || key;
+        }
+    }
+
+    private formatMessage(message: string, args: string[]): string {
+        return message.replace(/{(\d+)}/g, (match, number) => {
+            return typeof args[number] !== 'undefined' ? args[number] : match;
+        });
     }
 }
 

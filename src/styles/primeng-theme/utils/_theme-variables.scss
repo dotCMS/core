@@ -98,7 +98,7 @@ $button-flat: (
         shadow: none
     ),
     disabled: (
-        background: transparent,
+        background: $field-disabled-bgcolor,
         color: $field-disabled-color,
         border: $button-border,
         shadow: none
@@ -198,7 +198,7 @@ $menu-link-color: $black;
 
 // DIALOG
 $dialog-padding: $basic-padding * 3;
-$dialog-padding-footer: $basic-padding;
+$dialog-padding-footer: $basic-padding $dialog-padding;
 $dialog-title-font-size: $font-size-large;
 $dialog-message-line-height: 18px;
 $dialog-message-warning-color: $red;
