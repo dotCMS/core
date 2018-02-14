@@ -19,12 +19,12 @@ describe('PageViewService', () => {
         let result: any;
         this.pageViewService.get('about-us').subscribe(items => result = items);
 
-        expect(this.lastConnection.request.url).toContain('v1/page/render/about-us?live=false');
+        expect(this.lastConnection.request.url).toContain('v1/page/json/about-us?live=false');
     });
 
     it('should remove the leading slash if present when calling pageViewService', () => {
         this.pageViewService.get('/aboutUs/index');
-        expect(this.lastConnection.request.url).toContain('v1/page/render/aboutUs/index');
+        expect(this.lastConnection.request.url).toContain('v1/page/json/aboutUs/index');
     });
 
     it('should do a get request and return a pageView', fakeAsync(() => {

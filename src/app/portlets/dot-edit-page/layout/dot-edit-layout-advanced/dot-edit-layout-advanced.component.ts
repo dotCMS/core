@@ -23,7 +23,7 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService
     ) {
-        dotMessageService.getMessages(['dot.common.message.saved']).subscribe();
+        dotMessageService.getMessages(['dot.common.message.saved', 'dot.common.message.saving']).subscribe();
     }
 
     ngOnInit() {
@@ -41,10 +41,13 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
      */
     onLoad($event): void {
         Observable.fromEvent($event.target.contentWindow.document, 'ng-event')
-            .filter((event: CustomEvent) => event.detail.name === 'advanced-template-saved')
             .subscribe((event: CustomEvent) => {
                 this.ngZone.run(() => {
-                    this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+                    if (event.detail.name === 'advanced-template-saved') {
+                        this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+                    } else {
+                        this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
+                    }
                 });
             });
     }

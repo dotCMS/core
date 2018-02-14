@@ -23,7 +23,7 @@ export class PageViewService {
     get(url: string): Observable<DotPageView> {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
-            url: `v1/page/render/${url.replace(/^\//, '')}?live=false`
+            url: `v1/page/json/${url.replace(/^\//, '')}?live=false`
         }).pluck('bodyJsonObject');
     }
 
