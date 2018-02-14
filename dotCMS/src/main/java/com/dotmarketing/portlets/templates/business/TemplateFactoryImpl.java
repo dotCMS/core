@@ -122,6 +122,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
         if(!UtilMethods.isSet(template.getIdentifier())){
             throw new DotStateException("Cannot save a tempalte without an Identifier");
         }
+
+		if (UtilMethods.isSet(template.getTitle()) && !template.isAnonymous()) {
+			template.setIsTemplate(true);
+		}
         
         if(UtilMethods.isSet(template.getDrawedBody())) {
             template.setDrawed(true);
@@ -250,7 +254,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}else{
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
-		query.append(" and versioninfo.identifier=asset.identifier ");
+		query.append(" and versioninfo.identifier=asset.identifier ")
+			.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+
 		if(UtilMethods.isSet(hostId)){
 			query.append(" and identifier.host_inode = '");
 			query.append(hostId);

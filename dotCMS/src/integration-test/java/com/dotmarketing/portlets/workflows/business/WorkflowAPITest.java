@@ -1171,7 +1171,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             scheme.setName(schemeName);
             scheme.setDescription("testing workflows " + schemeName);
             scheme.setCreationDate(new Date());
-            scheme.setMandatory(false);
             workflowAPI.saveScheme(scheme);
         } catch (AlreadyExistException e) {
             //scheme already exist

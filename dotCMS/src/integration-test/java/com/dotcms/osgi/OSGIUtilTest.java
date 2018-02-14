@@ -1,10 +1,12 @@
 package com.dotcms.osgi;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
-
+import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -12,12 +14,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
-
-import java.io.File;
-
-import javax.servlet.ServletContextEvent;
-
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * OSGIUtilTest
@@ -42,8 +38,7 @@ public class OSGIUtilTest {
      */
     private static void initializeOSGIFramework() {
         try {
-            ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
-            OSGIUtil.getInstance().initializeFramework(context);
+            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         } catch (Exception ex) {
             throw new RuntimeException("Unable to initialize OSGI Framework", ex);
         }
@@ -149,9 +144,7 @@ public class OSGIUtilTest {
      */
     @Test
     public void test05GetBaseDirectoryFromServletContext() throws Exception {
-        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
-
-        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(context);
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
         assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
     }
 

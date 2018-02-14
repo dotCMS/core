@@ -159,9 +159,6 @@
 	<listener>
 	    <listener-class>com.dotmarketing.listeners.ClickstreamListener</listener-class>
 	</listener>
-	<listener>
-		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
-	</listener>
     <listener>
         <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
     </listener>
@@ -193,6 +190,11 @@
 		<load-on-startup>
 			98
 		</load-on-startup>
+	</servlet>
+	<servlet>
+		<servlet-name>proxy</servlet-name>
+		<servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
+		<load-on-startup>7</load-on-startup>
 	</servlet>
 	
 	<servlet>
@@ -344,12 +346,6 @@
 		<async-supported>true</async-supported>
 	</servlet>
 	
-    <servlet>
-        <servlet-name>proxy</servlet-name>
-        <servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
-        <load-on-startup>20</load-on-startup>
-    </servlet>
-    
     <servlet>
 		<servlet-name>XMLSitemapServlet</servlet-name>
 		<servlet-class>com.dotcms.xmlsitemap.XMLSitemapServlet</servlet-class>

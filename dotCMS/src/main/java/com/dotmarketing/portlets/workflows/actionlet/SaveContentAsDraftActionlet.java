@@ -74,6 +74,12 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			this.buildRelationships(processor.getUser(), contentRelationships, contentlet);
 
+			if (null != processor.getContentletDependencies()
+					&& null != processor.getContentletDependencies().getModUser()) {
+
+				contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+			}
+
 			final Contentlet contentletNew = this.contentletAPI.saveDraft(
 					contentlet, contentRelationships, categories, permissions, user, true);
 

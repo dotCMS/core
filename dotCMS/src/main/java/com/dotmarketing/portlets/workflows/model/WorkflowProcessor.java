@@ -117,13 +117,6 @@ public class WorkflowProcessor {
 				scheme = getWorkflowAPI().findScheme(action.getSchemeId());
 			}
 
-			if (!UtilMethods.isSet(workflowActionId) && task.isNew() && null != scheme) {
-				workflowActionId = scheme.getEntryActionId();
-				if (UtilMethods.isSet(workflowActionId)) {
-					action = findAction(contentlet, workflowActionId);
-				}
-			}
-
 			if (null == action) {
 				Logger.error(this,"Contentlet Identifier ("+contentlet.getIdentifier()+") should not have a null workflow action");
 				return;
