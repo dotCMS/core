@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(DataProviderRunner.class)
 public class ESUtilTest extends IntegrationTestBase {
@@ -105,12 +106,16 @@ public class ESUtilTest extends IntegrationTestBase {
         final String fieldValue = contentlet.get(field.variable()).toString();
         final String escapedValue = ESUtils.escape(fieldValue);
 
+        boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
+        Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
+
         final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:").append(type.id())
             .append(' ').append(type.variable()).append('.').append(field.variable()).append(':').append(escapedValue);
 
         final List<ContentletSearch> contentlets = contentletAPI.searchIndex(luceneQuery.toString(), 0, -1,
             null, systemUser, false);
 
+        assertFalse(contentlets.isEmpty());
         assertEquals(contentlets.get(0).getInode(), contentlet.getInode());
 
     }
