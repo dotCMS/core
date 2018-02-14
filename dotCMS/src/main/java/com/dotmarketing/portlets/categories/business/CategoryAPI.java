@@ -472,6 +472,11 @@ public interface CategoryAPI {
 	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
 	 */
 	public boolean isParent(Category givenChild, Category givenParent, User user);
+
+	/**
+	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
+	 */
+	public boolean isParent(Category givenChild, Category givenParent, User user, boolean respectFrontendRoles);
 	
 	
 	/**
