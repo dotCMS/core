@@ -159,7 +159,8 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             }
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
-            //WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+            // Sending notification message
+            WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
         }
     }
 

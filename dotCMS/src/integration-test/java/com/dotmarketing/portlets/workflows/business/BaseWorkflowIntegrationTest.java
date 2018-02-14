@@ -52,7 +52,6 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         scheme.setName(schemeName);
         scheme.setArchived(false);
         scheme.setDescription("Integration test " + schemeName);
-        scheme.setMandatory(false);
         scheme.setModDate(new Date());
         scheme.setCreationDate(new Date());
         scheme.setDefaultScheme(false);

@@ -5,8 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -23,7 +28,19 @@ public class ResourceCollectorUtil{
      *
      * @return the resources in the order they are found
      */
-    public static Collection<String> getResources(){
+    public static Collection<String> getResources() {
+        return getResources(null);
+    }
+
+    /**
+     * for all elements of java.class.path get a Collection of resources Pattern
+     * pattern = Pattern.compile(".*"); gets all resources
+     *
+     * @param jarPrefixesFilter List of jar prefixes of the jars we want to get the resources from
+     * @return the resources in the order they are found
+     */
+    public static Collection<String> getResources(List<String> jarPrefixesFilter) {
+
     	Pattern pattern = Pattern.compile(".*\\.class");
         final Set<String> retval = new HashSet<String>();
         final String classPath = System.getProperty("java.class.path", ".");
@@ -45,20 +62,35 @@ public class ResourceCollectorUtil{
         }
         String libPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF")) + File.separator + "WEB-INF" + File.separator + "lib";
         String classesPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF"))  + File.separator + "WEB-INF" + File.separator + "classes";
-//        String libPath = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "lib";
-        List<String> classPathElements = new ArrayList<String>();
-        if(isWindows)
-        	classPathElements = new ArrayList(Arrays.asList(classPath.split(";")));
-        else
-        	classPathElements = new ArrayList(Arrays.asList(classPath.split(":")));
+
+        List<String> classPathElements;
+        if (isWindows) {
+            classPathElements = new ArrayList(Arrays.asList(classPath.split(";")));
+        } else {
+            classPathElements = new ArrayList(Arrays.asList(classPath.split(":")));
+        }
 
         classPathElements.add(classesPath);
         File dir = new File(libPath);
         if(dir.exists() && dir.isDirectory()){
         	for(File jar : dir.listFiles()){
         		if(jar.getName().endsWith(".jar")){
-        			classPathElements.add(jar.getAbsolutePath());
-        		}
+
+                    Boolean useJar = true;
+
+                    //Filtering the jars if a filter is available
+                    if (null != jarPrefixesFilter && !jarPrefixesFilter.isEmpty()) {
+                        for (String prefix : jarPrefixesFilter) {
+                            useJar = jar.getName().startsWith(prefix);
+                            if (useJar) {
+                                break;
+                            }
+                        }
+                    }
+                    if (useJar) {
+                        classPathElements.add(jar.getAbsolutePath());
+                    }
+                }
         	}
         }
         for(final String element : classPathElements){

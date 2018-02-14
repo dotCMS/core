@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.loggers.mbeans.Log4jConfig;
 import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.plugin.PluginLoader;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -29,6 +30,7 @@ import com.dotmarketing.quartz.job.ShutdownHookThread;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
@@ -52,15 +54,18 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.lucene.search.BooleanQuery;
+import org.osgi.framework.BundleContext;
 import org.quartz.SchedulerException;
 
 /**
  * Initialization servlet for specific dotCMS components and features.
- * 
+ *
  * @author root
  *
  */
@@ -80,10 +85,17 @@ public class InitServlet extends HttpServlet {
     }
 
     public void destroy() {
+
+        if (System.getProperty(WebKeys.OSGI_ENABLED) != null) {
+            Logger.info(this, "dotCMS shutting down OSGI");
+            OSGIUtil.getInstance().stopFramework();
+        }
+
         Logger.info(this, "dotCMS shutting down Elastic Search");
         new ESClient().shutDownNode();
         Logger.info(this, "dotCMS shutting down Hazelcast");
         HazelcastUtil.getInstance().shutdown();
+
         Logger.info(this, "dotCMS shutting down");
     }
 
@@ -163,8 +175,6 @@ public class InitServlet extends HttpServlet {
 
         deleteFiles(new File(SystemUtils.JAVA_IO_TMPDIR));
 
-
-
         // runs the InitThread
 
         InitThread it = new InitThread();
@@ -216,7 +226,6 @@ public class InitServlet extends HttpServlet {
             Logger.error(InitServlet.class, e1.getMessage(), e1);
         }
 
-
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             ObjectName name = new ObjectName("org.dotcms:type=Log4J");
@@ -234,12 +243,15 @@ public class InitServlet extends HttpServlet {
             Logger.debug(InitServlet.class,"NullPointerException: " + e.getMessage(),e);
         }
 
-
         //Just get the Engine to make sure it gets inited on time before the first request
         VelocityUtil.getEngine();
 
         // Tell the world we are started up
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+
+        //Initializing felix
+        initializeOsgi(config.getServletContext());
+        initOsgiProxyTracker(config.getServletContext());
 
         // Record how long it took to start us up.
         try{
@@ -248,14 +260,13 @@ public class InitServlet extends HttpServlet {
 
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME, String.valueOf(startupTime));
 
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
         // Starting the re-indexation thread
         ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", ReindexThread.REINDEX_THREAD_SLEEP_DEFAULT_VALUE),
-                        Config.getIntProperty("REINDEX_THREAD_INIT_DELAY",
-                                        ReindexThread.REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE));
+                Config.getIntProperty("REINDEX_THREAD_INIT_DELAY",
+                        ReindexThread.REINDEX_THREAD_INIT_DELAY_DEFAULT_VALUE));
     }
 
     protected void deleteFiles(java.io.File directory) {
@@ -272,6 +283,7 @@ public class InitServlet extends HttpServlet {
     public static Date getStartupDate() {
         return startupDate;
     }
+
     /**
      *
      * @author will
@@ -324,8 +336,6 @@ public class InitServlet extends HttpServlet {
                         }
                     }
                 }
-
-
 
                 // Construct data
                 StringBuilder data = new StringBuilder();
@@ -397,13 +407,9 @@ public class InitServlet extends HttpServlet {
                 data.append(URLEncoder.encode("dotcms.com:/private", "UTF-8"));
                 data.append("&");
 
-
-
-
                 String portalUrl = Config.getStringProperty("DOTCMS_PORTAL_URL", "dotcms.com");
                 String portalUrlProtocol = Config.getStringProperty("DOTCMS_PORTAL_URL_PROTOCOL", "https");
                 String portalUrlUri = Config.getStringProperty("DOTCMS_PORTAL_URL_URI", "/api/content/save/1");
-
 
                 // Send data
 
@@ -421,7 +427,6 @@ public class InitServlet extends HttpServlet {
 
                 conn.setRequestProperty("DOTAUTH", "bGljZW5zZXJlcXVlc3RAZG90Y21zLmNvbTpKbnM0QHdAOCZM");
 
-
                 DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
                 wr.writeBytes(data.toString());
                 wr.flush();
@@ -434,8 +439,7 @@ public class InitServlet extends HttpServlet {
                 Logger.debug(this, "Unable to get Hostname", e);
             } catch (Exception e) {
                 Logger.debug(this, "InitThread broke:", e);
-            }
-            finally{
+            } finally {
                 try {
                     HibernateUtil.closeSession();
                 } catch (DotHibernateException e) {
@@ -447,6 +451,52 @@ public class InitServlet extends HttpServlet {
 
         }
 
+    }
+
+    /**
+     * Initialize the OSGI felix framework in case it was not already started
+     */
+    private void initializeOsgi(ServletContext context) {
+
+        //First verify if OSGI was already initialized
+        Boolean osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        if (osgiInitialized) {
+            return;
+        }
+
+        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+            System.clearProperty(WebKeys.OSGI_ENABLED);
+            return;
+        }
+
+        OSGIUtil.getInstance().initializeFramework(context);
+    }
+
+    /**
+     * Sets the bundle context to the OSGIProxyServlet
+     */
+    private void initOsgiProxyTracker(ServletContext context) {
+
+        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+            System.clearProperty(WebKeys.OSGI_ENABLED);
+            return;
+        }
+
+        if (OSGIProxyServlet.bundleContext == null) {
+            Object bundleContext = context.getAttribute(BundleContext.class.getName());
+            if (bundleContext instanceof BundleContext) {
+                OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
+                try {
+                    OSGIProxyServlet.tracker =
+                            new DispatcherTracker(OSGIProxyServlet.bundleContext, null,
+                                    OSGIProxyServlet.servletConfig);
+                } catch (Exception e) {
+                    Logger.error(this, "Error loading HttpService.", e);
+                    return;
+                }
+                OSGIProxyServlet.tracker.open();
+            }
+        }
     }
 
 }

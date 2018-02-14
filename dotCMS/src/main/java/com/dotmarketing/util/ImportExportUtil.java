@@ -2,8 +2,9 @@ package com.dotmarketing.util;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotcms.util.CloseUtils;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -27,7 +28,15 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
-
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.CompanyManagerUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.Image;
+import com.liferay.portal.model.PortletPreferences;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,21 +62,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
-
 import org.apache.commons.beanutils.BeanUtils;
-
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyManagerUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.Image;
-import com.liferay.portal.model.PortletPreferences;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
@@ -857,6 +852,11 @@ public class ImportExportUtil {
         } catch (DotDataException e1) {
             Logger.warn(this, "Exception trying to delete old indexes",e1);
         }
+
+        //Initializing felix
+        initializeOsgi();
+
+        //Reindexing the recently added content
         conAPI.refreshAllContent();
         long recordsToIndex = 0;
         try {
@@ -1711,6 +1711,25 @@ public class ImportExportUtil {
             contentlet.setDate25(new Date());
             out.println("Date changed to current date");
         }
+    }
+
+    /**
+     * Initialize the OSGI felix framework in case it was not already started
+     */
+    private void initializeOsgi() {
+
+        //First verify if OSGI was already initialized
+        Boolean osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        if (osgiInitialized) {
+            return;
+        }
+
+        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+            System.clearProperty(WebKeys.OSGI_ENABLED);
+            return;
+        }
+
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
     }
 
 }
