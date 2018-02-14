@@ -118,10 +118,9 @@ public class ContentletUtil {
 
 						final Category parentCategory        = APILocator.getCategoryAPI().find(f.getValues(), user, true);
 						final List<Category> childCategories = new ArrayList<>();
-						final boolean allowFrontEnd = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
 						for (Category category : cats) {
 
-							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,allowFrontEnd)) {
+							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,true)) {
 
 								childCategories.add(category);
 							}
