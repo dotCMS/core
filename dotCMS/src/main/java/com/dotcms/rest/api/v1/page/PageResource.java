@@ -245,23 +245,22 @@ public class PageResource {
             final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
             final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
             final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
-            
 
-            Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
+            final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
             
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
 
-            boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
+            final boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
 
             pageMapBuilder.put("render",html )
                 .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
                 .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
 
-            Map<String, Object> pageMap = new HashMap(page.getMap());
-            String templateIdentifier = (String) pageMap.get(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            final Map<String, Object> pageMap = new HashMap(page.getMap());
+            final String templateIdentifier = (String) pageMap.get(HTMLPageAssetAPI.TEMPLATE_FIELD);
             pageMap.remove(HTMLPageAssetAPI.TEMPLATE_FIELD);
 
             pageMapBuilder.putAll(pageMap);
