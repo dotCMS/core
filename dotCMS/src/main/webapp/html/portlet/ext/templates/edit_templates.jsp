@@ -97,6 +97,14 @@
     var isNg = '<%=request.getParameter("ng") %>' === 'true';
 
 	function submitfm(form,subcmd) {
+        var customEvent = document.createEvent("CustomEvent");
+
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "advanced-template-saveing",
+            data: {}
+        });
+        document.dispatchEvent(customEvent);
+
 		window.onbeforeunload=true;
 		if(dijit.byId("toggleEditor").checked){
 		      document.getElementById("bodyField").value=editor.getValue();
@@ -117,7 +125,6 @@
             req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             req.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    var customEvent = document.createEvent("CustomEvent");
                     customEvent.initCustomEvent("ng-event", false, false,  {
                         name: "advanced-template-saved",
                         data: {}
