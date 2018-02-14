@@ -100,7 +100,7 @@
         var customEvent = document.createEvent("CustomEvent");
 
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "advanced-template-saveing",
+            name: "advanced-template-saving",
             data: {}
         });
         document.dispatchEvent(customEvent);
