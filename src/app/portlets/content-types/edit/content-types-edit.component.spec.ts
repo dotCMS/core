@@ -62,7 +62,8 @@ const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.variable': 'Variable',
     'contenttypes.content.edit.contenttype': 'Edit {0}',
     'contenttypes.content.create.contenttype': 'Create {0}',
-    'contenttypes.form.identifier': 'Idenfifier'
+    'contenttypes.form.identifier': 'Idenfifier',
+    'contenttypes.content.content': 'Content'
 });
 
 const getConfig = (route) => {

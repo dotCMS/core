@@ -56,13 +56,22 @@ export class ContentTypesEditComponent implements OnInit {
         });
 
         this.dotMessageService.getMessages([
-            'contenttypes.action.form.cancel',
-            'contenttypes.action.edit',
             'contenttypes.action.create',
+            'contenttypes.action.edit',
+            'contenttypes.action.form.cancel',
             'contenttypes.action.update',
-            'contenttypes.content.variable',
-            'contenttypes.content.edit.contenttype',
+            'contenttypes.content.content',
             'contenttypes.content.create.contenttype',
+            'contenttypes.content.edit.contenttype',
+            'contenttypes.content.fileasset',
+            'contenttypes.content.form',
+            'contenttypes.content.htmlpage',
+            'contenttypes.content.key_value',
+            'contenttypes.content.persona',
+            'contenttypes.content.vanity_url',
+            'contenttypes.content.variable',
+            'contenttypes.content.variable',
+            'contenttypes.content.widget',
             'contenttypes.form.identifier'
 
         ]).subscribe();
@@ -91,13 +100,14 @@ export class ContentTypesEditComponent implements OnInit {
      */
     setTemplateInfo(): void {
         this.dotMessageService.messageMap$.subscribe(() => {
-            const type = this.contentTypesInfoService.getPrettyName(this.data.baseType);
+            const type = this.contentTypesInfoService.getLabel(this.data.baseType);
+            const contentTypeName = this.dotMessageService.get(`contenttypes.content.${type}`);
 
             this.templateInfo = {
                 icon: this.contentTypesInfoService.getIcon(type),
                 header: this.isEditMode()
-                    ? this.dotMessageService.get('contenttypes.content.edit.contenttype', type)
-                    : this.dotMessageService.get('contenttypes.content.create.contenttype', type)
+                    ? this.dotMessageService.get('contenttypes.content.edit.contenttype', contentTypeName)
+                    : this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName)
             };
         });
     }
