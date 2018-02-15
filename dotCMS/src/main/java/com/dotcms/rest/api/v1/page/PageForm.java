@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -10,10 +11,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -118,12 +116,11 @@ class PageForm {
 
                 List<TemplateLayoutRow> rows = layout.getBody().getRows();
                 List<ContainerUUID> containers = rows.stream()
-                        .map(row -> row.getColumns())
-                        .flatMap(columnsStream -> columnsStream.stream())
-                        .map(column -> column.getContainers())
-                        .flatMap(containersStream -> containersStream.stream())
-                        .filter(container -> !UtilMethods.isSet(container.getUUID()) ||
-                                                !StringUtils.isNumeric(container.getUUID()))
+                        .map(TemplateLayoutRow::getColumns)
+                        .flatMap(Collection::stream)
+                        .map(ContainerHolder::getContainers)
+                        .flatMap(Collection::stream)
+                        .filter(container -> !UtilMethods.isSet(container.getUUID()))
                         .collect(Collectors.toList());
 
                 int nextContainerUUID = layout.getMaxContainerUUID() + 1;

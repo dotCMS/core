@@ -15,6 +15,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -183,13 +184,13 @@ public class TemplateLayout implements Serializable{
     @JsonIgnore
     public int getMaxContainerUUID() {
         return this.body.getRows().stream()
-                .map(row -> row.getColumns())
-                .flatMap(columnsStream -> columnsStream.stream())
-                .map(column -> column.getContainers())
-                .flatMap(containersStream -> containersStream.stream())
-                .map(container -> container.getUUID())
+                .map(TemplateLayoutRow::getColumns)
+                .flatMap(Collection::stream)
+                .map(ContainerHolder::getContainers)
+                .flatMap(Collection::stream)
+                .map(ContainerUUID::getUUID)
                 .filter(uuid -> UtilMethods.isSet(uuid) && StringUtils.isNumeric(uuid))
-                .map(uuid -> Integer.parseInt(uuid))
+                .map(Integer::parseInt)
                 .max(Comparator.comparingInt(uuid2 -> uuid2))
                 .orElse(0);
     }
