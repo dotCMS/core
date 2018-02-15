@@ -644,12 +644,16 @@ public class CategoryAPIImpl implements CategoryAPI {
 	}
 
 	public boolean isParent(Category givenChild, Category givenParent, User user) {
+		return isParent(givenChild,givenParent,user,false);
+	}
+
+	public boolean isParent(Category givenChild, Category givenParent, User user, boolean respectFrontendRoles) {
 
 
 		List<Category> parents;
 
 		try {
-			parents = getParents(givenChild, user, false);
+			parents = getParents(givenChild, user, respectFrontendRoles);
 
 			if(parents==null || parents.isEmpty()) {
 				return false;
