@@ -126,7 +126,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.name("Sort Order")
 				.dataType(DataTypes.INTEGER)
 				.variable("sortOrder")
-				.required(true)
 				.fixed(true)
 				.searchable(true)
 				.defaultValue("0")
