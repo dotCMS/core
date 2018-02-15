@@ -12,7 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ContainerUUID implements Serializable{
 
     private final String identifier;
-    private final String uuid;
+
+    private String uuid;
 
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdentifier,
@@ -29,6 +30,7 @@ public class ContainerUUID implements Serializable{
     public String getUUID() {
         return uuid;
     }
+
     @Override
     public String toString() {
        try {
@@ -36,5 +38,9 @@ public class ContainerUUID implements Serializable{
         } catch (JsonProcessingException e) {
             return super.toString();
         }
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }
