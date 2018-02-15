@@ -15,9 +15,13 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,6 +44,8 @@ public class TemplateLayout implements Serializable{
 
     private Body body;
     private Sidebar sidebar;
+    @JsonIgnore
+    private int maxContainerUUID = -1;
 
     public String getPageWidth () {
         return pageWidth;
@@ -165,8 +171,6 @@ public class TemplateLayout implements Serializable{
 
     }
 
-
-
     @Override
     public String toString() {
        try {
@@ -176,5 +180,17 @@ public class TemplateLayout implements Serializable{
         }
     }
 
-
+    @JsonIgnore
+    public int getMaxContainerUUID() {
+        return this.body.getRows().stream()
+                .map(row -> row.getColumns())
+                .flatMap(columnsStream -> columnsStream.stream())
+                .map(column -> column.getContainers())
+                .flatMap(containersStream -> containersStream.stream())
+                .map(container -> container.getUUID())
+                .filter(uuid -> UtilMethods.isSet(uuid) && StringUtils.isNumeric(uuid))
+                .map(uuid -> Integer.parseInt(uuid))
+                .max(Comparator.comparingInt(uuid2 -> uuid2))
+                .orElse(0);
+    }
 }

@@ -1,17 +1,21 @@
 package com.dotcms.rest.api.v1.page;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
 /**
  * {@link PageResource}'s form
@@ -110,7 +114,25 @@ class PageForm {
 
             try {
                 String layoutString = JsonTransformer.mapper.writeValueAsString(layout);
-                return JsonTransformer.mapper.readValue(layoutString, TemplateLayout.class);
+                TemplateLayout layout = JsonTransformer.mapper.readValue(layoutString, TemplateLayout.class);
+
+                List<TemplateLayoutRow> rows = layout.getBody().getRows();
+                List<ContainerUUID> containers = rows.stream()
+                        .map(row -> row.getColumns())
+                        .flatMap(columnsStream -> columnsStream.stream())
+                        .map(column -> column.getContainers())
+                        .flatMap(containersStream -> containersStream.stream())
+                        .filter(container -> !UtilMethods.isSet(container.getUUID()) ||
+                                                !StringUtils.isNumeric(container.getUUID()))
+                        .collect(Collectors.toList());
+
+                int nextContainerUUID = layout.getMaxContainerUUID() + 1;
+
+                for (ContainerUUID container : containers) {
+                    container.setUuid(String.valueOf(nextContainerUUID++));
+                }
+
+                return layout;
             } catch (IOException e) {
                 throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
             }
