@@ -115,11 +115,11 @@ public class AuthenticationResource implements Serializable {
 
                 userMap.put("loggedInDate", new Date());
 
-                Identifier editModeId = (Identifier) request.getSession().getAttribute("LOGIN_TO_EDIT_MODE");
+                Identifier editModeId = (Identifier) request.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
 
                 if (editModeId != null) {
                     userMap.put("editModeUrl", editModeId.getURI());
-                    request.getSession().removeAttribute("LOGIN_TO_EDIT_MODE");
+                    request.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
                 }
 
                 res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
