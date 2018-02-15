@@ -98,7 +98,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
 
-		ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping, XContentType.JSON).execute();
+		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+				.preparePutMapping().setIndices(indexName).setType(type)
+				.setSource(mapping, XContentType.JSON).execute();
 		return lis.actionGet().isAcknowledged();
 	}
 
@@ -112,7 +114,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws IOException
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping, XContentType.JSON).execute();
+		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+				.preparePutMapping().setIndices(indexName).setType(type)
+				.setSource(mapping, XContentType.JSON).execute();
 		return lis.actionGet().isAcknowledged();
 	}
 
@@ -166,8 +170,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
 		try {
 
-			Map<String,Object> contentletMap = new HashMap();
-			Map<String,Object> mlowered=new HashMap();
+			final Map<String,Object> contentletMap = new HashMap();
+			final Map<String,Object> mlowered=new HashMap();
 			loadCategories(con, contentletMap);
 			loadFields(con, contentletMap);
 			loadPermissions(con, contentletMap);
@@ -258,7 +262,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				throw new DotRuntimeException(urlMap, e);
 			}
 
-			StringWriter sw = new StringWriter();
+			final StringWriter sw = new StringWriter();
 			for(Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lcasek=entry.getKey().toLowerCase();
 				Object lcasev = entry.getValue();
@@ -346,7 +350,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadPermissions(Contentlet con, Map<String,Object> m) throws DotDataException {
+	protected void loadPermissions(final Contentlet con, Map<String,Object> m) throws DotDataException {
 		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
 		StringBuilder permissionsSt = new StringBuilder();

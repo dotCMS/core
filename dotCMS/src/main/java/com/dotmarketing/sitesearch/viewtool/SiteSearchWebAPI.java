@@ -148,7 +148,7 @@ public class SiteSearchWebAPI implements ViewTool {
      * will be use if exist
      * @param query Query to apply
      */
-    public Map<String, Aggregation> getAggregations(String indexName, String query)
+    public Map<String, Aggregation> getAggregations(final String indexName, String query)
             throws DotDataException {
         return siteSearchAPI.getAggregations(indexName, query);
     }
@@ -161,12 +161,12 @@ public class SiteSearchWebAPI implements ViewTool {
      * @param query Query to apply
      * @deprecated use {@link #getAggregations(String, String)} instead
      */
-    public Map<String, Facet> getFacets(String indexName, String query)
+    public Map<String, Facet> getFacets(final String indexName, String query)
             throws DotDataException, IllegalAccessException, NoSuchFieldException {
 
         Facet internalFacet;
         //The map we will finally send
-        Map<String, Facet> internalFacets = new HashMap<>();
+        final Map<String, Facet> internalFacets = new HashMap<>();
 
         //Search with the given query
         Map<String, Aggregation> aggregations = this.getAggregations(indexName, query);
@@ -197,9 +197,9 @@ public class SiteSearchWebAPI implements ViewTool {
      */
     public class InternalWrapperCountDateHistogramFacet extends Facet {
 
-        private List<CountEntry> entries;
+        private final List<CountEntry> entries;
 
-        public InternalWrapperCountDateHistogramFacet(String name, String type,
+        public InternalWrapperCountDateHistogramFacet(final String name, final String type,
                 List<InternalDateHistogram.Bucket> entries) {
             super(name, type);
             this.entries = new ArrayList<>();
@@ -215,8 +215,8 @@ public class SiteSearchWebAPI implements ViewTool {
 
         public class CountEntry {
 
-            public long time;
-            public long count;
+            private final long time;
+            private final long count;
 
             public CountEntry(long time, long count) {
                 this.time = time;
@@ -243,12 +243,12 @@ public class SiteSearchWebAPI implements ViewTool {
 
         private List<InternalTermEntry> entries;
 
-        public InternalWrapperStringTermsFacet(String name, String type, List<Bucket> entries) {
+        public InternalWrapperStringTermsFacet(final String name, final String type, final List<Bucket> entries) {
 
             super(name, type);
 
             this.entries = new ArrayList<>();
-            for (Bucket entry : entries) {
+            for (final Bucket entry : entries) {
                 this.entries
                         .add(new InternalTermEntry(entry.getKey().toString(), entry.getDocCount()));
             }
@@ -260,8 +260,8 @@ public class SiteSearchWebAPI implements ViewTool {
 
         public class InternalTermEntry {
 
-            public String term;
-            public long count;
+            private final String term;
+            private final long count;
 
             public InternalTermEntry(String term, long count) {
                 this.term = term;
@@ -283,8 +283,8 @@ public class SiteSearchWebAPI implements ViewTool {
      */
     public class Facet {
 
-        private String name;
-        private String type;
+        private final String name;
+        private final String type;
 
         public Facet(String name, String type) {
 

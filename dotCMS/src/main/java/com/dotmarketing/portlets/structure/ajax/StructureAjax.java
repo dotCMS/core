@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -196,7 +195,7 @@ public class StructureAjax {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 
-		if(!InodeUtils.isSet(structureInode))
+		if(!InodeUtils.isSet(structureInode) || structureInode.equals(Structure.STRUCTURE_TYPE_ALL))
 			return new ArrayList<Map>();
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
