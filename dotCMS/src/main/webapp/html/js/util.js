@@ -709,7 +709,7 @@ function stripCarriageReturn(s) {
 	return s.replace(/\r|\n|\r\n/g, " ");
 }
 
-function submitForm(form, action, singleSubmit) {
+function submitForm(form, action, singleSubmit, callback) {
 	if (submitFormCount == 0) {
 		if (singleSubmit == null || singleSubmit) {
 			submitFormCount++;
@@ -727,7 +727,11 @@ function submitForm(form, action, singleSubmit) {
 			form.action = action;
 		}
 
-		form.submit();
+        form.submit();
+        
+        if (callback) {
+            callback();
+        }
 	}
 	else {
 		if (this.submitFormAlert != null) {

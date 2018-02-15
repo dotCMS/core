@@ -88,17 +88,19 @@ public class LayoutAction extends Action {
 //						}else{
 							_processActionRequest(req, res);
 
-							ActionResponseImpl actionResponse =
-								(ActionResponseImpl)req.getAttribute(
-									WebKeys.JAVAX_PORTLET_RESPONSE);
+							if (!Boolean.parseBoolean(req.getParameter("isNg"))) {
+								ActionResponseImpl actionResponse =
+										(ActionResponseImpl) req.getAttribute(
+												WebKeys.JAVAX_PORTLET_RESPONSE);
 
-							String redirectLocation =
-								actionResponse.getRedirectLocation();
+								String redirectLocation =
+										actionResponse.getRedirectLocation();
 
-							if (Validator.isNotNull(redirectLocation)) {
-								res.sendRedirect(SecurityUtils.stripReferer(req, redirectLocation));
+								if (Validator.isNotNull(redirectLocation)) {
+									res.sendRedirect(SecurityUtils.stripReferer(req, redirectLocation));
 
-								return null;
+									return null;
+								}
 							}
 
 							String windowState = req.getParameter("p_p_state");

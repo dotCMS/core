@@ -251,7 +251,11 @@ public class PageResourceHelper implements Serializable {
         final Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
                 (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
-        final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+        TemplateLayout layout = null;
+
+        if (template.isDrawed()) {
+            layout = DotTemplateTool.themeLayout(template.getInode());
+        }
 
         final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
 
@@ -381,7 +385,8 @@ public class PageResourceHelper implements Serializable {
         saveTemplate.setTitle(form.getTitle());
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
         saveTemplate.setDrawedBody(form.getLayout());
-
+        saveTemplate.setDrawed(true);
+        
         return saveTemplate;
     }
 

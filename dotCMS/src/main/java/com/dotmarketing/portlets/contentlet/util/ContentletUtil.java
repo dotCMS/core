@@ -123,7 +123,7 @@ public class ContentletUtil {
 						final List<Category> childCategories = new ArrayList<>();
 						for (Category category : cats) {
 
-							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user)) {
+							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,true)) {
 
 								childCategories.add(category);
 							}
