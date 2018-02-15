@@ -3,12 +3,16 @@ package com.dotmarketing.portlets.templates.design.bean;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -55,6 +59,7 @@ public class ContainerHolder implements Serializable{
 
         return sb.toString();
     }
+
     @Override
     public String toString() {
        try {
