@@ -1,10 +1,10 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
-<%@ page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
+<%@page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
 <%@page import="org.elasticsearch.search.suggest.term.TermSuggestion"%>
 <%@page import="org.elasticsearch.search.suggest.Suggest"%>
-
+<%@page import="org.elasticsearch.search.suggest.Suggest.*"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -15,6 +15,7 @@
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="java.util.Calendar"%>
+<%@page import="java.util.Iterator"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.ArrayList"%>
@@ -300,11 +301,12 @@ if(query == null){
 			</tr>
 			<tr>
 				<td><%int ii=1; %>
-					<%for(Suggestion s : cons.getSuggestions() ){ %>
-
+				    <%Iterator iterator = cons.getSuggestions().iterator();%>
+					<%while(iterator.hasNext() ){ %>
+                        <%Suggest.Suggestion s = (Suggest.Suggestion)iterator.next();%>
 						<%for (Object entry : s.getEntries()) {%>
-							<%=ii++%>. <%=((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> |
-							<%for(TermSuggestion.Entry.Option opt : ((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
+							<%=ii++%>. <%=((TermSuggestion.Entry) entry).getText() %> |
+							<%for(TermSuggestion.Entry.Option opt : ((TermSuggestion.Entry) entry).getOptions() ){ %>
 								<%=opt.getText()%>
 							<%} %>
 							<br>
