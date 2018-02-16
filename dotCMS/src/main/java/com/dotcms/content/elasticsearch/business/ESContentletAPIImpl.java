@@ -1594,7 +1594,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (contentlets.size() > 0) {
             XStream _xstream = new XStream(new DomDriver());
-            java.io.File backupFolder = new java.io.File(backupPath);
+            File backupFolder = new File(backupPath);
             if (!backupFolder.exists()) {
                 backupFolder.mkdirs();
             }
@@ -1603,7 +1603,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 List<Field> fields = st.getFields();
                 List<File> filelist = new ArrayList<File>();
 
-                java.io.File file = null;
+                File file = null;
                 for (Field field : fields) {
                     if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
                         try {
@@ -1618,10 +1618,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 
-               File papa =  new java.io.File(backupPath + File.separator
+               File papa =  new File(backupPath + File.separator
                     + cont.getIdentifier());
                papa.mkdirs();
-                  java.io.File _writingwbin = new java.io.File(papa,  cont.getIdentifier().toString()  + ".xml");
+                  File _writingwbin = new File(papa,  cont.getIdentifier().toString()  + ".xml");
 
                   try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writingwbin.toPath()))) {
                     _xstream.toXML(cont, _bout);
@@ -1871,13 +1871,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
-            java.io.File _writing = null;
+            File _writing = null;
 
-            java.io.File backupFolder = new java.io.File(backupPath);
+            File backupFolder = new File(backupPath);
             if (!backupFolder.exists()) {
                 backupFolder.mkdirs();
             }
-            _writing = new java.io.File(backupPath + File.separator + lastmoddate + "_" + "deletedcontentlets" + ".xml");
+            _writing = new File(backupPath + File.separator + lastmoddate + "_" + "deletedcontentlets" + ".xml");
 
             BufferedOutputStream _bout = null;
             try {
@@ -3109,13 +3109,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String oldInode = workingContentlet.getInode();
 
 
-                java.io.File newDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
                         + newInode.charAt(0)
                         + File.separator
                         + newInode.charAt(1) + File.separator + newInode);
                 newDir.mkdirs();
 
-                java.io.File oldDir = null;
+                File oldDir = null;
                 if(UtilMethods.isSet(oldInode)) {
                     oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
                             + File.separator + oldInode.charAt(0)
@@ -3123,9 +3123,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + File.separator + oldInode);
                 }
 
-                java.io.File tmpDir = null;
+                File tmpDir = null;
                 if(UtilMethods.isSet(oldInode)) {
-                    tmpDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                    tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
                             + File.separator + oldInode.charAt(0)
                             + File.separator + oldInode.charAt(1)
                             + File.separator + oldInode);
@@ -3144,14 +3144,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         try {
 
                             String velocityVarNm = field.getVelocityVarName();
-                            java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                            File incomingFile = contentletRaw.getBinary(velocityVarNm);
                             if(incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
                                throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
                             }
                             File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
                             
-                            java.io.File metadata=null;
+                            File metadata=null;
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                                 metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
                             }
@@ -3173,19 +3173,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
 
-                                java.io.File oldFile = null;
+                                File oldFile = null;
                                 if(UtilMethods.isSet(oldInode)) {
                                     //get old file
-                                    oldFile = new java.io.File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                                    oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
 
                                     // do we have an inline edited file, if so use that
-                                    java.io.File editedFile = new java.io.File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                                    File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
                                     if(editedFile.exists()){
                                         incomingFile = editedFile;
                                     }
                                 }
 
-                                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  newFileName);
+                                File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  newFileName);
                                 binaryFieldFolder.mkdirs();
 
                                 // we move files that have been newly uploaded or edited
@@ -3217,7 +3217,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                                     // try to get the content metadata from the old version
                                     if(metadata!=null) {
-                                        java.io.File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
+                                        File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
                                         if(oldMeta.exists()) {
                                             if(metadata.exists()) // unlikely to happend. deleting just in case
                                                 metadata.delete();
@@ -3333,7 +3333,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     //Parse file META-DATA
-                    java.io.File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
+                    File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
                     if(binFile!=null){
                         contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
                         if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
@@ -3829,7 +3829,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof java.io.File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List)){
+            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List)){
                 throw new DotContentletStateException("The map contains an invalid value");
             }
         }
@@ -4814,10 +4814,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
 
             // To delete binary files
-            FileUtil.deltree(new java.io.File(contentletAssetPath));
+            FileUtil.deltree(new File(contentletAssetPath));
 
             // To delete resized images
-            FileUtil.deltree(new java.io.File(contentletAssetCachePath));
+            FileUtil.deltree(new File(contentletAssetCachePath));
         });
     }
 
@@ -4834,10 +4834,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             try {
                 // To delete binary files
-                new TrashUtils().moveFileToTrash(new java.io.File(contentletAssetPath), "binaries/asset/"+con.getInode());
+                new TrashUtils().moveFileToTrash(new File(contentletAssetPath), "binaries/asset/"+con.getInode());
 
                 // To delete resized images
-                new TrashUtils().moveFileToTrash(new java.io.File(contentletAssetCachePath), "binaries/cache/"+con.getInode());
+                new TrashUtils().moveFileToTrash(new File(contentletAssetCachePath), "binaries/cache/"+con.getInode());
 
             } catch (IOException e) {
                 Logger.error(this, "Error moving files to trash: '"+contentletAssetPath+"', '"+ contentletAssetCachePath +"'" );
@@ -4897,7 +4897,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public java.io.File getBinaryFile(final String contentletInode, final String velocityVariableName,
+    public File getBinaryFile(final String contentletInode, final String velocityVariableName,
                                       final User user) throws DotDataException,DotSecurityException {
 
         Logger.debug(this,"Retrieving binary file name : getBinaryFileName()." );
@@ -4908,7 +4908,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("Unauthorized Access");
 
 
-        java.io.File binaryFile = null;
+        File binaryFile = null;
         String binaryFilePath = null;
         /*** THIS LOGIC IS DUPED IN THE CONTENTLET POJO.  IF YOU CHANGE HERE, CHANGE THERE **/
         try {
@@ -4922,7 +4922,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + contentletInode
                     + File.separator
                     + velocityVariableName;
-            java.io.File binaryFilefolder = new java.io.File(binaryFilePath);
+            File binaryFilefolder = new File(binaryFilePath);
 
             if ( binaryFilefolder.exists() ) {
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
@@ -5079,8 +5079,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-            java.io.File srcFile;
-            java.io.File destFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId());
+            File srcFile;
+            File destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId());
             if (!destFile.exists())
                 destFile.mkdirs();
 
@@ -5098,7 +5098,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }else{
                                 fieldValue=srcFile.getName();
                             }
-                            destFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId() + File.separator + fieldValue);
+                            destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId() + File.separator + fieldValue);
                             if (!destFile.exists())
                                 destFile.createNewFile();
 
