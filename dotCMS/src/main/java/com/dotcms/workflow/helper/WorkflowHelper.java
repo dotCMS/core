@@ -6,6 +6,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
@@ -29,6 +30,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
@@ -679,6 +681,70 @@ public class WorkflowHelper {
             return action;
         }
     } // IsNewAndCloneItResult.
+
+    /**
+     * Find Availables actions that can be used as default action by content type id
+     * @param contentTypeId String with the content type Id
+     * @param user          User   the user that makes the request
+     * @return List<WorkflowDefaultActionView>
+     */
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId,
+            final User   user) {
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        List<WorkflowAction> actions = Collections.emptyList();
+        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        try {
+
+            Logger.debug(this, "Getting the available default workflows actions by content type: " + contentTypeId);
+            actions = this.workflowAPI.findAvailableDefaultActionsByContentType(contentTypeAPI.find(contentTypeId), user);
+            for (WorkflowAction action : actions){
+                WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+                WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,action);
+                results.add(value);
+            }
+
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return results.build();
+    }
+
+    /**
+     * Find Availables actions that can be used as default action by Workflow schemes
+     * @param schemeIds     Comma separated list of workflow schemes Ids to process
+     * @param user          User   the user that makes the request
+     * @return List<WorkflowDefaultActionView>
+     */
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsBySchemes(final String schemeIds,
+            final User   user) {
+        List<WorkflowAction> actions = Collections.emptyList();
+        final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
+        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        try {
+
+            Logger.debug(this, "Getting the available workflows default actions by schemeIds: "+schemeIds);
+            for(String id: schemeIds.split(",")){
+                schemes.add(this.workflowAPI.findScheme(id));
+            }
+            actions = this.workflowAPI.findAvailableDefaultActionsBySchemes(schemes.build(), APILocator.getUserAPI().getSystemUser());
+            for (WorkflowAction action : actions){
+                WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+                WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,action);
+                results.add(value);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return results.build();
+    }
 
 
 } // E:O:F:WorkflowHelper.

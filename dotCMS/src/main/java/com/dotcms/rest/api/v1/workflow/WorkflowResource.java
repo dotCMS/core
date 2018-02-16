@@ -793,4 +793,84 @@ public class WorkflowResource {
         return response;
     } // exportScheme.
 
+    /**
+     * Returns all the possible default actions associated to the content type workflow schemes.
+     * 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/defaultactions/contenttype/{contentTypeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
+            @PathParam("contentTypeId")      final String contentTypeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowDefaultActionView> actions;
+        try {
+
+            Logger.debug(this,
+                    "Getting the available workflow schemes default action for the ContentType: "
+                            + contentTypeId );
+            actions = this.workflowHelper.findAvailableDefaultActionsByContentType
+                    (contentTypeId, initDataObject.getUser());
+
+            response  =
+                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAvailableDefaultActionsByContentType.
+
+    /**
+     * Returns all the possible default actions associated to the workflow schemes.
+     * 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/defaultactions/schemes")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findAvailableDefaultActionsBySchemes(@Context final HttpServletRequest request,
+            @QueryParam("ids")      final String schemeIds) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowDefaultActionView> actions;
+        try {
+
+            Logger.debug(this,
+                    "Getting the available workflow schemes default action for the schemes: "
+                            + schemeIds );
+            actions = this.workflowHelper.findAvailableDefaultActionsBySchemes
+                    (schemeIds, initDataObject.getUser());
+
+            response  =
+                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findAvailableDefaultActionsBySchemes.
+
 } // E:O:F:WorkflowResource.
