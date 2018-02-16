@@ -37,7 +37,8 @@ export class DotContainerSelectorComponent implements OnInit {
     containerChange(container: DotContainer): void {
         if (!this.isContainerSelected(container)) {
             this.selectedContainersList.push({
-                container: container
+                container: container,
+                uuid: (new Date().getTime()).toString()
             });
             this.change.emit(this.selectedContainersList);
         }
