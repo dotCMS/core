@@ -200,6 +200,7 @@ export const EDIT_PAGE_CSS = `
           visibility: hidden;
           opacity: 0;
           transition: opacity ${animation};
+          right: 0;
      }
 
      .dotedit-container__toolbar.active .dotedit-container__menu {

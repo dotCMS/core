@@ -77,15 +77,14 @@ export class DotEditContentHtmlService {
     renderPage(editPageHTML: string, iframeEl: ElementRef): Promise<any> {
         return new Promise((resolve, reject) => {
             this.iframe = iframeEl;
-            this.loadCodeIntoIframe(editPageHTML);
-
             const iframeElement = this.getEditPageIframe();
             iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModelChange;
             iframeElement.contentWindow.contentletEvents = this.contentletEvents;
-
             iframeElement.addEventListener('load', () => {
                 resolve(true);
             });
+            // Load content after bind 'load' event.
+            this.loadCodeIntoIframe(editPageHTML);
         });
     }
 
