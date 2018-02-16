@@ -601,7 +601,7 @@
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
 
             if(data["isHtmlPage"]){
-                self.location = data["htmlPageReferer"];
+                window.top.location = '/dotAdmin/#/edit-page/content?url=' + data["htmlPageReferer"];
             } else if(data["sourceReferer"]){
                 self.location = data["referer"] + "&content_inode=" + data["contentletInode"]+"&referer=" + escape(data["sourceReferer"]);
             }else{
