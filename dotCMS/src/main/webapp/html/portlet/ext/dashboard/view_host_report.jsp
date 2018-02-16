@@ -5,7 +5,7 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotmarketing.portlets.structure.factories.RelationshipFactory"%>
+<%@page import="com.dotmarketing.business.RelationshipAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Relationship"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
@@ -31,6 +31,7 @@ PermissionAPI perAPI = APILocator.getPermissionAPI();
 int userCount = perAPI.getUserCount(currentHost.getInode(), perAPI.PERMISSION_READ,"");
 List<TopAsset> topAssets = dashboardAPI.getTopAssets(user, hostId);
 java.text.NumberFormat numberFormat = java.text.NumberFormat.getInstance();
+RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 long totalPages = 0;
 long totalContent = 0;
 long totalFiles = 0;
@@ -45,9 +46,9 @@ for(TopAsset ta : topAssets){
 	}
 }
 List<Relationship> relationships = new ArrayList<Relationship>();
+
 if(content!=null){
-  relationships.addAll(RelationshipFactory.getRelationshipsByParent(content.getStructure()));
-  relationships.addAll(RelationshipFactory.getRelationshipsByChild(content.getStructure()));
+  relationships.addAll(relationshipAPI.byContentType(APILocator.getContentTypeAPI(APILocator.systemUser()).find(content.getStructureInode())));
 }
 LanguageAPI langAPI = APILocator.getLanguageAPI();
 List<Language> langs = langAPI.getLanguages();
