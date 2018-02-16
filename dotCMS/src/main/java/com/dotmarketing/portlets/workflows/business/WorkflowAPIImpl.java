@@ -1511,4 +1511,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	@CloseDBIfOpened
+	public List<WorkflowAction> findInitialAvailableActionsByContentType(ContentType contentType, User user)
+			throws DotDataException, DotSecurityException{
+		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
+		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
+		for(WorkflowScheme scheme: schemes){
+			List<WorkflowStep> steps = findSteps(scheme);
+			actions.addAll(findActions(steps.get(0), user));
+		}
+
+		return actions.build();
+	}
+
 }
