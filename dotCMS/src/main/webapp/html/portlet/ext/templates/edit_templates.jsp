@@ -94,8 +94,17 @@
 	dojo.require('dotcms.dojo.data.ContainerReadStore');
 
 	var referer = '<%=referer%>';
+    var isNg = '<%=request.getParameter("ng") %>' === 'true';
 
 	function submitfm(form,subcmd) {
+        var customEvent = document.createEvent("CustomEvent");
+
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "advanced-template-saving",
+            data: {}
+        });
+        document.dispatchEvent(customEvent);
+
 		window.onbeforeunload=true;
 		if(dijit.byId("toggleEditor").checked){
 		      document.getElementById("bodyField").value=editor.getValue();
@@ -107,8 +116,26 @@
 		}
 		form.cmd.value = '<%=Constants.ADD%>';
 		form.subcmd.value = subcmd;
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
-		submitForm(form);
+        form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
+
+        if (isNg) {
+            var data = new URLSearchParams(new FormData(form)).toString();
+            var req = new XMLHttpRequest();
+            req.open("POST", form.action, true);
+            req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            req.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    customEvent.initCustomEvent("ng-event", false, false,  {
+                        name: "advanced-template-saved",
+                        data: {}
+                    });
+                    document.dispatchEvent(customEvent);
+                }
+            };
+            req.send(data);
+        } else {
+            submitForm(form);
+        }
 	}
 
 	var copyAsset = false;
@@ -254,7 +281,6 @@
 </script>
 
 <script language="JavaScript" src="/html/js/cms_ui_utils.js"></script>
-
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-template\") %>" />
 
@@ -265,7 +291,7 @@
 	<input name="subcmd" type="hidden" value="">
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
-
+	<input name="isNg" type="hidden" value='<%=request.getParameter("ng") %>'>
 <div class="portlet-main" style="height:100vh;border:0px solid red;">
 
 <!-- START TabContainer-->
@@ -457,9 +483,11 @@
 			</a>
 		<% } %>
 	
-		<a onClick="cancelEdit()" >
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</a>
+        <% if (request.getParameter("ng") == null) { %>
+            <a onClick="cancelEdit()" >
+                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+            </a>
+        <% } %>
 	</div>
 	</div>
 </div>

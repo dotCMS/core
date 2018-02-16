@@ -281,19 +281,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	saveError : function(message) {
 		showDotCMSSystemMessage(message, true);
 
-	},
-
-	toggleInitialAction : function(){
-		if( dijit.byId("schemeMandatory").getValue() ){
-			dojo.style('forceInitialAction', 'display', 'flex');
-			dojo.query("#addEditSchemeForm").style("height","auto");
-		}
-		else{
-			dojo.style('forceInitialAction', 'display', 'none');
-
-		}
 	}
-
 
 });
 

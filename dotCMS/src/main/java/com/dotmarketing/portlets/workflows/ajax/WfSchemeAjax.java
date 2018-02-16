@@ -22,11 +22,7 @@ public class WfSchemeAjax extends WfBaseAction {
 		String schemeId = request.getParameter("schemeId");
 		String schemeDescription = request.getParameter("schemeDescription");
 		boolean schemeArchived = (request.getParameter("schemeArchived") != null);
-		boolean schemeMandatory = (request.getParameter("schemeMandatory") != null);
-		String schemeEntryAction = request.getParameter("schemeEntryAction");
-		if(!UtilMethods.isSet(schemeEntryAction)){
-			schemeEntryAction=null;
-		}
+
 		WorkflowScheme newScheme = new WorkflowScheme();
 
 		try {
@@ -40,8 +36,6 @@ public class WfSchemeAjax extends WfBaseAction {
 		newScheme.setArchived(schemeArchived);
 		newScheme.setDescription(schemeDescription);
 		newScheme.setName(schemeName);
-		newScheme.setMandatory(schemeMandatory);
-		newScheme.setEntryActionId(schemeEntryAction);
 
 		try {
 			wapi.saveScheme(newScheme);

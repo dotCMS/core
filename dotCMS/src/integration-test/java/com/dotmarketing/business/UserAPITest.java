@@ -251,7 +251,6 @@ public class UserAPITest extends IntegrationTestBase {
 		WorkflowScheme newScheme = new WorkflowScheme();
 		newScheme.setName(schemeName);
 		newScheme.setArchived(false);
-		newScheme.setMandatory(false);
 		workflowAPI.saveScheme(newScheme);
 
 		WorkflowScheme ws = workflowAPI.findSchemeByName(schemeName);

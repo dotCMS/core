@@ -1313,6 +1313,7 @@ public class DotWebdavHelper {
 			fileName = fileName.replace("<", "");
 			fileName = fileName.replace(">", "");
 			fileName = fileName.replace("|", "");
+			fileName = fileName.replace("+", " ");
 			if (!UtilMethods.isSet(fileName)) {
 				throw new IOException(
 						"Please specify a name without special characters \\/:*?\"<>|");

@@ -10,25 +10,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
-	final StringBuilder actionsDropDownOptions
-			= new StringBuilder("<option value='new'>New Action</option>"); // todo: i18n
-
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 	String schemeId  = request.getParameter("schemeId");
-	WorkflowScheme defaultScheme   = wapi.findDefaultScheme();
 	WorkflowScheme scheme          = wapi.findScheme(schemeId);
 	final List<WorkflowStep> steps = wapi.findSteps(scheme);
-	final List<WorkflowAction> schemaActions =
-			wapi.findActions(scheme, APILocator.getUserAPI().getSystemUser());
-	WorkflowAction entryAction = null;
-	if( UtilMethods.isSet(scheme.getEntryActionId())){
-		try{
-			entryAction = wapi.findAction(scheme.getEntryActionId(), APILocator.getUserAPI().getSystemUser());
-	
-		}catch(Exception e){
-			
-		}
-	}
 %>
 
 <script type="text/javascript">
