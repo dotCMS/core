@@ -12,11 +12,9 @@ import com.liferay.util.JNDIUtil;
 
 import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -68,6 +66,17 @@ public class DbConnectionFactory {
                     e);
         }
     } // setAutoCommit.
+
+    /**
+     * Returns the current date (now) depending of the right type for the current database type.
+     * @return Date
+     */
+    public static Date now() {
+
+        return MSSQL.equals(getDBType())?
+                new java.sql.Date(System.currentTimeMillis()):
+                new Timestamp(System.currentTimeMillis());
+    }
 
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;

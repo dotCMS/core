@@ -2,6 +2,7 @@
 
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.util.ConversionUtils;
@@ -44,9 +45,10 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
     protected static final int          SELECT_MAX_ROWS                      = Config.getIntProperty("task.4330.selectmaxrows", 25);
     protected static final int          MAX_BATCH_SIZE                       = Config.getIntProperty("task.4330.maxbatchsize", 100);
     protected static final String       SELECT_CONTENTLET_LANGS_INFO_SQL     = "select lang from contentlet_version_info where identifier=?";
-    protected static final String       INSERT_WORKFLOW_TASK_SQL             = "insert into (id, create_date, mode_date, created_by, assigned_to, status, webasset, language_id) values (?,?,?,?,?,?,?,?)";
+    protected static final String       INSERT_WORKFLOW_TASK_SQL             = "insert into workflow_task(id, title, creation_date, mod_date, created_by, assigned_to, status, webasset, language_id) values (?,?,?,?,?,?,?,?,?)";
 
     protected static final long         DEFAULT_LANGUAGE_ID                  = 1L;
+    protected static final String       SELECT_WORKFLOW_TASK_SQL             = "select id, assigned_to, title, status, webasset from workflow_task";
     protected final DotSubmitter        submitter                            = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
 
@@ -187,14 +189,14 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
 
     private void updateAllWorkflowTaskToDefaultLanguage() throws DotDataException {
 
-        Logger.debug(this, "Running upgrade Task04330WorkflowTaskAddLanguageIdColumn");
+        Logger.info(this, "Running upgrade Task04330WorkflowTaskAddLanguageIdColumn");
 
         int selectStartRow = 0;
         final List<WorkflowTask> workflowTasks = new ArrayList<>();
         final List<Future<WorkflowTaskResult>> futures =
                 new ArrayList<>();
         List<Map<String, Object>> workflowTaskList = new DotConnect()
-                .setSQL("select id, assigned_to, title, status, webasset from workflow_task")
+                .setSQL(SELECT_WORKFLOW_TASK_SQL)
                 .setStartRow(selectStartRow)
                 .setMaxRows(SELECT_MAX_ROWS)
                 .loadResults();
@@ -224,12 +226,14 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
             selectStartRow   += SELECT_MAX_ROWS;
             workflowTaskList  =
                     (List<Map<String, Object>>)new DotConnect()
-                            .setSQL("select id, assigned_to, title, status, webasset from workflow_task")
+                            .setSQL(SELECT_WORKFLOW_TASK_SQL)
                             .setStartRow(selectStartRow)
                             .setMaxRows (SELECT_MAX_ROWS)
                             .loadResults();
             futures.clear();
         }
+
+        this.doBatch       (workflowTasks, true);
     }
 
     private void doBatch(final List<WorkflowTask> workflowTasks) {
@@ -249,11 +253,12 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
 
                 if (workflowTask.isUpdate()) {
 
-                    paramsInsert.add(new Params(workflowTask.getLanguageId(),
+                    paramsUpdate.add(new Params(workflowTask.getLanguageId(),
                             workflowTask.getId()
                     ));
                 } else {
-                    paramsUpdate.add(new Params(workflowTask.getId(),
+                    paramsInsert.add(new Params(workflowTask.getId(),
+                            workflowTask.getTitle(),
                             DbConnectionFactory.now(),
                             DbConnectionFactory.now(),
                             SYSTEM_USER_ID,
@@ -311,6 +316,7 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
         futures.add(submitter.submit(()-> this.runWorkflowTask (workflowTaskMap)));
     }
 
+    @CloseDBIfOpened
     private WorkflowTaskResult runWorkflowTask(final Map<String, Object> workflowTaskMap) {
 
         final String id                = (String)workflowTaskMap.get("id");
