@@ -24,26 +24,26 @@ import { StringFormat } from './api/util/stringFormat';
 
 const PROVIDERS: any[] = [
     AccountService,
+    AuthGuardService,
     ColorUtil,
     ConfirmationService,
     ContentTypesInfoService,
+    ContentletGuardService,
     CrudService,
+    DefaultGuardService,
+    DotConfirmationService,
     DotMenuService,
+    DotMessageService,
     DotRouterService,
     FormatDateService,
     GravatarService,
     IframeOverlayService,
     Logger,
-    DotMessageService,
+    MenuGuardService,
     NotLicensedService,
-    DotConfirmationService,
     NotificationsService,
     PaginatorService,
-    AuthGuardService,
-    ContentletGuardService,
-    MenuGuardService,
     PublicAuthGuardService,
-    DefaultGuardService,
     StringFormat
 ];
 

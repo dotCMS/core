@@ -34,9 +34,6 @@ import { PageViewService } from '../../../../api/services/page-view/page-view.se
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [
-        ConfirmationService,
-        DotConfirmationService,
-        DotConfirmationService,
         DotEditLayoutService,
         DotEditLayoutService,
         PageViewService,
