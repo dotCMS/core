@@ -14,6 +14,15 @@ import org.apache.lucene.search.TopDocs;
 import com.liferay.util.Time;
 
 public class LuceneHits implements Serializable {
+
+	private long _start;
+	private float _searchTime;
+	private List<LuceneHit> luceneHits = new ArrayList<>();
+	private long _length;
+	private long _total;
+	private String _luceneQuery = "";
+	private int _offset = 0;
+	private String _sortBy = "";
 	
 	private class LuceneHit {
 		float score = 0;
@@ -140,15 +149,5 @@ public class LuceneHits implements Serializable {
     public void setSortBy(String sortBy) {
         this._sortBy = sortBy;
     }
-    
-	private long _start;
-	private float _searchTime;
-	private List<LuceneHit> luceneHits = new ArrayList<>();
-	private long _length;
-	private long _total;
-    private String _luceneQuery = "";
-    private int _offset = 0;
-    private String _sortBy = "";
-
 
 }

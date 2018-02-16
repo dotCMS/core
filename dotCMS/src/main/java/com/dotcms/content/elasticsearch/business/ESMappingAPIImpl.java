@@ -404,7 +404,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		Structure st=con.getStructure();
 		StringBuilder keyNameBuilder;
-		String keyName, keyNameText;
+		String keyName;
+		String keyNameText;
 		for (Field f : fields) {
 
 			keyNameBuilder = new StringBuilder(st.getVelocityVarName()).append(".")
@@ -449,8 +450,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					try {
 						String dateString = dateFormat.format(valueObj);
 						m.put(keyName, valueObj);
-						m.put(keyNameText.toString(),
-								dateString);
+						m.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
 						m.put(keyName, "");
@@ -459,8 +459,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					try {
 						String datetimeString = datetimeFormat.format(valueObj);
 						m.put(keyName, valueObj);
-						m.put(keyNameText,
-								datetimeString);
+						m.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
 						m.put(keyName, "");
@@ -471,14 +470,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
 					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
 						m.put(keyName, valueObj);
-						m.put(keyNameText,
-								valueObj.toString());
+						m.put(keyNameText, valueObj.toString());
 					} else {
 						m.put(keyName,
 								UtilMethods.listToString(valueObj.toString()));
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
-					boolean fileMetadata =
+					final boolean fileMetadata =
 							f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
 									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
