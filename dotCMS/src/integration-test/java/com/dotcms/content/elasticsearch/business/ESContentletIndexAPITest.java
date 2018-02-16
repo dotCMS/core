@@ -838,7 +838,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         Client client = new ESClient().getClient();
         SearchResponse resp;
         try {
-            QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery( qq );
+            final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery( qq );
             SearchRequestBuilder srb = client.prepareSearch();
             srb.setQuery( qb );
 

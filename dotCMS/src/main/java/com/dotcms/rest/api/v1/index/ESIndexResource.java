@@ -203,7 +203,7 @@ public class ESIndexResource {
 
     public static long indexDocumentCount(String indexName) {
 
-        Client client = new ESClient().getClient();
+        final Client client = new ESClient().getClient();
         final IndicesStatsResponse indicesStatsResponse =
             client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet();
         final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);

@@ -77,7 +77,7 @@ public class ESClient {
                             Settings.builder().
                                 put( "cluster.name", Config.getStringProperty("es.cluster.name")).
                                 put( "node.name", node_id ).
-                                put("path.home", "WEB-INF/elastic_search").
+                                put("path.home", Config.getStringProperty("es.path.home", "WEB-INF/elastic_search")).
                                 put("path.data", Config.getStringProperty(DATA_PATH)).
                                     put("path.repo", Config.getStringProperty(REPO_PATH)).build()
                         ).start();

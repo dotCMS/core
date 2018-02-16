@@ -195,8 +195,9 @@ public class StructureAjax {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 
-		if(!InodeUtils.isSet(structureInode) || structureInode.equals(Structure.STRUCTURE_TYPE_ALL))
-			return new ArrayList<Map>();
+		if(!InodeUtils.isSet(structureInode) || structureInode.equals(Structure.STRUCTURE_TYPE_ALL)) {
+			return new ArrayList<>();
+		}
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 

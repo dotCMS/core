@@ -148,7 +148,7 @@ public class SiteSearchWebAPI implements ViewTool {
      * will be use if exist
      * @param query Query to apply
      */
-    public Map<String, Aggregation> getAggregations(final String indexName, String query)
+    public Map<String, Aggregation> getAggregations(final String indexName, final String query)
             throws DotDataException {
         return siteSearchAPI.getAggregations(indexName, query);
     }
@@ -161,7 +161,7 @@ public class SiteSearchWebAPI implements ViewTool {
      * @param query Query to apply
      * @deprecated use {@link #getAggregations(String, String)} instead
      */
-    public Map<String, Facet> getFacets(final String indexName, String query)
+    public Map<String, Facet> getFacets(final String indexName, final String query)
             throws DotDataException, IllegalAccessException, NoSuchFieldException {
 
         Facet internalFacet;
@@ -169,10 +169,10 @@ public class SiteSearchWebAPI implements ViewTool {
         final Map<String, Facet> internalFacets = new HashMap<>();
 
         //Search with the given query
-        Map<String, Aggregation> aggregations = this.getAggregations(indexName, query);
+        final Map<String, Aggregation> aggregations = this.getAggregations(indexName, query);
         for (String key : aggregations.keySet()) {
 
-            Aggregation aggregation = aggregations.get(key);
+            final Aggregation aggregation = aggregations.get(key);
 
             if (aggregation instanceof InternalDateHistogram) {
                 internalFacet = new InternalWrapperCountDateHistogramFacet(aggregation.getName(),
@@ -203,7 +203,7 @@ public class SiteSearchWebAPI implements ViewTool {
                 List<InternalDateHistogram.Bucket> entries) {
             super(name, type);
             this.entries = new ArrayList<>();
-            for (InternalDateHistogram.Bucket entry : entries) {
+            for (final InternalDateHistogram.Bucket entry : entries) {
                 this.entries.add(new CountEntry(((DateTime) entry.getKey()).getMillis(),
                         entry.getDocCount()));
             }
@@ -218,7 +218,7 @@ public class SiteSearchWebAPI implements ViewTool {
             private final long time;
             private final long count;
 
-            public CountEntry(long time, long count) {
+            public CountEntry(final long time, final long count) {
                 this.time = time;
                 this.count = count;
             }
@@ -263,7 +263,7 @@ public class SiteSearchWebAPI implements ViewTool {
             private final String term;
             private final long count;
 
-            public InternalTermEntry(String term, long count) {
+            public InternalTermEntry(final String term, final long count) {
                 this.term = term;
                 this.count = count;
             }
@@ -286,7 +286,7 @@ public class SiteSearchWebAPI implements ViewTool {
         private final String name;
         private final String type;
 
-        public Facet(String name, String type) {
+        public Facet(final String name, final String type) {
 
             this.name = name;
             this.type = type;
