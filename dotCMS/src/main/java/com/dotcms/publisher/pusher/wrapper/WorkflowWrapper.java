@@ -20,9 +20,10 @@ public class WorkflowWrapper {
 	private List<WorkflowActionClass> actionClasses;
 	private List<WorkflowActionClassParameter> actionClassParams;
 	private Operation operation;
+	private List<Map<String, String>>  actionStepsListMap;
 
 	public WorkflowWrapper(WorkflowScheme scheme, List<WorkflowStep> steps, List<WorkflowAction> actions, Map<WorkflowAction,
-			List<Role>> actionRoles, List<WorkflowActionClass> actionClasses, List<WorkflowActionClassParameter> actionClassParams, Map<String, String> actionNextAssignRolekeyMap) {
+			List<Role>> actionRoles, List<WorkflowActionClass> actionClasses, List<WorkflowActionClassParameter> actionClassParams, Map<String, String> actionNextAssignRolekeyMap, List<Map<String, String>> actionStepsListMap) {
 		this.scheme = scheme;
 		this.steps = steps;
 		this.actions = actions;
@@ -30,6 +31,7 @@ public class WorkflowWrapper {
 		this.actionClasses = actionClasses;
 		this.actionClassParams = actionClassParams;
 		this.actionNextAssignRolekeyMap = actionNextAssignRolekeyMap;
+		this.actionStepsListMap = actionStepsListMap;
 	}
 
 
@@ -114,5 +116,21 @@ public class WorkflowWrapper {
 	 */
 	public void setOperation(Operation operation) {
 		this.operation = operation;
+	}
+
+	/**
+	 * Set the action steps map
+	 * @param actionStepsListMap List of action steps map
+	 */
+	public void setStepActions(List<Map<String, String>> actionStepsListMap) {
+		this.actionStepsListMap = actionStepsListMap;
+	}
+
+	/**
+	 * Get the List of related action steps map
+	 * @return a List action steps map
+	 */
+	public List<Map<String, String>> getStepActions() {
+		return actionStepsListMap;
 	}
 }
