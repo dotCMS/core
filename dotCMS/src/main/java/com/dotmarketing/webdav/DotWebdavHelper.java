@@ -1305,7 +1305,7 @@ public class DotWebdavHelper {
 		return r;
 	}
 
-	private String deleteSpecialCharacter(String fileName) throws IOException {
+	public String deleteSpecialCharacter(String fileName) throws IOException {
 		if (UtilMethods.isSet(fileName)) {
 			fileName = fileName.replace("\\", "");
 			fileName = fileName.replace(":", "");
