@@ -61,6 +61,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             path = path + "/";
         }
 
+        newName = dotDavHelper.deleteSpecialCharacter(newName);
         if(!dotDavHelper.isTempResource(newName)){
             try {
             	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
