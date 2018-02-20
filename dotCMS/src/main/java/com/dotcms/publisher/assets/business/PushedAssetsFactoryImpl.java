@@ -1,5 +1,6 @@
 package com.dotcms.publisher.assets.business;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +147,11 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		PushedAsset asset = cache.getPushedAsset(assetId, environmentId);
 		if(asset==null){
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECT_ASSET_LAST_PUSHED);
+			if(DbConnectionFactory.isOracle()){
+				dc.setSQL(SELECT_ASSET_LAST_PUSHED_ORACLE);
+			} else {
+				dc.setSQL(SELECT_ASSET_LAST_PUSHED);
+			}
 			dc.addParam(assetId);
 			dc.addParam(environmentId);
 			dc.addParam(endpointIds);
