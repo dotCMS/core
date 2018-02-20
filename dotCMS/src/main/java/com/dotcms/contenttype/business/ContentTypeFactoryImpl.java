@@ -543,7 +543,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // permissions have already been checked at this point
     int limit = 200;
     ContentletAPI conAPI = APILocator.getContentletAPI();
-    List<Contentlet> contentlets = new ArrayList<>();
+    List<Contentlet> contentlets;
 
     try {
       contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
@@ -554,13 +554,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       }
     } catch (DotSecurityException e) {
       throw new DotDataException(e);
-    } catch (RuntimeException ex) {
-      Throwable root = ex.getCause();
-      if (root instanceof IndexNotFoundException) {
-
-      }
     }
-
   }
 
   private void deleteRelationships(ContentType type) throws DotDataException {
