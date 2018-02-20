@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { PageViewService } from '../../../../../api/services/page-view/page-view.service';

@@ -8,7 +8,7 @@ import { By } from '@angular/platform-browser';
 
 @Component({
     selector: 'dot-test-host-component',
-    template:   `<form [formGroup]="group">
+    template: `<form [formGroup]="group">
                     <dot-layout-properties-item formControlName="header" ></dot-layout-properties-item>
                 </form>`
 })
@@ -53,7 +53,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
     it('should emit change value on host click', () => {
         let res: boolean;
 
-        comp.change.subscribe(value => res = value);
+        comp.change.subscribe((value) => (res = value));
         de.nativeElement.click();
 
         expect(res).toEqual(true);
@@ -79,6 +79,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
         hostComponentfixture.detectChanges();
 
         expect(comp.value).toEqual(true);
-        expect(component.writeValue).toHaveBeenCalledWith(({ header: true }));
+        expect(component.writeValue).toHaveBeenCalledWith({ header: true });
     });
 });

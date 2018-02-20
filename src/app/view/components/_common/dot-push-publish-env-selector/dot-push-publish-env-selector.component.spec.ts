@@ -13,7 +13,6 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
 
-
     pushPublishContent(contentTypeId: string, formValue: any): Observable<any> {
         return Observable.of([]);
     }
@@ -132,7 +131,7 @@ describe('PushPublishEnvSelectorComponent', () => {
 
     it('should get environments from PushPublishService', () => {
         fixture.detectChanges();
-        comp.pushEnvironments$.subscribe(environments => {
+        comp.pushEnvironments$.subscribe((environments) => {
             expect(environments).toEqual([
                 {
                     id: '22e332',

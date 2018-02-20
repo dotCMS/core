@@ -28,12 +28,12 @@ export class DotEditLayoutService {
         const grid: DotLayoutGridBox[] = [];
 
         dotLayoutBody.rows.forEach((row, rowIndex) => {
-            row.columns.forEach(column => {
+            row.columns.forEach((column) => {
                 grid.push({
                     containers: column.containers.map((dotPageContainer: DotPageContainer) => {
                         return {
                             container: this.templateContainersCacheService.get(dotPageContainer.identifier),
-                            uuid: dotPageContainer.uuid ? dotPageContainer.uuid : (new Date().getTime()).toString()
+                            uuid: dotPageContainer.uuid ? dotPageContainer.uuid : new Date().getTime().toString()
                         };
                     }),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
@@ -79,15 +79,18 @@ export class DotEditLayoutService {
         return {
             columns: gridBoxes.map(
                 (layoutGridBox: DotLayoutGridBox) =>
-                    <DotLayoutColumn> {
+                    <DotLayoutColumn>{
                         leftOffset: layoutGridBox.config.col,
                         width: layoutGridBox.config.sizex,
-                        containers: layoutGridBox.containers.map((dotContainersColumnBox: DotContainerColumnBox) =>
-                                <DotPageContainer> {
+                        containers: layoutGridBox.containers.map(
+                            (dotContainersColumnBox: DotContainerColumnBox) =>
+                                <DotPageContainer>{
                                     identifier: dotContainersColumnBox.container.identifier,
                                     uuid: dotContainersColumnBox.uuid
-                                })
-                        })
+                                }
+                        )
+                    }
+            )
         };
     }
 }

@@ -8,17 +8,17 @@
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-user__content">
         <header class="toolbar-user__header">
-            <gravatar class="toolbar-user__header-gravatar" size="40" [email]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"></gravatar>
+            <dot-gravatar class="toolbar-user__header-gravatar" size="40" [email]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"></dot-gravatar>
             <div class="toolbar-user__header-info">
-                <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">{{auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName}}</h5>
-                <p class="toolbar-user__email" id="dot-toolbar-email">{{auth.loginAsUser ? auth.loginAsUser.emailAddress : auth.user.emailAddress}}</p>
+                <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">{{ auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName }}</h5>
+                <p class="toolbar-user__email" id="dot-toolbar-email">{{ auth.loginAsUser ? auth.loginAsUser.emailAddress : auth.user.emailAddress }}</p>
             </div>
         </header>
         <ul class="toolbar-user__menu" id="dot-toolbar-user-menu">
-            <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-my-account" messagekey>my-account</a></li>
-            <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-login-as" messagekey>login-as</a></li>
-            <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-logout" messagekey>Logout</a></li>
-            <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="auth.loginAsUser" id="dot-toolbar-user-link-logout-as" messagekey>logout-as</a></li>
+            <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-my-account" dotMessagekey>my-account</a></li>
+            <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-login-as" dotMessagekey>login-as</a></li>
+            <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-logout" dotMessageKey>Logout</a></li>
+            <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="auth.loginAsUser" id="dot-toolbar-user-link-logout-as" dotMessagekey>logout-as</a></li>
         </ul>
     </div>
 </dot-dropdown-component>

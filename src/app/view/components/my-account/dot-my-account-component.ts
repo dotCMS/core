@@ -17,7 +17,10 @@ export class MyAccountComponent extends BaseComponent {
     @Output() close = new EventEmitter<any>();
     @Input() visible: boolean;
 
-    private accountUser: AccountUser = {
+    emailRegex: string;
+    passwordMatch: boolean;
+
+    accountUser: AccountUser = {
         currentPassword: '',
         email: '',
         givenName: '',
@@ -25,18 +28,16 @@ export class MyAccountComponent extends BaseComponent {
         userId: ''
     };
 
-    private passwordConfirm: string;
-    private passwordMatch: boolean;
-    private message = null;
-    private changePasswordOption = false;
-    private emailRegex: string;
+    passwordConfirm: string;
+    message = null;
+    changePasswordOption = false;
 
     constructor(
-        private loginService: LoginService,
-        private accountService: AccountService,
         dotMessageService: DotMessageService,
-        private stringFormat: StringFormat,
-        private dotcmsConfig: DotcmsConfig
+        private accountService: AccountService,
+        private dotcmsConfig: DotcmsConfig,
+        private loginService: LoginService,
+        private stringFormat: StringFormat
     ) {
         super(
             [
@@ -62,7 +63,7 @@ export class MyAccountComponent extends BaseComponent {
         this.passwordMatch = false;
         this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
-        this.dotcmsConfig.getConfig().subscribe(res => {
+        this.dotcmsConfig.getConfig().subscribe((res) => {
             this.emailRegex = res.emailRegex;
         });
     }
@@ -81,25 +82,13 @@ export class MyAccountComponent extends BaseComponent {
         this.changePasswordOption = !this.changePasswordOption;
     }
 
-    // tslint:disable-next-line:no-unused-variable
-    private getRequiredMessage(item): string {
+    getRequiredMessage(item): string {
         return this.stringFormat.formatMessage(this.i18nMessages['error.form.mandatory'], item);
     }
 
-    private loadUser(auth: Auth): void {
-        const user: User = auth.user;
-        this.accountUser.email = user.emailAddress;
-        this.accountUser.givenName = user.firstName;
-        this.accountUser.surname = user.lastName;
-        this.accountUser.userId = user.userId;
-        this.accountUser.newPassword = null;
-        this.passwordConfirm = null;
-    }
-
-    // tslint:disable-next-line:no-unused-variable
-    private save(): void {
+    save(): void {
         this.accountService.updateUser(this.accountUser).subscribe(
-            response => {
+            (response) => {
                 // TODO: replace the alert with a Angular components
                 alert(this.i18nMessages['message.createaccount.success']);
                 this.close.emit();
@@ -113,10 +102,20 @@ export class MyAccountComponent extends BaseComponent {
                     });
                 }
             },
-            response => {
+            (response) => {
                 // TODO: We have to define how must be the user feedback in case of error
                 this.message = response.errorsMessages;
             }
         );
+    }
+
+    private loadUser(auth: Auth): void {
+        const user: User = auth.user;
+        this.accountUser.email = user.emailAddress;
+        this.accountUser.givenName = user.firstName;
+        this.accountUser.surname = user.lastName;
+        this.accountUser.userId = user.userId;
+        this.accountUser.newPassword = null;
+        this.passwordConfirm = null;
     }
 }

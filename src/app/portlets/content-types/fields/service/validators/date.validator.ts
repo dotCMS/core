@@ -17,7 +17,7 @@ const format = {
  */
 export function validateDateDefaultValue(formControl: FormControl) {
     const invalidResponse = {
-            validateDate: {
+        validateDate: {
             valid: false
         }
     };

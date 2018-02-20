@@ -23,12 +23,6 @@ import { DotDirectivesModule } from '../../shared/dot-directives.module';
         DotDirectivesModule
     ],
     declarations: [],
-    providers: [
-        EditContentResolver,
-        EditLayoutResolver,
-        EditPageService,
-        PageViewService,
-        TemplateContainersCacheService
-    ]
+    providers: [EditContentResolver, EditLayoutResolver, EditPageService, PageViewService, TemplateContainersCacheService]
 })
 export class DotEditPageModule {}

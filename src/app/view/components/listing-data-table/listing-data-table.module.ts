@@ -11,26 +11,9 @@ import { DataTableModule, InputTextModule } from 'primeng/primeng';
 import { ActionMenuButtonModule } from './../_common/action-menu-button/action-menu-button.module';
 
 @NgModule({
-    declarations: [
-        ListingDataTableComponent
-    ],
-    exports: [
-        ListingDataTableComponent
-    ],
-    imports: [
-        ActionHeaderModule,
-        CommonModule,
-        DataTableModule,
-        FormsModule,
-        InputTextModule,
-        ActionMenuButtonModule
-    ],
-    providers: [
-        CrudService,
-        FormatDateService,
-        DotcmsConfig,
-        LoggerService,
-        DotMessageService,
-    ]
+    declarations: [ListingDataTableComponent],
+    exports: [ListingDataTableComponent],
+    imports: [ActionHeaderModule, CommonModule, DataTableModule, FormsModule, InputTextModule, ActionMenuButtonModule],
+    providers: [CrudService, FormatDateService, DotcmsConfig, LoggerService, DotMessageService]
 })
 export class ListingDataTableModule {}

@@ -7,19 +7,9 @@ import { NgModule } from '@angular/core';
 import { PaginatorService } from '../../../api/services/paginator';
 
 @NgModule({
-    declarations: [
-        DotContainerSelectorComponent
-    ],
-    exports: [
-        DotContainerSelectorComponent
-    ],
-    imports: [
-        CommonModule,
-        FormsModule,
-        ButtonModule,
-        SearchableDropDownModule
-    ],
+    declarations: [DotContainerSelectorComponent],
+    exports: [DotContainerSelectorComponent],
+    imports: [CommonModule, FormsModule, ButtonModule, SearchableDropDownModule],
     providers: [PaginatorService]
 })
-
 export class DotContainerSelectorModule {}

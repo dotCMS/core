@@ -1,5 +1,4 @@
-import { Component, OnDestroy, Input, Output, EventEmitter, OnInit,
-         ViewChild, ElementRef } from '@angular/core';
+import { Component, OnDestroy, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
@@ -13,7 +12,7 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 @Component({
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
-    templateUrl: './content-type-fields-add-row.component.html',
+    templateUrl: './content-type-fields-add-row.component.html'
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     rowState = 'add';
@@ -22,7 +21,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     @Input() columns: number[] = [1, 2, 3, 4];
     @Input() disabled = false;
-    @Input() toolTips: string[] = [
+    @Input()
+    toolTips: string[] = [
         'contenttypes.content.one_column',
         'contenttypes.content.two_columns',
         'contenttypes.content.three_columns',
@@ -31,8 +31,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer') colContainerElem: ElementRef;
 
-    constructor(private hotkeysService: HotkeysService , public dotMessageService: DotMessageService) {
-    }
+    constructor(private hotkeysService: HotkeysService, public dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
@@ -73,7 +72,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @memberof ContentTypeFieldsAddRowComponent
      */
     numberOfCols(n: number): number[] {
-       return Array(n).fill('');
+        return Array(n).fill('');
     }
 
     /**
@@ -85,7 +84,9 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         this.bindKeyboardEvents();
         // Transitions over focus event doesn't work, It needs a setTimeout
         // with time over the CSS transition 200 ms
-        setTimeout(() => { this.setFocus(this.getElementSelected()); }, 201);
+        setTimeout(() => {
+            this.setFocus(this.getElementSelected());
+        }, 201);
     }
 
     /**
@@ -114,10 +115,12 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @memberof ContentTypeFieldsAddRowComponent
      */
     setKeyboardEvent(key: string | string[], keyEvent): any {
-        this.hotkeysService.add(new Hotkey(key, (event: KeyboardEvent): boolean => {
-            keyEvent();
-            return false;
-        }));
+        this.hotkeysService.add(
+            new Hotkey(key, (_event: KeyboardEvent): boolean => {
+                keyEvent();
+                return false;
+            })
+        );
     }
 
     /**
@@ -143,12 +146,9 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private loadMessages(): void {
-        const i18nKeys = [
-            ...this.toolTips,
-            'contenttypes.dropzone.rows.add'
-        ];
+        const i18nKeys = [...this.toolTips, 'contenttypes.dropzone.rows.add'];
 
-        this.dotMessageService.getMessages(i18nKeys).subscribe(res => {
+        this.dotMessageService.getMessages(i18nKeys).subscribe((res) => {
             this.i18nMessages = res;
         });
     }

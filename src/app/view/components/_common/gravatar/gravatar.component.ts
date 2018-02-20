@@ -1,14 +1,13 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { GravatarService } from '../../../../api/services/gravatar-service';
 import * as md5 from 'md5';
 
 @Component({
-    selector: 'gravatar',
+    selector: 'dot-gravatar',
     styleUrls: ['./gravatar.component.scss'],
     templateUrl: './gravatar.component.html'
 })
-
-export class GravatarComponent {
+export class GravatarComponent implements OnChanges {
     @Input() email;
     @Input() size;
     public gravatarProfileStyles;
@@ -17,31 +16,29 @@ export class GravatarComponent {
     public gravatarPlaceholderStyles;
     public avatarUrl;
 
-    constructor(private gravatarService: GravatarService) {
-
-    }
+    constructor(private gravatarService: GravatarService) {}
 
     ngOnChanges(): void {
         const hash = md5(this.email);
         const profile$ = this.gravatarService.loadGravatarProfile(hash);
         profile$.subscribe(
-            data => {
+            (data) => {
                 this.gravatarProfileStyles = {
-                    'height': this.size + 'px',
-                    'width': this.size + 'px'
+                    height: this.size + 'px',
+                    width: this.size + 'px'
                 };
 
                 this.gravatarProfile = true;
                 this.avatarUrl = data.entry[0].photos[0].value + '?s=' + this.size;
             },
-            error => {
+            (_error) => {
                 this.gravatarProfile = false;
                 this.gravatarPlaceholder = this.getDotAvatar(this.email);
                 this.gravatarPlaceholderStyles = {
-                    'font-size': this.size - ((this.size * 25) / 100) + 'px',
-                    'height': this.size + 'px',
+                    'font-size': this.size - this.size * 25 / 100 + 'px',
+                    height: this.size + 'px',
                     'line-height': this.size + 'px',
-                    'width': this.size + 'px'
+                    width: this.size + 'px'
                 };
             }
         );

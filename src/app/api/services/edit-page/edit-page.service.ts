@@ -92,7 +92,8 @@ export class EditPageService {
      */
     setPageState(page: DotRenderedPage, state: DotEditPageState): Observable<DotRenderedPageState> {
         const lockUnlock: Observable<string> = this.getLockMode(page.liveInode, state.locked);
-        const pageMode: Observable<DotRenderedPage> = state.mode !== undefined ? this.getPageMode(state.mode)(page.pageURI) : null;
+        const pageMode: Observable<DotRenderedPage> =
+            state.mode !== undefined ? this.getPageMode(state.mode)(page.pageURI) : null;
 
         return this.getStateRequest(lockUnlock, pageMode);
     }

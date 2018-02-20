@@ -8,7 +8,7 @@ import { RequestMethod } from '@angular/http';
 export class DotCurrentUserService {
     private currentUsersUrl = 'v1/users/current/';
 
-    constructor(private coreWebService: CoreWebService) { }
+    constructor(private coreWebService: CoreWebService) {}
 
     // TODO: We need to update the LoginService to get the userId in the User object
     /**

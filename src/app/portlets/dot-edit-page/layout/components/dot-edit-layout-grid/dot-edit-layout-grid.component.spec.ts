@@ -119,7 +119,7 @@ describe('DotEditLayoutGridComponent', () => {
     it('should remove one Container from the Grid', () => {
         component.addBox();
         const dotConfirmationService = hostComponentfixture.debugElement.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
         component.onRemoveContainer(1);
@@ -166,7 +166,7 @@ describe('DotEditLayoutGridComponent', () => {
     it('should Propagate Change after a grid box is deleted', () => {
         component.addBox();
         const dotConfirmationService = hostComponentfixture.debugElement.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
         spyOn(component, 'propagateChange');

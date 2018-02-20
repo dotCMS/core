@@ -10,9 +10,7 @@ export class SafePipe implements PipeTransform {
             let urlWithParameters = url;
             urlWithParameters += urlWithParameters.indexOf('?') === -1 ? '?' : '&';
             urlWithParameters +=
-                urlWithParameters.indexOf('in_frame') === -1
-                    ? 'in_frame=true&frame=detailFrame&container=true'
-                    : '';
+                urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&container=true' : '';
 
             return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
         } else {

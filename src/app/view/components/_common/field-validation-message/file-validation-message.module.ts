@@ -4,9 +4,9 @@ import { NgModule } from '@angular/core';
 
 @NgModule({
     bootstrap: [],
-    declarations: [ FieldValidationMessageComponent ],
-    exports: [ FieldValidationMessageComponent ],
-    imports: [ CommonModule ],
+    declarations: [FieldValidationMessageComponent],
+    exports: [FieldValidationMessageComponent],
+    imports: [CommonModule],
     providers: []
 })
 export class FieldValidationMessageModule {}

@@ -21,7 +21,7 @@ describe('DotEditPageNavComponent', () => {
                 declarations: [DotEditPageNavComponent],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
-        }),
+        })
     );
 
     beforeEach(() => {

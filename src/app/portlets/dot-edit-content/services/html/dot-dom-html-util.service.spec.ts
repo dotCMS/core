@@ -23,7 +23,7 @@ describe('DotDOMHtmlUtilService', () => {
         const cssElementCreated = dotDOMHtmlUtilService.createLinkElement(href);
 
         expect(cssElementCreated.rel).toEqual('stylesheet');
-        expect(cssElementCreated.type ).toEqual('text/css');
+        expect(cssElementCreated.type).toEqual('text/css');
         expect(cssElementCreated.media).toEqual('all');
         expect(cssElementCreated.href).toEqual(href);
     });
@@ -50,7 +50,6 @@ describe('DotDOMHtmlUtilService', () => {
 
         expect(scriptElementCreated.text).toEqual(text);
     });
-
 
     it('should get a button html code', () => {
         const label = 'ButtonLabel';

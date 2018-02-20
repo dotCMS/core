@@ -11,7 +11,7 @@ import { DebugElement, Component } from '@angular/core';
 
 @Component({
     selector: 'dot-test-host-component',
-    template:   `<form [formGroup]="group">
+    template: `<form [formGroup]="group">
                     <dot-layout-properties></dot-layout-properties>
                 </form>`
 })
@@ -32,7 +32,6 @@ describe('DotLayoutPropertiesComponent', () => {
     let comp: DotLayoutPropertiesComponent;
     let fixture: ComponentFixture<DotLayoutPropertiesComponent>;
     let de: DebugElement;
-    let hostComponentfixture: ComponentFixture<TestHostComponent>;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.layout.properties.header': 'Header',
@@ -49,9 +48,7 @@ describe('DotLayoutPropertiesComponent', () => {
                 ButtonModule,
                 ReactiveFormsModule
             ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
         fixture = DOTTestBed.createComponent(DotLayoutPropertiesComponent);
@@ -60,6 +57,7 @@ describe('DotLayoutPropertiesComponent', () => {
     });
 
     xit('should modify the group model', () => {
-
+        expect(comp.group).toBeDefined();
+        expect(de).toBeDefined();
     });
 });

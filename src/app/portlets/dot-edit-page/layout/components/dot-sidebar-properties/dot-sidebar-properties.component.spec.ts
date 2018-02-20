@@ -1,4 +1,4 @@
-import { ComponentFixture} from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { Component, DebugElement } from '@angular/core';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -8,12 +8,10 @@ import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.componen
 import { OverlayPanelModule } from 'primeng/primeng';
 
 describe('DotSidebarPropertiesComponent', () => {
-
     let component: DotSidebarPropertiesComponent;
     let fixture: ComponentFixture<DotSidebarPropertiesComponent>;
 
     beforeEach(() => {
-
         const messageServiceMock = new MockDotMessageService({
             'editpage.layout.sidebar.width.small': 'Small',
             'editpage.layout.sidebar.width.medium': 'Medium',
@@ -24,9 +22,7 @@ describe('DotSidebarPropertiesComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotSidebarPropertiesComponent],
             imports: [OverlayPanelModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
         fixture = DOTTestBed.createComponent(DotSidebarPropertiesComponent);

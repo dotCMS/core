@@ -1,4 +1,4 @@
-@import "variables";
+@import 'variables';
 
 :host {
     box-shadow: $md-shadow-1;
@@ -30,7 +30,7 @@
     margin: 0 $basic-padding / 2;
     display: flex;
     flex-direction: column;
-    
+
     &:first-child {
         margin-left: 0;
     }

@@ -6,18 +6,18 @@
     dragula="fields-row-bag">
 
     <ng-template ngFor let-row [ngForOf]="fieldRows">
-        <content-type-fields-row
+        <dot-content-type-fields-row
             *ngIf="row.columns.length"
             [fieldRow]="row"
             (editField)="editField($event)"
             (removeField)="removeField($event)"
             (removeRow)="removeFieldRow($event)">
-        </content-type-fields-row>
+        </dot-content-type-fields-row>
     </ng-template>
 
     <div *ngIf="!fieldRows.length"
         class="content-type-fields-drop-zone__message">
-        {{i18nMessages['contenttypes.dropzone.empty.message']}}
+        {{ i18nMessages['contenttypes.dropzone.empty.message'] }}
     </div>
 </div>
 <p-dialog
@@ -31,14 +31,14 @@
     (onHide)="removeFieldsWithoutId()">
 
     <p-header>
-        {{currentFieldType?.label}} <i class="fa fa-question form__hint-icon content-type-fields-drop-zone__hint-icon" (click)="fieldHelperOverlay.toggle($event)"></i>
+        {{ currentFieldType?.label }} <i class="fa fa-question form__hint-icon content-type-fields-drop-zone__hint-icon" (click)="fieldHelperOverlay.toggle($event)"></i>
     </p-header>
 
-    <content-type-fields-properties-form
+    <dot-content-type-fields-properties-form
         [formFieldData]="formData"
         (saveField)="saveFieldsHandler($event)"
         #fieldPropertiesForm>
-    </content-type-fields-properties-form>
+    </dot-content-type-fields-properties-form>
 
     <p-footer>
         <button type="button" flat pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>

@@ -11,7 +11,7 @@ import { FieldService } from '../service';
  * @class ContentTypesFieldDragabbleItemComponent
  */
 @Component({
-    selector: 'content-type-field-dragabble-item',
+    selector: 'dot-content-type-field-dragabble-item',
     styleUrls: ['./content-type-field-dragabble-item.component.scss'],
     templateUrl: './content-type-field-dragabble-item.component.html'
 })

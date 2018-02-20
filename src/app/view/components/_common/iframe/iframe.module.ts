@@ -9,25 +9,9 @@ import { IframeOverlayService } from './service/iframe-overlay.service';
 import { PIPES } from '../../../../components';
 
 @NgModule({
-    declarations: [
-        IframeComponent,
-        IframePortletLegacyComponent,
-        ...PIPES
-    ],
-    exports: [
-        DotLoadingIndicatorModule,
-        IframeComponent,
-        IframePortletLegacyComponent
-    ],
-    imports: [
-        CommonModule,
-        FormsModule,
-        SearchableDropDownModule,
-        DotLoadingIndicatorModule
-    ],
-    providers: [
-        IframeOverlayService,
-    ],
+    declarations: [IframeComponent, IframePortletLegacyComponent, ...PIPES],
+    exports: [DotLoadingIndicatorModule, IframeComponent, IframePortletLegacyComponent],
+    imports: [CommonModule, FormsModule, SearchableDropDownModule, DotLoadingIndicatorModule],
+    providers: [IframeOverlayService]
 })
-
 export class IFrameModule {}

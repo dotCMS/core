@@ -5,8 +5,16 @@ import { ToolbarModule, SelectButtonModule, InputSwitchModule, SplitButtonModule
 import { FormsModule } from '@angular/forms';
 
 @NgModule({
-    imports: [SplitButtonModule, CommonModule, ToolbarModule, SelectButtonModule, InputSwitchModule, FormsModule, ButtonModule],
+    imports: [
+        SplitButtonModule,
+        CommonModule,
+        ToolbarModule,
+        SelectButtonModule,
+        InputSwitchModule,
+        FormsModule,
+        ButtonModule
+    ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent]
 })
-export class DotEditPageToolbarModule { }
+export class DotEditPageToolbarModule {}

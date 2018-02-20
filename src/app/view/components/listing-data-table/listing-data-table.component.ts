@@ -1,13 +1,4 @@
-import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    OnChanges,
-    ViewChild,
-    ElementRef,
-    OnInit
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { ActionHeaderOptions, ButtonAction } from '../../../shared/models/action-header';
 import { BaseComponent } from '../_common/_base/base-component';
@@ -20,7 +11,7 @@ import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-t
 
 @Component({
     providers: [PaginatorService],
-    selector: 'listing-data-table',
+    selector: 'dot-listing-data-table',
     styleUrls: ['./listing-data-table.component.scss'],
     templateUrl: 'listing-data-table.component.html'
 })
@@ -47,9 +38,9 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     loading = true;
 
     constructor(
-        dotMessageService: DotMessageService,
+        public dotMessageService: DotMessageService,
         public loggerService: LoggerService,
-        private paginatorService: PaginatorService,
+        public paginatorService: PaginatorService,
         private formatDateService: FormatDateService
     ) {
         super(['global-search'], dotMessageService);
@@ -62,7 +53,7 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
         }
 
         if (changes.columns && changes.columns.currentValue) {
-            this.dateColumns = changes.columns.currentValue.filter(column => column.format === this.DATE_FORMAT);
+            this.dateColumns = changes.columns.currentValue.filter((column) => column.format === this.DATE_FORMAT);
             this.loadData(0);
         }
         if (changes.paginationPerPage && changes.paginationPerPage.currentValue) {
@@ -96,7 +87,7 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
             this.paginatorService.sortField = sortField;
             this.paginatorService.sortOrder = sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).subscribe(items => this.setItems(items));
+            this.paginatorService.getWithOffset(offset).subscribe((items) => this.setItems(items));
         }
     }
 
@@ -107,7 +98,7 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     loadCurrentPage(): void {
         this.loading = true;
         if (this.columns) {
-            this.paginatorService.getCurrentPage().subscribe(items => this.setItems(items));
+            this.paginatorService.getCurrentPage().subscribe((items) => this.setItems(items));
         }
     }
 
@@ -125,9 +116,9 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     }
 
     private formatData(items: any[]): any[] {
-        return items.map(item => {
+        return items.map((item) => {
             this.dateColumns.forEach(
-                col => (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
+                (col) => (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;
         });

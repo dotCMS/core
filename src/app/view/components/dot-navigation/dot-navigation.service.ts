@@ -22,10 +22,10 @@ export class DotNavigationService {
         private location: PlatformLocation,
         private router: Router
     ) {
-        router.events
-            .filter(event => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
+        this.router.events
+            .filter((event) => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
             .take(1)
-            .subscribe((event: NavigationEnd) => {
+            .subscribe((_event: NavigationEnd) => {
                 this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
                     this.setMenu(menu);
                 });
@@ -149,10 +149,6 @@ export class DotNavigationService {
 
     private isFirstMenuActive(currentUrl: string, index: number): boolean {
         return currentUrl === '#/' && index === 0;
-    }
-
-    private isHashHome(hash: string): boolean {
-        return hash === '#/c' || hash === '#/c/' || hash === '' || hash === '#/';
     }
 
     private isMenuItemCurrentUrl(currentUrl: string, menuItemId: string): boolean {

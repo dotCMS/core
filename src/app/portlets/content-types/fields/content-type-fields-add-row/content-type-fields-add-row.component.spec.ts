@@ -30,13 +30,11 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         testHotKeysMock = new TestHotkeysMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsAddRowComponent
-            ],
+            declarations: [ContentTypeFieldsAddRowComponent],
             imports: [TooltipModule, BrowserAnimationsModule],
             providers: [
                 { provide: HotkeysService, useValue: testHotKeysMock },
-                { provide: DotMessageService, useValue: messageServiceMock}
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -67,8 +65,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should render tooltip input data', () => {
-        comp.toolTips = ['contenttypes.content.one_column',
-        'contenttypes.content.four_columns'];
+        comp.toolTips = ['contenttypes.content.one_column', 'contenttypes.content.four_columns'];
 
         fixture.detectChanges();
 
@@ -206,7 +203,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         const lis = de.queryAll(By.css('li'));
         addButton.nativeElement.click();
 
-        comp.selectColums.subscribe(cols => colsToEmit = cols);
+        comp.selectColums.subscribe((cols) => (colsToEmit = cols));
 
         lis[0].nativeElement.click();
 

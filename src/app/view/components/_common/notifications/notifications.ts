@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
+import { Component, ViewEncapsulation, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { BaseComponent } from '../_base/base-component';
 import { INotification } from '../../../../shared/models/notifications';
@@ -9,20 +9,20 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
     providers: [],
     selector: 'dot-notifications-item',
     styleUrls: ['./notifications-item.scss'],
-    templateUrl: 'notifications-item.html',
-
+    templateUrl: 'notifications-item.html'
 })
-export class NotificationsItem extends BaseComponent {
+export class NotificationsItemComponent extends BaseComponent implements OnInit {
     @Input() data;
     @Output() clear = new EventEmitter<Object>();
+
+    showLinkAction = false;
+    showTitleLinked = false;
 
     private notificationIcons: Object = {
         ERROR: 'exclamation-triangle',
         INFO: 'info-circle',
-        WARNING: 'ban',
+        WARNING: 'ban'
     };
-    private showLinkAction = false;
-    private showTitleLinked = false;
 
     constructor(dotMessageService: DotMessageService) {
         super(['notifications_dismiss'], dotMessageService);
@@ -31,11 +31,19 @@ export class NotificationsItem extends BaseComponent {
     ngOnInit(): void {
         // TODO: hand more than one action
         const actions = this.data.actions ? this.data.actions[0] : null;
-        this.showLinkAction = actions && actions.actionType === 'LINK' &&
-            (actions.text || actions.text !== '') && actions.action && actions.action !== '';
+        this.showLinkAction =
+            actions &&
+            actions.actionType === 'LINK' &&
+            (actions.text || actions.text !== '') &&
+            actions.action &&
+            actions.action !== '';
 
-        this.showTitleLinked = actions && actions.actionType === 'LINK'
-            && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
+        this.showTitleLinked =
+            actions &&
+            actions.actionType === 'LINK' &&
+            (!actions.text || actions.text === '') &&
+            actions.action &&
+            actions.action !== '';
     }
 
     getIconName(val: string): string {
@@ -54,9 +62,9 @@ export class NotificationsItem extends BaseComponent {
     providers: [],
     selector: 'dot-notifications-list',
     styleUrls: ['./notifications-list.scss'],
-    templateUrl: 'notifications-list.html',
+    templateUrl: 'notifications-list.html'
 })
-export class NotificationsList {
+export class NotificationsListComponent {
     @Input() notifications: INotification;
     @Output() dismissNotification = new EventEmitter<Object>();
 

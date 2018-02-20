@@ -1,6 +1,6 @@
 <div class="container-selector">
     <div class="container-selector__header">
-        <searchable-dropdown
+        <dot-searchable-dropdown
             (change)="containerChange($event)"
             (filterChange)="handleFilterChange($event)"
             (pageChange)="handlePageChange($event)"
@@ -9,9 +9,9 @@
             [rows]="paginationService.paginationPerPage"
             [totalRecords]="paginationService.totalRecords"
             [labelPropertyName]="['name', 'parentPermissionable.hostname']"
-            placeholder="{{dotMessageService.get('editpage.container.add.label')}}"
+            placeholder="{{ dotMessageService.get('editpage.container.add.label') }}"
             persistentPlaceholder="true">
-        </searchable-dropdown>
+        </dot-searchable-dropdown>
         <button class="container-selector__header-remove" type="button" pButton icon="fa-close" (click)="remove.emit($event)"></button>
     </div>
     <ul class="container-selector__list">

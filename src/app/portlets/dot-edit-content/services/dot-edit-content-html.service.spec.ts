@@ -77,34 +77,40 @@ describe('DotEditContentHtmlService', () => {
             TODO: in the refactor we need to make this service just to generate and return stuff, pass the iframe
             is not a good architecture.
         */
-        this.dotEditContentHtmlService.initEditMode(fakeHTML, {nativeElement: fakeIframeEl});
+        this.dotEditContentHtmlService.initEditMode(fakeHTML, { nativeElement: fakeIframeEl });
     });
 
-    it('should bind containers events when the html is done', fakeAsync((): void => {
-        spyOn(this.dotEditContentHtmlService, 'bindContainersEvents');
+    it(
+        'should bind containers events when the html is done',
+        fakeAsync((): void => {
+            spyOn(this.dotEditContentHtmlService, 'bindContainersEvents');
 
-        this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
-            this.dotEditContentHtmlService.bindContainersEvents();
-        });
+            this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
+                this.dotEditContentHtmlService.bindContainersEvents();
+            });
 
-        tick();
-        expect(this.dotEditContentHtmlService.bindContainersEvents).toHaveBeenCalledTimes(1);
-    }));
+            tick();
+            expect(this.dotEditContentHtmlService.bindContainersEvents).toHaveBeenCalledTimes(1);
+        })
+    );
 
-    it('should bind contentlets events when the html is done', fakeAsync((): void => {
-        spyOn(this.dotEditContentHtmlService, 'bindContenletsEvents');
+    it(
+        'should bind contentlets events when the html is done',
+        fakeAsync((): void => {
+            spyOn(this.dotEditContentHtmlService, 'bindContenletsEvents');
 
-        this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
-            this.dotEditContentHtmlService.bindContenletsEvents();
-        });
+            this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
+                this.dotEditContentHtmlService.bindContenletsEvents();
+            });
 
-        tick();
-        expect(this.dotEditContentHtmlService.bindContenletsEvents).toHaveBeenCalledTimes(1);
-    }));
+            tick();
+            expect(this.dotEditContentHtmlService.bindContenletsEvents).toHaveBeenCalledTimes(1);
+        })
+    );
 
     it('should add contentlet', () => {
         spyOn(this.dotEditContentHtmlService, 'renderAddedContentlet');
-        this.dotEditContentHtmlService.setContainterToAppendContentlet( {
+        this.dotEditContentHtmlService.setContainterToAppendContentlet({
             identifier: '123',
             uuid: '456'
         });
@@ -122,7 +128,7 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should edit contentlet', () => {
-        this.dotEditContentHtmlService.setContainterToEditContentlet( {
+        this.dotEditContentHtmlService.setContainterToEditContentlet({
             identifier: '123',
             uuid: '456'
         });
@@ -166,7 +172,9 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.currentContainer = currentContainer;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
+            Observable.of('<i>testing</i>')
+        );
 
         const contentlet: DotPageContent = {
             identifier: '67',
@@ -175,12 +183,14 @@ describe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => currentModel = model);
+        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => (currentModel = model));
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
 
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer)
-            .toHaveBeenCalledWith(currentContainer, contentlet);
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
+            currentContainer,
+            contentlet
+        );
 
         expect(this.dotEditContentHtmlService.currentContainer).toBeNull('currentContainer must be null');
         expect(currentModel).toEqual('testing', 'should tigger model change event');
@@ -196,7 +206,9 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.currentContainer = currentContainer;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
+            Observable.of('<i>testing</i>')
+        );
 
         const dotConfirmationService = this.injector.get(DotConfirmationService);
         spyOn(dotConfirmationService, 'alert');
@@ -208,7 +220,7 @@ describe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => currentModel = model);
+        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => (currentModel = model));
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
 
@@ -237,13 +249,20 @@ describe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
+            Observable.of('<i>testing</i>')
+        );
 
         this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
 
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(currentContainer, contentlet);
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(anotherContainer, contentlet);
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
+            currentContainer,
+            contentlet
+        );
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
+            anotherContainer,
+            contentlet
+        );
     });
 });

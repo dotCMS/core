@@ -5,15 +5,20 @@
     "scripts": {
         "ng": "ng",
         "start": "ng serve --proxy-config proxy.conf.json --port 3000",
-        "build:dev": "ng build -w --dev --aot=false --base-href=\"./\"",
+        "build:dev": "ng build -v -w --dev --aot=false --base-href=\"./\"",
         "build": "ng build --prod --aot=false --base-href=\"./\"",
         "watch": "npm run build -w --no-delete-output-path --sourcemap",
         "test": "ng test -sr",
         "lint": "ng lint",
         "e2e": "ng e2e",
-        "devversionbump": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",
+        "devversionbump":
+            "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",
         "publishdev": "rm -rf dist;npm run build;cp package.json ./dist/package.json;npm run devversionbump;cd dist;npm publish",
         "dotcms": "npm run build:dev --sourcemap --"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core-web.git"
     },
     "private": false,
     "dependencies": {
@@ -62,7 +67,8 @@
         "karma-jasmine-html-reporter": "^0.2.2",
         "protractor": "~5.1.2",
         "ts-node": "~3.2.0",
-        "tslint": "~5.3.2",
+        "tslint": "~5.9.1",
+        "tslint-angular": "^1.1.1",
         "typescript": "~2.3.3",
         "webpack": "^3.10.0"
     }

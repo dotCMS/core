@@ -3,9 +3,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 
 describe('ContentTypesInfoService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            ContentTypesInfoService
-        ]);
+        this.injector = DOTTestBed.resolveAndCreate([ContentTypesInfoService]);
 
         this.iconsService = this.injector.get(ContentTypesInfoService);
     });
@@ -19,10 +17,14 @@ describe('ContentTypesInfoService', () => {
     });
 
     it('should return a ImmutableWidgetContentType for page', () => {
-        expect(this.iconsService.getClazz('widget')).toBe('com.dotcms.contenttype.model.type.ImmutableWidgetContentType');
+        expect(this.iconsService.getClazz('widget')).toBe(
+            'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'
+        );
     });
 
     it('should return a ImmutablePersonaContentType for page', () => {
-        expect(this.iconsService.getClazz('persona')).toBe('com.dotcms.contenttype.model.type.ImmutablePersonaContentType');
+        expect(this.iconsService.getClazz('persona')).toBe(
+            'com.dotcms.contenttype.model.type.ImmutablePersonaContentType'
+        );
     });
 });

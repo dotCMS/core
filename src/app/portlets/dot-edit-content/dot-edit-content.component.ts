@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject } from 'rxjs/Subject';
 import { ActivatedRoute } from '@angular/router';
@@ -13,17 +13,11 @@ import { DotGlobalMessageService } from '../../view/components/_common/dot-globa
 import { DotMenuService } from '../../api/services/dot-menu.service';
 import { DotPageContainer } from '../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../dot-edit-page/shared/models/dot-page-content.model';
-import { DotContainer } from '../dot-edit-page/shared/models/dot-container.model';
 import { Workflow } from '../../shared/models/workflow/workflow.model';
 import { Observable } from 'rxjs/Observable';
 import { WorkflowService } from '../../api/services/workflow/workflow.service';
-import {
-    DotEditPageToolbarComponent,
-    PageMode
-} from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
+import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
-import { DotPage } from '../dot-edit-page/shared/models/dot-page.model';
-import { stagger } from '@angular/animations/src/animation_metadata';
 import { DotEditPageState } from '../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotRenderedPageState } from '../dot-edit-page/shared/models/dot-rendered-page-state.model';
 
@@ -105,7 +99,7 @@ export class DotEditContentComponent implements OnInit {
                 });
             });
 
-            this.dotEditContentHtmlService.pageModelChange.filter(model => model.length).subscribe((model) => {
+            this.dotEditContentHtmlService.pageModelChange.filter((model) => model.length).subscribe((model) => {
                 if (this.originalValue) {
                     this.ngZone.run(() => {
                         this.isModelUpdated = !_.isEqual(model, this.originalValue);
@@ -134,7 +128,7 @@ export class DotEditContentComponent implements OnInit {
      * @param {any} $event
      * @memberof DotEditContentComponent
      */
-    onLoad($event): void {
+    onLoad(_event): void {
         this.dotLoadingIndicatorService.hide();
     }
 
@@ -201,9 +195,7 @@ export class DotEditContentComponent implements OnInit {
         this.dialogTitle = this.dotMessageService.get('editpage.content.contentlet.add.content');
 
         this.loadDialogEditor(
-            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${
-                $event.dataset.dotAdd
-            }`,
+            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${$event.dataset.dotAdd}`,
             $event.contentletEvents
         );
     }
@@ -222,8 +214,7 @@ export class DotEditContentComponent implements OnInit {
 
         this.dotMenuService.getDotMenuId('content').subscribe((portletId: string) => {
             // tslint:disable-next-line:max-line-length
-            const url =
-            `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
+            const url = `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
 
             // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
             this.dialogTitle = 'Edit Contentlet';
@@ -273,12 +264,8 @@ export class DotEditContentComponent implements OnInit {
             header: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.header'),
             message: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.message'),
             footerLabel: {
-                acceptLabel: this.dotMessageService.get(
-                    'editpage.content.contentlet.remove.confirmation_message.accept'
-                ),
-                rejectLabel: this.dotMessageService.get(
-                    'editpage.content.contentlet.remove.confirmation_message.reject'
-                )
+                acceptLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.accept'),
+                rejectLabel: this.dotMessageService.get('editpage.content.contentlet.remove.confirmation_message.reject')
             }
         });
     }

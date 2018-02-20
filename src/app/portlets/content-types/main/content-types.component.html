@@ -1,4 +1,4 @@
-<listing-data-table
+<dot-listing-data-table
     #listing
     (rowWasClicked)="editContentType($event)"
     [actionHeaderOptions]="actionHeaderOptions"
@@ -9,7 +9,7 @@
     sortOrder="DESC"
     url="v1/contenttype"
     [actions]="rowActions">
-</listing-data-table>
+</dot-listing-data-table>
 
 <dot-push-publish-dialog *ngIf="pushPublishIdentifier" [assetIdentifier]="pushPublishIdentifier" (cancel)="pushPublishIdentifier = null"></dot-push-publish-dialog>
 

@@ -27,7 +27,6 @@ const mockDotRenderPage: DotRenderedPage = {
     workingInode: ''
 };
 
-
 describe('EditPageService', () => {
     let editPageService: EditPageService;
     let backend: MockBackend;
@@ -36,11 +35,9 @@ describe('EditPageService', () => {
     beforeEach(() => {
         lastConnection = [];
 
-        this.injector = DOTTestBed.resolveAndCreate([
-            EditPageService
-        ]);
+        this.injector = DOTTestBed.resolveAndCreate([EditPageService]);
 
-        editPageService =  this.injector.get(EditPageService);
+        editPageService = this.injector.get(EditPageService);
         backend = this.injector.get(ConnectionBackend) as MockBackend;
         backend.connections.subscribe((connection: any) => {
             lastConnection.push(connection);
@@ -49,61 +46,81 @@ describe('EditPageService', () => {
 
     it('should do a get a rendered page in edit mode', () => {
         let result: DotRenderedPage;
-        editPageService.getEdit('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
+        editPageService.getEdit('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderPage
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderPage
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderPage);
     });
 
     it('should do a get a rendered page in preview mode', () => {
         let result: DotRenderedPage;
-        editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
+        editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderPage
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderPage
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=PREVIEW_MODE');
         expect(result).toEqual(mockDotRenderPage);
     });
 
     it('should do a get a rendered page in live mode', () => {
         let result: DotRenderedPage;
-        editPageService.getLive('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
+        editPageService.getLive('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderPage
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderPage
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=LIVE_MODE');
         expect(result).toEqual(mockDotRenderPage);
     });
 
     it('should lock a content asset', () => {
         let result: any;
-        editPageService.lock('123').subscribe((lockInfo: any) => result = lockInfo);
+        editPageService.lock('123').subscribe((lockInfo: any) => (result = lockInfo));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: {
-                message: 'locked'
-            }
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        message: 'locked'
+                    }
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/123');
-        expect(result).toEqual({message: 'locked'});
+        expect(result).toEqual({ message: 'locked' });
     });
 
     it('should unlock a content asset', () => {
         let result: any;
-        editPageService.unlock('123').subscribe((lockInfo: any) => result = lockInfo);
+        editPageService.unlock('123').subscribe((lockInfo: any) => (result = lockInfo));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: {
-                message: 'locked'
-            }
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        message: 'locked'
+                    }
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/123');
-        expect(result).toEqual({message: 'locked'});
+        expect(result).toEqual({ message: 'locked' });
     });
 
     it('should set a page state (lock and the get edit)', () => {
@@ -119,19 +136,27 @@ describe('EditPageService', () => {
         };
 
         let result: DotRenderedPageState;
-        editPageService.setPageState(mockDotRenderPage, state).subscribe(res => {
+        editPageService.setPageState(mockDotRenderPage, state).subscribe((res) => {
             result = res;
         });
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: {
-                message: 'locked'
-            }
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        message: 'locked'
+                    }
+                })
+            )
+        );
 
-        lastConnection[1].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderPage
-        })));
+        lastConnection[1].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderPage
+                })
+            )
+        );
 
         expect(editPageService.lock).toHaveBeenCalledTimes(1);
         expect(editPageService.getEdit).toHaveBeenCalledTimes(1);
@@ -159,15 +184,19 @@ describe('EditPageService', () => {
         };
 
         let result: DotRenderedPageState;
-        editPageService.setPageState(mockDotRenderPage, state).subscribe(res => {
+        editPageService.setPageState(mockDotRenderPage, state).subscribe((res) => {
             result = res;
         });
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: {
-                message: 'locked'
-            }
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        message: 'locked'
+                    }
+                })
+            )
+        );
 
         expect(editPageService.lock).toHaveBeenCalledTimes(1);
         expect(result).toEqual({
@@ -192,13 +221,17 @@ describe('EditPageService', () => {
         };
 
         let result: DotRenderedPageState;
-        editPageService.setPageState(mockDotRenderPage, state).subscribe(res => {
+        editPageService.setPageState(mockDotRenderPage, state).subscribe((res) => {
             result = res;
         });
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderPage
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderPage
+                })
+            )
+        );
 
         expect(editPageService.getLive).toHaveBeenCalledTimes(1);
         expect(result).toEqual({

@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 $notification-padding: $basic-padding * 2;
 
@@ -19,12 +19,12 @@ $notification-padding: $basic-padding * 2;
     }
 
     .toolbar-notifications {
-        padding: $notification-padding 0 $notification-padding $notification-padding ;
+        padding: $notification-padding 0 $notification-padding $notification-padding;
         width: 350px;
 
         &:before {
             background: $white;
-            content: "";
+            content: '';
             height: 10px;
             position: absolute;
             right: 15px;
@@ -47,11 +47,11 @@ $notification-padding: $basic-padding * 2;
         margin: 0;
     }
 
-    .toolbar-notifications__footer{
+    .toolbar-notifications__footer {
         text-align: center;
     }
 
-    .toolbar-notifications__footer button{
-        margin:auto;
+    .toolbar-notifications__footer button {
+        margin: auto;
     }
 }

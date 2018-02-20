@@ -1,11 +1,5 @@
 import { BaseComponent } from '../_common/_base/base-component';
-import {
-    Component,
-    ViewChild,
-    Input,
-    ViewEncapsulation,
-    OnInit
-} from '@angular/core';
+import { Component, ViewChild, Input, ViewEncapsulation, OnInit } from '@angular/core';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -34,7 +28,7 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
     types: StructureTypeView[];
 
     private NUMBER_BY_PAGE = 4;
-    private currentPage: number = -1;
+    private currentPage = -1;
 
     constructor(
         dotMessageService: DotMessageService,
@@ -59,10 +53,7 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
     }
 
     select(structure: StructureTypeView): void {
-        if (
-            this.structureTypeViewSelected !== this.recent &&
-            this.structureTypeViewSelected[0] === structure
-        ) {
+        if (this.structureTypeViewSelected !== this.recent && this.structureTypeViewSelected[0] === structure) {
             this.currentPage = -1;
             this.nextRecent();
             this.selectedName = '';
@@ -81,9 +72,8 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
         this.currentPage++;
         this.showMore = false;
 
-        this.structureTypeViewSelected = this.recent.map(structureTypeView => {
-            const currentPage =
-                this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE);
+        this.structureTypeViewSelected = this.recent.map((structureTypeView) => {
+            const currentPage = this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE);
             this.showMore = this.showMore || structureTypeView.types.length > this.NUMBER_BY_PAGE;
 
             const startIndex = currentPage * this.NUMBER_BY_PAGE;
@@ -98,7 +88,7 @@ export class ToolbarAddContenletComponent extends BaseComponent implements OnIni
     }
 
     private formatMenuItems(types: StructureTypeView[]): MenuItem[] {
-        return types.map(type => {
+        return types.map((type) => {
             return {
                 label: type.label,
                 icon: this.contentTypesInfoService.getIcon(type.name),

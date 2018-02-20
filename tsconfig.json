@@ -9,6 +9,9 @@
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
+        // Can enable this because rules but we need to
+        // "noUnusedLocals": true,
+        // "noUnusedParameters": true,
         "target": "es5",
         "typeRoots": [
             "node_modules/@types"

@@ -1,7 +1,7 @@
-import {Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
-import {Folder} from 'dotcms-js/core/treeable/shared/folder.model';
-import {FileService, FolderService, SiteBrowserState, SiteDatagridComponent} from 'dotcms-js/dotcms-js';
-import {FileUpload} from 'primeng/primeng';
+import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Folder } from 'dotcms-js/core/treeable/shared/folder.model';
+import { FileService, FolderService, SiteBrowserState, SiteDatagridComponent } from 'dotcms-js/dotcms-js';
+import { FileUpload } from 'primeng/primeng';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -10,9 +10,7 @@ import {FileUpload} from 'primeng/primeng';
     styleUrls: ['./dot-browser.scss'],
     templateUrl: 'dot-browser.html'
 })
-
 export class DotBrowserComponent implements OnInit {
-
     @ViewChild('siteDatagridWidget') siteDatagrid: SiteDatagridComponent;
     @ViewChild('fileUploadWidget') fieldUpload: FileUpload;
     uploadedFiles: any[] = [];
@@ -34,7 +32,8 @@ export class DotBrowserComponent implements OnInit {
 
     onUpload(e: any) {
         const uri: String = this.updateService.getURI();
-        this.folderService.loadFolderByURI(this.updateService.getSelectedSite().hostname, uri !== null ? uri : '/')
+        this.folderService
+            .loadFolderByURI(this.updateService.getSelectedSite().hostname, uri !== null ? uri : '/')
             .subscribe((folder: Folder) => this.uploadIntoFolder(folder, e.files));
         setTimeout(() => {}, 100);
         return;
@@ -48,11 +47,11 @@ export class DotBrowserComponent implements OnInit {
         }
     }
 
-    clearUploads(e: any) {
+    clearUploads(_e: any) {
         this.uploadedFiles = [];
     }
 
-    displayUpload(file: File): void {
+    displayUpload(_file: File): void {
         this.uploadDialog = true;
     }
 

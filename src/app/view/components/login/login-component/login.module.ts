@@ -2,13 +2,13 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DotLoadingIndicatorModule  } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { ButtonModule, CheckboxModule, DropdownModule, InputTextModule } from 'primeng/primeng';
 
 import { LoginContainerComponent } from './login-container.component';
 import { LoginComponent } from './login.component';
 
-import { SharedModule} from '../../../../shared/shared.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
 
 const routes: Routes = [
@@ -31,9 +31,6 @@ const routes: Routes = [
         DotLoadingIndicatorModule,
         DotDirectivesModule
     ],
-    declarations: [
-        LoginContainerComponent,
-        LoginComponent
-    ]
+    declarations: [LoginContainerComponent, LoginComponent]
 })
-export class LoginModule { }
+export class LoginModule {}

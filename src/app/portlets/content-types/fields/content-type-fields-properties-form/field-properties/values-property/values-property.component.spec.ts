@@ -1,4 +1,3 @@
-
 import { ValuesPropertyComponent } from './index';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
@@ -10,10 +9,10 @@ import { By } from '@angular/platform-browser';
 import { DotTextareaContentModule } from '../../../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 
 @Component({
-    selector: 'field-validation-message',
+    selector: 'dot-field-validation-message',
     template: ''
-  })
- class TestFieldValidationMessageComponent {
+})
+class TestFieldValidationMessageComponent {
     @Input() field: NgControl;
     @Input() message: string;
 }
@@ -27,34 +26,29 @@ describe('ValuesPropertyComponent', () => {
         'Validation-RegEx': 'Validation-RegEx'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                TestFieldValidationMessageComponent,
-                ValuesPropertyComponent
-            ],
-            imports: [
-                DotTextareaContentModule
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
+                imports: [DotTextareaContentModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
+            fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
 
-        comp.group = new FormGroup({
-            values: new FormControl('')
-        });
-        comp.property = {
-            name: 'values',
-            value: 'value',
-            field: {}
-        };
-    }));
+            comp.group = new FormGroup({
+                values: new FormControl('')
+            });
+            comp.property = {
+                name: 'values',
+                value: 'value',
+                field: {}
+            };
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});
@@ -69,7 +63,7 @@ describe('ValuesPropertyComponent', () => {
         fixture.detectChanges();
 
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-        const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('field-validation-message'));
+        const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
 
         expect(fieldValidationmessage).not.toBeNull();
         expect(comp.group.controls['values']).toBe(fieldValidationmessage.componentInstance.field);

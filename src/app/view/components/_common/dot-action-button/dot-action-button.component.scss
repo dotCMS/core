@@ -1,4 +1,4 @@
-@import "primeng-theme/utils/theme-variables";
+@import 'primeng-theme/utils/theme-variables';
 
 $action-button-height: 56px;
 
@@ -15,7 +15,7 @@ $action-button-height: 56px;
             background-color: $blue;
             box-shadow: $md-shadow-1;
             opacity: 1;
-        
+
             &:hover {
                 background: darken($brand-primary, 10%);
                 box-shadow: $md-shadow-3;
@@ -29,7 +29,7 @@ $action-button-height: 56px;
                 background: darken($brand-primary, 10%);
             }
 
-            [class^="ui-button-icon"],
+            [class^='ui-button-icon'],
             .ui-button-text,
             .ui-c {
                 color: $white;

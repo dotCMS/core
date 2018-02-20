@@ -6,13 +6,13 @@ import { PatternLibraryComponent } from './pattern-library.component';
 import { NGFACES_MODULES } from './../../../../modules';
 // CUSTOM MDOULES
 import { DotActionButtonModule } from '../dot-action-button/dot-action-button.module';
-import { ListingDataTableModule} from '../../listing-data-table/listing-data-table.module';
-import { FieldValidationMessageModule} from '../field-validation-message/file-validation-message.module';
-import { SiteSelectorModule} from '../site-selector/site-selector.module';
+import { ListingDataTableModule } from '../../listing-data-table/listing-data-table.module';
+import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
+import { SiteSelectorModule } from '../site-selector/site-selector.module';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { DotTextareaContentModule } from '../dot-textarea-content/dot-textarea-content.module';
 
-import { DotDropdownModule} from '../dropdown-component/dot-dropdown.module';
+import { DotDropdownModule } from '../dropdown-component/dot-dropdown.module';
 import { SiteSelectorFieldModule } from '../site-selector-field/site-selector-field.module';
 
 const routes: Routes = [
@@ -36,11 +36,8 @@ const routes: Routes = [
         SiteSelectorModule,
         SiteSelectorFieldModule,
         SearchableDropDownModule,
-        RouterModule.forChild(routes),
+        RouterModule.forChild(routes)
     ],
-    declarations: [
-        PatternLibraryComponent
-    ]
+    declarations: [PatternLibraryComponent]
 })
-
-export class PatternLibraryModule { }
+export class PatternLibraryModule {}

@@ -49,7 +49,9 @@ import {
     RegexCheckPropertyComponent,
     ValuesPropertyComponent
 } from './fields/content-type-fields-properties-form/field-properties';
-import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import {
+    DynamicFieldPropertyDirective
+} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '../../view/components/_common/iframe';
 import { DotTextareaContentModule } from '../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';

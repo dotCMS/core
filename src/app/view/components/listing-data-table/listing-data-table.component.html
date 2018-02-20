@@ -1,6 +1,6 @@
-<action-header [options]="actionHeaderOptions">
-    <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="filter"/>
-</action-header>
+<dot-action-header [options]="actionHeaderOptions">
+    <input #gf pInputText type="text" placeholder="{{ i18nMessages['global-search'] }}" [(ngModel)]="filter"/>
+</dot-action-header>
 
 <p-dataTable [value]="items"
              [rows]="paginatorService.paginationPerPage"
@@ -24,8 +24,8 @@
             [sortable]="col.sortable"
             [style]="{'width': col.width, 'text-align': getAlign(col)}">
             <ng-template let-item="rowData" pTemplate="body">
-                <i class="fa {{col.icon(item)}} listing-datatable__icon" *ngIf="col.icon"></i>
-                {{item[col.fieldName]}}
+                <i class="fa {{ col.icon(item) }} listing-datatable__icon" *ngIf="col.icon"></i>
+                {{ item[col.fieldName] }}
             </ng-template>
         </p-column>
     </ng-template>
@@ -33,11 +33,11 @@
     <p-column *ngIf="actions && actions.length > 0" styleClass="listing-datatable__action-column" [style]="{'width': '5%'}">
         <ng-template pTemplate="header"></ng-template>
         <ng-template let-item="rowData" pTemplate="body">
-            <action-menu-button
+            <dot-action-menu-button
                 class="listing-datatable__action-button"
                 [actions]="actions"
                 [item]="item">
-            </action-menu-button>
+            </dot-action-menu-button>
         </ng-template>
     </p-column>
 

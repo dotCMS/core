@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotBrowserComponent } from './dot-browser-component';
 
-import {AutoCompleteModule, DialogModule, FileUploadModule} from 'primeng/primeng';
+import { AutoCompleteModule, DialogModule, FileUploadModule } from 'primeng/primeng';
 import {
     DotBreadcrumbHostselectorModule,
     DotBreadcrumbModule,
@@ -13,7 +13,8 @@ import {
     DotHttpModule,
     DotNotificationModule,
     DotSettingsStorageModule,
-    DotSiteBrowserModule, DotSiteDatagridModule,
+    DotSiteBrowserModule,
+    DotSiteDatagridModule,
     DotSiteDatatableModule,
     DotSiteSelectorModule,
     DotSiteTreeTableModule,

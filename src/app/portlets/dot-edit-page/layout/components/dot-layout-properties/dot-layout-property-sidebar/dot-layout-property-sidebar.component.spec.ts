@@ -10,7 +10,7 @@ import { By } from '@angular/platform-browser';
 
 @Component({
     selector: 'dot-test-host-component',
-    template:   `<form [formGroup]="group">
+    template: `<form [formGroup]="group">
                     <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
                 </form>`
 })
@@ -40,9 +40,7 @@ describe('DotLayoutSidebarComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotLayoutSidebarComponent, TestHostComponent],
             imports: [DotLayoutPropertiesItemModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
         fixture = DOTTestBed.createComponent(DotLayoutSidebarComponent);
@@ -53,10 +51,10 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should propagate change after sidebar property item is clicked', () => {
         let res = false;
-        const dotLayoutPropertiesItem  = de.query(By.css('dot-layout-properties-item')).componentInstance;
+        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item')).componentInstance;
         const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item')).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe(value => res = value);
+        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
         spyOn(comp, 'propagateChange');
@@ -68,10 +66,10 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should check left value and unchecked right value', () => {
         let res = false;
-        const dotLayoutPropertiesItem  = de.query(By.css('dot-layout-properties-item')).componentInstance;
+        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item')).componentInstance;
         const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item')).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe(value => res = value);
+        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
         spyOn(comp.propertyItemLeft, 'setChecked');
@@ -85,10 +83,10 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should check right value and unchecked left value', () => {
         let res = false;
-        const dotLayoutPropertiesItem  = de.query(By.css('dot-layout-properties-item')).componentInstance;
+        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item')).componentInstance;
         const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item')).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe(value => res = value);
+        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
         spyOn(comp.propertyItemLeft, 'setUnchecked');
@@ -111,7 +109,7 @@ describe('DotLayoutSidebarComponent', () => {
         hostComponentfixture.detectChanges();
 
         expect(comp.value).toEqual('left');
-        expect(component.writeValue).toHaveBeenCalledWith(({ sidebar: 'left' }));
+        expect(component.writeValue).toHaveBeenCalledWith({ sidebar: 'left' });
     });
 
     xit('should show selected left or right based on the sidebar location value', () => {});

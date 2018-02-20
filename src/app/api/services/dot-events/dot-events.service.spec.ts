@@ -14,10 +14,10 @@ describe('DotEventsService', () => {
     it('should filter notifications based on event name', () => {
         let timesCalled = 0,
             randomEvent = 0;
-        dotEventsService.listen('test').subscribe(value => {
+        dotEventsService.listen('test').subscribe((value) => {
             timesCalled++;
         });
-        dotEventsService.listen('randomEvent').subscribe(value => {
+        dotEventsService.listen('randomEvent').subscribe((value) => {
             randomEvent++;
         });
 
@@ -30,7 +30,7 @@ describe('DotEventsService', () => {
 
     it('should notify subscribers', () => {
         let numbersArray: number[] = [];
-        dotEventsService.listen('test').subscribe(value => {
+        dotEventsService.listen('test').subscribe((value) => {
             numbersArray = value.data;
         });
 

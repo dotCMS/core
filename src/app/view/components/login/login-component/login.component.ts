@@ -1,7 +1,6 @@
-import { Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation } from '@angular/core';
+import { Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation, AfterViewInit } from '@angular/core';
 import { LoginData } from './login-container.component';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
-import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -11,7 +10,7 @@ import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-ind
  * The login component allows the user to fill all
  * the info required to log in the dotCMS angular backend
  */
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit {
     @Input() isLoginInProgress = false;
     @Input() message = '';
     @Input() passwordChanged = false;
@@ -21,34 +20,34 @@ export class LoginComponent {
     @Output() recoverPassword = new EventEmitter<any>();
     @Output() login = new EventEmitter<LoginData>();
 
-    public myAccountLogin: string;
-    public password: string;
-    public myAccountRememberMe = false;
-    public language = '';
-
-    public languages: Array<any> = [];
+    myAccountLogin: string;
+    password: string;
+    myAccountRememberMe = false;
+    language = '';
+    languages: Array<any> = [];
 
     // labels
+    communityLicenseInfoMessage = '';
+    dotcmsBuildDateString = '';
+    dotcmsServerId = '';
+    dotcmsVersion = '';
+    dotcmscompanyLogo = '';
+    dotcmslicenceLevel = '';
+    forgotPasswordButton = '';
+    isCommunityLicense = true;
+    loginButton = '';
+    loginLabel = '';
+    passwordLabel = '';
+    rememberMeLabel = '';
+    serverLabel = '';
+    userIdOrEmailLabel = '';
+
     private cancelButton = '';
-    public communityLicenseInfoMessage = '';
-    public dotcmsBuildDateString = '';
-    public dotcmscompanyLogo = '';
-    public dotcmslicenceLevel = '';
-    public dotcmsServerId = '';
-    public dotcmsVersion = '';
     private emailAddressLabel = '';
-    public forgotPasswordButton = '';
-    public loginButton = '';
-    public loginLabel = '';
     private mandatoryFieldError = '';
-    public passwordLabel = '';
-    public rememberMeLabel = '';
     private resetEmailMessage = '';
     private resetPasswordSuccess = '';
-    public serverLabel = '';
-    public userIdOrEmailLabel = '';
 
-    public isCommunityLicense = true;
 
     private i18nMessages: Array<string> = [
         'Login',
@@ -69,8 +68,7 @@ export class LoginComponent {
     constructor(
         private loginService: LoginService,
         private ngZone: NgZone,
-        private loggerService: LoggerService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService
+        private loggerService: LoggerService
     ) {
         this.language = '';
         this.renderPageData();
@@ -134,7 +132,7 @@ export class LoginComponent {
      */
     private renderPageData(): void {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe(
-            data => {
+            (data) => {
                 // Translate labels and messages
                 const dataI18n = data.i18nMessagesMap;
                 const entity = data.entity;
@@ -160,11 +158,8 @@ export class LoginComponent {
                 this.dotcmscompanyLogo = entity.logo;
                 this.dotcmsServerId = entity.serverId;
                 this.dotcmslicenceLevel = entity.levelName;
-                if (this.dotcmslicenceLevel.indexOf('COMMUNITY') !== -1) {
-                    this.isCommunityLicense = true;
-                } else {
-                    this.isCommunityLicense = false;
-                }
+                this.isCommunityLicense = this.dotcmslicenceLevel.indexOf('COMMUNITY') !== -1;
+
                 this.dotcmsVersion = entity.version;
                 this.dotcmsBuildDateString = entity.buildDateString;
 
@@ -172,7 +167,7 @@ export class LoginComponent {
                 if (this.languages.length === 0) {
                     const currentLanguage = entity.currentLanguage;
 
-                    entity.languages.forEach(lang => {
+                    entity.languages.forEach((lang) => {
                         this.languages.push({
                             label: lang.displayName,
                             value: lang.language + '_' + lang.country
@@ -189,7 +184,7 @@ export class LoginComponent {
                     this.message = this.resetEmailMessage.replace('{0}', this.resetEmail);
                 }
             },
-            error => {
+            (error) => {
                 this.loggerService.debug(error);
             }
         );

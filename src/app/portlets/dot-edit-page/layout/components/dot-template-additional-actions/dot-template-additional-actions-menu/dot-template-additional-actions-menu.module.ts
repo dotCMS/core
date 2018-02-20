@@ -4,7 +4,6 @@ import { DotMessageService } from '../../../../../../api/services/dot-messages-s
 import { CommonModule } from '@angular/common';
 import { DotTemplateAdditionalActionsMenuComponent } from './dot-template-additional-actions-menu.component';
 
-
 @NgModule({
     declarations: [DotTemplateAdditionalActionsMenuComponent],
     imports: [MenuModule, ButtonModule, CommonModule],

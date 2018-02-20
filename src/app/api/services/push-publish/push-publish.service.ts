@@ -16,14 +16,14 @@ import { DotCurrentUserService } from '../dot-current-user/dot-current-user.serv
 @Injectable()
 export class PushPublishService {
     private pushEnvironementsUrl = 'environment/loadenvironments/roleId';
-    private currentUsersUrl = 'v1/users/current/';
     private _lastEnvironmentPushed: string[];
     /*
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
-    private publishUrl = `${this._apiRoot
-        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishUrl = `${
+        this._apiRoot.baseUrl
+    }DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
 
     constructor(
         public _apiRoot: ApiRoot,
@@ -39,7 +39,7 @@ export class PushPublishService {
     getEnvironments(): Observable<DotEnvironment[]> {
         return this.currentUser
             .getCurrentUser()
-            .mergeMap(user => {
+            .mergeMap((user) => {
                 return this.coreWebService.requestView({
                     method: RequestMethod.Get,
                     url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
@@ -47,7 +47,7 @@ export class PushPublishService {
             })
             .pluck('bodyJsonObject')
             .flatMap((environments: DotEnvironment[]) => environments)
-            .filter(environment => environment.name !== '')
+            .filter((environment) => environment.name !== '')
             .toArray();
     }
 

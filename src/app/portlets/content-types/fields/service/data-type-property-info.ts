@@ -49,5 +49,5 @@ export const DATA_TYPE_PROPERTY_INFO = {
             text: 'contenttypes.field.properties.data_type.values.number',
             value: 'INTEGER'
         }
-    ],
+    ]
 };

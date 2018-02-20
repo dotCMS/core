@@ -16,7 +16,7 @@ import { ENV_PROVIDERS } from './providers';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { SharedModule } from './shared/shared.module';
 
-import {HotkeyModule} from 'angular2-hotkeys';
+import { HotkeyModule } from 'angular2-hotkeys';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 
 /**
@@ -39,8 +39,6 @@ import { DotDirectivesModule } from './shared/dot-directives.module';
         HotkeyModule.forRoot(),
         DotDirectivesModule
     ],
-    providers: [
-        ENV_PROVIDERS
-    ]
+    providers: [ENV_PROVIDERS]
 })
 export class AppModule {}

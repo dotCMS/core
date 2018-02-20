@@ -2,7 +2,6 @@ import { NgGridItemConfig } from 'angular2-grid';
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 import { DotContainerColumnBox } from './dot-container-column-box.model';
 
-
 export const DOT_LAYOUT_GRID_MAX_COLUMNS = 12;
 export const DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE: NgGridItemConfig = { fixed: true, sizex: 3, maxCols: 12, maxRows: 1 };
 export const DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS: NgGridItemConfig = {

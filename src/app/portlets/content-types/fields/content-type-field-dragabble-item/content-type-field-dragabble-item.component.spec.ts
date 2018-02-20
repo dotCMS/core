@@ -25,10 +25,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypesFieldDragabbleItemComponent],
                 imports: [IconButtonTooltipModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    FieldService
-                ]
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
             });
 
             fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
@@ -76,7 +73,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(span.nativeElement.textContent).toEqual(field.name + ' *');
     });
 
-    it('should has a remove button',
+    it(
+        'should has a remove button',
         fakeAsync(() => {
             const field = {
                 fieldType: 'fieldType',
@@ -96,7 +94,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             expect(button.attributes['icon']).toEqual('fa-trash');
 
             let resp: ContentTypeField;
-            comp.remove.subscribe(field => (resp = field));
+            comp.remove.subscribe((fieldItem) => (resp = fieldItem));
             button.nativeElement.click();
 
             tick();
@@ -105,7 +103,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         })
     );
 
-    it('should not has a remove button (Fixed Field)', fakeAsync(() => {
+    it(
+        'should not has a remove button (Fixed Field)',
+        fakeAsync(() => {
             const field = {
                 fieldType: 'fieldType',
                 fixed: true,
@@ -145,7 +145,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             expect(button.attributes['icon']).toEqual('fa-edit');
 
             let resp: ContentTypeField;
-            comp.edit.subscribe(field => (resp = field));
+            comp.edit.subscribe((field) => (resp = field));
             button.nativeElement.click();
 
             tick();
@@ -169,7 +169,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         fixture.detectChanges();
 
         let resp: ContentTypeField;
-        comp.edit.subscribe(field => (resp = field));
+        comp.edit.subscribe((field) => (resp = field));
 
         de.nativeElement.click();
 

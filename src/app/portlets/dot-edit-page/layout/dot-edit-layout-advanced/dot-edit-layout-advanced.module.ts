@@ -10,4 +10,4 @@ import { IFrameModule } from '../../../../view/components/_common/iframe';
     declarations: [DotEditLayoutAdvancedComponent],
     providers: []
 })
-export class DotEditLayoutAdvancedModule { }
+export class DotEditLayoutAdvancedModule {}

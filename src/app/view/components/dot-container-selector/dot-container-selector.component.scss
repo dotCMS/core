@@ -1,5 +1,5 @@
-@import "variables";
-@import "mixins";
+@import 'variables';
+@import 'mixins';
 
 .container-selector {
     height: 206px;
@@ -7,8 +7,7 @@
     background-color: $white;
 
     .ui-button[iconButton] {
-
-        [class^="ui-button-icon"] {
+        [class^='ui-button-icon'] {
             color: $body-font-color;
         }
     }

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { CrudService } from './../../../api/services/crud/crud.service';
 import { ContentType } from './../shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -24,7 +24,7 @@ import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-t
 
 @Injectable()
 class MockDotContentletService {
-    getAllContentTypes() { }
+    getAllContentTypes() {}
 }
 
 @Injectable()
@@ -70,7 +70,7 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
-            'mod_date': 'Last Edit Date',
+            mod_date: 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle'
@@ -106,15 +106,17 @@ describe('ContentTypesPortletComponent', () => {
         dotcmsConfigService = fixture.debugElement.injector.get(DotcmsConfig);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
 
-        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(Observable.of([
-            { name: 'CONTENT', label: 'Content', types: [] },
-            { name: 'WIDGET', label: 'Widget', types: [] },
-            { name: 'FORM', label: 'Form', types: [] }
-        ]));
+        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
+            Observable.of([
+                { name: 'CONTENT', label: 'Content', types: [] },
+                { name: 'WIDGET', label: 'Widget', types: [] },
+                { name: 'FORM', label: 'Form', types: [] }
+            ])
+        );
     });
 
     it('should display a listing-data-table.component', () => {
-        const listingDataTable = fixture.debugElement.query(By.css('listing-data-table'));
+        const listingDataTable = fixture.debugElement.query(By.css('dot-listing-data-table'));
         fixture.detectChanges();
 
         expect('v1/contenttype').toEqual(listingDataTable.nativeElement.getAttribute('url'));
@@ -149,7 +151,7 @@ describe('ContentTypesPortletComponent', () => {
             {
                 icon: 'fa-trash',
                 label: 'Remove',
-                command: () => { }
+                command: () => {}
             }
         ];
 
@@ -167,7 +169,7 @@ describe('ContentTypesPortletComponent', () => {
         };
 
         const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 
@@ -182,32 +184,42 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+            'Delete',
+            'Push Publish',
+            'Add to bundle'
+        ]);
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotcmsConfigService, 'getConfig').and.returnValue(Observable.of({
-            license: {
-                isCommunity: true
-            }
-        }));
+        spyOn(dotcmsConfigService, 'getConfig').and.returnValue(
+            Observable.of({
+                license: {
+                    isCommunity: true
+                }
+            })
+        );
         fixture.detectChanges();
-        expect(comp.rowActions.map(action => {
-            return {
-                label: action.menuItem.label,
-                icon: action.menuItem.icon
-            };
-        })).toEqual([{
-            label: 'Delete',
-            icon: 'fa-trash'
-        }]);
+        expect(
+            comp.rowActions.map((action) => {
+                return {
+                    label: action.menuItem.label,
+                    icon: action.menuItem.icon
+                };
+            })
+        ).toEqual([
+            {
+                label: 'Delete',
+                icon: 'fa-trash'
+            }
+        ]);
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
         spyOn(pushPublishService, 'getEnvironments').and.returnValue(Observable.of([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
     });
 
     it('should open push publish dialog', () => {

@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule, InputTextModule } from 'primeng/primeng';
 
-import { ResetPasswordContainerComponent} from './reset-password-container.component';
-import { ResetPasswordComponent} from './reset-password.component';
+import { ResetPasswordContainerComponent } from './reset-password-container.component';
+import { ResetPasswordComponent } from './reset-password.component';
 
 const routes: Routes = [
     {
@@ -16,16 +16,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [
-        CommonModule,
-        FormsModule,
-        InputTextModule,
-        ButtonModule,
-        RouterModule.forChild(routes)
-    ],
-    declarations: [
-        ResetPasswordContainerComponent,
-        ResetPasswordComponent
-    ]
+    imports: [CommonModule, FormsModule, InputTextModule, ButtonModule, RouterModule.forChild(routes)],
+    declarations: [ResetPasswordContainerComponent, ResetPasswordComponent]
 })
-export class ResetPasswordModule { }
+export class ResetPasswordModule {}

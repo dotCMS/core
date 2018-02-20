@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 :host {
     display: block;
@@ -19,7 +19,8 @@
         font-size: rem-cal(13px);
     }
 
-    .section-headings, .section-paragraph {
+    .section-headings,
+    .section-paragraph {
         .section_desc {
             border-bottom: solid 1px $gray-light;
             text-align: right;
@@ -27,13 +28,17 @@
     }
 
     .section-headings {
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             margin-bottom: 0;
         }
 
         .section_desc {
             margin: 0 0 rem-cal(20px);
-
 
             &:last-child {
                 margin-bottom: 0;
@@ -58,6 +63,4 @@
     .section__title {
         color: $body-font-color;
     }
-
 }
-

@@ -5,16 +5,8 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 import { GravatarModule } from '../gravatar/gravatar.module';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        ButtonModule,
-        GravatarModule
-    ],
-    declarations: [
-        DotDropdownComponent
-    ],
-    exports: [
-        DotDropdownComponent
-    ]
+    imports: [CommonModule, ButtonModule, GravatarModule],
+    declarations: [DotDropdownComponent],
+    exports: [DotDropdownComponent]
 })
-export class DotDropdownModule { }
+export class DotDropdownModule {}

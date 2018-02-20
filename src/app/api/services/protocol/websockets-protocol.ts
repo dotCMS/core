@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { Subject } from 'rxjs/Subject';
 import { LoggerService, Protocol, Url } from 'dotcms-js/dotcms-js';
 
 export class WebSocketProtocol extends Protocol {
@@ -11,7 +10,6 @@ export class WebSocketProtocol extends Protocol {
     private readyStateConstants = {
         CONNECTING: 0,
         OPEN: 1,
-        // tslint:disable-next-line:object-literal-sort-keys
         CLOSING: 2,
         CLOSED: 3,
         RECONNECT_ABORTED: 4
@@ -19,15 +17,14 @@ export class WebSocketProtocol extends Protocol {
 
     private normalCloseCode = 1000;
     private reconnectableStatusCodes = [WebSocketProtocol.AVAILABLE_FOR_USER_WS_CLOSE_STATUS];
-    private dataStream: Subject<any>;
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
 
     constructor(
-        private url: Url,
+        config: WebSocketConfig,
         loggerService: LoggerService,
-        config?: WebSocketConfig,
-        private protocols?: Array<string>
+        private protocols: Array<string>,
+        private url: Url
     ) {
         super(loggerService, config);
 
@@ -37,7 +34,6 @@ export class WebSocketProtocol extends Protocol {
         }
         this.reconnectIfNotNormalClose =
             config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
-        this.dataStream = new Subject();
     }
 
     connect(force = false): void {
@@ -95,6 +91,7 @@ export class WebSocketProtocol extends Protocol {
             } else {
                 this.sendQueue.push({ message: data });
                 this.fireQueue();
+                resolve();
             }
         });
     }
@@ -103,9 +100,7 @@ export class WebSocketProtocol extends Protocol {
         while (this.sendQueue.length && this.socket.readyState === this.readyStateConstants.OPEN) {
             const data = this.sendQueue.shift();
 
-            this.socket.send(
-                _.isString(data.message) ? data.message : JSON.stringify(data.message)
-            );
+            this.socket.send(_.isString(data.message) ? data.message : JSON.stringify(data.message));
             data.deferred.resolve();
         }
     }

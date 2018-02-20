@@ -1,12 +1,12 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 .login-as {
-    input[type="password"] {
+    input[type='password'] {
         width: 100%;
     }
 }
 
-:host p-dialog{
+:host p-dialog {
     overflow: visible;
 }

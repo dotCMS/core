@@ -1,5 +1,4 @@
-import { DotNavigationComponent } from './../dot-navigation/dot-navigation.component';
-import {Component, OnDestroy, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 import { Router } from '@angular/router';
 
@@ -10,31 +9,29 @@ import { Router } from '@angular/router';
     styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html'
 })
-export class MainComponentLegacy implements OnInit, OnDestroy {
+export class MainComponentLegacyComponent implements OnInit {
     isMenuCollapsed = false;
     isTablet = false;
-    private messages: any = {};
-    private label = '';
 
     constructor(private dotEventsService: DotEventsService, private router: Router) {}
 
     /**
      * Set isTablet when resizing the window size
      * @param {any} event
-     * @memberof MainComponentLegacy
+     * @memberof MainComponentLegacyComponentComponent
      */
     @HostListener('window:resize', ['$event'])
-        onResize(event: any) {
+    onResize(event: any) {
         this.isTablet = event.target.innerWidth < 1025;
     }
 
     /**
      * Respond to document events and collapse the sidenav if is clicked outside
      * @param {*} event
-     * @memberof DotNavigationComponent
+     * @memberof MainComponentLegacyComponent
      */
     @HostListener('click', ['$event'])
-    onClickOutside(event: any) {
+    onClickOutside(_event: any) {
         if (this.isTablet && !this.isMenuCollapsed) {
             this.isMenuCollapsed = true;
         }
@@ -43,18 +40,13 @@ export class MainComponentLegacy implements OnInit, OnDestroy {
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
         document.body.style.backgroundImage = '';
-        this.router.events.subscribe(event => this.setMenuState());
+        this.router.events.subscribe((_event) => this.setMenuState());
         this.setMenuState();
-    }
-
-    ngOnDestroy(): void {
-        this.messages = null;
-        this.label = null;
     }
 
     /**
      * Set collapsed menu state base on the screen size
-     * @memberof MainComponentLegacy
+     * @memberof MainComponentLegacyComponent
      */
     setMenuState(): void {
         if (window.innerWidth < 1025) {
@@ -66,7 +58,7 @@ export class MainComponentLegacy implements OnInit, OnDestroy {
     /**
      * Toggle show/hide sidenav
      *
-     * @memberof MainComponentLegacy
+     * @memberof MainComponentLegacyComponent
      */
     toggleSidenav(): void {
         this.isMenuCollapsed = !this.isMenuCollapsed;

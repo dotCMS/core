@@ -14,25 +14,20 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
 
-    beforeEach(async(() => {
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypeFieldsRowListComponent],
+                imports: [DragulaModule],
+                providers: [FieldDragDropService]
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsRowListComponent
-            ],
-            imports: [
-                DragulaModule
-            ],
-            providers: [
-                FieldDragDropService
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(ContentTypeFieldsRowListComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(ContentTypeFieldsRowListComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     it('should has a ul', () => {
         const ul = de.query(By.css('ul'));

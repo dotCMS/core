@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 $row-height: 70px;
 
@@ -19,7 +19,8 @@ $row-height: 70px;
     position: relative;
 }
 
-.dot-add-rows-button__container, .dot-add-rows-columns-list__container {
+.dot-add-rows-button__container,
+.dot-add-rows-columns-list__container {
     display: flex;
     position: absolute;
     width: 100%;
@@ -64,11 +65,11 @@ $row-height: 70px;
         background-color: $gray-light;
         flex-grow: 1;
         margin: 0 $basic-padding / 2;
-    
+
         &:first-child {
             margin-left: 0;
         }
-    
+
         &:last-child {
             margin-right: 0;
         }

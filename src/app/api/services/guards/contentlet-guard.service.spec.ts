@@ -53,7 +53,7 @@ describe('ValidContentletGuardService', () => {
         spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(Observable.of(true));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
         expect(result).toBe(true);
     });
@@ -64,7 +64,7 @@ describe('ValidContentletGuardService', () => {
         spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(Observable.of(false));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);

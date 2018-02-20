@@ -5,20 +5,9 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 @NgModule({
-    declarations: [
-        ContentTypeFieldsAddRowComponent,
-    ],
-    exports: [
-        ContentTypeFieldsAddRowComponent,
-    ],
-    imports: [
-        CommonModule,
-        ButtonModule,
-        TooltipModule
-    ],
-    providers: [
-        HotkeysService
-    ],
+    declarations: [ContentTypeFieldsAddRowComponent],
+    exports: [ContentTypeFieldsAddRowComponent],
+    imports: [CommonModule, ButtonModule, TooltipModule],
+    providers: [HotkeysService]
 })
-
 export class ContentTypeFieldsAddRowModule {}

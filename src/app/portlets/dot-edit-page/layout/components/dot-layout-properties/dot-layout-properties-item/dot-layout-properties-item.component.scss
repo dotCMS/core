@@ -1,13 +1,13 @@
-@import "variables";
+@import 'variables';
 
-:host { 
+:host {
     display: flex;
     cursor: pointer;
     align-content: center;
     padding: $basic-padding $basic-padding * 2;
 
     &:hover {
-        background-color: $gray-lighter; 
+        background-color: $gray-lighter;
     }
 
     &.property-item__footer {

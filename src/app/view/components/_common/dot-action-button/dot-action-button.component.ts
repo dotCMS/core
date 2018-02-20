@@ -13,7 +13,6 @@ import { OnChanges } from '@angular/core/src/metadata/lifecycle_hooks';
     styleUrls: ['./dot-action-button.component.scss'],
     templateUrl: 'dot-action-button.component.html'
 })
-
 export class DotActionButtonComponent implements OnInit, OnChanges {
     @ViewChild('menu') menu: Menu;
 
@@ -23,7 +22,7 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
     @Input() model: MenuItem[];
     @Input() selected: boolean;
 
-    @Output() onClick: EventEmitter<any> = new EventEmitter();
+    @Output() click: EventEmitter<any> = new EventEmitter();
 
     @HostBinding('class.action-button--no-label') isNotLabeled = true;
 
@@ -55,6 +54,6 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
      * @memberof DotActionButtonComponent
      */
     buttonOnClick($event): void {
-        this.isHaveOptions() ? this.menu.toggle($event) : this.onClick.emit($event);
+        this.isHaveOptions() ? this.menu.toggle($event) : this.click.emit($event);
     }
 }

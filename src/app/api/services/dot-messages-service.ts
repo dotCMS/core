@@ -50,9 +50,7 @@ export class DotMessageService {
      */
     get(key: string, ...args: string[]): string {
         if (args.length) {
-            return this.messagesLoaded[key]
-                ? this.formatMessage(this.messagesLoaded[key], args)
-                : key;
+            return this.messagesLoaded[key] ? this.formatMessage(this.messagesLoaded[key], args) : key;
         } else {
             return this.messagesLoaded[key] || key;
         }
@@ -112,7 +110,7 @@ export class DotMessageService {
             'relativetime.yy'
         ];
         this.getMessages(relativeDateKeys).subscribe((res) => {
-            const relativeDateMessages = _.mapKeys(res, (value, key: string) => {
+            const relativeDateMessages = _.mapKeys(res, (_value, key: string) => {
                 return key.replace('relativetime.', '');
             });
             this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);

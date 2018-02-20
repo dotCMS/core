@@ -21,10 +21,12 @@ export class PageViewService {
      * @memberof PageViewService
      */
     get(url: string): Observable<DotPageView> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: `v1/page/json/${url.replace(/^\//, '')}?live=false`
-        }).pluck('bodyJsonObject');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: `v1/page/json/${url.replace(/^\//, '')}?live=false`
+            })
+            .pluck('bodyJsonObject');
     }
 
     /**
@@ -34,10 +36,12 @@ export class PageViewService {
      * @memberof PageViewService
      */
     save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotPageView> {
-        return this.coreWebService.requestView({
-            body: dotLayout,
-            method: RequestMethod.Post,
-            url: `v1/page/${pageIdentifier}/layout`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                body: dotLayout,
+                method: RequestMethod.Post,
+                url: `v1/page/${pageIdentifier}/layout`
+            })
+            .pluck('entity');
     }
 }

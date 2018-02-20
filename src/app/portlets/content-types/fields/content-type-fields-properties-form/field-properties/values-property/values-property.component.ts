@@ -6,8 +6,8 @@ import { FormGroup } from '@angular/forms';
 import { DotTextareaContentComponent } from '../../../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 @Component({
-    selector: 'values-property',
-    templateUrl: './values-property.component.html',
+    selector: 'dot-values-property',
+    templateUrl: './values-property.component.html'
 })
 export class ValuesPropertyComponent extends BaseComponent {
     @ViewChild('value') value: DotTextareaContentComponent;
@@ -15,11 +15,6 @@ export class ValuesPropertyComponent extends BaseComponent {
     group: FormGroup;
 
     constructor(public dotMessageService: DotMessageService) {
-        super(
-            [
-                'contenttypes.field.properties.value.label',
-            ],
-            dotMessageService
-        );
+        super(['contenttypes.field.properties.value.label'], dotMessageService);
     }
 }

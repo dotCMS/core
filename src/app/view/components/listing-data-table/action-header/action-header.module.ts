@@ -6,17 +6,9 @@ import { SplitButtonModule } from 'primeng/primeng';
 
 @NgModule({
     bootstrap: [],
-    declarations: [
-        ActionHeaderComponent
-    ],
-    exports: [
-        ActionHeaderComponent
-    ],
-    imports: [
-        CommonModule,
-        DotActionButtonModule,
-        SplitButtonModule
-    ],
+    declarations: [ActionHeaderComponent],
+    exports: [ActionHeaderComponent],
+    imports: [CommonModule, DotActionButtonModule, SplitButtonModule],
     providers: []
 })
 export class ActionHeaderModule {}

@@ -1,7 +1,6 @@
 import { ListingDataTableComponent } from './../../../view/components/listing-data-table/listing-data-table.component';
 import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
 import { CrudService } from './../../../api/services/crud';
-import { MenuItem } from 'primeng/primeng';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild } from '@angular/core';
 
@@ -74,21 +73,24 @@ export class ContentTypesPortletComponent implements OnInit {
         private router: Router,
         public dotMessageService: DotMessageService,
         private pushPublishService: PushPublishService
-    ) { }
+    ) {}
 
     ngOnInit() {
         Observable.forkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
-            this.dotcmsConfig.getConfig().take(1).map((config: ConfigParams) => {
-                /*
+            this.dotcmsConfig
+                .getConfig()
+                .take(1)
+                .map((config: ConfigParams) => {
+                    /*
                     TODO: need to update ConfigParams interface and create a License interface
                 */
-                const license: any = config.license;
-                return license.isCommunity;
-            }),
+                    const license: any = config.license;
+                    return license.isCommunity;
+                }),
             this.pushPublishService.getEnvironments().map((environments: DotEnvironment[]) => !!environments.length)
-        ).subscribe(res => {
+        ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
                 delete: true,
@@ -98,7 +100,7 @@ export class ContentTypesPortletComponent implements OnInit {
 
             this.actionHeaderOptions = {
                 primary: {
-                    command: $event => {
+                    command: ($event) => {
                         this.createContentType($event);
                     },
                     model: this.setContentTypes(baseTypes)
@@ -110,6 +112,12 @@ export class ContentTypesPortletComponent implements OnInit {
         });
     }
 
+    editContentType($event): void {
+        this.router.navigate([`edit/${$event.data.id}`], {
+            relativeTo: this.route
+        });
+    }
+
     private createRowActions(rowActionsMap: any): DotDataTableAction[] {
         const listingActions: DotDataTableAction[] = [];
 
@@ -117,13 +125,12 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: item => this.removeConfirmation(item),
+                    command: (item) => this.removeConfirmation(item),
                     icon: 'fa-trash'
                 },
-                shouldShow: item => !item.fixed
+                shouldShow: (item) => !item.fixed
             });
         }
-
 
         /*
             Only show Push Publish action if DotCMS instance have the appropriate license and there are
@@ -133,7 +140,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: item => this.pushPublishContentType(item)
+                    command: (item) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -142,7 +149,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: item => this.addToBundleContentType(item)
+                    command: (item) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -154,17 +161,17 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeIconsFromMenuItem(action: DotDataTableAction): DotDataTableAction {
-        const { icon, ...noIconMenuItem} = action.menuItem;
+        const { icon, ...noIconMenuItem } = action.menuItem;
         return {
-            ... action,
+            ...action,
             menuItem: noIconMenuItem
         };
     }
 
     private setContentTypes(s: StructureTypeView[]): ButtonModel[] {
-        return s.map(structureTypeView => {
+        return s.map((structureTypeView) => {
             return {
-                command: $event => {
+                command: ($event) => {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(structureTypeView.name),
@@ -206,14 +213,8 @@ export class ContentTypesPortletComponent implements OnInit {
         ];
     }
 
-    private createContentType(type: string, $event?): void {
+    private createContentType(type: string, _event?): void {
         this.router.navigate(['create', type], { relativeTo: this.route });
-    }
-
-    private editContentType($event): void {
-        this.router.navigate([`edit/${$event.data.id}`], {
-            relativeTo: this.route
-        });
     }
 
     private removeConfirmation(item: any): void {
@@ -235,7 +236,7 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeContentType(item): void {
-        this.crudService.delete(`v1/contenttype/id`, item.id).subscribe(data => {
+        this.crudService.delete(`v1/contenttype/id`, item.id).subscribe(() => {
             this.listing.loadCurrentPage();
         });
     }

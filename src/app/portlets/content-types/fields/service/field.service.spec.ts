@@ -1,9 +1,5 @@
 import { fakeAsync, tick } from '@angular/core/testing';
-import {
-  Response,
-  ResponseOptions,
-  ConnectionBackend,
-} from '@angular/http';
+import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -11,57 +7,67 @@ import { ContentTypeField } from '../shared/field.model';
 
 describe('FieldService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            FieldService
-        ]);
+        this.injector = DOTTestBed.resolveAndCreate([FieldService]);
 
         this.fieldService = this.injector.get(FieldService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => this.lastConnection = connection);
+        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
 
-    it('should load field types', fakeAsync(() => {
+    it(
+        'should load field types',
+        fakeAsync(() => {
+            const mockResponse = {
+                entity: [
+                    {
+                        clazz: 'TextField',
+                        helpText: 'helpText',
+                        id: 'text',
+                        label: 'Text',
+                        properties: []
+                    }
+                ]
+            };
 
-        const mockResponse = {
-            entity: [{
-                clazz: 'TextField',
-                helpText: 'helpText',
-                id: 'text',
-                label: 'Text',
-                properties: []
-            }]
-        };
+            this.fieldService.loadFieldTypes().subscribe((res) => (this.response = res));
 
-        this.fieldService.loadFieldTypes().subscribe(res => this.response = res);
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: JSON.stringify(mockResponse)
+                    })
+                )
+            );
 
-        this.lastConnection.mockRespond(new Response(new ResponseOptions({
-            body: JSON.stringify(mockResponse)
-        })));
+            tick();
 
-        tick();
-
-        expect(this.response).toEqual(mockResponse.entity);
-    }));
+            expect(this.response).toEqual(mockResponse.entity);
+        })
+    );
 
     describe('Save Fields', () => {
         beforeEach(() => {
             this.mockData = [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-                    name: 'Hello World',
+                    name: 'Hello World'
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
                 }
             ];
 
-            this.fieldService.saveFields('1', this.mockData).subscribe(res => this.response = JSON.parse(res));
+            this.fieldService.saveFields('1', this.mockData).subscribe((res) => (this.response = JSON.parse(res)));
 
-            this.lastConnection.mockRespond(new Response(new ResponseOptions({
-                body: {
-                    entity: JSON.stringify(this.mockData)
-                }
-            })));
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: {
+                            entity: JSON.stringify(this.mockData)
+                        }
+                    })
+                )
+            );
         });
 
         it('should save field', () => {
@@ -93,16 +99,20 @@ describe('FieldService', () => {
                 }
             ];
 
-            this.fieldService.deleteFields('1', this.mockData).subscribe(res => this.response = res);
+            this.fieldService.deleteFields('1', this.mockData).subscribe((res) => (this.response = res));
 
-            this.lastConnection.mockRespond(new Response(new ResponseOptions({
-                body: {
-                    entity: {
-                        deletedIds: ['1', '2'],
-                        fields: this.mockData
-                    }
-                }
-            })));
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: {
+                            entity: {
+                                deletedIds: ['1', '2'],
+                                fields: this.mockData
+                            }
+                        }
+                    })
+                )
+            );
         });
 
         it('should delete fieldd', () => {
@@ -111,7 +121,6 @@ describe('FieldService', () => {
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
             expect(this.lastConnection.request.url).toContain('v1/contenttype/1/fields');
         });
-
 
         it('should set name and contentTypeId', () => {
             const requestBody = JSON.parse(this.lastConnection.request._body);

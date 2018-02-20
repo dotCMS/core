@@ -7,24 +7,17 @@ import { ActionHeaderOptions, ButtonAction } from '../../../../shared/models/act
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    selector: 'action-header',
+    selector: 'dot-action-header',
     styleUrls: ['./action-header.scss'],
     templateUrl: 'action-header.html'
 })
-
 export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() selectedItems = [];
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
     constructor(dotMessageService: DotMessageService, private dotConfirmationService: DotConfirmationService) {
-        super(
-            [
-                'selected',
-                'contenttypes.action.delete',
-                'contenttypes.action.cancel'
-            ], dotMessageService
-        );
+        super(['selected', 'contenttypes.action.delete', 'contenttypes.action.cancel'], dotMessageService);
     }
 
     ngOnChanges(changes: SimpleChanges): any {
@@ -38,29 +31,27 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     }
 
     private setCommandWrapper(options: ButtonAction[]): void {
-        options.forEach(actionButton => {
-            actionButton.model
-                .filter(model => model.deleteOptions)
-                .forEach(model => {
-                    if (typeof model.command === 'function') {
-                        const callback = model.command ;
-                        model.command = ($event) => {
-                            const originalEvent = $event;
+        options.forEach((actionButton) => {
+            actionButton.model.filter((model) => model.deleteOptions).forEach((model) => {
+                if (typeof model.command === 'function') {
+                    const callback = model.command;
+                    model.command = ($event) => {
+                        const originalEvent = $event;
 
-                            this.dotConfirmationService.confirm({
-                                accept: () => {
-                                    callback(originalEvent);
-                                },
-                                header: model.deleteOptions.confirmHeader,
-                                message: model.deleteOptions.confirmMessage,
-                                footerLabel: {
-                                    acceptLabel: this.i18nMessages['contenttypes.action.delete'],
-                                    rejectLabel: this.i18nMessages['contenttypes.action.cancel']
-                                }
-                            });
-                        };
-                    }
-                });
+                        this.dotConfirmationService.confirm({
+                            accept: () => {
+                                callback(originalEvent);
+                            },
+                            header: model.deleteOptions.confirmHeader,
+                            message: model.deleteOptions.confirmMessage,
+                            footerLabel: {
+                                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
+                                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                            }
+                        });
+                    };
+                }
+            });
         });
     }
 

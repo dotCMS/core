@@ -1,4 +1,3 @@
-
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FieldDragDropService } from './field-drag-drop.service';
 import { DragulaService } from 'ng2-dragula';
@@ -25,7 +24,7 @@ describe('FieldDragDropService', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([
             FieldDragDropService,
-            { provide: DragulaService, useClass: MockDragulaService },
+            { provide: DragulaService, useClass: MockDragulaService }
         ]);
 
         this.fieldDragDropService = this.injector.get(FieldDragDropService);
@@ -118,7 +117,7 @@ describe('FieldDragDropService', () => {
     });
 
     it('should emit fieldDropFromSource', () => {
-        this.fieldDragDropService.fieldDropFromSource$.subscribe(() => this.fieldDropFromSource = true);
+        this.fieldDragDropService.fieldDropFromSource$.subscribe(() => (this.fieldDropFromSource = true));
 
         this.dragulaService.dropModel.emit([
             'fields-bag',
@@ -135,7 +134,7 @@ describe('FieldDragDropService', () => {
     });
 
     it('should emit fieldDropFromTarget', () => {
-        this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => this.fieldDropFromTarget = true);
+        this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => (this.fieldDropFromTarget = true));
 
         this.dragulaService.dropModel.emit([
             'fields-bag',
@@ -151,9 +150,8 @@ describe('FieldDragDropService', () => {
         expect(true).toBe(this.fieldDropFromTarget);
     });
 
-
     it('should emit fieldRowDropFromSource', () => {
-        this.fieldDragDropService.fieldRowDropFromSource$.subscribe(() => this.fieldRowDropFromSource = true);
+        this.fieldDragDropService.fieldRowDropFromSource$.subscribe(() => (this.fieldRowDropFromSource = true));
 
         this.dragulaService.dropModel.emit([
             'fields-row-bag',
@@ -170,7 +168,7 @@ describe('FieldDragDropService', () => {
     });
 
     it('should emit fieldRowDropFromTarget', () => {
-        this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => this.fieldRowDropFromTarget = true);
+        this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => (this.fieldRowDropFromTarget = true));
 
         this.dragulaService.dropModel.emit([
             'fields-row-bag',

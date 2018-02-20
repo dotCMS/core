@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './../dot-router-service';
 
@@ -17,8 +17,8 @@ export class PublicAuthGuardService implements CanActivate {
      * @param {RouterStateSnapshot} state
      * @returns {Observable<boolean>}
      */
-    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.loginService.isLogin$.map(isLogin => {
+    canActivate(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<boolean> {
+        return this.loginService.isLogin$.map((isLogin) => {
             if (isLogin) {
                 this.router.goToMain();
             }

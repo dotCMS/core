@@ -7,7 +7,6 @@ import * as _ from 'lodash';
 import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { SelectItem } from 'primeng/primeng';
 
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 import { Workflow } from '../../../shared/models/workflow/workflow.model';
@@ -34,7 +33,7 @@ export class ContentTypesFormComponent implements OnInit {
 
     @Input() data: any;
     @Input() fields: ContentTypeField[];
-    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+    @Output() submit: EventEmitter<any> = new EventEmitter();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -50,36 +49,38 @@ export class ContentTypesFormComponent implements OnInit {
         private workflowService: WorkflowService,
         public dotMessageService: DotMessageService
     ) {
-        dotMessageService.getMessages([
-            'contenttypes.action.create',
-            'contenttypes.action.delete',
-            'contenttypes.action.edit',
-            'contenttypes.action.form.cancel',
-            'contenttypes.action.save',
-            'contenttypes.action.update',
-            'contenttypes.content.content',
-            'contenttypes.content.fileasset',
-            'contenttypes.content.form',
-            'contenttypes.content.htmlpage',
-            'contenttypes.content.key_value',
-            'contenttypes.content.persona',
-            'contenttypes.content.vanity_url',
-            'contenttypes.content.variable',
-            'contenttypes.content.widget',
-            'contenttypes.form.field.detail.page',
-            'contenttypes.form.field.expire.date.field',
-            'contenttypes.form.field.host_folder.label',
-            'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
-            'contenttypes.form.identifier',
-            'contenttypes.form.label.URL.pattern',
-            'contenttypes.form.label.description',
-            'contenttypes.form.label.publish.date.field',
-            'contenttypes.form.label.workflow',
-            'contenttypes.form.message.no.date.fields.defined',
-            'contenttypes.form.name',
-            'contenttypes.hint.URL.map.pattern.hint1',
-            'dot.common.message.field.required'
-        ]).subscribe();
+        dotMessageService
+            .getMessages([
+                'contenttypes.action.create',
+                'contenttypes.action.delete',
+                'contenttypes.action.edit',
+                'contenttypes.action.form.cancel',
+                'contenttypes.action.save',
+                'contenttypes.action.update',
+                'contenttypes.content.content',
+                'contenttypes.content.fileasset',
+                'contenttypes.content.form',
+                'contenttypes.content.htmlpage',
+                'contenttypes.content.key_value',
+                'contenttypes.content.persona',
+                'contenttypes.content.vanity_url',
+                'contenttypes.content.variable',
+                'contenttypes.content.widget',
+                'contenttypes.form.field.detail.page',
+                'contenttypes.form.field.expire.date.field',
+                'contenttypes.form.field.host_folder.label',
+                'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
+                'contenttypes.form.identifier',
+                'contenttypes.form.label.URL.pattern',
+                'contenttypes.form.label.description',
+                'contenttypes.form.label.publish.date.field',
+                'contenttypes.form.label.workflow',
+                'contenttypes.form.message.no.date.fields.defined',
+                'contenttypes.form.name',
+                'contenttypes.hint.URL.map.pattern.hint1',
+                'dot.common.message.field.required'
+            ])
+            .subscribe();
     }
 
     ngOnInit(): void {
@@ -121,7 +122,7 @@ export class ContentTypesFormComponent implements OnInit {
      */
     submitForm(): void {
         if (this.form.valid) {
-            this.onSubmit.emit(this.form.value);
+            this.submit.emit(this.form.value);
         }
     }
 
@@ -155,18 +156,6 @@ export class ContentTypesFormComponent implements OnInit {
         }
 
         return dateVarOptions;
-    }
-
-    private handleDateVarChange($event, field): void {
-        const expireDateVar = this.form.get('expireDateVar');
-        const publishDateVar = this.form.get('publishDateVar');
-
-        if (field === 'publishDateVar' && expireDateVar.value === $event.value) {
-            expireDateVar.patchValue('');
-        }
-        if (field === 'expireDateVar' && publishDateVar.value === $event.value) {
-            publishDateVar.patchValue('');
-        }
     }
 
     private initFormGroup(): void {

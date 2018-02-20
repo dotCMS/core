@@ -8,12 +8,11 @@ describe('TemplateContainersCacheService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [TemplateContainersCacheService],
-            imports: [  ]
+            imports: []
         });
 
         service = TestBed.get(TemplateContainersCacheService);
     });
-
 
     it('should return the right container', () => {
         const containers = {
@@ -22,7 +21,7 @@ describe('TemplateContainersCacheService', () => {
                     identifier: '1',
                     name: 'container 1',
                     type: 'type'
-                },
+                }
             },
             '2': {
                 container: {

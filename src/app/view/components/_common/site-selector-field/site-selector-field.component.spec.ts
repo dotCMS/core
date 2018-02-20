@@ -15,7 +15,7 @@ import { SiteSelectorFieldModule } from './site-selector-field.module';
     template: `
         <form [formGroup]="form">
             <dot-site-selector-field formControlName="site"></dot-site-selector-field>
-            {{form.value | json}}
+            {{ form.value | json }}
         </form>
     `
 })
@@ -100,7 +100,6 @@ describe('SiteSelectorFieldComponent', () => {
             site: 'abc'
         });
     });
-
 
     it('should have undefined params by default', () => {
         const siteSelector = de.query(By.css('dot-site-selector'));

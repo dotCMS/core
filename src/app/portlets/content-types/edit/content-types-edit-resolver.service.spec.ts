@@ -77,9 +77,7 @@ describe('ContentTypeEditResolver', () => {
 
         spyOn(dotRouterService, 'gotoPortlet');
 
-        spyOn(crudService, 'getDataById').and.returnValue(
-            Observable.throw({})
-        );
+        spyOn(crudService, 'getDataById').and.returnValue(Observable.throw({}));
 
         contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
             expect(fakeContentType).toEqual(null);
@@ -101,7 +99,7 @@ describe('ContentTypeEditResolver', () => {
     });
 
     it('should return a content type placeholder base on type', () => {
-        activatedRouteSnapshotMock.paramMap.get = param => {
+        activatedRouteSnapshotMock.paramMap.get = (param) => {
             return param === 'type' ? 'content' : false;
         };
         spyOn(dotRouterService, 'gotoPortlet');

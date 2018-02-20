@@ -67,7 +67,7 @@ describe('ContentTypesFormComponent', () => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypesFormComponent],
                 imports: [
-                    RouterTestingModule.withRoutes([{component: ContentTypesFormComponent, path: 'test'}]),
+                    RouterTestingModule.withRoutes([{ component: ContentTypesFormComponent, path: 'test' }]),
                     BrowserAnimationsModule,
                     ButtonModule,
                     DropdownModule,
@@ -313,7 +313,7 @@ describe('ContentTypesFormComponent', () => {
             '#content-type-form-expire-date-field'
         ];
 
-        fields.forEach(field => {
+        fields.forEach((field) => {
             expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
         });
     });
@@ -357,7 +357,7 @@ describe('ContentTypesFormComponent', () => {
             '#content-type-form-url-map-pattern'
         ];
 
-        fields.forEach(field => {
+        fields.forEach((field) => {
             expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
         });
     });
@@ -403,7 +403,7 @@ describe('ContentTypesFormComponent', () => {
                 license: { isCommunity: false }
             })
         );
-        spyOn(workflowService, 'get').and.returnValue(Observable.of([{'id': '123'}]));
+        spyOn(workflowService, 'get').and.returnValue(Observable.of([{ id: '123' }]));
         comp.data = {
             baseType: 'CONTENT'
         };
@@ -449,7 +449,6 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('expireDateVar').disabled).toBe(false);
     });
 
-
     it('should not submit form with invalid form', () => {
         comp.data = {
             baseType: 'CONTENT'
@@ -459,7 +458,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
 
-        comp.onSubmit.subscribe(res => (data = res));
+        comp.submit.subscribe((res) => (data = res));
         comp.submitForm();
 
         expect(comp.submitForm).toHaveBeenCalled();
@@ -475,7 +474,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
 
-        comp.onSubmit.subscribe(res => (data = res));
+        comp.submit.subscribe((res) => (data = res));
 
         comp.form.controls.name.setValue('A content type name');
 

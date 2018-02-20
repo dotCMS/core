@@ -31,22 +31,22 @@ export const EDIT_PAGE_JS = `
         });
         return model;
     }
-    
+
     function checkIfContentletTypeIsAcepted(el, target){
-        return el.dataset.dotBasetype === 'WIDGET' || 
+        return el.dataset.dotBasetype === 'WIDGET' ||
                el.dataset.dotBasetype === 'FORM' ||
                target.dataset.dotAcceptTypes.indexOf(el.dataset.dotType) > -1;
     }
-    
+
     function checkIfMaxLimitNotReached(target){
         return target.children.length < parseInt(target.dataset.maxContentlets, 10)
     }
-    
-    function checkIfContentletIsUnique(el, target){    
+
+    function checkIfContentletIsUnique(el, target){
         return !Array.from(target.querySelectorAll("div[data-dot-object='contentlet']"))
-            .filter(node => { 
-                return (node.dataset.dotInode === el.dataset.dotInode || 
-                        node.dataset.dotIdentifier === el.dataset.dotIdentifier) 
+            .filter(node => {
+                return (node.dataset.dotInode === el.dataset.dotInode ||
+                        node.dataset.dotIdentifier === el.dataset.dotIdentifier)
                 }).length;
     }
 

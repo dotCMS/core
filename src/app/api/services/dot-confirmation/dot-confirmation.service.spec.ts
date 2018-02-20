@@ -4,9 +4,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 describe('DotConfirmationService', () => {
     let mockData;
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            DotConfirmationService
-        ]);
+        this.injector = DOTTestBed.resolveAndCreate([DotConfirmationService]);
 
         mockData = {
             footerLabel: {
@@ -15,7 +13,7 @@ describe('DotConfirmationService', () => {
             }
         };
 
-        this.dotConfirmationService =  this.injector.get(DotConfirmationService);
+        this.dotConfirmationService = this.injector.get(DotConfirmationService);
     });
 
     it('should emit data to labels property', () => {
@@ -37,4 +35,3 @@ describe('DotConfirmationService', () => {
         expect(this.dotConfirmationService.confirmationService.confirm).toHaveBeenCalledWith(mockData);
     });
 });
-

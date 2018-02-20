@@ -15,33 +15,32 @@ describe('ActionHeaderComponent', () => {
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
-        const messageServiceMock = new MockDotMessageService({
-            'selected': 'selected'
-        });
+    beforeEach(
+        async(() => {
+            const messageServiceMock = new MockDotMessageService({
+                selected: 'selected'
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ActionHeaderComponent
-            ],
-            imports: [
-                BrowserAnimationsModule,
-                DotActionButtonModule,
-                RouterTestingModule.withRoutes([{
-                    component: ActionHeaderComponent,
-                    path: 'test'
-                }])
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                DotConfirmationService
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [ActionHeaderComponent],
+                imports: [
+                    BrowserAnimationsModule,
+                    DotActionButtonModule,
+                    RouterTestingModule.withRoutes([
+                        {
+                            component: ActionHeaderComponent,
+                            path: 'test'
+                        }
+                    ])
+                ],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotConfirmationService]
+            });
 
-        fixture = DOTTestBed.createComponent(ActionHeaderComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('.action-header'));
-    }));
+            fixture = DOTTestBed.createComponent(ActionHeaderComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement.query(By.css('.action-header'));
+        })
+    );
 
     it('should render default state correctly', () => {
         const actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));
@@ -51,7 +50,7 @@ describe('ActionHeaderComponent', () => {
     });
 
     it('should show the number of items selected', () => {
-        comp.selectedItems = [{key: 'value'}, {key: 'value'}];
+        comp.selectedItems = [{ key: 'value' }, { key: 'value' }];
         fixture.detectChanges();
         const selectedItemsCounter: DebugElement = de.query(By.css('.action-header__selected-items-counter'));
         expect(de.nativeElement.className).toContain('selected');
@@ -105,7 +104,7 @@ describe('ActionHeaderComponent', () => {
             ]
         };
         comp.options = options;
-        comp.selectedItems = [{key: 'value'}, {key: 'value'}];
+        comp.selectedItems = [{ key: 'value' }, { key: 'value' }];
         fixture.detectChanges();
 
         const splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.ui-menuitem-link');

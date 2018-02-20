@@ -22,10 +22,9 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages([
-            'editpage.layout.properties.sidebar.left',
-            'editpage.layout.properties.sidebar.right'
-        ]).subscribe();
+        this.dotMessageService
+            .getMessages(['editpage.layout.properties.sidebar.left', 'editpage.layout.properties.sidebar.right'])
+            .subscribe();
     }
 
     propagateChange = (_: any) => {};
@@ -72,4 +71,4 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     }
 
     registerOnTouched(): void {}
- }
+}

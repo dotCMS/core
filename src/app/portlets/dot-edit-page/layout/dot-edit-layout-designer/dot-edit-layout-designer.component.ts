@@ -8,12 +8,10 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotLayout } from '../../shared/models/dot-layout.model';
 import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation/index';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 import * as _ from 'lodash';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
-import { DotPage } from '../../shared/models/dot-page.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -34,7 +32,6 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     showTemplateLayoutSelectionDialog = false;
 
     constructor(
-        private dotConfirmationService: DotConfirmationService,
         private dotEditLayoutService: DotEditLayoutService,
         private dotEventsService: DotEventsService,
         private dotGlobalMessageService: DotGlobalMessageService,
@@ -125,11 +122,11 @@ export class DotEditLayoutDesignerComponent implements OnInit {
      *
      * @memberof DotEditLayoutDesignerComponent
      */
-    saveLayout(event): void {
+    saveLayout(_event): void {
         this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
         const dotLayout: DotLayout = this.form.value;
         this.pageViewService.save(this.pageView.page.identifier, dotLayout).subscribe(
-            response => {
+            () => {
                 // TODO: This extra request will change once the this.pageViewService.save return a DotPageView object.
                 this.pageViewService.get(this.route.snapshot.queryParams.url).subscribe((pageView: DotPageView) => {
                     this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));

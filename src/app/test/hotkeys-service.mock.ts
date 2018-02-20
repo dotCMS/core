@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs/Observable';
-import { HotkeysService, Hotkey } from 'angular2-hotkeys';
+import { Hotkey } from 'angular2-hotkeys';
 
 /**
  * Mock of HotkeysService.
@@ -20,7 +20,7 @@ export class TestHotkeysMock {
      * @param hotkey
      * @param specificEvent
      */
-    add(hotkey: Hotkey | Hotkey[], specificEvent?: string | string[]): Observable<Hotkey[]> {
+    add(hotkey: Hotkey | Hotkey[], _specificEvent?: string | string[]): Observable<Hotkey[]> {
         this.hotkeys.push(hotkey);
         return Observable.of([]);
     }
@@ -34,8 +34,8 @@ export class TestHotkeysMock {
      */
     get(combo: string[]): Hotkey | Hotkey[] {
         const hotKeyCombo: Hotkey[] = [];
-        this.hotkeys.forEach(hotkey => {
-            hotkey.combo.forEach(hotkeyCombo => {
+        this.hotkeys.forEach((hotkey) => {
+            hotkey.combo.forEach((hotkeyCombo) => {
                 if (combo.includes(hotkeyCombo)) {
                     hotKeyCombo.push(hotkey);
                 }
@@ -52,7 +52,7 @@ export class TestHotkeysMock {
      * @returns {(Hotkey | Hotkey[])}
      * @memberof TestHotkeysMock
      */
-    remove(hotkey?: Hotkey | Hotkey[]): Hotkey | Hotkey[] {
+    remove(_hotkey?: Hotkey | Hotkey[]): Hotkey | Hotkey[] {
         return null;
     }
 
@@ -63,10 +63,10 @@ export class TestHotkeysMock {
      * @returns {(any|void)}
      * @memberof TestHotkeysMock
      */
-    callback(combo: string[]): any|void {
+    callback(combo: string[]): any | void {
         const hotkey: any = this.get(combo);
         if (hotkey) {
-          return hotkey.callback(null, combo);
+            return hotkey.callback(null, combo);
         }
     }
 }

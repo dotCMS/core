@@ -3,7 +3,7 @@ import { validateDateDefaultValue } from './date.validator';
 
 describe('validateDateDefaultValue', () => {
     const invalidResponse = {
-            validateDate: {
+        validateDate: {
             valid: false
         }
     };
@@ -14,7 +14,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('2017-08-27')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
 
@@ -24,7 +24,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('2017-08-27')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
 
@@ -34,7 +34,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('2017/08/27')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toEqual(invalidResponse);
     });
 
@@ -44,7 +44,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('2017-08-27 14:06:45')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
 
@@ -54,7 +54,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('2017-08-27 140645')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toEqual(invalidResponse);
     });
 
@@ -64,7 +64,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('14:06:45')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
 
@@ -74,7 +74,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('140645')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toEqual(invalidResponse);
     });
 
@@ -84,7 +84,7 @@ describe('validateDateDefaultValue', () => {
             defaultValue: new FormControl('')
         });
 
-        const valid = validateDateDefaultValue(<FormControl> group.controls['defaultValue']);
+        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
 });

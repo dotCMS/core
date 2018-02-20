@@ -4,17 +4,9 @@ import { CommonModule } from '@angular/common';
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-
 @NgModule({
     declarations: [DotSidebarPropertiesComponent],
-    imports: [
-        ButtonModule,
-        CommonModule,
-        FormsModule,
-        RadioButtonModule,
-        OverlayPanelModule,
-        ReactiveFormsModule
-    ],
+    imports: [ButtonModule, CommonModule, FormsModule, RadioButtonModule, OverlayPanelModule, ReactiveFormsModule],
     exports: [DotSidebarPropertiesComponent]
 })
 export class DotSidebarPropertiesModule {}

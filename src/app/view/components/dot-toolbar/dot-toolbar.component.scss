@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 .toolbar {
     z-index: 1004; // Menu and dropdown options in primeng use 1003.
@@ -81,7 +81,7 @@
         }
     }
 
-    .ui-button-icon-right{
+    .ui-button-icon-right {
         color: $white;
         font-size: $font-size-large;
     }

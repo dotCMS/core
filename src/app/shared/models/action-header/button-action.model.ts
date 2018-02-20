@@ -1,4 +1,3 @@
-
 import { ButtonModel } from './button.model';
 
 export interface ButtonAction {

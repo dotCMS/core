@@ -47,7 +47,8 @@ class TestContentTypeLayoutComponent {
 class TestContentTypesFormComponent {
     @Input() data: any;
     @Input() fields: ContentTypeField[];
-    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+    // tslint:disable-next-line:no-output-on-prefix
+    @Output() submit: EventEmitter<any> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -74,10 +75,7 @@ const getConfig = (route) => {
             TestContentTypesFormComponent,
             TestContentTypeLayoutComponent
         ],
-        imports: [
-            RouterTestingModule,
-            BrowserAnimationsModule
-        ],
+        imports: [RouterTestingModule, BrowserAnimationsModule],
         providers: [
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -202,7 +200,7 @@ describe('ContentTypesEditComponent create mode', () => {
     });
 
     it('should create content type', () => {
-        const fakeContentType: ContentType = {
+        const mockContentType: ContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
             defaultType: false,
             fixed: false,
@@ -213,7 +211,7 @@ describe('ContentTypesEditComponent create mode', () => {
             system: false
         };
 
-        const responseContentType = Object.assign({}, {id: '123'}, fakeContentType, {
+        const responseContentType = Object.assign({}, { id: '123' }, mockContentType, {
             fields: [{ hello: 'world' }]
         });
 
@@ -221,15 +219,14 @@ describe('ContentTypesEditComponent create mode', () => {
         spyOn(location, 'replaceState').and.returnValue(Observable.of([responseContentType]));
 
         const contentTypeForm: ContentTypesFormComponent = de.query(By.css('dot-content-types-form')).componentInstance;
-        contentTypeForm.onSubmit.emit(fakeContentType);
+        contentTypeForm.submit.emit(mockContentType);
 
-        expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', fakeContentType);
+        expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockContentType);
         expect(comp.data).toEqual(responseContentType, 'set data with response');
         expect(comp.fields).toEqual(responseContentType.fields, 'ser fields with response');
         expect(location.replaceState).toHaveBeenCalledWith('/content-types-angular/edit/123');
     });
 });
-
 
 const currentFieldsInServer = [
     {
@@ -345,7 +342,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         clickEditButton();
 
         const contentTypeForm: ContentTypesFormComponent = de.query(By.css('dot-content-types-form')).componentInstance;
-        contentTypeForm.onSubmit.emit(fakeContentType);
+        contentTypeForm.submit.emit(fakeContentType);
 
         expect(crudService.putData).toHaveBeenCalledWith('v1/contenttype/id/1234567890', fakeContentType);
         expect(comp.data).toEqual(responseContentType, 'set data with response');

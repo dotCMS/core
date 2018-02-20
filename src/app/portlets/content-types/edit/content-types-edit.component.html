@@ -36,13 +36,13 @@
     [draggable]="false"
     [closable]="isEditMode()"> 
     
-    <p-header>{{templateInfo.header}}</p-header>
+    <p-header>{{ templateInfo.header }}</p-header>
 
     <dot-content-types-form
         #form
         [fields]="fields"
         [data]="data"
-        (onSubmit)="handleFormSubmit($event)">
+        (submit)="handleFormSubmit($event)">
     </dot-content-types-form>
 
     <p-footer>

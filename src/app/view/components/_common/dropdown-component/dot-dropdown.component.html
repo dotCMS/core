@@ -15,7 +15,7 @@
         [disabled]="disabled">
 </button>
 
-<gravatar class="dropdown-component__gravatar" *ngIf="gravatar" size="32" [email]="gravatar" (click)="onToggle()"></gravatar>
+<dot-gravatar class="dropdown-component__gravatar" *ngIf="gravatar" size="32" [email]="gravatar" (click)="onToggle()"></dot-gravatar>
 
 <div class="dropdown-content" *ngIf="show" [@enterAnimation]="show" [ngStyle]="!position || position === 'left' ? { left: 0 } : { right: 0 }">
     <ng-content></ng-content>

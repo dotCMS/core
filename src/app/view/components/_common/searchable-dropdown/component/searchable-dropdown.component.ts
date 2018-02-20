@@ -15,7 +15,7 @@ import {
 import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { OverlayPanel } from 'primeng/primeng';
 
 /**
@@ -34,7 +34,7 @@ import { OverlayPanel } from 'primeng/primeng';
             useExisting: forwardRef(() => SearchableDropdownComponent)
         }
     ],
-    selector: 'searchable-dropdown',
+    selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html'
 })
@@ -135,10 +135,10 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
-            resultProps = this.labelPropertyName.map(item => {
+            resultProps = this.labelPropertyName.map((item) => {
                 if (item.indexOf('.') > -1) {
                     let propertyName;
-                    item.split('.').forEach(nested => {
+                    item.split('.').forEach((nested) => {
                         propertyName = propertyName ? propertyName[nested] : container[nested];
                     });
 
@@ -161,7 +161,7 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
      * @param {*} item
      * @memberof SearchableDropdownComponent
      */
-    private handleClick(item: any): void {
+    handleClick(item: any): void {
         if (this.value !== item) {
             this.value = item;
             if (Array.isArray(this.labelPropertyName)) {

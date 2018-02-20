@@ -1,6 +1,6 @@
-import { Component, OnInit, Input, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { SelectItem, MenuItem, SplitButton, InputSwitch } from 'primeng/primeng';
+import { SelectItem, MenuItem } from 'primeng/primeng';
 import { Workflow } from '../../../../shared/models/workflow/workflow.model';
 import { DotRenderedPage } from '../../../dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotEditPageState } from '../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
@@ -110,7 +110,7 @@ export class DotEditPageToolbarComponent implements OnInit {
      * @param {any} $event
      * @memberof DotEditPageToolbarComponent
      */
-    lockPageHandler($event): void {
+    lockPageHandler(_event): void {
         const state: DotEditPageState = {
             locked: this.page.locked
         };

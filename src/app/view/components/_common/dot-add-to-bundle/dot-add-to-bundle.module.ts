@@ -7,14 +7,9 @@ import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 import { AddToBundleService } from '../../../../api/services/add-to-bundle/add-to-bundle.service';
 import { DotCurrentUserService } from '../../../../api/services/dot-current-user/dot-current-user.service';
 
-
 @NgModule({
-    declarations: [
-        DotAddToBundleComponent
-    ],
-    exports: [
-        DotAddToBundleComponent
-    ],
+    declarations: [DotAddToBundleComponent],
+    exports: [DotAddToBundleComponent],
     imports: [
         CommonModule,
         ButtonModule,
@@ -26,5 +21,4 @@ import { DotCurrentUserService } from '../../../../api/services/dot-current-user
     ],
     providers: [AddToBundleService, DotCurrentUserService]
 })
-
 export class DotAddToBundleModule {}

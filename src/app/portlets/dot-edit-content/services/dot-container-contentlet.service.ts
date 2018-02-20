@@ -10,10 +10,12 @@ export class DotContainerContentletService {
     constructor(private coreWebService: CoreWebService) {}
 
     getContentletToContainer(container: DotPageContainer, content: DotPageContent): Observable<string> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: `v1/containers/${container.identifier}/uuid/${container.uuid}/content/${content.identifier}`
-        }).pluck('bodyJsonObject', 'render');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: `v1/containers/${container.identifier}/uuid/${container.uuid}/content/${content.identifier}`
+            })
+            .pluck('bodyJsonObject', 'render');
     }
 
     /**
@@ -22,10 +24,12 @@ export class DotContainerContentletService {
      * @param model content model
      */
     saveContentlet(pageId: string, content: DotPageContainer[]): Observable<string> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Post,
-            body: content,
-            url: `v1/page/${pageId}/content`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Post,
+                body: content,
+                url: `v1/page/${pageId}/content`
+            })
+            .pluck('entity');
     }
 }

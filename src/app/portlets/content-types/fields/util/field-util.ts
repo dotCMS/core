@@ -63,7 +63,7 @@ export class FieldUtil {
         const result: ContentTypeField[][] = [];
         let currentFields: ContentTypeField[];
 
-        fields.forEach(field => {
+        fields.forEach((field) => {
             if (field.clazz === fieldClass) {
                 currentFields = [];
                 result.push(currentFields);

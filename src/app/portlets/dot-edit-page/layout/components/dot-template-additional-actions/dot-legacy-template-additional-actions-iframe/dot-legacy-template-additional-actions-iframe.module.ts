@@ -4,7 +4,6 @@ import { IFrameModule } from '../../../../../../view/components/_common/iframe/i
 import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-template-additional-actions-iframe.component';
 import { CommonModule } from '@angular/common';
 
-
 @NgModule({
     declarations: [DotLegacyTemplateAdditionalActionsComponent],
     imports: [IFrameModule, CommonModule],

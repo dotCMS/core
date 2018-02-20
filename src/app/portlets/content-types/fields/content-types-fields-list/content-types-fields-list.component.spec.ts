@@ -16,33 +16,24 @@ describe('ContentTypesFieldsListComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
 
-    beforeEach(async(() => {
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypesFieldsListComponent],
+                imports: [DragulaModule],
+                providers: [DragulaService, FieldDragDropService, FieldService]
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypesFieldsListComponent
-            ],
-            imports: [
-                DragulaModule
-            ],
-            providers: [
-                DragulaService,
-                FieldDragDropService,
-                FieldService
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
-
+            fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     it('should renderer each items', () => {
         const fieldService = fixture.debugElement.injector.get(FieldService);
         const itemsData = [
-
             {
                 label: 'Text'
             },
@@ -69,7 +60,9 @@ describe('ContentTypesFieldsListComponent', () => {
         const itemsElements = de.queryAll(By.css('li'));
 
         expect(itemsData.length).toEqual(itemsElements.length);
-        itemsData.forEach((fieldType, index) => expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label));
+        itemsData.forEach((fieldType, index) =>
+            expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label)
+        );
 
         const ulElement = de.query(By.css('ul'));
 

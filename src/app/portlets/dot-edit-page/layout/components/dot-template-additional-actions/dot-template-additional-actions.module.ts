@@ -1,8 +1,7 @@
-import { MenuModule } from 'primeng/primeng';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { NgModule } from '@angular/core';
-import { IFrameModule } from '../../../../../view/components/_common/iframe/index';
-import { DotTemplateAdditionalActionsMenuModule } from './dot-template-additional-actions-menu/dot-template-additional-actions-menu.module';
+import {
+    DotTemplateAdditionalActionsMenuModule
+} from './dot-template-additional-actions-menu/dot-template-additional-actions-menu.module';
 import {
     DotTemplateAdditionalActionsIframeModule
 } from './dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.module';
@@ -15,14 +14,8 @@ import {
 
 @NgModule({
     declarations: [],
-    imports: [
-        DotTemplateAdditionalActionsMenuModule,
-        DotTemplateAdditionalActionsIframeModule
-    ],
-    exports: [
-        DotLegacyTemplateAdditionalActionsComponent,
-        DotTemplateAdditionalActionsMenuComponent
-    ],
+    imports: [DotTemplateAdditionalActionsMenuModule, DotTemplateAdditionalActionsIframeModule],
+    exports: [DotLegacyTemplateAdditionalActionsComponent, DotTemplateAdditionalActionsMenuComponent],
     providers: []
 })
 export class DotTemplateAdditionalActionsModule {}

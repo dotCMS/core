@@ -8,7 +8,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
     styleUrls: ['./global-search.scss'],
     templateUrl: 'global-search.html'
 })
-export class GlobalSearch extends BaseComponent {
+export class GlobalSearchComponent extends BaseComponent {
     constructor(dotMessageService: DotMessageService) {
         super(['search'], dotMessageService);
     }

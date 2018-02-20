@@ -1,6 +1,6 @@
-@import "mixins";
-@import "variables";
-@import "primeng-theme/utils/theme-variables";
+@import 'mixins';
+@import 'variables';
+@import 'primeng-theme/utils/theme-variables';
 
 .content-type {
     .ui-tabview-nav {
@@ -12,12 +12,10 @@
             position: relative;
             z-index: 1;
         }
-
-
     }
 
     dot-iframe {
-        padding: $basic-padding * 2 0
+        padding: $basic-padding * 2 0;
     }
 }
 

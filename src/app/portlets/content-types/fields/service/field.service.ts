@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
-import { ContentTypeField, FieldType, FieldRow } from '../shared';
+import { ContentTypeField, FieldType } from '../shared';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldUtil } from '../util/field-util';
@@ -42,11 +42,13 @@ export class FieldService {
             }
         });
 
-        return this.coreWebService.requestView({
-            body: fields,
-            method: RequestMethod.Put,
-            url: `v1/contenttype/${contentTypeId}/fields`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                body: fields,
+                method: RequestMethod.Put,
+                url: `v1/contenttype/${contentTypeId}/fields`
+            })
+            .pluck('entity');
     }
 
     /**
@@ -54,12 +56,17 @@ export class FieldService {
      * @param contentTypeId content types's id that contains the fields
      * @param fields Fields to delete
      */
-    deleteFields(contentTypeId: string, fields: ContentTypeField[]): Observable<{fields: ContentTypeField[], deletedIds: string[]}> {
-        return this.coreWebService.requestView({
-            body: fields.map(field => field.id),
-            method: RequestMethod.Delete,
-            url: `v1/contenttype/${contentTypeId}/fields`
-        }).pluck('entity');
+    deleteFields(
+        contentTypeId: string,
+        fields: ContentTypeField[]
+    ): Observable<{ fields: ContentTypeField[]; deletedIds: string[] }> {
+        return this.coreWebService
+            .requestView({
+                body: fields.map((field) => field.id),
+                method: RequestMethod.Delete,
+                url: `v1/contenttype/${contentTypeId}/fields`
+            })
+            .pluck('entity');
     }
 
     /**

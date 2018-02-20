@@ -5,12 +5,9 @@ import {
     OnInit,
     Input,
     ViewChild,
-    SimpleChanges,
     Output,
     EventEmitter
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
@@ -22,13 +19,12 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html'
 })
-export class IframeComponent implements OnInit  {
+export class IframeComponent implements OnInit {
     @ViewChild('iframeElement') iframeElement: ElementRef;
     @Input() src: string;
     @Input() isLoading = false;
     @Output() load: EventEmitter<any> = new EventEmitter();
 
-    iframeURL: SafeResourceUrl;
     showOverlay = false;
 
     private readonly DEFAULT_LOCATION = {
@@ -40,14 +36,12 @@ export class IframeComponent implements OnInit  {
         private element: ElementRef,
         private loggerService: LoggerService,
         private loginService: LoginService,
-        private route: ActivatedRoute,
-        private sanitizer: DomSanitizer,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public iframeOverlayService: IframeOverlayService
     ) {}
 
     ngOnInit(): void {
-        this.iframeOverlayService.overlay.subscribe(val => (this.showOverlay = val));
+        this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
         this.element.nativeElement.style.height = this.getIframeHeight(window.innerHeight);
 
         Observable.fromEvent(window, 'resize')
@@ -69,8 +63,8 @@ export class IframeComponent implements OnInit  {
 
             if (currentPath.indexOf('/c/portal_public/login') !== -1) {
                 this.loginService.logOutUser().subscribe(
-                    data => {},
-                    error => {
+                    (_data) => {},
+                    (error) => {
                         this.loggerService.error(error);
                     }
                 );

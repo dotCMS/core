@@ -6,8 +6,8 @@
     (open)="iframeOverlayService.show()"
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-add-contentlet__head">
-        <dot-action-button *ngFor="let structureTypeView of mainTypes | async" (onClick)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [label]="structureTypeView.label" [selected]="selectedName === structureTypeView.name"></dot-action-button>
-        <dot-action-button icon="fa-chevron-down" label="{{i18nMessages['more']}}" [model]="moreTypes | async" ></dot-action-button>
+        <dot-action-button *ngFor="let structureTypeView of mainTypes | async" (click)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [label]="structureTypeView.label" [selected]="selectedName === structureTypeView.name"></dot-action-button>
+        <dot-action-button icon="fa-chevron-down" label="{{ i18nMessages['more'] }}" [model]="moreTypes | async" ></dot-action-button>
     </div>
 
     <dot-toolbar-add-contentlet-body

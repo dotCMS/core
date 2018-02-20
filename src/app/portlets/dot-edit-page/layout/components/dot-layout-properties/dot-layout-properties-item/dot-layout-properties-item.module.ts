@@ -9,4 +9,3 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
     providers: []
 })
 export class DotLayoutPropertiesItemModule {}
-

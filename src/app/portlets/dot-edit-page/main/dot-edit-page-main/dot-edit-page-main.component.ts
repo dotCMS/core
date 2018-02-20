@@ -1,17 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { pipe, Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { pluck, map } from 'rxjs/operators';
-
-import { DotPageView } from '../../shared/models/dot-page-view.model';
+// tslint:disable-next-line:import-blacklist
+import { pipe } from 'rxjs';
 
 export const getDrawed = pluck('pageView', 'template', 'drawed');
 export const isAdvanced = map((isDrawed: boolean) => !isDrawed);
-export const getTemplateType = pipe(
-    getDrawed,
-    isAdvanced
-);
+export const getTemplateType = pipe(getDrawed, isAdvanced);
 
 @Component({
     selector: 'dot-edit-page-main',

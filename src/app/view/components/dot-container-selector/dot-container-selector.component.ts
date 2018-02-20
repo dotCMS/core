@@ -18,14 +18,11 @@ export class DotContainerSelectorComponent implements OnInit {
     totalRecords: number;
     currentContainers: DotContainer[] = [];
 
-
-    constructor(public paginationService: PaginatorService, public dotMessageService: DotMessageService) { }
+    constructor(public paginationService: PaginatorService, public dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';
-        this.dotMessageService.getMessages([
-            'editpage.container.add.label'
-        ]).subscribe();
+        this.dotMessageService.getMessages(['editpage.container.add.label']).subscribe();
     }
 
     /**
@@ -38,7 +35,7 @@ export class DotContainerSelectorComponent implements OnInit {
         if (!this.isContainerSelected(container)) {
             this.selectedContainersList.push({
                 container: container,
-                uuid: (new Date().getTime()).toString()
+                uuid: new Date().getTime().toString()
             });
             this.change.emit(this.selectedContainersList);
         }
@@ -81,12 +78,14 @@ export class DotContainerSelectorComponent implements OnInit {
      * @memberof DotContainerSelectorComponent
      */
     isContainerSelected(dotContainer: DotContainer): boolean {
-        return this.selectedContainersList.some(containerItem => containerItem.container.identifier === dotContainer.identifier);
+        return this.selectedContainersList.some(
+            (containerItem) => containerItem.container.identifier === dotContainer.identifier
+        );
     }
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             this.currentContainers = items.splice(0);
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
         });

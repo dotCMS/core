@@ -1,5 +1,3 @@
-import { DotPage } from './dot-page.model';
-
 export interface DotRenderedPage {
     canLock: boolean;
     identifier: string;

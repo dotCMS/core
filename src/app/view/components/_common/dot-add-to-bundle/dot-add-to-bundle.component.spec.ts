@@ -22,7 +22,7 @@ class AddToBundleServiceMock {
 }
 
 @Component({
-    selector: 'test-host-component',
+    selector: 'dot-test-host-component',
     template: '<dot-add-to-bundle [assetIdentifier]="addToBundleIdentifier"></dot-add-to-bundle>'
 })
 class TestHostComponent {
@@ -49,17 +49,11 @@ describe('DotAddToBundleComponent', () => {
         addToBundleServiceMock = new AddToBundleServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                DotAddToBundleComponent,
-                TestHostComponent
-            ],
-            imports: [
-                BrowserAnimationsModule,
-                FieldValidationMessageModule
-            ],
+            declarations: [DotAddToBundleComponent, TestHostComponent],
+            imports: [BrowserAnimationsModule, FieldValidationMessageModule],
             providers: [
                 { provide: AddToBundleService, useValue: addToBundleServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock}
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -82,7 +76,7 @@ describe('DotAddToBundleComponent', () => {
 
     it('should be valid if bundle field is added', () => {
         fixture.detectChanges();
-        comp.form.get('addBundle').setValue({id: '12345', name: 'my bundle'});
+        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
         expect(comp.form.valid).toEqual(true);
     });
 
@@ -98,7 +92,7 @@ describe('DotAddToBundleComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe(res => {
+        comp.cancel.subscribe((res) => {
             expect(res).toEqual(true);
         });
     });
@@ -107,7 +101,7 @@ describe('DotAddToBundleComponent', () => {
         fixture.detectChanges();
         const cancelButton: DebugElement = fixture.debugElement.query(By.css('.add-to-bundle__form-cancel'));
 
-        comp.form.get('addBundle').setValue({id: '12345', name: 'my bundle'});
+        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
 
         cancelButton.nativeElement.click();
 
@@ -161,12 +155,14 @@ describe('DotAddToBundleComponent', () => {
     });
 
     it('should set placeholder "Select or type bundle" if bundles exist', () => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(Observable.of([
-            {
-                id: '1234',
-                name: 'my bundle'
-            }
-        ]));
+        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+            Observable.of([
+                {
+                    id: '1234',
+                    name: 'my bundle'
+                }
+            ])
+        );
         fixture.detectChanges();
         expect(comp.placeholder).toEqual('Select or type bundle');
     });
@@ -177,7 +173,7 @@ describe('DotAddToBundleComponent', () => {
         spyOn(addToBundleServiceMock, 'addToBundle');
         const form = fixture.debugElement.query(By.css('form'));
 
-        comp.form.get('addBundle').setValue({id: '12345', name: 'my bundle'});
+        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
 
         fixture.componentInstance.addToBundleIdentifier = '7ad979-89a-97ada9d9ad';
         fixture.detectChanges();

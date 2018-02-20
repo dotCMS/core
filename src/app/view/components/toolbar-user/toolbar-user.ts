@@ -6,16 +6,16 @@ import { LoginService, Auth, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 
 @Component({
-    selector: 'toolbar-user',
+    selector: 'dot-toolbar-user',
     styleUrls: ['./toolbar-user.scss'],
     templateUrl: 'toolbar-user.html'
 })
 export class ToolbarUserComponent extends BaseComponent implements OnInit {
     @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+    auth: Auth;
 
-    private showLoginAs = false;
-    private auth: Auth;
-    private showMyAccount = false;
+    showLoginAs = false;
+    showMyAccount = false;
 
     constructor(
         dotMessageService: DotMessageService,
@@ -37,8 +37,8 @@ export class ToolbarUserComponent extends BaseComponent implements OnInit {
      */
     logout(): boolean {
         this.loginService.logOutUser().subscribe(
-            data => {},
-            error => {
+            () => {},
+            (error) => {
                 this.loggerService.error(error);
             }
         );
@@ -48,11 +48,11 @@ export class ToolbarUserComponent extends BaseComponent implements OnInit {
     logoutAs($event): void {
         $event.preventDefault();
         this.loginService.logoutAs().subscribe(
-            data => {
+            () => {
                 this.dropdown.closeIt();
                 this.iframeOverlayService.hide();
             },
-            error => {
+            (error) => {
                 this.loggerService.error(error);
             }
         );

@@ -1,4 +1,4 @@
-@import "variables";
+@import 'variables';
 
 :host {
     display: block;
@@ -11,7 +11,7 @@
     position: relative;
     z-index: 1;
 
-    &.selected {    
+    &.selected {
         .action-header__primary-button {
             opacity: 0;
             transform: translateY(-20px);
@@ -42,10 +42,7 @@
     left: $basic-padding * 2;
     top: 0;
     transform: translateY(0);
-    transition: 
-        background-color 100ms,
-        transform 0.2s ease,
-        opacity 0.2s ease;
+    transition: background-color 100ms, transform 0.2s ease, opacity 0.2s ease;
     z-index: 1;
 }
 
@@ -63,16 +60,14 @@
     }
 }
 
-.action-header__group-actions { 
+.action-header__group-actions {
     align-items: center;
     background: $blue;
     color: $white;
     display: flex;
     height: 60px;
     transform: translateY(0px);
-    transition: 
-        transform 0.2s ease,
-        visibility 0.2s ease;
+    transition: transform 0.2s ease, visibility 0.2s ease;
     visibility: hidden;
 }
 

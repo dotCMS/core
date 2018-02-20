@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewEncapsulation} from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 
 @Component({
@@ -12,12 +12,11 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginPageComponent implements OnInit {
-
     constructor(private loginService: LoginService, private loggerService: LoggerService) {}
 
     ngOnInit(): void {
         this.loginService.getLoginFormInfo('', []).subscribe(
-            data => {
+            (data) => {
                 // Translate labels and messages
                 const entity = data.entity;
 
@@ -29,7 +28,7 @@ export class LoginPageComponent implements OnInit {
                     document.body.style.backgroundImage = 'url(' + entity.backgroundPicture + ')';
                 }
             },
-            error => {
+            (error) => {
                 this.loggerService.debug(error);
             }
         );

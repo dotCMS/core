@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 import { PageViewService } from '../../../../../api/services/page-view/page-view.service';
 import { Injectable } from '@angular/core';

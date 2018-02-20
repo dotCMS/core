@@ -9,7 +9,7 @@ import { ContentTypeField } from '../../../';
 import { By } from '@angular/platform-browser';
 
 @Component({
-    selector: 'test',
+    selector: 'dot-test',
     template: '<h1>Testing</h1>'
 })
 class TestComponent {
@@ -29,12 +29,16 @@ class TestComponentFactoryResolver {
 
 class TestViewContainerRef {
     // tslint:disable-next-line:max-line-length
-    createComponent<C>(componentFactory: any, index?: number, injector?: any, projectableNodes?: any[][], ngModule?: any): any {}
+    createComponent<C>(
+        componentFactory: any,
+        index?: number,
+        injector?: any,
+        projectableNodes?: any[][],
+        ngModule?: any
+    ): any {}
 }
 
-
 describe('Directive: DynamicFieldPropertyDirective', () => {
-
     beforeEach(() => {
         this.component = new TestComponent();
 
@@ -50,13 +54,18 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         this.componentFactory = {};
 
         this.getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(TestComponent);
-        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(this.componentFactory);
+        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
+            this.componentFactory
+        );
         this.createComponent = spyOn(viewContainerRef, 'createComponent').and.returnValue({
             instance: this.component
         });
 
-        const dynamicFieldPropertyDirective = new DynamicFieldPropertyDirective(<ViewContainerRef> viewContainerRef,
-            <ComponentFactoryResolver> resolver, <FieldPropertyService> fieldPropertyService);
+        const dynamicFieldPropertyDirective = new DynamicFieldPropertyDirective(
+            <ViewContainerRef>viewContainerRef,
+            <ComponentFactoryResolver>resolver,
+            <FieldPropertyService>fieldPropertyService
+        );
 
         dynamicFieldPropertyDirective.propertyName = this.propertyName;
         dynamicFieldPropertyDirective.field = this.field;

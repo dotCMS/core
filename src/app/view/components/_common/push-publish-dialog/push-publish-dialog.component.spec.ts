@@ -23,7 +23,7 @@ class PushPublishServiceMock {
 }
 
 @Component({
-    selector: 'test-host-component',
+    selector: 'dot-test-host-component',
     template: '<dot-push-publish-dialog [assetIdentifier]="pushPublishIdentifier"></dot-push-publish-dialog>'
 })
 class TestHostComponent {
@@ -55,18 +55,11 @@ describe('PushPublishContentTypesDialogComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                PushPublishContentTypesDialogComponent,
-                TestHostComponent
-            ],
-            imports: [
-                PushPublishEnvSelectorModule,
-                BrowserAnimationsModule,
-                FieldValidationMessageModule
-            ],
+            declarations: [PushPublishContentTypesDialogComponent, TestHostComponent],
+            imports: [PushPublishEnvSelectorModule, BrowserAnimationsModule, FieldValidationMessageModule],
             providers: [
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock}
+                { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
 
@@ -103,8 +96,8 @@ describe('PushPublishContentTypesDialogComponent', () => {
 
     it('should be valid if all required fields are filled', () => {
         fixture.detectChanges();
-        comp.form.get('publishdate').setValue(new Date);
-        comp.form.get('expiredate').setValue(new Date);
+        comp.form.get('publishdate').setValue(new Date());
+        comp.form.get('expiredate').setValue(new Date());
         comp.form.get('environment').setValue('my environment');
         expect(comp.form.valid).toEqual(true);
     });
@@ -121,7 +114,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe(res => {
+        comp.cancel.subscribe((res) => {
             expect(res).toEqual(true);
         });
     });
@@ -197,7 +190,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
         spyOn(comp, 'submitPushAction').and.callThrough();
         spyOn(pushPublishServiceMock, 'pushPublishContent');
 
-        const newDate = new Date;
+        const newDate = new Date();
         const form = fixture.debugElement.query(By.css('form'));
 
         comp.form.get('pushActionSelected').setValue('publishexpire');

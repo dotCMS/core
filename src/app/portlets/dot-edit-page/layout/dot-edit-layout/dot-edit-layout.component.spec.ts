@@ -101,5 +101,4 @@ describe('DotEditLayoutComponent with Edit Advanced Layout', () => {
         const layoutEditorAdvanced: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-advanced'));
         expect(layoutEditorAdvanced.componentInstance.templateInode).toEqual('123');
     });
-
 });

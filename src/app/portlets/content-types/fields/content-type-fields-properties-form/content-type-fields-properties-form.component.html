@@ -3,7 +3,7 @@
         <div class="ui-g-12" #properties>
             <div [ngClass]="{'form__group': checkboxFields.indexOf(property) == -1}" *ngFor="let property of fieldProperties">
                 <ng-container 
-                    dynamicFieldProperty
+                    dotDynamicFieldProperty
                     [propertyName]="property"
                     [field]="formFieldData"
                     [group]="form">

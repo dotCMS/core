@@ -6,14 +6,9 @@ import { CalendarModule, DialogModule, DropdownModule, CheckboxModule } from 'pr
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
 
-
 @NgModule({
-    declarations: [
-        PushPublishContentTypesDialogComponent
-    ],
-    exports: [
-        PushPublishContentTypesDialogComponent
-    ],
+    declarations: [PushPublishContentTypesDialogComponent],
+    exports: [PushPublishContentTypesDialogComponent],
     imports: [
         CommonModule,
         FormsModule,
@@ -26,5 +21,4 @@ import { FieldValidationMessageModule } from '../field-validation-message/file-v
         CheckboxModule
     ]
 })
-
 export class PushPublishContentTypesDialogModule {}

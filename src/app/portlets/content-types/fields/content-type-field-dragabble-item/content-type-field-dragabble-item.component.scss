@@ -1,5 +1,5 @@
-@import "mixins";
-@import "variables";
+@import 'mixins';
+@import 'variables';
 
 :host {
     border-left: solid 3px $gray-lighter;
@@ -39,7 +39,7 @@
 .field__actions {
     opacity: 0.25;
     transition: opacity $basic-speed;
-    
+
     & > * {
         margin: 0 $basic-padding / 2;
     }

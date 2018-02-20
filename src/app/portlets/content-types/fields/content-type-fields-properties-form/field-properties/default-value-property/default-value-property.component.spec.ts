@@ -8,10 +8,10 @@ import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 @Component({
-    selector: 'field-validation-message',
+    selector: 'dot-field-validation-message',
     template: ''
-  })
- class TestFieldValidationMessageComponent {
+})
+class TestFieldValidationMessageComponent {
     @Input() field: NgControl;
     @Input() message: string;
 }
@@ -25,24 +25,20 @@ describe('DefaultValuePropertyComponent', () => {
         'Default-Value': 'Default-Value'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DefaultValuePropertyComponent,
-                TestFieldValidationMessageComponent
-            ],
-            imports: [
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DefaultValuePropertyComponent, TestFieldValidationMessageComponent],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(DefaultValuePropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(DefaultValuePropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});
@@ -71,7 +67,6 @@ describe('DefaultValuePropertyComponent', () => {
         expect(pInput).not.toBeNull();
     });
 
-
     it('should have a field-message', () => {
         comp.group = new FormGroup({
             name: new FormControl('')
@@ -85,7 +80,7 @@ describe('DefaultValuePropertyComponent', () => {
         fixture.detectChanges();
 
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-        const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('field-validation-message'));
+        const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
 
         expect(fieldValidationmessage).not.toBeNull();
         expect(comp.group.controls['name']).toBe(fieldValidationmessage.componentInstance.field);

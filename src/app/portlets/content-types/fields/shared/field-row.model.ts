@@ -3,7 +3,6 @@ import { FieldColumn } from './field-column.model';
 import { ContentTypeField } from './field.model';
 
 export class FieldRow {
-
     columns: FieldColumn[];
     lineDivider: ContentTypeField;
 
@@ -50,7 +49,7 @@ export class FieldRow {
      * @param {ContentTypeField[]} fields fields to add
      * @memberof FieldRow
      */
-    addFields(fields:  ContentTypeField[]): void {
+    addFields(fields: ContentTypeField[]): void {
         let offset = 0;
 
         if (fields[0] && FieldUtil.isRow(fields[0])) {
@@ -59,7 +58,7 @@ export class FieldRow {
         }
 
         const fieldsSplitByTabDivider: ContentTypeField[][] = FieldUtil.splitFieldsByTabDivider(fields.splice(offset));
-        fieldsSplitByTabDivider.forEach(tabDividerFields =>  {
+        fieldsSplitByTabDivider.forEach((tabDividerFields) => {
             this.columns.push(new FieldColumn(tabDividerFields));
         });
     }

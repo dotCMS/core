@@ -1,6 +1,6 @@
-@import "mixins";
-@import "../../../../styles/primeng-theme/utils/_mixins.scss";
-@import "variables";
+@import 'mixins';
+@import '../../../../styles/primeng-theme/utils/_mixins.scss';
+@import 'variables';
 $sidebar-width: 190px;
 
 .layout {
@@ -28,7 +28,7 @@ $sidebar-width: 190px;
     &.layout__main--tablet-only {
         &::after {
             background-color: $black;
-            content: "";
+            content: '';
             position: absolute;
             height: 100%;
             top: 0;
@@ -39,9 +39,9 @@ $sidebar-width: 190px;
             z-index: 9;
             transition: opacity 2s ease-in;
         }
-    
+
         .collapsed & {
-            &::after { 
+            &::after {
                 position: static;
                 transition: opacity 2s ease-out;
             }

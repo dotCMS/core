@@ -29,9 +29,9 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
 
     ngOnInit() {
         this.pushEnvironments$ = this.pushPublishService.getEnvironments();
-        this.pushPublishService.getEnvironments().subscribe(environments => {
+        this.pushPublishService.getEnvironments().subscribe((environments) => {
             if (this.pushPublishService.lastEnvironmentPushed) {
-                this.selectedEnvironments = environments.filter(env => {
+                this.selectedEnvironments = environments.filter((env) => {
                     return this.pushPublishService.lastEnvironmentPushed.includes(env.id);
                 });
                 this.valueChange('', this.selectedEnvironments);
@@ -78,7 +78,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
      * @param {any} selectedEnvironments
      * @memberof PushPublishEnvSelectorComponent
      */
-    valueChange($event, selectedEnvironments): void {
+    valueChange(_event, selectedEnvironments): void {
         this.propagateEnvironmentId(selectedEnvironments);
     }
 
@@ -89,13 +89,13 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
      */
     removeEnvironmentItem(environmentItem: DotEnvironment): void {
         this.selectedEnvironments = this.selectedEnvironments.filter(
-            environment => environment.id !== environmentItem.id
+            (environment) => environment.id !== environmentItem.id
         );
         this.propagateEnvironmentId(this.selectedEnvironments);
     }
 
     private propagateEnvironmentId(selectedEnvironments): void {
-        this.selectedEnvironmentIds = selectedEnvironments.map(environment => environment.id);
+        this.selectedEnvironmentIds = selectedEnvironments.map((environment) => environment.id);
         this.propagateChange(this.selectedEnvironmentIds);
         this.propagateTouched(this.selectedEnvironmentIds);
     }

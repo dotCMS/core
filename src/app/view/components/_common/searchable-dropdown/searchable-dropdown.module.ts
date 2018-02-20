@@ -14,19 +14,9 @@ export const SEARCHABLE_NGFACES_MODULES = [
 ];
 
 @NgModule({
-    declarations: [
-        SearchableDropdownComponent
-    ],
-    exports: [
-        SearchableDropdownComponent
-    ],
-    imports: [
-        CommonModule,
-        FormsModule,
-        ...SEARCHABLE_NGFACES_MODULES
-    ],
+    declarations: [SearchableDropdownComponent],
+    exports: [SearchableDropdownComponent],
+    imports: [CommonModule, FormsModule, ...SEARCHABLE_NGFACES_MODULES],
     providers: []
 })
-export class SearchableDropDownModule {
-
-}
+export class SearchableDropDownModule {}

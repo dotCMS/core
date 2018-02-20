@@ -11,31 +11,27 @@ import { Observable } from 'rxjs/Observable';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
-    selector: 'content-types-fields-list',
+    selector: 'dot-content-types-fields-list',
     template: ''
 })
-class TestContentTypeFieldsList {
-
-}
+class TestContentTypeFieldsListComponent {}
 
 @Component({
-    selector: 'content-type-fields-row-list',
+    selector: 'dot-content-type-fields-row-list',
     template: ''
 })
-class TestContentTypeFieldsRowList {
-
-}
+class TestContentTypeFieldsRowListComponent {}
 
 @Component({
     selector: 'dot-iframe',
     template: ''
 })
-class TestDotIframe {
+class TestDotIframeComponent {
     @Input() src: string;
 }
 
 @Component({
-    selector: 'test-host-component',
+    selector: 'dot-test-host-component',
     template: '<dot-content-type-layout [contentTypeId]="contentTypeId"></dot-content-type-layout>'
 })
 class TestHostComponent {
@@ -46,17 +42,13 @@ class TestHostComponent {
     selector: 'dot-content-types-relationship-listing',
     template: ''
 })
-class TestContentTypesRelationshipListingComponent {
-
-}
+class TestContentTypesRelationshipListingComponent {}
 
 @Injectable()
 export class MockDotMenuService {
-
     getDotMenuId(portletId: string): Observable<string> {
         return Observable.of('1234');
     }
-
 }
 
 class FieldDragDropServiceMock {
@@ -72,7 +64,6 @@ describe('ContentTypesLayoutComponent', () => {
     const mockDotMenuService: MockDotMenuService = new MockDotMenuService();
 
     beforeEach(() => {
-
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -85,15 +76,13 @@ describe('ContentTypesLayoutComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypesLayoutComponent,
-                TestContentTypeFieldsList,
-                TestContentTypeFieldsRowList,
-                TestDotIframe,
+                TestContentTypeFieldsListComponent,
+                TestContentTypeFieldsRowListComponent,
+                TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
                 TestHostComponent
             ],
-            imports: [
-                TabViewModule
-            ],
+            imports: [TabViewModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotMenuService, useClass: MockDotMenuService },
@@ -153,7 +142,7 @@ describe('ContentTypesLayoutComponent', () => {
         it('should has a field types list', () => {
             const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
             const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title'));
-            const contentTypesFieldsList = this.pTabPanel.query(By.css('content-types-fields-list'));
+            const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
 
             expect(fieldTitle.nativeElement.textContent).toBe('Field Title');
             expect(contentTypesFieldsList).not.toBeNull();
@@ -162,7 +151,7 @@ describe('ContentTypesLayoutComponent', () => {
         it('should has a field row list', () => {
             const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
             const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
-            const fieldRowList = this.pTabPanel.query(By.css('content-type-fields-row-list'));
+            const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
 
             expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
             expect(fieldRowList).not.toBeNull();
@@ -174,7 +163,7 @@ describe('ContentTypesLayoutComponent', () => {
             fixture.componentInstance.contentTypeId = '2';
             fixture.detectChanges();
 
-            this.pTabPanel = fixture.debugElement.query(By.css('p-tabView  .content-type__permissions'));
+            this.pTabPanel = fixture.debugElement.query(By.css('p-tabView .content-type__permissions'));
         });
 
         it('should has a permission panel', () => {
@@ -242,11 +231,13 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should set the src attribute', () => {
-           const iframe = this.relationshipTab.query(By.css('dot-iframe'));
+            const iframe = this.relationshipTab.query(By.css('dot-iframe'));
 
             // tslint:disable-next-line:max-line-length
-            expect(iframe.componentInstance.src)
-                .toBe('c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=2');
+            expect(iframe.componentInstance.src).toBe(
+                // tslint:disable-next-line:max-line-length
+                'c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=2'
+            );
         });
     });
 });

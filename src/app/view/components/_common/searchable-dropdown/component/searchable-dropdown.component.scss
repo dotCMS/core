@@ -1,6 +1,6 @@
-@import "primeng-theme/utils/extends";
+@import 'primeng-theme/utils/extends';
 
-searchable-dropdown {
+dot-searchable-dropdown {
     .ui-button {
         @extend #inputtext-normal-border;
         background: none;
@@ -55,7 +55,7 @@ searchable-dropdown {
 }
 
 .searchable-dropdown__search {
-    position: relative
+    position: relative;
 }
 
 .searchable-dropdown__search-icon {

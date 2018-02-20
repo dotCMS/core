@@ -1,4 +1,3 @@
-
 export interface ContentTypeField {
     clazz?: string;
     contentTypeId?: string;

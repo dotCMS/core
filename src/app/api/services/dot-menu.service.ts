@@ -1,6 +1,6 @@
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotMenu, DotMenuItem } from '../../shared/models/navigation';
 
@@ -37,7 +37,7 @@ export class DotMenuService {
         return this.getMenuItems()
             .pluck('id')
             .map((id: string) => menuId === id)
-            .filter(val => !!val)
+            .filter((val) => !!val)
             .defaultIfEmpty(false);
     }
 
@@ -80,7 +80,7 @@ export class DotMenuService {
     getDotMenuId(portletId: string): Observable<string> {
         return this.loadMenu()
             .flatMap((menus: DotMenu[]) => menus)
-            .find((menu: DotMenu) => menu.menuItems.some(menuItem => menuItem.id === portletId))
+            .find((menu: DotMenu) => menu.menuItems.some((menuItem) => menuItem.id === portletId))
             .map((menu: DotMenu) => menu.id);
     }
 

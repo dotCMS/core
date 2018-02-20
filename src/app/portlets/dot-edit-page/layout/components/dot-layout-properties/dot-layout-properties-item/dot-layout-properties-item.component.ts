@@ -1,6 +1,5 @@
-import { DotLayoutSidebarComponent } from '../dot-layout-property-sidebar/dot-layout-property-sidebar.component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Component, Input, Output, EventEmitter, forwardRef, HostListener, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties-item',

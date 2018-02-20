@@ -56,7 +56,6 @@ describe('SiteSelectorComponent', () => {
 
         const paginatorService: PaginatorService = de.injector.get(PaginatorService);
 
-
         expect(paginatorService.extraParams.get('archive')).toBe('false');
         expect(paginatorService.extraParams.get('live')).toBe('false');
         expect(paginatorService.extraParams.get('system')).toBe('false');
@@ -98,97 +97,104 @@ describe('SiteSelectorComponent', () => {
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
     });
 
-    it('should call refresh if a event happen', async(() => {
-        const site1 = {
-            identifier: 1,
-            name: 'Site 1'
-        };
+    it(
+        'should call refresh if a event happen',
+        async(() => {
+            const site1 = {
+                identifier: 1,
+                name: 'Site 1'
+            };
 
-        const site2 = {
-            identifier: 2,
-            name: 'Site 2'
-        };
+            const site2 = {
+                identifier: 2,
+                name: 'Site 2'
+            };
 
-        const siteService = de.injector.get(SiteService);
-        const spy = spyOn(siteService, 'refreshSites$').and.returnValue(
-            Observable.of([site1, site2])
-        );
+            const siteService = de.injector.get(SiteService);
+            const spy = spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
 
-        fixture.detectChanges();
+            fixture.detectChanges();
 
-        expect(spy.calls.any()).toEqual(false);
-    }));
+            expect(spy.calls.any()).toEqual(false);
+        })
+    );
 
-    it('should change Page', fakeAsync(() => {
-        const filter = 'filter';
-        const page = 1;
+    it(
+        'should change Page',
+        fakeAsync(() => {
+            const filter = 'filter';
+            const page = 1;
 
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-        paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+            paginatorService.totalRecords = 2;
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-        const siteService = de.injector.get(SiteService);
-        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+            const siteService = de.injector.get(SiteService);
+            spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-        fixture.detectChanges();
+            fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
-            By.css('searchable-dropdown')
-        ).componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
+                .componentInstance;
 
-        searchableDropdownComponent.pageChange.emit({
-            filter: filter,
-            first: 10,
-            page: page,
-            pageCount: 10,
-            rows: 0
-        });
+            searchableDropdownComponent.pageChange.emit({
+                filter: filter,
+                first: 10,
+                page: page,
+                pageCount: 10,
+                rows: 0
+            });
 
-        tick();
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
-    }));
+            tick();
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        })
+    );
 
-    it('should paginate when the filter change', fakeAsync(() => {
-        const filter = 'filter';
-        const first = 2;
+    it(
+        'should paginate when the filter change',
+        fakeAsync(() => {
+            const filter = 'filter';
+            const first = 2;
 
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-        paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+            paginatorService.totalRecords = 2;
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-        const siteService = de.injector.get(SiteService);
-        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+            const siteService = de.injector.get(SiteService);
+            spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-        fixture.detectChanges();
+            fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
-            By.css('searchable-dropdown')
-        ).componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
+                .componentInstance;
 
-        searchableDropdownComponent.filterChange.emit(filter);
-        comp.handleFilterChange(filter);
+            searchableDropdownComponent.filterChange.emit(filter);
+            comp.handleFilterChange(filter);
 
-        tick();
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-        expect(paginatorService.filter).toEqual(filter);
-    }));
+            tick();
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.filter).toEqual(filter);
+        })
+    );
 
-    it('should be assign to filter if empty', fakeAsync(() => {
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-        paginatorService.filter = 'filter';
-        paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+    it(
+        'should be assign to filter if empty',
+        fakeAsync(() => {
+            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+            paginatorService.filter = 'filter';
+            paginatorService.totalRecords = 2;
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-        fixture.detectChanges();
+            fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
-            By.css('searchable-dropdown')
-        ).componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
+                .componentInstance;
 
-        searchableDropdownComponent.filterChange.emit('');
+            searchableDropdownComponent.filterChange.emit('');
 
-        tick();
-        expect(paginatorService.filter).toEqual('');
-    }));
+            tick();
+            expect(paginatorService.filter).toEqual('');
+        })
+    );
 });

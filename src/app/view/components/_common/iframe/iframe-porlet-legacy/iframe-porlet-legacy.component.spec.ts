@@ -36,9 +36,11 @@ describe('IframePortletLegacyComponent', () => {
                         provide: ActivatedRoute,
                         useValue: {
                             parent: {
-                                url: Observable.of([{
-                                    path: 'an-url'
-                                }])
+                                url: Observable.of([
+                                    {
+                                        path: 'an-url'
+                                    }
+                                ])
                             }
                         }
                     }
@@ -63,7 +65,7 @@ describe('IframePortletLegacyComponent', () => {
         route.queryParams = Observable.of({ url: 'hello/world' });
 
         let src: string;
-        comp.url.subscribe(url => {
+        comp.url.subscribe((url) => {
             src = url;
         });
 
@@ -80,7 +82,7 @@ describe('IframePortletLegacyComponent', () => {
 
         let src: string;
 
-        comp.url.subscribe(url => {
+        comp.url.subscribe((url) => {
             src = url;
         });
 

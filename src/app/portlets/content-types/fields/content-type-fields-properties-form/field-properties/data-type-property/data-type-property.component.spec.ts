@@ -1,4 +1,3 @@
-
 import { DataTypePropertyComponent } from './';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
@@ -23,39 +22,36 @@ describe('DataTypePropertyComponent', () => {
         'contenttypes.field.properties.data_type.values.decimal': 'Decimal',
         'contenttypes.field.properties.data_type.values.number': 'Whole-Number',
         'contenttypes.field.properties.data_type.values.large_text': 'Large-Block-of-Text',
-        'contenttypes.field.properties.data_type.values.system': 'System-Field',
+        'contenttypes.field.properties.data_type.values.system': 'System-Field'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DataTypePropertyComponent
-            ],
-            imports: [
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DataTypePropertyComponent],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
+            fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
 
-        this.group = new FormGroup({
-            name: new FormControl('')
-        });
+            this.group = new FormGroup({
+                name: new FormControl('')
+            });
 
-        comp.group = this.group;
-        comp.property = {
-            field: {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-            },
-            name: 'name',
-            value: 'value'
-        };
-    }));
+            comp.group = this.group;
+            comp.property = {
+                field: {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
+                },
+                name: 'name',
+                value: 'value'
+            };
+        })
+    );
 
     it('should have a form', () => {
         fixture.detectChanges();
@@ -67,7 +63,6 @@ describe('DataTypePropertyComponent', () => {
     });
 
     it('should have 4 values for Radio Field', () => {
-
         fixture.detectChanges();
 
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));

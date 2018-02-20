@@ -1,6 +1,6 @@
 import { Site } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
 
 export class SiteServiceMock {
     public mockSites: Site[] = [
@@ -23,7 +23,7 @@ export class SiteServiceMock {
         return null;
     }
 
-    paginateSites(filter: string, archived: boolean, page: number, count: number): Observable<Site[]> {
+    paginateSites(): Observable<Site[]> {
         return Observable.of(this.mockSites);
     }
 

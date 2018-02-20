@@ -114,7 +114,7 @@ describe('SearchableDropdownComponent', () => {
             const input = fixture.debugElement.query(By.css('input[type="text"]'));
             input.nativeElement.value = filter;
 
-            comp.pageChange.subscribe(e => {
+            comp.pageChange.subscribe((e) => {
                 event = e;
             });
 
@@ -139,10 +139,10 @@ describe('SearchableDropdownComponent', () => {
         })
     );
 
-    it('should change the value', done => {
+    it('should change the value', (done) => {
         comp.data = data;
         comp.labelPropertyName = 'name';
-        comp.change.subscribe(value => {
+        comp.change.subscribe((value) => {
             expect(data[0]).toEqual(value);
             done();
         });

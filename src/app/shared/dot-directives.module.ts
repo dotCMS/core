@@ -8,22 +8,13 @@ import { DotRippleEffectDirective } from '../view/directives/ripple/ripple-effec
 import { MaterialDesignTextfieldDirective } from '../view/directives/md-inputtext/md-input-text.directive';
 
 @NgModule({
-    declarations: [
-        MessageKeyDirective,
-        DotRippleEffectDirective,
-        MaterialDesignTextfieldDirective
-    ],
+    declarations: [MessageKeyDirective, DotRippleEffectDirective, MaterialDesignTextfieldDirective],
     imports: [
         CommonModule
         // MessageKeysModule,
         // RippleEffectModule,
         // MdInputTextModule
     ],
-    exports: [
-        MessageKeyDirective,
-        DotRippleEffectDirective,
-        MaterialDesignTextfieldDirective
-    ]
+    exports: [MessageKeyDirective, DotRippleEffectDirective, MaterialDesignTextfieldDirective]
 })
 export class DotDirectivesModule {}
-

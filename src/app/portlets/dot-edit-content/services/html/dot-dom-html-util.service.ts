@@ -8,7 +8,6 @@ const CSS_MIME_TYPE = 'text/css';
  */
 @Injectable()
 export class DotDOMHtmlUtilService {
-
     public createLinkElement(href: string): HTMLLinkElement {
         const cssElement = document.createElement('link');
         cssElement.rel = 'stylesheet';
@@ -45,8 +44,8 @@ export class DotDOMHtmlUtilService {
 
         return script;
     }
- 
-    public getButtomHTML(label: string, className: string, dataset: {[key: string]: string}): string {
+
+    public getButtomHTML(label: string, className: string, dataset: { [key: string]: string }): string {
         // TODO look for a better way to do this
         let datasetString = '';
 
@@ -55,7 +54,7 @@ export class DotDOMHtmlUtilService {
             datasetString += ` data-${property}="${dataset[property]}"`;
         }
 
-        return  `<button type="button" role="button"
+        return `<button type="button" role="button"
                         ${datasetString}
                         class="${className}"
                         aria-label="${label}">

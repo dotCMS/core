@@ -1,17 +1,15 @@
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
-import { StructureType, StructureTypeView, ContentTypeView } from '../../shared/models/contentlet';
+import { StructureTypeView, ContentTypeView } from '../../shared/models/contentlet';
 
 @Injectable()
 export class DotContentletService {
     private MAIN_CONTENT_TYPES = ['CONTENT', 'WIDGET', 'FORM', 'FILEASSET', 'HTMLPAGE'];
-    private structureTypeView: StructureTypeView[];
     private types$: Observable<StructureTypeView[]>;
 
-    constructor(private coreWebService: CoreWebService) {
-    }
+    constructor(private coreWebService: CoreWebService) {}
 
     /**
      * Get the content types from the endpoint

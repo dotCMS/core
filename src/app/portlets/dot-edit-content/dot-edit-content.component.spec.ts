@@ -138,11 +138,10 @@ describe('DotEditContentComponent', () => {
         fixture.detectChanges();
         expect(component.toolbar.page.title).toEqual('A title', 'toolbar have title');
         expect(component.toolbar.page.pageURI).toEqual('A url', 'toolbar have url');
-        expect(component.toolbar.pageWorkflows).toEqual([
-            { name: 'Workflow 1', id: 'one' },
-            { name: 'Workflow 2', id: 'two' },
-            { name: 'Workflow 3', id: 'three' }
-        ], 'toolbar have workflows');
+        expect(component.toolbar.pageWorkflows).toEqual(
+            [{ name: 'Workflow 1', id: 'one' }, { name: 'Workflow 2', id: 'two' }, { name: 'Workflow 3', id: 'three' }],
+            'toolbar have workflows'
+        );
     });
 
     xit('should check isModelUpdated', () => {});
@@ -182,9 +181,9 @@ describe('DotEditContentComponent', () => {
         };
 
         spyOn(dotEditContentHtmlService, 'contentletEvents').and.returnValue(Observable.of(mockResEvent));
-        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(res => {});
+        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake((res) => {});
 
-        spyOn(dotConfirmationService, 'confirm').and.callFake(conf => {
+        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 
@@ -198,7 +197,8 @@ describe('DotEditContentComponent', () => {
             {
                 inode: mockResEvent.dataset.dotInode,
                 identifier: mockResEvent.dataset.dotIdentifier
-            });
+            }
+        );
     });
 
     it('should call the setPageState in the editPageService correctly', () => {
@@ -238,10 +238,12 @@ describe('DotEditContentComponent', () => {
     it('should set the page mode', () => {
         fixture.detectChanges();
 
-        spyOn(editPageService, 'setPageState').and.returnValue(Observable.of({
-            dotRenderedPage: {},
-            lockState: 'locked'
-        }));
+        spyOn(editPageService, 'setPageState').and.returnValue(
+            Observable.of({
+                dotRenderedPage: {},
+                lockState: 'locked'
+            })
+        );
         spyOn(component, 'statePageHandler').and.callThrough();
         spyOn(component, 'setPage').and.callThrough();
         spyOn(dotGlobalMessageService, 'display').and.callThrough();

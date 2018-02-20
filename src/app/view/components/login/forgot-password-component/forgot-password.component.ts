@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation, OnInit } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 
 @Component({
@@ -6,24 +6,20 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
     selector: 'dot-forgot-password-component',
     templateUrl: 'forgot-password.component.html'
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnInit {
     @Input() message: string;
     @Output() cancel = new EventEmitter<any>();
     @Output() recoverPassword = new EventEmitter<string>();
 
-    public forgotPasswordLogin: string;
-    private language = '';
+    forgotPasswordLogin: string;
+    cancelButton = '';
+    forgotPasswordButton = '';
+    forgotPasswordLabel = '';
+    userIdOrEmailLabel = '';
+    emailMandatoryFieldError = '';
 
-    // labels
-    public cancelButton = '';
-    public forgotPasswordButton = '';
-    public forgotPasswordLabel = '';
-    public userIdOrEmailLabel = '';
-
-    // Messages
-    public emailMandatoryFieldError = '';
     private forgotPasswordConfirmationMessage = '';
-
+    private language = '';
     private i18nMessages: Array<string> = [
         'error.form.mandatory',
         'user-id',
@@ -54,7 +50,7 @@ export class ForgotPasswordComponent {
      */
     private loadLabels(): void {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe(
-            data => {
+            (data) => {
                 // Translate labels and messages
                 const dataI18n = data.i18nMessagesMap;
                 const entity = data.entity;
@@ -68,14 +64,13 @@ export class ForgotPasswordComponent {
                 this.forgotPasswordLabel = dataI18n['forgot-password'];
                 this.forgotPasswordButton = dataI18n['get-new-password'];
                 this.cancelButton = dataI18n.cancel;
-                this.forgotPasswordConfirmationMessage =
-                    dataI18n['an-email-with-instructions-will-be-sent'];
+                this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
                 this.emailMandatoryFieldError = dataI18n['error.form.mandatory'].replace(
                     '{0}',
                     this.userIdOrEmailLabel
                 );
             },
-            error => {
+            (error) => {
                 this.loggerService.error(error);
             }
         );

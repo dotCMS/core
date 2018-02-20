@@ -57,12 +57,8 @@ export class DotEditContentHtmlService {
             }
         });
 
-
         this.dotMessageService
-            .getMessages([
-                'editpage.content.add.already.title',
-                'editpage.content.add.already.message'
-            ])
+            .getMessages(['editpage.content.add.already.title', 'editpage.content.add.already.message'])
             .subscribe();
     }
 
@@ -75,7 +71,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderPage(editPageHTML: string, iframeEl: ElementRef): Promise<any> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
             const iframeElement = this.getEditPageIframe();
             iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModelChange;
@@ -110,7 +106,11 @@ export class DotEditContentHtmlService {
     removeContentlet(container: DotPageContainer, content: DotPageContent): void {
         const doc = this.getEditPageDocument();
         // tslint:disable-next-line:max-line-length
-        const contenletEl = doc.querySelector(`div[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"] div[data-dot-inode="${content.inode}"]`);
+        const contenletEl = doc.querySelector(
+            `div[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${
+                container.uuid
+            }"] div[data-dot-inode="${content.inode}"]`
+        );
         contenletEl.remove();
         this.pageModelChange.next(this.getContentModel());
     }
@@ -125,7 +125,7 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const currentContentlets = doc.querySelectorAll(`div[data-dot-identifier="${contentlet.identifier}"]`);
 
-        currentContentlets.forEach(currentContentlet => {
+        currentContentlets.forEach((currentContentlet) => {
             contentlet.type = currentContentlet.dataset.dotType;
 
             const containerEl = currentContentlet.parentNode;
@@ -153,11 +153,12 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderAddedContentlet(contentlet: DotPageContent): void {
-
         const doc = this.getEditPageDocument();
         const containerEl = doc.querySelector(
             // tslint:disable-next-line:max-line-length
-            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
+            `div[data-dot-object="container"][data-dot-identifier="${
+                this.currentContainer.identifier
+            }"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
         if (!this.isContentExistInContainer(contentlet, containerEl)) {
@@ -172,7 +173,6 @@ export class DotEditContentHtmlService {
         } else {
             this.showContentAlreadyAddedError();
         }
-
     }
 
     /**
@@ -220,9 +220,12 @@ export class DotEditContentHtmlService {
 
     private isContentExistInContainer(contentlet: DotPageContent, containerEL: HTMLElement): boolean {
         const contentsSelector = `div[data-dot-object="contentlet"]`;
-        const doc = this.getEditPageDocument();
-        const currentContentlets: HTMLElement[] = <HTMLElement[]> Array.from(containerEL.querySelectorAll(contentsSelector).values());
-        return currentContentlets.some(contentElement => contentElement.dataset.dotIdentifier === contentlet.identifier);
+        const currentContentlets: HTMLElement[] = <HTMLElement[]>Array.from(
+            containerEL.querySelectorAll(contentsSelector).values()
+        );
+        return currentContentlets.some(
+            (contentElement) => contentElement.dataset.dotIdentifier === contentlet.identifier
+        );
     }
 
     private addContentToolBars(): void {
@@ -279,8 +282,8 @@ export class DotEditContentHtmlService {
 
     private bindButtonsEvent(button: HTMLElement, type: string): void {
         button.addEventListener('click', ($event: MouseEvent) => {
-            const target = <HTMLElement> $event.target;
-            const container = <HTMLElement> target.closest('div[data-dot-object="container"]');
+            const target = <HTMLElement>$event.target;
+            const container = <HTMLElement>target.closest('div[data-dot-object="container"]');
 
             this.contentletEvents.next({
                 name: type,
@@ -305,7 +308,7 @@ export class DotEditContentHtmlService {
     }
 
     private bindEventToAddContentSubMenu(button: Node): void {
-        button.addEventListener('click', ($event) => {
+        button.addEventListener('click', (_event) => {
             this.closeContainersToolBarMenu(button.parentElement);
             button.parentElement.classList.toggle('active');
         });
@@ -359,7 +362,10 @@ export class DotEditContentHtmlService {
             TODO: we have the method: DotEditContentToolbarHtmlService.addContentletMarkup that does this, we need
             to consolidate this.
         */
-        const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(contentlet.identifier, contentlet.inode);
+        const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(
+            contentlet.identifier,
+            contentlet.inode
+        );
 
         dotEditContentletEl.innerHTML = `<div class="dotedit-contentlet__toolbar">
                 ${contenToolbarButtons}

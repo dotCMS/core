@@ -49,7 +49,7 @@ describe('ActionMenuButtonComponent', () => {
         fixture.detectChanges();
 
         const button = de.query(By.css('button'));
-        const buttonTooltip = de.query(By.css('icon-button-tooltip'));
+        const buttonTooltip = de.query(By.css('dot-icon-button-tooltip'));
         const menu = de.query(By.css('p-menu'));
 
         expect(buttonTooltip).toBeNull();
@@ -71,7 +71,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.actions = fakeActions;
         fixture.detectChanges();
 
-        const actionButtonTooltip = de.query(By.css('icon-button-tooltip'));
+        const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
         const actionButtonMenu = de.query(By.css('p-menu'));
 
         expect(actionButtonTooltip).not.toBeNull();
@@ -107,7 +107,7 @@ describe('ActionMenuButtonComponent', () => {
 
         spyOn(fakeActions[0].menuItem, 'command');
 
-        const actionButtonTooltip = de.query(By.css('icon-button-tooltip'));
+        const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
         actionButtonTooltip.nativeElement.click();
 
         expect(fakeActions[0].menuItem.command).toHaveBeenCalledTimes(1);
@@ -182,7 +182,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.item = mockContentType;
         fixture.detectChanges();
 
-        expect(de.query(By.css('icon-button-tooltip')) === null).toEqual(true, 'tooltip button hide');
+        expect(de.query(By.css('dot-icon-button-tooltip')) === null).toEqual(true, 'tooltip button hide');
         expect(de.query(By.css('p-menu')) === null).toEqual(false, 'menu options show');
         expect(de.query(By.css('button')) === null).toEqual(false, 'button to show/hide menu show');
     });

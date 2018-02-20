@@ -2,7 +2,6 @@ import { Component, OnInit, Input } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
 import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 
-
 @Component({
     selector: 'dot-template-addtional-actions-menu',
     templateUrl: './dot-template-additional-actions-menu.component.html'
@@ -11,9 +10,7 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
     @Input() templateId: string;
     items: MenuItem[];
 
-    constructor(private dotMessageService: DotMessageService) {
-
-    }
+    constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         const keys = [
@@ -22,7 +19,7 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
             'template.action.additional.properties'
         ];
 
-        this.dotMessageService.getMessages(keys).subscribe(messages => {
+        this.dotMessageService.getMessages(keys).subscribe((messages) => {
             this.items = [
                 {
                     label: messages['template.action.additional.properties'],

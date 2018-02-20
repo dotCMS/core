@@ -28,7 +28,7 @@ export const PROPERTY_INFO = {
         component: DefaultValuePropertyComponent,
         defaultValue: '',
         order: 4,
-        validations: [validateDateDefaultValue],
+        validations: [validateDateDefaultValue]
     },
     hint: {
         component: HintPropertyComponent,

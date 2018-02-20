@@ -1,4 +1,3 @@
-
 import { ActionHeaderDeleteOptions } from './action-header-delete-options.model';
 
 export interface ButtonModel {

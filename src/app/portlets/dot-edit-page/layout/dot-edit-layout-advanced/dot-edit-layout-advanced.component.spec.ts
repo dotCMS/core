@@ -78,8 +78,8 @@ describe('DotEditLayoutAdvancedComponent - Basic', () => {
         component.url.subscribe((url) => {
             result = url;
         });
-        // tslint:disable-next-line:max-line-length
         expect(result).toEqual(
+            // tslint:disable-next-line:max-line-length
             'c/portal/layout?ng=true&p_l_id=123&p_p_id=templates&p_p_action=1&p_p_state=maximized&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&inode=456&r=0d618b02-f184-48fe-88f4-e98563ee6e9e'
         );
     });
@@ -92,14 +92,12 @@ describe('DotEditLayoutAdvancedComponent - Basic', () => {
     });
 
     it('should handle custom events from the iframe', () => {
-
         spyOn(dotGlobalMessageService, 'display');
-
 
         const dotIframe: IframeComponent = de.query(By.css('dot-iframe')).componentInstance;
         const iframe: any = dotIframe.iframeElement.nativeElement;
 
-        dotIframe.load.emit({target: iframe});
+        dotIframe.load.emit({ target: iframe });
 
         const customEvent = document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, {

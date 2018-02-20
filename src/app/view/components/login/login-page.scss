@@ -1,5 +1,5 @@
-@import "variables";
-@import "mixins";
+@import 'variables';
+@import 'mixins';
 
 .cms-info {
     display: flex;
@@ -23,7 +23,7 @@
     justify-content: center;
 
     .container {
-        max-width: $container-lg
+        max-width: $container-lg;
     }
 
     input.ui-inputtext {

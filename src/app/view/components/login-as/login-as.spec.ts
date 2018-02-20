@@ -13,7 +13,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../api/services/paginator';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotRouterService } from '../../../api/services/dot-router-service';
@@ -105,7 +105,7 @@ describe('LoginAsComponent', () => {
             const paginatorService: PaginatorService = fixture.debugElement.injector.get(PaginatorService);
             spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
-            const searchableDropdown = de.query(By.css('searchable-dropdown'));
+            const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             searchableDropdown.componentInstance.pageChange.emit({
                 filter: 'filter',
                 first: 1
@@ -135,7 +135,7 @@ describe('LoginAsComponent', () => {
             const paginatorService: PaginatorService = fixture.debugElement.injector.get(PaginatorService);
             spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
-            const searchableDropdown = de.query(By.css('searchable-dropdown'));
+            const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             searchableDropdown.componentInstance.filterChange.emit('new filter');
 
             tick();

@@ -15,11 +15,9 @@ import { Category } from '../../../shared';
  * @implements {OnInit}
  */
 @Component({
-    providers: [
-        PaginatorService,
-    ],
-    selector: 'categories-property',
-    templateUrl: './categories-property.component.html',
+    providers: [PaginatorService],
+    selector: 'dot-categories-property',
+    templateUrl: './categories-property.component.html'
 })
 export class CategoriesPropertyComponent extends BaseComponent implements OnInit {
     categoriesCurrentPage: Category[];
@@ -27,22 +25,14 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
     group: FormGroup;
 
     constructor(public dotMessageService: DotMessageService, private paginationService: PaginatorService) {
-        super([
-            'contenttypes.field.properties.category.label',
-            'contenttypes.field.properties.category.error.required'
-        ], dotMessageService);
+        super(
+            ['contenttypes.field.properties.category.label', 'contenttypes.field.properties.category.error.required'],
+            dotMessageService
+        );
     }
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/categories';
-    }
-
-    private getCategoriesList(filter = '', offset = 0): void {
-        this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
-            // items.splice(0) is used to return a new object and trigger the change detection in angular
-            this.categoriesCurrentPage = items.splice(0);
-        });
     }
 
     /**
@@ -61,5 +51,13 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
      */
     handlePageChange(event): void {
         this.getCategoriesList(event.filter, event.first);
+    }
+
+    private getCategoriesList(filter = '', offset = 0): void {
+        this.paginationService.filter = filter;
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
+            // items.splice(0) is used to return a new object and trigger the change detection in angular
+            this.categoriesCurrentPage = items.splice(0);
+        });
     }
 }

@@ -14,20 +14,24 @@ describe('WorkflowService', () => {
 
     it('should get workflows', () => {
         let result;
-        this.workflowService.get().subscribe(res => {
+        this.workflowService.get().subscribe((res) => {
             result = res;
         });
 
-        this.lastConnection.mockRespond(new Response(new ResponseOptions({
-            body: {
-                entity: [
-                    {
-                        hello: 'world',
-                        hola: 'mundo'
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: [
+                            {
+                                hello: 'world',
+                                hola: 'mundo'
+                            }
+                        ]
                     }
-                ]
-            }
-        })));
+                })
+            )
+        );
         expect(result).toEqual([
             {
                 hello: 'world',

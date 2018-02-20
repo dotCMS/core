@@ -22,7 +22,7 @@ describe('ValidDefaultGuardService', () => {
     });
 
     it('should redirect to to Main Portlet always', () => {
-        let result = defaultGuardService.canActivate();
+        const result = defaultGuardService.canActivate();
         expect(dotRouterService.goToMain).toHaveBeenCalled();
         expect(result).toBe(true);
     });

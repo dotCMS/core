@@ -60,7 +60,7 @@ describe('ValidMenuGuardService', () => {
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(Observable.of(true));
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(result).toBe(true);
     });
@@ -71,7 +71,7 @@ describe('ValidMenuGuardService', () => {
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(Observable.of(false));
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
@@ -83,7 +83,7 @@ describe('ValidMenuGuardService', () => {
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(Observable.of(true));
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(result).toBe(true);
     });
@@ -94,7 +94,7 @@ describe('ValidMenuGuardService', () => {
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(Observable.of(false));
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);

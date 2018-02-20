@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
 import { DotDataTableAction } from '../../../../shared/models/data-table/dot-data-table-action';
 
@@ -9,7 +9,7 @@ import { DotDataTableAction } from '../../../../shared/models/data-table/dot-dat
  * @class ActionMenuButtonComponent
  */
 @Component({
-    selector: 'action-menu-button',
+    selector: 'dot-action-menu-button',
     styleUrls: ['./action-menu-button.component.scss'],
     templateUrl: 'action-menu-button.component.html'
 })

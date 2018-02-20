@@ -49,7 +49,7 @@ describe('ValidAuthGuardService', () => {
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(true));
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(result).toBe(true);
     });
 
@@ -58,7 +58,7 @@ describe('ValidAuthGuardService', () => {
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(false));
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotRouterService.goToLogin).toHaveBeenCalled();
         expect(result).toBe(false);
     });

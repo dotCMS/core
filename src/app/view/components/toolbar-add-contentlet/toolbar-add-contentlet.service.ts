@@ -10,40 +10,27 @@ export class ToolbarAddContenletService {
     more$: Subject<StructureTypeView[]> = new Subject();
     recent$: Subject<StructureTypeView[]> = new Subject();
 
-    constructor(
-        private contentletService: DotContentletService,
-        private dotcmsEventsService: DotcmsEventsService
-    ) {
+    constructor(private contentletService: DotContentletService, private dotcmsEventsService: DotcmsEventsService) {
         this.loadData();
-        dotcmsEventsService
-            .subscribeToEvents([
-                'SAVE_BASE_CONTENT_TYPE',
-                'UPDATE_BASE_CONTENT_TYPE',
-                'DELETE_BASE_CONTENT_TYPE'
-            ])
+        this.dotcmsEventsService
+            .subscribeToEvents(['SAVE_BASE_CONTENT_TYPE', 'UPDATE_BASE_CONTENT_TYPE', 'DELETE_BASE_CONTENT_TYPE'])
             .subscribe(() => {
                 this.reloadContentlets();
             });
     }
 
     private loadData() {
-        this.contentletService
-            .getMainContentTypes()
-            .subscribe((structureTypeViews: StructureTypeView[]) => {
-                this.main$.next(structureTypeViews);
-            });
+        this.contentletService.getMainContentTypes().subscribe((structureTypeViews: StructureTypeView[]) => {
+            this.main$.next(structureTypeViews);
+        });
 
-        this.contentletService
-            .getMoreContentTypes()
-            .subscribe((structureTypeViews: StructureTypeView[]) => {
-                this.more$.next(structureTypeViews);
-            });
+        this.contentletService.getMoreContentTypes().subscribe((structureTypeViews: StructureTypeView[]) => {
+            this.more$.next(structureTypeViews);
+        });
 
-        this.contentletService
-            .getRecentContentTypes()
-            .subscribe((structureTypeViews: StructureTypeView[]) => {
-                this.recent$.next(structureTypeViews);
-            });
+        this.contentletService.getRecentContentTypes().subscribe((structureTypeViews: StructureTypeView[]) => {
+            this.recent$.next(structureTypeViews);
+        });
     }
 
     private reloadContentlets() {

@@ -12,13 +12,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [
-        CommonModule,
-        RouterModule.forChild(routes)
-    ],
-    declarations: [
-        NotLicensedComponent
-    ]
+    imports: [CommonModule, RouterModule.forChild(routes)],
+    declarations: [NotLicensedComponent]
 })
-
-export class NotLicensedModule { }
+export class NotLicensedModule {}

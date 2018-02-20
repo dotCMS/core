@@ -1,5 +1,5 @@
 <div [formGroup]="group" *ngIf="radioInputs">
-    <label class="form__label">{{i18nMessages['contenttypes.field.properties.data_type.label']}}</label>
+    <label class="form__label">{{ i18nMessages['contenttypes.field.properties.data_type.label'] }}</label>
     <p-radioButton *ngFor="let radio of radioInputs"
         [label]="i18nMessages[radio.text]" 
         name="dataType" 

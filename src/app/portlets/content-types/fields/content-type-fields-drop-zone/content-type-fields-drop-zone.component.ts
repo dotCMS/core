@@ -91,7 +91,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      */
     editField(fieldToEdit: ContentTypeField): void {
         const fields = this.getFields();
-        this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
+        this.formData = fields.filter((field) => fieldToEdit.id === field.id)[0];
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
         this.toggleDialog();
     }
@@ -102,7 +102,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      */
     setDroppedField(): void {
         const fields = this.getFields();
-        this.formData = fields.find(field => FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field));
+        this.formData = fields.find((field) => FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field));
         if (this.formData) {
             this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
         }
@@ -115,7 +115,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     removeFieldsWithoutId(): void {
         const fieldRows: any = this.fieldRows;
         // TODO needs an improvement for performance reasons
-        fieldRows.forEach(row => {
+        fieldRows.forEach((row) => {
             row.columns.forEach((col, colIndex) => {
                 col.fields.forEach((field, fieldIndex) => {
                     if (!field.id) {
@@ -155,9 +155,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         const fieldsToDelete: ContentTypeField[] = [];
 
         fieldsToDelete.push(fieldRow.lineDivider);
-        fieldRow.columns.forEach(fieldColumn => {
+        fieldRow.columns.forEach((fieldColumn) => {
             fieldsToDelete.push(fieldColumn.tabDivider);
-            fieldColumn.fields.forEach(field => fieldsToDelete.push(field));
+            fieldColumn.fields.forEach((field) => fieldsToDelete.push(field));
         });
         this.removeFields.emit(fieldsToDelete);
     }
@@ -220,7 +220,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         let fieldRows: FieldRow[] = [];
         const splitFields: ContentTypeField[][] = FieldUtil.splitFieldsByLineDivider(fields);
 
-        fieldRows = splitFields.map(fieldsByLineDivider => {
+        fieldRows = splitFields.map((fieldsByLineDivider) => {
             const fieldRow: FieldRow = new FieldRow();
             fieldRow.addFields(fieldsByLineDivider);
             return fieldRow;
@@ -232,12 +232,12 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     private getFields(): ContentTypeField[] {
         const fields: ContentTypeField[] = [];
 
-        this.fieldRows.forEach((fieldRow, rowIndex) => {
+        this.fieldRows.forEach((fieldRow) => {
             fields.push(fieldRow.lineDivider);
 
-            fieldRow.columns.forEach((fieldColumn, colIndex) => {
+            fieldRow.columns.forEach((fieldColumn) => {
                 fields.push(fieldColumn.tabDivider);
-                fieldColumn.fields.forEach(field => fields.push(field));
+                fieldColumn.fields.forEach((field) => fields.push(field));
             });
         });
 

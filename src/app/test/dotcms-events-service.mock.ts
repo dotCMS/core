@@ -1,4 +1,5 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
 
 export class DotcmsEventsServiceMock {
     private observers: Subject<any>[] = [];
@@ -11,9 +12,9 @@ export class DotcmsEventsServiceMock {
     }
 
     subscribeToEvents(clientEventTypes: string[]): Observable<any> {
-        let subject: Subject<any> = new Subject<any>();
+        const subject: Subject<any> = new Subject<any>();
 
-        clientEventTypes.forEach(eventType => this.subscribeTo(eventType).subscribe(data => subject.next(data)));
+        clientEventTypes.forEach((eventType) => this.subscribeTo(eventType).subscribe((data) => subject.next(data)));
 
         return subject.asObservable();
     }

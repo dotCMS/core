@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
 
-import { ButtonModule, CheckboxModule, InputTextModule, DialogModule, ConfirmationService } from 'primeng/primeng';
+import { ButtonModule, CheckboxModule, InputTextModule, DialogModule } from 'primeng/primeng';
 
 import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 import { DotEditLayoutDesignerComponent } from '../dot-edit-layout-designer/dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
@@ -33,11 +31,6 @@ import { PageViewService } from '../../../../api/services/page-view/page-view.se
         DotSidebarPropertiesModule
     ],
     exports: [DotEditLayoutDesignerComponent],
-    providers: [
-        DotEditLayoutService,
-        DotEditLayoutService,
-        PageViewService,
-        TemplateContainersCacheService
-    ]
+    providers: [DotEditLayoutService, DotEditLayoutService, PageViewService, TemplateContainersCacheService]
 })
 export class DotEditLayoutDesignerModule {}

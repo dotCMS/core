@@ -2,21 +2,20 @@ import { Component, Input, ElementRef, ViewChild, AfterViewInit, OnDestroy } fro
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
-
-    selector: 'accordion',
+    selector: 'dot-accordion',
     template: `
         <ng-content></ng-content>
     `
 })
-export class Accordion {
-    groups: Array<AccordionGroup> = [];
+export class AccordionComponent {
+    groups: Array<AccordionGroupComponent> = [];
 
-    addGroup(group: AccordionGroup): void {
+    addGroup(group: AccordionGroupComponent): void {
         this.groups.push(group);
     }
 
-    closeOthers(openGroup: AccordionGroup): void {
-        this.groups.forEach((group: AccordionGroup) => {
+    closeOthers(openGroup: AccordionGroupComponent): void {
+        this.groups.forEach((group: AccordionGroupComponent) => {
             if (group !== openGroup) {
                 // TODO: why is this code commented?
                 // group.isOpen = false;
@@ -24,7 +23,7 @@ export class Accordion {
         });
     }
 
-    removeGroup(group: AccordionGroup): void {
+    removeGroup(group: AccordionGroupComponent): void {
         const index = this.groups.indexOf(group);
         if (index !== -1) {
             this.groups.splice(index, 1);
@@ -52,13 +51,13 @@ export class Accordion {
             transition('expanded <=> collapsed', animate('250ms ease-in-out'))
         ])
     ],
-    selector: 'accordion-group',
+    selector: 'dot-accordion-group',
     styleUrls: ['./accordion-group.scss'],
     template: `
-        <a href="#" ripple (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
-            <i class="fa fa-th-list {{icon}}" aria-hidden="true" *ngIf="icon"></i>
+        <a href="#" dotMdRipple (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
+            <i class="fa fa-th-list {{ icon }}" aria-hidden="true" *ngIf="icon"></i>
             <span class="accordion-group__title-text">
-                {{heading}}
+                {{ heading }}
             </span>
 
         </a>
@@ -69,14 +68,15 @@ export class Accordion {
         </div>
     `
 })
-export class AccordionGroup implements AfterViewInit, OnDestroy {
-    @Input('open') _isOpen = false;
+export class AccordionGroupComponent implements AfterViewInit, OnDestroy {
+    // tslint:disable-next-line:no-input-rename
+    @Input('open') _isOpen = false; // TODO: need to refactor this
     @Input() heading: string;
     @Input() icon: string;
     @ViewChild('accordionGroupContentInner') accordionGroupContentInner: ElementRef;
     public accordionGroupHeight: number;
 
-    constructor(private accordion: Accordion) {
+    constructor(private accordion: AccordionComponent) {
         this.accordion.addGroup(this);
     }
 
@@ -111,5 +111,4 @@ export class AccordionGroup implements AfterViewInit, OnDestroy {
     ngOnDestroy(): void {
         this.accordion.removeGroup(this);
     }
-
 }

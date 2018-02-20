@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router-service';
@@ -17,13 +17,13 @@ export class MenuGuardService implements CanActivate {
         private dotNavigationService: DotNavigationService
     ) {}
 
-    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return !environment.production && state.url === '/pl'
             ? Observable.of(true)
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
-    canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    canActivateChild(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return !environment.production && state.url === '/pl'
             ? Observable.of(true)
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
@@ -36,7 +36,7 @@ export class MenuGuardService implements CanActivate {
      * @returns {boolean}
      */
     private canAccessPortlet(url: string): Observable<boolean> {
-        return this.dotMenuService.isPortletInMenu(url).map(isValidPortlet => {
+        return this.dotMenuService.isPortletInMenu(url).map((isValidPortlet) => {
             if (!isValidPortlet) {
                 this.dotNavigationService.goToFirstPortlet();
             }

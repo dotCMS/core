@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { Component, Input, Output, EventEmitter, ViewEncapsulation, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
@@ -40,8 +40,8 @@ export class DotAddToBundleComponent implements OnInit {
 
         this.bundle$ = this.addToBundleService.getBundles();
 
-        this.dotMessageService.getMessages(keys).subscribe(messages => {
-            this.addToBundleService.getBundles().subscribe(bundles => {
+        this.dotMessageService.getMessages(keys).subscribe((messages) => {
+            this.addToBundleService.getBundles().subscribe((bundles) => {
                 this.placeholder = bundles.length
                     ? messages['contenttypes.content.add_to_bundle.select']
                     : messages['contenttypes.content.add_to_bundle.type'];
@@ -65,7 +65,7 @@ export class DotAddToBundleComponent implements OnInit {
      * @param {any} $event
      * @memberof DotAddToBundleComponent
      */
-    submitBundle($event): void {
+    submitBundle(_event): void {
         if (this.form.valid) {
             this.addToBundleService.addToBundle(this.assetIdentifier, this.setBundleData()).subscribe((result: any) => {
                 if (!result.errors) {
@@ -93,7 +93,7 @@ export class DotAddToBundleComponent implements OnInit {
     }
 
     private setBundleData(): DotBundle {
-        if (typeof(this.form.value.addBundle) === 'string') {
+        if (typeof this.form.value.addBundle === 'string') {
             return {
                 id: this.form.value.addBundle,
                 name: this.form.value.addBundle

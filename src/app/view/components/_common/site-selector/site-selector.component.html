@@ -1,4 +1,4 @@
-<searchable-dropdown
+<dot-searchable-dropdown
     *ngIf="totalRecords > 1"
     #searchableDropdown
     (change)="siteChange($event)"
@@ -14,6 +14,6 @@
     class="site-selector__field"
     labelPropertyName="hostname"
     >
-</searchable-dropdown>
+</dot-searchable-dropdown>
 
-<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite && currentSite['value'] ? currentSite['value'].hostname : '' | async}}</span>
+<span *ngIf="totalRecords == 1" class="site-selector__title">{{ currentSite && currentSite['value'] ? currentSite['value'].hostname : '' | async }}</span>

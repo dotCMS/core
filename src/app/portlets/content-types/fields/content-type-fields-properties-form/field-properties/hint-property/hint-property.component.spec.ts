@@ -7,33 +7,29 @@ import { DotMessageService } from '../../../../../../api/services/dot-messages-s
 import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-
 describe('HintPropertyComponent', () => {
     let comp: HintPropertyComponent;
     let fixture: ComponentFixture<HintPropertyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
-        'Hint': 'Hint'
+        Hint: 'Hint'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                HintPropertyComponent
-            ],
-            imports: [
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [HintPropertyComponent],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(HintPropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(HintPropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});

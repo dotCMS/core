@@ -1,5 +1,5 @@
-import { Component, OnInit, Renderer2, ElementRef, forwardRef, Input } from '@angular/core';
-import { SelectControlValueAccessor, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, Input } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { Subscription } from 'rxjs/Subscription';
 /**
@@ -21,7 +21,6 @@ import { Subscription } from 'rxjs/Subscription';
         }
     ]
 })
-
 export class SiteSelectorFieldComponent implements ControlValueAccessor {
     @Input() archive: boolean;
     @Input() live: boolean;

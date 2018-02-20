@@ -6,18 +6,16 @@ import { DOTTestBed } from './../../../test/dot-test-bed';
 
 describe('PageViewService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([
-            PageViewService
-        ]);
+        this.injector = DOTTestBed.resolveAndCreate([PageViewService]);
 
-        this.pageViewService =  this.injector.get(PageViewService);
+        this.pageViewService = this.injector.get(PageViewService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
-        this.backend.connections.subscribe((connection: any) => this.lastConnection = connection);
+        this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
 
     it('should do a get request with url param', () => {
         let result: any;
-        this.pageViewService.get('about-us').subscribe(items => result = items);
+        this.pageViewService.get('about-us').subscribe((items) => (result = items));
 
         expect(this.lastConnection.request.url).toContain('v1/page/json/about-us?live=false');
     });
@@ -27,58 +25,72 @@ describe('PageViewService', () => {
         expect(this.lastConnection.request.url).toContain('v1/page/json/aboutUs/index');
     });
 
-    it('should do a get request and return a pageView', fakeAsync(() => {
-        let result: any;
+    it(
+        'should do a get request and return a pageView',
+        fakeAsync(() => {
+            let result: any;
 
-        this.pageViewService.get('about-us').subscribe(items => result = items);
+            this.pageViewService.get('about-us').subscribe((items) => (result = items));
 
-        const mockResponse = {
-            layout: {
+            const mockResponse = {
+                layout: {
+                    body: {
+                        containers: ['string1', 'string2'],
+                        rows: ['column']
+                    }
+                },
+                page: {
+                    identifier: 'test38923-82393842-23823'
+                }
+            };
+
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: mockResponse
+                    })
+                )
+            );
+
+            tick();
+
+            expect(result).toEqual(mockResponse);
+        })
+    );
+
+    it(
+        'should post data and return an entity',
+        fakeAsync(() => {
+            let result;
+            const mockDotLayout = {
                 body: {
                     containers: ['string1', 'string2'],
                     rows: ['column']
                 }
-            },
-            page: {
-                identifier: 'test38923-82393842-23823'
-            }
-        };
+            };
 
-        this.lastConnection.mockRespond(new Response(new ResponseOptions({
-            body: mockResponse,
-        })));
+            const mockResponse = {
+                entity: [
+                    Object.assign({}, mockDotLayout, {
+                        iDate: 1495670226000,
+                        identifier: '1234-id-7890-entifier',
+                        modDate: 1495670226000
+                    })
+                ]
+            };
 
-        tick();
+            this.pageViewService.save('test38923-82393842-23823', mockDotLayout).subscribe((res) => (result = res));
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: JSON.stringify(mockResponse)
+                    })
+                )
+            );
 
-        expect(result).toEqual(mockResponse);
-    }));
-
-    it('should post data and return an entity', fakeAsync(() => {
-        let result;
-        const mockDotLayout = {
-            body: {
-                containers: ['string1', 'string2'],
-                rows: ['column']
-            }
-        };
-
-        const mockResponse = {
-            entity: [
-                Object.assign({}, mockDotLayout, {
-                    'iDate': 1495670226000,
-                    'identifier': '1234-id-7890-entifier',
-                    'modDate': 1495670226000
-                })
-            ]
-        };
-
-        this.pageViewService.save('test38923-82393842-23823', mockDotLayout).subscribe(res => result = res);
-        this.lastConnection.mockRespond(new Response(new ResponseOptions({
-            body: JSON.stringify(mockResponse)
-        })));
-
-        tick();
-        expect(this.lastConnection.request.url).toContain('v1/page/test38923-82393842-23823/layout');
-        expect(result).toEqual(mockResponse.entity);
-    }));
+            tick();
+            expect(this.lastConnection.request.url).toContain('v1/page/test38923-82393842-23823/layout');
+            expect(result).toEqual(mockResponse.entity);
+        })
+    );
 });

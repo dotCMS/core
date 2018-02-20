@@ -1,9 +1,9 @@
 import { Routes, RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
-import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
+import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 import { LoginPageComponent } from './view/components/login/login-page-component';
-import { LogOutContainer } from './view/components/login/login-component/log-out-container';
+import { LogOutContainerComponent } from './view/components/login/login-component/log-out-container';
 import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
@@ -124,12 +124,12 @@ const appRoutes: Routes = [
         path: 'fromCore'
     },
     {
-        component: LogOutContainer,
+        component: LogOutContainerComponent,
         path: 'logout'
     },
     {
         canActivate: [AuthGuardService],
-        component: MainComponentLegacy,
+        component: MainComponentLegacyComponent,
         children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR],
         path: ''
     },

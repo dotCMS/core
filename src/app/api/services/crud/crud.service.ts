@@ -10,7 +10,6 @@ import { RequestMethod } from '@angular/http';
  */
 @Injectable()
 export class CrudService {
-
     constructor(private coreWebService: CoreWebService) {}
 
     /**
@@ -22,11 +21,13 @@ export class CrudService {
      * @memberof CrudService
      */
     public postData(baseUrl: string, data: any): Observable<any> {
-        return this.coreWebService.requestView({
-            body: data,
-            method: RequestMethod.Post,
-            url: `${baseUrl}`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                body: data,
+                method: RequestMethod.Post,
+                url: `${baseUrl}`
+            })
+            .pluck('entity');
     }
 
     /**
@@ -38,11 +39,13 @@ export class CrudService {
      * @memberof CrudService
      */
     public putData(baseUrl: string, data: any): Observable<any> {
-        return this.coreWebService.requestView({
-            body: data,
-            method: RequestMethod.Put,
-            url: `${baseUrl}`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                body: data,
+                method: RequestMethod.Put,
+                url: `${baseUrl}`
+            })
+            .pluck('entity');
     }
 
     /**
@@ -54,10 +57,12 @@ export class CrudService {
      * @memberof CrudService
      */
     getDataById(baseUrl: string, id: string): Observable<any> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: `${baseUrl}/id/${id}`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: `${baseUrl}/id/${id}`
+            })
+            .pluck('entity');
     }
 
     /**
@@ -69,9 +74,11 @@ export class CrudService {
      * @memberof CrudService
      */
     delete(baseUrl: string, id: string): Observable<any> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Delete,
-            url: `${baseUrl}/${id}`
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Delete,
+                url: `${baseUrl}/${id}`
+            })
+            .pluck('entity');
     }
 }

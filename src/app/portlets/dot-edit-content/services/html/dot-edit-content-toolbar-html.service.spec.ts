@@ -51,4 +51,3 @@ describe('DotEditContentToolbarHtmlService', () => {
         expect(testDoc.getElementsByClassName('dotedit-contentlet__remove').length).toEqual(1);
     });
 });
-

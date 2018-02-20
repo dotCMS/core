@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { SelectItem } from 'primeng/primeng';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
@@ -36,7 +35,7 @@ export class WorkflowService {
      * @returns {Observable<Workflow[]>}
      * @memberof WorkflowService
      */
-    getPageWorkflows(pageIdentifier: string): Observable<Workflow[]> {
+    getPageWorkflows(_pageIdentifier: string): Observable<Workflow[]> {
         return Observable.of([
             { name: 'Workflow 1', id: 'one' },
             { name: 'Workflow 2', id: 'two' },

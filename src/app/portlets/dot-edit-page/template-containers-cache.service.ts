@@ -6,13 +6,13 @@ import { DotContainer } from '../../shared/models/container/dot-container.model'
  */
 @Injectable()
 export class TemplateContainersCacheService {
-    private containers: { [key: string]: {container: DotContainer}};
+    private containers: { [key: string]: { container: DotContainer } };
 
-    set(containers: { [key: string]: {container: DotContainer}}): void {
+    set(containers: { [key: string]: { container: DotContainer } }): void {
         this.containers = containers;
     }
 
     get(containerId: string): DotContainer {
-        return this.containers[containerId] ? this.containers[containerId].container :  null;
+        return this.containers[containerId] ? this.containers[containerId].container : null;
     }
 }

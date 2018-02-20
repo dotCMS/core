@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
-import { FieldDragDropService  } from '../service';
+import { FieldDragDropService } from '../service';
 import { ContentTypeField, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
@@ -13,7 +13,7 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
 
 @Component({
-    selector: 'content-type-field-dragabble-item',
+    selector: 'dot-content-type-field-dragabble-item',
     template: ''
 })
 class TestContentTypeFieldDraggableItemComponent {
@@ -38,55 +38,54 @@ describe('ContentTypeFieldsRowComponent', () => {
         'contenttypes.action.no': 'No'
     });
 
-    beforeEach(async(() => {
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent],
+                imports: [DragulaModule, IconButtonTooltipModule, ConfirmDialogModule],
+                providers: [
+                    FieldDragDropService,
+                    DotConfirmationService,
+                    { provide: DotMessageService, useValue: messageServiceMock }
+                ]
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsRowComponent,
-                TestContentTypeFieldDraggableItemComponent
-            ],
-            imports: [
-                DragulaModule,
-                IconButtonTooltipModule,
-                ConfirmDialogModule
-            ],
-            providers: [
-                FieldDragDropService,
-                DotConfirmationService,
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     describe('setting rows and columns', () => {
+        beforeEach(
+            async(() => {
+                this.fieldRow = new FieldRow();
+                this.fieldRow.columns.push(
+                    new FieldColumn([
+                        {
+                            clazz: 'text',
+                            name: 'field-1'
+                        },
+                        {
+                            clazz: 'image',
+                            name: 'field-1'
+                        }
+                    ])
+                );
 
-        beforeEach(async(() => {
-            this.fieldRow = new FieldRow();
-            this.fieldRow.columns.push(new FieldColumn([
-                {
-                    clazz: 'text',
-                    name: 'field-1'
-                },
-                {
-                    clazz: 'image',
-                    name: 'field-1'
-                }
-            ]));
+                this.fieldRow.columns.push(
+                    new FieldColumn([
+                        {
+                            clazz: 'text',
+                            name: 'field-1'
+                        }
+                    ])
+                );
 
-            this.fieldRow.columns.push(new FieldColumn([
-                {
-                    clazz: 'text',
-                    name: 'field-1'
-                }
-            ]));
-
-            comp.fieldRow = this.fieldRow;
-        }));
+                comp.fieldRow = this.fieldRow;
+            })
+        );
 
         it('should has row and columns', () => {
             fixture.detectChanges();
@@ -98,55 +97,61 @@ describe('ContentTypeFieldsRowComponent', () => {
                 expect('fields-bag').toEqual(col.attributes['dragula']);
                 expect('target').toEqual(col.attributes['data-drag-type']);
 
-                const draggableItems = col.queryAll(By.css('content-type-field-dragabble-item'));
+                const draggableItems = col.queryAll(By.css('dot-content-type-field-dragabble-item'));
                 expect(this.fieldRow.columns[index].fields.length).toEqual(draggableItems.length);
             });
         });
 
-        it('should handle edit field event', fakeAsync(() => {
-            let editField;
+        it(
+            'should handle edit field event',
+            fakeAsync(() => {
+                let editField;
 
-            const field = {
-                clazz: 'text',
-                name: 'field-1'
-            };
+                const field = {
+                    clazz: 'text',
+                    name: 'field-1'
+                };
 
-            fixture.detectChanges();
+                fixture.detectChanges();
 
-            const column = de.query(By.css('.row-columns__item'));
-            const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
+                const column = de.query(By.css('.row-columns__item'));
+                const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
-            comp.editField.subscribe(eventField => editField = eventField);
-            dragableItem.componentInstance.edit.emit(field);
+                comp.editField.subscribe((eventField) => (editField = eventField));
+                dragableItem.componentInstance.edit.emit(field);
 
-            tick();
+                tick();
 
-            expect(field).toEqual(editField);
-        }));
+                expect(field).toEqual(editField);
+            })
+        );
 
-        it('should handle remove field event', async(() => {
-            let removeField;
+        it(
+            'should handle remove field event',
+            async(() => {
+                let removeField;
 
-            const field = this.fieldRow.columns[0].fields[0];
-            fixture.detectChanges();
+                const field = this.fieldRow.columns[0].fields[0];
+                fixture.detectChanges();
 
-            const column = de.query(By.css('.row-columns__item'));
-            const dragableItem = column.query(By.css('content-type-field-dragabble-item'));
+                const column = de.query(By.css('.row-columns__item'));
+                const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
-            const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+                const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
 
-            spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
-                conf.accept();
-            });
+                spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+                    conf.accept();
+                });
 
-            comp.removeField.subscribe(eventField => {
-                removeField = eventField;
-            });
-            dragableItem.componentInstance.remove.emit(field);
+                comp.removeField.subscribe((eventField) => {
+                    removeField = eventField;
+                });
+                dragableItem.componentInstance.remove.emit(field);
 
-            expect(field).toEqual(removeField);
-            const fieldRemoved = this.fieldRow.columns[0].fields.filter(columnField => columnField === field);
-            expect(fieldRemoved).toEqual([]);
-        }));
+                expect(field).toEqual(removeField);
+                const fieldRemoved = this.fieldRow.columns[0].fields.filter((columnField) => columnField === field);
+                expect(fieldRemoved).toEqual([]);
+            })
+        );
     });
 });

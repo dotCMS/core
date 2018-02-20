@@ -5,8 +5,7 @@ import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 
 describe('DotEditLayoutService', () => {
-
-    const containers =  {
+    const containers = {
         '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
             container: {
                 type: 'containers',

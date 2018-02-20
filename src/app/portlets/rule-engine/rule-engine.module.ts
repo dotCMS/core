@@ -38,11 +38,12 @@ import {
 } from 'dotcms-rules-engine/dotcms-rules-engine';
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
 
-const routes: Routes = [{
-    component: AppRulesComponent,
-    path: ''
-}];
-
+const routes: Routes = [
+    {
+        component: AppRulesComponent,
+        path: ''
+    }
+];
 
 @NgModule({
     imports: [

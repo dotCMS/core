@@ -24,7 +24,7 @@ export class ForgotPasswordContainerComponent {
         this.email = forgotPasswordLogin;
 
         this.loginService.recoverPassword(forgotPasswordLogin).subscribe(
-            (resp: ResponseView) => {
+            () => {
                 this.goToLogin();
             },
             (resp: ResponseView) => {

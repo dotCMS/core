@@ -1,8 +1,8 @@
 <div [formGroup]="group">
-    <label class="form__label">{{i18nMessages['contenttypes.field.properties.value.label']}}*</label>
+    <label class="form__label">{{ i18nMessages['contenttypes.field.properties.value.label'] }}*</label>
     <dot-textarea-content #value [formControlName]="property.name" [show]="['code']" height="90px"></dot-textarea-content>
-    <field-validation-message 
+    <dot-field-validation-message 
         message="Values is required" 
         [field]="group.controls[property.name]">
-    </field-validation-message>
+    </dot-field-validation-message>
 </div>

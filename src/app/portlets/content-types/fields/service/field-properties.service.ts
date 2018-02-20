@@ -1,23 +1,20 @@
-import { Injectable, ComponentFactory, Type } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
-import { RequestMethod } from '@angular/http';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { Injectable, Type } from '@angular/core';
 import { PROPERTY_INFO } from './field-property-info';
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { ValidationErrors } from '@angular/forms';
 import { FieldService } from './field.service';
-import { FieldType} from '../shared/field-type.model';
+import { FieldType } from '../shared/field-type.model';
 
 /**
  * Provide method to handle with the Field Types's properties
  */
 @Injectable()
 export class FieldPropertyService {
-    private fieldTypes= new Map<string, FieldType>();
+    private fieldTypes = new Map<string, FieldType>();
 
     constructor(fieldService: FieldService) {
-        fieldService.loadFieldTypes().subscribe(fieldTypes => {
-            fieldTypes.forEach(fieldType => {
+        fieldService.loadFieldTypes().subscribe((fieldTypes) => {
+            fieldTypes.forEach((fieldType) => {
                 this.fieldTypes.set(fieldType.clazz, fieldType);
             });
         });
@@ -97,7 +94,7 @@ export class FieldPropertyService {
      */
     getProperties(fieldTypeClass: string): string[] {
         const fieldType = this.fieldTypes.get(fieldTypeClass);
-        return  fieldType !== undefined ? fieldType.properties : undefined;
+        return fieldType !== undefined ? fieldType.properties : undefined;
     }
 
     /**

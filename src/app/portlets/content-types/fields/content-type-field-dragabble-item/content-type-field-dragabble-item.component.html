@@ -1,22 +1,22 @@
 <i class="fa field__icon" [ngClass]="fieldService.getIcon(field.clazz)"></i>
 
 <div class="field__properties">
-    <div class="field__name">{{field.name}} <i class="ui-messages-error" *ngIf="field.required">*</i></div>
+    <div class="field__name">{{ field.name }} <i class="ui-messages-error" *ngIf="field.required">*</i></div>
 
-    <div class="field__variable">{{field.variable}}</div>
+    <div class="field__variable">{{ field.variable }}</div>
 </div>
 
 <div class="field__actions">
-    <icon-button-tooltip *ngIf="!field.fixed"
+    <dot-icon-button-tooltip *ngIf="!field.fixed"
         class="field__actions-delete"
         icon="fa-trash"
         [tooltipText]="i18nMessages['contenttypes.action.delete']"
         (click)="removeItem($event)">
-    </icon-button-tooltip>
-    <icon-button-tooltip 
+    </dot-icon-button-tooltip>
+    <dot-icon-button-tooltip 
         class="field__actions-edit"
         icon="fa-edit"
         [tooltipText]="i18nMessages['contenttypes.action.edit']"
         (click)="this.onClick($event)">
-    </icon-button-tooltip>
+    </dot-icon-button-tooltip>
 </div>

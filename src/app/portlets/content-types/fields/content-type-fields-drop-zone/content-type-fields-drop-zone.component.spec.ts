@@ -17,35 +17,34 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Subject } from 'rxjs/Subject';
 import { FieldDragDropService } from '../service/index';
-import {FieldPropertyService } from '../service/field-properties.service';
+import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 
 @Component({
-    selector: 'content-type-fields-row',
+    selector: 'dot-content-type-fields-row',
     template: ''
 })
-class TestContentTypeFieldsRow {
+class TestContentTypeFieldsRowComponent {
     @Input() fieldRow: FieldRow;
     @Output() editField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
 }
 
 @Component({
-    selector: 'content-type-fields-properties-form ',
+    selector: 'dot-content-type-fields-properties-form ',
     template: ''
 })
-class TestContentTypeFieldsPropertiesForm {
+class TestContentTypeFieldsPropertiesFormComponent {
     @Output() saveField: EventEmitter<any> = new EventEmitter();
     @Input() formFieldData: ContentTypeField;
 }
 
 @Component({
+    // tslint:disable-next-line:component-selector
     selector: 'p-overlayPanel',
     template: ''
 })
-class TestPOverlayPanelComponent {
-
-}
+class TestPOverlayPanelComponent {}
 
 @Injectable()
 class TestFieldDragDropService {
@@ -85,43 +84,47 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         'contenttypes.dropzone.action.create.field': 'Create field'
     });
 
-    beforeEach(async(() => {
-        this.testFieldDragDropService = new TestFieldDragDropService();
+    beforeEach(
+        async(() => {
+            this.testFieldDragDropService = new TestFieldDragDropService();
 
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                TestContentTypeFieldsRow,
-                TestContentTypeFieldsPropertiesForm,
-                TestPOverlayPanelComponent
-            ],
-            imports: [
-                RouterTestingModule.withRoutes([{
-                    component: ContentTypeFieldsDropZoneComponent,
-                    path: 'test'
-                }]),
-                DragulaModule,
-                FieldValidationMessageModule,
-                ReactiveFormsModule,
-                BrowserAnimationsModule
-            ],
-            providers: [
-                { provide: FieldDragDropService, useValue: this.testFieldDragDropService},
-                LoginService,
-                SocketFactory,
-                FormatDateService,
-                FieldPropertyService,
-                FieldService,
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: Router, useValue: mockRouter }
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    ContentTypeFieldsDropZoneComponent,
+                    TestContentTypeFieldsRowComponent,
+                    TestContentTypeFieldsPropertiesFormComponent,
+                    TestPOverlayPanelComponent
+                ],
+                imports: [
+                    RouterTestingModule.withRoutes([
+                        {
+                            component: ContentTypeFieldsDropZoneComponent,
+                            path: 'test'
+                        }
+                    ]),
+                    DragulaModule,
+                    FieldValidationMessageModule,
+                    ReactiveFormsModule,
+                    BrowserAnimationsModule
+                ],
+                providers: [
+                    { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
+                    LoginService,
+                    SocketFactory,
+                    FormatDateService,
+                    FieldPropertyService,
+                    FieldService,
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: Router, useValue: mockRouter }
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(ContentTypeFieldsDropZoneComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(ContentTypeFieldsDropZoneComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
     it('should has fieldsContainer', () => {
         const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
@@ -139,131 +142,138 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(dialog).not.toBeNull();
     });
 
-    it('should emit removeFields event', fakeAsync(() => {
-        let fieldsToRemove;
+    it(
+        'should emit removeFields event',
+        fakeAsync(() => {
+            let fieldsToRemove;
 
-        const field = {
-            clazz: 'classField',
-            name: 'nameField',
-        };
+            const field = {
+                clazz: 'classField',
+                name: 'nameField'
+            };
 
-        comp.removeFields.subscribe(removeFields => fieldsToRemove = removeFields);
+            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-        tick();
+            tick();
 
-        comp.removeField(field);
-        expect([field]).toEqual(fieldsToRemove);
-    }));
+            comp.removeField(field);
+            expect([field]).toEqual(fieldsToRemove);
+        })
+    );
 
-    it('should emit removeFields event when a Row is removed', fakeAsync(() => {
-        let fieldsToRemove: ContentTypeField[];
+    it(
+        'should emit removeFields event when a Row is removed',
+        fakeAsync(() => {
+            let fieldsToRemove: ContentTypeField[];
 
-        const fieldRow: FieldRow = new FieldRow();
-        const field = {
-            clazz: 'classField',
-            name: 'nameField',
-        };
-        fieldRow.addFields([field]);
+            const fieldRow: FieldRow = new FieldRow();
+            const field = {
+                clazz: 'classField',
+                name: 'nameField'
+            };
+            fieldRow.addFields([field]);
 
-        comp.removeFields.subscribe(removeFields => fieldsToRemove = removeFields);
+            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-        tick();
+            tick();
 
-        comp.removeFieldRow(fieldRow);
+            comp.removeFieldRow(fieldRow);
 
-        expect([fieldRow.lineDivider, fieldRow.columns[0].tabDivider, field]).toEqual(fieldsToRemove);
-    }));
+            expect([fieldRow.lineDivider, fieldRow.columns[0].tabDivider, field]).toEqual(fieldsToRemove);
+        })
+    );
 
     describe('Load fields and drag and drop', () => {
-        beforeEach(async(() => {
-            this.fields = [
-                {
-                    name: 'field 1',
-                    id: 1,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                    sortOrder: 1
-                },
-                {
-                    name: 'field 2',
-                    id: 2,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                    sortOrder: 2
-                },
-                {
-                    clazz: 'text',
-                    id: 3,
-                    name: 'field 3',
-                    sortOrder: 3
-                },
-                {
-                    clazz: 'text',
-                    id: 4,
-                    name: 'field 4',
-                    sortOrder: 4
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                    id: 5,
-                    name: 'field 5',
-                    sortOrder: 5
-                },
-                {
-                    clazz: 'text',
-                    id: 6,
-                    name: 'field 6',
-                    sortOrder: 6
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                    id: 7,
-                    name: 'field 7',
-                    sortOrder: 7
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                    id: 8,
-                    name: 'field 8',
-                    sortOrder: 8
-                },
-                {
-                    clazz: 'text',
-                    id: 9,
-                    name: 'field 9',
-                    sortOrder: 9
-                }
-            ];
-        }));
+        beforeEach(
+            async(() => {
+                this.fields = [
+                    {
+                        name: 'field 1',
+                        id: 1,
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                        sortOrder: 1
+                    },
+                    {
+                        name: 'field 2',
+                        id: 2,
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        sortOrder: 2
+                    },
+                    {
+                        clazz: 'text',
+                        id: 3,
+                        name: 'field 3',
+                        sortOrder: 3
+                    },
+                    {
+                        clazz: 'text',
+                        id: 4,
+                        name: 'field 4',
+                        sortOrder: 4
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        id: 5,
+                        name: 'field 5',
+                        sortOrder: 5
+                    },
+                    {
+                        clazz: 'text',
+                        id: 6,
+                        name: 'field 6',
+                        sortOrder: 6
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                        id: 7,
+                        name: 'field 7',
+                        sortOrder: 7
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        id: 8,
+                        name: 'field 8',
+                        sortOrder: 8
+                    },
+                    {
+                        clazz: 'text',
+                        id: 9,
+                        name: 'field 9',
+                        sortOrder: 9
+                    }
+                ];
+            })
+        );
 
         it('should handler editField event', () => {
             const field = {
                 clazz: 'classField',
-                name: 'nameField',
+                name: 'nameField'
             };
             const spy = spyOn(comp, 'editField');
 
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
 
             fixture.detectChanges();
 
             const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
-            const fieldRows = fieldsContainer.queryAll(By.css('content-type-fields-row'));
+            const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
             fieldRows[0].componentInstance.editField.emit(field);
 
             expect(spy).toHaveBeenCalledWith(field);
         });
 
         it('should has FieldRow and FieldColumn', () => {
-
             comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
+                fields: new SimpleChange(null, this.fields, true)
             });
 
             fixture.detectChanges();
 
             const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
-            const fieldRows = fieldsContainer.queryAll(By.css('content-type-fields-row'));
+            const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
             expect(2).toEqual(fieldRows.length);
 
             expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
@@ -274,147 +284,189 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
         });
 
-        it('should set dropped field if a drop event happen from source', fakeAsync(() => {
-            becomeNewField(this.fields[8]);
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true),
-            });
+        it(
+            'should set dropped field if a drop event happen from source',
+            fakeAsync(() => {
+                becomeNewField(this.fields[8]);
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, this.fields, true)
+                });
 
-            comp.ngOnInit();
+                comp.ngOnInit();
 
-            this.testFieldDragDropService._fieldDropFromSource.next(['fields-bag', null, null, {
-                dataset: {
-                    dragType: 'source'
-                }
-            }]);
+                this.testFieldDragDropService._fieldDropFromSource.next([
+                    'fields-bag',
+                    null,
+                    null,
+                    {
+                        dataset: {
+                            dragType: 'source'
+                        }
+                    }
+                ]);
 
-            tick();
+                tick();
 
-            expect(this.fields[8]).toBe(comp.formData);
-        }));
+                expect(this.fields[8]).toBe(comp.formData);
+            })
+        );
 
-        it('should display dialog if a drop event happen from source', fakeAsync(() => {
+        it(
+            'should display dialog if a drop event happen from source',
+            fakeAsync(() => {
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, this.fields, true)
+                });
 
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true)
-            });
+                comp.ngOnInit();
 
-            comp.ngOnInit();
+                this.testFieldDragDropService._fieldDropFromSource.next([
+                    'fields-bag',
+                    null,
+                    null,
+                    {
+                        dataset: {
+                            dragType: 'source'
+                        }
+                    }
+                ]);
 
-            this.testFieldDragDropService._fieldDropFromSource.next(['fields-bag', null, null, {
-                dataset: {
-                    dragType: 'source'
-                }
-            }]);
+                tick();
+                fixture.detectChanges();
 
-            tick();
-            fixture.detectChanges();
+                expect(true).toBe(comp.displayDialog);
 
-            expect(true).toBe(comp.displayDialog);
+                const dialog = de.query(By.css('p-dialog'));
+                expect(true).toBe(dialog.componentInstance.visible);
+            })
+        );
 
-            const dialog = de.query(By.css('p-dialog'));
-            expect(true).toBe(dialog.componentInstance.visible);
-        }));
+        it(
+            'should save all the fields (moving the last line to the top)',
+            fakeAsync(() => {
+                const testFields = [...this.fields.slice(6, 9), ...this.fields.slice(0, 6)];
 
-        it('should save all the fields (moving the last line to the top)', fakeAsync(() => {
-            const testFields = [...this.fields.slice(6, 9), ...this.fields.slice(0, 6)];
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, testFields, true)
+                });
 
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, testFields, true)
-            });
+                spyOn(comp.saveFields, 'emit');
+                comp.ngOnInit();
 
-            spyOn(comp.saveFields, 'emit');
-            comp.ngOnInit();
+                this.testFieldDragDropService._fieldRowDropFromTarget.next([
+                    'fields-bag',
+                    null,
+                    null,
+                    {
+                        dataset: {
+                            dragType: 'target'
+                        }
+                    }
+                ]);
 
-            this.testFieldDragDropService._fieldRowDropFromTarget.next(['fields-bag', null, null, {
-                dataset: {
-                    dragType: 'target'
-                }
-            }]);
+                tick();
+                fixture.detectChanges();
 
-            tick();
-            fixture.detectChanges();
+                expect(comp.saveFields.emit).toHaveBeenCalledWith(testFields);
+            })
+        );
 
-            expect(comp.saveFields.emit).toHaveBeenCalledWith(testFields);
-        }));
+        it(
+            'should save all the fields (moving just the last field)',
+            fakeAsync(() => {
+                const testFields = [...this.fields.slice(0, 5), this.fields[8], ...this.fields.slice(5, 8)];
 
-        it('should save all the fields (moving just the last field)', fakeAsync(() => {
-            const testFields = [...this.fields.slice(0, 5), this.fields[8], ...this.fields.slice(5, 8)];
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, testFields, true)
+                });
 
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, testFields, true)
-            });
+                spyOn(comp.saveFields, 'emit');
+                comp.ngOnInit();
 
-            spyOn(comp.saveFields, 'emit');
-            comp.ngOnInit();
+                this.testFieldDragDropService._fieldDropFromTarget.next([
+                    'fields-bag',
+                    null,
+                    null,
+                    {
+                        dataset: {
+                            dragType: 'target'
+                        }
+                    }
+                ]);
 
-            this.testFieldDragDropService._fieldDropFromTarget.next(['fields-bag', null, null, {
-                dataset: {
-                    dragType: 'target'
-                }
-            }]);
+                tick();
+                fixture.detectChanges();
 
-            tick();
-            fixture.detectChanges();
+                expect(comp.saveFields.emit).toHaveBeenCalledWith(testFields.slice(5, 9));
+            })
+        );
 
-            expect(comp.saveFields.emit).toHaveBeenCalledWith(testFields.slice(5, 9));
-        }));
+        it(
+            'should save all the new fields',
+            fakeAsync(() => {
+                let saveFields;
 
-        it('should save all the new fields', fakeAsync(() => {
-            let saveFields;
+                becomeNewField(this.fields[6]);
+                becomeNewField(this.fields[7]);
+                becomeNewField(this.fields[8]);
 
-            becomeNewField(this.fields[6]);
-            becomeNewField(this.fields[7]);
-            becomeNewField(this.fields[8]);
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, this.fields, true)
+                });
+                comp.ngOnInit();
 
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true)
-            });
-            comp.ngOnInit();
+                // sleect the fields[8] as the current field
+                this.testFieldDragDropService._fieldDropFromSource.next([
+                    'fields-bag',
+                    null,
+                    null,
+                    {
+                        dataset: {
+                            dragType: 'source'
+                        }
+                    }
+                ]);
 
-            // sleect the fields[8] as the current field
-            this.testFieldDragDropService._fieldDropFromSource.next(['fields-bag', null, null, {
-                dataset: {
-                    dragType: 'source'
-                }
-            }]);
+                tick();
 
-            tick();
+                comp.saveFields.subscribe((fields) => (saveFields = fields));
+                comp.saveFieldsHandler(this.fields[8]);
 
-            comp.saveFields.subscribe(fields => saveFields = fields);
-            comp.saveFieldsHandler(this.fields[8]);
+                tick();
 
-            tick();
+                expect([this.fields[6], this.fields[7], this.fields[8]]).toEqual(saveFields);
+            })
+        );
 
-            expect([this.fields[6], this.fields[7], this.fields[8]]).toEqual(saveFields);
-        }));
+        it(
+            'should save all updated fields',
+            fakeAsync(() => {
+                let saveFields;
 
-        it('should save all updated fields', fakeAsync(() => {
-            let saveFields;
+                comp.ngOnChanges({
+                    fields: new SimpleChange(null, this.fields, true)
+                });
+                comp.ngOnInit();
+                comp.editField(this.fields[8]);
 
-            comp.ngOnChanges({
-                fields: new SimpleChange(null, this.fields, true)
-            });
-            comp.ngOnInit();
-            comp.editField(this.fields[8]);
+                tick();
 
-            tick();
+                comp.saveFields.subscribe((fields) => (saveFields = fields));
 
-            comp.saveFields.subscribe(fields => saveFields = fields);
+                const fieldUpdated = {
+                    fixed: true,
+                    indexed: true
+                };
 
-            const fieldUpdated = {
-                fixed: true,
-                indexed: true
-            };
+                comp.saveFieldsHandler(fieldUpdated);
 
-            comp.saveFieldsHandler(fieldUpdated);
+                tick();
 
-            tick();
-
-            expect([this.fields[8]]).toEqual(saveFields);
-            expect(this.fields[8].fixed).toEqual(true);
-            expect(this.fields[8].indexed).toEqual(true);
-        }));
+                expect([this.fields[8]]).toEqual(saveFields);
+                expect(this.fields[8].fixed).toEqual(true);
+                expect(this.fields[8].indexed).toEqual(true);
+            })
+        );
 
         it('should handler removeField event', () => {
             const field = {
@@ -431,7 +483,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             fixture.detectChanges();
 
             const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
-            const fieldRows = fieldsContainer.queryAll(By.css('content-type-fields-row'));
+            const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
             fieldRows[0].componentInstance.removeField.emit(field);
 
             expect(spy).toHaveBeenCalledWith(field);

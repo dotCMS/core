@@ -7,17 +7,14 @@ import {
     EventEmitter,
     Input,
     OnInit,
-    AfterViewInit,
-    AfterContentInit,
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { Observable } from 'rxjs/Observable';
-import { Subscription } from 'rxjs/Subscription';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -41,8 +38,6 @@ import { Subscription } from 'rxjs/Subscription';
     templateUrl: 'site-selector.component.html'
 })
 export class SiteSelectorComponent implements OnInit, OnChanges {
-    private static readonly MIN_CHARECTERS_TO_SERACH = 3;
-
     @Input() archive: boolean;
     @Input() id: string;
     @Input() live: boolean;
@@ -69,7 +64,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
 
         this.getSitesList();
 
-        this.siteService.refreshSites$.subscribe(site => this.handleSitesRefresh());
+        this.siteService.refreshSites$.subscribe((_site: Site) => this.handleSitesRefresh());
 
         if (this.id) {
             this.selectCurrentSite(this.id);
@@ -89,7 +84,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
      * @memberof SiteSelectorComponent
      */
     handleSitesRefresh(): void {
-        this.paginationService.getCurrentPage().subscribe(items => {
+        this.paginationService.getCurrentPage().subscribe((items) => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
             this.totalRecords = this.paginationService.totalRecords;
@@ -124,7 +119,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
     getSitesList(filter = '', offset = 0): void {
         // Set filter if undefined
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
@@ -141,10 +136,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
     }
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
-        return (
-            this.sitesCurrentPage &&
-            this.sitesCurrentPage.filter(site => site.identifier === siteId)[0]
-        );
+        return this.sitesCurrentPage && this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0];
     }
 
     private selectCurrentSite(siteId: string): void {

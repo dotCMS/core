@@ -49,7 +49,7 @@ describe('ValidPublicAuthGuardService', () => {
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(true));
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(dotRouterService.goToMain).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -59,7 +59,7 @@ describe('ValidPublicAuthGuardService', () => {
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(Observable.of(false));
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe(res => (result = res));
+            .subscribe((res) => (result = res));
         expect(result).toBe(true);
     });
 });

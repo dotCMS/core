@@ -21,9 +21,9 @@ describe('DotEditPageMainComponent', () => {
             TestBed.configureTestingModule({
                 imports: [RouterTestingModule, DotEditPageNavModule],
                 declarations: [DotEditPageMainComponent],
-                providers: [{provide: DotMessageService, useValue: messageServiceMock}]
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
-        }),
+        })
     );
 
     beforeEach(() => {

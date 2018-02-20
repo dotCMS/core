@@ -17,9 +17,9 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     @Output() cancel = new EventEmitter<boolean>();
     @Input() visible: boolean;
 
+    form: FormGroup;
+    needPassword = false;
     userCurrentPage: User[];
-    private needPassword = false;
-    private form: FormGroup;
 
     constructor(
         dotMessageService: DotMessageService,
@@ -28,10 +28,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         public paginationService: PaginatorService,
         private iframeOverlayService: IframeOverlayService
     ) {
-        super(
-            ['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'],
-            dotMessageService
-        );
+        super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], dotMessageService);
     }
 
     ngOnInit(): void {
@@ -61,13 +58,13 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         const user: User = this.form.value.loginAsUser;
 
         this.loginService.loginAs({ user: user, password: password }).subscribe(
-            data => {
+            (data) => {
                 if (data) {
                     this.close();
                     this.iframeOverlayService.hide();
                 }
             },
-            response => {
+            (response) => {
                 // TODO: Replace the alert below with a modal error message.
                 if (response.entity) {
                     alert(response.errorsMessages);
@@ -90,7 +87,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
      */
     getUsersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.userCurrentPage = items.splice(0);
         });

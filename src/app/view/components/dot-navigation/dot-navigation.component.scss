@@ -1,6 +1,6 @@
-@import "variables";
+@import 'variables';
 
-accordion {
+dot-accordion {
     a {
         display: block;
         padding: 5px 30px 5px 47px;
@@ -32,7 +32,6 @@ accordion {
             font-size: $font-size-large;
         }
     }
-
 
     .accordion-group__title-text {
         margin-left: 6px; // with the space it's 10px

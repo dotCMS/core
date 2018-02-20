@@ -8,6 +8,7 @@ import { MenuItem } from 'primeng/components/common/menuitem';
 import { DotTemplateAdditionalActionsMenuComponent } from './dot-template-additional-actions-menu.component';
 
 @Component({
+    // tslint:disable-next-line:component-selector
     selector: 'p-menu',
     template: ''
 })
@@ -17,12 +18,10 @@ class MockPrimeNGMenuComponent {
 }
 
 describe('DotLegacyAdditionalActionsMenuComponent', () => {
-
     let component: DotTemplateAdditionalActionsMenuComponent;
     let fixture: ComponentFixture<DotTemplateAdditionalActionsMenuComponent>;
 
     beforeEach(() => {
-
         const messageServiceMock = new MockDotMessageService({
             'template.action.additional.permissions': 'permissions',
             'template.action.additional.history': 'history',
@@ -30,13 +29,8 @@ describe('DotLegacyAdditionalActionsMenuComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                DotTemplateAdditionalActionsMenuComponent,
-                MockPrimeNGMenuComponent
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            declarations: [DotTemplateAdditionalActionsMenuComponent, MockPrimeNGMenuComponent],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
         fixture = DOTTestBed.createComponent(DotTemplateAdditionalActionsMenuComponent);

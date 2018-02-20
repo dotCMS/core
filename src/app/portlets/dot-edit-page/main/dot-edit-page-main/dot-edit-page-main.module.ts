@@ -6,6 +6,6 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
 
 @NgModule({
     imports: [CommonModule, RouterModule, DotEditPageNavModule],
-    declarations: [DotEditPageMainComponent],
+    declarations: [DotEditPageMainComponent]
 })
 export class DotEditPageMainModule {}

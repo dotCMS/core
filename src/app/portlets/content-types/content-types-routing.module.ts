@@ -34,11 +34,7 @@ const contentTypesRoutes: Routes = [
 ];
 
 @NgModule({
-    exports: [
-        RouterModule
-    ],
-    imports: [
-        RouterModule.forChild(contentTypesRoutes)
-    ]
+    exports: [RouterModule],
+    imports: [RouterModule.forChild(contentTypesRoutes)]
 })
-export class ContentTypesRoutingModule { }
+export class ContentTypesRoutingModule {}

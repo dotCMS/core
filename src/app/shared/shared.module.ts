@@ -23,12 +23,7 @@ import { DotEventsService } from '../api/services/dot-events/dot-events.service'
 
 @NgModule({
     declarations: [],
-    imports: [
-        CommonModule,
-        DotDropdownModule,
-        GravatarModule,
-        MainNavigationModule
-    ],
+    imports: [CommonModule, DotDropdownModule, GravatarModule, MainNavigationModule],
     exports: [
         CommonModule,
         // Common Modules

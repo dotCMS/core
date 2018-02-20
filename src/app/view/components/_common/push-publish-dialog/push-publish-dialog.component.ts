@@ -1,4 +1,3 @@
-import { BehaviorSubject } from 'rxjs/Rx';
 import { Component, Input, Output, EventEmitter, ViewEncapsulation, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
@@ -12,7 +11,6 @@ import { LoggerService } from 'dotcms-js/dotcms-js';
     styleUrls: ['./push-publish-dialog.component.scss'],
     templateUrl: 'push-publish-dialog.component.html'
 })
-
 export class PushPublishContentTypesDialogComponent implements OnInit {
     form: FormGroup;
     pushActions: SelectItem[];
@@ -45,22 +43,24 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
             }
         ];
 
-        this.dotMessageService.getMessages([
-            'contenttypes.content.push_publish',
-            'contenttypes.content.push_publish.action.push',
-            'contenttypes.content.push_publish.action.remove',
-            'contenttypes.content.push_publish.action.pushremove',
-            'contenttypes.content.push_publish.I_want_To',
-            'contenttypes.content.push_publish.force_push',
-            'contenttypes.content.push_publish.publish_date',
-            'contenttypes.content.push_publish.expire_date',
-            'contenttypes.content.push_publish.push_to',
-            'contenttypes.content.push_publish.push_to_errormsg',
-            'contenttypes.content.push_publish.form.cancel',
-            'contenttypes.content.push_publish.form.push',
-            'contenttypes.content.push_publish.publish_date_errormsg',
-            'contenttypes.content.push_publish.expire_date_errormsg'
-        ]).subscribe();
+        this.dotMessageService
+            .getMessages([
+                'contenttypes.content.push_publish',
+                'contenttypes.content.push_publish.action.push',
+                'contenttypes.content.push_publish.action.remove',
+                'contenttypes.content.push_publish.action.pushremove',
+                'contenttypes.content.push_publish.I_want_To',
+                'contenttypes.content.push_publish.force_push',
+                'contenttypes.content.push_publish.publish_date',
+                'contenttypes.content.push_publish.expire_date',
+                'contenttypes.content.push_publish.push_to',
+                'contenttypes.content.push_publish.push_to_errormsg',
+                'contenttypes.content.push_publish.form.cancel',
+                'contenttypes.content.push_publish.form.push',
+                'contenttypes.content.push_publish.publish_date_errormsg',
+                'contenttypes.content.push_publish.expire_date_errormsg'
+            ])
+            .subscribe();
 
         this.initForm();
     }
@@ -80,15 +80,17 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
      * @param {any} $event
      * @memberof PushPublishContentTypesDialogComponent
      */
-    submitPushAction($event): void {
+    submitPushAction(_event): void {
         if (this.form.valid) {
-            this.pushPublishService.pushPublishContent(this.assetIdentifier, this.form.value).subscribe((result: any) => {
-                if (!result.errors) {
-                    this.close();
-                } else {
-                    this.loggerService.debug(result.errorMessages);
-                }
-            });
+            this.pushPublishService
+                .pushPublishContent(this.assetIdentifier, this.form.value)
+                .subscribe((result: any) => {
+                    if (!result.errors) {
+                        this.close();
+                    } else {
+                        this.loggerService.debug(result.errorMessages);
+                    }
+                });
             this.form.reset();
         }
     }
@@ -104,8 +106,8 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     private initForm(): void {
         this.form = this.fb.group({
             pushActionSelected: [this.pushActions[0].value || '', [Validators.required]],
-            publishdate: [new Date, [Validators.required]],
-            expiredate: [new Date, [Validators.required]],
+            publishdate: [new Date(), [Validators.required]],
+            expiredate: [new Date(), [Validators.required]],
             environment: ['', [Validators.required]],
             forcePush: false
         });

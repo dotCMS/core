@@ -21,4 +21,4 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableTextField': 'fa-font',
     'com.dotcms.contenttype.model.field.ImmutableTimeField': 'fa-clock-o',
     'com.dotcms.contenttype.model.field.ImmutableWysiwygField': 'fa-eye'
- };
+};

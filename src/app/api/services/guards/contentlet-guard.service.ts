@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 import { DotContentletService } from './../dot-contentlet.service';
 import { DotNavigationService } from '../../../view/components/dot-navigation/dot-navigation.service';
 
@@ -14,7 +14,7 @@ export class ContentletGuardService implements CanActivateChild {
         private dotNavigationService: DotNavigationService
     ) {}
 
-    canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    canActivateChild(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<boolean> {
         return this.canAccessContentType(route.params.id);
     }
 
@@ -25,7 +25,7 @@ export class ContentletGuardService implements CanActivateChild {
      * @returns {boolean}
      */
     canAccessContentType(url: string): Observable<boolean> {
-        return this.dotContentletService.isContentTypeInMenu(url).map(res => {
+        return this.dotContentletService.isContentTypeInMenu(url).map((res) => {
             if (!res) {
                 this.dotNavigationService.goToFirstPortlet();
             }

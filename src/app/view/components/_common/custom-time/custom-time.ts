@@ -4,19 +4,16 @@ import { Subject } from 'rxjs/Subject';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    selector: 'custom-time',
+    selector: 'dot-custom-time',
     styleUrls: ['./custom-time.scss'],
-    templateUrl: 'custom-time.html',
-
+    templateUrl: 'custom-time.html'
 })
 export class CustomTimeComponent implements OnInit, AfterViewChecked {
     @Input() time;
 
     private formattedTime: Subject<string> = new Subject();
 
-    constructor(private formatDateService: FormatDateService) {
-
-    }
+    constructor(private formatDateService: FormatDateService) {}
 
     ngOnInit(): void {
         this.formattedTime.next(this.formatDateService.getRelative(this.time));

@@ -1,5 +1,5 @@
-@import "variables";
-@import "mixins";
+@import 'variables';
+@import 'mixins';
 
 :host {
     background-color: $white;
@@ -73,7 +73,6 @@
             }
         }
     }
-    
 }
 
 .edit-page-toolbar__locker ::ng-deep {
@@ -84,7 +83,7 @@
         position: relative;
 
         &:after {
-            content: "\F023";
+            content: '\F023';
             display: inline-block;
             font-size: inherit;
             font: normal normal normal 14px / 1 FontAwesome;

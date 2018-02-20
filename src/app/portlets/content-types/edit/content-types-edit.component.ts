@@ -2,7 +2,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
 
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
 import { CrudService } from '../../../api/services/crud';
@@ -55,26 +54,27 @@ export class ContentTypesEditComponent implements OnInit {
             }
         });
 
-        this.dotMessageService.getMessages([
-            'contenttypes.action.create',
-            'contenttypes.action.edit',
-            'contenttypes.action.form.cancel',
-            'contenttypes.action.update',
-            'contenttypes.content.content',
-            'contenttypes.content.create.contenttype',
-            'contenttypes.content.edit.contenttype',
-            'contenttypes.content.fileasset',
-            'contenttypes.content.form',
-            'contenttypes.content.htmlpage',
-            'contenttypes.content.key_value',
-            'contenttypes.content.persona',
-            'contenttypes.content.vanity_url',
-            'contenttypes.content.variable',
-            'contenttypes.content.variable',
-            'contenttypes.content.widget',
-            'contenttypes.form.identifier'
-
-        ]).subscribe();
+        this.dotMessageService
+            .getMessages([
+                'contenttypes.action.create',
+                'contenttypes.action.edit',
+                'contenttypes.action.form.cancel',
+                'contenttypes.action.update',
+                'contenttypes.content.content',
+                'contenttypes.content.create.contenttype',
+                'contenttypes.content.edit.contenttype',
+                'contenttypes.content.fileasset',
+                'contenttypes.content.form',
+                'contenttypes.content.htmlpage',
+                'contenttypes.content.key_value',
+                'contenttypes.content.persona',
+                'contenttypes.content.vanity_url',
+                'contenttypes.content.variable',
+                'contenttypes.content.variable',
+                'contenttypes.content.widget',
+                'contenttypes.form.identifier'
+            ])
+            .subscribe();
 
         this.setTemplateInfo();
 

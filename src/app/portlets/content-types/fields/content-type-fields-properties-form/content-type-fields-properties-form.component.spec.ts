@@ -9,8 +9,8 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 import { ContentTypeField } from '../index';
 
 @Directive({
-    selector: '[dynamicFieldProperty]'
-  })
+    selector: '[dotDynamicFieldProperty]'
+})
 class TestDynamicFieldPropertyDirective {
     @Input() propertyName: string;
     @Input() field: ContentTypeField;
@@ -19,7 +19,7 @@ class TestDynamicFieldPropertyDirective {
 
 @Injectable()
 class TestFieldPropertiesService {
-    getProperties(fieldTypeClass: string): string[] {
+    getProperties(): string[] {
         return ['property1', 'property2', 'property3'];
     }
 
@@ -27,7 +27,7 @@ class TestFieldPropertiesService {
         return propertyName === 'property1' || propertyName === 'property2';
     }
 
-    getDefaultValue(propertyName: string, fieldTypeClass?: string): any {
+    getDefaultValue(propertyName: string): any {
         return propertyName === 'property1' ? '' : true;
     }
 
@@ -50,70 +50,72 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
-        'name': 'name',
-        'Label': 'Label',
+        name: 'name',
+        Label: 'Label',
         'message.field.fieldType': 'message.field.fieldType',
-        'categories': 'categories',
+        categories: 'categories',
         'Data-Type': 'Data-Type',
-        'required': 'required',
+        required: 'required',
         'User-Searchable': 'User-Searchable',
         'System-Indexed': 'System-Indexed',
-        'listed': 'listed',
-        'Unique': 'Unique',
+        listed: 'listed',
+        Unique: 'Unique',
         'Default-Value': 'Default-Value',
-        'Hint': 'Hint',
+        Hint: 'Hint',
         'Validation-RegEx': 'Validation-RegEx',
-        'Value': 'Value',
-        'Binary': 'Binary',
-        'Text': 'Text',
+        Value: 'Value',
+        Binary: 'Binary',
+        Text: 'Text',
         'True-False': 'True-False',
-        'Date': 'Date',
-        'Decimal': 'Decimal',
+        Date: 'Date',
+        Decimal: 'Decimal',
         'Whole-Number': 'Whole-Number',
         'Large-Block-of-Text': 'Large-Block-of-Text',
         'System-Field': 'System-Field'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsPropertiesFormComponent,
-                TestDynamicFieldPropertyDirective
-            ],
-            imports: [
-            ],
-            providers: [
-                FormBuilder,
-                ComponentFactoryResolver,
-                FieldPropertyService,
-                { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypeFieldsPropertiesFormComponent, TestDynamicFieldPropertyDirective],
+                imports: [],
+                providers: [
+                    FormBuilder,
+                    ComponentFactoryResolver,
+                    FieldPropertyService,
+                    { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
+                    { provide: DotMessageService, useValue: messageServiceMock }
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(ContentTypeFieldsPropertiesFormComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
-    }));
+            fixture = DOTTestBed.createComponent(ContentTypeFieldsPropertiesFormComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
-    it('should call submit function', () => {
-
-    });
+    it('should call submit function', () => {});
 
     describe('should init component', () => {
-        beforeEach(async(() => {
-            this.field = {
-                clazz: 'field.class',
-                name: 'fieldName'
-            };
+        beforeEach(
+            async(() => {
+                this.field = {
+                    clazz: 'field.class',
+                    name: 'fieldName'
+                };
 
-            comp.formFieldData = this.field;
-        }));
+                comp.formFieldData = this.field;
+            })
+        );
 
         it('should init form right', () => {
             const mockFieldPropertyService = fixture.debugElement.injector.get(FieldPropertyService);
-            const spyMethod = spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['property1', 'property2', 'property3']);
+            const spyMethod = spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'property1',
+                'property2',
+                'property3'
+            ]);
 
             comp.ngOnChanges({
                 formFieldData: new SimpleChange(null, this.field, true)
@@ -145,11 +147,11 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         xit('should save checked and auto checked checkbox', () => {
-        // TODO: It needs a real mock of FieldPropertyService
+            // TODO: It needs a real mock of FieldPropertyService
         });
 
         xit('should not unchecked indexed checkbox if unique checkbox is checked', () => {
-        // TODO: It needs a real mock of FieldPropertyService
+            // TODO: It needs a real mock of FieldPropertyService
         });
     });
 });

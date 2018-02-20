@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-
-import { FieldService } from '../service';
 import { FieldRow } from '../shared';
 
 /**
@@ -10,23 +8,21 @@ import { FieldRow } from '../shared';
  * @class FieldTypesConFieldsRowListComponentainerComponent
  */
 @Component({
-    selector: 'content-type-fields-row-list',
+    selector: 'dot-content-type-fields-row-list',
     styleUrls: ['./content-type-fields-row-list.component.scss'],
-    templateUrl: './content-type-fields-row-list.component.html',
+    templateUrl: './content-type-fields-row-list.component.html'
 })
 export class ContentTypeFieldsRowListComponent implements OnInit {
     rows: number[] = [4, 3, 2, 1];
     fieldRows: FieldRow[];
 
-    constructor() {
-
-    }
+    constructor() {}
 
     numberOfCols(n: number): number[] {
         return Array(n).fill('');
     }
 
     ngOnInit(): void {
-        this.fieldRows = this.rows.map(nColumns => new FieldRow(nColumns));
+        this.fieldRows = this.rows.map((nColumns) => new FieldRow(nColumns));
     }
 }
