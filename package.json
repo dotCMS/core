@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "4.2.1",
+    "version": "4.3.0",
     "license": "MIT",
     "scripts": {
         "ng": "ng",
@@ -11,8 +11,7 @@
         "test": "ng test -sr",
         "lint": "ng lint",
         "e2e": "ng e2e",
-        "devversionbump":
-            "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",
+        "devversionbump": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",
         "publishdev": "rm -rf dist;npm run build;cp package.json ./dist/package.json;npm run devversionbump;cd dist;npm publish",
         "dotcms": "npm run build:dev --sourcemap --"
     },
