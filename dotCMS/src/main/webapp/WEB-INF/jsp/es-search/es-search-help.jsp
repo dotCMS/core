@@ -199,8 +199,8 @@ $results.response&lt;br&gt;
 <p>Filter news by distance away</p>
 <pre><code>{
     "query": {
-        "filtered": {
-            "query": {
+        "bool": {
+            "must": {
                 "match_all": {}
             },
             "filter": {
@@ -222,8 +222,8 @@ $results.response&lt;br&gt;
 <p>filter news by distance away part 2 (For this example to work you need to add a field to the news structure that uses latlon as its velocity variable name. it can be a text field with a value of ""42.648899,-71.165497)</p>
 <pre><code>{
     "query": {
-        "filtered": {
-            "query": {
+        "bool": {
+            "must": {
                 "match_all": {}
             },
             "filter": {
