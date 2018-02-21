@@ -10,6 +10,7 @@ import {
     CoreWebService,
     DotcmsConfig,
     DotcmsEventsService,
+    SocketFactory,
     LoggerService,
     StringUtils,
     UserModel
@@ -54,12 +55,13 @@ export class DOTTestBed {
             Http,
             Logger,
             LoggerService,
+            SocketFactory,
             StringUtils,
             UserModel
         ]
     };
 
-    public static configureTestingModule(config: TestModuleMetadata): void {
+    public static configureTestingModule(config: TestModuleMetadata): typeof TestBed {
         // tslint:disable-next-line:forin
         for (const property in DOTTestBed.DEFAULT_CONFIG) {
             if (config[property]) {
@@ -80,6 +82,8 @@ export class DOTTestBed {
             }
         });
         TestBed.compileComponents();
+
+        return TestBed;
     }
 
     public static createComponent<T>(component: Type<T>): ComponentFixture<T> {

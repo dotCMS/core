@@ -17,7 +17,7 @@ export class DotMenuService {
      *
      * @param {string} id
      * @returns {Observable<string>}
-     * @memberof DotNavigationService
+     * @memberof DotMenuService
      */
     getUrlById(id: string): Observable<string> {
         return this.getMenuItems()
@@ -31,7 +31,7 @@ export class DotMenuService {
      *
      * @param {string} url
      * @returns {Observable<boolean>}
-     * @memberof DotNavigationService
+     * @memberof DotMenuService
      */
     isPortletInMenu(menuId: string): Observable<boolean> {
         return this.getMenuItems()
@@ -45,7 +45,7 @@ export class DotMenuService {
      * Load and set menu from endpoint
      *
      * @returns {Observable<DotMenu[]>}
-     * @memberof DotNavigationService
+     * @memberof DotMenuService
      */
     loadMenu(): Observable<DotMenu[]> {
         if (!this.menu$) {
@@ -66,7 +66,7 @@ export class DotMenuService {
      * Clear the "cache" in the menu and reloads
      *
      * @returns {Observable<DotMenu[]>}
-     * @memberof DotNavigationService
+     * @memberof DotMenuService
      */
     reloadMenu(): Observable<DotMenu[]> {
         this.menu$ = null;

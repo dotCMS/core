@@ -1,14 +1,17 @@
-import { PlatformLocation } from '@angular/common';
 import { Injectable } from '@angular/core';
+import { PlatformLocation } from '@angular/common';
+import { Router, NavigationEnd } from '@angular/router';
+
 import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+
+import { Auth } from 'dotcms-js/core/login.service';
+import { DotcmsEventsService } from 'dotcms-js/core/dotcms-events.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
+
 import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../api/services/dot-router-service';
-import { LoginService } from 'dotcms-js/dotcms-js';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { DotcmsEventsService } from 'dotcms-js/core/dotcms-events.service';
-import { Auth } from 'dotcms-js/core/login.service';
-import { Router, NavigationEnd } from '@angular/router';
 
 @Injectable()
 export class DotNavigationService {
@@ -34,14 +37,17 @@ export class DotNavigationService {
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
             this.reloadNavigation();
         });
-        /*
-            When the browser refresh the auth$ triggers for the "first time" and because of that
-            on page reload we are doing 2 requests to menu enpoint.
-        */
-        this.loginService.auth$.subscribe((auth: Auth) => {
-            if (auth.loginAsUser || auth.user) {
-                this.reloadNavigation();
-            }
+
+        this.loginService.auth$.filter((auth: Auth) => !!(auth.loginAsUser || auth.user)).subscribe((auth: Auth) => {
+            this.reloadNavigation().subscribe((isPortletInMenu: boolean) => {
+                const isUserRedirect = auth.user['editModeUrl'] || this.dotRouterService.previousSavedURL;
+
+                if (isUserRedirect) {
+                    this.userCustomRedirect(auth.user['editModeUrl']);
+                } else if (!isPortletInMenu) {
+                    this.goToFirstPortlet();
+                }
+            });
         });
     }
 
@@ -89,30 +95,13 @@ export class DotNavigationService {
      * @returns {Observable<DotMenu[]>}
      * @memberof DotNavigationService
      */
-    reloadNavigation(): void {
-        this.dotMenuService.reloadMenu().subscribe((menu: DotMenu[]) => {
-            this.dotMenuService
-                .isPortletInMenu(
-                    this.dotRouterService.currentPortlet.id || this.dotRouterService.getPortletId(this.location.hash)
-                )
-                .subscribe((isPortletInMenu: boolean) => {
-                    if (!isPortletInMenu) {
-                        if (this.dotRouterService.previousSavedURL) {
-                            this.dotRouterService
-                                .gotoPortlet(this.dotRouterService.previousSavedURL, true)
-                                .then((res: boolean) => {
-                                    if (res) {
-                                        this.dotRouterService.previousSavedURL = null;
-                                        this.setMenu(menu);
-                                    }
-                                });
-                        } else {
-                            this.goToFirstPortlet().then(() => this.setMenu(menu));
-                        }
-                    } else {
-                        this.setMenu(menu);
-                    }
-                });
+    reloadNavigation(): Observable<boolean> {
+        return this.dotMenuService.reloadMenu().mergeMap((menu: DotMenu[]) => {
+            this.setMenu(menu);
+
+            return this.dotMenuService.isPortletInMenu(
+                this.dotRouterService.currentPortlet.id || this.dotRouterService.getPortletId(this.location.hash)
+            );
         });
     }
 
@@ -157,5 +146,15 @@ export class DotNavigationService {
 
     private setMenu(menu: DotMenu[]) {
         this.items$.next(this.formatMenuItems(menu));
+    }
+
+    private userCustomRedirect(editModeUrl?: string): void {
+        if (editModeUrl) {
+            this.dotRouterService.gotoPortlet(`edit-page/content?url=${editModeUrl}`, true);
+        } else if (this.dotRouterService.previousSavedURL) {
+            this.dotRouterService.gotoPortlet(this.dotRouterService.previousSavedURL, true).then((res: boolean) => {
+                this.dotRouterService.previousSavedURL = res ? null : this.dotRouterService.previousSavedURL;
+            });
+        }
     }
 }

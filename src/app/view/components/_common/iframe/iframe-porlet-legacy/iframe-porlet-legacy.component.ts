@@ -33,8 +33,8 @@ export class IframePortletLegacyComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.dotRouterService.portletReload$.subscribe(() => {
-            this.reloadIframePortlet();
+        this.dotRouterService.portletReload$.subscribe((portletId: string) => {
+            this.reloadIframePortlet(portletId);
         });
         this.siteService.switchSite$.subscribe(() => {
             // prevent set empty URL - when the page first loads.
@@ -66,9 +66,15 @@ export class IframePortletLegacyComponent implements OnInit {
      * Tigger when the current site is changed, this method reload the iframe if is neccesary
      * @memberof IframePortletLegacyComponent
      */
-    reloadIframePortlet(): void {
+    reloadIframePortlet(portletId?: string): void {
         this.dotLoadingIndicatorService.show();
-        this.setUrl(this.url.getValue());
+        if (portletId) {
+            this.dotMenuService.getUrlById(portletId).subscribe((url: string) => {
+                this.setUrl(url);
+            });
+        } else {
+            this.setUrl(this.url.getValue());
+        }
     }
 
     private bindGlobalEvents(): void {
