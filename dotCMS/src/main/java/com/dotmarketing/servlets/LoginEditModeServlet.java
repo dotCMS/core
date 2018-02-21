@@ -45,10 +45,9 @@ public class LoginEditModeServlet extends HttpServlet {
 
 					if ("contentlet".equals(_edit_mode_id.getAssetType())) {
 						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-						
+
 						String pageURI = findAssetURI(cont);
-						    
-						_edit_mode_id.setURI(pageURI);
+
 					}
 				}else{
 					Logger.info(LoginEditModeServlet.class,
