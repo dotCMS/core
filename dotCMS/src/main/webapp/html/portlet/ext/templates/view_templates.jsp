@@ -159,7 +159,7 @@ function handleDepResponse(data, arg1) {
 
 		dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
         dojo.byId("query").innerHTML = "<%=LanguageUtil.get(pageContext, "message.template.dependencies.top", "10")%>" + "<br>" +
-				"<%=LanguageUtil.get(pageContext,"message.template.dependencies.query", "")%>" + "<br> +baseType:5 +_all:"+ identifier;
+				"<%=LanguageUtil.get(pageContext,"message.template.dependencies.query", "")%>" + "<br> +baseType:5 +catchall:"+ identifier;
 		dijit.byId("dependenciesDialog").show();
 	}else{
 		processDelete(inode, referer);

@@ -284,7 +284,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
             }
         }
         // this is a light weight search for pages that use this template
-        List<ContentletSearch> pages= APILocator.getContentletAPIImpl().searchIndex("+_all:" + template.getIdentifier() + " +baseType:"
+        List<ContentletSearch> pages= APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
                 + BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,respectFrontendRoles);
 
         for (ContentletSearch page : pages) {

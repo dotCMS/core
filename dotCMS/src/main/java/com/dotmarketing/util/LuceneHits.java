@@ -14,6 +14,15 @@ import org.apache.lucene.search.TopDocs;
 import com.liferay.util.Time;
 
 public class LuceneHits implements Serializable {
+
+	private long _start;
+	private float _searchTime;
+	private List<LuceneHit> luceneHits = new ArrayList<>();
+	private long _length;
+	private long _total;
+	private String _luceneQuery = "";
+	private int _offset = 0;
+	private String _sortBy = "";
 	
 	private class LuceneHit {
 		float score = 0;
@@ -55,7 +64,7 @@ public class LuceneHits implements Serializable {
 		throws IOException {
 
 		_total = hits.totalHits;
-		int upperIndex = hits.totalHits;
+		long upperIndex;
 		if (offset > -1 && limit > 0) {
 			if (offset + limit >  hits.totalHits)
 				upperIndex = hits.totalHits;
@@ -74,9 +83,7 @@ public class LuceneHits implements Serializable {
 		
         ScoreDoc[] hitsList = hits.scoreDocs;
        
-   		luceneHits = new ArrayList<LuceneHit>(_length);
-
-        luceneHits = new ArrayList<LuceneHit>(upperIndex - offset);
+   		luceneHits = new ArrayList(Math.toIntExact(_length));
         
         for (int i = offset; i < upperIndex; i++) {
         	int docId = hitsList[i].doc;
@@ -99,7 +106,7 @@ public class LuceneHits implements Serializable {
 		return luceneHits.get(n).getDoc();
 	}
 
-	public int length() {
+	public long length() {
 		return _length;
 	}
 
@@ -111,7 +118,7 @@ public class LuceneHits implements Serializable {
 		return _searchTime;
 	}
 
-	public int getTotal() {
+	public long getTotal() {
 		return _total;
 	}
 
@@ -142,15 +149,5 @@ public class LuceneHits implements Serializable {
     public void setSortBy(String sortBy) {
         this._sortBy = sortBy;
     }
-    
-	private long _start;
-	private float _searchTime;
-	private List<LuceneHit> luceneHits = new ArrayList<LuceneHit>();
-	private int _length;
-	private int _total;
-    private String _luceneQuery = "";
-    private int _offset = 0;
-    private String _sortBy = "";
-
 
 }

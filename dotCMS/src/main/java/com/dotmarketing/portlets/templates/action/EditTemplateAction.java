@@ -303,7 +303,7 @@ public class EditTemplateAction extends DotPortletAction implements
 						LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
 								"<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
 						"<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
-								" +_all:" + webAsset.getIdentifier()
+								" +catchall:" + webAsset.getIdentifier()
 						));
 
 				if (canTemplateBeDeleted(webAsset, user, error)) {
@@ -343,9 +343,9 @@ public class EditTemplateAction extends DotPortletAction implements
 						WebAssetFactory.deleteAsset(webAsset,user);
 					} else {
 						if (errorCount == 0) {
-							errors.setFooter(errors.getFooter() + " +(_all:" + webAsset.getIdentifier());
+							errors.setFooter(errors.getFooter() + " +(catchall:" + webAsset.getIdentifier());
 						} else {
-							errors.setFooter(errors.getFooter() + " OR _all:" + webAsset.getIdentifier());
+							errors.setFooter(errors.getFooter() + " OR catchall:" + webAsset.getIdentifier());
 						}
 						errorCount++;
 						SessionMessages.add(httpReq,SessionMessages.DIALOG_MESSAGE, errors);

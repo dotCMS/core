@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.facet.Facet;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
@@ -58,7 +58,9 @@ public interface SiteSearchAPI {
 
 	SiteSearchResult getFromIndex(String index, String id);
 
-	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException;
+	Map<String, Aggregation> getAggregations(String indexName, String query) throws DotDataException;
+
+	Map<String, Aggregation> getFacets(String indexName, String query) throws DotDataException; //TODO: https://github.com/dotcms/core/issues/13492
 
     List<String> listClosedIndices();
 }
