@@ -73,7 +73,7 @@ public class ESSearchResults implements List {
 	}
 
 	public Aggregations getAggregations() {
-		return response.getAggregations(); //TODO: https://github.com/dotcms/core/issues/13492
+		return response.getAggregations();
 	}
 
 	final List cons;
