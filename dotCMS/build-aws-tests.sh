@@ -47,6 +47,8 @@ cd ../..
 tar zxf core/dist-output/dotcms_*.tar.gz
 mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 
+# Assign permissions to ES modules jar
+chmod -R +x dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search/modules/
 
 # Copy test JARs into distro's tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
