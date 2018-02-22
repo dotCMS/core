@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate } from '@angular/router';
-import { DotRouterService } from './../dot-router-service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
  * Route Guard the only function is to redirect to the Main Portlet.

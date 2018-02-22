@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { DefaultGuardService } from './default-guard.service';
-import { DotRouterService } from './../dot-router-service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 class MockDotRouterService {

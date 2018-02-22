@@ -18,7 +18,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DotRouterService } from '../../../api/services/dot-router-service';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { ContentTypesFormComponent } from '../form';
 

@@ -5,7 +5,7 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotRouterService } from '../../../../../api/services/dot-router-service';
+import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { IFrameModule } from '../index';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { Observable } from 'rxjs/Observable';

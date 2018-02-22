@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from '../../../../api/services/dot-router-service';
+import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

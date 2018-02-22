@@ -5,7 +5,7 @@ import { ContentTypesInfoService } from './api/services/content-types-info';
 import { CrudService } from './api/services/crud/crud.service';
 import { DotConfirmationService } from './api/services/dot-confirmation';
 import { DotMenuService } from './api/services/dot-menu.service';
-import { DotRouterService } from './api/services/dot-router-service';
+import { DotRouterService } from './api/services/dot-router/dot-router.service';
 import { FormatDateService } from './api/services/format-date-service';
 import { GravatarService } from './api/services/gravatar-service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';

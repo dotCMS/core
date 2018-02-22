@@ -8,7 +8,7 @@
         "build:dev": "ng build -v -w --dev --aot=false --base-href=\"./\"",
         "build": "ng build --prod --aot=false --base-href=\"./\"",
         "watch": "npm run build -w --no-delete-output-path --sourcemap",
-        "test": "ng test -sr",
+        "test": "ng test",
         "lint": "ng lint",
         "e2e": "ng e2e",
         "devversionbump": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",

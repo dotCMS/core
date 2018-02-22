@@ -1,6 +1,6 @@
 import { User, Auth } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
 
 const mockUser: User = {
     emailAddress: 'admin@dotcms.com',
@@ -8,6 +8,11 @@ const mockUser: User = {
     lastName: 'Admin',
     loggedInDate: 123456789,
     userId: '123'
+};
+
+const mockUserWithRedirect = {
+    ...mockUser,
+    editModeUrl: 'redirect/to'
 };
 
 const mockAuth: Auth = {
@@ -31,6 +36,10 @@ export class LoginServiceMock {
         return this._auth;
     }
 
+    loginUser(): Observable<User> {
+        return Observable.of(mockUserWithRedirect);
+    }
+
     watchUser(func: Function): void {
         this.watchUserFunc = func;
     }
@@ -41,5 +50,18 @@ export class LoginServiceMock {
 
     triggerNewAuth(auth: Auth) {
         this._auth.next(auth);
+    }
+
+    getLoginFormInfo(): Observable<any> {
+        return Observable.of({
+            i18nMessagesMap: {
+                'sign-in': 'Sign in'
+            },
+            entity: {
+                levelName: '',
+                languages: [],
+                currentLanguage: ''
+            }
+        });
     }
 }

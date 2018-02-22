@@ -9,7 +9,7 @@ import { ContentTypeField } from '../fields/index';
 import { FieldService } from '../fields/service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DotRouterService } from '../../../api/services/dot-router-service';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 /**
  * Portlet component for edit content types

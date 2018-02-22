@@ -5,7 +5,7 @@ import { CrudService } from '../../../api/services/crud';
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from '../../../api/services/dot-router-service';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 /**
  * With the url return a content type by id or a default content type

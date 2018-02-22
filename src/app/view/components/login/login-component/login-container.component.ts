@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { HttpRequestUtils, LoginService, LoggerService, HttpCode, ResponseView } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from '../../../../api/services/dot-router-service';
+import { HttpRequestUtils, LoginService, LoggerService, HttpCode, ResponseView, User } from 'dotcms-js/dotcms-js';
+import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 @Component({
@@ -10,7 +10,7 @@ import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-ind
     template: `
         <dot-login-component
             [message]="message"
-            [isLoginInProgress] = "isLoginInProgress"
+            [isLoginInProgress]="isLoginInProgress"
             (login)="logInUser($event)"
             (recoverPassword)="showForgotPassword()"
             [passwordChanged]="passwordChanged"
@@ -50,23 +50,22 @@ export class LoginContainerComponent {
         this.dotLoadingIndicatorService.show();
         this.message = '';
 
-        this.loginService
-            .loginUser(loginData.login, loginData.password, loginData.rememberMe, loginData.language)
-            .subscribe(
-                () => {
-                    this.message = '';
-                    this.dotLoadingIndicatorService.hide();
-                },
-                (error: ResponseView) => {
-                    if (error.status === HttpCode.BAD_REQUEST || error.status === HttpCode.UNAUTHORIZED) {
-                        this.message = error.errorsMessages || this.getErrorMessage(error.response.json().error);
-                    } else {
-                        this.loggerService.debug(error);
-                    }
-                    this.isLoginInProgress = false;
-                    this.dotLoadingIndicatorService.hide();
+        this.loginService.loginUser(loginData.login, loginData.password, loginData.rememberMe, loginData.language).subscribe(
+            (user: User) => {
+                this.message = '';
+                this.dotLoadingIndicatorService.hide();
+                this.dotRouterService.goToMain(user['editModeUrl']);
+            },
+            (error: ResponseView) => {
+                if (this.isBadRequestOrUnathorized(error.status)) {
+                    this.message = error.errorsMessages || this.getErrorMessage(error.response.json().error);
+                } else {
+                    this.loggerService.debug(error);
                 }
-            );
+                this.isLoginInProgress = false;
+                this.dotLoadingIndicatorService.hide();
+            }
+        );
     }
 
     /**
@@ -79,6 +78,10 @@ export class LoginContainerComponent {
     private getErrorMessage(origMessage: string): string {
         const split = origMessage.split(':');
         return split[2];
+    }
+
+    private isBadRequestOrUnathorized(status: number) {
+        return status === HttpCode.BAD_REQUEST || status === HttpCode.UNAUTHORIZED;
     }
 }
 

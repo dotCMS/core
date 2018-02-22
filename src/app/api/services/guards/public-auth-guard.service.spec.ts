@@ -4,7 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { PublicAuthGuardService } from './public-auth-guard.service';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from './../dot-router-service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 class MockLoginService {
