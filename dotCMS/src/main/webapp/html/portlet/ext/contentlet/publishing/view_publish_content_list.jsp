@@ -73,7 +73,7 @@
     try {
         if ( UtilMethods.isSet( query ) ) {
 
-            // if this is not a lucene query, lets query _all
+            // if this is not a lucene query, lets query catchall
             if ( query.indexOf( ":" ) == -1 ) {
 
                 StringWriter sw = new StringWriter();
@@ -83,7 +83,7 @@
                     if ( UtilMethods.isSet( x ) ) {
                         sw.append( "title:" + x + "* " );
                     }
-                    sw.append( "+_all:" + x + "* " );
+                    sw.append( "+catchall:" + x + "* " );
                 }
 
                 query = sw.toString();

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -26,7 +27,7 @@ import java.util.List;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(DataProviderRunner.class)
-public class DependencySetTest {
+public class DependencySetTest extends IntegrationTestBase {
 
     private final User systemUser = APILocator.systemUser();
 

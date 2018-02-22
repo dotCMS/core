@@ -224,7 +224,6 @@ public class TaskLocatorUtil {
 		ret.add(Task04330WorkflowTaskAddLanguageIdColumn.class);
 		ret.add(Task04335CreateSystemWorkflow.class);
 		ret.add(Task04340TemplateShowOnMenu.class);
-		ret.add(Task04345ChangeMultiTreePrimaryKey.class);
 
 		return ret;
 	}

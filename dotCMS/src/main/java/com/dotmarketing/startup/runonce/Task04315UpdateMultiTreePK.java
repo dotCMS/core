@@ -38,8 +38,12 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     
     
     final static String updateRelationTypesSQL =   "update multi_tree set relation_type='" + MultiTree.LEGACY_RELATION_TYPE + "' where relation_type is null or relation_type=''";
-    
+
+    private static final String H2_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type SET NOT NULL";
     private static final String MSSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type NVARCHAR(64) NOT NULL";
+    private static final String MYSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree MODIFY relation_type VARCHAR(64) NOT NULL";
+    private static final String ORACLE_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree MODIFY relation_type VARCHAR2(64) NOT NULL";
+    private static final String POSTGRES_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type SET NOT NULL";
 
     final static String alterRelationTypePK =   "ALTER TABLE " + tableName + " ADD CONSTRAINT " + indexName + " PRIMARY KEY (" + columnNames + ")";
     
@@ -63,27 +67,36 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
             // Drop Indexes
             this.getIndexes(conn, ImmutableList.of(tableName), true );
             
-            
+            //Update relation_type null or empty values to LEGACY_RELATION_TYPE
             DotConnect db = new DotConnect();
             db.setSQL(updateRelationTypesSQL);
             db.loadResult(conn);
 
+            //Change relation_type to Not null
+            if (DbConnectionFactory.isH2()){
+                db.setSQL(H2_SET_NOT_NULL_RELATION_TYPE);
+            }
+            if (DbConnectionFactory.isMySql()){
+                db.setSQL(MYSQL_SET_NOT_NULL_RELATION_TYPE);
+            }
             if (DbConnectionFactory.isMsSql()) {
                 db.setSQL(MSSQL_SET_NOT_NULL_RELATION_TYPE);
-                db.loadResult(conn);
             }
-            
+            if (DbConnectionFactory.isOracle()) {
+                db.setSQL(ORACLE_SET_NOT_NULL_RELATION_TYPE);
+            }
+            if (DbConnectionFactory.isPostgres()) {
+                db.setSQL(POSTGRES_SET_NOT_NULL_RELATION_TYPE);
+            }
+            db.loadResult(conn);
+
+            //Add PKs
             db.setSQL(alterRelationTypePK);
             db.loadResult(conn);
             
-
-            
+            //Add Indexes
             db.setSQL(addIndexToMultiTree);
             db.loadResult(conn);
-            
-
-            
-
 
         }
         catch(Exception e) {

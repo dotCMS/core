@@ -5,64 +5,59 @@
           "type": "multi_field",
           "fields": {
             "untouched": {
-              "type": "string",
-              "index": "not_analyzed",
+              "type": "keyword",
               "ignore_above": 8191,
               "doc_values" : true
             },
             "content": {
-              "type": "string",
+              "type": "text",
               "analyzer": "standard_content"
             },
             "ngram": {
               "search_analyzer": "standard_content",
-              "index_analyzer": "partial_content",
-              "type": "string"
+              "analyzer": "partial_content",
+              "type": "text"
             }
           }
         },
         "host": {
-          "type": "string",
-          "index": "not_analyzed",
+          "type": "keyword",
           "doc_values" : true
         },
         "contentLength": {
           "type": "long"
         },
         "uri": {
-          "type": "string",
-          "index": "not_analyzed",
+          "type": "keyword",
           "doc_values" : true
         },
         "url": {
-          "type": "string",
-          "index": "not_analyzed",
+          "type": "keyword",
           "doc_values" : true
         },
         "mimeType": {
-          "type": "string",
-          "index": "not_analyzed",
+          "type": "keyword",
           "doc_values" : true
         },
         "title": {
-          "type": "string"
+          "type": "text"
         },
         "description": {
-          "type": "string"
+          "type": "text"
         },
         "modified": {
           "type": "date",
           "doc_values" : true
         },
         "keywords": {
-          "type": "string",
-	 	  "analyzer": "comma_analyzer"	
+          "type": "keyword",
+	 	  "analyzer": "comma_analyzer"
 		},
         "language": {
           "type": "integer"
         },
         "author": {
-          "type": "string"
+          "type": "text"
         }
       }
     }

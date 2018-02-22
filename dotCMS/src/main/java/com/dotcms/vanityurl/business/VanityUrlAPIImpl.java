@@ -1,5 +1,7 @@
 package com.dotcms.vanityurl.business;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static com.dotcms.util.VanityUrlUtil.isValidRegex;
@@ -29,10 +31,11 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import org.elasticsearch.index.IndexNotFoundException;
+
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,7 +44,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import org.apache.commons.collections.keyvalue.MultiKey;
-import org.elasticsearch.indices.IndexMissingException;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -494,7 +496,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 this.checkSiteLanguageVanities
                         (siteId, languageId, includedSystemHostOnLuceneQuery);
             }
-        } catch (IndexMissingException e) {
+        } catch (IndexNotFoundException e) {
             /*
 			 * We catch this exception in order to avoid to stop the
 			 * initialization of dotCMS if for some reason at this point we
@@ -505,7 +507,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
         } catch (Exception e) {
-            if (e.getCause() instanceof IndexMissingException) {
+            if (e.getCause() instanceof IndexNotFoundException) {
                 /*
 				 * We catch this exception in order to avoid to stop the
 				 * initialization of dotCMS if for some reason at this point we

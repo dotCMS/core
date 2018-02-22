@@ -1,12 +1,10 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
-<%@ page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
+<%@page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
 <%@page import="org.elasticsearch.search.suggest.term.TermSuggestion"%>
-<%@page import="org.elasticsearch.search.suggest.Suggest.Suggestion"%>
-<%@page import="org.elasticsearch.search.facet.terms.TermsFacet"%>
-<%@page import="org.elasticsearch.search.facet.Facet"%>
-
+<%@page import="org.elasticsearch.search.suggest.Suggest"%>
+<%@page import="org.elasticsearch.search.suggest.Suggest.*"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -17,6 +15,7 @@
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="java.util.Calendar"%>
+<%@page import="java.util.Iterator"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.ArrayList"%>
@@ -28,6 +27,10 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
+<%@ page import="org.elasticsearch.search.aggregations.Aggregation" %>
+<%@ page import="org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation" %>
+<%@ page import="org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket" %>
+
 
 <%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
@@ -263,22 +266,22 @@ if(query == null){
 		</div>
 	<%} %>
 
-	<%if(cons!= null && cons.getFacets() !=null){ %>
+	<%if(cons!= null && cons.getAggregations() !=null){ %>
 		<table class="listingTable" style="width:90%;">
 			<tr><th colspan="3">
 
 
-					<h2>Facets</h2>
+					<h2>Aggregations</h2>
 				</th></tr>
 				<tr>
 					<td>
-					<%for(Facet f : cons.getFacets()){ %>
-					<%TermsFacet terms = (TermsFacet) f; %>
+					<%for(Aggregation agg : cons.getAggregations()){ %>
+					<%MultiBucketsAggregation multiBuckets = (MultiBucketsAggregation) agg; %>
 					<%int ii=1; %>
-						<%for (TermsFacet.Entry entry : terms) {%>
+						<%for (Bucket entry : multiBuckets.getBuckets()) {%>
 
-							<%=ii++%>. <%=entry.getTerm()%> =
-							<%= entry.getCount()%><br>
+							<%=ii++%>. <%=entry.getKey()%> =
+							<%= entry.getDocCount()%><br>
 
 						<% } %>
 					<%} %>
@@ -298,11 +301,12 @@ if(query == null){
 			</tr>
 			<tr>
 				<td><%int ii=1; %>
-					<%for(Suggestion s : cons.getSuggestions() ){ %>
-
+				    <%Iterator iterator = cons.getSuggestions().iterator();%>
+					<%while(iterator.hasNext() ){ %>
+                        <%Suggest.Suggestion s = (Suggest.Suggestion)iterator.next();%>
 						<%for (Object entry : s.getEntries()) {%>
-							<%=ii++%>. <%=((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> |
-							<%for(TermSuggestion.Entry.Option opt : ((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
+							<%=ii++%>. <%=((TermSuggestion.Entry) entry).getText() %> |
+							<%for(TermSuggestion.Entry.Option opt : ((TermSuggestion.Entry) entry).getOptions() ){ %>
 								<%=opt.getText()%>
 							<%} %>
 							<br>
