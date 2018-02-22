@@ -160,7 +160,6 @@
 	function importCancel(id){
     	ImportContentletAjax.cancelImport(id,importCancelCallback);
     }
-    //dojo.require("dojo.data.ItemFileWriteStore");
 
     var actionData = {
         identifier: 'id',
