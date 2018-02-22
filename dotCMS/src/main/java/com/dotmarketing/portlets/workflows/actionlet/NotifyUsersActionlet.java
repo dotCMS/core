@@ -32,7 +32,6 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 
 
 	public String getName() {
-		// TODO Auto-generated method stub
 		return "Notify Users";
 	}
 
@@ -43,12 +42,10 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 
-		
 		String emailSubject =null;
 		String emailBody =null;
 		boolean isHtml = false;
-		
-			
+
 		if(params.get("emailSubject") != null ){
 			emailSubject = params.get("emailSubject").getValue();
 		}
@@ -66,14 +63,10 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		}
 		
 		String emails = (params.get("emails")== null) ? "" : params.get("emails").getValue();
-		
-		
-		
-		
-		
 		List<String> recipients = new ArrayList<String>();
 		StringTokenizer st = new StringTokenizer(emails, ", ");
-		while(st.hasMoreTokens()){
+		while(st.hasMoreTokens()) {
+
 			String x = st.nextToken();
 			
 			if(x.contains("$")){
@@ -86,54 +79,39 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 				} catch (Exception e) {
 					Logger.error(NotifyUsersActionlet.class,e.getMessage(),e);
 				}
-				
-				
-				
+
 				continue;
 			}
-			
-			
-			
-			
-			if(Validator.isEmailAddress(x)){
+
+			if(Validator.isEmailAddress(x)) {
 				recipients.add(x);
 				continue;
 			}
 			
-			try{
-
+			try {
 
 				List<User> users = APILocator.getRoleAPI().findUsersForRole(APILocator.getRoleAPI().loadRoleByKey(x), false);
 				for(User u : users){
 					recipients.add(u.getEmailAddress());
 				}
 				continue;
-			}
-			
-			catch(Exception e){
+			} catch(Exception e) {
 				Logger.debug(this.getClass(),"Unable to find role:" + x);
 			}
 			
-			try{
+			try {
 				User u = APILocator.getUserAPI().loadUserById(x, APILocator.getUserAPI().getDefaultUser(), true);
 				if(u != null && UtilMethods.isSet(u.getUserId())){
 					recipients.add(u.getEmailAddress());
 				}
-			}
-			catch(Exception e){
+			} catch(Exception e) {
 				Logger.debug(this.getClass(),"Unable to find user:" + x);
 			}
-			
 		}
 		
 		String[] emailsToSend = (String[]) recipients.toArray(new String[recipients.size()]);
 		
 		WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
-		
-		
-		
-		
-
 	}
 
 	public WorkflowStep getNextStep() {
