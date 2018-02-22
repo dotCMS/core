@@ -22,8 +22,6 @@
         <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
         <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
         <Property name="MDC_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %m - %X{EndpointName} %X{BundleId} %n</Property>
-        <Property name="SYSTEM_WORKFLOW_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/systemworkflow.log</Property>
-        <Property name="SYSTEM_WORKFLOW_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/systemworkflow-%i.log.gz</Property>
     </Properties>
 
     <Appenders>
@@ -55,9 +53,6 @@
         </Async>
         <Async name="velocity">
             <AppenderRef ref="VELOCITY-FILE"/>
-        </Async>
-        <Async name="systemworkflow">
-            <AppenderRef ref="SYSTEM_WORKFLOW-FILE"/>
         </Async>
 
         <!--  Generic Logging File -->
@@ -129,17 +124,6 @@
         <RollingFile name="VELOCITY-FILE"
                      fileName="${VELOCITY_LOG_FILE}"
                      filePattern="${VELOCITY_FILENAME_PATTERN}">
-            <PatternLayout pattern="${MESSAGE_PATTERN}"/>
-            <Policies>
-                <SizeBasedTriggeringPolicy size="20MB"/>
-            </Policies>
-            <DefaultRolloverStrategy max="10"/>
-        </RollingFile>
-        <!--  Generic Logging File -->
-        <RollingFile name="SYSTEM_WORKFLOW-FILE"
-                     fileName="${SYSTEM_WORKFLOW_LOG_FILE}"
-                     filePattern="${SYSTEM_WORKFLOW_FILENAME_PATTERN}"
-                     immediateFlush="false">
             <PatternLayout pattern="${MESSAGE_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
@@ -222,9 +206,6 @@
         </Logger>
         <Logger name="org.apache.velocity" level="warn" additivity="false">
             <AppenderRef ref="velocity"/>
-        </Logger>
-        <Logger name="com.dotmarketing.startup.runonce.SystemWorkflowUpgradeLoggerError" level="info" additivity="false">
-            <AppenderRef ref="systemworkflow"/>
         </Logger>
     </Loggers>
 </Configuration>
