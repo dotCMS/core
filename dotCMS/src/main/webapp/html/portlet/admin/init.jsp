@@ -56,9 +56,9 @@
 <%@ page import="com.liferay.portlet.admin.action.DeleteUserAction" %>
 <%@ page import="com.liferay.portlet.admin.action.UpdateUserConfigAction" %>
 
-<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.Level" %>
-<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.core.Logger" %>
-<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.LogManager" %>
+<%@ page import="org.apache.logging.log4j.Level" %>
+<%@ page import="org.apache.logging.log4j.core.Logger" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
 
 <portlet:defineObjects />
 

@@ -22,7 +22,7 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.ThreadContext;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
