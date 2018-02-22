@@ -20,7 +20,7 @@ import java.util.Map;
  * @version 5.0
  *
  */
-public class Task04340AddSystemWorkflowToContentType implements StartupTask {
+public class Task04345AddSystemWorkflowToContentType implements StartupTask {
 
     public static final String SYSTEM_WORKFLOW_ID          = WorkflowAPI.SYSTEM_WORKFLOW_ID;
     protected static String SELECT_CONTENT_TYPES           = "select inode, name from structure";
@@ -34,7 +34,6 @@ public class Task04340AddSystemWorkflowToContentType implements StartupTask {
     @Override
     @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException {
-
 
         Logger.info(this, "Running the upgrade for the system workflow to content type");
 
@@ -52,8 +51,8 @@ public class Task04340AddSystemWorkflowToContentType implements StartupTask {
 
             new DotConnect().setSQL(INSERT_SCHEME_FOR_CONTENT_TYPE)
                     .addParam(UUIDGenerator.generateUuid())
-                    .addParam(contentTypeId)
                     .addParam(SYSTEM_WORKFLOW_ID)
+                    .addParam(contentTypeId)
                     .loadResult();
         }
 
