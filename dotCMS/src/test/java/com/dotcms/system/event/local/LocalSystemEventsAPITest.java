@@ -153,12 +153,14 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
 
         Assert.assertTrue(localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber));
+        localSystemEventsAPI.unsubscribe(TestEventType1.class);
+        localSystemEventsAPI.unsubscribe(TestEventType2.class);
 
         localSystemEventsAPI.notify(new TestEventType1("works??"));
         localSystemEventsAPI.notify(new TestEventType2("really works??"));
 
         // new message not received, so the counter still on 4
-        Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
+        Assert.assertEquals(4, testAnnotatedSubscriber.getCalled());
 
     } // deleteAnnotatedSubscriberTest.
 

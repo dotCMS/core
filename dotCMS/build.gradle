@@ -6,7 +6,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
-        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
+        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
         classpath 'nl.eveoh:gradle-aspectj:1.6'
     }

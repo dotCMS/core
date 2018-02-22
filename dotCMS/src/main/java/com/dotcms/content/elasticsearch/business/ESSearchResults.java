@@ -2,7 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.suggest.Suggest;
 
 import java.util.Collection;
@@ -72,14 +72,14 @@ public class ESSearchResults implements List {
 		return response.getSuggest();
 	}
 
-	public Facets getFacets() {
-		return response.getFacets();
+	public Aggregations getAggregations() {
+		return response.getAggregations();
 	}
 
 	final List cons;
 
 	public long getCount() {
-		return response.getHits().hits().length;
+		return response.getHits().getHits().length;
 	}
 
 	public String getQuery() {
@@ -104,7 +104,7 @@ public class ESSearchResults implements List {
 	}
 
 	public long getQueryTook() {
-		return response.getTookInMillis();
+		return response.getTook().getMillis();
 	}
 
 	public long getPopulationTook() {

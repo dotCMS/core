@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import java.math.BigDecimal;
@@ -1003,7 +1004,6 @@ public class DotConnect {
 			return json;
 
     }
-    
 
     /**
      * Executes in batch transaction, with N copies of the "sql". How many times will be added to the batch will depend on the "listOfParams" size.
@@ -1019,6 +1019,24 @@ public class DotConnect {
      * @return int []
      */
     public int [] executeBatch (final String sql, final Collection<Params> listOfParams) throws DotDataException {
+
+        return this.executeBatch(sql, listOfParams, this::setParams);
+    }
+
+    /**
+     * Executes in batch transaction, with N copies of the "sql". How many times will be added to the batch will depend on the "listOfParams" size.
+     *
+     * Will returns an array with the integer result of how many rows were affected for each row updated.
+     *
+     * Pre: all {@link Params}.size() should be the same on the "listOfParams",
+     * the first param in the list will be taken as a default to set statement parameter over the rest of the
+     * params in the collection.
+     *
+     * @param sql {@link String}
+     * @param listOfParams {@link Collection} of {@link Params}
+     * @return int []
+     */
+    public int [] executeBatch (final String sql, final Collection<Params> listOfParams, final ParamsSetter paramsSetter) throws DotDataException {
 
         int [] results = null;
         boolean previousAutocommit = true;
@@ -1039,7 +1057,7 @@ public class DotConnect {
 
                     if (null != params) {
 
-                        this.setParams (preparedStatement, params);
+                        paramsSetter.setParams (preparedStatement, params);
                         preparedStatement.addBatch();
                     }
                 }
@@ -1089,6 +1107,27 @@ public class DotConnect {
         for (int i = 0; i < params.size(); ++i) {
 
             preparedStatement.setObject(i+1, params.get(i));
+        }
+    }
+
+    /**
+     * Set parameter to the {@link PreparedStatement} in the index (parameterIndex), if value is null, set null for cross db.
+     * @param preparedStatement
+     * @param parameterIndex
+     * @param value
+     * @throws SQLException
+     */
+    public static void setStringOrNull (final PreparedStatement preparedStatement,
+                                        final int parameterIndex,
+                                        final String value
+                                        ) throws SQLException {
+
+        if (UtilMethods.isSet(value)) {
+
+            preparedStatement.setObject(parameterIndex, value);
+        } else {
+
+            preparedStatement.setNull(parameterIndex, DbConnectionFactory.getDBStringType());
         }
     }
 

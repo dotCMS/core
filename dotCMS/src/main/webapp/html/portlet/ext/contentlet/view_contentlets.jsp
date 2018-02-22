@@ -109,7 +109,7 @@
 
     if (!InodeUtils.isSet(structureSelected) || !structures.contains(CacheLocator.getContentTypeCache().getStructureByInode(structureSelected))) {
 
-        structureSelected = "_all";
+        structureSelected = "catchall";
 
     }
 
@@ -164,7 +164,7 @@
 
 
 
-    String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
+    String _allValue = (UtilMethods.webifyString(fieldsSearch.get("catchall")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("catchall")).substring(0,UtilMethods.webifyString(fieldsSearch.get("catchall")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("catchall"));
 
     String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
             LanguageUtil.get(pageContext, "Widget"),
@@ -215,7 +215,7 @@
         items: [
             <%if(request.getAttribute("DONT_SHOW_ALL") == null){%>
             {
-                name: "_all",
+                name: "catchall",
                 label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
                 textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
             },

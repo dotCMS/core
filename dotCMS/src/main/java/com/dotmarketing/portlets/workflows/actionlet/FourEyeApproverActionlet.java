@@ -41,12 +41,16 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1177885642438262884L;
 
-    private static final String ACTIONLET_NAME = "'4 Eye' Approval";
+    private static final String ACTIONLET_NAME = "'Four Eyes' Approval";
     private static final String HOW_TO =
-            "This actionlet implements the '4 Eyes' principle for verifying new content. It takes a comma-separated list of user IDs, email addresses, or role keys "
-                    + "(i.e., the users assigned to those roles) which will be in charge of reviewing the content, and a minimum number of approvers. "
-                    + "If the number of approvers is greater or equal than the specified value, the next sub-action will be executed. Otherwise, an email will be sent "
-                    + "to all users who haven't approved the content yet, and STOP all further sub-action processing.";
+            "This actionlet implements the 'Four Eyes' principle for verifying new content. It takes a " +
+                    "comma-separated list of users and Roles (in the form of User IDs, Email addresses, " +
+                    "or Role keys) who are authorized to review the content, and a minimum number of " +
+                    "approvers. When a user executes the Workflow action, if the number of users who " +
+                    "have approved the content is greater than or equal than the specified value, " +
+                    "the following sub-actions will be executed; otherwise, an email will be sent to " +
+                    "all users who haven't approved the content yet, and none of the following sub-actions " +
+                    "will be executed.";
     private static final String ID_DELIMITER = ",";
     private static final String PARAM_CONTENT_APPROVERS = "approvers";
     private static final String PARAM_MINIMUM_CONTENT_APPROVERS = "minimumApprovers";
@@ -75,7 +79,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             ACTIONLET_PARAMETERS
                     .add(new WorkflowActionletParameter(PARAM_EMAIL_SUBJECT,
                             "Email Subject",
-                            "'4 Eye' Approval Required", true));
+                            "Multiple Approval Required", true));
             ACTIONLET_PARAMETERS
                     .add(new WorkflowActionletParameter(PARAM_EMAIL_BODY, "Email Message",
                             null,
@@ -159,7 +163,8 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             }
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
-            //WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+            // Sending notification message
+            WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
         }
     }
 

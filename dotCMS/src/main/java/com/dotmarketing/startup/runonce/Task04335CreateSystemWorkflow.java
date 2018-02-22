@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 /**
  * This upgrade task will creates the system workflow
  *
@@ -135,7 +137,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
                 .addParam((String)action.get("name"))
                 .addParam((String)action.get("condition"))
                 .addParam((String)action.get("nextStep"))
-                .addParam((String)action.get("nextAssign"))
+                .addParam(this.getRoleId("CMS Anonymous", (String)action.get("nextAssign")))
                 .addParam(ConversionUtils.toInt(action.get("order").toString(), 0))
                 .addParam(Boolean.valueOf(action.get("assignable").toString()))
                 .addParam(Boolean.valueOf(action.get("commentable").toString()))
@@ -144,6 +146,15 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
                 .addParam(Boolean.valueOf(action.get("requiresCheckout").toString()))
                 .addParam(this.getShowOn((List<String>)action.get("showOn")))
                 .loadResult();
+    }
+
+    private String getRoleId(final String roleKey, final String defaultValue) throws DotDataException {
+        return (String)new DotConnect()
+                .setSQL("select id,role_name,role_key from cms_role where role_key = ?")
+                .addParam(roleKey)
+                .loadObjectResults()
+                .stream().findFirst().orElse(map("id", defaultValue))
+                .get("id");
     }
 
     private String getShowOn(final List<String> showOn) {
