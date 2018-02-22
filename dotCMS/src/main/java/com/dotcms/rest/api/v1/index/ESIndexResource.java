@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
-import static com.dotcms.util.DotPreconditions.checkArgument;
+import com.google.gson.Gson;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -47,7 +48,13 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.snapshots.SnapshotRestoreException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,12 +62,11 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
 import javax.servlet.http.HttpServletRequest;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.snapshots.SnapshotRestoreException;
+
+import static com.dotcms.util.DotPreconditions.checkArgument;
 
 /**
  * Index endpoint for REST calls version 1
@@ -196,10 +202,12 @@ public class ESIndexResource {
     }
 
     public static long indexDocumentCount(String indexName) {
-        ESIndexAPI esapi = APILocator.getESIndexAPI();
-        Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-        IndexStatus status = indexInfo.get(indexName);
-        return (status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): 0;
+
+        final Client client = new ESClient().getClient();
+        final IndicesStatsResponse indicesStatsResponse =
+            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet();
+        final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
+        return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
     }
 
     /**

@@ -1,8 +1,7 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-
-import org.elasticsearch.common.collect.ImmutableMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

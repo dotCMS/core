@@ -39,7 +39,7 @@
         "bool": {
             "must": {
                 "term": {
-                    "_all": "gas"
+                    "catchall": "gas"
                 }
             }
         }
@@ -51,17 +51,17 @@
 
 
 
-<h3>Facet on the news.tags field</h3>
+<h3>Aggregation on the news.tags field</h3>
 <pre><code>
 {
     "query" : {
         "match_all" : {  }
     },
-    "facets" : {
+    "aggs" : {
         "tag" : {
             "terms" : {
                 "field" : "news.tags",
-                "size" : 100   //the number of facets to return
+                "size" : 100   //the number of aggregations to return
             }
         }
     },
@@ -155,18 +155,18 @@ $results.response&lt;br&gt;
         "bool": {
             "must": {
                 "term": {
-                    "_all": "gas"
+                    "catchall": "gas"
                 }
             }
         }
     }
 }'
 </code></pre>
-<p>curl for facets (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
+<p>curl for aggregations (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
 <pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/raw -d '
     {
         "query" : { "query_string" : {"query" : "gas*"} },
-        "facets" : {
+        "aggs" : {
             "tags" : { "terms" : {"field" : "news.tags"} }
         }
     }
@@ -199,8 +199,8 @@ $results.response&lt;br&gt;
 <p>Filter news by distance away</p>
 <pre><code>{
     "query": {
-        "filtered": {
-            "query": {
+        "bool": {
+            "must": {
                 "match_all": {}
             },
             "filter": {
@@ -222,8 +222,8 @@ $results.response&lt;br&gt;
 <p>filter news by distance away part 2 (For this example to work you need to add a field to the news structure that uses latlon as its velocity variable name. it can be a text field with a value of ""42.648899,-71.165497)</p>
 <pre><code>{
     "query": {
-        "filtered": {
-            "query": {
+        "bool": {
+            "must": {
                 "match_all": {}
             },
             "filter": {

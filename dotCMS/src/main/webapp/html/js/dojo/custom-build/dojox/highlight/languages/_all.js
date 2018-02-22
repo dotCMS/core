@@ -1,2 +1,2 @@
-define("dojox/highlight/languages/_all", ["./_static", "./_dynamic", "./_www"], function(){})
+define("dojox/highlight/languages/catchall", ["./_static", "./_dynamic", "./_www"], function(){})
 

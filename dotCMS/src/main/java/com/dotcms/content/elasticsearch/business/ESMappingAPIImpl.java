@@ -48,6 +48,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.sql.Date;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -60,14 +61,16 @@ import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.common.xcontent.XContentType;
 
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	private static final int UUID_LENGTH = 36;
+	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
 
 	public ESMappingAPIImpl() {
@@ -95,7 +98,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
 
-		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+				.preparePutMapping().setIndices(indexName).setType(type)
+				.setSource(mapping, XContentType.JSON).execute();
 		return lis.actionGet().isAcknowledged();
 	}
 
@@ -109,16 +114,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws IOException
 	 */
 	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+				.preparePutMapping().setIndices(indexName).setType(type)
+				.setSource(mapping, XContentType.JSON).execute();
 		return lis.actionGet().isAcknowledged();
 	}
-
-	public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
-		new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
-		return true;
-	}
-
-
 
 	/**
 	 * Gets the mapping params for an index and type
@@ -135,17 +135,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				.get(index).mapping(type).source().string();
 
 	}
-
-	public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
-
-		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet().getState().metaData().indices()
-
-				.get(index).settings().getAsMap().toString();
-
-	}
-
-
 
 	private Map<String, Object> getDefaultFieldMap() {
 
@@ -181,8 +170,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
 		try {
 
-			Map<String,String> contentletMap = new HashMap<String,String>();
-			Map<String,Object> mlowered=new HashMap<String,Object>();
+			final Map<String,Object> contentletMap = new HashMap();
+			final Map<String,Object> mlowered=new HashMap();
 			loadCategories(con, contentletMap);
 			loadFields(con, contentletMap);
 			loadPermissions(con, contentletMap);
@@ -197,18 +186,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.TITLE, con.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
-			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType() + ""); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType() + "");
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE  + TEXT, Integer.toString(st.getStructureType())); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType());
+			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(st.getStructureType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, con.getInode());
-			contentletMap.put(ESMappingConstants.MOD_DATE, datetimeFormat.format(con.getModDate()));
+			contentletMap.put(ESMappingConstants.MOD_DATE, con.getModDate());
+			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(con.getModDate()));
 			contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
-			contentletMap.put(ESMappingConstants.LIVE, Boolean.toString(con.isLive()));
-			contentletMap.put(ESMappingConstants.WORKING, Boolean.toString(con.isWorking()));
-			contentletMap.put(ESMappingConstants.LOCKED, Boolean.toString(con.isLocked()));
-			contentletMap.put(ESMappingConstants.DELETED, Boolean.toString(con.isArchived()));
-			contentletMap.put(ESMappingConstants.LANGUAGE_ID, Long.toString(con.getLanguageId()));
+			contentletMap.put(ESMappingConstants.LIVE, con.isLive());
+			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(con.isLive()));
+			contentletMap.put(ESMappingConstants.WORKING, con.isWorking());
+			contentletMap.put(ESMappingConstants.WORKING + TEXT, Boolean.toString(con.isWorking()));
+			contentletMap.put(ESMappingConstants.LOCKED, con.isLocked());
+			contentletMap.put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(con.isLocked()));
+			contentletMap.put(ESMappingConstants.DELETED, con.isArchived());
+			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(con.isArchived()));
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID, con.getLanguageId());
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(con.getLanguageId()));
 			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
@@ -223,27 +220,35 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
 					contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
 					contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, datetimeFormat.format(task.getModDate()));
+					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, task.getModDate());
+					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
 				}
-
 			}
 			catch(DotDataException e){
 				Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
 			}
 
+			if(UtilMethods.isSet(ident.getSysPublishDate())) {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, ident.getSysPublishDate());
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+						datetimeFormat.format(ident.getSysPublishDate()));
+			}else {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE,cvi.getVersionTs());
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
+						datetimeFormat.format(cvi.getVersionTs()));
+			}
 
+			if(UtilMethods.isSet(ident.getSysExpireDate())) {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, ident.getSysExpireDate());
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
+						datetimeFormat.format(ident.getSysExpireDate()));
+			}else {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, new Date(Long.MAX_VALUE));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
+			}
 
-			if(UtilMethods.isSet(ident.getSysPublishDate()))
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(ident.getSysPublishDate()));
-			else
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(cvi.getVersionTs()));
-
-			if(UtilMethods.isSet(ident.getSysExpireDate()))
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, datetimeFormat.format(ident.getSysExpireDate()));
-			else
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, "29990101000000");
-
-			contentletMap.put(ESMappingConstants.VERSION_TS, datetimeFormat.format(cvi.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, cvi.getVersionTs());
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(cvi.getVersionTs()));
 
 			String urlMap = null;
 			try{
@@ -257,12 +262,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				throw new DotRuntimeException(urlMap, e);
 			}
 
-			for(Entry<String,String> entry : contentletMap.entrySet()){
+			final StringWriter sw = new StringWriter();
+			for(final Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lcasek=entry.getKey().toLowerCase();
-				final String lcasev = UtilMethods.isSet(entry.getValue()) ? entry.getValue().toLowerCase() : null;
+				Object lcasev = entry.getValue();
+
+				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
+					lcasev = ((String) lcasev).toLowerCase();
+					if (!lcasek.endsWith(TEXT)){
+						mlowered.put(lcasek + "_dotraw", lcasev);
+					}else{
+						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
+					}
+				}
+
 				mlowered.put(lcasek, lcasev);
-				mlowered.put(lcasek + "_dotraw", lcasev);
+
+				if(lcasev!=null) {
+					sw.append(lcasev.toString()).append(' ');
+				}
 			}
+
+
 
 			if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 				// see if we have content metadata
@@ -274,6 +295,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
 
 					mlowered.put(lvar+".metadata.content", contentData);
+					sw.append(contentData).append(' ');
 				}
 			}
 
@@ -281,11 +303,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
 				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
+				sw.append(ident.getAssetName());
 			}
+
+			mlowered.put("catchall", sw.toString());
 
 			return mlowered;
 		} catch (Exception e) {
-			//Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
@@ -295,7 +319,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadCategories(final Contentlet con, final Map<String,String> m)
+	protected void loadCategories(final Contentlet con, final Map<String,Object> m)
 			throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 
@@ -316,17 +340,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         m.put(ESMappingConstants.CATEGORIES, myCatsString.toString());
         
 
-	    for(final com.dotcms.contenttype.model.field.Field f : catFields){/*
-	        StringWriter fieldCatString=new StringWriter();
-	        Category parent = APILocator.getCategoryAPI().find(f.values(), APILocator.systemUser(), false);
-            List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
-                            parent, APILocator.systemUser(), false);
-            for(Category me : myCats){
-                if(childrens.contains(me)){
-                    fieldCatString.append(me.getCategoryVelocityVarName()).append(" ");
-                }
-            }
-            */
+	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
             m.put(type.variable() + "." + f.variable(), myCatsString.toString());
 	    
@@ -334,7 +348,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadPermissions(Contentlet con, Map<String,String> m) throws DotDataException {
+	protected void loadPermissions(final Contentlet con, final Map<String,Object> m) throws DotDataException {
 		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
 		StringBuilder permissionsSt = new StringBuilder();
@@ -360,9 +374,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 		m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
-		m.put(ESMappingConstants.OWNER_CAN_READ, Boolean.toString(ownerCanRead));
-		m.put(ESMappingConstants.OWNER_CAN_WRITE, Boolean.toString(ownerCanWrite));
-		m.put(ESMappingConstants.OWNER_CAN_PUBLISH, Boolean.toString(ownerCanPub));
+		m.put(ESMappingConstants.OWNER_CAN_READ, ownerCanRead);
+		m.put(ESMappingConstants.OWNER_CAN_READ + TEXT, Boolean.toString(ownerCanRead));
+		m.put(ESMappingConstants.OWNER_CAN_WRITE, ownerCanWrite);
+		m.put(ESMappingConstants.OWNER_CAN_WRITE + TEXT, Boolean.toString(ownerCanWrite));
+		m.put(ESMappingConstants.OWNER_CAN_PUBLISH, ownerCanPub);
+		m.put(ESMappingConstants.OWNER_CAN_PUBLISH + TEXT, Boolean.toString(ownerCanPub));
 	}
 
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
@@ -373,7 +390,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 
-	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
+	protected void loadFields(Contentlet con, Map<String, Object> m) throws DotDataException {
 
 		// https://github.com/dotCMS/dotCMS/issues/6152
 		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
@@ -382,10 +399,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
 
 		FieldAPI fAPI=APILocator.getFieldAPI();
-		List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
+		final List<Field> fields = new ArrayList<>(
+				FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
 
 		Structure st=con.getStructure();
+		StringBuilder keyNameBuilder;
+		String keyName;
+		String keyNameText;
 		for (Field f : fields) {
+
+			keyNameBuilder = new StringBuilder(st.getVelocityVarName()).append(".")
+					.append(f.getVelocityVarName());
+			keyName        = keyNameBuilder.toString();
+			keyNameText    = keyNameBuilder.append(TEXT).toString();
 			if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
 					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
 				continue;
@@ -395,7 +421,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 			try {
 				if(fAPI.isElementConstant(f)){
-					m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (f.getValues() == null ? "":f.getValues().toString()));
+					m.put(keyName, (f.getValues() == null ? "":f.getValues()));
 					continue;
 				}
 
@@ -408,46 +434,54 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 
 				if(!UtilMethods.isSet(valueObj)) {
-					m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), "");
+					m.put(keyName, "");
 				}
 				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
 						String timeStr=timeFormat.format(valueObj);
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
+						m.put(keyName, valueObj);
+						m.put(keyNameText, timeStr);
 					}
 					catch(Exception e){
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+						m.put(keyName, "");
 					}
 				}
 				else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
 					try {
 						String dateString = dateFormat.format(valueObj);
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), dateString);
+						m.put(keyName, valueObj);
+						m.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+						m.put(keyName, "");
 					}
 				} else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
 						String datetimeString = datetimeFormat.format(valueObj);
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), datetimeString);
+						m.put(keyName, valueObj);
+						m.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+						m.put(keyName, "");
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
+						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
 					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
+						m.put(keyName, valueObj);
+						m.put(keyNameText, valueObj.toString());
 					} else {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), UtilMethods.listToString(valueObj.toString()));
+						m.put(keyName,
+								UtilMethods.listToString(valueObj.toString()));
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
-					boolean fileMetadata=f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET;
+					final boolean fileMetadata =
+							f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
+									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (String)valueObj);
+						m.put(keyName, valueObj);
 						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
 
 						Set<String> allowedFields=null;
@@ -458,7 +492,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							for(FieldVariable fv : fieldVariables) {
 								if(fv.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
 									String[] names=fv.getValue().split(",");
-									allowedFields=new HashSet<String>();
+									allowedFields=new HashSet<>();
 									for(String n : names)
 										allowedFields.add(n.trim().toLowerCase());
 								}
@@ -468,7 +502,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							if(configFields.trim().length()>0) {
 								String[] names=configFields.split(",");
 								if(names.length>0 && allowedFields==null)
-									allowedFields=new HashSet<String>();
+									allowedFields=new HashSet<>();
 								for(String n : names)
 									allowedFields.add(n.trim().toLowerCase());
 							}
@@ -476,8 +510,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 						if(keyValueMap!=null && !keyValueMap.isEmpty())
 							for(String key : keyValueMap.keySet())
-								if(allowedFields==null || allowedFields.contains(key.toLowerCase()))
-									m.put(st.getVelocityVarName() + "." + f.getVelocityVarName() + "." + key, (String)keyValueMap.get(key));
+								if (allowedFields == null || allowedFields
+										.contains(key.toLowerCase())) {
+									m.put(keyName, keyValueMap.get(key));
+								}
 					}
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -499,7 +535,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 					if(tagg.length() >tagDelimit.length()){
 						String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
+						m.put(keyName,
+								taggStr.replaceAll(",,", " "));
 						m.put(ESMappingConstants.TAGS, taggStr);
 					}
 
@@ -507,18 +544,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
 						if ( personaTags.length() > tagDelimit.length() ) {
 							String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
-							m.put(st.getVelocityVarName() + "."+ESMappingConstants.PERSONAS, personaStr);
+							m.put(new StringBuilder(st.getVelocityVarName()).append(".")
+									.append(ESMappingConstants.PERSONAS).toString(), personaStr);
 							m.put(ESMappingConstants.PERSONAS, personaStr);
 						}
 					}
 
 				} else {
-					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
-					} else if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), numFormatter.format(valueObj));
+					if (f.getFieldContentlet()
+							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
+						m.put(keyName, valueObj);
+						m.put(keyNameText,valueObj.toString());
+					} else if (f.getFieldContentlet()
+							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f
+							.getFieldContentlet()
+							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
+						m.put(keyName, valueObj);
+						m.put(keyNameText, numFormatter.format(valueObj));
 					} else {
-						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
+						m.put(keyName, valueObj);
+						m.put(keyNameText, valueObj.toString());
 					}
 				}
 			} catch (Exception e) {
@@ -549,18 +594,25 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			for(Relationship rel : relationships) {
 
-				List<Contentlet> oldDocs = new ArrayList <Contentlet>();
+				List<Contentlet> oldDocs;
 
-				String q = "";
+				StringBuilder q = new StringBuilder();
 				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
-				if(isSameStructRelationship)
-					q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT+":" + con.getIdentifier() + " " +
-							rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD+":" + con.getIdentifier() + ") ";
-				else
-					q = "+type:content +" + rel.getRelationTypeValue() + ":" + con.getIdentifier();
-
-				oldDocs  = conAPI.search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+				if(isSameStructRelationship) {
+					q.append("+type:content +(").append(rel.getRelationTypeValue())
+							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
+							.append(con.getIdentifier())
+							.append(" ").append(rel.getRelationTypeValue())
+							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
+							.append(con.getIdentifier()).append(") ");
+				}else {
+					q.append("+type:content +").append(rel.getRelationTypeValue()).append(":")
+							.append(con.getIdentifier());
+				}
+				oldDocs = conAPI
+						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
+								false);
 
 				List<String> oldRelatedIds = new ArrayList<String>();
 				if(oldDocs.size() > 0) {
@@ -586,13 +638,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
 				//re-indexation and the list of new dependencies no re-indexed yet
-				dependenciesToReindex.addAll(CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
+				dependenciesToReindex.addAll(
+						CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
 			}
 		}
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(Contentlet con, Map<String,String> m) throws DotStateException, DotDataException {
+	protected void loadRelationshipFields(Contentlet con, Map<String,Object> m) throws DotStateException, DotDataException {
 		DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
 		db.addParam(con.getIdentifier());
@@ -625,7 +678,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     String me = con.getIdentifier();
                     String related = me.equals(childId)? parentId : childId;
 
-					String previousPropNameValue = m.get(propName);
+					String previousPropNameValue = (String) m.get(propName);
 					int previousPropNameValueLength = previousPropNameValue!=null?previousPropNameValue.length():0;
 
 					StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + UUID_LENGTH + 1);
@@ -634,7 +687,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					m.put(propName, propNameValue.append(previousPropNameValue != null ? previousPropNameValue : "")
 							.append(related).append(" ").toString() );
 
-					String previousOrderKeyValue = m.get(orderKey);
+					String previousOrderKeyValue = (String) m.get(orderKey);
 					int previousOrderKeyValueLength = previousOrderKeyValue!=null?previousOrderKeyValue.length():0;
 					int orderLength = order!=null?order.length():0;
 

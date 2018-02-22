@@ -499,7 +499,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             throws DotDataException, DotSecurityException {
 
         return permissionAPI.filterCollection(
-                    contentletAPI.search("+_all:" + template.getIdentifier() + " +baseType:"
+                    contentletAPI.search("+catchall:" + template.getIdentifier() + " +baseType:"
                                     + BaseContentType.HTMLPAGE.getType(), limit, 0, null, user,
                             respectFrontendRoles),
                     PermissionAPI.PERMISSION_READ,

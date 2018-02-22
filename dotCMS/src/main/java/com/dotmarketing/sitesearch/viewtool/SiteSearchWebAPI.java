@@ -13,17 +13,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.facet.Facet;
-import org.elasticsearch.search.facet.datehistogram.DateHistogramFacet;
-import org.elasticsearch.search.facet.datehistogram.InternalCountDateHistogramFacet;
-import org.elasticsearch.search.facet.terms.TermsFacet;
-import org.elasticsearch.search.facet.terms.strings.InternalStringTermsFacet;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.bucket.histogram.InternalDateHistogram;
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.*;
+import org.joda.time.DateTime;
 
 public class SiteSearchWebAPI implements ViewTool {
 
@@ -143,127 +142,164 @@ public class SiteSearchWebAPI implements ViewTool {
 	}
 
     /**
+     * Returns the aggregations for a given query
+     *
+     * @param indexName Name of the index where the search will be made, if null the default index
+     * will be use if exist
+     * @param query Query to apply
+     */
+    public Map<String, Aggregation> getAggregations(final String indexName, final String query)
+            throws DotDataException {
+        return siteSearchAPI.getAggregations(indexName, query);
+    }
+
+    /**
      * Returns the Facets for a given query
      *
-     * @param indexName Name of the index where the search will be made, if null the default index will be use if exist
-     * @param query     Query to apply
-     * @return
-     * @throws DotDataException
-     * @throws IllegalAccessException
-     * @throws NoSuchFieldException
-     * @see <a href="http://www.elasticsearch.org/guide/reference/api/search/facets/">http://www.elasticsearch.org/guide/reference/api/search/facets/</a>
+     * @param indexName Name of the index where the search will be made, if null the default index
+     * will be use if exist
+     * @param query Query to apply
+     * @deprecated use {@link #getAggregations(String, String)} instead
      */
-    public Map<String, Facet> getFacets ( String indexName, String query ) throws DotDataException, IllegalAccessException, NoSuchFieldException {
+    public Map<String, Facet> getFacets(final String indexName, final String query)
+            throws DotDataException, IllegalAccessException, NoSuchFieldException {
 
+        Facet internalFacet;
         //The map we will finally send
-        Map<String, Facet> internalFacets = new HashMap<String, Facet>();
+        final Map<String, Facet> internalFacets = new HashMap<>();
 
         //Search with the given query
-        Map<String, Facet> facets = siteSearchAPI.getFacets( indexName, query );
-        for ( String key : facets.keySet() ) {
+        final Map<String, Aggregation> aggregations = this.getAggregations(indexName, query);
+        for (String key : aggregations.keySet()) {
 
-            Facet internalFacet = facets.get( key );
+            final Aggregation aggregation = aggregations.get(key);
 
-            //Verify the type of the facet in order to be able to create a proper wrapper for it
-            if ( internalFacet instanceof InternalStringTermsFacet ) {
-
-                InternalStringTermsFacet facet = (InternalStringTermsFacet) internalFacet;
-
-                //Getting private fields values required for the proper build of the wrapper
-                Integer requiredSize = (Integer) getFieldValue( InternalStringTermsFacet.class, "requiredSize", facet );
-                TermsFacet.ComparatorType comparatorType = (TermsFacet.ComparatorType) getFieldValue( InternalStringTermsFacet.class, "comparatorType", facet );
-                //New Instance of the wrapper for the String Facet
-                internalFacet = new InternalWrapperStringTermsFacet( facet.getName(), comparatorType, requiredSize, facet.getEntries(), facet.getMissingCount(), facet.getTotalCount() );
-            } else if ( internalFacet instanceof InternalCountDateHistogramFacet ) {
-
-                InternalCountDateHistogramFacet facet = (InternalCountDateHistogramFacet) internalFacet;
-
-                //Getting private fields values required for the proper build of the wrapper
-                DateHistogramFacet.ComparatorType comparatorType = (DateHistogramFacet.ComparatorType) getFieldValue( InternalCountDateHistogramFacet.class, "comparatorType", facet );
-                //New Instance of the wrapper for the Date Facet
-                internalFacet = new InternalWrapperCountDateHistogramFacet( facet.getName(), comparatorType, facet.getEntries() );
+            if (aggregation instanceof InternalDateHistogram) {
+                internalFacet = new InternalWrapperCountDateHistogramFacet(aggregation.getName(),
+                        aggregation.getType(), ((InternalDateHistogram) aggregation).getBuckets());
+            } else if (aggregation instanceof StringTerms) {
+                internalFacet = new InternalWrapperStringTermsFacet(aggregation.getName(),
+                        aggregation.getType(), ((StringTerms) aggregation).getBuckets());
+            } else {
+                internalFacet = new Facet(aggregation.getName(), aggregation.getType());
             }
-
-            internalFacets.put( key, internalFacet );
+            internalFacets.put(key, internalFacet);
         }
 
         return internalFacets;
     }
 
     /**
-     * Utility method to get the value of a private field using reflection
+     * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
+     * Search.
      *
-     * @param clazz
-     * @param fieldName
-     * @param getFrom
-     * @return
-     * @throws NoSuchFieldException
-     * @throws IllegalAccessException
+     * @deprecated use ES Aggregations instead
      */
-    private Object getFieldValue ( Class clazz, String fieldName, Object getFrom ) throws NoSuchFieldException, IllegalAccessException {
+    public class InternalWrapperCountDateHistogramFacet extends Facet {
 
-        Field field = clazz.getDeclaredField( fieldName );
-        field.setAccessible( true );
-        Object value = field.get( getFrom );
-        field.setAccessible( false );
+        private final List<CountEntry> entries;
 
-        return value;
-    }
-
-    /**
-     * Internal wrapper class for backwards compatibility with the new Elastic Search in
-     * Site Search.
-     */
-    public class InternalWrapperCountDateHistogramFacet extends InternalCountDateHistogramFacet {
-
-        public InternalWrapperCountDateHistogramFacet ( String name, ComparatorType comparatorType, List<InternalCountDateHistogramFacet.CountEntry> entries ) {
-            super( name, comparatorType, entries.toArray( new InternalCountDateHistogramFacet.CountEntry[entries.size()] ) );
-        }
-
-        public java.util.List<CountEntry> entries () {
-            return getEntries();
-        }
-    }
-
-    /**
-     * Internal wrapper class for backwards compatibility with the new Elastic Search in
-     * Site Search.
-     */
-    public class InternalWrapperStringTermsFacet extends InternalStringTermsFacet {
-
-        private List<InternalTermEntry> entries;
-
-        public InternalWrapperStringTermsFacet ( String name, ComparatorType comparatorType, int requiredSize, Collection<TermEntry> entries, long missing, long total ) {
-
-            super( name, comparatorType, requiredSize, entries, missing, total );
-
-            this.entries = new ArrayList<InternalTermEntry>();
-            for ( TermEntry entry : getEntries() ) {
-                this.entries.add( new InternalTermEntry( entry.getTerm().toString(), entry.getCount() ) );
+        public InternalWrapperCountDateHistogramFacet(final String name, final String type,
+                List<InternalDateHistogram.Bucket> entries) {
+            super(name, type);
+            this.entries = new ArrayList<>();
+            for (final InternalDateHistogram.Bucket entry : entries) {
+                this.entries.add(new CountEntry(((DateTime) entry.getKey()).getMillis(),
+                        entry.getDocCount()));
             }
         }
 
-        public java.util.List<InternalTermEntry> entries () {
+        public List<CountEntry> entries() {
+            return entries;
+        }
+
+        public class CountEntry {
+
+            private final long time;
+            private final long count;
+
+            public CountEntry(final long time, final long count) {
+                this.time = time;
+                this.count = count;
+            }
+
+            public long getTime() {
+                return time;
+            }
+
+            public long getCount() {
+                return count;
+            }
+        }
+    }
+
+    /**
+     * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
+     * Search.
+     *
+     * @deprecated use ES Aggregations instead
+     */
+    public class InternalWrapperStringTermsFacet extends Facet {
+
+        private List<InternalTermEntry> entries;
+
+        public InternalWrapperStringTermsFacet(final String name, final String type, final List<Bucket> entries) {
+
+            super(name, type);
+
+            this.entries = new ArrayList<>();
+            for (final Bucket entry : entries) {
+                this.entries
+                        .add(new InternalTermEntry(entry.getKey().toString(), entry.getDocCount()));
+            }
+        }
+
+        public java.util.List<InternalTermEntry> entries() {
             return entries;
         }
 
         public class InternalTermEntry {
 
-            public String term;
-            public int count;
+            private final String term;
+            private final long count;
 
-            public InternalTermEntry ( String term, int count ) {
+            public InternalTermEntry(final String term, final long count) {
                 this.term = term;
                 this.count = count;
             }
 
-            public String getTerm () {
+            public String getTerm() {
                 return term;
             }
 
-            public int getCount () {
+            public long getCount() {
                 return count;
             }
+        }
+    }
+
+    /**
+     * @deprecated use ES Aggregations instead
+     */
+    public class Facet {
+
+        private final String name;
+        private final String type;
+
+        public Facet(final String name, final String type) {
+
+            this.name = name;
+            this.type = type;
+        }
+
+
+        public String getType() {
+            return type;
+        }
+
+
+        public String getName() {
+            return name;
         }
     }
 

@@ -1291,7 +1291,7 @@ create table multi_tree (
    child NVARCHAR(36) not null,
    parent1 NVARCHAR(36) not null,
    parent2 NVARCHAR(36) not null,
-   relation_type NVARCHAR(64) null,
+   relation_type NVARCHAR(64) not null,
    tree_order int null,
    primary key (child, parent1, parent2, relation_type)
 );
