@@ -80,16 +80,14 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         this.dotMessageService.getMessages(this.i18nKeys).subscribe();
         this.dotEventsService.listen('dot-side-nav-toggle').subscribe(() => {
             // setTimeout is need it because the side nav animation time.
-            setTimeout(() => {
-                this.ngGrid.triggerResize();
-            }, 200);
+            this.resizeGrid(200);
         });
         this.dotEventsService.listen('layout-sidebar-change').subscribe(() => {
             // We need to "wait" until the template remove the sidebar div.
-            setTimeout(() => {
-                this.ngGrid.triggerResize();
-            }, 0);
+            this.resizeGrid();
         });
+        // needed it because the transition between content & layout.
+        this.resizeGrid();
     }
 
     /**
@@ -252,5 +250,11 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
 
     private isHaveRows(): boolean {
         return !!(this.value && this.value.rows && this.value.rows.length);
+    }
+
+    private resizeGrid(timeOut?): void {
+        setTimeout(() => {
+            this.ngGrid.triggerResize();
+        }, timeOut ? timeOut : 0);
     }
 }

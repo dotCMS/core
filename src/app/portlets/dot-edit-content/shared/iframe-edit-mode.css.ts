@@ -9,7 +9,7 @@ export const EDIT_PAGE_CSS = `
     [data-dot-object="container"] {
         border: solid 1px #53c2f9;
         min-height: 120px;
-        margin: 10px 0;
+        margin: 20px 0;
     }
 
     [data-dot-object="container"].no {
@@ -100,8 +100,9 @@ export const EDIT_PAGE_CSS = `
 
     .dotedit-container__toolbar {
         position: relative;
-        margin: -20px 8px 0 0;
+        margin: -15px 8px 0 0;
         float: right;
+        font-size: 0;
     }
 
     .dotedit-container__toolbar button,
