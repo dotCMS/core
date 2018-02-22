@@ -15,11 +15,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.struts.FileForm;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -274,11 +277,18 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                         if( identifier!=null && InodeUtils.isSet(identifier.getId()) ) {
                             contentlet.setIdentifier(identifier.getId());
                         }
-
-                        contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
-                        if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
-                            APILocator.getContentletAPI().publish(contentlet, user, false);
-                        }
+						String wfActionId = ParamUtil.getString(req, "wfActionId");
+						contentlet.setStringProperty("wfActionId",wfActionId);
+						ContentletRelationships contentletRelationships = APILocator.getContentletAPI().getAllRelationships(contentlet);
+						contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+								new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+										.modUser(user)
+										.relationships(contentletRelationships)
+										.workflowActionId(wfActionId)
+										.workflowActionComments("")
+										.workflowAssignKey("")
+										.categories(new ArrayList<Category>())
+										.generateSystemEvent(Boolean.FALSE).build());
 
                         HibernateUtil.closeAndCommitTransaction();
 						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
