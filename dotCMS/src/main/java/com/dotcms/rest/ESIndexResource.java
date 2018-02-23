@@ -1,23 +1,14 @@
 package com.dotcms.rest;
 
+import com.google.gson.Gson;
 import com.dotcms.rest.exception.ForbiddenException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.enterprise.license.LicenseLevel;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
-import com.google.gson.Gson;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -44,6 +35,18 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
+import org.elasticsearch.client.Client;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 /**
  * @deprecated As of 2016-10-12, replaced by {@link com.dotcms.rest.api.v1.index.ESIndexResource}
  */
@@ -166,10 +169,11 @@ public class ESIndexResource {
     }
     
     public static long indexDocumentCount(String indexName) {
-        ESIndexAPI esapi = APILocator.getESIndexAPI();
-        Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-        IndexStatus status = indexInfo.get(indexName);
-        return (status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): 0;
+        final Client client = new ESClient().getClient();
+        final IndicesStatsResponse indicesStatsResponse =
+            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet();
+        final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
+        return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
     }
     
     @PUT

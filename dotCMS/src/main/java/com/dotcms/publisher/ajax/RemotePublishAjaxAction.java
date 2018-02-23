@@ -56,6 +56,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -72,10 +73,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.elasticsearch.common.base.Strings;
 
 /**
  * This class handles the different action mechanisms related to the handling of 
@@ -929,7 +930,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String forcePushTmp = request.getParameter( "forcePush" );
             
             Boolean forcePush = false;
-            if(!Strings.isNullOrEmpty(forcePushTmp)){
+            if(UtilMethods.isSet(forcePushTmp)){
                 forcePush = Boolean.valueOf(forcePushTmp);
             }
             

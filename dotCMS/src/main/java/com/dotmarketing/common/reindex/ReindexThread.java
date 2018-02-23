@@ -393,7 +393,7 @@ public class ReindexThread extends Thread {
 									handleRecords(failedRecords);
 								}
 
-								public void onFailure ( Throwable ex ) {
+								public void onFailure ( Exception ex ) {
 
 									Logger.error(ReindexThread.class, "Indexing process failed", ex);
 

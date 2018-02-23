@@ -33,6 +33,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.elasticsearch.index.IndexNotFoundException;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -40,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.indices.IndexMissingException;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -541,7 +543,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // permissions have already been checked at this point
     int limit = 200;
     ContentletAPI conAPI = APILocator.getContentletAPI();
-    List<Contentlet> contentlets = new ArrayList<>();
+    List<Contentlet> contentlets;
 
     try {
       contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
@@ -552,13 +554,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       }
     } catch (DotSecurityException e) {
       throw new DotDataException(e);
-    } catch (RuntimeException ex) {
-      Throwable root = ex.getCause();
-      if (root instanceof IndexMissingException) {
-
-      }
     }
-
   }
 
   private void deleteRelationships(ContentType type) throws DotDataException {

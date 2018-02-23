@@ -28,7 +28,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf  {
 
-    public static final String STRUCTURE_TYPE_ALL       = "_all";
+    public static final String STRUCTURE_TYPE_ALL       = "catchall";
 
 
     /**
