@@ -294,7 +294,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
 
-					mlowered.put(lvar+".metadata.content", contentData);
+					mlowered.put(lvar+".metadata_content", contentData);
 					sw.append(contentData).append(' ');
 				}
 			}
