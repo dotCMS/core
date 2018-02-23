@@ -748,7 +748,8 @@ public class WorkflowHelper {
     }
 
     /**
-     * Finds the available actions for an content type Id and user.
+     * Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated
+     * with a content type Id and user.
      * @param contentTypeId String Content Type Id
      * @param user  User
      * @return List of WorkflowAction

@@ -1296,7 +1296,6 @@ public class ImportUtil {
                             }
                         }
                         //END Load the old relationShips and add the new ones
-                        cont.setStringProperty("wfActionId",wfActionId);
                         cont = workflowAPI.fireContentWorkflow(cont,
                                 new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
                                         .modUser(user)

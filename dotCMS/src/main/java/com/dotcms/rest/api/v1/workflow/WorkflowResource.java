@@ -874,7 +874,8 @@ public class WorkflowResource {
     } // findAvailableDefaultActionsBySchemes.
 
     /**
-     * Finds the available actions for a Content Type Id
+     * Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated
+     * with a content type Id.
      * @param request HttpServletRequest
      * @param contentTypeId String
      * @return Response

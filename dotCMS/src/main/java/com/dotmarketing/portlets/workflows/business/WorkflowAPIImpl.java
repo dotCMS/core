@@ -494,6 +494,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(final WorkflowStep step, final User user, final Permissionable permissionable) throws DotDataException,
             DotSecurityException {
+		if(null == step){
+			return Collections.emptyList();
+		}
         List<WorkflowAction> actions = workFlowFactory.findActions(step);
         actions = filterActionsCollection(actions, user, true, permissionable);
         return actions;
@@ -1209,6 +1212,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
 
+		if(!UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, dependencies.getWorkflowActionId());
+		}
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
 
 		processor.setContentletDependencies(dependencies);
@@ -1518,7 +1524,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 		for(WorkflowScheme scheme: schemes){
 			List<WorkflowStep> steps = findSteps(scheme);
-			actions.addAll(findActions(steps.get(0), user));
+			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user));
 		}
 
 		return actions.build();

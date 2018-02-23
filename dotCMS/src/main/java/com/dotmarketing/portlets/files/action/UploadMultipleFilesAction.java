@@ -36,11 +36,13 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.ParamUtil;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
@@ -278,16 +280,15 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                             contentlet.setIdentifier(identifier.getId());
                         }
 						String wfActionId = ParamUtil.getString(req, "wfActionId");
-						contentlet.setStringProperty("wfActionId",wfActionId);
 						ContentletRelationships contentletRelationships = APILocator.getContentletAPI().getAllRelationships(contentlet);
 						contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
 								new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
 										.modUser(user)
 										.relationships(contentletRelationships)
 										.workflowActionId(wfActionId)
-										.workflowActionComments("")
-										.workflowAssignKey("")
-										.categories(new ArrayList<Category>())
+										.workflowActionComments(StringPool.BLANK)
+										.workflowAssignKey(StringPool.BLANK)
+										.categories(Collections.emptyList())
 										.generateSystemEvent(Boolean.FALSE).build());
 
                         HibernateUtil.closeAndCommitTransaction();
