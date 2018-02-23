@@ -11,7 +11,7 @@ public class SearchSourceBuilderUtilTest {
     @Test
     public void testGetSearchSourceBuilder() throws IOException {
         String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {"
-                + "       \"terms\" : { \"field\" : \"contenttype._keyword\",  \"size\" : "
+                + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : "
                 + Integer.MAX_VALUE + "}"
                 + "     }" + "   }," + "   \"size\":0}";
 

@@ -52,62 +52,6 @@ public class InitAction extends SimpleAction {
 			Locale.setDefault(
 				new Locale(userLanguage, userCountry, userVariant));
 		}
-
-		// Log4J
-
-		/*if (GetterUtil.get(PropsUtil.get(
-				PropsUtil.LOG_CONFIGURE_LOG4J), true) &&
-			!ServerDetector.isSun()) {
-
-			URL portalLog4jUrl = getClass().getClassLoader().getResource(
-				"META-INF/portal-log4j.xml");
-
-			com.dotcms.repackage.org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
-			//Getting all the appenders for this logger
-			Map<String, Appender> appenderMap = ((Logger) logger).getAppenders();
-			if ( appenderMap.isEmpty() && portalLog4jUrl != null) {
-				//Initialises/reconfigures log4j based on a given log4j configuration file
-				Log4jUtil.initializeFromPath(portalLog4jUrl.toString());
-			}
-			else {
-				Set currentLoggerNames = new HashSet();
-
-				//Getting all the registered loggers
-				Collection<Logger> loggers = Log4jUtil.getLoggers();
-
-				Iterator<Logger> loggerIterator = loggers.iterator();
-				while ( loggerIterator.hasNext() ) {
-					Logger currentLogger = loggerIterator.next();
-					currentLoggerNames.add(currentLogger.getName());
-				}
-
-				try {
-					SAXReader reader = new SAXReader();
-
-					Document doc = reader.read(portalLog4jUrl);
-
-					Element root = doc.getRootElement();
-
-					Iterator itr = root.elements("category").iterator();
-
-					while (itr.hasNext()) {
-						Element category = (Element)itr.next();
-
-						String name = category.attributeValue("name");
-						String priority =
-							category.element(
-								"priority").attributeValue("value");
-
-						//Search for the logger and change the priority
-						Logger currentLogger = (Logger) LogManager.getLogger(name);
-						Log4jUtil.setLevel(currentLogger, Level.toLevel(priority));
-					}
-				}
-				catch (Exception e) {
-					com.dotmarketing.util.Logger.error(this,e.getMessage(),e);
-				}
-			}
-		}*/
 	}
 
 }

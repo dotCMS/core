@@ -1,16 +1,17 @@
 package com.dotmarketing.loggers;
 
-import com.dotcms.repackage.org.apache.logging.log4j.Level;
-import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
-import com.dotcms.repackage.org.apache.logging.log4j.Logger;
-import com.dotcms.repackage.org.apache.logging.log4j.core.Appender;
-import com.dotcms.repackage.org.apache.logging.log4j.core.Layout;
-import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
-import com.dotcms.repackage.org.apache.logging.log4j.core.appender.ConsoleAppender;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configuration;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configurator;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.LoggerConfig;
-import com.dotcms.repackage.org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
@@ -27,9 +28,9 @@ public class Log4jUtil {
     public static void createAndAddConsoleAppender () {
 
         //Getting the current log4j appenders
-        Logger logger = LogManager.getRootLogger();
+        org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
         //Getting all the appenders for this logger
-        Map<String, Appender> appenderMap = ((com.dotcms.repackage.org.apache.logging.log4j.core.Logger) logger).getAppenders();
+        Map<String, Appender> appenderMap = ((Logger) logger).getAppenders();
 
         //Getting the log4j configuration
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext();
@@ -39,7 +40,9 @@ public class Log4jUtil {
         if ( !appenderMap.isEmpty() ) {
 
             //Create a simple layout for our appender
-            Layout simpleLayout = PatternLayout.createLayout(PatternLayout.SIMPLE_CONVERSION_PATTERN, configuration, null, null, true, false, null, null);
+            Layout simpleLayout = PatternLayout.newBuilder()
+                    .withPattern(PatternLayout.SIMPLE_CONVERSION_PATTERN)
+                    .withConfiguration(configuration).build();
 
             //Create and add a console appender to the configuration
             ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(simpleLayout);
@@ -52,7 +55,7 @@ public class Log4jUtil {
      *
      * @return
      */
-    public static Collection<com.dotcms.repackage.org.apache.logging.log4j.core.Logger> getLoggers () {
+    public static Collection<org.apache.logging.log4j.core.Logger> getLoggers () {
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext();
         return loggerContext.getLoggers();
     }
@@ -81,7 +84,7 @@ public class Log4jUtil {
      * @param logger
      * @param level
      */
-    public static void setLevel ( com.dotcms.repackage.org.apache.logging.log4j.core.Logger logger, Level level ) {
+    public static void setLevel ( org.apache.logging.log4j.core.Logger logger, Level level ) {
         logger.setLevel(level);
     }
 

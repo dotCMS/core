@@ -1,6 +1,6 @@
 package com.dotcms.visitor.business;
 
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
+import org.apache.logging.log4j.util.Strings;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.visitor.domain.Visitor;

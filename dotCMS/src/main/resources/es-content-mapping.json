@@ -78,13 +78,7 @@
                         "analyzer": "whitespace",
                         "search_analyzer": "whitespace",
                         "store": "false",
-                        "type": "text",
-                        "fields": {
-                            "_keyword": {
-                                "type": "keyword",
-                                "ignore_above": 8191
-                            }
-                        }
+                        "type": "text"
                     }
                 }
             }
