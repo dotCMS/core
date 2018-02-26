@@ -994,6 +994,21 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 //
 
 dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
+
+	myDnD : null,
+	initDnD : function () {
+
+		// Clean up existing and not longer valid dnd source instances
+		if (null !== actionClassAdmin.myDnD) {
+			actionClassAdmin.myDnD.destroy();
+			actionClassAdmin.myDnD = null;
+		}
+
+		// Creating a new dnd source instance
+		actionClassAdmin.myDnD = new dojo.dnd.Source("actionletsTblBody", {autoSync : true});
+		actionClassAdmin.myDnD.on("DndDrop", actionClassAdmin.reorderActionClasses);
+	},
+
 	actionClasses : [],
 	addSelectedToActionClasses : function(){
 		var select = dijit.byId("wfActionlets");
@@ -1126,8 +1141,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
             dojo.create("td", { colSpan: 2, className:"wfnoSubActions", innerHTML:"<%=LanguageUtil.get(pageContext, "No-Sub-Actions-Configured")%>" }, tr);
         }
 
-        var myDnD = new dojo.dnd.Source("actionletsTblBody", {autoSync : true});
-        myDnD.on("DndDrop", actionClassAdmin.reorderActionClasses);
+        actionClassAdmin.initDnD();
     },
 
     /**

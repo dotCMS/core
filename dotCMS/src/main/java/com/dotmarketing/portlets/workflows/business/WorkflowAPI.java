@@ -32,6 +32,7 @@ import java.util.Set;
 
 public interface WorkflowAPI {
 
+	public static final String SYSTEM_WORKFLOW_ID           = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
 	public static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
 
     public void registerBundleService ();
@@ -548,5 +549,18 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowAction> findAvailableDefaultActionsBySchemes(List<WorkflowScheme> schemes, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the list of available workflow actions associated to a Content type. All the
+	 * Workflow Actions are part of the first step of the Workflow Schemes associated to the Content
+	 * Type
+	 *
+	 * @param contentType ContentType to be processed
+	 * @param user The current User
+	 * @return List<WorkflowAction>
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findInitialAvailableActionsByContentType(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
 }

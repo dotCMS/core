@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
+import org.apache.logging.log4j.util.Strings;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;

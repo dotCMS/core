@@ -2,7 +2,7 @@ package com.dotmarketing.util;
 
 import java.util.UUID;
 
-import com.dotcms.repackage.org.apache.logging.log4j.core.util.UuidUtil;
+import org.apache.logging.log4j.core.util.UuidUtil;
 
 public final class UUIDUtil {
 

@@ -302,7 +302,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> recentlyUsed(BaseContentType type, int numberToShow) throws DotDataException {
 
     String query =
-        " { \"query\": { \"query_string\": { \"query\": \"+moduser:{0} +working:true +deleted:false +basetype:{1}\" } },  \"aggs\": { \"recent-contents\": { \"terms\": { \"field\": \"contentType._keyword\", \"size\": {2} }, \"aggs\": { \"top_tag_hits\": { \"top_hits\": { \"sort\": [ { \"moddate\": { \"order\": \"desc\" } } ], \"_source\": { \"include\": [ \"title\" ] }, \"size\" : 1 } } }  }  }, \"size\":0 } ";
+        " { \"query\": { \"query_string\": { \"query\": \"+moduser:{0} +working:true +deleted:false +basetype:{1}\" } },  \"aggs\": { \"recent-contents\": { \"terms\": { \"field\": \"contentType_dotraw\", \"size\": {2} }, \"aggs\": { \"top_tag_hits\": { \"top_hits\": { \"sort\": [ { \"moddate\": { \"order\": \"desc\" } } ], \"_source\": { \"include\": [ \"title\" ] }, \"size\" : 1 } } }  }  }, \"size\":0 } ";
 
     int limit = (numberToShow < 1 || numberToShow > 20) ? 20 : numberToShow;
 
@@ -333,7 +333,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
-    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype._keyword\",  \"size\" : " + Integer.MAX_VALUE + "}"
+    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : " + Integer.MAX_VALUE + "}"
         + "     }" + "   }," + "   \"size\":0}";
 
     try {
