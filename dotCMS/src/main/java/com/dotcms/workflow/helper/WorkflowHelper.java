@@ -5,6 +5,7 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -745,6 +746,42 @@ public class WorkflowHelper {
 
         return results.build();
     }
+
+    /**
+     * Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated
+     * with a content type Id and user.
+     * @param contentTypeId String Content Type Id
+     * @param user  User
+     * @return List of WorkflowAction
+     */
+    @CloseDBIfOpened
+    public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentType(final String contentTypeId, final User user) {
+
+        ContentType contentType        = null;
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        try {
+
+            Logger.debug(this, "Asking for the available actions for the content type Id: " + contentTypeId);
+            contentType = contentTypeAPI.find(contentTypeId);
+
+            if (null != contentType) {
+                final List<WorkflowAction> actions = this.workflowAPI.findInitialAvailableActionsByContentType(contentType, user);
+                for (WorkflowAction action : actions){
+                    WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+                    WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,action);
+                    results.add(value);
+                }
+            }
+        } catch (DotDataException  | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+        return results.build();
+    } // findInitialAvailableActionsByContentType.
 
 
 } // E:O:F:WorkflowHelper.

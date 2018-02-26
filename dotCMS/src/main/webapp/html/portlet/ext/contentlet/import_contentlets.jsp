@@ -56,6 +56,7 @@
 	function structureChanged () {
 		var inode = dijit.byId("structuresSelect").attr('value');
 		StructureAjax.getKeyStructureFields(inode, fillFields);
+		updateDefaultWorkflowActions(inode);
 	}
 
 	function fillFields (data) {
@@ -159,6 +160,48 @@
 	function importCancel(id){
     	ImportContentletAjax.cancelImport(id,importCancelCallback);
     }
+
+    var actionData = {
+        identifier: 'id',
+        label: 'name',
+        items: [
+            { id:'',  name:'' }
+        ]};
+    var actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+
+    function updateDefaultWorkflowActions(contentTypeId){
+        var xhrArgs = {
+            url: "/api/v1/workflow/initialactions/contenttype/" + contentTypeId,
+			handleAs: "json",
+	        load: function(data) {
+                var results = data.entity;
+                fillAvailableWorkflowActions(results);
+            },
+            error : function(error) {
+                showDotCMSSystemMessage(error, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+	}
+
+    function fillAvailableWorkflowActions(actions){
+        var items = new Array();
+        for(var i=0; i < actions.length; i++){
+            items.push({
+                id: actions[i].action.id,
+                name: actions[i].action.name+" ( "+actions[i].scheme.name+" )"
+            });
+        }
+        actionData = {
+            identifier: 'id',
+            label: 'name',
+            items:
+                items
+            };
+        actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+        dijit.byId("workflowActionId").attr('store', actionStore);
+    }
+
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -258,6 +301,15 @@
 										<table class="content-search__key-fields">
 											<tbody id="import_fields_table"> </tbody>
 										</table>
+									</dd>
+								</dl>
+								<dl>
+									<dt>
+										<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
+									</dt>
+									<dd>
+										<select dojoType="dijit.form.FilteringSelect" name="workflowActionId" id="workflowActionId" store="actionStore" value="<%= UtilMethods.isSet(form.getWorkflowActionId()) ? form.getWorkflowActionId() : "" %>" >
+										</select>
 									</dd>
 								</dl>
 								<dl>

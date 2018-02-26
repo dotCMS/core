@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -75,6 +77,7 @@ public class ImportUtil {
     private final static LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final static HostAPI hostAPI = APILocator.getHostAPI();
     private final static FolderAPI folderAPI = APILocator.getFolderAPI();
+    private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
     private final static String languageCodeHeader = "languageCode";
     private final static String countryCodeHeader = "countryCode";
@@ -136,6 +139,8 @@ public class ImportUtil {
 	 *            - The column name containing the country code.
 	 * @param reader
 	 *            - The character streams reader.
+     * @param wfActionId
+     *            - The workflow Action Id to execute on the import
 	 * @return The resulting analysis performed on the CSV file. This provides
 	 *         information regarding inconsistencies, errors, warnings and/or
 	 *         precautions to the user.
@@ -144,7 +149,7 @@ public class ImportUtil {
 	 * @throws DotDataException
 	 *             An error occurred when analyzing the CSV file.
 	 */
-    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
+    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId)
             throws DotRuntimeException, DotDataException {
 
         HashMap<String, List<String>> results = new HashMap<String, List<String>>();
@@ -238,7 +243,7 @@ public class ImportUtil {
 
                                 //Importing content record...
                                 importLine( csvLine, currentSiteId, contentType, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
-                                        counters, keyContentUpdated, contentTypePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
+                                        counters, keyContentUpdated, contentTypePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert, wfActionId );
 
                                 //Storing the record keys we just imported for a later reference...
                                 if ( keyFields != null && !keyFields.isEmpty() ) {
@@ -531,7 +536,7 @@ public class ImportUtil {
 	/**
 	 * Imports content extracted from a CSV upload file. This method will
 	 * receive and handle line by line of the import file.
-	 * 
+	 *
 	 * @param line
 	 *            - Represents the data line read from the CSV file.
 	 * @param contentType
@@ -582,6 +587,8 @@ public class ImportUtil {
 	 *            batch upload, help us to see if there is a batch content
 	 *            upload with multiple records and the same key, mostly used for
 	 *            content with multiple languages.
+     * @param wfActionId
+     *            - represent the Workflow Action Id to execute
 	 * @throws DotRuntimeException
 	 *             An error was detected when importing a line from the CSV
 	 *             file.
@@ -589,7 +596,7 @@ public class ImportUtil {
     private static void importLine ( String[] line, String currentHostId, Structure contentType, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
             HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
             HashSet<String> keyContentUpdated, List<Permission> contentTypePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
-            boolean sameKeyBatchInsert ) throws DotRuntimeException {
+            boolean sameKeyBatchInsert, String wfActionId ) throws DotRuntimeException {
 
         try {
             //Building a values HashMap based on the headers/columns position
@@ -1289,7 +1296,15 @@ public class ImportUtil {
                             }
                         }
                         //END Load the old relationShips and add the new ones
-                        cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), contentTypePermissions, user, false);
+                        cont = workflowAPI.fireContentWorkflow(cont,
+                                new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                                        .modUser(user)
+                                        .relationships(contentletRelationships)
+                                        .workflowActionId(wfActionId)
+                                        .workflowActionComments("")
+                                        .workflowAssignKey("")
+                                        .categories(new ArrayList<Category>(categories))
+                                        .generateSystemEvent(Boolean.FALSE).build());
 
                         if(Config.getBooleanProperty("PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)){
                             APILocator.getContentletAPI().publish(cont, user, false);

@@ -20,6 +20,8 @@ public class ImportContentletsForm extends ValidatorForm {
 	
 	private String[] fields = new String[0];
 
+	private String workflowActionId = "";
+
     public String[] getFields() {
         return fields;
     }
@@ -57,6 +59,22 @@ public class ImportContentletsForm extends ValidatorForm {
 	public String getFileName() {
 		return fileName;
 	}
+
+    /**
+     * Set the WorkflowActionId to be executed on the import
+     * @param workflowActionId the workflow action Id string
+     */
+    public void setWorkflowActionId(String workflowActionId) {
+        this.workflowActionId = workflowActionId;
+    }
+
+    /**
+     * Get the Workflow Action Id to be executed on the import
+     * @return The workflow Action Id
+     */
+    public String getWorkflowActionId() {
+        return workflowActionId;
+    }
     
     
     
