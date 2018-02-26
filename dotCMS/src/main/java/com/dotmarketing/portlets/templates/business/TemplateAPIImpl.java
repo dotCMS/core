@@ -36,6 +36,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -308,10 +309,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     }
 
 	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
-		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
 		if (layout == null) {
-			return containerUUIDS;
+			return Collections.emptyList();
 		}
+		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
 		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
 		for (final TemplateLayoutRow row : rows) {
