@@ -4,7 +4,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class ContentletDependencies {
 
@@ -13,7 +13,7 @@ public class ContentletDependencies {
     private final String                  workflowActionId;
     private final String                  workflowActionComments;
     private final String                  workflowAssignKey;
-    private final ArrayList<Category>     categories;
+    private final List<Category> categories;
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
 
@@ -50,7 +50,7 @@ public class ContentletDependencies {
         return workflowAssignKey;
     }
 
-    public ArrayList<Category> getCategories() {
+    public List<Category> getCategories() {
         return categories;
     }
 
@@ -69,7 +69,7 @@ public class ContentletDependencies {
         private String workflowActionId;
         private String workflowActionComments;
         private String workflowAssignKey;
-        private ArrayList<Category> categories;
+        private List<Category> categories;
         private boolean respectAnonymousPermissions;
         private boolean generateSystemEvent;
 
@@ -102,7 +102,7 @@ public class ContentletDependencies {
             return this;
         }
 
-        public ContentletDependencies.Builder categories(final ArrayList<Category> categories) {
+        public ContentletDependencies.Builder categories(final List<Category> categories) {
             this.categories = categories;
             return this;
         }

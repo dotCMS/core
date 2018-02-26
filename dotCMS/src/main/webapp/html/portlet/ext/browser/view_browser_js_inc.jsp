@@ -1928,7 +1928,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         if(dijit.byId('addFileDialog')){
             var uploadDlg = dijit.byId('addFileDialog');
             uploadDlg.set('href',url);
-
+            dojo.connect(uploadDlg, "onLoad", null, function(e) {
+                loadWorkflowActions(selectedStructure);
+            });
             uploadDlg.show();
 
             hidePopUp('context_menu_popup_'+parentId);

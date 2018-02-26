@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -10,6 +9,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Host;
@@ -25,9 +25,14 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.ImportUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
+import java.util.Arrays;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -51,13 +56,15 @@ import static org.junit.Assert.assertTrue;
  * 
  * @author Jonathan Gamba Date: 3/10/14
  */
-public class ImportUtilTest extends IntegrationTestBase {
+public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
     private static User user;
     private static Host defaultSite;
     private static Language defaultLanguage;
     private static ContentTypeAPIImpl contentTypeApi;
     private static FieldAPI fieldAPI;
+    private static BaseWorkflowIntegrationTest.CreateSchemeStepActionResult schemeStepActionResult1 = null;
+    private static WorkflowAPI workflowAPI;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -68,10 +75,16 @@ public class ImportUtilTest extends IntegrationTestBase {
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         contentTypeApi  = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
+        workflowAPI = APILocator.getWorkflowAPI();
+
+        // creates the scheme, step1 and action1
+        schemeStepActionResult1 = createSchemeStepActionActionlet
+                ("ImportUtilScheme" + UUIDGenerator.generateUuid(), "step1", "action1", SaveContentActionlet.class);
+
     }
 
     /**
-     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, com.liferay.portal.model.User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, java.io.Reader)} method
+     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, com.liferay.portal.model.User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, java.io.Reader, String)} method
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -100,6 +113,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         Field siteField = new Field( "Host", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, contentType, true, true, true, 2, false, false, true );
         siteField = FieldFactory.saveField( siteField );
         final String siteFieldVarName = siteField.getVelocityVarName();
+        workflowAPI.saveSchemesForStruct(contentType, Arrays.asList(schemeStepActionResult1.getScheme()));
 
         //----------------PREVIEW = TRUE------------------------------------------
         //------------------------------------------------------------------------
@@ -114,7 +128,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         String[] csvHeaders = csvreader.getHeaders();
 
         //Preview=true
-        HashMap<String, List<String>> results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader );
+        HashMap<String, List<String>> results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, true, false, true );
 
@@ -137,7 +151,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         csvHeaders = csvreader.getHeaders();
 
         //Preview=false
-        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader );
+        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, false, false, true );
 
@@ -159,7 +173,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         csvHeaders = csvreader.getHeaders();
 
         //Preview=true
-        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader );
+        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, true, true, true );
 
@@ -191,7 +205,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         csvHeaders = csvreader.getHeaders();
 
         //Preview=false
-        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{textField.getInode()}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader );
+        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{textField.getInode()}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, false, false, true );//We should expect warnings: Line #X. The key fields chosen match 1 existing content(s) - more than one match suggests key(s) are not properly unique
 
@@ -223,7 +237,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         csvHeaders = csvreader.getHeaders();
 
         //Preview=false
-        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader );
+        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{}, false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, false, false, true );
 
@@ -246,7 +260,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         int languageCodeHeaderColumn = 0;
         int countryCodeHeaderColumn = 1;
         //Preview=false
-        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{textField.getInode()}, false, true, user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader );
+        results = ImportUtil.importFile( 0L, defaultSite.getInode(), contentType.getInode(), new String[]{textField.getInode()}, false, true, user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, schemeStepActionResult1.getAction().getId() );
         //Validations
         validate( results, false, false, false );
 
@@ -366,6 +380,9 @@ public class ImportUtilTest extends IntegrationTestBase {
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
                 "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
@@ -380,7 +397,7 @@ public class ImportUtilTest extends IntegrationTestBase {
             results =
                 ImportUtil
                     .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
-                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, schemeStepActionResult1.getAction().getId());
             //Validations
             validate(results, true, false, true);
 
@@ -427,6 +444,9 @@ public class ImportUtilTest extends IntegrationTestBase {
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
                 "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
@@ -441,7 +461,7 @@ public class ImportUtilTest extends IntegrationTestBase {
             results =
                 ImportUtil
                     .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
-                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, schemeStepActionResult1.getAction().getId());
             //Validations
             validate(results, true, false, true);
 
