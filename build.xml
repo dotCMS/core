@@ -128,9 +128,9 @@
         <fileset dir="../../${target.root}/WEB-INF/lib">
             <include name="ant-tooling-*.jar" />
             <include name="commons-lang-*.jar" />
-            <include name="dot.log4j-api*.jar" />
-            <include name="dot.log4j-core*.jar" />
-            <include name="dot.log4j-web*.jar" />
+            <include name="log4j-api*.jar" />
+            <include name="log4j-core*.jar" />
+            <include name="log4j-web*.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -140,9 +140,9 @@
         <fileset dir="${lib.app}">
             <include name="ant-tooling-*.jar" />
             <include name="commons-lang-*.jar" />
-            <include name="dot.log4j-api*.jar" />
-            <include name="dot.log4j-core*.jar" />
-            <include name="dot.log4j-web*.jar" />
+            <include name="log4j-api*.jar" />
+            <include name="log4j-core*.jar" />
+            <include name="log4j-web*.jar" />
         </fileset>
     </path>
 
