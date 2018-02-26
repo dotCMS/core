@@ -19,12 +19,18 @@ package org.apache.velocity.runtime.resource;
  * under the License.
  */
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+
+import com.liferay.portal.model.User;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -35,7 +41,9 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
+import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -287,7 +295,10 @@ public class ResourceManagerImpl
          * (static content from #include) with a Template.
          */
 
-        final String resourceKey = resourceType + resourceName;
+        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        User user = getUser(request);
+
+        final String resourceKey = resourceType + resourceName + user.getUserId();
         Resource resource = globalCache.get(resourceKey);
 
         if (resource != null)
@@ -372,6 +383,15 @@ public class ResourceManagerImpl
         }
 
         return resource;
+    }
+
+    @Nullable
+    private User getUser(HttpServletRequest request) {
+        try {
+            return request != null ? WebAPILocator.getUserWebAPI().getUser(request) : APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            return null;
+        }
     }
 
     /**

@@ -1,14 +1,14 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.beans.PermissionType;
+import com.dotmarketing.business.*;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -22,8 +22,11 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 
+import com.liferay.portal.model.User;
 import org.apache.felix.framework.resolver.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.ResourceManager;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author will
@@ -133,10 +136,13 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append(container.getPreLoop());
                 sb.append("#end");
             }
-            
-            
+
+            HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            User user = request != null ? WebAPILocator.getUserWebAPI().getUser(request) : sysUser();
+
             if (mode == PageMode.EDIT_MODE) {
                 StringWriter editWrapperDiv = new StringWriter();
+
                 editWrapperDiv.append("<div")
                     .append(" data-dot-object=")
                     .append("\"container\"")
@@ -149,6 +155,10 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append(" data-max-contentlets=")
                     .append("\"" + container.getMaxContentlets() + "\"")
                     .append(" data-dot-accept-types=")
+                    .append(" data-dot-can-edit=\"")
+                    .append(String.valueOf(APILocator.getPermissionAPI().doesUserHavePermission(container,
+                            PermissionLevel.WRITE.getType(), user,true)))
+                    .append("\"")
                     .append("\"");
                 Iterator<ContainerStructure> it= csList.iterator();
                 while (it.hasNext()) {
@@ -232,8 +242,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$CONTENT_LANGUAGE\"")
                     .append(" data-dot-title=")
                     .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
-                    
-                    
+                    .append(" data-dot-can-edit=")
+                    .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
                     .append(">");
 
 

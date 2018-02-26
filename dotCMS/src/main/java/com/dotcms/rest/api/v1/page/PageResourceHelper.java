@@ -248,10 +248,11 @@ public class PageResourceHelper implements Serializable {
         final HTMLPageAsset page = (UUIDUtil.isUUID(pageUri)) ?  (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
-        final Template template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
-                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
-
         TemplateLayout layout = null;
+        Template template = null;
+
+        template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
+                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
 
         if (template.isDrawed()) {
             layout = DotTemplateTool.themeLayout(template.getInode());
