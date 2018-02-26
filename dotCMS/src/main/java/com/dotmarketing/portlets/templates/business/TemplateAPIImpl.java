@@ -309,6 +309,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
 		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
+		if (layout == null) {
+			return containerUUIDS;
+		}
 		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
 		for (final TemplateLayoutRow row : rows) {
