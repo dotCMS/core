@@ -101,20 +101,22 @@ public class DotParse extends DotDirective {
         String errorMessage = String.format("Not found %s version of [%s]",  params.mode, templatePath);
         throw new ResourceNotFoundException(errorMessage);
       }
-      boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
 
-      Contentlet contentlet = APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), respectFrontEndRolesForVTL);
-      FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+      final boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
+
+      final Contentlet contentlet = APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), respectFrontEndRolesForVTL);
+      final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
       
       
       // add the edit control if we have run through a page render
-      if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode &&  (request.getAttribute(
-              Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
-        if (APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user)) {
-          String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", contentlet.getInode()).replace("${_dotParsePath}",
+      if (!context.containsKey("dontShowIcon") &&
+              PageMode.EDIT_MODE == params.mode &&
+              (request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)!=null) &&
+              APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user)) {
+
+          final String editIcon = EDIT_ICON.replace("${_dotParseInode}", contentlet.getInode()).replace("${_dotParsePath}",
               id.getURI());
           writer.append(editIcon);
-        }
       }
 
 

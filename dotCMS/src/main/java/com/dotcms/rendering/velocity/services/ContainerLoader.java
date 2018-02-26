@@ -137,11 +137,11 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append("#end");
             }
 
-            HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            User user = request != null ? WebAPILocator.getUserWebAPI().getUser(request) : sysUser();
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final User user = request != null ? WebAPILocator.getUserWebAPI().getUser(request) : sysUser();
 
             if (mode == PageMode.EDIT_MODE) {
-                StringWriter editWrapperDiv = new StringWriter();
+                final StringWriter editWrapperDiv = new StringWriter();
 
                 editWrapperDiv.append("<div")
                     .append(" data-dot-object=")

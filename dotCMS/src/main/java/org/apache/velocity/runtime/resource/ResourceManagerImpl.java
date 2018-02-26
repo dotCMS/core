@@ -295,8 +295,8 @@ public class ResourceManagerImpl
          * (static content from #include) with a Template.
          */
 
-        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        User user = getUser(request);
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final User user = getUser(request);
 
         final String resourceKey = resourceType + resourceName + user.getUserId();
         Resource resource = globalCache.get(resourceKey);
@@ -386,7 +386,7 @@ public class ResourceManagerImpl
     }
 
     @Nullable
-    private User getUser(HttpServletRequest request) {
+    private User getUser(final HttpServletRequest request) {
         try {
             return request != null ? WebAPILocator.getUserWebAPI().getUser(request) : APILocator.getUserAPI().getSystemUser();
         } catch (DotDataException e) {

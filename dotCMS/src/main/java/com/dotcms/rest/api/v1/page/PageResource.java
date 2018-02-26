@@ -293,7 +293,9 @@ public class PageResource {
     }
 
     @NotNull
-    private Map<String, Object> getLockMap(User user, HTMLPageAsset page, ContentletVersionInfo info) throws DotDataException, DotSecurityException {
+    private Map<String, Object> getLockMap(final User user, final HTMLPageAsset page, final ContentletVersionInfo info)
+            throws DotDataException, DotSecurityException {
+
         final Builder<String, Object> lockMap = ImmutableMap.builder();
         final boolean canLock  = canLock(user, page);
         final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
@@ -309,17 +311,17 @@ public class PageResource {
         return lockMap.build();
     }
 
-    private ImmutableMap<Object, Object> getTemplateAtrributes(User user, HTMLPageAsset page, String templateIdentifier)
+    private ImmutableMap<Object, Object> getTemplateAtrributes(final User user, final HTMLPageAsset page, final String templateIdentifier)
             throws DotDataException, DotSecurityException {
 
-        Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+        final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
         return ImmutableMap.builder().put("drawed", template.isDrawed())
                 .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
                 .put("id", templateIdentifier)
                 .build();
     }
 
-    private boolean canLock(User user, HTMLPageAsset page)  {
+    private boolean canLock(final User user, final HTMLPageAsset page)  {
         try {
             APILocator.getContentletAPI().canLock(page, user);
             return true;

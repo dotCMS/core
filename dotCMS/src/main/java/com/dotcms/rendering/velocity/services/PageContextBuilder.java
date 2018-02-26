@@ -146,10 +146,10 @@ public class PageContextBuilder {
 
     }
 
-    private boolean hasWritePermissionInTemplate(String templateId) throws DotDataException {
+    private boolean hasWritePermissionInTemplate(final String templateId) throws DotDataException {
 
         try {
-            Template template = (mode.showLive) ?
+            final Template template = (mode.showLive) ?
                     (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, user, false)
                     : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, user, false);
 
@@ -170,10 +170,10 @@ public class PageContextBuilder {
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
-                    Set<String> cons = pageContents.get(containerId, uniqueId);
+                    final Set<String> cons = pageContents.get(containerId, uniqueId);
 
-                    User systemUser = APILocator.getUserAPI().getSystemUser();
-                    Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    final User systemUser = APILocator.getUserAPI().getSystemUser();
+                    final Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
                             .findLiveVersion(containerId, systemUser, false)
                             : (Container) APILocator.getVersionableAPI()
                             .findWorkingVersion(containerId, systemUser, false);
