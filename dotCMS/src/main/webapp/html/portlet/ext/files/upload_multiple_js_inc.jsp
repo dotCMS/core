@@ -16,10 +16,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
  *
  * @param uploader
  * @param referer
- * @param operation
  * @return {boolean}
  */
-function uploadFiles(uploader, referer, operation) {
+function uploadFiles(uploader, referer) {
 
     /**
     * Registers and manage the onComplete event for uploaded files
@@ -41,6 +40,10 @@ function uploadFiles(uploader, referer, operation) {
     var nameValueSeparator = "<%=com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR%>";
     var uploadFiles = uploader.getFileList();
 
+    if (dijit.byId("wfActionId").value === "") {
+        alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.select.a.workflow.action")) %>');
+        return false;
+    }
     if (uploadFiles.length == 0) {
         alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
         return false;
@@ -57,7 +60,7 @@ function uploadFiles(uploader, referer, operation) {
     document.getElementById("messageDiv").style.display = "";
 
     form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
-    form.subcmd.value = operation;
+    form.subcmd.value = "";
     form.cmd.value = "<%= Constants.ADD %>";
     dijit.byId('saveButton').setAttribute('disabled', true);
     if (dijit.byId('savePublishButton') != null) {
@@ -69,4 +72,45 @@ function uploadFiles(uploader, referer, operation) {
     return true;
 }
 
+var actionData = {
+    identifier: 'id',
+    label: 'name',
+    items: [
+        { id:'',  name:'' }
+    ]};
+
+var actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+
+function loadWorkflowActions(contentTypeId){
+    var xhrArgs = {
+        url: "/api/v1/workflow/initialactions/contenttype/" + contentTypeId,
+        handleAs: "json",
+        load: function(data) {
+            var results = data.entity;
+            fillAvailableWorkflowActions(results);
+        },
+        error : function(error) {
+            showDotCMSSystemMessage(error, true);
+        }
+    };
+    dojo.xhrGet(xhrArgs);
+}
+
+function fillAvailableWorkflowActions(actions){
+    var items = new Array();
+    for(var i=0; i < actions.length; i++){
+        items.push({
+            id: actions[i].action.id,
+            name: actions[i].action.name+" ( "+actions[i].scheme.name+" )"
+        });
+    }
+    actionData = {
+        identifier: 'id',
+        label: 'name',
+        items: items
+    };
+    actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+    dijit.byId("wfActionId").attr('store', actionStore);
+}
+loadWorkflowActions("<%=selectedStructure%>");
 </script>

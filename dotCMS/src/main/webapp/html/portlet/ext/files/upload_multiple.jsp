@@ -141,71 +141,42 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                      %>
 
 					<div class="buttonRow">
-                     <%if (canUserPublishFile) {%>
-				    <button dojoType="dijit.form.Button" onclick="doUpload('')" iconClass="saveIcon" id="saveButton">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-					<script type="dojo/method" event="onClick" args="evt">
-                        //Submit the form
-                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "");
+						<select dojoType="dijit.form.FilteringSelect" name="wfActionId" id="wfActionId" store="actionStore" value="" >
+				        </select>
+                        <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
+					        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
+					        <script type="dojo/method" event="onClick" args="evt">
 
-                        <% if(inFrame) { %>
-                            if(parent.fileSubmitted) {
-                                parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
-                            }
-                        <% } %>
-					</script>
-                </button>
-                <button dojoType="dijit.form.Button" id="savePublishButton" type="button">
-                	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-					<script type="dojo/method" event="onClick" args="evt">
+                            //Submit the form
+                            uploadFiles(dijit.byId("uploader"), "<%=referer%>");
 
-                        //Submit the form
-                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "publish");
-
-                        <% if(inFrame) { %>
-                            if(parent.fileSubmitted) {
-                                parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
-                            }
-                        <% } %>
-					</script>
-                </button>
-             <%} else if (canUserWriteToFile) { %>
-                <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-					<script type="dojo/method" event="onClick" args="evt">
-
-                        //Submit the form
-                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "");
-
-                        <% if(inFrame) { %>
-                            if(parent.fileSubmitted) {
-                                parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
-                            }
-                        <% } %>
-					</script>
-             	</button>
-			  <% } %>
-                <button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
-                	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-                	<script type="dojo/method" event="onClick" args="evt">						
-                        try{
-                            if(dijit.byId('addFileDialog')){
-                                dijit.byId('addFileDialog').hide();
-                            } else {
-                                if(parent.closeAddFileDialog) {
-                                    parent.closeAddFileDialog();
+                            <% if(inFrame) { %>
+                                if(parent.fileSubmitted) {
+                                    parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
                                 }
-                            }
-                        }catch(e){
-                            console.error(e);
-                        }
-                	</script>
-                </button>
-			</div>
-	</html:form>
-</div>
-
-<% } %>
+                            <% } %>
+					        </script>
+             	        </button>
+                        <button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
+                	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+                	        <script type="dojo/method" event="onClick" args="evt">
+                                try{
+                                    if(dijit.byId('addFileDialog')){
+                                        dijit.byId('addFileDialog').hide();
+                                    } else {
+                                        if(parent.closeAddFileDialog) {
+                                            parent.closeAddFileDialog();
+                                        }
+                                    }
+                                }catch(e){
+                                    console.error(e);
+                                }
+                	        </script>
+                        </button>
+			        </div>
+	         </html:form>
+         </div>
+	<% } %>
 
 <div id="messageDiv" class="messageBox shadowBox" style="display: none;">
 	<b><%= LanguageUtil.get(pageContext, "File-Uploading") %>  . . .</b><BR>

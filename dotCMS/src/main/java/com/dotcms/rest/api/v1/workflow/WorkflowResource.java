@@ -873,4 +873,50 @@ public class WorkflowResource {
         return response;
     } // findAvailableDefaultActionsBySchemes.
 
+    /**
+     * Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated
+     * with a content type Id.
+     * @param request HttpServletRequest
+     * @param contentTypeId String
+     * @return Response
+     */
+    @GET
+    @Path("/initialactions/contenttype/{contentTypeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findInitialAvailableActionsByContentType(@Context final HttpServletRequest request,
+            @PathParam("contentTypeId") final String contentTypeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        List<WorkflowDefaultActionView> actions;
+
+        try {
+
+            Logger.debug(this, "Getting the available actions for the contentlet inode: " + contentTypeId);
+            actions   = this.workflowHelper.findInitialAvailableActionsByContentType(contentTypeId,
+                    initDataObject.getUser());
+            response  =
+                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findAvailableActionsByContentType, content type id: " + contentTypeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findInitialAvailableActionsByContentType, content type id: " + contentTypeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // findInitialAvailableActionsByContentType.
+
 } // E:O:F:WorkflowResource.
