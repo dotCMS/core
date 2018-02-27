@@ -259,7 +259,7 @@ public class PageResourceHelper implements Serializable {
         TemplateLayout layout = null;
         Template template = null;
 
-        User systemUser = userAPI.getSystemUser();
+        final User systemUser = userAPI.getSystemUser();
         template = mode.showLive ?
                 (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), systemUser, mode.respectAnonPerms) :
                 (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), systemUser, mode.respectAnonPerms);
@@ -268,7 +268,7 @@ public class PageResourceHelper implements Serializable {
             layout = DotTemplateTool.themeLayout(template.getInode());
         }
 
-        final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template, user);
+        final Map<String, ContainerView> mappedContainers = this.getMappedContainers(template);
 
         if (isRendered) {
 
@@ -276,7 +276,7 @@ public class PageResourceHelper implements Serializable {
 
         }
 
-        boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(),
+        final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(),
                 user, false);
         return new PageView(site, template, mappedContainers, page, layout, canEditTemplate);
     }
@@ -302,9 +302,9 @@ public class PageResourceHelper implements Serializable {
 
 
 
-    private Map<String, ContainerView> getMappedContainers(final Template template, final User user)
+    private Map<String, ContainerView> getMappedContainers(final Template template)
             throws DotSecurityException, DotDataException {
-        User systemUser = this.userAPI.getSystemUser();
+        final User systemUser = this.userAPI.getSystemUser();
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser, false);
 
         final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();

@@ -99,14 +99,14 @@ public class PageContextBuilder {
         // to check user has permission to write on this page
         List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI()
             .getReceivingEndPoints();
-        boolean hasAddChildrenPermOverHTMLPage =
+        final boolean hasAddChildrenPermOverHTMLPage =
                 permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user);
-        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
-        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
-        boolean hasRemotePublishPermOverHTMLPage =
+        final boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
+        final boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
+        final boolean hasRemotePublishPermOverHTMLPage =
                 hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
-        boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-        boolean canUserWriteOnTemplate = hasWritePermissionInTemplate(templateId);
+        final boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+        final boolean canUserWriteOnTemplate = hasWritePermissionInTemplate(templateId);
 
         ctxMap.put("dotPageMode", mode.name());
 
