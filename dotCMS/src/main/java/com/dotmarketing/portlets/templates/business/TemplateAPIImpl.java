@@ -272,17 +272,19 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
         final Set<Container> containers = new HashSet<>();
         if(template.isDrawed()) {
             final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
-            final List<String> containersId = this.getContainersId(layout);
-    
-            for (final String cont : containersId) {
-                final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
-    
-                if(container==null) {
-                    continue;
-                }
-    
-                containers.add(container);
-            }
+            if (layout != null) {
+				final List<String> containersId = this.getContainersId(layout);
+
+				for (final String cont : containersId) {
+					final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+
+					if (container == null) {
+						continue;
+					}
+
+					containers.add(container);
+				}
+			}
         }
         // this is a light weight search for pages that use this template
         List<ContentletSearch> pages= APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
@@ -309,9 +311,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     }
 
 	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
-		if (layout == null) {
-			return Collections.emptyList();
-		}
 		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
 		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
