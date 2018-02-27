@@ -110,6 +110,8 @@ sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/do
 sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/work,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.repo *=.*$,es.path.repo=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snaphosts,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.logs *=.*$,es.path.logs=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.home *=.*$,es.path.home=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+
 echo "
 AUTOWIRE_CLUSTER_TRANSPORT=false
 " >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties

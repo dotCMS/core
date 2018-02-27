@@ -3,28 +3,18 @@ package com.dotmarketing.db;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.util.JNDIUtil;
-
 import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 
+import javax.naming.*;
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.naming.Binding;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 
 public class DbConnectionFactory {
 
@@ -34,6 +24,8 @@ public class DbConnectionFactory {
     protected static final String ORACLE = "Oracle";
     protected static final String MSSQL = "Microsoft SQL Server";
     protected static final String H2 = "H2";
+
+    private static DataSource defaultDataSource = null;
 
     /**
      * Gets the autoCommit for the current connection
@@ -98,17 +90,27 @@ public class DbConnectionFactory {
         new ThreadLocal<HashMap<String, Connection>>();
 
     public static DataSource getDataSource() {
-        try {
-            InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE);
-            return ds;
 
-        } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
-                e);
-            throw new DotRuntimeException(e.toString());
+        if (null == defaultDataSource) {
+
+            synchronized (DbConnectionFactory.class) {
+
+                if (null == defaultDataSource) {
+
+                    try {
+                        final InitialContext ctx = new InitialContext();
+                        defaultDataSource = (DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE);
+                    } catch (Exception e) {
+                        Logger.error(DbConnectionFactory.class,
+                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                                e);
+                        throw new DotRuntimeException(e.toString());
+                    }
+                }
+            }
         }
+
+        return defaultDataSource;
     }
 
     /**

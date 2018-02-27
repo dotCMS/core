@@ -2,7 +2,7 @@ package com.dotcms.csspreproc;
 
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
 import com.dotcms.enterprise.csspreproc.CSSCompiler;
-//import com.dotcms.enterprise.csspreproc.DotLibSassCompiler;
+import com.dotcms.enterprise.csspreproc.DotLibSassCompiler;
 import com.dotcms.enterprise.csspreproc.LessCompiler;
 import com.dotcms.enterprise.csspreproc.SassCompiler;
 import com.dotcms.util.DownloadUtil;
@@ -85,7 +85,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                                            :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
             
             if(Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) && reqURI.startsWith("/DOTSASS/")) {
-               // compilerClass = DotLibSassCompiler.class;
+                compilerClass = DotLibSassCompiler.class;
             }
             
             CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,uri,live);
