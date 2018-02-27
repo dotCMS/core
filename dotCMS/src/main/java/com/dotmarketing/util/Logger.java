@@ -5,7 +5,7 @@
  */
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.util.WeakHashMap;
@@ -18,13 +18,13 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  */
 public class Logger{
 
-	private static WeakHashMap<Class, com.dotcms.repackage.org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
+	private static WeakHashMap<Class, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
 
 	public static void clearLoggers(){
 		map.clear();
 	}
 
-    public static com.dotcms.repackage.org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
+    public static org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
         return map.remove( clazz );
 	}
 	
@@ -34,9 +34,9 @@ public class Logger{
 	 * @param cl
 	 * @return
 	 */
-	private synchronized static com.dotcms.repackage.org.apache.logging.log4j.Logger loadLogger(Class cl){
+	private synchronized static org.apache.logging.log4j.Logger loadLogger(Class cl){
 		if(map.get(cl) == null){
-			com.dotcms.repackage.org.apache.logging.log4j.Logger logger = LogManager.getLogger(cl);
+			org.apache.logging.log4j.Logger logger = LogManager.getLogger(cl);
 			map.put(cl, logger);
 		}
 		return map.get(cl);
@@ -51,7 +51,7 @@ public class Logger{
     		velocityInfo(cl, message);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -71,7 +71,7 @@ public class Logger{
     		velocityDebug(cl, message);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -83,7 +83,7 @@ public class Logger{
     		velocityDebug(cl, message, ex);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -103,7 +103,7 @@ public class Logger{
     		velocityError(cl, message);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -116,7 +116,7 @@ public class Logger{
     		velocityError(cl, message, ex);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -141,7 +141,7 @@ public class Logger{
     		velocityFatal(cl, message);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -153,7 +153,7 @@ public class Logger{
     		velocityFatal(cl, message, ex);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -173,7 +173,7 @@ public class Logger{
     		velocityWarn(cl, message);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -186,7 +186,7 @@ public class Logger{
     		velocityWarn(cl, message, ex);
     		return;
     	}
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -194,7 +194,7 @@ public class Logger{
         logger.warn(message, ex);
     }
     public static boolean isDebugEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -203,7 +203,7 @@ public class Logger{
     }
 
     public static boolean isInfoEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -211,7 +211,7 @@ public class Logger{
 
     }
     public static boolean isWarnEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -219,7 +219,7 @@ public class Logger{
 
     }
     public static boolean isErrorEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -227,8 +227,8 @@ public class Logger{
 
     }
     
-    public static com.dotcms.repackage.org.apache.logging.log4j.Logger getLogger(Class cl) {
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    public static org.apache.logging.log4j.Logger getLogger(Class cl) {
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -238,7 +238,7 @@ public class Logger{
     
     
     public static void velocityError(Class cl, String message, Throwable thr){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -246,7 +246,7 @@ public class Logger{
     }
     
     public static void velocityWarn(Class cl, String message, Throwable thr){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -254,21 +254,21 @@ public class Logger{
     }
     
     public static void velocityInfo(Class cl, String message, Throwable thr){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.info(message + " @ " +  Thread.currentThread().getName(), thr);
     }
     public static void velocityFatal(Class cl, String message, Throwable thr){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.fatal(message + " @ " +  Thread.currentThread().getName(), thr);
 	}
     public static void velocityDebug(Class cl, String message, Throwable thr){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -276,7 +276,7 @@ public class Logger{
 	}
 
     public static void velocityError(Class cl, String message){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -284,7 +284,7 @@ public class Logger{
 	}
 	
 	public static void velocityWarn(Class cl, String message){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -292,21 +292,21 @@ public class Logger{
 	}
 	
 	public static void velocityInfo(Class cl, String message){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.info(message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityFatal(Class cl, String message){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
 		logger.fatal(message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityDebug(Class cl, String message){
-    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
+    	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}

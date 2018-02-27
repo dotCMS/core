@@ -1,5 +1,3 @@
-
-
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -12,6 +10,8 @@ import com.dotmarketing.util.UUIDGenerator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This upgrade task associated the system workflow to all contenttypes.
@@ -24,6 +24,11 @@ public class Task04345AddSystemWorkflowToContentType implements StartupTask {
 
     public static final String SYSTEM_WORKFLOW_ID          = WorkflowAPI.SYSTEM_WORKFLOW_ID;
     protected static String SELECT_CONTENT_TYPES           = "select inode, name from structure";
+    protected static String SELECT_CONTENT_TYPES_WITH_MANDATORY =
+            "select structure.inode as inode from structure, workflow_scheme_x_structure, workflow_scheme " +
+            "where structure.inode = workflow_scheme_x_structure.structure_id and " +
+            "      workflow_scheme_x_structure.scheme_id = workflow_scheme.id and " +
+            "      workflow_scheme.mandatory = ?";
     protected static String INSERT_SCHEME_FOR_CONTENT_TYPE = "insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values ( ?, ?, ?)";
 
     @Override
@@ -39,23 +44,35 @@ public class Task04345AddSystemWorkflowToContentType implements StartupTask {
 
         final List<Map<String, Object>> contentResults =
                 (List<Map<String, Object>>)new DotConnect()
-                     .setSQL(SELECT_CONTENT_TYPES)
-                    .loadResults();
+                        .setSQL(SELECT_CONTENT_TYPES)
+                        .loadResults();
+
+        final Set<String> contentResultsWithMandatory =
+                        new DotConnect()
+                        .setSQL(SELECT_CONTENT_TYPES_WITH_MANDATORY)
+                        .addParam(Boolean.TRUE)
+                        .loadObjectResults().stream()
+                        .map(stringObjectMap -> (String)stringObjectMap.get("inode"))
+                        .collect(Collectors.toSet());
 
         for (final Map<String, Object> contentResult : contentResults) {
 
             final String contentTypeId = (String)contentResult.get("inode");
 
-            Logger.info(this, "Adding the system workflow to the content type "
-                    + contentTypeId + ", name " + contentResult.get("name"));
+            if (!contentResultsWithMandatory.contains(contentTypeId)) {
 
-            new DotConnect().setSQL(INSERT_SCHEME_FOR_CONTENT_TYPE)
-                    .addParam(UUIDGenerator.generateUuid())
-                    .addParam(SYSTEM_WORKFLOW_ID)
-                    .addParam(contentTypeId)
-                    .loadResult();
+                Logger.info(this, "Adding the system workflow to the content type "
+                        + contentTypeId + ", name " + contentResult.get("name"));
+
+                new DotConnect().setSQL(INSERT_SCHEME_FOR_CONTENT_TYPE)
+                        .addParam(UUIDGenerator.generateUuid())
+                        .addParam(SYSTEM_WORKFLOW_ID)
+                        .addParam(contentTypeId)
+                        .loadResult();
+            }
         }
 
     } // executeUpgrade.
 
 }
+

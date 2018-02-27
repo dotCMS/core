@@ -1036,11 +1036,23 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 						   final WorkflowStep workflowStep,
 						   final int order)  throws DotDataException,AlreadyExistException {
 
-		new DotConnect().setSQL(sql.INSERT_ACTION_FOR_STEP)
-				.addParam(workflowAction.getId())
-				.addParam(workflowStep.getId())
-				.addParam(order)
-				.loadResult();
+		boolean isNew = true;
+		if (UtilMethods.isSet(workflowAction.getId()) && UtilMethods.isSet(workflowStep.getId())) {
+			isNew = (null == findAction(workflowAction.getId(), workflowStep.getId()));
+		}
+		if (isNew) {
+			new DotConnect().setSQL(sql.INSERT_ACTION_FOR_STEP)
+					.addParam(workflowAction.getId())
+					.addParam(workflowStep.getId())
+					.addParam(order)
+					.loadResult();
+		} else {
+			new DotConnect().setSQL(sql.UPDATE_ACTION_FOR_STEP_ORDER)
+					.addParam(order)
+					.addParam(workflowAction.getId())
+					.addParam(workflowStep.getId())
+					.loadResult();
+		}
 
 		final WorkflowStep proxyStep = new WorkflowStep();
 		proxyStep.setId(workflowStep.getId());

@@ -72,12 +72,16 @@ public class ESClient {
                     shutDownNode();
 
                     String node_id = ConfigUtils.getServerId();
+                    String esPathHome = Config.getStringProperty("es.path.home", "WEB-INF/elastic_search");
+                    if(!new File(esPathHome).isAbsolute()){
+                        esPathHome = FileUtil.getRealPath(esPathHome);
+                    }
                     try{
                         _nodeInstance = new Node(
                             Settings.builder().
                                 put( "cluster.name", Config.getStringProperty("es.cluster.name")).
                                 put( "node.name", node_id ).
-                                put("path.home", Config.getStringProperty("es.path.home", "WEB-INF/elastic_search")).
+                                put("path.home", esPathHome).
                                 put("path.data", Config.getStringProperty(DATA_PATH)).
                                     put("path.repo", Config.getStringProperty(REPO_PATH)).build()
                         ).start();

@@ -46,7 +46,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.ThreadContext;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;

@@ -2,16 +2,13 @@
     "dot_site_search": {
       "properties": {
         "content": {
-          "type": "multi_field",
+          "type": "text",
+          "analyzer": "standard_content",
           "fields": {
             "untouched": {
               "type": "keyword",
               "ignore_above": 8191,
               "doc_values" : true
-            },
-            "content": {
-              "type": "text",
-              "analyzer": "standard_content"
             },
             "ngram": {
               "search_analyzer": "standard_content",
@@ -50,7 +47,7 @@
           "doc_values" : true
         },
         "keywords": {
-          "type": "keyword",
+          "type": "text",
 	 	  "analyzer": "comma_analyzer"
 		},
         "language": {

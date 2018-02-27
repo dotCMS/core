@@ -47,6 +47,8 @@ cd ../..
 tar zxf core/dist-output/dotcms_*.tar.gz
 mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 
+# Assign permissions to ES modules jar
+chmod -R +x dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search/modules/
 
 # Copy test JARs into distro's tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
@@ -108,6 +110,8 @@ sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/do
 sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/work,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.repo *=.*$,es.path.repo=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snaphosts,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.logs *=.*$,es.path.logs=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.home *=.*$,es.path.home=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+
 echo "
 AUTOWIRE_CLUSTER_TRANSPORT=false
 " >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
