@@ -354,23 +354,17 @@
             	var assignable = content.wfActionMapList[i].assignable;
             	var hasPushPublishActionlet = content.wfActionMapList[i].hasPushPublishActionlet;
 	            var commentable = content.wfActionMapList[i].commentable;
-	            console.log(name + ":"+ assignable + ":" + commentable);
 	            var icon = content.wfActionMapList[i].icon;
 	            var requiresCheckout = content.wfActionMapList[i].requiresCheckout;
 	            var wfActionNameStr = content.wfActionMapList[i].wfActionNameStr;
 	            var isLocked = content.isLocked;
 	            var contentEditable = content.contentEditable;
-	            if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
-	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	                strHTML += '<span class=\''+icon+'\'></span>';
-	                strHTML += wfActionNameStr;
-	                strHTML += '</a>';
-	            }else if(!requiresCheckout)  {
-	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	                strHTML += '<span class=\''+icon+'\'></span>';
-	                strHTML += wfActionNameStr;
-	                strHTML += '</a>';
-	            }
+
+                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+                strHTML += '<span class=\''+icon+'\'></span>';
+                strHTML += wfActionNameStr;
+                strHTML += '</a>';
+
 	        }
 	       }
 		return strHTML;
@@ -439,15 +433,6 @@
 		
 
 		if (working && publish && !archived ) {
-			strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	    	if (live) {
-	            strHTML += '<span class="republishIcon"></span>';
-				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
-	        } else {
-	            strHTML += '<span class="publishIcon"></span>';
-				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
-			}
-			strHTML += '</a>';
 	
 	        if (enterprise) {
 	             if (sendingEndpoints) {
@@ -475,28 +460,7 @@
                 }
 			}
 		}
-			
-		if ((live || hasLiveVersion) && publish) {
-			strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-            strHTML += '<span class="unpublishIcon"></span>';
-            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
-			strHTML += '</a>';
-		}
-	
-		if (!live && working && publish && !hasLiveVersion) {
-			if (!archived) {
-				strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-		   		strHTML += '<span class="archiveIcon"></span>';
-		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
-				strHTML += '</a>';
-			}
-			else {
-				strHTML += '<a  href="javascript: unarchiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	   			strHTML += '<span class="unarchiveIcon"></span>';
-	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
-				strHTML += '</a>';
-			}
-		}
+
 	
 		if (locked && write) {
 			strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -504,24 +468,12 @@
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 			strHTML += '</a>';
 		}
-	
-		if (write && archived)
-		{
-			strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-			strHTML += '<span class="stopIcon"></span>';
-		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-File")) %>';
-			strHTML += '</a>';
-		}
+
 
 		
 		if (write && !archived)  {
 			
 			strHTML += '<div class="pop_divider" ></div>';
-
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	    		strHTML += '<span class="docCopyIcon"></span>';
-	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
-			strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	strHTML += '<span class="cutIcon"></span>';
@@ -731,16 +683,6 @@
         
         if(!page.isContentlet) {
 			if (working && !archived && publish) {
-				strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-		    	if(live) {
-					strHTML += '<span class="republishIcon"></span>';
-					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
-		   	    }
-				else {
-					strHTML += '<span class="publishIcon"></span>';
-					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
-				}
-				strHTML += '</a>';
 	
 	            if (enterprise) {
 	                if (sendingEndpoints) {
@@ -769,28 +711,6 @@
                     }
 				}
 			}
-
-            if ((live || hasLiveVersion) && publish) {
-				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-			    	strHTML += '<span class="unpublishIcon"></span>';
-			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
-				strHTML += '</a>';
-			}
-	
-			if (!live && working && publish && !hasLiveVersion) {
-				if (!archived) {
-					strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-			   			strHTML += '<span class="archiveIcon"></span>';
-	    	          	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
-					strHTML += '</a>';
-				}
-				else {
-					strHTML += '<a href="javascript: unarchiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-			   			strHTML += '<span class="unarchiveIcon"></span>';
-	    		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
-					strHTML += '</a>';
-				}
-			}
 	
 			if (locked && write) {
 				strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -798,23 +718,11 @@
 			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 				strHTML += '</a>';
 			}
-			
-			if (write && archived)
-	        {
-	            strHTML += '<a href="javascript: deleteHTMLPagePreCheck(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	                strHTML += '<span class="stopIcon"></span>';
-	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
-	            strHTML += '</a>';
-	        }
+
         }
 
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
-
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
-	    		strHTML += '<span class="docCopyIcon"></span>';
-	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
-			strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	strHTML += '<span class="cutIcon"></span>';
