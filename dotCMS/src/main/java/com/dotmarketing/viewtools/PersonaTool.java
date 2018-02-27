@@ -101,7 +101,7 @@ public class PersonaTool implements ViewTool {
 			return null;
 		}
 
-		return APILocator.getPersonaAPI().find(id, user, true);
+		return APILocator.getPersonaAPI().find(id, user, false);
 
 	}
 
