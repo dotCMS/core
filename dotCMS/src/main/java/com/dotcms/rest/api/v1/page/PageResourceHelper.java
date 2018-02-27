@@ -217,7 +217,15 @@ public class PageResourceHelper implements Serializable {
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
         HTMLPageAsset page = (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
-        this.permissionAPI.checkPermission(page, PermissionLevel.EDIT, user);
+        boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(),
+                user, false);
+
+        if (!doesUserHavePermission){
+            String message = String.format("User: %s does not have permissions %s for object %s", user,
+                    PermissionLevel.READ, page);
+            throw new DotSecurityException(message);
+        }
+
         return page;
     }
 
@@ -268,7 +276,8 @@ public class PageResourceHelper implements Serializable {
 
         }
 
-        boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+        boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(),
+                user, false);
         return new PageView(site, template, mappedContainers, page, layout, canEditTemplate);
     }
 
