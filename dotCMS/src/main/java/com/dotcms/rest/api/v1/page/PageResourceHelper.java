@@ -12,9 +12,7 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -80,7 +78,8 @@ public class PageResourceHelper implements Serializable {
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private final UserAPI userAPI = APILocator.getUserAPI();
 
 
     /**
@@ -216,8 +215,10 @@ public class PageResourceHelper implements Serializable {
 
         final Host site =resolveSite(request, user);
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
-        return  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+        HTMLPageAsset page = (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
+        this.permissionAPI.checkPermission(page, PermissionLevel.EDIT, user);
+        return page;
     }
 
     /**
@@ -237,22 +238,23 @@ public class PageResourceHelper implements Serializable {
             throws DotSecurityException, DotDataException {
 
         final Context velocityContext = VelocityUtil.getWebContext(request, response);
-
         final Host site =resolveSite(request, user);
-        
-
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
-        
 
         
-        final HTMLPageAsset page = (UUIDUtil.isUUID(pageUri)) ?  (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :  (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
-                site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
+        final HTMLPageAsset page = (UUIDUtil.isUUID(pageUri)) ?
+                (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
+                (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri, site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
+
+        this.permissionAPI.checkPermission(page, PermissionLevel.READ, user);
 
         TemplateLayout layout = null;
         Template template = null;
 
-        template = mode.showLive ? (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), user, mode.respectAnonPerms) :
-                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), user, mode.respectAnonPerms);
+        User systemUser = userAPI.getSystemUser();
+        template = mode.showLive ?
+                (Template) this.versionableAPI.findLiveVersion(page.getTemplateId(), systemUser, mode.respectAnonPerms) :
+                (Template) this.versionableAPI.findWorkingVersion(page.getTemplateId(), systemUser, mode.respectAnonPerms);
 
         if (template.isDrawed()) {
             layout = DotTemplateTool.themeLayout(template.getInode());
@@ -266,7 +268,8 @@ public class PageResourceHelper implements Serializable {
 
         }
 
-        return new PageView(site, template, mappedContainers, page, layout);
+        boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+        return new PageView(site, template, mappedContainers, page, layout, canEditTemplate);
     }
 
 
@@ -292,8 +295,8 @@ public class PageResourceHelper implements Serializable {
 
     private Map<String, ContainerView> getMappedContainers(final Template template, final User user)
             throws DotSecurityException, DotDataException {
-
-        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, user, false);
+        User systemUser = this.userAPI.getSystemUser();
+        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser, false);
 
         final Map<String, ContainerView> mappedContainers = new LinkedHashMap<>();
         for (final Container container : templateContainers) {
