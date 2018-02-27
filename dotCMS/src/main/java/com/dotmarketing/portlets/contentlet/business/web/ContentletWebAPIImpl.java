@@ -324,6 +324,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		final String currentContentident = currentContentlet.getIdentifier();
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
+		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
+			currentContentlet = conAPI.checkout(currentContentlet.getInode(), user, false);
+		}
+
 		/***
 		 * Workflow
 		 */
@@ -496,6 +500,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
+				if (Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
+
+					Logger.info(this, "Saving the Host");
+					currentContentlet.setInode(null);
+					currentContentlet = this.conAPI.checkin
+							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
+				}
 			}
 		} catch(DotContentletValidationException ve) {
 

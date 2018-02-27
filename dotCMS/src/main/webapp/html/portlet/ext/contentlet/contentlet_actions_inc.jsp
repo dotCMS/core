@@ -92,6 +92,12 @@ catch(Exception e){
 	if (canPublish && isHost) {
 		final String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));
 	%>
+
+		<a onClick="saveContent(false);">
+			<span class="saveIcon"></span>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+		</a>
+
 		<input type="hidden" id="copyOptions" name="copyOptions" value="<%= copyOptions %>" />
 		<a onClick="publishContent()">
 			<span class="publishIcon"></span>
