@@ -20,6 +20,7 @@ import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/
 import { EditPageService } from '../../api/services/edit-page/edit-page.service';
 import { DotEditPageState } from '../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotRenderedPageState } from '../dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { PageMode } from './shared/page-mode.enum';
 
 @Component({
     selector: 'dot-edit-content',
@@ -39,6 +40,7 @@ export class DotEditContentComponent implements OnInit {
     dialogTitle: string;
     isModelUpdated = false;
     page: DotRenderedPage;
+    pageMode: PageMode;
     pageWorkFlows: Observable<Workflow[]>;
 
     private originalValue: any;
@@ -65,6 +67,10 @@ export class DotEditContentComponent implements OnInit {
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'editpage.content.contentlet.remove.confirmation_message.accept',
+                'editpage.content.steal.lock.confirmation_message.header',
+                'editpage.content.steal.lock.confirmation_message.message',
+                'editpage.content.steal.lock.confirmation_message.reject',
+                'editpage.content.steal.lock.confirmation_message.accept',
                 'editpage.content.contentlet.add.content',
                 'dot.common.message.saving',
                 'dot.common.message.saved'
@@ -78,24 +84,7 @@ export class DotEditContentComponent implements OnInit {
 
             this.dotEditContentHtmlService.contentletEvents.subscribe((contentletEvent: any) => {
                 this.ngZone.run(() => {
-                    switch (contentletEvent.name) {
-                        case 'edit':
-                            this.editContentlet(contentletEvent);
-                            break;
-                        case 'add':
-                            this.addContentlet(contentletEvent);
-                            break;
-                        case 'remove':
-                            this.removeContentlet(contentletEvent);
-                            break;
-                        case 'cancel':
-                        case 'save':
-                        case 'select':
-                            this.closeDialog();
-                            break;
-                        default:
-                            break;
-                    }
+                    this.contentletEventsHandler(contentletEvent.name)(contentletEvent);
                 });
             });
 
@@ -138,20 +127,9 @@ export class DotEditContentComponent implements OnInit {
      * @param {*} state
      * @memberof DotEditContentComponent
      */
+
     statePageHandler(state: DotEditPageState): void {
-        if (this.isLockModified(state.locked)) {
-            this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saving'));
-        }
-
-        this.editPageService.setPageState(this.page, state).subscribe((dotRenderedPageState: DotRenderedPageState) => {
-            if (dotRenderedPageState.dotRenderedPage) {
-                this.setPage(dotRenderedPageState.dotRenderedPage);
-            }
-
-            if (this.isLockModified(state.locked)) {
-                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
-            }
-        });
+        this.setPageState(state);
     }
 
     /**
@@ -177,9 +155,10 @@ export class DotEditContentComponent implements OnInit {
      */
     setPage(renderedPage: DotRenderedPage): void {
         this.page = renderedPage;
+        this.pageMode = this.getPageMode(renderedPage);
         this.pageWorkFlows = this.workflowsService.getPageWorkflows(this.page.identifier);
 
-        if (this.page.locked) {
+        if (this.pageMode === PageMode.EDIT) {
             this.dotEditContentHtmlService.initEditMode(renderedPage.render, this.iframe);
         } else {
             this.dotEditContentHtmlService.renderPage(renderedPage.render, this.iframe);
@@ -220,6 +199,23 @@ export class DotEditContentComponent implements OnInit {
             this.dialogTitle = 'Edit Contentlet';
             this.loadDialogEditor(url, $event.contentletEvents);
         });
+    }
+
+    private getPageMode(page: DotRenderedPage): PageMode {
+        return page.locked && page.canLock ? PageMode.EDIT : PageMode.PREVIEW;
+    }
+
+    private contentletEventsHandler(event: any): Function {
+        const eventsHandlerMap = {
+            'edit': this.editContentlet.bind(this),
+            'add': this.addContentlet.bind(this),
+            'remove': this.removeContentlet.bind(this),
+            'select': this.closeDialog.bind(this),
+            'cancel': () => {},
+            'save': () => {},
+        };
+
+        return eventsHandlerMap[event];
     }
 
     private isLockModified(lock: boolean) {
@@ -280,5 +276,21 @@ export class DotEditContentComponent implements OnInit {
     private setOriginalValue(model?: any): void {
         this.originalValue = model || this.dotEditContentHtmlService.getContentModel();
         this.isModelUpdated = false;
+    }
+
+    private setPageState(state: DotEditPageState): void {
+        if (this.isLockModified(state.locked)) {
+            this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saving'));
+        }
+
+        this.editPageService.setPageState(this.page, state).subscribe((dotRenderedPageState: DotRenderedPageState) => {
+            if (dotRenderedPageState.dotRenderedPage) {
+                this.setPage(dotRenderedPageState.dotRenderedPage);
+            }
+
+            if (this.isLockModified(state.locked)) {
+                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+            }
+        });
     }
 }

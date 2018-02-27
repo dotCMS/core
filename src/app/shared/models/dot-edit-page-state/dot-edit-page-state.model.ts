@@ -1,4 +1,5 @@
-import { PageMode } from '../../../portlets/dot-edit-content/components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
+import { PageMode } from '../../../portlets/dot-edit-content/shared/page-mode.enum';
+
 
 export interface DotEditPageState {
     locked?: boolean;

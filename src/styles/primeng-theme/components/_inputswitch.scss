@@ -37,4 +37,26 @@
     .ui-inputswitch-on {
         display: none;
     }
+
+    &.ui-state-disabled {
+        background-color: rgba($black, 0.12);
+
+        .ui-inputswitch-handle {
+            background-color: $gray-lighter;
+        }
+    }
+}
+
+p-inputswitch.warn {
+    .ui-inputswitch {
+        background-color: $inputswitch-warn-normal-track-color;
+
+        &.ui-inputswitch-checked {
+            background-color: $inputswitch-warn-checked-track-color;
+
+            .ui-inputswitch-handle {
+                background-color: $inputswitch-warn-hecked-thumb-color;
+            }
+        }
+    }
 }

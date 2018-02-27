@@ -16,6 +16,31 @@
     }
 }
 
+.edit-page-toolbar__message-separator {
+    font-weight: bold;
+    margin: 0 $basic-padding / 4;
+}
+
+.edit-page-toolbar__cant-lock-message {
+    color: $red;
+
+    &--blink {
+        animation: blinker 500ms linear 1;
+    }
+}
+
+::ng-deep [flat] .ui-selectbutton {
+    .edit-page-toolbar__state-selector-item--disabled,
+    .edit-page-toolbar__state-selector-item--disabled:hover {
+        background: none;
+        pointer-events: none;
+
+        .ui-button-text {
+            color: $gray-light;
+        }
+    }
+}
+
 .edit-page-toolbar__page-url,
 .edit-page-toolbar__page-title {
     margin: 0;
@@ -57,11 +82,12 @@
             flex-grow: 1;
 
             .ui-button {
-                height: 100%;
                 display: flex;
                 flex-direction: column;
                 flex-grow: 1;
+                height: 100%;
                 justify-content: center;
+                padding: 0 $basic-padding;
 
                 &.ui-state-active {
                     background-color: rgba($brand-primary, 0.1);
@@ -75,26 +101,72 @@
     }
 }
 
-.edit-page-toolbar__locker ::ng-deep {
-    align-self: center;
-    margin-right: $basic-padding * 2;
+.edit-page-toolbar__locker {
+    ::ng-deep {
+        align-self: center;
+        margin-right: $basic-padding * 2;
 
-    .ui-inputswitch-handle {
-        position: relative;
+        .ui-inputswitch-handle {
+            position: relative;
 
-        &:after {
-            content: '\F023';
-            display: inline-block;
-            font-size: inherit;
-            font: normal normal normal 14px / 1 FontAwesome;
-            left: 5px;
-            position: absolute;
-            text-rendering: auto;
-            top: 3px;
+            &:after {
+                content: "\F023";
+                display: inline-block;
+                font-size: inherit;
+                font: normal normal normal 14px / 1 FontAwesome;
+                left: 5px;
+                position: absolute;
+                text-rendering: auto;
+                top: 3px;
+            }
+        }
+
+        &.ui-inputswitch-checked .ui-inputswitch-handle {
+            color: $white;
+        }
+
+        .ui-state-disabled {
+            .ui-inputswitch-handle {
+                &:after {
+                    color: rgba($black, 0.2);
+                }
+            }
         }
     }
 
-    &.ui-inputswitch-checked .ui-inputswitch-handle {
-        color: $white;
+    &.warn ::ng-deep {
+        .ui-inputswitch-handle {
+            &:after {
+                color: $orange;
+            }
+        }
+
+        &.ui-inputswitch-checked .ui-inputswitch-handle {
+            &:after {
+                color: $white;
+            }
+        }
+    }
+}
+
+@keyframes blinker {
+    0% {
+        opacity: 0.25;
+    }
+
+    25% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    75% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
     }
 }

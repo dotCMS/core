@@ -7,15 +7,12 @@
     @extend #button-raised;
     @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
 
-    &:hover {
-        @include button-base($selectbutton-hover-bgcolor, $selectbutton-hover-border, $selectbutton-hover-shadow);
-    }
-
     [flat] & {
+        box-shadow: none;
         background-color: rgba($brand-primary, 0.1);
-        @extend #button-flat;
 
         .ui-button {
+            @extend #button-flat;
             background-color: transparent;
         }
     }
