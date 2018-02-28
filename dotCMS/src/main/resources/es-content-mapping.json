@@ -7,7 +7,7 @@
             ]
         },
         "dynamic_date_formats": [
-            "MMM d, yyyy hh:mm:ss aaa"
+            "yyyy-MM-dd'T'HH:mm:ss||MMM d, yyyy hh:mm:ss aaa||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         ],
         "dynamic_templates": [
             {
@@ -41,6 +41,14 @@
                         "ignore_malformed": true
                     },
                     "match_mapping_type": "date"
+                }
+            },
+            {
+                "strings_as_dates": {
+                    "match": "recurrenceend || expire",
+                    "mapping": {
+                        "type": "date"
+                    }
                 }
             },
             {

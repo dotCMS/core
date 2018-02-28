@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.calendar.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.elasticSearchDateTimeFormat;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,7 +27,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 public class EventFactoryImpl extends EventFactory {
-
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -80,14 +81,15 @@ public class EventFactoryImpl extends EventFactory {
 		Field recurNoEndF = eventStructure.getFieldVar("noRecurrenceEnd");
 		Field recurs = eventStructure.getFieldVar("recurs");
 
-		String fromDateQuery = new SimpleDateFormat("yyyyMMddHHmmss").format(fromDate)+"*";
-		String fromDateQueryRec = new SimpleDateFormat("yyyy").format(fromDate)+"*";
-		String toDateQuery = new SimpleDateFormat("yyyyMMddHHmmss").format(toDate);
+		String fromDateQuery = datetimeFormat.format(fromDate);
+		String fromDateQueryRec = new SimpleDateFormat("yyyy").format(fromDate);
+		String toDateQueryRec = new SimpleDateFormat("yyyy-MM-dd").format(30000101000000L);
+		String toDateQuery = datetimeFormat.format(toDate);
 		
 		StringBuffer query = new StringBuffer ("+type:content +structureInode:" + eventStructure.getInode() +
 			" +" + startDateF.getFieldContentlet() + ":[19000101000000" + " TO " + toDateQuery + "] " +
 			" +(" + endDateF.getFieldContentlet() + ":[" + fromDateQuery + " TO 30000101000000] " + "(+("+
-			        recurEndF.getFieldContentlet() + ":[" + fromDateQueryRec + " TO 30000101000000] " +
+			        recurEndF.getFieldContentlet() + ":[" + fromDateQueryRec + " TO " + toDateQueryRec +  "] " +
 			        recurNoEndF.getFieldContentlet() + ":true ) "+ "-"+recurs.getFieldContentlet()+":false))"
 			
 		);

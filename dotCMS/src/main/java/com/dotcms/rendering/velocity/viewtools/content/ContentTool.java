@@ -100,6 +100,9 @@ public class ContentTool implements ViewTool {
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
+		if(!InodeUtils.isSet(inodeOrIdentifier)){
+			return null;
+		}
 		long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 		
 	    try {
