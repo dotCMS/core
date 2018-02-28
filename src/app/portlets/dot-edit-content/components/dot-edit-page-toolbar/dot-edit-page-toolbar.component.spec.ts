@@ -184,7 +184,7 @@ describe('DotEditPageToolbarComponent', () => {
         expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
     });
 
-    it('should have page is locked by message', () => {
+    it('should have page is can\'t edit message', () => {
         component.page.canEdit = false;
         fixture.detectChanges();
 
