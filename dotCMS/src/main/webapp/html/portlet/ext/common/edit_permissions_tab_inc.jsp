@@ -4,7 +4,7 @@
 
 <!-- START Loading Image Div -->
 	<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
-<div id="loadingPermissionsAccordion"><img src="/html/js/lightbox/images/loading.gif"></div>
+<div id="loadingPermissionsAccordion"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 <!-- END Loading Image Div -->
 
 <!-- START Alert Message -->
