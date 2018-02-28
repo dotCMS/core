@@ -7,10 +7,17 @@
             </div>
             <h3 class="edit-page-toolbar__page-title">
                 {{page.title}}
-                <ng-template [ngIf]="!page.canLock && page.canEdit">
+                <ng-template [ngIf]="page.lockedByAnotherUser && page.canEdit">
                     <span class="edit-page-toolbar__message-separator">•</span>
-                    <span #lockedPageMessage class="edit-page-toolbar__cant-lock-message">
+                    <span #lockedPageMessage class="edit-page-toolbar__locked-by-message">
                         {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', page.lockedByName) }}
+                    </span>
+                </ng-template>
+
+                <ng-template [ngIf]="!page.canEdit">
+                    <span class="edit-page-toolbar__message-separator">•</span>
+                    <span class="edit-page-toolbar__cant-edit-message">
+                        {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}                            
                     </span>
                 </ng-template>
             </h3>

@@ -47,7 +47,8 @@ describe('DotEditPageToolbarComponent', () => {
         'editpage.toolbar.live.page': 'Live',
         'editpage.toolbar.primary.workflow.actions': 'Acciones',
         'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',
-        'editpage.toolbar.page.locked.by.user': 'Page is locked'
+        'editpage.toolbar.page.locked.by.user': 'Page is locked',
+        'editpage.toolbar.page.cant.edit': 'You dont have permissions'
     });
 
     let testbed;
@@ -175,12 +176,28 @@ describe('DotEditPageToolbarComponent', () => {
         expect(lockSwitch.componentInstance.disabled).toBe(true);
     });
 
-    it('should have page is locked message', () => {
-        component.page.canLock = false;
+    it('should have page is locked by message', () => {
+        component.page.lockedByAnotherUser = true;
         fixture.detectChanges();
 
-        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-lock-message'));
+        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
         expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
+    });
+
+    it('should have page is locked by message', () => {
+        component.page.canEdit = false;
+        fixture.detectChanges();
+
+        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
+        expect(lockedMessage.nativeElement.textContent).toContain('You dont have permissions');
+    });
+
+    it('should not have have any locked messages', () => {
+        fixture.detectChanges();
+        const cantEditMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
+        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
+        expect(cantEditMessage === null).toBe(true);
+        expect(lockedMessage === null).toBe(true);
     });
 
     it('should blink page is locked message', () => {
