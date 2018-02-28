@@ -45,9 +45,10 @@
             },
             {
                 "strings_as_dates": {
-                    "match": "recurrenceend",
+                    "match": "originalstartdate||recurrencestart||recurrenceend",
                     "mapping": {
-                        "type": "date"
+                        "type": "date",
+                        "ignore_malformed": true
                     }
                 }
             },
