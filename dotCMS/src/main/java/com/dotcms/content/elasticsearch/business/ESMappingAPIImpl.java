@@ -518,7 +518,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
 					StringBuilder personaTags = new StringBuilder();
-					StringBuilder tagg = new StringBuilder();
+					List<String> tagg = new ArrayList<>();
 					List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
 					if(tagList ==null || tagList.size()==0) continue;
 
@@ -528,18 +528,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					for ( Tag t : tagList ) {
 						if(t.getTagName() ==null) continue;
 						String myTag = t.getTagName().trim();
-						tagg.append(myTag).append(tagDelimit);
+						tagg.add(myTag);
 						if ( t.isPersona() ) {
 							personaTags.append(myTag).append(' ');
 						}
 					}
-					if(tagg.length() >tagDelimit.length()){
-						String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
-						m.put(keyName,
-								taggStr.replaceAll(",,", " "));
-						m.put(ESMappingConstants.TAGS, taggStr);
-					}
 
+					m.put(new StringBuilder(st.getVelocityVarName()).append(".")
+							.append(ESMappingConstants.TAGS).toString(), tagg);
+					m.put(ESMappingConstants.TAGS, tagg);
 
 					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
 						if ( personaTags.length() > tagDelimit.length() ) {
