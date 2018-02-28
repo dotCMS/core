@@ -110,7 +110,7 @@ export class DotEditPageToolbarComponent implements OnInit {
      * @param {any} $event
      * @memberof DotEditPageToolbarComponent
      */
-    lockerHandler($event): void {
+    onLockerClick($event): void {
         const blinkClass = 'edit-page-toolbar__cant-lock-message--blink';
 
         if (this.locker.disabled) {
@@ -152,16 +152,22 @@ export class DotEditPageToolbarComponent implements OnInit {
      * @memberof DotEditPageToolbarComponent
      */
     stateSelectorHandler(pageState: PageMode): void {
-        const state: DotEditPageState = {
-            mode: pageState
-        };
-
-        if (!this.lockerModel && pageState === PageMode.EDIT) {
-            this.lockerModel = pageState === PageMode.EDIT;
-            state.locked = this.lockerModel;
+        if (this.shouldConfirmToLock()) {
+            this.dotConfirmationService.confirm({
+                accept: () => {
+                    this.setSelectorState(pageState);
+                },
+                reject: () => {
+                    this.lockerModel = false;
+                    this.mode = PageMode.PREVIEW;
+                },
+                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.header'),
+                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.message'),
+                footerLabel: {}
+            });
+        } else {
+            this.setSelectorState(pageState);
         }
-
-        this.changeState.emit(state);
     }
 
     private getAutoUpdatedMode(): PageMode {
@@ -194,8 +200,21 @@ export class DotEditPageToolbarComponent implements OnInit {
         this.changeState.emit(state);
     }
 
+    private setSelectorState(pageState: PageMode) {
+        const state: DotEditPageState = {
+            mode: pageState
+        };
+
+        if (!this.lockerModel && pageState === PageMode.EDIT) {
+            this.lockerModel = pageState === PageMode.EDIT;
+            state.locked = this.lockerModel;
+        }
+
+        this.changeState.emit(state);
+    }
+
     private shouldConfirmToLock(): boolean {
-        return this.lockerModel && this.page.lockedByAnotherUser;
+        return (this.lockerModel || this.mode === PageMode.EDIT) && this.page.lockedByAnotherUser;
     }
 
     private shouldGoToEdit(): boolean {

@@ -184,13 +184,13 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should blink page is locked message', () => {
-        spyOn(component, 'lockerHandler');
+        spyOn(component, 'onLockerClick');
         component.page.canLock = false;
         fixture.detectChanges();
 
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
         lockSwitch.nativeElement.click();
-        expect(component.lockerHandler).toHaveBeenCalledTimes(1);
+        expect(component.onLockerClick).toHaveBeenCalledTimes(1);
     });
 
     it('should have edit button disabled', () => {
@@ -373,12 +373,11 @@ describe('DotEditPageToolbarComponent', () => {
             expect(dotConfirmationService.confirm).toHaveBeenCalledTimes(1);
         });
 
-        it('should emit state on confirmation accept', () => {
+        it('should emit state on lock attemp when confirmation accept', () => {
             spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
 
-            component.page.locked = false;
             component.page.lockedByAnotherUser = true;
             component.mode = PageMode.LIVE;
 
@@ -394,12 +393,11 @@ describe('DotEditPageToolbarComponent', () => {
             );
         });
 
-        it('should not emit state on confirmation reject and set lockermodel to false', () => {
+        it('should not emit state on lock attemp when confirmation reject and set lockermodel to false', () => {
             spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
                 conf.reject();
             });
 
-            component.page.locked = false;
             component.page.lockedByAnotherUser = true;
             component.mode = PageMode.LIVE;
 
@@ -422,6 +420,55 @@ describe('DotEditPageToolbarComponent', () => {
                 },
                 'emit correct state'
             );
+        });
+
+        it('should call confirmation service on edit attemp when page is locked by another user', () => {
+            spyOn(dotConfirmationService, 'confirm');
+            component.page.lockedByAnotherUser = true;
+            component.mode = PageMode.PREVIEW;
+
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+            expect(dotConfirmationService.confirm).toHaveBeenCalledTimes(1);
+        });
+
+        it('should emit state on edit attemp when confirmation accept', () => {
+            spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+
+            component.page.lockedByAnotherUser = true;
+            component.mode = PageMode.PREVIEW;
+
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+
+            expect(pageStateResult).toEqual(
+                {
+                    locked: true,
+                    mode: PageMode.EDIT
+                },
+                'emit correct state'
+            );
+        });
+
+        it('should not emit state on edit attemp when confirmation accept', () => {
+            spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+                conf.reject();
+            });
+
+            component.page.lockedByAnotherUser = true;
+            component.mode = PageMode.PREVIEW;
+
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+
+            expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
+            expect(component.lockerModel).toBe(false);
+            expect(component.mode).toBe(PageMode.PREVIEW);
         });
 
         it('should keep the locker true from preview to edit', () => {

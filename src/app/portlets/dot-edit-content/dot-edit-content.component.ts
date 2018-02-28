@@ -158,10 +158,11 @@ export class DotEditContentComponent implements OnInit {
         this.pageMode = this.getPageMode(renderedPage);
         this.pageWorkFlows = this.workflowsService.getPageWorkflows(this.page.identifier);
 
-        if (this.pageMode === PageMode.EDIT) {
+        if (this.pageMode === PageMode.EDIT && !this.page.lockedByAnotherUser) {
             this.dotEditContentHtmlService.initEditMode(renderedPage.render, this.iframe);
         } else {
             this.dotEditContentHtmlService.renderPage(renderedPage.render, this.iframe);
+            this.pageMode = PageMode.PREVIEW;
         }
     }
 

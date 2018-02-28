@@ -164,14 +164,20 @@ describe('DotEditContentComponent', () => {
     });
 
     it('should set the page mode in preview', () => {
+        spyOn(dotEditContentHtmlService, 'renderPage');
+        spyOn(dotEditContentHtmlService, 'initEditMode');
         fixture.detectChanges();
         expect(component.pageMode).toEqual(PageMode.PREVIEW);
 
         const toolbar: DebugElement = de.query(By.css('.dot-edit__toolbar'));
         expect(toolbar.componentInstance.mode).toEqual(PageMode.PREVIEW);
+        expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledTimes(1);
+        expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
     });
 
     it('should set the page mode in edit', () => {
+        spyOn(dotEditContentHtmlService, 'renderPage');
+        spyOn(dotEditContentHtmlService, 'initEditMode');
         route.data = Observable.of({
             renderedPage: {
                 ...fakePageRendered,
@@ -184,6 +190,28 @@ describe('DotEditContentComponent', () => {
 
         const toolbar: DebugElement = de.query(By.css('.dot-edit__toolbar'));
         expect(toolbar.componentInstance.mode).toEqual(PageMode.EDIT);
+        expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
+        expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledTimes(1);
+    });
+
+    it('should set the page mode in preview when the page is locked by another user', () => {
+        spyOn(dotEditContentHtmlService, 'renderPage');
+        spyOn(dotEditContentHtmlService, 'initEditMode');
+        route.data = Observable.of({
+            renderedPage: {
+                ...fakePageRendered,
+                lockedByAnotherUser: true,
+                locked: true,
+                canLock: true
+            }
+        });
+        fixture.detectChanges();
+        expect(component.pageMode).toEqual(PageMode.PREVIEW);
+
+        const toolbar: DebugElement = de.query(By.css('.dot-edit__toolbar'));
+        expect(toolbar.componentInstance.mode).toEqual(PageMode.PREVIEW);
+        expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledTimes(1);
+        expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
     });
 
     it('should hide dotLoadingIndicatorService when the component loads', () => {
