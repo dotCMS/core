@@ -454,6 +454,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		Contentlet c = new Contentlet();
 		c.setIdentifier(task.getWebasset());
+		c.setLanguageId(task.getLanguageId());
 
 		boolean localTransaction = false;
 		try {

@@ -1,15 +1,14 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+
+import java.util.List;
+import java.util.Map;
 
 public class ArchiveContentActionlet extends WorkFlowActionlet {
     private static final long serialVersionUID = 6953016451278627341L;
