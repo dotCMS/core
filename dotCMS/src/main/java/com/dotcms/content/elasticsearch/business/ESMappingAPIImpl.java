@@ -453,7 +453,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						m.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, "");
+						m.put(keyName, null);
+						m.put(keyNameText, null);
 					}
 				} else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
@@ -462,7 +463,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						m.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, "");
+						m.put(keyName, null);
+						m.put(keyNameText, null);
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories

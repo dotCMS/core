@@ -45,7 +45,7 @@
             },
             {
                 "strings_as_dates": {
-                    "match": "recurrenceend||expire",
+                    "match": "recurrenceend",
                     "mapping": {
                         "type": "date"
                     }
