@@ -155,11 +155,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append(" data-max-contentlets=")
                     .append("\"" + container.getMaxContentlets() + "\"")
                     .append(" data-dot-accept-types=")
-                    .append(" data-dot-can-edit=\"")
-                    .append(String.valueOf(APILocator.getPermissionAPI().doesUserHavePermission(container,
-                            PermissionLevel.WRITE.getType(), user,true)))
-                    .append("\"")
                     .append("\"");
+
                 Iterator<ContainerStructure> it= csList.iterator();
                 while (it.hasNext()) {
                     ContainerStructure struct = it.next();
@@ -172,8 +169,12 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     }
                 }
 
-                editWrapperDiv.append("WIDGET,FORM");
-                editWrapperDiv.append("\">");
+                editWrapperDiv.append("WIDGET,FORM")
+                    .append(" data-dot-can-edit=\"")
+                    .append(String.valueOf(APILocator.getPermissionAPI().doesUserHavePermission(container,
+                        PermissionLevel.WRITE.getType(), user,true)))
+                    .append("\"")
+                    .append("\">");
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(editWrapperDiv);
                 sb.append("#end");

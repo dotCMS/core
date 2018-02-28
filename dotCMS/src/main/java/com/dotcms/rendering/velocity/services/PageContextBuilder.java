@@ -96,6 +96,11 @@ public class PageContextBuilder {
             pageChannel = st.nextToken();
         }
 
+        User systemUser = APILocator.getUserAPI().getSystemUser();
+        Template template = (mode.showLive) ?
+                (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, systemUser, false)
+                : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, systemUser, false);
+
         // to check user has permission to write on this page
         List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI()
             .getReceivingEndPoints();
@@ -106,7 +111,8 @@ public class PageContextBuilder {
         final boolean hasRemotePublishPermOverHTMLPage =
                 hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         final boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-        final boolean canUserWriteOnTemplate = hasWritePermissionInTemplate(templateId);
+        final boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
+                .hasTemplateManagerRights(user);
 
         ctxMap.put("dotPageMode", mode.name());
 
@@ -144,20 +150,6 @@ public class PageContextBuilder {
 
 
 
-    }
-
-    private boolean hasWritePermissionInTemplate(final String templateId) throws DotDataException {
-
-        try {
-            final Template template = (mode.showLive) ?
-                    (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, user, false)
-                    : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, user, false);
-
-            return  permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
-                        .hasTemplateManagerRights(user);
-        } catch (DotSecurityException e) {
-            return false;
-        }
     }
 
 
