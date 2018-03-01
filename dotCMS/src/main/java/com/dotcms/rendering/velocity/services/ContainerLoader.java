@@ -137,8 +137,6 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append("#end");
             }
 
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final User user = request != null ? WebAPILocator.getUserWebAPI().getUser(request) : sysUser();
 
             if (mode == PageMode.EDIT_MODE) {
                 final StringWriter editWrapperDiv = new StringWriter();
@@ -169,12 +167,11 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     }
                 }
 
-                editWrapperDiv.append("WIDGET,FORM")
-                    .append(" data-dot-can-edit=\"")
-                    .append(String.valueOf(APILocator.getPermissionAPI().doesUserHavePermission(container,
-                        PermissionLevel.WRITE.getType(), user,true)))
-                    .append("\"")
-                    .append("\">");
+                editWrapperDiv.append("WIDGET,FORM");
+                editWrapperDiv.append("\"");
+                editWrapperDiv.append(" data-dot-can-edit=\"$containerAPI.doesUserHasPermission($containerInode, 2, true)\"");
+                editWrapperDiv.append(">");
+
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(editWrapperDiv);
                 sb.append("#end");

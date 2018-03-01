@@ -298,7 +298,7 @@ public class ResourceManagerImpl
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final User user = getUser(request);
 
-        final String resourceKey = resourceType + resourceName + user.getUserId();
+        final String resourceKey = resourceType + resourceName;
         Resource resource = globalCache.get(resourceKey);
 
         if (resource != null)
