@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -96,6 +97,7 @@ public class CopyActionlet extends WorkFlowActionlet {
         }
     } // executeAction.
 
+    @WrapInTransaction
     private void performCopy(final Contentlet contentlet,
                              final User user) throws DotDataException, DotSecurityException, IOException {
 

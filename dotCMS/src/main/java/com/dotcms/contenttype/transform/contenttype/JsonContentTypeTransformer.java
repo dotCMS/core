@@ -1,27 +1,20 @@
 package com.dotcms.contenttype.transform.contenttype;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonTransformer {
   final List<ContentType> list;

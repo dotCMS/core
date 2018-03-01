@@ -560,7 +560,7 @@ public class WorkflowHelper {
         newAction.setNextStep   (workflowActionForm.getActionNextStep());
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
-        newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
+        newAction.setRequiresCheckout(false);
         newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
                 workflowActionForm.getShowOn():WorkflowAPI.DEFAULT_SHOW_ON);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());

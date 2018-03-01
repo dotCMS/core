@@ -5020,6 +5020,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      *             The contentlet object could not be saved.
      */
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
