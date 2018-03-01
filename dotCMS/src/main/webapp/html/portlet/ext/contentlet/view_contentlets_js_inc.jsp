@@ -1944,14 +1944,14 @@
                                     popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                   }else{
                                     popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
-                              }
+                                  }
                                 }else{
                                   if (write=="1"){
                                     popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                   }else{
                                     popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
-                              }
-                            }
+                                  }
+                                }
                         }
 
 
@@ -1994,7 +1994,7 @@
                           }
                         }
 
-						// END NEW CONTEXT MEN
+						// END NEW CONTEXT MENU
 
 
                         if ((!live) && working && (publish=="1") && hasLiveVersion!="true") {
