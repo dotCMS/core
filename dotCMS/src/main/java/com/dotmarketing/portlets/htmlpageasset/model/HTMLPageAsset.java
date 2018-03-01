@@ -194,6 +194,13 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
             map.put( "pageUrl", getPageUrl() );
         }
 
+        try {
+            map.put("pageURI", this.getURI());
+        } catch (Exception e) {
+            Logger.debug(this, "Could not get URI : ", e);
+            Logger.warn(this, String.format("Could not get URI for %s", this));
+        }
+
         return map;
     }
 
