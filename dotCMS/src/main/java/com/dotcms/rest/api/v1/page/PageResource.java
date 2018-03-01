@@ -29,6 +29,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -37,6 +38,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -220,9 +223,12 @@ public class PageResource {
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr,
+                                   @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+                                   @QueryParam("language_id") @DefaultValue("LIVE_ADMIN") final String languageId) {
 
-        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
+        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona ->", uri, modeStr,
+                languageId, personaId));
 
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
@@ -272,6 +278,8 @@ public class PageResource {
 
             pageMapBuilder.put("template", templateMap);
 
+            pageMapBuilder.put("viewAs", createViasMap(request));
+
             if(lockedBy!=null) {
                 pageMapBuilder.put("lockedOn", info.getLockedOn())
                     .put("lockedBy", lockedBy)
@@ -306,6 +314,20 @@ public class PageResource {
         }
         return res;
     }
+
+    private ImmutableMap<Object, Object> createViasMap(HttpServletRequest request) {
+        Builder<Object, Object> builder = ImmutableMap.builder();
+
+        Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
+
+        if (currentPersona != null) {
+            builder.put("persona", currentPersona.getMap());
+        }
+
+        builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
+        return builder.build();
+    }
+
     /**
      * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
      * otherwise a new template is created and the old link template remains unchanged
