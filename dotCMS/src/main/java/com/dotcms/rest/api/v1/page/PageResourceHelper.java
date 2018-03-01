@@ -215,13 +215,13 @@ public class PageResourceHelper implements Serializable {
 
         final Host site =resolveSite(request, user);
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
-        HTMLPageAsset page = (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
+        final HTMLPageAsset page = (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
-        boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(),
+        final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(),
                 user, false);
 
         if (!doesUserHavePermission){
-            String message = String.format("User: %s does not have permissions %s for object %s", user,
+            final String message = String.format("User: %s does not have permissions %s for object %s", user,
                     PermissionLevel.READ, page);
             throw new DotSecurityException(message);
         }

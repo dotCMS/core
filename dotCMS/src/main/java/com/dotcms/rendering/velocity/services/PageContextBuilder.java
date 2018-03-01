@@ -96,8 +96,8 @@ public class PageContextBuilder {
             pageChannel = st.nextToken();
         }
 
-        User systemUser = APILocator.getUserAPI().getSystemUser();
-        Template template = (mode.showLive) ?
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final Template template = (mode.showLive) ?
                 (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, systemUser, false)
                 : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, systemUser, false);
 

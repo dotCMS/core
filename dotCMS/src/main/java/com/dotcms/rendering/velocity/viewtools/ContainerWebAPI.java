@@ -38,7 +38,7 @@ public class ContainerWebAPI implements ViewTool {
 		request = viewContext.getRequest();
         ctx = viewContext.getVelocityContext();
 
-		UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
+		final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
 		permissionAPI = APILocator.getPermissionAPI();
 
 		try {
@@ -89,8 +89,8 @@ public class ContainerWebAPI implements ViewTool {
 			if(!InodeUtils.isSet(containerInode)) {
 				return false;
 			} else {
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				Container container = APILocator.getContainerAPI().find(containerInode, systemUser, respectFrontendRoles);
+				final User systemUser = APILocator.getUserAPI().getSystemUser();
+				final Container container = APILocator.getContainerAPI().find(containerInode, systemUser, respectFrontendRoles);
 				return permissionAPI.doesUserHavePermission(container, permission, backuser, respectFrontendRoles);
 			}
 		} catch (DotSecurityException e) {
