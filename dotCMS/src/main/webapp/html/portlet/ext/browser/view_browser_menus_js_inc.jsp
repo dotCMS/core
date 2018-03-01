@@ -475,6 +475,11 @@
 			
 			strHTML += '<div class="pop_divider" ></div>';
 
+            strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+            strHTML += '<span class="docCopyIcon"></span>';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+            strHTML += '</a>';
+
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	strHTML += '<span class="cutIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
@@ -719,10 +724,22 @@
 				strHTML += '</a>';
 			}
 
+            if (write && archived)
+            {
+                strHTML += '<a href="javascript: deleteHTMLPagePreCheck(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+                strHTML += '<span class="stopIcon"></span>';
+                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
+                strHTML += '</a>';
+            }
         }
 
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
+
+            strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+            strHTML += '<span class="docCopyIcon"></span>';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+            strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	strHTML += '<span class="cutIcon"></span>';
