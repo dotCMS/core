@@ -420,12 +420,12 @@ public class PublisherQueueJob implements StatefulJob {
 		Date publishEnd;
 		publishStart = remoteHistory.getPublishStart();
 		publishEnd = remoteHistory.getPublishEnd();
-		if(localHistory.getPublishStart()==null || publishStart.before(localHistory.getPublishStart())) {
-            localHistory.setPublishStart(publishStart);
-        }
-		if(localHistory.getPublishEnd()==null || publishEnd.after(localHistory.getPublishEnd())) {
-            localHistory.setPublishEnd(publishEnd);
-        }
+		if(localHistory.getPublishStart()==null || (publishStart != null && publishStart.before(localHistory.getPublishStart()))) {
+			localHistory.setPublishStart(publishStart);
+		}
+		if(localHistory.getPublishEnd()==null || (publishEnd != null && publishEnd.after(localHistory.getPublishEnd()))) {
+			localHistory.setPublishEnd(publishEnd);
+		}
 	}
 
     /**
