@@ -4,6 +4,15 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.InodeUtils;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -21,11 +30,22 @@ public class ContainerWebAPI implements ViewTool {
 	private static HttpServletRequest request;
     private Context ctx;
     private ViewContext viewContext;
+	private User backuser;
+	private PermissionAPI permissionAPI;
 
 	public void init(Object initData) {
 		viewContext = (ViewContext) initData;
 		request = viewContext.getRequest();
         ctx = viewContext.getVelocityContext();
+
+		final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
+		permissionAPI = APILocator.getPermissionAPI();
+
+		try {
+			backuser = userAPI.getLoggedInUser(request.getSession());
+		} catch (Exception e) {
+			Logger.error(this, "Error finding the logged in user", e);
+		}
 	}
 
 	public String getStructureCode(String containerIdentifier, String structureId) throws Exception {
@@ -60,4 +80,21 @@ public class ContainerWebAPI implements ViewTool {
 
 	}
 
+	/**
+	 * This method checks if the logged in user (frontend) has the required permission over
+	 * the passed container id
+	 */
+	public boolean doesUserHasPermission (String containerInode, int permission, boolean respectFrontendRoles) throws DotDataException {
+		try {
+			if(!InodeUtils.isSet(containerInode)) {
+				return false;
+			} else {
+				final User systemUser = APILocator.getUserAPI().getSystemUser();
+				final Container container = APILocator.getContainerAPI().find(containerInode, systemUser, respectFrontendRoles);
+				return permissionAPI.doesUserHavePermission(container, permission, backuser, respectFrontendRoles);
+			}
+		} catch (DotSecurityException e) {
+			return false;
+		}
+	}
 }

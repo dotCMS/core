@@ -308,11 +308,6 @@ public class BrowserAPI {
 					pageMap.put("name", page.getPageUrl());
 					pageMap.put("description", page.getFriendlyName());
 					pageMap.put("extension", "page");
-					try {
-						pageMap.put("pageURI", page.getURI());
-					} catch (Exception e) {
-						Logger.error(this, "Could not get URI : ", e);
-					}
 					pageMap.put("isContentlet", page instanceof Contentlet);
 					
 					if(wfdata!=null ) {
