@@ -246,8 +246,13 @@ public class PageResource {
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
 
+            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+
             final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
             final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
+            final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
+            final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
+            final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
 
             final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
             
@@ -265,8 +270,9 @@ public class PageResource {
             pageMap.remove(HTMLPageAssetAPI.TEMPLATE_FIELD);
 
             pageMapBuilder.putAll(pageMap);
-            pageMapBuilder.put("template", getTemplateAtrributes(user, page, templateIdentifier));
             pageMapBuilder.putAll(getLockMap(user, page, info));
+
+            final boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
 
             final ImmutableMap<Object, Object> templateMap = ImmutableMap.builder().put("drawed", template.isDrawed())
                     .put("canEdit", editPermission)
@@ -274,14 +280,7 @@ public class PageResource {
                     .build();
 
             pageMapBuilder.put("template", templateMap);
-
             pageMapBuilder.put("viewAs", createViasMap(request));
-
-            if(lockedBy!=null) {
-                pageMapBuilder.put("lockedOn", info.getLockedOn())
-                    .put("lockedBy", lockedBy)
-                    .put("lockedByName", lockedUserName);
-            }
 
             if(info.getLiveInode()!=null) {
                 pageMapBuilder.put("liveInode", info.getLiveInode())
@@ -343,16 +342,6 @@ public class PageResource {
                 .put("lockedByName", lockedUserName);
         }
         return lockMap.build();
-    }
-
-    private ImmutableMap<Object, Object> getTemplateAtrributes(final User user, final HTMLPageAsset page, final String templateIdentifier)
-            throws DotDataException, DotSecurityException {
-
-        final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-        return ImmutableMap.builder().put("drawed", template.isDrawed())
-                .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-                .put("id", templateIdentifier)
-                .build();
     }
 
     private boolean canLock(final User user, final HTMLPageAsset page)  {
