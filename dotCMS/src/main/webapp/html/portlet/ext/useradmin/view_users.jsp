@@ -65,7 +65,7 @@
 				<button dojoType="dijit.form.Button" onclick="clearUserFilter()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 			</div>
 			<div id="usersGrid"></div>
-			<div id="loadingUsers"><img src="/html/js/lightbox/images/loading.gif"></div>
+			<div id="loadingUsers"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 			<div class="clear"></div>
 			<div class="inputCaption" style="padding:3px 0 10px 10px;"><%= LanguageUtil.get(pageContext, "Limit-Max-50-Results") %></div>
 		</div>

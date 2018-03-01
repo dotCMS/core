@@ -57,8 +57,6 @@ catch(Exception e){
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Steal-Lock")) %>
 			</a>
 		<%} %>
-
-
 <%} %>
 
 
@@ -70,11 +68,6 @@ catch(Exception e){
 				<span class="reorderIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 			</a>
-		<%} else { %>
-			<a onClick="saveContent(false);">
-				<span class="saveIcon"></span>
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-			</a>
 		<%}%>
 	<%} else if (InodeUtils.isSet(contentlet.getInode())) {%>
 		<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
@@ -82,19 +75,9 @@ catch(Exception e){
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
 		</a>
 	<%} %>
-<%}else if(!InodeUtils.isSet(contentlet.getInode())) {%>
-			<a onClick="saveContent(false);">
-			<span class="saveIcon"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-		</a>
 <%}else if(!isContLocked) {%>
 
-
 	<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
-
-
-
-
 	    <a onClick="makeEditable('<%=contentlet.getInode() %>');" id="lockContentButton">
 			<span class="lockIcon"></span>
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Make-Editable")) %>
@@ -105,12 +88,16 @@ catch(Exception e){
 
 
 	<%
-	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
-	if (canPublish) {
-		String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Publish"));
-		if(isHost){
-			savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));
-		}%>
+	final boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
+	if (canPublish && isHost) {
+		final String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));
+	%>
+
+		<a onClick="saveContent(false);">
+			<span class="saveIcon"></span>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+		</a>
+
 		<input type="hidden" id="copyOptions" name="copyOptions" value="<%= copyOptions %>" />
 		<a onClick="publishContent()">
 			<span class="publishIcon"></span>
