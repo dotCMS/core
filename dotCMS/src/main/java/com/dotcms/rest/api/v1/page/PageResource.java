@@ -21,6 +21,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -33,6 +34,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -59,6 +61,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -140,7 +143,7 @@ public class PageResource {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e
                     .getMessage() + ")";
@@ -201,7 +204,7 @@ public class PageResource {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e
                     .getMessage() + ")";
@@ -239,18 +242,12 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-
             final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ?
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
 
-            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-            
             final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
             final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
-            final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
-            final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
-            final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
 
             final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
             
@@ -258,18 +255,18 @@ public class PageResource {
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
             final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
 
-            final boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
-
             pageMapBuilder.put("render",html )
-                .put("canLock", canLock)
                 .put("workingInode", info.getWorkingInode())
-                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()));
+                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()))
+                .put("canEdit", this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user));
 
             final Map<String, Object> pageMap = new HashMap(page.getMap());
             final String templateIdentifier = (String) pageMap.get(HTMLPageAssetAPI.TEMPLATE_FIELD);
             pageMap.remove(HTMLPageAssetAPI.TEMPLATE_FIELD);
 
             pageMapBuilder.putAll(pageMap);
+            pageMapBuilder.put("template", getTemplateAtrributes(user, page, templateIdentifier));
+            pageMapBuilder.putAll(getLockMap(user, page, info));
 
             final ImmutableMap<Object, Object> templateMap = ImmutableMap.builder().put("drawed", template.isDrawed())
                     .put("canEdit", editPermission)
@@ -285,6 +282,7 @@ public class PageResource {
                     .put("lockedBy", lockedBy)
                     .put("lockedByName", lockedUserName);
             }
+
             if(info.getLiveInode()!=null) {
                 pageMapBuilder.put("liveInode", info.getLiveInode())
                 .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
@@ -302,7 +300,7 @@ public class PageResource {
             PageMode.setPageMode(request, PageMode.ADMIN_MODE);
             final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch (DotDataException e) {
             final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
             Logger.error(this, e.getMessage(), e);
@@ -326,6 +324,44 @@ public class PageResource {
 
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
         return builder.build();
+    }
+
+    @NotNull
+    private Map<String, Object> getLockMap(final User user, final HTMLPageAsset page, final ContentletVersionInfo info)
+            throws DotDataException, DotSecurityException {
+
+        final Builder<String, Object> lockMap = ImmutableMap.builder();
+        final boolean canLock  = canLock(user, page);
+        final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
+        final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
+
+        lockMap.put("canLock", canLock);
+
+        if(lockedBy!=null) {
+            lockMap.put("lockedOn", info.getLockedOn())
+                .put("lockedBy", lockedBy)
+                .put("lockedByName", lockedUserName);
+        }
+        return lockMap.build();
+    }
+
+    private ImmutableMap<Object, Object> getTemplateAtrributes(final User user, final HTMLPageAsset page, final String templateIdentifier)
+            throws DotDataException, DotSecurityException {
+
+        final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+        return ImmutableMap.builder().put("drawed", template.isDrawed())
+                .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
+                .put("id", templateIdentifier)
+                .build();
+    }
+
+    private boolean canLock(final User user, final HTMLPageAsset page)  {
+        try {
+            APILocator.getContentletAPI().canLock(page, user);
+            return true;
+        } catch (DotLockException e) {
+            return false;
+        }
     }
 
     /**
@@ -367,7 +403,7 @@ public class PageResource {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch(NotFoundException e) {
             final String errorMsg = String.format("NotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
@@ -416,7 +452,7 @@ public class PageResource {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s: ",
                     request, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            throw new ForbiddenException(e);
         } catch (BadRequestException | DotDataException e) {
             final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s: ",
                     e.getClass().getCanonicalName(), request, form);
@@ -478,8 +514,8 @@ public class PageResource {
 
             res = Response.ok(new ResponseEntityView("ok")).build();
         } catch (DotSecurityException e) {
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
             Logger.error(this, e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DotDataException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
             Logger.error(this, e.getMessage(), e);
