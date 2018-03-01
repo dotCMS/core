@@ -33,6 +33,7 @@ class PageView implements Serializable {
     private final Map<String, ContainerView> containers;
     private final HTMLPageAsset page;
     private final TemplateLayout layout;
+    private final boolean canEditTemplate;
 
     /**
      * Creates an instance of this class.
@@ -44,13 +45,14 @@ class PageView implements Serializable {
      * @param page       The {@link HTMLPageAsset} object.
      * @param layout     The {@link TemplateLayout} that specifies the design of the template.
      */
-    public PageView(final Host site, final Template template, final Map<String, ContainerView>
-            containers, final HTMLPageAsset page, final TemplateLayout layout) {
+    public PageView(final Host site, final Template template, final Map<String, ContainerView> containers,
+                    final HTMLPageAsset page, final TemplateLayout layout, final boolean canEditTemplate) {
         this.site = site;
         this.template = template;
         this.containers = containers;
         this.page = page;
         this.layout = layout;
+        this.canEditTemplate= canEditTemplate;
     }
 
     /**
@@ -96,6 +98,10 @@ class PageView implements Serializable {
      */
     public HTMLPageAsset getPage() {
         return this.page;
+    }
+
+    public boolean isCanEditTemplate() {
+        return canEditTemplate;
     }
 
     @Override
