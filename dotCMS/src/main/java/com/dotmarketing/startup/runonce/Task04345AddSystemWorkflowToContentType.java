@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.startup.StartupTask;
@@ -74,4 +73,6 @@ public class Task04345AddSystemWorkflowToContentType implements StartupTask {
         }
 
     } // executeUpgrade.
+
 }
+

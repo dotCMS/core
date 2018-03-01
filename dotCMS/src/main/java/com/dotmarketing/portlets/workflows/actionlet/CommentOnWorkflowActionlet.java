@@ -29,7 +29,6 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 	}
 
 	public String getName() {
-		// TODO Auto-generated method stub
 		return "Comment on Workflow";
 	}
 
@@ -53,7 +52,6 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 	}
 
 	public WorkflowStep getNextStep() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
