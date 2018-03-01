@@ -515,7 +515,7 @@ td {font-size: 100%;}
 		</div>
 	</div>
 	
-	<div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/lightbox/images/loading.gif"></div>
+	<div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 
     <div id="tagsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
         <div id="tagsGrid" class="tag-manager__tags-list"></div>
