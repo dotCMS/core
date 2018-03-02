@@ -1,6 +1,6 @@
 <%@ include file="/html/portlet/ext/common/edit_permissions_tab_js_inc_ajax.jsp" %>
 <!-- START Loading Image Div -->
-<div id="loadingPermissionsAccordion"><img src="/html/js/lightbox/images/loading.gif"></div>
+<div id="loadingPermissionsAccordion"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 <!-- END Loading Image Div -->
 
 <!-- START Alert Message -->

@@ -70,6 +70,7 @@ public class DbConnectionFactory {
                 new Timestamp(System.currentTimeMillis());
     }
 
+
     /**
      * Return the default db type to map the String
      * @return int

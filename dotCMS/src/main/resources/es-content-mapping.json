@@ -7,7 +7,7 @@
             ]
         },
         "dynamic_date_formats": [
-            "MMM d, yyyy hh:mm:ss aaa"
+            "yyyy-MM-dd'T'HH:mm:ss||MMM d, yyyy hh:mm:ss aaa||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         ],
         "dynamic_templates": [
             {
@@ -44,6 +44,15 @@
                 }
             },
             {
+                "strings_as_dates": {
+                    "match": "originalstartdate||recurrencestart||recurrenceend",
+                    "mapping": {
+                        "type": "date",
+                        "ignore_malformed": true
+                    }
+                }
+            },
+            {
                 "geomapping": {
                     "match": "*latlon",
                     "mapping": {
@@ -62,14 +71,13 @@
                 }
             },
             {
-            	"tags" : {
-		            "match": "tags",
-		            "mapping": {
-		                "type": "keyword",
-		                "analyzer": "dot_comma_analyzer",
-		                "doc_values": false 	
-					}
-	            }
+                "tags" : {
+                    "match": "tags",
+                    "mapping": {
+                        "type": "keyword",
+                        "doc_values": true
+                    }
+                }
             },
             {
                 "textmapping": {
