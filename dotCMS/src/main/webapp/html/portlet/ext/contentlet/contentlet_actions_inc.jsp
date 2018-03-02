@@ -75,7 +75,7 @@ catch(Exception e){
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
 		</a>
 	<%} %>
-<%}else if(!isContLocked) {%>
+<%}else if(!isContLocked &&  !contentlet.isNew()) {%>
 
 	<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 	    <a onClick="makeEditable('<%=contentlet.getInode() %>');" id="lockContentButton">

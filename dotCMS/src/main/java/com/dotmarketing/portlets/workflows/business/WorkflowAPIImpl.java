@@ -569,8 +569,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
 			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
+			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
 		} catch(Exception e) {
 
 		}
