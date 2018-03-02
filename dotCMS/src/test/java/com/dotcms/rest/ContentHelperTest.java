@@ -22,7 +22,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testGetNullUrl() {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = null;
 
         final String url = contentHelper.getUrl(identifier);
@@ -34,7 +34,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testGetNotFoundUrl() throws DotDataException {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = null;
 
         when(identifierAPI.find(identifier)).thenReturn(null);
@@ -48,7 +48,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testGetFoundUrl() throws DotDataException {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = "1234";
         Identifier identifierObject = new Identifier();
         String urlExpected = "home_page";
@@ -67,7 +67,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testHydrateContentLetWithUrl() throws DotDataException {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = "1234";
         Identifier identifierObject = new Identifier();
         String urlExpected = "home_page";
@@ -91,7 +91,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testHydrateContentLetWithoutUrlAndAssetNameDoesNotExist() throws DotDataException {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = "1234";
         Contentlet contentlet = new Contentlet();
 
@@ -110,7 +110,7 @@ public class ContentHelperTest extends UnitTestBase {
     public void testHydrateContentLetWithoutUrl() throws DotDataException {
 
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-        final ContentHelper contentHelper = new ContentHelper(identifierAPI);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = "1234";
         Identifier identifierObject = new Identifier();
         String urlExpected = "home_page";
