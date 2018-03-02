@@ -50,7 +50,7 @@ public class LanguagesResource {
     /**
      * return a array with all the languages
      */
-    public Response  list(@Context HttpServletRequest request) {
+    public Response  list(final HttpServletRequest request) {
         Logger.debug(this, String.format("listing languages %s", request.getRequestURI()));
 
         webResource.init(true, request, true);

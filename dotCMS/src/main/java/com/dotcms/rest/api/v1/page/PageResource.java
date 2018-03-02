@@ -250,9 +250,6 @@ public class PageResource {
 
             final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
             final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
-            final boolean canLock  = APILocator.getContentletAPI().canLock(page, user);
-            final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
-            final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
 
             final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
             
@@ -280,7 +277,7 @@ public class PageResource {
                     .build();
 
             pageMapBuilder.put("template", templateMap);
-            pageMapBuilder.put("viewAs", createViasMap(request));
+            pageMapBuilder.put("viewAs", createViewAsMap(request));
 
             if(info.getLiveInode()!=null) {
                 pageMapBuilder.put("liveInode", info.getLiveInode())
@@ -312,10 +309,10 @@ public class PageResource {
         return res;
     }
 
-    private ImmutableMap<Object, Object> createViasMap(HttpServletRequest request) {
-        Builder<Object, Object> builder = ImmutableMap.builder();
+    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request) {
+        final Builder<Object, Object> builder = ImmutableMap.builder();
 
-        Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
+        final Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
 
         if (currentPersona != null) {
             builder.put("persona", currentPersona.getMap());

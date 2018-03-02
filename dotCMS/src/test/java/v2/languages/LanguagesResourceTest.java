@@ -28,19 +28,17 @@ public class LanguagesResourceTest {
     public void list(){
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final WebResource webResource = mock(WebResource.class);
-        LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageAPI languageAPI = mock(LanguageAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final UserAPI userAPI = mock(UserAPI.class);
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(languageAPI.getLanguages()).thenReturn(languages);
 
-        LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
-
-        Response response = languagesResource.list(request);
+        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
+        final Response response = languagesResource.list(request);
 
         assertEquals(languages, ((ResponseEntityView) response.getEntity()).getEntity());
     }

@@ -129,8 +129,8 @@ public class PageResourceHelper implements Serializable {
         multiTreeAPI.saveMultiTree(multiTree);
     }
 
-    public IPersona getCurrentPersona(HttpServletRequest request) {
-        Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+    public IPersona getCurrentPersona(final HttpServletRequest request) {
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
         return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
     }
 
