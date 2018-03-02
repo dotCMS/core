@@ -42,14 +42,6 @@ public class LoginEditModeServlet extends HttpServlet {
 				if (clickstream != null) {
 					String pageId = clickstream.getLastPageId();
 					_edit_mode_id = APILocator.getIdentifierAPI().find(pageId);
-
-					if ("contentlet".equals(_edit_mode_id.getAssetType())) {
-						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-						
-						String pageURI = findAssetURI(cont);
-						    
-						_edit_mode_id.setURI(pageURI);
-					}
 				}else{
 					Logger.info(LoginEditModeServlet.class,
 							"The edit mode don't work when the ENABLE_CLICKSTREAM_TRACKING is off");
