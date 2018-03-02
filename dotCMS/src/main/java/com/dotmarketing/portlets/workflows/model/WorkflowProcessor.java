@@ -122,15 +122,6 @@ public class WorkflowProcessor {
 				return;
 			}
 
-			if(action.requiresCheckout()){
-				try {
-					APILocator.getContentletAPI().canLock(contentlet, user);
-				} catch (Exception ex) {
-					throw new DotWorkflowException(LanguageUtil
-							.get(user, "message.workflow.error.content.requires.lock")
-							+ contentlet.getStructure().getName(), ex);
-				}
-			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
 				nextAssign = getRoleAPI().loadRoleById(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY));
 			}

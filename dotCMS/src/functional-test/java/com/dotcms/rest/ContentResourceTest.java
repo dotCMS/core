@@ -584,7 +584,7 @@ public class ContentResourceTest {
         saveDraft.setName("Save as Draft");
         saveDraft.setOrder(1);
         saveDraft.setNextStep(step1.getId());
-        saveDraft.setRequiresCheckout(true);
+        saveDraft.setRequiresCheckout(false);
         saveDraft.setStepId(step1.getId());
         saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         APILocator.getWorkflowAPI().saveAction(saveDraft,
@@ -603,7 +603,7 @@ public class ContentResourceTest {
         escalate.setName("Save and Assign");
         escalate.setOrder(2);
         escalate.setNextStep(step1.getId());
-        escalate.setRequiresCheckout(true);
+        escalate.setRequiresCheckout(false);
         escalate.setStepId(step1.getId());
         escalate.setAssignable(true);
         escalate.setCommentable(true);

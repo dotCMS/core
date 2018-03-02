@@ -32,7 +32,7 @@ import java.util.Set;
 
 public interface WorkflowAPI {
 
-	public static final String SYSTEM_WORKFLOW_ID           = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
+	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 	public static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
 
     public void registerBundleService ();
