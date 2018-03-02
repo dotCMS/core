@@ -66,7 +66,7 @@ public class MapToContentletPopulator  {
                 stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName)
                         .getInode();
             } else {
-                String contentType = (String) map.get(Contentlet.CONTENT_TYPE_KEY);
+                final String contentType = (String) map.get(Contentlet.CONTENT_TYPE_KEY);
                 if (UtilMethods.isSet(contentType)) {
                     stInode = CacheLocator.getContentTypeCache()
                             .getStructureByVelocityVarName(contentType).getInode();
@@ -99,8 +99,8 @@ public class MapToContentletPopulator  {
 
                 // build a field map for easy lookup
                 final Map<String, Field> fieldMap = new HashMap<>();
-                for (Field ff : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
-                    fieldMap.put(ff.getVelocityVarName(), ff);
+                for (final Field field : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
+                    fieldMap.put(field.getVelocityVarName(), field);
                 }
 
                 // look for relationships
@@ -113,7 +113,8 @@ public class MapToContentletPopulator  {
     } // processMap.
 
     private void fillFields(final Contentlet contentlet,
-                            final Map<String, Object> map, ContentType type,
+                            final Map<String, Object> map,
+                            final ContentType type,
                             final Map<String, Field> fieldMap) {
 
         for (final Map.Entry<String, Object> entry : map.entrySet()) {
@@ -220,9 +221,9 @@ public class MapToContentletPopulator  {
                                               final ContentType type,
                                               final Object value,
                                               final User systemUser) throws DotDataException, DotSecurityException {
-        Folder folder   = null;
-        String[] split  = value.toString().split(":");
-        final Host host = APILocator.getHostAPI()
+        Folder folder         = null;
+        final String[] split  = value.toString().split(":");
+        final Host     host   = APILocator.getHostAPI()
                 .findByName(split[0], systemUser, false);
 
         if (host != null && InodeUtils.isSet(host.getIdentifier())) {
