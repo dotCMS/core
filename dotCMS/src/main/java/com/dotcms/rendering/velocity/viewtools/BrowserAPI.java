@@ -74,7 +74,6 @@ public class BrowserAPI {
     protected static class WfData {
         
         List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
-        WorkflowStep wfStep; WorkflowScheme wfScheme;
         boolean contentEditable = false;
         List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
         
@@ -84,14 +83,8 @@ public class BrowserAPI {
             
             try {
                 if (contentlet != null) {
-                	WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
-                	if(null != step) {
-						wfStep = step;
-						wfScheme = APILocator.getWorkflowAPI().findScheme(
-								wfStep.getSchemeId());
-						wfActions = APILocator.getWorkflowAPI()
+                	wfActions = APILocator.getWorkflowAPI()
 								.findAvailableActions(contentlet, user);
-					}
                 }
             } catch (Exception e) {
                 Logger.error(this, "Could not load workflow actions : ", e);
@@ -125,9 +118,7 @@ public class BrowserAPI {
                     for (WorkflowAction action : wfActions) {
                         List<WorkflowActionClass> actionlets = APILocator
                                 .getWorkflowAPI().findActionClasses(action);
-                        if (action.requiresCheckout()) {
-                            continue;
-                        }
+						WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
                         Map<String, Object> wfActionMap = new HashMap<String, Object>();
                         wfActionMap.put("name", action.getName());
                         wfActionMap.put("id", action.getId());
@@ -138,7 +129,7 @@ public class BrowserAPI {
                         wfActionMap.put("requiresCheckout",
                                 action.requiresCheckout());
                         wfActionMap.put("wfActionNameStr",
-                                LanguageUtil.get(user, action.getName()));
+                                LanguageUtil.get(user, action.getName())+" ( "+LanguageUtil.get(user,wfScheme.getName())+" )");
                         for (WorkflowActionClass actionlet : actionlets) {
                             if (actionlet
                                     .getActionlet()
@@ -413,7 +404,6 @@ public class BrowserAPI {
 			Identifier ident = APILocator.getIdentifierAPI().find(
 					fileAsset.getVersionId());
 
-			WorkflowScheme wfScheme = wfdata!=null ? wfdata.wfScheme : null;
 			fileMap.put("permissions", permissions);
 			fileMap.put("mimeType", APILocator.getFileAssetAPI()
 					.getMimeType(fileAsset.getFileName()));
